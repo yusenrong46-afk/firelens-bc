@@ -1,0 +1,26 @@
+repair_registry_version: "r1.0"
+reviewed_on: "2026-07-25"
+
+repairs:
+  - source_id: preparedbc_wildfire_guide
+    page_number: 5
+    document_sha256: "f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3"
+    review_status: human_verified
+    reason: >
+      The visible infographic is legible, but the PDF heading uses an unmapped
+      font encoding. The replacement below was transcribed and visually checked
+      against rendered page 5; it does not add guidance absent from the page.
+    replacement_text: |
+      Wildfire Preparedness Guide
+      Grab-and-Go Bag
+      • Pen & notepad
+      • Phone charger & battery bank
+      • Flashlight
+      • Radio
+      • First aid kit
+      • Personal toiletries
+      • Seasonal clothing
+      • Food & water
+      • Batteries
+      • Whistle
+      • Emergency plan

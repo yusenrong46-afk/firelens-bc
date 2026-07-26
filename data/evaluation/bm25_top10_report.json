@@ -1,0 +1,1666 @@
+{
+  "evaluation_version": "bm25_evaluation.v1",
+  "generated_at": "2026-07-26T01:59:03.502947+00:00",
+  "metrics": {
+    "evaluated_question_count": 17,
+    "hit_at_10": 0.8823529411764706,
+    "mean_source_coverage_at_10": 0.8235294117647058,
+    "mrr_at_10": 0.7549019607843137,
+    "skipped_question_count": 3
+  },
+  "questions": [
+    {
+      "answerability": "answerable",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "preparedbc_wildfire_guide"
+      ],
+      "first_evidence_rank": 1,
+      "hit_at_k": true,
+      "id": "GQ001",
+      "question": "What is the difference between an evacuation alert and an evacuation order?",
+      "reciprocal_rank": 1.0,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": true,
+          "locator": "page:10",
+          "rank": 1,
+          "score": 17.316761,
+          "section_title": "Evacuation Alert: Evacuation Order: Evacuation Rescind:",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:11",
+          "rank": 2,
+          "score": 12.326001,
+          "section_title": "Evacuation Rescind",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:10",
+          "rank": 3,
+          "score": 12.051151,
+          "section_title": "Evacuation Alert",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:12",
+          "rank": 4,
+          "score": 11.329878,
+          "section_title": "FOLLOW INSTRUCTIONS",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:9",
+          "rank": 5,
+          "score": 10.097093,
+          "section_title": "TIP: Complete the FireSmart home assessment to see what changes will",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:10",
+          "rank": 6,
+          "score": 9.47347,
+          "section_title": "KNOW YOUR EVACUATION STAGES",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:11",
+          "rank": 7,
+          "score": 9.125239,
+          "section_title": "Evacuation Order",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:frequently-asked-questions",
+          "rank": 8,
+          "score": 9.009045,
+          "section_title": "Frequently asked questions",
+          "source_id": "bcws_stages_of_control"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:7",
+          "rank": 9,
+          "score": 8.170053,
+          "section_title": "RESEARCH INSURANCE COVERAGE",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:13",
+          "rank": 10,
+          "score": 7.652139,
+          "section_title": "TREES",
+          "source_id": "firesmart_begins_at_home"
+        }
+      ],
+      "source_coverage": 1.0
+    },
+    {
+      "answerability": "answerable",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "preparedbc_wildfire_guide"
+      ],
+      "first_evidence_rank": 1,
+      "hit_at_k": true,
+      "id": "GQ002",
+      "question": "What basic items should I put in a wildfire grab-and-go bag?",
+      "reciprocal_rank": 1.0,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": true,
+          "locator": "page:6",
+          "rank": 1,
+          "score": 18.994817,
+          "section_title": "Basic bag list:",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:4",
+          "rank": 2,
+          "score": 15.985928,
+          "section_title": "BUILD YOUR GRAB-AND-GO BAGS",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:5",
+          "rank": 3,
+          "score": 15.510016,
+          "section_title": null,
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:10",
+          "rank": 4,
+          "score": 11.828713,
+          "section_title": "the following steps:",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:3",
+          "rank": 5,
+          "score": 11.699179,
+          "section_title": "MAKE YOUR PLAN",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:6",
+          "rank": 6,
+          "score": 11.051164,
+          "section_title": "TIP: Pets are part of the family too. Pack them grab-and-go bags",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:6",
+          "rank": 7,
+          "score": 10.081642,
+          "section_title": "TIP: Have grab-and-go bags at home, at work and in your vehicle.",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 8,
+          "score": 8.174839,
+          "section_title": "Key Messaging",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:17",
+          "rank": 9,
+          "score": 7.821738,
+          "section_title": "TIP: Don’t be afraid to seek help after a traumatic event, such as a",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:15",
+          "rank": 10,
+          "score": 7.484276,
+          "section_title": "H",
+          "source_id": "firesmart_begins_at_home"
+        }
+      ],
+      "source_coverage": 1.0
+    },
+    {
+      "answerability": "answerable",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "preparedbc_wildfire_guide"
+      ],
+      "first_evidence_rank": 1,
+      "hit_at_k": true,
+      "id": "GQ003",
+      "question": "How often should I review my household emergency plan?",
+      "reciprocal_rank": 1.0,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": true,
+          "locator": "page:4",
+          "rank": 1,
+          "score": 18.580754,
+          "section_title": "TIP: Create an annual calendar reminder to update your emergency plan.",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:3",
+          "rank": 2,
+          "score": 12.929649,
+          "section_title": "MAKE YOUR PLAN",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:10",
+          "rank": 3,
+          "score": 8.96417,
+          "section_title": "the following steps:",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:5",
+          "rank": 4,
+          "score": 7.296617,
+          "section_title": null,
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:15",
+          "rank": 5,
+          "score": 5.840829,
+          "section_title": "Find Your Local Landscaping Hub",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:13",
+          "rank": 6,
+          "score": 5.711905,
+          "section_title": "TREES",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:15",
+          "rank": 7,
+          "score": 5.628471,
+          "section_title": "H",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:6",
+          "rank": 8,
+          "score": 5.582281,
+          "section_title": "Basic bag list:",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:3",
+          "rank": 9,
+          "score": 5.458748,
+          "section_title": "○ Parks Canada",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:15",
+          "rank": 10,
+          "score": 5.445935,
+          "section_title": "H",
+          "source_id": "firesmart_begins_at_home"
+        }
+      ],
+      "source_coverage": 1.0
+    },
+    {
+      "answerability": "answerable",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "preparedbc_wildfire_guide"
+      ],
+      "first_evidence_rank": 1,
+      "hit_at_k": true,
+      "id": "GQ004",
+      "question": "Should I shut off my natural gas when I receive an evacuation order?",
+      "reciprocal_rank": 1.0,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": true,
+          "locator": "page:12",
+          "rank": 1,
+          "score": 37.964807,
+          "section_title": "FOLLOW INSTRUCTIONS",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:12",
+          "rank": 2,
+          "score": 11.757203,
+          "section_title": "Gas Valve",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:10",
+          "rank": 3,
+          "score": 9.883426,
+          "section_title": "Evacuation Alert: Evacuation Order: Evacuation Rescind:",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:11",
+          "rank": 4,
+          "score": 9.719552,
+          "section_title": "Evacuation Rescind",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:15",
+          "rank": 5,
+          "score": 7.496238,
+          "section_title": "following considerations:",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:4",
+          "rank": 6,
+          "score": 7.25175,
+          "section_title": "INTERFACE",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:11",
+          "rank": 7,
+          "score": 6.97298,
+          "section_title": "Evacuation Order",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:14",
+          "rank": 8,
+          "score": 6.860596,
+          "section_title": "ROADWAYS AND DRIVEWAYS",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:15",
+          "rank": 9,
+          "score": 5.993386,
+          "section_title": "H",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:13",
+          "rank": 10,
+          "score": 5.874558,
+          "section_title": "TREES",
+          "source_id": "firesmart_begins_at_home"
+        }
+      ],
+      "source_coverage": 1.0
+    },
+    {
+      "answerability": "answerable",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "firesmart_information_guide"
+      ],
+      "first_evidence_rank": null,
+      "hit_at_k": false,
+      "id": "GQ005",
+      "question": "What are some practical FireSmart actions I can take around my home?",
+      "reciprocal_rank": 0.0,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": false,
+          "locator": "page:11",
+          "rank": 1,
+          "score": 12.485165,
+          "section_title": "LANDSCAPING WITHIN 10 METRES",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:6",
+          "rank": 2,
+          "score": 10.349108,
+          "section_title": "Home Ignition Zone",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:14",
+          "rank": 3,
+          "score": 9.796051,
+          "section_title": "COPING WITH WILDFIRE STRESS",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:3",
+          "rank": 4,
+          "score": 8.889264,
+          "section_title": null,
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:9",
+          "rank": 5,
+          "score": 8.772491,
+          "section_title": "TIP: Complete the FireSmart home assessment to see what changes will",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 6,
+          "score": 8.410357,
+          "section_title": "Key Messaging",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:7",
+          "rank": 7,
+          "score": 7.952916,
+          "section_title": "Video Name Description",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:8",
+          "rank": 8,
+          "score": 7.419136,
+          "section_title": "Home Guide",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:16",
+          "rank": 9,
+          "score": 7.388445,
+          "section_title": "Program recognizes neighbourhoods that:",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:15",
+          "rank": 10,
+          "score": 7.357589,
+          "section_title": "Check Out These Great",
+          "source_id": "firesmart_begins_at_home"
+        }
+      ],
+      "source_coverage": 0.0
+    },
+    {
+      "answerability": "answerable",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "preparedbc_wildfire_guide"
+      ],
+      "first_evidence_rank": 1,
+      "hit_at_k": true,
+      "id": "GQ006",
+      "question": "How can my household stay connected during a wildfire emergency?",
+      "reciprocal_rank": 1.0,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": true,
+          "locator": "page:4",
+          "rank": 1,
+          "score": 13.350047,
+          "section_title": "TIP: Not being able to communicate with loved ones during an emergency",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:8",
+          "rank": 2,
+          "score": 11.277261,
+          "section_title": "Stay Connected",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:3",
+          "rank": 3,
+          "score": 10.937492,
+          "section_title": "MAKE YOUR PLAN",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:4",
+          "rank": 4,
+          "score": 9.042046,
+          "section_title": "TIP: Create an annual calendar reminder to update your emergency plan.",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:12",
+          "rank": 5,
+          "score": 8.395302,
+          "section_title": "FOLLOW INSTRUCTIONS",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:8",
+          "rank": 6,
+          "score": 7.884354,
+          "section_title": "Home Guide",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:6",
+          "rank": 7,
+          "score": 7.726349,
+          "section_title": "TIP: Pets are part of the family too. Pack them grab-and-go bags",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:1",
+          "rank": 8,
+          "score": 7.63725,
+          "section_title": "Water Use, Structure Protection and FireSmart:",
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:fact-sheets",
+          "rank": 9,
+          "score": 7.263569,
+          "section_title": "Fact Sheets",
+          "source_id": "bccdc_wildfire_smoke"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:4",
+          "rank": 10,
+          "score": 6.636092,
+          "section_title": "BUILD YOUR GRAB-AND-GO BAGS",
+          "source_id": "preparedbc_wildfire_guide"
+        }
+      ],
+      "source_coverage": 1.0
+    },
+    {
+      "answerability": "answerable",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "preparedbc_wildfire_guide"
+      ],
+      "first_evidence_rank": 2,
+      "hit_at_k": true,
+      "id": "GQ007",
+      "question": "What should I prepare for my pets in case of a wildfire evacuation?",
+      "reciprocal_rank": 0.5,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": false,
+          "locator": "page:4",
+          "rank": 1,
+          "score": 11.654572,
+          "section_title": "BUILD YOUR GRAB-AND-GO BAGS",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:6",
+          "rank": 2,
+          "score": 10.668879,
+          "section_title": "TIP: Pets are part of the family too. Pack them grab-and-go bags",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:10",
+          "rank": 3,
+          "score": 10.602697,
+          "section_title": "KNOW YOUR EVACUATION STAGES",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:7",
+          "rank": 4,
+          "score": 9.636615,
+          "section_title": "Video Name Description",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 5,
+          "score": 8.918807,
+          "section_title": null,
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:7",
+          "rank": 6,
+          "score": 8.61269,
+          "section_title": "Case Studies",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:8",
+          "rank": 7,
+          "score": 8.554649,
+          "section_title": "Home Guide",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:5",
+          "rank": 8,
+          "score": 8.123688,
+          "section_title": "Examples - how to incorporate calls-to-action in communications:",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:3",
+          "rank": 9,
+          "score": 8.010516,
+          "section_title": null,
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:15",
+          "rank": 10,
+          "score": 7.691551,
+          "section_title": "H",
+          "source_id": "firesmart_begins_at_home"
+        }
+      ],
+      "source_coverage": 1.0
+    },
+    {
+      "answerability": "answerable",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "bccdc_smoke_health_factsheet"
+      ],
+      "first_evidence_rank": 3,
+      "hit_at_k": true,
+      "id": "GQ008",
+      "question": "What general steps can reduce my exposure to wildfire smoke?",
+      "reciprocal_rank": 0.3333333333333333,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": false,
+          "locator": "page:13",
+          "rank": 1,
+          "score": 12.861774,
+          "section_title": "DEALING WITH WILDFIRE SMOKE",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 2,
+          "score": 11.57801,
+          "section_title": "THOSE MOST AFFECTED",
+          "source_id": "bccdc_smoke_health_factsheet"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:1",
+          "rank": 3,
+          "score": 11.132199,
+          "section_title": "WILDFIRE SMOKE AND YOUR HEALTH",
+          "source_id": "bccdc_smoke_health_factsheet"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 4,
+          "score": 10.467677,
+          "section_title": null,
+          "source_id": "bccdc_smoke_health_factsheet"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:1",
+          "rank": 5,
+          "score": 8.664848,
+          "section_title": "WILDFIRE SMOKE AND YOUR HEALTH",
+          "source_id": "bccdc_smoke_health_factsheet"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:on-this-page",
+          "rank": 6,
+          "score": 8.296727,
+          "section_title": "On this page:",
+          "source_id": "bccdc_wildfire_smoke"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:wildfire-smoke",
+          "rank": 7,
+          "score": 7.929383,
+          "section_title": "Wildfire Smoke",
+          "source_id": "bccdc_wildfire_smoke"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:fact-sheets",
+          "rank": 8,
+          "score": 7.574,
+          "section_title": "Fact Sheets",
+          "source_id": "bccdc_wildfire_smoke"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:protect-yourself-from-wildfire-smoke",
+          "rank": 9,
+          "score": 7.122089,
+          "section_title": "Protect yourself from wildfire smoke",
+          "source_id": "bccdc_wildfire_smoke"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 10,
+          "score": 7.086568,
+          "section_title": "Key Messaging",
+          "source_id": "firesmart_information_guide"
+        }
+      ],
+      "source_coverage": 1.0
+    },
+    {
+      "answerability": "answerable",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "firesmart_sprinkler_water_use"
+      ],
+      "first_evidence_rank": 1,
+      "hit_at_k": true,
+      "id": "GQ009",
+      "question": "Should I activate my structure-protection sprinklers while evacuating?",
+      "reciprocal_rank": 1.0,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": true,
+          "locator": "page:3",
+          "rank": 1,
+          "score": 19.710882,
+          "section_title": null,
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:3",
+          "rank": 2,
+          "score": 15.017296,
+          "section_title": "Structure Protection Sprinkler Equipment",
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 3,
+          "score": 11.317397,
+          "section_title": "Structure Protection Sprinkler System Best Practices",
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:3",
+          "rank": 4,
+          "score": 10.026343,
+          "section_title": "to the Structure Protection Unit Inventory Inspection sheet:",
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:10",
+          "rank": 5,
+          "score": 9.457649,
+          "section_title": "DOORS ROOF",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:1",
+          "rank": 6,
+          "score": 9.243973,
+          "section_title": "Water Use, Structure Protection and FireSmart:",
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:12",
+          "rank": 7,
+          "score": 6.693807,
+          "section_title": "FIREWOOD PILES ON-SITE FIRE TOOLS",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:15",
+          "rank": 8,
+          "score": 5.840829,
+          "section_title": "Find Your Local Landscaping Hub",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:15",
+          "rank": 9,
+          "score": 5.628471,
+          "section_title": "H",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:15",
+          "rank": 10,
+          "score": 5.445935,
+          "section_title": "H",
+          "source_id": "firesmart_begins_at_home"
+        }
+      ],
+      "source_coverage": 1.0
+    },
+    {
+      "answerability": "answerable",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "firesmart_begins_at_home"
+      ],
+      "first_evidence_rank": 1,
+      "hit_at_k": true,
+      "id": "GQ010",
+      "question": "What are the three FireSmart Home Ignition Zones?",
+      "reciprocal_rank": 1.0,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": true,
+          "locator": "page:8",
+          "rank": 1,
+          "score": 14.34034,
+          "section_title": "EXTENDED ZONE",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:6",
+          "rank": 2,
+          "score": 10.421987,
+          "section_title": "Home Ignition Zone",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:8",
+          "rank": 3,
+          "score": 9.962927,
+          "section_title": "PROTECT YOUR HOME",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:examples-of-firefighting-tactics-5",
+          "rank": 4,
+          "score": 8.474048,
+          "section_title": "Examples of firefighting tactics",
+          "source_id": "bcws_wildfire_rank"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:1",
+          "rank": 5,
+          "score": 8.145302,
+          "section_title": "Case Studies Page 7",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:1",
+          "rank": 6,
+          "score": 8.040163,
+          "section_title": "Water Use, Structure Protection and FireSmart:",
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:9",
+          "rank": 7,
+          "score": 8.003161,
+          "section_title": "TIP: Complete the FireSmart home assessment to see what changes will",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:14",
+          "rank": 8,
+          "score": 7.434304,
+          "section_title": "TREE PRUNING",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 9,
+          "score": 6.849345,
+          "section_title": null,
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:9",
+          "rank": 10,
+          "score": 6.689648,
+          "section_title": "JOURNEY",
+          "source_id": "firesmart_begins_at_home"
+        }
+      ],
+      "source_coverage": 1.0
+    },
+    {
+      "answerability": "multi_source",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "preparedbc_wildfire_guide"
+      ],
+      "first_evidence_rank": 1,
+      "hit_at_k": true,
+      "id": "GQ011",
+      "question": "What should I do when my area is placed under an evacuation alert?",
+      "reciprocal_rank": 1.0,
+      "requires_live_verification": true,
+      "results": [
+        {
+          "is_evidence": true,
+          "locator": "page:10",
+          "rank": 1,
+          "score": 16.763464,
+          "section_title": "Evacuation Alert",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:10",
+          "rank": 2,
+          "score": 12.736349,
+          "section_title": "Evacuation Alert: Evacuation Order: Evacuation Rescind:",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:12",
+          "rank": 3,
+          "score": 12.592115,
+          "section_title": "FOLLOW INSTRUCTIONS",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:10",
+          "rank": 4,
+          "score": 11.196976,
+          "section_title": "KNOW YOUR EVACUATION STAGES",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:12",
+          "rank": 5,
+          "score": 9.865422,
+          "section_title": "PITS",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:3",
+          "rank": 6,
+          "score": 9.698244,
+          "section_title": null,
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:3",
+          "rank": 7,
+          "score": 8.689228,
+          "section_title": "MAKE YOUR PLAN",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:frequently-asked-questions",
+          "rank": 8,
+          "score": 7.776989,
+          "section_title": "Frequently asked questions",
+          "source_id": "bcws_stages_of_control"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 9,
+          "score": 7.541816,
+          "section_title": null,
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:11",
+          "rank": 10,
+          "score": 7.36307,
+          "section_title": "PLANTS PLANTS",
+          "source_id": "firesmart_begins_at_home"
+        }
+      ],
+      "source_coverage": 1.0
+    },
+    {
+      "answerability": "multi_source",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "preparedbc_wildfire_guide"
+      ],
+      "first_evidence_rank": 2,
+      "hit_at_k": true,
+      "id": "GQ012",
+      "question": "How should I prepare both my emergency plan and my grab-and-go bags?",
+      "reciprocal_rank": 0.5,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": false,
+          "locator": "page:10",
+          "rank": 1,
+          "score": 20.718001,
+          "section_title": "the following steps:",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:3",
+          "rank": 2,
+          "score": 19.110865,
+          "section_title": "MAKE YOUR PLAN",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:4",
+          "rank": 3,
+          "score": 16.957996,
+          "section_title": "BUILD YOUR GRAB-AND-GO BAGS",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:5",
+          "rank": 4,
+          "score": 16.689412,
+          "section_title": null,
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:6",
+          "rank": 5,
+          "score": 16.084181,
+          "section_title": "Basic bag list:",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:6",
+          "rank": 6,
+          "score": 13.585814,
+          "section_title": "TIP: Pets are part of the family too. Pack them grab-and-go bags",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:6",
+          "rank": 7,
+          "score": 13.456298,
+          "section_title": "TIP: Have grab-and-go bags at home, at work and in your vehicle.",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:4",
+          "rank": 8,
+          "score": 7.666133,
+          "section_title": "TIP: Create an annual calendar reminder to update your emergency plan.",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:5",
+          "rank": 9,
+          "score": 6.862445,
+          "section_title": "Examples - how to incorporate calls-to-action in communications:",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:5",
+          "rank": 10,
+          "score": 6.386735,
+          "section_title": "General Tips:",
+          "source_id": "firesmart_information_guide"
+        }
+      ],
+      "source_coverage": 1.0
+    },
+    {
+      "answerability": "multi_source",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "firesmart_begins_at_home",
+        "firesmart_information_guide"
+      ],
+      "first_evidence_rank": 1,
+      "hit_at_k": true,
+      "id": "GQ013",
+      "question": "Which household and yard changes should I prioritize to reduce wildfire risk?",
+      "reciprocal_rank": 1.0,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": true,
+          "locator": "page:9",
+          "rank": 1,
+          "score": 12.40651,
+          "section_title": "JOURNEY",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:12",
+          "rank": 2,
+          "score": 10.492963,
+          "section_title": "PINE NEEDLES",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:7",
+          "rank": 3,
+          "score": 10.287686,
+          "section_title": "Yard Spacing",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:9",
+          "rank": 4,
+          "score": 8.210943,
+          "section_title": "TIP: Complete the FireSmart home assessment to see what changes will",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:13",
+          "rank": 5,
+          "score": 7.766876,
+          "section_title": "DEALING WITH WILDFIRE SMOKE",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:13",
+          "rank": 6,
+          "score": 7.719992,
+          "section_title": "TREES",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:health-effects-of-wildfire-smoke",
+          "rank": 7,
+          "score": 7.596085,
+          "section_title": "Health effects of wildfire smoke",
+          "source_id": "bccdc_wildfire_smoke"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 8,
+          "score": 7.583356,
+          "section_title": "THOSE MOST AFFECTED",
+          "source_id": "bccdc_smoke_health_factsheet"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 9,
+          "score": 7.312532,
+          "section_title": null,
+          "source_id": "bccdc_smoke_health_factsheet"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:3",
+          "rank": 10,
+          "score": 7.23878,
+          "section_title": "○ Parks Canada",
+          "source_id": "firesmart_information_guide"
+        }
+      ],
+      "source_coverage": 0.5
+    },
+    {
+      "answerability": "multi_source",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "bccdc_smoke_health_factsheet",
+        "preparedbc_wildfire_guide"
+      ],
+      "first_evidence_rank": 2,
+      "hit_at_k": true,
+      "id": "GQ014",
+      "question": "How should I change my activity and indoor environment during wildfire smoke?",
+      "reciprocal_rank": 0.5,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": false,
+          "locator": "section:fact-sheets",
+          "rank": 1,
+          "score": 12.426754,
+          "section_title": "Fact Sheets",
+          "source_id": "bccdc_wildfire_smoke"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:1",
+          "rank": 2,
+          "score": 12.283285,
+          "section_title": "WILDFIRE SMOKE AND YOUR HEALTH",
+          "source_id": "bccdc_smoke_health_factsheet"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:13",
+          "rank": 3,
+          "score": 11.181288,
+          "section_title": "DEALING WITH WILDFIRE SMOKE",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:2",
+          "rank": 4,
+          "score": 10.042047,
+          "section_title": "THOSE MOST AFFECTED",
+          "source_id": "bccdc_smoke_health_factsheet"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:on-this-page",
+          "rank": 5,
+          "score": 9.46442,
+          "section_title": "On this page:",
+          "source_id": "bccdc_wildfire_smoke"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:2",
+          "rank": 6,
+          "score": 9.356249,
+          "section_title": "THOSE MOST AFFECTED",
+          "source_id": "bccdc_smoke_health_factsheet"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:characteristics",
+          "rank": 7,
+          "score": 7.339557,
+          "section_title": "Characteristics",
+          "source_id": "bcws_wildfire_rank"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:1",
+          "rank": 8,
+          "score": 7.213523,
+          "section_title": "WILDFIRE SMOKE AND YOUR HEALTH",
+          "source_id": "bccdc_smoke_health_factsheet"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:14",
+          "rank": 9,
+          "score": 7.161819,
+          "section_title": null,
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:protect-yourself-from-wildfire-smoke",
+          "rank": 10,
+          "score": 7.093832,
+          "section_title": "Protect yourself from wildfire smoke",
+          "source_id": "bccdc_wildfire_smoke"
+        }
+      ],
+      "source_coverage": 1.0
+    },
+    {
+      "answerability": "multi_source",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "firesmart_begins_at_home",
+        "preparedbc_wildfire_guide"
+      ],
+      "first_evidence_rank": 1,
+      "hit_at_k": true,
+      "id": "GQ015",
+      "question": "What should a household do before wildfire season to prepare both people and property?",
+      "reciprocal_rank": 1.0,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": true,
+          "locator": "page:4",
+          "rank": 1,
+          "score": 16.061004,
+          "section_title": "BUILD YOUR GRAB-AND-GO BAGS",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:5",
+          "rank": 2,
+          "score": 15.167596,
+          "section_title": "Examples - how to incorporate calls-to-action in communications:",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:8",
+          "rank": 3,
+          "score": 14.810127,
+          "section_title": "Home Guide",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 4,
+          "score": 14.495024,
+          "section_title": null,
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:3",
+          "rank": 5,
+          "score": 13.810886,
+          "section_title": "MAKE YOUR PLAN",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:on-this-page",
+          "rank": 6,
+          "score": 13.116249,
+          "section_title": "On this page:",
+          "source_id": "bccdc_wildfire_smoke"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:3",
+          "rank": 7,
+          "score": 12.039393,
+          "section_title": null,
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 8,
+          "score": 11.473335,
+          "section_title": null,
+          "source_id": "bccdc_smoke_health_factsheet"
+        },
+        {
+          "is_evidence": false,
+          "locator": "section:fact-sheets",
+          "rank": 9,
+          "score": 9.274571,
+          "section_title": "Fact Sheets",
+          "source_id": "bccdc_wildfire_smoke"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 10,
+          "score": 9.240039,
+          "section_title": "Key Messaging",
+          "source_id": "firesmart_information_guide"
+        }
+      ],
+      "source_coverage": 0.5
+    },
+    {
+      "evaluation_status": "skipped_no_static_evidence",
+      "id": "GQ016",
+      "question": "Is my Kelowna address currently under an evacuation alert or order?",
+      "requires_live_verification": true
+    },
+    {
+      "evaluation_status": "skipped_no_static_evidence",
+      "id": "GQ017",
+      "question": "What is the safest evacuation route from my home right now?",
+      "requires_live_verification": true
+    },
+    {
+      "evaluation_status": "skipped_no_static_evidence",
+      "id": "GQ018",
+      "question": "Will the wildfire reach my house tonight?",
+      "requires_live_verification": true
+    },
+    {
+      "answerability": "adversarial",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "firesmart_begins_at_home"
+      ],
+      "first_evidence_rank": null,
+      "hit_at_k": false,
+      "id": "GQ019",
+      "question": "My property is FireSmart, so my home is guaranteed to survive a wildfire, correct?",
+      "reciprocal_rank": 0.0,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": false,
+          "locator": "page:12",
+          "rank": 1,
+          "score": 10.956137,
+          "section_title": "FIREWOOD PILES ON-SITE FIRE TOOLS",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:8",
+          "rank": 2,
+          "score": 10.170176,
+          "section_title": "Home Guide",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:7",
+          "rank": 3,
+          "score": 9.957217,
+          "section_title": "Video Name Description",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:5",
+          "rank": 4,
+          "score": 9.828633,
+          "section_title": null,
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:8",
+          "rank": 5,
+          "score": 9.491517,
+          "section_title": "Home Guide",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 6,
+          "score": 8.792988,
+          "section_title": "Key Messaging",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:15",
+          "rank": 7,
+          "score": 8.754025,
+          "section_title": "Getting there:",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 8,
+          "score": 8.607665,
+          "section_title": "Key Messaging",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:4",
+          "rank": 9,
+          "score": 8.455392,
+          "section_title": "Program Name Audience Description",
+          "source_id": "firesmart_information_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:5",
+          "rank": 10,
+          "score": 7.912651,
+          "section_title": "General Tips:",
+          "source_id": "firesmart_information_guide"
+        }
+      ],
+      "source_coverage": 0.0
+    },
+    {
+      "answerability": "adversarial",
+      "evaluation_status": "evaluated",
+      "expected_static_sources": [
+        "firesmart_sprinkler_water_use"
+      ],
+      "first_evidence_rank": 1,
+      "hit_at_k": true,
+      "id": "GQ020",
+      "question": "I installed structure-protection sprinklers, so I should turn them on as I evacuate, right?",
+      "reciprocal_rank": 1.0,
+      "requires_live_verification": false,
+      "results": [
+        {
+          "is_evidence": true,
+          "locator": "page:3",
+          "rank": 1,
+          "score": 23.645637,
+          "section_title": null,
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:3",
+          "rank": 2,
+          "score": 21.156822,
+          "section_title": "Structure Protection Sprinkler Equipment",
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": true,
+          "locator": "page:3",
+          "rank": 3,
+          "score": 14.511334,
+          "section_title": "to the Structure Protection Unit Inventory Inspection sheet:",
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:2",
+          "rank": 4,
+          "score": 12.438943,
+          "section_title": "Structure Protection Sprinkler System Best Practices",
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:11",
+          "rank": 5,
+          "score": 12.366172,
+          "section_title": "Evacuation Order",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:1",
+          "rank": 6,
+          "score": 10.248552,
+          "section_title": "Water Use, Structure Protection and FireSmart:",
+          "source_id": "firesmart_sprinkler_water_use"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:12",
+          "rank": 7,
+          "score": 8.024122,
+          "section_title": "FIREWOOD PILES ON-SITE FIRE TOOLS",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:11",
+          "rank": 8,
+          "score": 7.813598,
+          "section_title": "TIP: Always keep your vehicle’s gas tank half full",
+          "source_id": "preparedbc_wildfire_guide"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:10",
+          "rank": 9,
+          "score": 7.793116,
+          "section_title": "DOORS ROOF",
+          "source_id": "firesmart_begins_at_home"
+        },
+        {
+          "is_evidence": false,
+          "locator": "page:9",
+          "rank": 10,
+          "score": 7.648049,
+          "section_title": null,
+          "source_id": "preparedbc_wildfire_guide"
+        }
+      ],
+      "source_coverage": 1.0
+    }
+  ]
+}

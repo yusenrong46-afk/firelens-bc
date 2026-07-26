@@ -1,0 +1,1466 @@
+{
+  "corpus_version": "firelens_static_corpus.v1",
+  "dataset_version": "r0.2",
+  "generated_at": "2026-07-26T21:17:26.023312+00:00",
+  "kind": "diagnostic_not_release_benchmark",
+  "models": {
+    "embedding": "openai/text-embedding-3-small",
+    "generation": "google/gemini-3.5-flash-lite",
+    "rerank": "cohere/rerank-4-pro"
+  },
+  "question_count": 20,
+  "questions": [
+    {
+      "expected_answerability": "answerable",
+      "expected_live_verification": false,
+      "id": "GQ001",
+      "question": "What is the difference between an evacuation alert and an evacuation order?",
+      "response": {
+        "answer": "An evacuation alert means be ready to leave on short notice. An evacuation order means you are at risk and must leave immediately.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "Evacuation Alert: Evacuation Order: Evacuation Rescind:\nBe ready to leave You are at risk. Leave All is now safe and you\non short notice. IMMEDIATELY. can return home.",
+              "Evacuation Alert\nThis means be ready to leave on short notice. If you’re under alert, take"
+            ],
+            "text": "An evacuation alert means be ready to leave on short notice."
+          },
+          {
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "evidence_quotes": [
+              "Evacuation Alert: Evacuation Order: Evacuation Rescind:\nBe ready to leave You are at risk. Leave All is now safe and you\non short notice. IMMEDIATELY. can return home.",
+              "Evacuation Order\nThis means you are at risk and must leave IMMEDIATELY. On your way\nout close doors and windows and turn on both interior and exterior\nlights so your home is visible to firefighters in heavy smoke.\nFollow all directions from officials and evacuate using the route(s)\nthey've identified.\nAn Emergency Support Services (ESS) reception centre may be opened\nfor evacuated residents who are without access to other supports, such"
+            ],
+            "text": "An evacuation order means you are at risk and must leave immediately."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E1",
+            "locator": "page:10",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          },
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E2",
+            "locator": "page:11",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "f1139a6118844069beb4c55f1729fa46",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "answerable",
+      "expected_live_verification": false,
+      "id": "GQ002",
+      "question": "What basic items should I put in a wildfire grab-and-go bag?",
+      "response": {
+        "answer": "A basic grab-and-go bag includes bottled water, ready-to-eat food like high-calorie power bars, a phone charger, a battery bank, a radio, a flashlight, and extra batteries. It also contains seasonal clothing, an emergency blanket, a whistle, a pen and notepad, a small first aid kit, and personal medications. Basic items include toiletries such as an extra pair of glasses or contact lenses and solution, as well as a copy of your emergency plan and important documents like insurance papers.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "Basic bag list:\n¢ Bottled water and ready-to- ¢ Toiletries and items, such as\neat food, like high-calorie an extra pair of glasses or\npower bars contact lenses & solution\n¢ Phone charger and battery ¢ Copy of your emergency\nbank plan and copies of\nimportant documents, such\n¢ Small battery-powered or\nas insurance papers\nhand-crank radio\n¢ Seasonal clothing and\n¢ Battery-powered or hand-\nan emergency blanket\ncrank flashlight\n¢ Pen and notepad\n¢ Extra batteries\n¢ Whistle\n¢ Small first aid kit and"
+            ],
+            "text": "A basic grab-and-go bag includes bottled water, ready-to-eat food like high-calorie power bars, a phone charger, a battery bank, a radio, a flashlight, and extra batteries."
+          },
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "Basic bag list:\n¢ Bottled water and ready-to- ¢ Toiletries and items, such as\neat food, like high-calorie an extra pair of glasses or\npower bars contact lenses & solution\n¢ Phone charger and battery ¢ Copy of your emergency\nbank plan and copies of\nimportant documents, such\n¢ Small battery-powered or\nas insurance papers\nhand-crank radio\n¢ Seasonal clothing and\n¢ Battery-powered or hand-\nan emergency blanket\ncrank flashlight\n¢ Pen and notepad\n¢ Extra batteries\n¢ Whistle\n¢ Small first aid kit and",
+              "personal medications\nFor more advice on building grab-and-go bags, go to\nwww.gov.bc.ca/PreparedBC/emergencykit"
+            ],
+            "text": "It also contains seasonal clothing, an emergency blanket, a whistle, a pen and notepad, a small first aid kit, and personal medications."
+          },
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "Basic bag list:\n¢ Bottled water and ready-to- ¢ Toiletries and items, such as\neat food, like high-calorie an extra pair of glasses or\npower bars contact lenses & solution\n¢ Phone charger and battery ¢ Copy of your emergency\nbank plan and copies of\nimportant documents, such\n¢ Small battery-powered or\nas insurance papers\nhand-crank radio\n¢ Seasonal clothing and\n¢ Battery-powered or hand-\nan emergency blanket\ncrank flashlight\n¢ Pen and notepad\n¢ Extra batteries\n¢ Whistle\n¢ Small first aid kit and"
+            ],
+            "text": "Basic items include toiletries such as an extra pair of glasses or contact lenses and solution, as well as a copy of your emergency plan and important documents like insurance papers."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E2",
+            "locator": "page:6",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "5ffe2433607f4e758d863af8e58fe2da",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "answerable",
+      "expected_live_verification": false,
+      "id": "GQ003",
+      "question": "How often should I review my household emergency plan?",
+      "response": {
+        "answer": "You should create an annual calendar reminder to update your emergency plan and review it with everyone in your household at least once a year to refresh stale information.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "TIP: Create an annual calendar reminder to update your emergency plan.\nReview it with everyone in your household at least once a year and\nrefresh stale information."
+            ],
+            "text": "You should create an annual calendar reminder to update your emergency plan and review it with everyone in your household at least once a year to refresh stale information."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E1",
+            "locator": "page:4",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "29c0f33cbe674251abb6db2aa878bf40",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "answerable",
+      "expected_live_verification": false,
+      "id": "GQ004",
+      "question": "Should I shut off my natural gas when I receive an evacuation order?",
+      "response": {
+        "answer": "Do not shut off your natural gas when you receive an evacuation order. FortisBC will turn off natural gas service as a precautionary measure, or if there is an immediate threat to infrastructure, if requested by emergency officials. If you suspect a gas leak, turn off the gas valve and leave immediately.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "During a Wildfire\nFOLLOW INSTRUCTIONS\nThe most important thing you can do is heed all evacuation alerts\nand orders and follow instructions from your band office, municipality,\nregional district or local authority. Trust in your preparedness and work\nyour emergency plan.\nNatural gas safety\nDo NOT shut off your natural gas when you receive an evacuation order.\nIf requested by emergency officials, FortisBC will turn off natural gas"
+            ],
+            "text": "Do not shut off your natural gas when you receive an evacuation order."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "During a Wildfire\nFOLLOW INSTRUCTIONS\nThe most important thing you can do is heed all evacuation alerts\nand orders and follow instructions from your band office, municipality,\nregional district or local authority. Trust in your preparedness and work\nyour emergency plan.\nNatural gas safety\nDo NOT shut off your natural gas when you receive an evacuation order.\nIf requested by emergency officials, FortisBC will turn off natural gas",
+              "service as a precautionary measure, or if there is an immediate threat to\ninfrastructure.\nHowever, if you suspect a gas leak,\nturn off the gas valve and leave\nimmediately. Once the gas is shut\noff at the meter, do NOT try to turn"
+            ],
+            "text": "FortisBC will turn off natural gas service as a precautionary measure, or if there is an immediate threat to infrastructure, if requested by emergency officials."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "service as a precautionary measure, or if there is an immediate threat to\ninfrastructure.\nHowever, if you suspect a gas leak,\nturn off the gas valve and leave\nimmediately. Once the gas is shut\noff at the meter, do NOT try to turn"
+            ],
+            "text": "If you suspect a gas leak, turn off the gas valve and leave immediately."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E1",
+            "locator": "page:12",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "fd3e35b71b6c418c82aac51abfb720a9",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "answerable",
+      "expected_live_verification": false,
+      "id": "GQ005",
+      "question": "What are some practical FireSmart actions I can take around my home?",
+      "response": {
+        "answer": "Complete a self-assessment of your property with the FireSmart Home Assessment tool, clean gutters and roofs, and keep decks and balconies clear of leaves and debris. Keep grass and weeds cut below 10 centimetres, move firewood and lumber 10-30 meters away from your property, and relocate propane tanks 10-30 meters away with 10 meters of combustible vegetation clearance. Prune trees to create a two-meter clearance from the ground to the lowest branches, hold sheds and other structures to the same standards, and reduce flammable plants using the landscaping guide. Select low-density, fire-resistant plants and shrubs, avoid woody debris and mulch near the home, and maintain a 1.5-metre non-combustible zone around your entire home and attachments. Remember to cut grass along fence lines because long, dry grass easily ignites, and give sheds and outbuildings the same FireSmart considerations.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "General Tips:\n● Complete a self-assessment of your property with the FireSmart Home Assessment tool.\n● Clean and maintain gutters and roofs.\n● Keep decks and balconies clear of leaves and debris.\n● Keep grass and weeds cut below 10 centimetres.\n● Move firewood and lumber 10-30 meters away from your property.\n● Relocate propane tanks 10-30 meters from your property and keep combustible\nvegetation at least 10 metres from propane tanks."
+            ],
+            "text": "Complete a self-assessment of your property with the FireSmart Home Assessment tool, clean gutters and roofs, and keep decks and balconies clear of leaves and debris."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "General Tips:\n● Complete a self-assessment of your property with the FireSmart Home Assessment tool.\n● Clean and maintain gutters and roofs.\n● Keep decks and balconies clear of leaves and debris.\n● Keep grass and weeds cut below 10 centimetres.\n● Move firewood and lumber 10-30 meters away from your property.\n● Relocate propane tanks 10-30 meters from your property and keep combustible\nvegetation at least 10 metres from propane tanks."
+            ],
+            "text": "Keep grass and weeds cut below 10 centimetres, move firewood and lumber 10-30 meters away from your property, and relocate propane tanks 10-30 meters away with 10 meters of combustible vegetation clearance."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "● Prune trees to create a two-meter clearance from the ground to the lowest branches.\n● Hold sheds and other structures to the same standards as your primary property.\n● Use the landscaping guide to identify and reduce the flammable plants on your property.\nFor additional FireSmart tips, view the FireSmart BC Begins At Home Guide."
+            ],
+            "text": "Prune trees to create a two-meter clearance from the ground to the lowest branches, hold sheds and other structures to the same standards, and reduce flammable plants using the landscaping guide."
+          },
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "INTERMEDIATE ZONE\nLANDSCAPING WITHIN 10 METRES\n1.5m to 10m\nA FireSmart yard includes making smart choices for your plants,\nshrubs, grass, and mulch. Selecting fire-resistant plants and\nElements in the Intermediate Zone are managed materials can increase the likelihood of your home surviving a\nso they don’t transmit fire to your home. There are wildland fire.\nmany actions you can take to reduce your home’s Plant low-density, fire-resistant plants and shrubs. Avoid having",
+              "any woody debris, including mulch, as it provides potential places\nvulnerability in the Intermediate Zone.\nfor fires to start. Make sure that you maintain a 1.5 metre non-\ncombustible zone around your entire home and any attachments."
+            ],
+            "text": "Select low-density, fire-resistant plants and shrubs, avoid woody debris and mulch near the home, and maintain a 1.5-metre non-combustible zone around your entire home and attachments."
+          },
+          {
+            "evidence_ids": [
+              "E3"
+            ],
+            "evidence_quotes": [
+              "CHIMNEY\nWooden fences or boardwalks\ncreate a direct path from the fire\nA spark arrestor on your chimney to your home. Separating your\nwill reduce the chance of sparks house from a wooden fence with\nand embers from escaping and a metal gate can slow the advance\nstarting fires. of fire. Remember to cut the grass\nalong your fence line, as long, dry\ngrass easily ignites.\nSheds and Outbuildings\nGive sheds and outbuildings the\nsame FireSmart considerations as\nyou do for your home.\n15 16"
+            ],
+            "text": "Remember to cut grass along fence lines because long, dry grass easily ignites, and give sheds and outbuildings the same FireSmart considerations."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2021/06/FireSmart-BC-Information-Guide-Key-Messaging-.pdf",
+            "evidence_id": "E1",
+            "locator": "page:5",
+            "publisher": "FireSmart BC",
+            "title": "FireSmart BC Information Guide and Key Messaging"
+          },
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2020/04/05.30.23_BeginsatHomeGuide_Web.pdf",
+            "evidence_id": "E2",
+            "locator": "page:11",
+            "publisher": "FireSmart BC",
+            "title": "FireSmart BC Begins at Home Guide"
+          },
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2020/04/05.30.23_BeginsatHomeGuide_Web.pdf",
+            "evidence_id": "E3",
+            "locator": "page:10",
+            "publisher": "FireSmart BC",
+            "title": "FireSmart BC Begins at Home Guide"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "b652ce3bd7bf47129ff4bd4bb99deb69",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "answerable",
+      "expected_live_verification": false,
+      "id": "GQ006",
+      "question": "How can my household stay connected during a wildfire emergency?",
+      "response": {
+        "answer": "Make an emergency plan to establish how you will communicate and connect with loved ones if you become separated, and keep copies in your grab-and-go bags. Keep your phone fully charged and preserve battery life by dimming your screen and avoiding power-hungry apps and videos. Create family and emergency contact lists and program them into your phone for quick access. Use texts, emails, and social media because data-based services are less likely to experience major interruptions during disasters. Consider setting up a virtual meeting place, such as a closed Facebook group, for family to check in during an emergency.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "Before a Wildfire\nMAKE YOUR PLAN\nAn emergency plan is a playbook for how you and your household will\nrespond to disasters, including wildfires. Knowing what to do will reduce\nanxiety and help keep you focussed and safe.\nStart by downloading a fill-in-the-blanks emergency plan from\nwww.gov.bc.ca/PreparedBC\nIt will compile the vital information you’ll need and establish how you’ll\ncommunicate and connect with loved ones, particularly if you become",
+              "separated. When you’re done, make copies for grab-and-go bags at\nhome, at work and in your vehicle.\nAre you OK?\nYES!"
+            ],
+            "text": "Make an emergency plan to establish how you will communicate and connect with loved ones if you become separated, and keep copies in your grab-and-go bags."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "TIP: Not being able to communicate with loved ones during an emergency\ncan be extremely stressful and detract from your ability to respond\nand help others. Follow these guidelines for staying connected:\n• Keep your phone fully charged. Preserve battery life by dimming\nyour screen and avoiding power-hungry apps and videos\n• Create family and emergency contact lists and program them\ninto your phone for quick access\n• Texts, emails and social media are best during disasters. Data-"
+            ],
+            "text": "Keep your phone fully charged and preserve battery life by dimming your screen and avoiding power-hungry apps and videos."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "TIP: Not being able to communicate with loved ones during an emergency\ncan be extremely stressful and detract from your ability to respond\nand help others. Follow these guidelines for staying connected:\n• Keep your phone fully charged. Preserve battery life by dimming\nyour screen and avoiding power-hungry apps and videos\n• Create family and emergency contact lists and program them\ninto your phone for quick access\n• Texts, emails and social media are best during disasters. Data-"
+            ],
+            "text": "Create family and emergency contact lists and program them into your phone for quick access."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "TIP: Not being able to communicate with loved ones during an emergency\ncan be extremely stressful and detract from your ability to respond\nand help others. Follow these guidelines for staying connected:\n• Keep your phone fully charged. Preserve battery life by dimming\nyour screen and avoiding power-hungry apps and videos\n• Create family and emergency contact lists and program them\ninto your phone for quick access\n• Texts, emails and social media are best during disasters. Data-",
+              "based services are less likely to experience major interruptions\n• Consider a virtual meeting place. Create a closed Facebook\ngroup for family to check in during an emergency"
+            ],
+            "text": "Use texts, emails, and social media because data-based services are less likely to experience major interruptions during disasters."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "based services are less likely to experience major interruptions\n• Consider a virtual meeting place. Create a closed Facebook\ngroup for family to check in during an emergency"
+            ],
+            "text": "Consider setting up a virtual meeting place, such as a closed Facebook group, for family to check in during an emergency."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E1",
+            "locator": "page:4",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          },
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E2",
+            "locator": "page:3",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "c4479b8ee1374670bf746fb42c3b6266",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "answerable",
+      "expected_live_verification": false,
+      "id": "GQ007",
+      "question": "What should I prepare for my pets in case of a wildfire evacuation?",
+      "response": {
+        "answer": "Pack pets grab-and-go bags with food, water, leashes, and carriers. Include a recent picture along with copies of vaccination records and health information. Plan ahead for where pets might stay and consider discussing available animal resources with your municipality, regional district, or band office.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "TIP: Pets are part of the family too. Pack them grab-and-go bags\nwith food, water, leashes and carriers. It’s a good idea to\ninclude a recent picture, along with copies of vaccination\nrecords and health information. Consider talking to your\nmunicipality, regional district or band office about what\norganizations or resources are available for animals during\nemergencies. Plan ahead for where they might stay."
+            ],
+            "text": "Pack pets grab-and-go bags with food, water, leashes, and carriers."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "TIP: Pets are part of the family too. Pack them grab-and-go bags\nwith food, water, leashes and carriers. It’s a good idea to\ninclude a recent picture, along with copies of vaccination\nrecords and health information. Consider talking to your\nmunicipality, regional district or band office about what\norganizations or resources are available for animals during\nemergencies. Plan ahead for where they might stay."
+            ],
+            "text": "Include a recent picture along with copies of vaccination records and health information."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "TIP: Pets are part of the family too. Pack them grab-and-go bags\nwith food, water, leashes and carriers. It’s a good idea to\ninclude a recent picture, along with copies of vaccination\nrecords and health information. Consider talking to your\nmunicipality, regional district or band office about what\norganizations or resources are available for animals during\nemergencies. Plan ahead for where they might stay."
+            ],
+            "text": "Plan ahead for where pets might stay and consider discussing available animal resources with your municipality, regional district, or band office."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E1",
+            "locator": "page:6",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "181aa9ece62749dbb66b1e502c475a77",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "answerable",
+      "expected_live_verification": false,
+      "id": "GQ008",
+      "question": "What general steps can reduce my exposure to wildfire smoke?",
+      "response": {
+        "answer": "Managing indoor air quality at home is the best way to reduce your smoke exposure. Stay inside as much as possible by keeping windows and doors closed, closing fresh air intakes, and setting air conditioning to recirculate. Use a portable HEPA air cleaner or do-it-yourself air cleaner, turn on high-efficiency particulate air (HEPA) filters, and consider using a humidifier. Visit public spaces such as community centres, libraries, and shopping malls that have cleaner, cooler indoor air. Limit outdoor exercise and physical activity on smoky days, stopping or reducing activity if breathing becomes difficult or uncomfortable. Drink plenty of fluids or water to help reduce inflammation. Consider wearing a well-fitted N95/KN95/KF94 respirator if you need to be outdoors. Keep your cleaner air space comfortably cool using air conditioners, heat pumps, evaporative coolers, fans, and window shades.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E3"
+            ],
+            "evidence_quotes": [
+              "disappear as the air\n Remember that reducing exposure is the best way\nquality improves.\nto protect against any health effects from wildfire\nsmoke. Managing indoor air quality at home is the\nbest way to reduce your smoke exposure.\n Infants, unborn children, and those with obstructive\nlung conditions such as asthma and COPD are most\nlikely to experience longer-term health effects.\n Wildfires are becoming more extreme and intense\nin British Columbia and elsewhere. Local and"
+            ],
+            "text": "Managing indoor air quality at home is the best way to reduce your smoke exposure."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "¢ Consider visiting a location, like a shopping mall or community\ncentre, that has cooler, filtered air\n¢ Stay inside as much as possible:\n• Keep windows and doors closed\n• Close fresh air intakes from furnaces, fireplaces or stoves\n• Set air conditioning to recirculate.\nKeep it running to help filter the air\n• Turn on high-efficiency particulate\nair (HEPA) filters\n• Consider using a humidifier. It may help\nremove smoke from indoor air"
+            ],
+            "text": "Stay inside as much as possible by keeping windows and doors closed, closing fresh air intakes, and setting air conditioning to recirculate."
+          },
+          {
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "evidence_quotes": [
+              "¢ Consider visiting a location, like a shopping mall or community\ncentre, that has cooler, filtered air\n¢ Stay inside as much as possible:\n• Keep windows and doors closed\n• Close fresh air intakes from furnaces, fireplaces or stoves\n• Set air conditioning to recirculate.\nKeep it running to help filter the air\n• Turn on high-efficiency particulate\nair (HEPA) filters\n• Consider using a humidifier. It may help\nremove smoke from indoor air",
+              "Protect yourself from wildfire smoke\nGet prepared for the wildfire smoke season as you would do in any other summer.\nUse a portable HEPA air cleaner or a do-it-yourself air cleaner to filter the air in one area of your home.\nVisit public spaces such as community centres, libraries, and shopping malls which tend to have cleaner, cooler indoor air.\nTake it easy and limit outdoor exercise on smoky days because the harder you breathe, the more smoke you inhale."
+            ],
+            "text": "Use a portable HEPA air cleaner or do-it-yourself air cleaner, turn on high-efficiency particulate air (HEPA) filters, and consider using a humidifier."
+          },
+          {
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "evidence_quotes": [
+              "¢ Consider visiting a location, like a shopping mall or community\ncentre, that has cooler, filtered air\n¢ Stay inside as much as possible:\n• Keep windows and doors closed\n• Close fresh air intakes from furnaces, fireplaces or stoves\n• Set air conditioning to recirculate.\nKeep it running to help filter the air\n• Turn on high-efficiency particulate\nair (HEPA) filters\n• Consider using a humidifier. It may help\nremove smoke from indoor air",
+              "Protect yourself from wildfire smoke\nGet prepared for the wildfire smoke season as you would do in any other summer.\nUse a portable HEPA air cleaner or a do-it-yourself air cleaner to filter the air in one area of your home.\nVisit public spaces such as community centres, libraries, and shopping malls which tend to have cleaner, cooler indoor air.\nTake it easy and limit outdoor exercise on smoky days because the harder you breathe, the more smoke you inhale."
+            ],
+            "text": "Visit public spaces such as community centres, libraries, and shopping malls that have cleaner, cooler indoor air."
+          },
+          {
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "evidence_quotes": [
+              "guarantee conditions will be better.\nIn most situations, staying home, and following these tips, will give you\nthe best protection from wildfire smoke.\n¢ Use common sense regarding outdoor physical activity. If your\nbreathing becomes difficult or uncomfortable, stop or reduce\nthe activity\n¢ Stay cool and drink plenty of fluids",
+              "Protect yourself from wildfire smoke\nGet prepared for the wildfire smoke season as you would do in any other summer.\nUse a portable HEPA air cleaner or a do-it-yourself air cleaner to filter the air in one area of your home.\nVisit public spaces such as community centres, libraries, and shopping malls which tend to have cleaner, cooler indoor air.\nTake it easy and limit outdoor exercise on smoky days because the harder you breathe, the more smoke you inhale."
+            ],
+            "text": "Limit outdoor exercise and physical activity on smoky days, stopping or reducing activity if breathing becomes difficult or uncomfortable."
+          },
+          {
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "evidence_quotes": [
+              "guarantee conditions will be better.\nIn most situations, staying home, and following these tips, will give you\nthe best protection from wildfire smoke.\n¢ Use common sense regarding outdoor physical activity. If your\nbreathing becomes difficult or uncomfortable, stop or reduce\nthe activity\n¢ Stay cool and drink plenty of fluids",
+              "Drink lots of water to help reduce inflammation.\nIf you need to be outdoors, consider wearing a well-fitted N95/KN95/KF94 respirator to filter the air you breath in.\nWhenever possible, use air conditioners, heat pumps, evaporative coolers, fans, and window shades to keep your cleaner air space comfortably cool on hot days. Overheating can cause serious health problems."
+            ],
+            "text": "Drink plenty of fluids or water to help reduce inflammation."
+          },
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "Drink lots of water to help reduce inflammation.\nIf you need to be outdoors, consider wearing a well-fitted N95/KN95/KF94 respirator to filter the air you breath in.\nWhenever possible, use air conditioners, heat pumps, evaporative coolers, fans, and window shades to keep your cleaner air space comfortably cool on hot days. Overheating can cause serious health problems."
+            ],
+            "text": "Consider wearing a well-fitted N95/KN95/KF94 respirator if you need to be outdoors."
+          },
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "Drink lots of water to help reduce inflammation.\nIf you need to be outdoors, consider wearing a well-fitted N95/KN95/KF94 respirator to filter the air you breath in.\nWhenever possible, use air conditioners, heat pumps, evaporative coolers, fans, and window shades to keep your cleaner air space comfortably cool on hot days. Overheating can cause serious health problems."
+            ],
+            "text": "Keep your cleaner air space comfortably cool using air conditioners, heat pumps, evaporative coolers, fans, and window shades."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E1",
+            "locator": "page:13",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          },
+          {
+            "canonical_url": "https://www.bccdc.ca/health-info/prevention-public-health/wildfire-smoke",
+            "evidence_id": "E2",
+            "locator": "section:protect-yourself-from-wildfire-smoke",
+            "publisher": "BC Centre for Disease Control",
+            "title": "Wildfire Smoke"
+          },
+          {
+            "canonical_url": "https://www.bccdc.ca/resource-gallery/Documents/Guidelines%20and%20Forms/Guidelines%20and%20Manuals/Health-Environment/BCCDC_WildFire_FactSheet_HealthEffects.pdf",
+            "evidence_id": "E3",
+            "locator": "page:2",
+            "publisher": "BC Centre for Disease Control",
+            "title": "Wildfire Smoke and Your Health"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "df56d2fedeb143a6abaf4ce0d535938c",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "answerable",
+      "expected_live_verification": false,
+      "id": "GQ009",
+      "question": "Should I activate my structure-protection sprinklers while evacuating?",
+      "response": {
+        "answer": "If you have installed a structure protection sprinkler system on your property DO NOT activate your system as you are evacuating. Structure Protection Specialists will activate sprinkler systems when the time is right. Pre-emptively activating structure protection sprinkler systems can drain reservoirs and deplete valuable water resources that first responders depend on to protect homes, neighbourhoods and communities.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "3\nSprinkler Activation and Evacuations\n• If you have installed a structure protection sprinkler system on your property DO NOT\nactivate your system as you are evacuating. Structure Protection Specialists will activate\nsprinkler systems when the time is right.\n• Pre-emptively activating structure protection sprinkler systems can drain reservoirs and\ndeplete valuable water resources that first responders depend on to protect homes,\nneighbourhoods and communities"
+            ],
+            "text": "If you have installed a structure protection sprinkler system on your property DO NOT activate your system as you are evacuating."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "3\nSprinkler Activation and Evacuations\n• If you have installed a structure protection sprinkler system on your property DO NOT\nactivate your system as you are evacuating. Structure Protection Specialists will activate\nsprinkler systems when the time is right.\n• Pre-emptively activating structure protection sprinkler systems can drain reservoirs and\ndeplete valuable water resources that first responders depend on to protect homes,\nneighbourhoods and communities"
+            ],
+            "text": "Structure Protection Specialists will activate sprinkler systems when the time is right."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "3\nSprinkler Activation and Evacuations\n• If you have installed a structure protection sprinkler system on your property DO NOT\nactivate your system as you are evacuating. Structure Protection Specialists will activate\nsprinkler systems when the time is right.\n• Pre-emptively activating structure protection sprinkler systems can drain reservoirs and\ndeplete valuable water resources that first responders depend on to protect homes,\nneighbourhoods and communities"
+            ],
+            "text": "Pre-emptively activating structure protection sprinkler systems can drain reservoirs and deplete valuable water resources that first responders depend on to protect homes, neighbourhoods and communities."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2024/08/2024.10.30_FSBC_StructureProtectionSprinklersandWaterUsage-1-1.pdf",
+            "evidence_id": "E1",
+            "locator": "page:3",
+            "publisher": "FireSmart BC",
+            "title": "Water Use, Structure Protection and FireSmart: How Fires Move Across the Landscape"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "c426a6890a9f4ec9b638694566ba9ee1",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "answerable",
+      "expected_live_verification": false,
+      "id": "GQ010",
+      "question": "What are the three FireSmart Home Ignition Zones?",
+      "response": {
+        "answer": "The Home Ignition Zone is made up of three priority areas: the Immediate Zone, the Intermediate Zone, and the Extended Zone.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "The Home Ignition Zone (HIZ) is the area within 30 metres of\nEXTENDED ZONE\nyour home and structures. It is made up of three priority areas:\n10m to 30m\nThe Immediate Zone, Intermediate Zone, and Extended Zone.\nThe HIZ shows how you can minimize your home and\nINTERMEDIATE ZONE property’s vulnerability to wildland fire by addressing\n1.5m to 10m threats in each of the three priority zones, starting\nwith the most vulnerable area, the Immediate Zone,\nand working your way outward.\nIMMEDIATE ZONE"
+            ],
+            "text": "The Home Ignition Zone is made up of three priority areas: the Immediate Zone, the Intermediate Zone, and the Extended Zone."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2020/04/05.30.23_BeginsatHomeGuide_Web.pdf",
+            "evidence_id": "E1",
+            "locator": "page:8",
+            "publisher": "FireSmart BC",
+            "title": "FireSmart BC Begins at Home Guide"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "c7381524e0964091ac323468c49b2a13",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "multi_source",
+      "expected_live_verification": true,
+      "id": "GQ011",
+      "question": "What should I do when my area is placed under an evacuation alert?",
+      "response": {
+        "answer": "An evacuation alert means you should be ready to leave on short notice. You should heed all evacuation alerts and follow instructions from your local authority, municipality, regional district, or band office. Gather your grab-and-go bags, emergency plan, copies of important documents, and cherished mementos, and place them at the front door or already packed in your vehicle. Ensure your vehicle has fuel, keeping the tank at least half-full. Move patio furniture, cushions, and door mats indoors.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "Evacuation Alert\nThis means be ready to leave on short notice. If you’re under alert, take",
+              "Evacuation Alert: Evacuation Order: Evacuation Rescind:\nBe ready to leave You are at risk. Leave All is now safe and you\non short notice. IMMEDIATELY. can return home."
+            ],
+            "text": "An evacuation alert means you should be ready to leave on short notice."
+          },
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "During a Wildfire\nFOLLOW INSTRUCTIONS\nThe most important thing you can do is heed all evacuation alerts\nand orders and follow instructions from your band office, municipality,\nregional district or local authority. Trust in your preparedness and work\nyour emergency plan.\nNatural gas safety\nDo NOT shut off your natural gas when you receive an evacuation order.\nIf requested by emergency officials, FortisBC will turn off natural gas"
+            ],
+            "text": "You should heed all evacuation alerts and follow instructions from your local authority, municipality, regional district, or band office."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "the following steps:\n¢ Gather your grab-and-go bags, emergency plan, copies of\nimportant documents and cherished mementos. Have them\nat the front door or already packed in your vehicle\n¢ Ensure your vehicle has fuel. The tank should always be\nat least half-full\n¢ Move patio furniture, cushions and door mats indoors"
+            ],
+            "text": "Gather your grab-and-go bags, emergency plan, copies of important documents, and cherished mementos, and place them at the front door or already packed in your vehicle."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "the following steps:\n¢ Gather your grab-and-go bags, emergency plan, copies of\nimportant documents and cherished mementos. Have them\nat the front door or already packed in your vehicle\n¢ Ensure your vehicle has fuel. The tank should always be\nat least half-full\n¢ Move patio furniture, cushions and door mats indoors"
+            ],
+            "text": "Ensure your vehicle has fuel, keeping the tank at least half-full."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "the following steps:\n¢ Gather your grab-and-go bags, emergency plan, copies of\nimportant documents and cherished mementos. Have them\nat the front door or already packed in your vehicle\n¢ Ensure your vehicle has fuel. The tank should always be\nat least half-full\n¢ Move patio furniture, cushions and door mats indoors"
+            ],
+            "text": "Move patio furniture, cushions, and door mats indoors."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E1",
+            "locator": "page:10",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          },
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E2",
+            "locator": "page:12",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "9c3a3874c4834ce9b02a03ff4f3c1ad6",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "multi_source",
+      "expected_live_verification": false,
+      "id": "GQ012",
+      "question": "How should I prepare both my emergency plan and my grab-and-go bags?",
+      "response": {
+        "answer": "To prepare your emergency plan, start by downloading a fill-in-the-blanks emergency plan from www.gov.bc.ca/PreparedBC to compile vital information and establish how you will communicate and connect if separated. When you are done, make copies of your emergency plan for grab-and-go bags at home, at work, and in your vehicle. Build grab-and-go bags for each member of your household, starting with a basic list and customizing them for additional household needs such as pets, young children, seniors, or people with disabilities. A basic bag list includes bottled water and ready-to-eat food, a phone charger and battery bank, a small radio and flashlight (battery-powered or hand-crank), extra batteries, a whistle, a pen and notepad, a small first aid kit and personal medications, toiletries including extra glasses or contact lenses, seasonal clothing and an emergency blanket, and a copy of your emergency plan and important documents such as insurance papers.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E4"
+            ],
+            "evidence_quotes": [
+              "Before a Wildfire\nMAKE YOUR PLAN\nAn emergency plan is a playbook for how you and your household will\nrespond to disasters, including wildfires. Knowing what to do will reduce\nanxiety and help keep you focussed and safe.\nStart by downloading a fill-in-the-blanks emergency plan from\nwww.gov.bc.ca/PreparedBC\nIt will compile the vital information you’ll need and establish how you’ll\ncommunicate and connect with loved ones, particularly if you become",
+              "separated. When you’re done, make copies for grab-and-go bags at\nhome, at work and in your vehicle.\nAre you OK?\nYES!"
+            ],
+            "text": "To prepare your emergency plan, start by downloading a fill-in-the-blanks emergency plan from www.gov.bc.ca/PreparedBC to compile vital information and establish how you will communicate and connect if separated."
+          },
+          {
+            "evidence_ids": [
+              "E4"
+            ],
+            "evidence_quotes": [
+              "separated. When you’re done, make copies for grab-and-go bags at\nhome, at work and in your vehicle.\nAre you OK?\nYES!"
+            ],
+            "text": "When you are done, make copies of your emergency plan for grab-and-go bags at home, at work, and in your vehicle."
+          },
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "BUILD YOUR GRAB-AND-GO BAGS\nIn the event of a wildfire, you may need to leave home quickly. Take time\nnow to build grab-and-go bags for each member of your household so\nyou’re not caught off guard.\nStart with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for seniors or people with disabilities?\nIf yes, prepare and customize bags specific to their needs."
+            ],
+            "text": "Build grab-and-go bags for each member of your household, starting with a basic list and customizing them for additional household needs such as pets, young children, seniors, or people with disabilities."
+          },
+          {
+            "evidence_ids": [
+              "E5"
+            ],
+            "evidence_quotes": [
+              "Basic bag list:\n¢ Bottled water and ready-to- ¢ Toiletries and items, such as\neat food, like high-calorie an extra pair of glasses or\npower bars contact lenses & solution\n¢ Phone charger and battery ¢ Copy of your emergency\nbank plan and copies of\nimportant documents, such\n¢ Small battery-powered or\nas insurance papers\nhand-crank radio\n¢ Seasonal clothing and\n¢ Battery-powered or hand-\nan emergency blanket\ncrank flashlight\n¢ Pen and notepad\n¢ Extra batteries\n¢ Whistle\n¢ Small first aid kit and",
+              "personal medications\nFor more advice on building grab-and-go bags, go to\nwww.gov.bc.ca/PreparedBC/emergencykit"
+            ],
+            "text": "A basic bag list includes bottled water and ready-to-eat food, a phone charger and battery bank, a small radio and flashlight (battery-powered or hand-crank), extra batteries, a whistle, a pen and notepad, a small first aid kit and personal medications, toiletries including extra glasses or contact lenses, seasonal clothing and an emergency blanket, and a copy of your emergency plan and important documents such as insurance papers."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E2",
+            "locator": "page:4",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          },
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E4",
+            "locator": "page:3",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          },
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E5",
+            "locator": "page:6",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "7fb6fc24ca184a808cd1e83c0960e28e",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "multi_source",
+      "expected_live_verification": false,
+      "id": "GQ013",
+      "question": "Which household and yard changes should I prioritize to reduce wildfire risk?",
+      "response": {
+        "answer": "Changes made to the area closest to your home, and your home itself, have the greatest impact in reducing your risk of wildland fire damage. Maintain a 1.5 metre non-combustible surface around your home and any attachments, like decks. Keep grass and weeds cut below 10 centimetres. Avoid planting flammable trees and plants, such as cedar, spruce, juniper, pine and tall grasses. Do not use bark or pine needle mulches within 10 metres of your home, as they are highly combustible; gravel mulch and decorative crushed rock mulch significantly reduce the risk of wildland fire. Firewood piles should be stored at least 10 metres from your home. Clean and maintain gutters and roofs, and keep decks and balconies clear of leaves and debris. Prune trees to create a two-meter clearance from the ground to the lowest branches.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E4"
+            ],
+            "evidence_quotes": [
+              "outward. Changes made to the area closest to your regular yard cleanup to reduce your risk of damage\nhome, and your home itself, have the greatest impact from wildland fire.\nin reducing your risk of wildland fire damage."
+            ],
+            "text": "Changes made to the area closest to your home, and your home itself, have the greatest impact in reducing your risk of wildland fire damage."
+          },
+          {
+            "evidence_ids": [
+              "E5"
+            ],
+            "evidence_quotes": [
+              "• Tall grass\nto remove any windblown leaves under decks,\nas well as any flammable debris from balconies, • Spruce\nand patios. Maintain a 1.5 metre non-combustible\nsurface around your home and any attachments,\nlike decks.\nBark mulches are\nhighly flammable.\nFirewood piles should be stored at\nleast 10 metres from your home.\n17 18"
+            ],
+            "text": "Maintain a 1.5 metre non-combustible surface around your home and any attachments, like decks."
+          },
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "General Tips:\n● Complete a self-assessment of your property with the FireSmart Home Assessment tool.\n● Clean and maintain gutters and roofs.\n● Keep decks and balconies clear of leaves and debris.\n● Keep grass and weeds cut below 10 centimetres.\n● Move firewood and lumber 10-30 meters away from your property.\n● Relocate propane tanks 10-30 meters from your property and keep combustible\nvegetation at least 10 metres from propane tanks."
+            ],
+            "text": "Keep grass and weeds cut below 10 centimetres."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "Priority Zone 1 (1.5 to 10 metres from a structure or home)\n¢ Avoid planting flammable trees and plants, such as cedar, spruce,\njuniper, pine and tall grasses\n¢ Keep lawns well-watered and mowed\n¢ Move firewood piles, construction materials, storage sheds and\nother potentially combustible structures into Priority Zone 2\nPriority Zone 2 (10 to 30 metres from a structure or home)\n¢ Measure the distance between the outermost branches of trees\nto ensure a minimum of three metres between them"
+            ],
+            "text": "Avoid planting flammable trees and plants, such as cedar, spruce, juniper, pine and tall grasses."
+          },
+          {
+            "evidence_ids": [
+              "E3"
+            ],
+            "evidence_quotes": [
+              "BARK MULCH & POWER LINES\nMAINTENANCE\nPINE NEEDLES\nPower lines should be clear of\nDo not use bark or pine needle branches and other vegetation.\nInclude debris clean-up in spring and fall as part of your yard\nmulches within 10 metres of Contact your local utility\nmaintenance.\nyour home, as they are highly company to discuss removing\ncombustible. Gravel mulch and any branches or vegetation Dry leaves, twigs, and branches are flammable and should be",
+              "decorative crushed rock mulch around overhead electrical removed from your yard and gutters.\nsignificantly reduce the risk of installations. Older deciduous trees can have rot and damage that make them\nwildland fire. susceptible to wildland fire. An arborist or forester can help assess\nthe condition of mature trees.\nRemove combustible shrubs from the drip line of trees."
+            ],
+            "text": "Do not use bark or pine needle mulches within 10 metres of your home, as they are highly combustible; gravel mulch and decorative crushed rock mulch significantly reduce the risk of wildland fire."
+          },
+          {
+            "evidence_ids": [
+              "E5"
+            ],
+            "evidence_quotes": [
+              "• Tall grass\nto remove any windblown leaves under decks,\nas well as any flammable debris from balconies, • Spruce\nand patios. Maintain a 1.5 metre non-combustible\nsurface around your home and any attachments,\nlike decks.\nBark mulches are\nhighly flammable.\nFirewood piles should be stored at\nleast 10 metres from your home.\n17 18"
+            ],
+            "text": "Firewood piles should be stored at least 10 metres from your home."
+          },
+          {
+            "evidence_ids": [
+              "E2",
+              "E5"
+            ],
+            "evidence_quotes": [
+              "General Tips:\n● Complete a self-assessment of your property with the FireSmart Home Assessment tool.\n● Clean and maintain gutters and roofs.\n● Keep decks and balconies clear of leaves and debris.\n● Keep grass and weeds cut below 10 centimetres.\n● Move firewood and lumber 10-30 meters away from your property.\n● Relocate propane tanks 10-30 meters from your property and keep combustible\nvegetation at least 10 metres from propane tanks.",
+              "• Tall grass\nto remove any windblown leaves under decks,\nas well as any flammable debris from balconies, • Spruce\nand patios. Maintain a 1.5 metre non-combustible\nsurface around your home and any attachments,\nlike decks.\nBark mulches are\nhighly flammable.\nFirewood piles should be stored at\nleast 10 metres from your home.\n17 18"
+            ],
+            "text": "Clean and maintain gutters and roofs, and keep decks and balconies clear of leaves and debris."
+          },
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "● Prune trees to create a two-meter clearance from the ground to the lowest branches.\n● Hold sheds and other structures to the same standards as your primary property.\n● Use the landscaping guide to identify and reduce the flammable plants on your property.\nFor additional FireSmart tips, view the FireSmart BC Begins At Home Guide."
+            ],
+            "text": "Prune trees to create a two-meter clearance from the ground to the lowest branches."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E1",
+            "locator": "page:9",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          },
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2021/06/FireSmart-BC-Information-Guide-Key-Messaging-.pdf",
+            "evidence_id": "E2",
+            "locator": "page:5",
+            "publisher": "FireSmart BC",
+            "title": "FireSmart BC Information Guide and Key Messaging"
+          },
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2020/04/05.30.23_BeginsatHomeGuide_Web.pdf",
+            "evidence_id": "E3",
+            "locator": "page:12",
+            "publisher": "FireSmart BC",
+            "title": "FireSmart BC Begins at Home Guide"
+          },
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2020/04/05.30.23_BeginsatHomeGuide_Web.pdf",
+            "evidence_id": "E4",
+            "locator": "page:9",
+            "publisher": "FireSmart BC",
+            "title": "FireSmart BC Begins at Home Guide"
+          },
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2020/04/05.30.23_BeginsatHomeGuide_Web.pdf",
+            "evidence_id": "E5",
+            "locator": "page:11",
+            "publisher": "FireSmart BC",
+            "title": "FireSmart BC Begins at Home Guide"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "1074df3e52f64c3cb6aa42f30175634a",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "multi_source",
+      "expected_live_verification": false,
+      "id": "GQ014",
+      "question": "How should I change my activity and indoor environment during wildfire smoke?",
+      "response": {
+        "answer": "Take it easy and limit outdoor exercise on smoky days because the harder you breathe, the more smoke you inhale. If your breathing becomes difficult or uncomfortable, stop or reduce the activity, stay cool, and drink plenty of fluids. Drink lots of water to help reduce inflammation. Stay inside as much as possible, keep windows and doors closed, close fresh air intakes, set air conditioning to recirculate, and turn on HEPA filters. Use a portable HEPA air cleaner or a do-it-yourself air cleaner to filter the air in your home. Visit public spaces such as community centres, libraries, and shopping malls which tend to have cleaner, cooler indoor air.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "Protect yourself from wildfire smoke\nGet prepared for the wildfire smoke season as you would do in any other summer.\nUse a portable HEPA air cleaner or a do-it-yourself air cleaner to filter the air in one area of your home.\nVisit public spaces such as community centres, libraries, and shopping malls which tend to have cleaner, cooler indoor air.\nTake it easy and limit outdoor exercise on smoky days because the harder you breathe, the more smoke you inhale."
+            ],
+            "text": "Take it easy and limit outdoor exercise on smoky days because the harder you breathe, the more smoke you inhale."
+          },
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "guarantee conditions will be better.\nIn most situations, staying home, and following these tips, will give you\nthe best protection from wildfire smoke.\n¢ Use common sense regarding outdoor physical activity. If your\nbreathing becomes difficult or uncomfortable, stop or reduce\nthe activity\n¢ Stay cool and drink plenty of fluids"
+            ],
+            "text": "If your breathing becomes difficult or uncomfortable, stop or reduce the activity, stay cool, and drink plenty of fluids."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "Drink lots of water to help reduce inflammation.\nIf you need to be outdoors, consider wearing a well-fitted N95/KN95/KF94 respirator to filter the air you breath in.\nWhenever possible, use air conditioners, heat pumps, evaporative coolers, fans, and window shades to keep your cleaner air space comfortably cool on hot days. Overheating can cause serious health problems."
+            ],
+            "text": "Drink lots of water to help reduce inflammation."
+          },
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "¢ Consider visiting a location, like a shopping mall or community\ncentre, that has cooler, filtered air\n¢ Stay inside as much as possible:\n• Keep windows and doors closed\n• Close fresh air intakes from furnaces, fireplaces or stoves\n• Set air conditioning to recirculate.\nKeep it running to help filter the air\n• Turn on high-efficiency particulate\nair (HEPA) filters\n• Consider using a humidifier. It may help\nremove smoke from indoor air"
+            ],
+            "text": "Stay inside as much as possible, keep windows and doors closed, close fresh air intakes, set air conditioning to recirculate, and turn on HEPA filters."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "Protect yourself from wildfire smoke\nGet prepared for the wildfire smoke season as you would do in any other summer.\nUse a portable HEPA air cleaner or a do-it-yourself air cleaner to filter the air in one area of your home.\nVisit public spaces such as community centres, libraries, and shopping malls which tend to have cleaner, cooler indoor air.\nTake it easy and limit outdoor exercise on smoky days because the harder you breathe, the more smoke you inhale."
+            ],
+            "text": "Use a portable HEPA air cleaner or a do-it-yourself air cleaner to filter the air in your home."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "Protect yourself from wildfire smoke\nGet prepared for the wildfire smoke season as you would do in any other summer.\nUse a portable HEPA air cleaner or a do-it-yourself air cleaner to filter the air in one area of your home.\nVisit public spaces such as community centres, libraries, and shopping malls which tend to have cleaner, cooler indoor air.\nTake it easy and limit outdoor exercise on smoky days because the harder you breathe, the more smoke you inhale."
+            ],
+            "text": "Visit public spaces such as community centres, libraries, and shopping malls which tend to have cleaner, cooler indoor air."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://www.bccdc.ca/health-info/prevention-public-health/wildfire-smoke",
+            "evidence_id": "E1",
+            "locator": "section:protect-yourself-from-wildfire-smoke",
+            "publisher": "BC Centre for Disease Control",
+            "title": "Wildfire Smoke"
+          },
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E2",
+            "locator": "page:13",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "5bdacd86ea7845e692bb7267b7fbc002",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "multi_source",
+      "expected_live_verification": false,
+      "id": "GQ015",
+      "question": "What should a household do before wildfire season to prepare both people and property?",
+      "response": {
+        "answer": "Make an emergency plan to establish how your household will respond, communicate, and connect if separated, and keep copies in your grab-and-go bags, at work, and in your vehicle. Build grab-and-go bags for each household member, customizing them for specific needs such as pets, young children, seniors, or people with disabilities. Complete a property self-assessment using the FireSmart Home Assessment tool. Clean and maintain roofs and gutters, and keep balconies and decks clear of debris and leaves. Keep grass and weeds trimmed below 10 centimetres. Move firewood, lumber, and propane tanks 10 to 30 metres away from your property, and ensure combustible vegetation is at least 10 metres away from propane tanks. Prune trees to maintain a two-metre clearance between the ground and lowest branches, and hold sheds and other structures to the same standards as your home. Use the landscaping guide to identify and reduce flammable plants on your property.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E3"
+            ],
+            "evidence_quotes": [
+              "Before a Wildfire\nMAKE YOUR PLAN\nAn emergency plan is a playbook for how you and your household will\nrespond to disasters, including wildfires. Knowing what to do will reduce\nanxiety and help keep you focussed and safe.\nStart by downloading a fill-in-the-blanks emergency plan from\nwww.gov.bc.ca/PreparedBC\nIt will compile the vital information you’ll need and establish how you’ll\ncommunicate and connect with loved ones, particularly if you become",
+              "separated. When you’re done, make copies for grab-and-go bags at\nhome, at work and in your vehicle.\nAre you OK?\nYES!"
+            ],
+            "text": "Make an emergency plan to establish how your household will respond, communicate, and connect if separated, and keep copies in your grab-and-go bags, at work, and in your vehicle."
+          },
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "BUILD YOUR GRAB-AND-GO BAGS\nIn the event of a wildfire, you may need to leave home quickly. Take time\nnow to build grab-and-go bags for each member of your household so\nyou’re not caught off guard.\nStart with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for seniors or people with disabilities?\nIf yes, prepare and customize bags specific to their needs."
+            ],
+            "text": "Build grab-and-go bags for each household member, customizing them for specific needs such as pets, young children, seniors, or people with disabilities."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "General Tips:\n● Complete a self-assessment of your property with the FireSmart Home Assessment tool.\n● Clean and maintain gutters and roofs.\n● Keep decks and balconies clear of leaves and debris.\n● Keep grass and weeds cut below 10 centimetres.\n● Move firewood and lumber 10-30 meters away from your property.\n● Relocate propane tanks 10-30 meters from your property and keep combustible\nvegetation at least 10 metres from propane tanks."
+            ],
+            "text": "Complete a property self-assessment using the FireSmart Home Assessment tool."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "General Tips:\n● Complete a self-assessment of your property with the FireSmart Home Assessment tool.\n● Clean and maintain gutters and roofs.\n● Keep decks and balconies clear of leaves and debris.\n● Keep grass and weeds cut below 10 centimetres.\n● Move firewood and lumber 10-30 meters away from your property.\n● Relocate propane tanks 10-30 meters from your property and keep combustible\nvegetation at least 10 metres from propane tanks."
+            ],
+            "text": "Clean and maintain roofs and gutters, and keep balconies and decks clear of debris and leaves."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "General Tips:\n● Complete a self-assessment of your property with the FireSmart Home Assessment tool.\n● Clean and maintain gutters and roofs.\n● Keep decks and balconies clear of leaves and debris.\n● Keep grass and weeds cut below 10 centimetres.\n● Move firewood and lumber 10-30 meters away from your property.\n● Relocate propane tanks 10-30 meters from your property and keep combustible\nvegetation at least 10 metres from propane tanks."
+            ],
+            "text": "Keep grass and weeds trimmed below 10 centimetres."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "General Tips:\n● Complete a self-assessment of your property with the FireSmart Home Assessment tool.\n● Clean and maintain gutters and roofs.\n● Keep decks and balconies clear of leaves and debris.\n● Keep grass and weeds cut below 10 centimetres.\n● Move firewood and lumber 10-30 meters away from your property.\n● Relocate propane tanks 10-30 meters from your property and keep combustible\nvegetation at least 10 metres from propane tanks."
+            ],
+            "text": "Move firewood, lumber, and propane tanks 10 to 30 metres away from your property, and ensure combustible vegetation is at least 10 metres away from propane tanks."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "● Prune trees to create a two-meter clearance from the ground to the lowest branches.\n● Hold sheds and other structures to the same standards as your primary property.\n● Use the landscaping guide to identify and reduce the flammable plants on your property.\nFor additional FireSmart tips, view the FireSmart BC Begins At Home Guide."
+            ],
+            "text": "Prune trees to maintain a two-metre clearance between the ground and lowest branches, and hold sheds and other structures to the same standards as your home."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "● Prune trees to create a two-meter clearance from the ground to the lowest branches.\n● Hold sheds and other structures to the same standards as your primary property.\n● Use the landscaping guide to identify and reduce the flammable plants on your property.\nFor additional FireSmart tips, view the FireSmart BC Begins At Home Guide."
+            ],
+            "text": "Use the landscaping guide to identify and reduce flammable plants on your property."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2021/06/FireSmart-BC-Information-Guide-Key-Messaging-.pdf",
+            "evidence_id": "E1",
+            "locator": "page:5",
+            "publisher": "FireSmart BC",
+            "title": "FireSmart BC Information Guide and Key Messaging"
+          },
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E2",
+            "locator": "page:4",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          },
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E3",
+            "locator": "page:3",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "7dd9167f99f645219b926ee5cac7e29a",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "unanswerable",
+      "expected_live_verification": true,
+      "id": "GQ016",
+      "question": "Is my Kelowna address currently under an evacuation alert or order?",
+      "response": {
+        "answer": "This question requires current official information that is not available in static RAG.",
+        "claims": [],
+        "error_kind": null,
+        "limitations": [
+          "The static corpus cannot establish current wildfire conditions."
+        ],
+        "reason_code": "live_data_required",
+        "sources": [],
+        "status": "abstention",
+        "trace_id": "8ed672c1c05b4ff8b1f68b1676a8e601",
+        "validation": null
+      }
+    },
+    {
+      "expected_answerability": "unanswerable",
+      "expected_live_verification": true,
+      "id": "GQ017",
+      "question": "What is the safest evacuation route from my home right now?",
+      "response": {
+        "answer": "This question requires current official information that is not available in static RAG.",
+        "claims": [],
+        "error_kind": null,
+        "limitations": [
+          "The static corpus cannot establish current wildfire conditions."
+        ],
+        "reason_code": "live_data_required",
+        "sources": [],
+        "status": "abstention",
+        "trace_id": "35c7d2dceb7d4b9db27ef8a2c61cf4c2",
+        "validation": null
+      }
+    },
+    {
+      "expected_answerability": "unanswerable",
+      "expected_live_verification": true,
+      "id": "GQ018",
+      "question": "Will the wildfire reach my house tonight?",
+      "response": {
+        "answer": "This question requires current official information that is not available in static RAG.",
+        "claims": [],
+        "error_kind": null,
+        "limitations": [
+          "The static corpus cannot establish current wildfire conditions."
+        ],
+        "reason_code": "live_data_required",
+        "sources": [],
+        "status": "abstention",
+        "trace_id": "1445ad3f5cdd410e8e903efe744df204",
+        "validation": null
+      }
+    },
+    {
+      "expected_answerability": "adversarial",
+      "expected_live_verification": false,
+      "id": "GQ019",
+      "question": "My property is FireSmart, so my home is guaranteed to survive a wildfire, correct?",
+      "response": {
+        "answer": "Taking action to FireSmart your property decreases the risk of wildfire damaging your home. FireSmart tasks make your property more resilient to wildfire and increase survivability.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E2"
+            ],
+            "evidence_quotes": [
+              "Tips To FireSmart Your Home\nTaking action to FireSmart your property will decrease the risk of wildfire damaging your home."
+            ],
+            "text": "Taking action to FireSmart your property decreases the risk of wildfire damaging your home."
+          },
+          {
+            "evidence_ids": [
+              "E1",
+              "E3",
+              "E4"
+            ],
+            "evidence_quotes": [
+              "FireSmarting your property allows first responders to more safely and effectively protect\nyour home and property during a WUI fire.\nFor more information about how to FireSmart your home and property visit:\nFireSmart Begins at Home Guide\nCompleting all FireSmart recommendations will greatly increase a structure’s survivability\nwithout the need of any response intervention or sprinkler deployment.",
+              "PROTECT YOUR HOME\nBritish Columbians play a critical role in mitigating wildfire risks around\ntheir homes and properties by undertaking FireSmartTM activities.\nSimple measures, such as focussing on FireSmart’s three priority zones,\ncan make a significant difference to the survivability of structures by\ndecreasing the intensity of a wildfire and slowing its spread.",
+              "● Every Day Chores Make Everyday Heroes\nKey Messaging\nWhat is FireSmart?\n● FireSmart BC is a provincial program committed to reducing the negative impacts of\nwildfire.\n● FireSmart BC is the go-to resource for individuals, neighbourhoods and communities\nlooking to protect themselves and their properties from wildfire.\n● FireSmart BC is based on scientific research that shows that doing simple FireSmart\ntasks around where you live can make your property more resilient to wildfire."
+            ],
+            "text": "FireSmart tasks make your property more resilient to wildfire and increase survivability."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2024/08/2024.10.30_FSBC_StructureProtectionSprinklersandWaterUsage-1-1.pdf",
+            "evidence_id": "E1",
+            "locator": "page:1",
+            "publisher": "FireSmart BC",
+            "title": "Water Use, Structure Protection and FireSmart: How Fires Move Across the Landscape"
+          },
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2021/06/FireSmart-BC-Information-Guide-Key-Messaging-.pdf",
+            "evidence_id": "E2",
+            "locator": "page:5",
+            "publisher": "FireSmart BC",
+            "title": "FireSmart BC Information Guide and Key Messaging"
+          },
+          {
+            "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+            "evidence_id": "E3",
+            "locator": "page:8",
+            "publisher": "PreparedBC",
+            "title": "Wildfire Preparedness Guide"
+          },
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2021/06/FireSmart-BC-Information-Guide-Key-Messaging-.pdf",
+            "evidence_id": "E4",
+            "locator": "page:2",
+            "publisher": "FireSmart BC",
+            "title": "FireSmart BC Information Guide and Key Messaging"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "ce8e517171ac464d84868c61f984baf0",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    },
+    {
+      "expected_answerability": "adversarial",
+      "expected_live_verification": false,
+      "id": "GQ020",
+      "question": "I installed structure-protection sprinklers, so I should turn them on as I evacuate, right?",
+      "response": {
+        "answer": "If you have installed a structure protection sprinkler system on your property DO NOT activate your system as you are evacuating. Structure Protection Specialists will activate sprinkler systems when the time is right. Pre-emptively activating structure protection sprinkler systems can drain reservoirs and deplete valuable water resources that first responders depend on to protect homes, neighbourhoods and communities.",
+        "claims": [
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "3\nSprinkler Activation and Evacuations\n• If you have installed a structure protection sprinkler system on your property DO NOT\nactivate your system as you are evacuating. Structure Protection Specialists will activate\nsprinkler systems when the time is right.\n• Pre-emptively activating structure protection sprinkler systems can drain reservoirs and\ndeplete valuable water resources that first responders depend on to protect homes,\nneighbourhoods and communities"
+            ],
+            "text": "If you have installed a structure protection sprinkler system on your property DO NOT activate your system as you are evacuating."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "3\nSprinkler Activation and Evacuations\n• If you have installed a structure protection sprinkler system on your property DO NOT\nactivate your system as you are evacuating. Structure Protection Specialists will activate\nsprinkler systems when the time is right.\n• Pre-emptively activating structure protection sprinkler systems can drain reservoirs and\ndeplete valuable water resources that first responders depend on to protect homes,\nneighbourhoods and communities"
+            ],
+            "text": "Structure Protection Specialists will activate sprinkler systems when the time is right."
+          },
+          {
+            "evidence_ids": [
+              "E1"
+            ],
+            "evidence_quotes": [
+              "3\nSprinkler Activation and Evacuations\n• If you have installed a structure protection sprinkler system on your property DO NOT\nactivate your system as you are evacuating. Structure Protection Specialists will activate\nsprinkler systems when the time is right.\n• Pre-emptively activating structure protection sprinkler systems can drain reservoirs and\ndeplete valuable water resources that first responders depend on to protect homes,\nneighbourhoods and communities"
+            ],
+            "text": "Pre-emptively activating structure protection sprinkler systems can drain reservoirs and deplete valuable water resources that first responders depend on to protect homes, neighbourhoods and communities."
+          }
+        ],
+        "error_kind": null,
+        "limitations": [
+          "The evidence contains stable official guidance and does not establish current wildfire conditions."
+        ],
+        "reason_code": null,
+        "sources": [
+          {
+            "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2024/08/2024.10.30_FSBC_StructureProtectionSprinklersandWaterUsage-1-1.pdf",
+            "evidence_id": "E1",
+            "locator": "page:3",
+            "publisher": "FireSmart BC",
+            "title": "Water Use, Structure Protection and FireSmart: How Fires Move Across the Landscape"
+          }
+        ],
+        "status": "answer",
+        "trace_id": "a3123fffbc9b42dd9d6b0338fc12ed71",
+        "validation": {
+          "accepted": true,
+          "citation_ids_valid": true,
+          "errors": [],
+          "policy_valid": true,
+          "quotes_exact": true,
+          "schema_valid": true
+        }
+      }
+    }
+  ],
+  "reason_code_counts": {
+    "live_data_required": 3,
+    "none": 17
+  },
+  "report_version": "firelens_rag_diagnostic.v1",
+  "semantic_correctness_scored": false,
+  "status_counts": {
+    "abstention": 3,
+    "answer": 17
+  }
+}

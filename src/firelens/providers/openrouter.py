@@ -1,0 +1,287 @@
+"""OpenRouter HTTP adapter. No FireLens policy decisions belong here."""
+
+from __future__ import annotations
+
+import json
+from typing import Any, Sequence
+
+import httpx
+from pydantic import ValidationError
+
+from firelens.config import FireLensConfig
+from firelens.contracts import (
+    DraftAnswer,
+    EmbeddingResponse,
+    GenerationResponse,
+    RerankResponse,
+    RerankResult,
+)
+from firelens.errors import ProviderError, ProviderErrorKind
+
+
+_CANONICAL_RESPONSE_MODELS: dict[str, frozenset[str]] = {
+    "openai/text-embedding-3-small": frozenset(
+        {"openai/text-embedding-3-small", "text-embedding-3-small"}
+    ),
+    "cohere/rerank-4-pro": frozenset(
+        {"cohere/rerank-4-pro", "rerank-v4.0-pro"}
+    ),
+}
+
+
+def _model_identity_matches(requested: str, returned: object) -> bool:
+    if not isinstance(returned, str):
+        return False
+    allowed = _CANONICAL_RESPONSE_MODELS.get(requested, frozenset({requested}))
+    return returned in allowed
+
+
+class OpenRouterProvider:
+    def __init__(
+        self,
+        config: FireLensConfig,
+        *,
+        client: httpx.AsyncClient | None = None,
+    ) -> None:
+        self.config = config
+        self._client = client
+
+    def _headers(self) -> dict[str, str]:
+        if self.config.openrouter_api_key is None:
+            raise ProviderError(
+                ProviderErrorKind.AUTHENTICATION,
+                "OpenRouter API key is not configured.",
+                status_code=401,
+            )
+        return {
+            "Authorization": (
+                f"Bearer {self.config.openrouter_api_key.get_secret_value()}"
+            ),
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://firelens.local",
+            "X-Title": "FireLens BC",
+        }
+
+    def _provider_preferences(self) -> dict[str, Any]:
+        preferences: dict[str, Any] = {
+            "require_parameters": True,
+            "data_collection": "deny",
+            "allow_fallbacks": False,
+        }
+        if self.config.require_zdr:
+            preferences["zdr"] = True
+        return preferences
+
+    async def _post(self, endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
+        owns_client = self._client is None
+        client = self._client or httpx.AsyncClient(
+            timeout=self.config.request_timeout_seconds
+        )
+        try:
+            response = await client.post(
+                f"{self.config.openrouter_base_url}/{endpoint.lstrip('/')}",
+                headers=self._headers(),
+                json=payload,
+            )
+            try:
+                body = response.json()
+            except json.JSONDecodeError as exc:
+                raise ProviderError(
+                    ProviderErrorKind.INVALID_RESPONSE,
+                    "OpenRouter returned a non-JSON response.",
+                    status_code=response.status_code,
+                ) from exc
+            if not isinstance(body, dict):
+                raise ProviderError(
+                    ProviderErrorKind.INVALID_RESPONSE,
+                    "OpenRouter returned an unexpected response shape.",
+                    status_code=response.status_code,
+                )
+            if response.is_error or body.get("error"):
+                self._raise_provider_error(response.status_code, body)
+            return body
+        except httpx.TimeoutException as exc:
+            raise ProviderError(
+                ProviderErrorKind.TIMEOUT,
+                "OpenRouter request timed out.",
+                status_code=408,
+                retryable=True,
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise ProviderError(
+                ProviderErrorKind.UNAVAILABLE,
+                "OpenRouter could not be reached.",
+                retryable=True,
+            ) from exc
+        finally:
+            if owns_client:
+                await client.aclose()
+
+    @staticmethod
+    def _raise_provider_error(status: int, body: dict[str, Any]) -> None:
+        error = body.get("error") or {}
+        if not isinstance(error, dict):
+            error = {}
+        raw_code = error.get("code")
+        code = raw_code if isinstance(raw_code, int) else status or 500
+        kinds = {
+            400: ProviderErrorKind.INVALID_REQUEST,
+            401: ProviderErrorKind.AUTHENTICATION,
+            402: ProviderErrorKind.CREDITS,
+            403: ProviderErrorKind.SAFETY,
+            404: ProviderErrorKind.MODEL_UNAVAILABLE,
+            408: ProviderErrorKind.TIMEOUT,
+            429: ProviderErrorKind.RATE_LIMIT,
+            524: ProviderErrorKind.TIMEOUT,
+            529: ProviderErrorKind.UNAVAILABLE,
+            502: ProviderErrorKind.UNAVAILABLE,
+            503: ProviderErrorKind.UNAVAILABLE,
+        }
+        kind = kinds.get(code, ProviderErrorKind.UNKNOWN)
+        safe_messages = {
+            ProviderErrorKind.AUTHENTICATION: "OpenRouter authentication failed.",
+            ProviderErrorKind.CREDITS: "OpenRouter credits are unavailable.",
+            ProviderErrorKind.RATE_LIMIT: "OpenRouter rate limit was reached.",
+            ProviderErrorKind.TIMEOUT: "OpenRouter request timed out.",
+            ProviderErrorKind.UNAVAILABLE: "The required OpenRouter model is unavailable.",
+            ProviderErrorKind.MODEL_UNAVAILABLE: "The requested OpenRouter model is unavailable.",
+            ProviderErrorKind.INVALID_REQUEST: "OpenRouter rejected the request.",
+            ProviderErrorKind.SAFETY: "OpenRouter blocked the request by policy.",
+            ProviderErrorKind.UNKNOWN: "OpenRouter returned an unexpected error.",
+        }
+        raise ProviderError(
+            kind,
+            safe_messages[kind],
+            status_code=code,
+            retryable=kind in {
+                ProviderErrorKind.RATE_LIMIT,
+                ProviderErrorKind.TIMEOUT,
+                ProviderErrorKind.UNAVAILABLE,
+                ProviderErrorKind.MODEL_UNAVAILABLE,
+            },
+        )
+
+    async def embed(self, texts: Sequence[str]) -> EmbeddingResponse:
+        body = await self._post(
+            "embeddings",
+            {
+                "model": self.config.embedding_model,
+                "input": list(texts),
+                "provider": self._provider_preferences(),
+            },
+        )
+        try:
+            if not _model_identity_matches(
+                self.config.embedding_model, body.get("model")
+            ):
+                raise ValueError("embedding model mismatch")
+            rows = sorted(body["data"], key=lambda row: row["index"])
+            vectors = [row["embedding"] for row in rows]
+            if len(vectors) != len(texts):
+                raise ValueError("embedding count mismatch")
+            return EmbeddingResponse(
+                model=body.get("model", self.config.embedding_model),
+                vectors=vectors,
+                usage=body.get("usage") or {},
+            )
+        except (KeyError, TypeError, ValueError, ValidationError) as exc:
+            raise ProviderError(
+                ProviderErrorKind.INVALID_RESPONSE,
+                "OpenRouter returned invalid embeddings.",
+            ) from exc
+
+    async def rerank(
+        self,
+        query: str,
+        documents: Sequence[str],
+        *,
+        top_n: int,
+    ) -> RerankResponse:
+        body = await self._post(
+            "rerank",
+            {
+                "model": self.config.rerank_model,
+                "query": query,
+                "documents": list(documents),
+                "top_n": top_n,
+                "provider": self._provider_preferences(),
+            },
+        )
+        try:
+            if not _model_identity_matches(self.config.rerank_model, body.get("model")):
+                raise ValueError("rerank model mismatch")
+            results = [
+                RerankResult(
+                    index=row["index"], relevance_score=row["relevance_score"]
+                )
+                for row in body["results"]
+            ]
+            indices = [result.index for result in results]
+            if len(indices) != len(set(indices)):
+                raise ValueError("duplicate rerank indices")
+            if any(index >= len(documents) for index in indices):
+                raise ValueError("rerank index out of range")
+            if len(results) != min(top_n, len(documents)):
+                raise ValueError("rerank result count mismatch")
+            return RerankResponse(
+                model=body.get("model", self.config.rerank_model),
+                results=results,
+                usage=body.get("usage")
+                or (body.get("meta") or {}).get("billed_units")
+                or {},
+            )
+        except (KeyError, TypeError, ValueError, ValidationError) as exc:
+            raise ProviderError(
+                ProviderErrorKind.INVALID_RESPONSE,
+                "OpenRouter returned invalid rerank results.",
+            ) from exc
+
+    async def generate(
+        self,
+        messages: Sequence[dict[str, str]],
+        *,
+        output_schema: dict[str, Any],
+    ) -> GenerationResponse:
+        body = await self._post(
+            "chat/completions",
+            {
+                "model": self.config.generation_model,
+                "messages": list(messages),
+                "stream": False,
+                "max_tokens": 1_200,
+                "provider": self._provider_preferences(),
+                "response_format": {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "firelens_draft_answer",
+                        "strict": True,
+                        "schema": output_schema,
+                    },
+                },
+            },
+        )
+        try:
+            if not _model_identity_matches(
+                self.config.generation_model, body.get("model")
+            ):
+                raise ValueError("generation model mismatch")
+            content = body["choices"][0]["message"]["content"]
+            payload = json.loads(content) if isinstance(content, str) else content
+            draft = DraftAnswer.model_validate(payload)
+            return GenerationResponse(
+                model=body.get("model", self.config.generation_model),
+                draft=draft,
+                usage=body.get("usage") or {},
+            )
+        except (
+            IndexError,
+            KeyError,
+            TypeError,
+            ValueError,
+            json.JSONDecodeError,
+            ValidationError,
+        ) as exc:
+            raise ProviderError(
+                ProviderErrorKind.INVALID_RESPONSE,
+                "OpenRouter returned an invalid structured answer.",
+            ) from exc

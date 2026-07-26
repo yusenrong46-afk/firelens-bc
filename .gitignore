@@ -1,0 +1,30 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Frontend dependencies, generated bundles, and browser-test artifacts.
+**/node_modules/
+**/dist/
+**/coverage/
+**/playwright-report/
+**/test-results/
+
+# Downloaded and generated data are reproducible and should not be committed.
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+data/index/*
+!data/index/.gitkeep
+output/*
+!output/.gitkeep

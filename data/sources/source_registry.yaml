@@ -1,0 +1,179 @@
+registry_version: "r1.0"
+reviewed_on: "2026-07-25"
+
+authority_policy:
+  stable_guidance_publishers:
+    - PreparedBC
+    - BC Wildfire Service
+    - FireSmart BC
+    - BC Centre for Disease Control
+  live_status_publishers:
+    - EmergencyInfoBC
+    - BC Wildfire Service
+    - issuing local authority or First Nation
+
+sources:
+  - source_id: preparedbc_wildfire_guide
+    title: Wildfire Preparedness Guide
+    publisher: PreparedBC
+    canonical_url: "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf"
+    source_type: pdf
+    temporal_class: stable_guidance
+    authority_class: provincial_government
+    review_status: approved_static
+    corpus_action: include
+    local_file: data/raw/preparedbc_wildfire_guide.pdf
+    intended_use:
+      - emergency planning
+      - grab-and-go bags
+      - evacuation stages
+      - actions during an evacuation
+      - general smoke guidance
+    known_limitations:
+      - Must not be used to determine current evacuation status.
+
+  - source_id: firesmart_begins_at_home
+    title: FireSmart BC Begins at Home Guide
+    publisher: FireSmart BC
+    canonical_url: "https://firesmartbc.ca/wp-content/uploads/2020/04/05.30.23_BeginsatHomeGuide_Web.pdf"
+    source_type: pdf
+    temporal_class: stable_guidance
+    authority_class: recognized_wildfire_preparedness_program
+    review_status: approved_static
+    corpus_action: include
+    local_file: data/raw/firesmart_begins_at_home.pdf
+    intended_use:
+      - home ignition zone
+      - property risk reduction
+      - vegetation and material guidance
+    known_limitations:
+      - General property guidance, not a property-specific risk assessment.
+
+  - source_id: firesmart_information_guide
+    title: FireSmart BC Information Guide and Key Messaging
+    publisher: FireSmart BC
+    canonical_url: "https://firesmartbc.ca/wp-content/uploads/2021/06/FireSmart-BC-Information-Guide-Key-Messaging-.pdf"
+    source_type: pdf
+    temporal_class: stable_guidance
+    authority_class: recognized_wildfire_preparedness_program
+    review_status: approved_static
+    corpus_action: include
+    local_file: data/raw/firesmart_information_guide.pdf
+    intended_use:
+      - FireSmart concepts
+      - home preparation actions
+      - home ignition zone
+    known_limitations:
+      - Some campaign statistics may become stale and require date-aware handling.
+
+  - source_id: firesmart_sprinkler_water_use
+    title: "Water Use, Structure Protection and FireSmart: How Fires Move Across the Landscape"
+    publisher: FireSmart BC
+    canonical_url: "https://firesmartbc.ca/wp-content/uploads/2024/08/2024.10.30_FSBC_StructureProtectionSprinklersandWaterUsage-1-1.pdf"
+    source_type: pdf
+    temporal_class: stable_guidance
+    authority_class: recognized_wildfire_preparedness_program
+    review_status: approved_static
+    corpus_action: include
+    local_file: data/raw/firesmart_sprinkler_water_use.pdf
+    intended_use:
+      - structure protection sprinklers
+      - evacuation-time sprinkler safety
+      - water-resource considerations
+    known_limitations:
+      - Does not authorize residents to operate professional structure-protection systems.
+
+  - source_id: bcws_stages_of_control
+    title: Stages of control
+    publisher: BC Wildfire Service
+    canonical_url: "https://www2.gov.bc.ca/gov/content/safety/wildfire-status/wildfire-response/management-strategies/stages-of-control"
+    source_type: html
+    temporal_class: stable_guidance
+    authority_class: provincial_government
+    review_status: approved_static
+    corpus_action: include
+    local_file: data/raw/bcws_stages_of_control.html
+    intended_use:
+      - interpreting wildfire stages of control
+    known_limitations:
+      - A stage of control is not an evacuation instruction or a complete statement of public risk.
+
+  - source_id: bcws_wildfire_rank
+    title: Wildfire rank
+    publisher: BC Wildfire Service
+    canonical_url: "https://www2.gov.bc.ca/gov/content/safety/wildfire-status/wildfire-response/about-wildfire/wildfire-rank"
+    source_type: html
+    temporal_class: stable_guidance
+    authority_class: provincial_government
+    review_status: approved_static
+    corpus_action: include
+    local_file: data/raw/bcws_wildfire_rank.html
+    intended_use:
+      - interpreting observed wildfire behaviour
+    known_limitations:
+      - Wildfire rank must not be translated into personalized evacuation advice.
+
+  - source_id: emergencyinfobc_evacuation_stages
+    title: EmergencyInfoBC evacuation-stage guidance
+    publisher: EmergencyInfoBC
+    canonical_url: "https://www.emergencyinfobc.gov.bc.ca/"
+    source_type: html
+    temporal_class: live_status
+    authority_class: provincial_government
+    review_status: candidate_live_source
+    corpus_action: exclude_live
+    intended_use:
+      - current alerts and orders
+      - evacuation-stage definitions
+    known_limitations:
+      - Must be fetched live with timestamps for current-status questions.
+      - Event pages can move, change, or be superseded.
+
+  - source_id: preparedbc_wildfire_web
+    title: Get prepared for a wildfire
+    publisher: PreparedBC
+    canonical_url: "https://www2.gov.bc.ca/gov/content/safety/emergency-management/preparedbc/know-your-hazards/wildfires"
+    source_type: html
+    temporal_class: stable_guidance
+    authority_class: provincial_government
+    review_status: approved_reference_only
+    corpus_action: exclude_duplicate
+    local_file: data/raw/preparedbc_wildfire_web.html
+    duplicate_of: preparedbc_wildfire_guide
+    intended_use:
+      - wildfire preparedness overview
+      - links to current PreparedBC guidance
+    known_limitations:
+      - May duplicate the PDF guide and require canonical-version rules.
+
+  - source_id: bccdc_wildfire_smoke
+    title: Wildfire Smoke
+    publisher: BC Centre for Disease Control
+    canonical_url: "https://www.bccdc.ca/health-info/prevention-public-health/wildfire-smoke"
+    source_type: html
+    temporal_class: stable_guidance
+    authority_class: provincial_public_health
+    review_status: approved_static
+    corpus_action: include
+    local_file: data/raw/bccdc_wildfire_smoke.html
+    intended_use:
+      - general health effects of wildfire smoke
+      - public-health resources
+    known_limitations:
+      - Not a substitute for personalized medical advice or emergency care.
+
+  - source_id: bccdc_smoke_health_factsheet
+    title: Wildfire Smoke and Your Health
+    publisher: BC Centre for Disease Control
+    canonical_url: "https://www.bccdc.ca/resource-gallery/Documents/Guidelines%20and%20Forms/Guidelines%20and%20Manuals/Health-Environment/BCCDC_WildFire_FactSheet_HealthEffects.pdf"
+    source_type: pdf
+    temporal_class: stable_guidance
+    authority_class: provincial_public_health
+    review_status: approved_static
+    corpus_action: include
+    local_file: data/raw/bccdc_smoke_health_factsheet.pdf
+    intended_use:
+      - general wildfire-smoke health effects
+      - recognizing general symptoms
+    known_limitations:
+      - Must not generate diagnoses or individualized treatment.

@@ -1,0 +1,129 @@
+"""Load and validate corpus/index resources, then assemble the application service."""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from firelens.answering.service import StaticRAGService
+from firelens.config import FireLensConfig
+from firelens.contracts import HealthResponse
+from firelens.errors import CorpusValidationError, IndexValidationError
+from firelens.ingestion.chunking import ChunkRecord
+from firelens.providers.base import AIProvider
+from firelens.providers.openrouter import OpenRouterProvider
+from firelens.retrieval.bm25 import load_chunk_records
+from firelens.retrieval.pipeline import RetrievalPipeline
+from firelens.retrieval.vector import VectorIndex
+
+
+@dataclass
+class Runtime:
+    config: FireLensConfig
+    chunks: tuple[ChunkRecord, ...] = ()
+    corpus_version: str | None = None
+    service: StaticRAGService | None = None
+    problems: list[str] = field(default_factory=list)
+    provider_configured: bool = False
+
+    @property
+    def chunks_by_id(self) -> dict[str, ChunkRecord]:
+        return {chunk.chunk_id: chunk for chunk in self.chunks}
+
+    def health(self) -> HealthResponse:
+        corpus_ready = bool(self.chunks and self.corpus_version)
+        index_ready = self.service is not None
+        ready = corpus_ready and index_ready and self.provider_configured
+        return HealthResponse(
+            status="ready" if ready else "not_ready",
+            corpus_ready=corpus_ready,
+            index_ready=index_ready,
+            provider_configured=self.provider_configured,
+            corpus_version=self.corpus_version,
+            chunk_count=len(self.chunks) if self.chunks else None,
+            problems=self.problems,
+        )
+
+
+def load_corpus_resources(
+    config: FireLensConfig,
+) -> tuple[tuple[ChunkRecord, ...], str]:
+    if not config.corpus_path.is_file() or not config.corpus_manifest_path.is_file():
+        raise CorpusValidationError("Static corpus or manifest is missing.")
+    try:
+        manifest = json.loads(config.corpus_manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise CorpusValidationError("Static corpus manifest is invalid JSON.") from exc
+    chunks = tuple(load_chunk_records(config.corpus_path))
+    corpus_version = manifest.get("corpus_version")
+    if not isinstance(corpus_version, str) or not corpus_version:
+        raise CorpusValidationError("Static corpus manifest has no version.")
+    if manifest.get("combined_chunk_count") != len(chunks):
+        raise CorpusValidationError("Static corpus count does not match manifest.")
+    if len({chunk.chunk_id for chunk in chunks}) != len(chunks):
+        raise CorpusValidationError("Static corpus contains duplicate chunk IDs.")
+    if any(chunk.temporal_class != "stable_guidance" for chunk in chunks):
+        raise CorpusValidationError("Static corpus contains non-static evidence.")
+    included = [
+        source
+        for source in manifest.get("sources", [])
+        if source.get("corpus_action") == "include"
+    ]
+    if not included or any(
+        source.get("review_status") != "approved_static" for source in included
+    ):
+        raise CorpusValidationError("Static corpus includes an unapproved source.")
+    if manifest.get("included_source_count") != len(included):
+        raise CorpusValidationError("Static source count does not match manifest.")
+    approved_source_ids = {source.get("source_id") for source in included}
+    if any(chunk.source_id not in approved_source_ids for chunk in chunks):
+        raise CorpusValidationError("Static corpus contains an unapproved source.")
+    return chunks, corpus_version
+
+
+def load_runtime(
+    config: FireLensConfig,
+    *,
+    provider: AIProvider | None = None,
+) -> Runtime:
+    runtime = Runtime(
+        config=config,
+        provider_configured=provider is not None or config.openrouter_api_key is not None,
+    )
+    try:
+        chunks, corpus_version = load_corpus_resources(config)
+        runtime.chunks = chunks
+        runtime.corpus_version = corpus_version
+    except (CorpusValidationError, OSError, ValueError) as exc:
+        runtime.problems.append(str(exc))
+        return runtime
+
+    try:
+        vector_index = VectorIndex.load(
+            chunks,
+            matrix_path=config.vector_matrix_path,
+            manifest_path=config.vector_manifest_path,
+            corpus_path=config.corpus_path,
+            corpus_version=corpus_version,
+            embedding_model=config.embedding_model,
+        )
+    except IndexValidationError as exc:
+        runtime.problems.append(str(exc))
+        return runtime
+
+    active_provider = provider or OpenRouterProvider(config)
+    retrieval = RetrievalPipeline(
+        chunks,
+        vector_index=vector_index,
+        provider=active_provider,
+        config=config,
+    )
+    runtime.service = StaticRAGService(
+        chunks,
+        corpus_version=corpus_version,
+        retrieval=retrieval,
+        provider=active_provider,
+        config=config,
+    )
+    return runtime
