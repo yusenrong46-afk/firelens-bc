@@ -31,9 +31,7 @@ def make_chunk(source_id: str, page: int, text: str) -> ChunkRecord:
 
 class RetrievalEvaluationTests(unittest.TestCase):
     def test_live_evidence_is_ignored_but_static_evidence_is_scored(self) -> None:
-        index = BM25Index(
-            [make_chunk("static", 2, "Evacuation alert means prepare to leave.")]
-        )
+        index = BM25Index([make_chunk("static", 2, "Evacuation alert means prepare to leave.")])
         question = {
             "id": "GQ",
             "question": "What does evacuation alert mean?",
@@ -44,9 +42,7 @@ class RetrievalEvaluationTests(unittest.TestCase):
                 {"source_id": "live", "pdf_pages": []},
             ],
         }
-        report = evaluate_retrieval(
-            index, [question], corpus_source_ids={"static"}, top_k=3
-        )
+        report = evaluate_retrieval(index, [question], corpus_source_ids={"static"}, top_k=3)
         row = report["questions"][0]
         self.assertTrue(row["hit_at_k"])
         self.assertEqual(row["expected_static_sources"], ["static"])

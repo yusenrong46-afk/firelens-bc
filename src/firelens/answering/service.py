@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from time import perf_counter
 from uuid import uuid4
+
+from pydantic import HttpUrl
 
 from firelens.answering.context import build_evidence_packet, decide_support
 from firelens.answering.generate import draft_schema, generation_messages
@@ -13,19 +15,37 @@ from firelens.answering.validate import validate_draft
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     AskResponse,
-    DraftClaim,
-    PublicSource,
+    ClaimSupport,
+    EvidenceQuoteCandidate,
+    PublicEvidence,
     QueryRequest,
     ResponseStatus,
     RetrievalBundle,
     SearchResponse,
     SupportStatus,
+    VerifiedClaim,
 )
 from firelens.errors import ProviderError
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.providers.base import AIProvider
 from firelens.retrieval.pipeline import RetrievalPipeline
 from firelens.traces import TraceRecorder
+
+
+def _unique_claim_supports(
+    quote_ids: Sequence[str], quote_candidates: Mapping[str, EvidenceQuoteCandidate]
+) -> list[ClaimSupport]:
+    supports: list[ClaimSupport] = []
+    seen: set[tuple[str, str]] = set()
+    for quote_id in quote_ids:
+        candidate = quote_candidates[quote_id]
+        evidence_id = candidate.evidence_id
+        quote = candidate.text
+        pair = (evidence_id, quote)
+        if pair not in seen:
+            seen.add(pair)
+            supports.append(ClaimSupport(evidence_id=evidence_id, quote=quote))
+    return supports
 
 
 class StaticRAGService:
@@ -45,10 +65,13 @@ class StaticRAGService:
         self.provider = provider
         self.config = config
         self.trace_recorder = trace_recorder or TraceRecorder(
-            config.trace_dir, include_content=config.trace_content
+            config.trace_dir,
+            include_content=config.trace_content,
+            max_files=config.trace_max_files,
+            max_bytes=config.trace_max_bytes,
         )
 
-    def _record_ask(
+    async def _record_ask(
         self,
         request: QueryRequest,
         response: AskResponse,
@@ -56,7 +79,7 @@ class StaticRAGService:
         route: str,
         **details: object,
     ) -> AskResponse:
-        self.trace_recorder.record(
+        await self.trace_recorder.record(
             response.trace_id,
             question=request.question,
             payload={
@@ -70,7 +93,9 @@ class StaticRAGService:
         )
         return response
 
-    async def search(self, request: QueryRequest, *, trace_id: str | None = None) -> SearchResponse:
+    async def search(
+        self, request: QueryRequest, *, trace_id: str | None = None
+    ) -> SearchResponse:
         active_trace_id = trace_id or uuid4().hex
         plan = plan_query(request)
         if not plan.retrieval_requests:
@@ -93,7 +118,7 @@ class StaticRAGService:
             evidence=[] if packet is None else packet.items,
             support=support,
         )
-        self.trace_recorder.record(
+        await self.trace_recorder.record(
             active_trace_id,
             question=request.question,
             payload={
@@ -121,6 +146,8 @@ class StaticRAGService:
                     "generation_model": self.config.generation_model,
                 },
                 "timings_ms": bundle.timings_ms,
+                "provider_usage": bundle.provider_usage,
+                "provider_attempts": bundle.provider_attempts,
                 "errors": bundle.errors,
             },
         )
@@ -137,9 +164,7 @@ class StaticRAGService:
                 error_kind=search.retrieval.errors[0] if search.retrieval.errors else "unknown",
                 limitations=search.plan.limitations,
             )
-            return self._record_ask(
-                request, response, route=search.plan.route.value
-            )
+            return await self._record_ask(request, response, route=search.plan.route.value)
         if search.support.status != SupportStatus.ANSWERABLE:
             response = AskResponse(
                 status=ResponseStatus.ABSTENTION,
@@ -148,9 +173,7 @@ class StaticRAGService:
                 limitations=search.plan.limitations,
                 reason_code=search.support.reason_code,
             )
-            return self._record_ask(
-                request, response, route=search.plan.route.value
-            )
+            return await self._record_ask(request, response, route=search.plan.route.value)
 
         packet = build_evidence_packet(
             search.plan.normalized_question,
@@ -162,7 +185,7 @@ class StaticRAGService:
         started = perf_counter()
         try:
             generated = await self.provider.generate(
-                generation_messages(packet), output_schema=draft_schema()
+                generation_messages(packet), output_schema=draft_schema(packet)
             )
         except ProviderError as exc:
             response = AskResponse(
@@ -172,9 +195,7 @@ class StaticRAGService:
                 error_kind=exc.kind.value,
                 limitations=packet.limitations,
             )
-            return self._record_ask(
-                request, response, route=search.plan.route.value
-            )
+            return await self._record_ask(request, response, route=search.plan.route.value)
         validation = validate_draft(generated.draft, packet)
         generation_ms = (perf_counter() - started) * 1_000
         if not validation.accepted:
@@ -186,12 +207,14 @@ class StaticRAGService:
                 reason_code="draft_validation_failed",
                 validation=validation,
             )
-            return self._record_ask(
+            return await self._record_ask(
                 request,
                 response,
                 route=search.plan.route.value,
                 model=generated.model,
                 generation_ms=generation_ms,
+                generation_usage=generated.usage,
+                generation_attempts=generated.attempts,
                 validation=validation.model_dump(mode="json"),
             )
         if generated.draft.answer_type == "abstention":
@@ -203,12 +226,14 @@ class StaticRAGService:
                 reason_code="model_abstained",
                 validation=validation,
             )
-            return self._record_ask(
+            return await self._record_ask(
                 request,
                 response,
                 route=search.plan.route.value,
                 model=generated.model,
                 generation_ms=generation_ms,
+                generation_usage=generated.usage,
+                generation_attempts=generated.attempts,
                 validation=validation.model_dump(mode="json"),
             )
 
@@ -216,33 +241,26 @@ class StaticRAGService:
             candidate.quote_id: candidate for candidate in packet.quote_candidates
         }
         public_claims = [
-            DraftClaim(
+            VerifiedClaim(
+                claim_id=f"C{claim_index}",
                 text=claim.text,
-                evidence_ids=list(
-                    dict.fromkeys(
-                        quote_candidates[quote_id].evidence_id
-                        for quote_id in claim.evidence_quote_ids
-                    )
-                ),
-                evidence_quotes=[
-                    quote_candidates[quote_id].text
-                    for quote_id in claim.evidence_quote_ids
-                ],
+                supports=_unique_claim_supports(claim.evidence_quote_ids, quote_candidates),
             )
-            for claim in generated.draft.claims
+            for claim_index, claim in enumerate(generated.draft.claims, start=1)
         ]
         cited_ids = {
-            evidence_id
-            for claim in public_claims
-            for evidence_id in claim.evidence_ids
+            support.evidence_id for claim in public_claims for support in claim.supports
         }
-        sources = [
-            PublicSource(
+        evidence = [
+            PublicEvidence(
                 evidence_id=item.evidence_id,
                 title=item.title,
                 publisher=item.publisher,
-                canonical_url=item.canonical_url,
+                canonical_url=HttpUrl(item.canonical_url),
                 locator=item.locator,
+                temporal_class="stable_guidance",
+                primary_text=item.primary_text,
+                context_text=item.context_text,
             )
             for item in packet.items
             if item.evidence_id in cited_ids
@@ -252,16 +270,18 @@ class StaticRAGService:
             trace_id=trace_id,
             answer=" ".join(claim.text.strip() for claim in public_claims),
             claims=public_claims,
-            sources=sources,
+            evidence=evidence,
             limitations=generated.draft.limitations,
             validation=validation,
         )
-        return self._record_ask(
+        return await self._record_ask(
             request,
             response,
             route=search.plan.route.value,
             model=generated.model,
             generation_ms=generation_ms,
+            generation_usage=generated.usage,
+            generation_attempts=generated.attempts,
             validation=validation.model_dump(mode="json"),
             cited_evidence_ids=sorted(cited_ids),
         )

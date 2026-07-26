@@ -1,5 +1,8 @@
 # R1.1 PDF Ingestion Result
 
+> Historical executed subsystem note. Current corpus audit and repairs are
+> recorded in `docs/TECHNICAL_HANDBOOK.md`.
+
 Date: `2026-07-25`  
 Source: `preparedbc_wildfire_guide`  
 Input: PreparedBC Wildfire Preparedness Guide

@@ -1,0 +1,245 @@
+{
+  "coverage": {
+    "authority_classes": {
+      "provincial_government": 3,
+      "provincial_public_health": 2,
+      "recognized_wildfire_preparedness_program": 3
+    },
+    "temporal_classes": {
+      "stable_guidance": 8
+    },
+    "topics": {
+      "FireSmart concepts": [
+        "firesmart_information_guide"
+      ],
+      "actions during an evacuation": [
+        "preparedbc_wildfire_guide"
+      ],
+      "emergency planning": [
+        "preparedbc_wildfire_guide"
+      ],
+      "evacuation stages": [
+        "preparedbc_wildfire_guide"
+      ],
+      "evacuation-time sprinkler safety": [
+        "firesmart_sprinkler_water_use"
+      ],
+      "general health effects of wildfire smoke": [
+        "bccdc_wildfire_smoke"
+      ],
+      "general smoke guidance": [
+        "preparedbc_wildfire_guide"
+      ],
+      "general wildfire-smoke health effects": [
+        "bccdc_smoke_health_factsheet"
+      ],
+      "grab-and-go bags": [
+        "preparedbc_wildfire_guide"
+      ],
+      "home ignition zone": [
+        "firesmart_begins_at_home",
+        "firesmart_information_guide"
+      ],
+      "home preparation actions": [
+        "firesmart_information_guide"
+      ],
+      "interpreting observed wildfire behaviour": [
+        "bcws_wildfire_rank"
+      ],
+      "interpreting wildfire stages of control": [
+        "bcws_stages_of_control"
+      ],
+      "property risk reduction": [
+        "firesmart_begins_at_home"
+      ],
+      "public-health resources": [
+        "bccdc_wildfire_smoke"
+      ],
+      "recognizing general symptoms": [
+        "bccdc_smoke_health_factsheet"
+      ],
+      "structure protection sprinklers": [
+        "firesmart_sprinkler_water_use"
+      ],
+      "vegetation and material guidance": [
+        "firesmart_begins_at_home"
+      ],
+      "water-resource considerations": [
+        "firesmart_sprinkler_water_use"
+      ]
+    }
+  },
+  "extraction_quality_flags": [
+    {
+      "extraction_status": "suspect_text",
+      "page_number": 1,
+      "quality_flags": [
+        "unmapped_font_glyphs"
+      ],
+      "source_id": "preparedbc_wildfire_guide"
+    },
+    {
+      "extraction_status": "text_extracted",
+      "page_number": 5,
+      "quality_flags": [
+        "unmapped_font_glyphs",
+        "human_reviewed_text_repair"
+      ],
+      "source_id": "preparedbc_wildfire_guide"
+    },
+    {
+      "extraction_status": "suspect_text",
+      "page_number": 19,
+      "quality_flags": [
+        "very_short_text"
+      ],
+      "source_id": "preparedbc_wildfire_guide"
+    },
+    {
+      "extraction_status": "text_extracted",
+      "page_number": 10,
+      "quality_flags": [
+        "codex_visual_reviewed_text_repair"
+      ],
+      "source_id": "firesmart_begins_at_home"
+    },
+    {
+      "extraction_status": "suspect_text",
+      "page_number": 17,
+      "quality_flags": [
+        "very_short_text"
+      ],
+      "source_id": "firesmart_begins_at_home"
+    },
+    {
+      "extraction_status": "suspect_text",
+      "page_number": 18,
+      "quality_flags": [
+        "very_short_text"
+      ],
+      "source_id": "firesmart_begins_at_home"
+    }
+  ],
+  "generated_at": "2026-07-26T22:27:50.756618+00:00",
+  "included_source_count": 8,
+  "layout_review_candidates": [
+    {
+      "extraction_status": "text_extracted",
+      "layout_regions_detected": 2,
+      "note": "Conservative layout candidate; detector may include design boxes and does not prove that a semantic table exists.",
+      "page_number": 8,
+      "quality_flags": [],
+      "review_priority": "normal",
+      "source_id": "preparedbc_wildfire_guide"
+    },
+    {
+      "extraction_status": "text_extracted",
+      "layout_regions_detected": 4,
+      "note": "Conservative layout candidate; detector may include design boxes and does not prove that a semantic table exists.",
+      "page_number": 9,
+      "quality_flags": [],
+      "review_priority": "normal",
+      "source_id": "preparedbc_wildfire_guide"
+    },
+    {
+      "extraction_status": "text_extracted",
+      "layout_regions_detected": 2,
+      "note": "Conservative layout candidate; detector may include design boxes and does not prove that a semantic table exists.",
+      "page_number": 11,
+      "quality_flags": [],
+      "review_priority": "normal",
+      "source_id": "preparedbc_wildfire_guide"
+    },
+    {
+      "extraction_status": "text_extracted",
+      "layout_regions_detected": 3,
+      "note": "Conservative layout candidate; detector may include design boxes and does not prove that a semantic table exists.",
+      "page_number": 12,
+      "quality_flags": [],
+      "review_priority": "normal",
+      "source_id": "preparedbc_wildfire_guide"
+    },
+    {
+      "extraction_status": "text_extracted",
+      "layout_regions_detected": 8,
+      "note": "Conservative layout candidate; detector may include design boxes and does not prove that a semantic table exists.",
+      "page_number": 5,
+      "quality_flags": [],
+      "review_priority": "high",
+      "source_id": "firesmart_begins_at_home"
+    },
+    {
+      "extraction_status": "text_extracted",
+      "layout_regions_detected": 4,
+      "note": "Conservative layout candidate; detector may include design boxes and does not prove that a semantic table exists.",
+      "page_number": 7,
+      "quality_flags": [],
+      "review_priority": "normal",
+      "source_id": "firesmart_begins_at_home"
+    },
+    {
+      "extraction_status": "text_extracted",
+      "layout_regions_detected": 5,
+      "note": "Conservative layout candidate; detector may include design boxes and does not prove that a semantic table exists.",
+      "page_number": 9,
+      "quality_flags": [],
+      "review_priority": "high",
+      "source_id": "firesmart_begins_at_home"
+    },
+    {
+      "extraction_status": "text_extracted",
+      "layout_regions_detected": 10,
+      "note": "Conservative layout candidate; detector may include design boxes and does not prove that a semantic table exists.",
+      "page_number": 10,
+      "quality_flags": [
+        "codex_visual_reviewed_text_repair"
+      ],
+      "review_priority": "high",
+      "source_id": "firesmart_begins_at_home"
+    },
+    {
+      "extraction_status": "text_extracted",
+      "layout_regions_detected": 3,
+      "note": "Conservative layout candidate; detector may include design boxes and does not prove that a semantic table exists.",
+      "page_number": 13,
+      "quality_flags": [],
+      "review_priority": "normal",
+      "source_id": "firesmart_begins_at_home"
+    },
+    {
+      "extraction_status": "text_extracted",
+      "layout_regions_detected": 5,
+      "note": "Conservative layout candidate; detector may include design boxes and does not prove that a semantic table exists.",
+      "page_number": 1,
+      "quality_flags": [],
+      "review_priority": "high",
+      "source_id": "firesmart_information_guide"
+    },
+    {
+      "extraction_status": "text_extracted",
+      "layout_regions_detected": 2,
+      "note": "Conservative layout candidate; detector may include design boxes and does not prove that a semantic table exists.",
+      "page_number": 3,
+      "quality_flags": [],
+      "review_priority": "normal",
+      "source_id": "firesmart_information_guide"
+    },
+    {
+      "extraction_status": "text_extracted",
+      "layout_regions_detected": 7,
+      "note": "Conservative layout candidate; detector may include design boxes and does not prove that a semantic table exists.",
+      "page_number": 8,
+      "quality_flags": [],
+      "review_priority": "high",
+      "source_id": "firesmart_information_guide"
+    }
+  ],
+  "limitations": [
+    "Layout-region detection is a review aid, not proof of a semantic table.",
+    "This report does not establish semantic completeness of extracted text."
+  ],
+  "registry_version": "r1.0",
+  "report_version": "firelens_corpus_audit.v1",
+  "reviewed_hash_count": 8,
+  "source_review_date_count": 8
+}

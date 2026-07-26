@@ -1,5 +1,8 @@
 # FireLens BC R0 Product Contract
 
+> Historical foundation contract. The stable-guidance boundary is preserved;
+> current V1 contracts are authoritative in `docs/TECHNICAL_HANDBOOK.md`.
+
 Status: Owner-approved for R0 implementation  
 Contract version: `r0.4`  
 Date: `2026-07-25`

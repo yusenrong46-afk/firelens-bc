@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/prepare-sites-build.mjs",
+    "generate:api": "openapi-typescript ../../docs/openapi.v1.json -o src/api-schema.d.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "build": "npm run typecheck && vite build && node scripts/prepare-sites-build.mjs",
     "preview": "vite preview",
     "test:sites": "node --test tests/sites-worker.test.mjs"
   },
@@ -19,6 +23,17 @@
     "vite": "6.4.2"
   },
   "devDependencies": {
-    "sharp": "^0.35.3"
+    "@playwright/test": "^1.62.0",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "jsdom": "^29.1.1",
+    "openapi-typescript": "^7.13.0",
+    "sharp": "^0.35.3",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.10",
+    "vitest-axe": "^0.1.0"
   }
 }

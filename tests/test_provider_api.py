@@ -7,17 +7,102 @@ from pathlib import Path
 
 import httpx
 from pydantic import SecretStr
+from rag_helpers import make_chunk, make_runtime, write_test_corpus
 
 from firelens.api import create_app
-from firelens.config import FireLensConfig
 from firelens.contracts import DraftAnswer
 from firelens.errors import ProviderError
 from firelens.providers.openrouter import OpenRouterProvider
 
-from rag_helpers import make_runtime, write_test_corpus, make_chunk
-
 
 class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
+    async def test_transient_rate_limit_retries_same_request(self) -> None:
+        calls: list[dict[str, object]] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls.append(json.loads(request.content))
+            if len(calls) == 1:
+                return httpx.Response(429, json={"error": {"code": 429}})
+            return httpx.Response(
+                200,
+                json={
+                    "model": "text-embedding-3-small",
+                    "data": [{"index": 0, "embedding": [1.0, 0.0]}],
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "embedding_model": "openai/text-embedding-3-small",
+                    "provider_retry_base_seconds": 0,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                response = await OpenRouterProvider(config, client=client).embed(["water"])
+        self.assertEqual(response.attempts, 2)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(calls[0]["model"], calls[1]["model"])
+        self.assertFalse(calls[0]["provider"]["allow_fallbacks"])
+
+    async def test_timeout_stops_after_three_same_model_attempts(self) -> None:
+        calls = 0
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal calls
+            calls += 1
+            raise httpx.ReadTimeout("simulated timeout", request=request)
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "embedding_model": "openai/text-embedding-3-small",
+                    "provider_retry_base_seconds": 0,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                with self.assertRaises(ProviderError) as raised:
+                    await OpenRouterProvider(config, client=client).embed(["water"])
+        self.assertEqual(calls, 3)
+        self.assertEqual(raised.exception.kind.value, "timeout")
+
+    async def test_transient_503_retries_then_succeeds(self) -> None:
+        calls = 0
+
+        def handler(_request: httpx.Request) -> httpx.Response:
+            nonlocal calls
+            calls += 1
+            if calls < 3:
+                return httpx.Response(503, json={"error": {"code": 503}})
+            return httpx.Response(
+                200,
+                json={
+                    "model": "text-embedding-3-small",
+                    "data": [{"index": 0, "embedding": [1.0, 0.0]}],
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "embedding_model": "openai/text-embedding-3-small",
+                    "provider_retry_base_seconds": 0,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                response = await OpenRouterProvider(config, client=client).embed(["water"])
+        self.assertEqual(calls, 3)
+        self.assertEqual(response.attempts, 3)
+
     async def test_embedding_request_and_response_are_bounded(self) -> None:
         captured: dict[str, object] = {}
 
@@ -47,7 +132,11 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(captured["model"], "openai/text-embedding-3-small")
 
     async def test_credit_error_is_normalized_without_upstream_text(self) -> None:
+        calls = 0
+
         def handler(_request: httpx.Request) -> httpx.Response:
+            nonlocal calls
+            calls += 1
             return httpx.Response(402, json={"error": {"message": "secret detail"}})
 
         with tempfile.TemporaryDirectory() as directory:
@@ -62,6 +151,7 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
                 with self.assertRaises(ProviderError) as raised:
                     await OpenRouterProvider(config, client=client).embed(["water"])
         self.assertEqual(raised.exception.kind.value, "credits")
+        self.assertEqual(calls, 1)
         self.assertNotIn("secret detail", str(raised.exception))
 
     async def test_rerank_discards_provider_document_metadata(self) -> None:
@@ -97,9 +187,7 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_malformed_generation_response_is_rejected(self) -> None:
         def handler(_request: httpx.Request) -> httpx.Response:
-            return httpx.Response(
-                200, json={"choices": [{"message": {"content": "not-json"}}]}
-            )
+            return httpx.Response(200, json={"choices": [{"message": {"content": "not-json"}}]})
 
         with tempfile.TemporaryDirectory() as directory:
             config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
@@ -148,23 +236,29 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             runtime, _, config = await make_runtime(Path(directory))
             app = create_app(config, runtime=runtime)
             transport = httpx.ASGITransport(app=app)
-            async with httpx.AsyncClient(
-                transport=transport, base_url="http://test"
-            ) as client:
-                health = await client.get("/health")
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                alive = await client.get("/api/v1/health/live")
+                self.assertEqual(alive.status_code, 200)
+                self.assertEqual(alive.json()["status"], "alive")
+                health = await client.get("/api/v1/health/ready")
                 self.assertEqual(health.status_code, 200)
                 self.assertEqual(health.json()["status"], "ready")
-                invalid = await client.post("/ask", json={"question": "   "})
+                invalid = await client.post("/api/v1/ask", json={"question": "   "})
                 self.assertEqual(invalid.status_code, 400)
+                self.assertIn("trace_id", invalid.json())
                 live = await client.post(
-                    "/ask", json={"question": "Is a wildfire active near me right now?"}
+                    "/api/v1/ask",
+                    json={"question": "Is a wildfire active near me right now?"},
                 )
                 self.assertEqual(live.status_code, 200)
                 self.assertEqual(live.json()["status"], "abstention")
                 stable = await client.post(
-                    "/ask", json={"question": "What belongs in an emergency kit?"}
+                    "/api/v1/ask",
+                    json={"question": "What belongs in an emergency kit?"},
                 )
                 self.assertEqual(stable.status_code, 200)
                 self.assertEqual(stable.json()["status"], "answer")
-                debug = await client.get("/debug/chunks/chunk-a0")
+                self.assertTrue(stable.json()["claims"][0]["supports"])
+                self.assertTrue(stable.json()["evidence"])
+                debug = await client.get("/api/v1/debug/chunks/chunk-a0")
                 self.assertEqual(debug.status_code, 200)

@@ -5,15 +5,15 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
-import yaml
 import pdfplumber
+import yaml
 from pypdf import PdfReader
-
 
 SCHEMA_VERSION = "page_record.v1"
 
@@ -91,9 +91,7 @@ def load_source_record(
     }
     missing = sorted(field for field in required_fields if not source.get(field))
     if missing:
-        raise IngestionError(
-            f"Source {source_id!r} is missing required fields: {missing}."
-        )
+        raise IngestionError(f"Source {source_id!r} is missing required fields: {missing}.")
 
     return source
 
@@ -144,9 +142,7 @@ def ingest_pdf(
             raise IngestionError(f"File does not have a PDF header: {pdf_path}")
 
     document_sha256 = sha256_file(pdf_path)
-    timestamp = (retrieved_at or datetime.now(timezone.utc)).astimezone(
-        timezone.utc
-    )
+    timestamp = (retrieved_at or datetime.now(UTC)).astimezone(UTC)
     retrieved_at_iso = timestamp.isoformat()
 
     try:
@@ -216,9 +212,7 @@ def write_jsonl(records: Iterable[PageRecord], output_path: Path) -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8", newline="\n") as stream:
         for record in materialized:
-            stream.write(
-                json.dumps(asdict(record), ensure_ascii=False, sort_keys=True) + "\n"
-            )
+            stream.write(json.dumps(asdict(record), ensure_ascii=False, sort_keys=True) + "\n")
     return len(materialized)
 
 

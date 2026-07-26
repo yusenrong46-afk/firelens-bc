@@ -8,8 +8,14 @@ from firelens.contracts import RetrievalHit
 from firelens.retrieval.bm25 import RetrievalResult
 
 
-def bm25_hit(result: RetrievalResult, *, authority_class: str, temporal_class: str,
-             document_sha256: str, chunk_index: int) -> RetrievalHit:
+def bm25_hit(
+    result: RetrievalResult,
+    *,
+    authority_class: str,
+    temporal_class: str,
+    document_sha256: str,
+    chunk_index: int,
+) -> RetrievalHit:
     return RetrievalHit(
         chunk_id=result.chunk_id,
         parent_record_id=result.parent_record_id,
@@ -60,17 +66,10 @@ def reciprocal_rank_fusion(
                         else hit.vector_score,
                     }
                 )
-            scores[hit.chunk_id] = scores.get(hit.chunk_id, 0.0) + 1 / (
-                rrf_k + position
-            )
+            scores[hit.chunk_id] = scores.get(hit.chunk_id, 0.0) + 1 / (rrf_k + position)
 
-    ranked_ids = sorted(scores, key=lambda chunk_id: (-scores[chunk_id], chunk_id))[
-        :top_k
-    ]
+    ranked_ids = sorted(scores, key=lambda chunk_id: (-scores[chunk_id], chunk_id))[:top_k]
     return [
-        hits[chunk_id].model_copy(
-            update={"rrf_rank": rank, "rrf_score": scores[chunk_id]}
-        )
+        hits[chunk_id].model_copy(update={"rrf_rank": rank, "rrf_score": scores[chunk_id]})
         for rank, chunk_id in enumerate(ranked_ids, start=1)
     ]
-

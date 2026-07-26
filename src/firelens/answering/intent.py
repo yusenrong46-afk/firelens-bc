@@ -11,13 +11,14 @@ from firelens.contracts import (
     RetrievalRequest,
 )
 
-
 _PROHIBITED_PATTERNS = (
-    r"\b(safest|best)\s+(road|route|way)\b",
+    r"\b(safest|best)\s+(?:evacuation\s+)?(road|route|way)\b",
     r"\bwhich\s+(road|route)\s+should\s+i\s+take\b",
     r"\b(am i|are we|is it)\s+safe\b",
     r"\bis\s+(?:my|our)\s+.{0,30}\bsafe\b",
     r"\bshould\s+i\s+(stay|leave|evacuate|return)\b",
+    r"\b(?:can|could|may)\s+(?:i|we)\s+safely\s+(?:stay|leave|evacuate|return)\b",
+    r"\bwhether\s+(?:my|our)\s+.{0,30}\bsafe\b",
     r"\btell me\s+whether\s+to\s+evacuate\b",
 )
 
@@ -34,6 +35,30 @@ _LIVE_PATTERNS = (
     r"\b(?:fires|wildfires)\b.{0,40}\bburning\b",
     r"\bburning\b.{0,40}\b(?:fires|wildfires)\b",
     r"\b(?:road|highway)\b.{0,40}\b(?:open|closed|closure|blocked)\b",
+)
+
+_DOMAIN_TERMS = (
+    "wildfire",
+    "wildfyre",
+    "fire",
+    "evacuation",
+    "evacuate",
+    "alert",
+    "order",
+    "emergency",
+    "grab-and-go",
+    "go-bag",
+    "smoke",
+    "air quality",
+    "firesmart",
+    "home ignition",
+    "sprinkler",
+    "ember",
+    "stage of control",
+    "being held",
+    "under control",
+    "out of control",
+    "rank",
 )
 
 
@@ -69,6 +94,16 @@ def plan_query(request: QueryRequest) -> QueryPlan:
             route=QueryRoute.LIVE,
             retrieval_requests=[],
             limitations=["The static corpus cannot establish current wildfire conditions."],
+        )
+    if not any(term in lowered for term in _DOMAIN_TERMS):
+        return QueryPlan(
+            original_question=request.question,
+            normalized_question=question,
+            route=QueryRoute.STATIC,
+            retrieval_requests=[],
+            limitations=[
+                "FireLens only answers questions covered by its approved wildfire-preparedness corpus."
+            ],
         )
     return QueryPlan(
         original_question=request.question,

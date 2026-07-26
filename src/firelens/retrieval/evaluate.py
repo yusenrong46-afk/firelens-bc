@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -66,9 +66,7 @@ def evaluate_retrieval(
                 "question": question["question"],
                 "evaluation_status": "evaluated",
                 "answerability": question["answerability"],
-                "requires_live_verification": question.get(
-                    "requires_live_verification", False
-                ),
+                "requires_live_verification": question.get("requires_live_verification", False),
                 "expected_static_sources": sorted(expected_sources),
                 "first_evidence_rank": first_hit_rank,
                 "hit_at_k": first_hit_rank is not None,
@@ -82,8 +80,7 @@ def evaluate_retrieval(
                         "locator": result.locator,
                         "section_title": result.section_title,
                         "is_evidence": any(
-                            _is_evidence_hit(result, evidence)
-                            for evidence in static_evidence
+                            _is_evidence_hit(result, evidence) for evidence in static_evidence
                         ),
                     }
                     for result in results
@@ -100,14 +97,10 @@ def evaluate_retrieval(
             sum(row["hit_at_k"] for row in evaluated) / count if count else 0.0
         ),
         f"mrr_at_{top_k}": (
-            sum(row["reciprocal_rank"] for row in evaluated) / count
-            if count
-            else 0.0
+            sum(row["reciprocal_rank"] for row in evaluated) / count if count else 0.0
         ),
         f"mean_source_coverage_at_{top_k}": (
-            sum(row["source_coverage"] for row in evaluated) / count
-            if count
-            else 0.0
+            sum(row["source_coverage"] for row in evaluated) / count if count else 0.0
         ),
     }
     return {"metrics": metrics, "questions": rows}
@@ -117,7 +110,7 @@ def write_report(report: dict[str, Any], output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "evaluation_version": "bm25_evaluation.v1",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         **report,
     }
     with output_path.open("w", encoding="utf-8", newline="\n") as stream:

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 import yaml
 
@@ -27,13 +28,9 @@ def load_text_repairs(path: Path) -> list[dict[str, Any]]:
     for index, repair in enumerate(repairs, start=1):
         missing = sorted(field for field in required if not repair.get(field))
         if missing:
-            raise IngestionError(
-                f"Text repair {index} is missing required fields: {missing}."
-            )
-        if repair["review_status"] != "human_verified":
-            raise IngestionError(
-                f"Text repair {index} is not approved for corpus use."
-            )
+            raise IngestionError(f"Text repair {index} is missing required fields: {missing}.")
+        if repair["review_status"] not in {"human_verified", "codex_visual_reviewed"}:
+            raise IngestionError(f"Text repair {index} is not approved for corpus use.")
     return repairs
 
 
@@ -66,17 +63,18 @@ def apply_text_repairs(
         text = str(repair["replacement_text"]).strip()
         if len(text) < 50:
             raise IngestionError(f"Replacement text is implausibly short for {key}.")
+        repair_flag = (
+            "human_reviewed_text_repair"
+            if repair["review_status"] == "human_verified"
+            else "codex_visual_reviewed_text_repair"
+        )
         repaired.append(
             replace(
                 record,
                 text=text,
                 char_count=len(text),
                 extraction_status="text_extracted",
-                quality_flags=tuple(
-                    dict.fromkeys(
-                        (*record.quality_flags, "human_reviewed_text_repair")
-                    )
-                ),
+                quality_flags=tuple(dict.fromkeys((*record.quality_flags, repair_flag))),
             )
         )
         matched.add(key)

@@ -1,0 +1,8 @@
+{
+  "manifest_version": "firelens_benchmark_manifest.v1",
+  "dataset_version": "firelens_benchmark.v1",
+  "dataset_sha256": "75414daede41d029ecb233b380053546c279eb4ed33a201c19a5ceb5d2e6afef",
+  "holdout_case_count": 20,
+  "holdout_sha256": "d16eb54a8a9d88d27db776db83171d555a90cd8bdc971ce436349cbc238420fe",
+  "frozen_at": "2026-07-26T00:00:00Z"
+}

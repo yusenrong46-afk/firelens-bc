@@ -5,13 +5,12 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Iterable, Sequence
 
-from firelens.ingestion.pdf import IngestionError, PageRecord
 from firelens.ingestion.html import SectionRecord
-
+from firelens.ingestion.pdf import IngestionError, PageRecord
 
 SCHEMA_VERSION = "chunk_record.v2"
 DEFAULT_MAX_CHARS = 900
@@ -273,11 +272,7 @@ def _split_long_unit(text: str, max_chars: int) -> list[str]:
 
     if len(text) <= max_chars:
         return [text]
-    sentences = [
-        part.strip()
-        for part in re.split(r"(?<=[.!?])\s+", text)
-        if part.strip()
-    ]
+    sentences = [part.strip() for part in re.split(r"(?<=[.!?])\s+", text) if part.strip()]
     pieces: list[str] = []
     active = ""
     for sentence in sentences:
@@ -382,9 +377,7 @@ def write_chunk_jsonl(records: Iterable[ChunkRecord], output_path: Path) -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8", newline="\n") as stream:
         for record in materialized:
-            stream.write(
-                json.dumps(asdict(record), ensure_ascii=False, sort_keys=True) + "\n"
-            )
+            stream.write(json.dumps(asdict(record), ensure_ascii=False, sort_keys=True) + "\n")
     return len(materialized)
 
 
@@ -404,10 +397,7 @@ def main() -> None:
     chunks = chunk_page_records(pages, max_chars=args.max_chars)
     count = write_chunk_jsonl(chunks, args.output)
     excluded = sum(page.extraction_status != "text_extracted" for page in pages)
-    print(
-        f"Wrote {count} chunks to {args.output}; "
-        f"excluded {excluded} non-clean pages."
-    )
+    print(f"Wrote {count} chunks to {args.output}; excluded {excluded} non-clean pages.")
 
 
 if __name__ == "__main__":

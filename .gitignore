@@ -28,3 +28,4 @@ data/index/*
 !data/index/.gitkeep
 output/*
 !output/.gitkeep
+tmp/

@@ -6,15 +6,15 @@ import argparse
 import hashlib
 import json
 import re
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from lxml import html
 
 from firelens.ingestion.pdf import IngestionError, load_source_record
-
 
 SCHEMA_VERSION = "section_record.v1"
 _SPACE = re.compile(r"\s+")
@@ -52,15 +52,13 @@ def _content_root(document: Any) -> Any:
     """Choose a publisher-specific content container without navigation chrome."""
 
     bc_gov = document.xpath(
-        '//*[contains(concat(" ", normalize-space(@class), " "), '
-        '" topicContent__main ")]'
+        '//*[contains(concat(" ", normalize-space(@class), " "), " topicContent__main ")]'
     )
     if bc_gov:
         return bc_gov[0]
 
     bccdc = document.xpath(
-        '//*[contains(concat(" ", normalize-space(@class), " "), '
-        '" ms-rtestate-field ")]'
+        '//*[contains(concat(" ", normalize-space(@class), " "), " ms-rtestate-field ")]'
     )
     if bccdc:
         return max(bccdc, key=lambda element: len(_normalized_text(element)))
@@ -113,9 +111,7 @@ def _extract_sections(root: Any, source: dict[str, Any]) -> list[tuple[tuple[str
                 break
             flush()
             level = int(element.tag[1])
-            heading_stack = [
-                item for item in heading_stack if item[0] < level
-            ]
+            heading_stack = [item for item in heading_stack if item[0] < level]
             heading_stack.append((level, heading))
             active_lines.append(heading)
             continue
@@ -166,7 +162,7 @@ def ingest_html(
         raise IngestionError(f"No usable HTML sections found: {html_path}")
 
     document_sha256 = hashlib.sha256(raw).hexdigest()
-    timestamp = (retrieved_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    timestamp = (retrieved_at or datetime.now(UTC)).astimezone(UTC)
     records: list[SectionRecord] = []
     used_ids: dict[str, int] = {}
     for section_index, (heading_path, text) in enumerate(extracted, start=1):
@@ -204,9 +200,7 @@ def write_jsonl(records: Iterable[SectionRecord], output_path: Path) -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8", newline="\n") as stream:
         for record in materialized:
-            stream.write(
-                json.dumps(asdict(record), ensure_ascii=False, sort_keys=True) + "\n"
-            )
+            stream.write(json.dumps(asdict(record), ensure_ascii=False, sort_keys=True) + "\n")
     return len(materialized)
 
 
@@ -223,9 +217,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
-    source = load_source_record(
-        args.registry, args.source_id, expected_source_type="html"
-    )
+    source = load_source_record(args.registry, args.source_id, expected_source_type="html")
     records = ingest_html(args.html, source)
     count = write_jsonl(records, args.output)
     print(f"Wrote {count} section records to {args.output}")

@@ -45,4 +45,3 @@ class OpenRouterSmokeTests(unittest.IsolatedAsyncioTestCase):
             output_schema=draft_schema(),
         )
         self.assertEqual(response.draft.answer_type, "abstention")
-

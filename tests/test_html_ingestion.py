@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from firelens.ingestion.html import ingest_html
 from firelens.ingestion.pdf import IngestionError
-
 
 SOURCE = {
     "source_id": "test_html",
@@ -35,7 +34,7 @@ class HtmlIngestionUnitTests(unittest.TestCase):
             records = ingest_html(
                 path,
                 SOURCE,
-                retrieved_at=datetime(2026, 7, 25, tzinfo=timezone.utc),
+                retrieved_at=datetime(2026, 7, 25, tzinfo=UTC),
             )
 
         self.assertEqual(len(records), 2)

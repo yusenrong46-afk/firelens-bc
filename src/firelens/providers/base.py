@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, Sequence
+from collections.abc import Sequence
+from typing import Any, Protocol
 
 from firelens.contracts import EmbeddingResponse, GenerationResponse, RerankResponse
 
@@ -24,4 +25,3 @@ class AIProvider(Protocol):
         *,
         output_schema: dict[str, Any],
     ) -> GenerationResponse: ...
-

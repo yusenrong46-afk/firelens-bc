@@ -43,6 +43,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .assistant-message img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
 .assistant-name { color: #2b5e96; font-size: 10px; font-weight: 600; }
 .assistant-message p { margin: 10px 0 0; color: #213651; font-size: 14px; line-height: 1.66; }
+.assistant-message--loading { opacity: .78; }
+.assistant-message--abstention, .assistant-message--unavailable, .assistant-message--error { background: #fffaf5; }
+.retry-button { margin-top: 13px; padding: 8px 12px; color: #fff; background: var(--navy); border: 0; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; }
 .claim-group { padding-top: 17px; }
 .claim-list { display: grid; gap: 9px; }
 .claim-card { width: 100%; min-height: 82px; display: grid; grid-template-columns: 24px 1fr 20px; align-items: start; gap: 12px; padding: 15px 10px; color: #233953; text-align: left; background: #fff; border: 1px solid #d4d9dc; border-radius: 5px; cursor: pointer; }
@@ -61,6 +64,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .composer-input button svg { width: 34px; height: 34px; padding: 7px; background: var(--navy); border-radius: 50%; }
 .composer-input button:disabled { opacity: .45; cursor: default; }
 .composer > p { display: grid; grid-template-columns: 17px 1fr; gap: 8px; margin: 13px 2px 0; color: #3d4d60; font-size: 9px; line-height: 1.35; }
+.abstention-card { display: grid; grid-template-columns: 26px 1fr; gap: 10px; margin-top: 18px; padding: 16px; color: #643923; background: #fff7ed; border: 1px solid #e2c8b7; border-radius: 5px; }
+.abstention-card strong { font: 600 16px/1.2 "Newsreader", Georgia, serif; }
+.abstention-card p { margin: 6px 0 0; font-size: 10px; line-height: 1.45; }
 
 .evidence-panel { min-width: 0; overflow-y: auto; background: #fbfbf8; }
 .evidence-inner { width: calc(100% - 84px); margin: 0 auto; padding: 27px 0 32px; }
@@ -88,17 +94,23 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .source-details dd { margin: 3px 0 0; color: #243b55; font-size: 12px; line-height: 1.3; }
 .canonical { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid #d7ddd8; }
 .canonical a { display: inline-flex; align-items: center; gap: 4px; color: #1e5687; font-size: 11px; font-weight: 600; }
-.passage h3 { margin: 0 0 13px; color: #2f4054; font: 600 19px/1.2 "Newsreader", Georgia, serif; }
+.passage h2 { margin: 0 0 13px; color: #2f4054; font: 600 19px/1.2 "Newsreader", Georgia, serif; }
 .passage p { margin: 0 0 17px; color: #253a53; font-size: 14px; line-height: 1.54; }
 .passage mark { padding: 2px 3px; color: inherit; background: #edf3d6; }
 .support-box { display: grid; grid-template-columns: 40px 1fr; gap: 12px; margin-top: 19px; padding-top: 18px; border-top: 1px solid #d9ddd8; }
 .support-icon { width: 31px; height: 31px; display: grid; place-items: center; color: var(--green); background: #eef5d9; border-radius: 50%; }
-.support-box h4 { margin: 0 0 5px; color: #324a3d; font: 600 16px/1.2 "Newsreader", Georgia, serif; }
+.support-box h3 { margin: 0 0 5px; color: #324a3d; font: 600 16px/1.2 "Newsreader", Georgia, serif; }
 .support-box p { margin: 0; font-size: 11px; }
 .secondary-source { position: relative; }
 .secondary-source .source-toggle { min-height: 78px; }
 .secondary-copy { grid-column: 1/-1; margin: -4px 0 14px 36px; color: #4e5c68; font-size: 10px; }
 .access-date { display: flex; align-items: center; gap: 10px; padding: 18px 4px; color: #2f4b6d; font-size: 10px; }
+.evidence-placeholder { max-width: 660px; min-height: 510px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; margin: 0 auto; color: var(--navy); }
+.evidence-placeholder > span { width: 58px; height: 58px; display: grid; place-items: center; color: var(--green); background: var(--moss); border-radius: 50%; }
+.evidence-placeholder h1 { margin-top: 22px; }
+.evidence-placeholder p { max-width: 570px; margin: 0; color: #506070; font-size: 14px; line-height: 1.65; }
+.spinner { width: 22px; height: 22px; border: 3px solid rgba(35,92,71,.2); border-top-color: var(--green); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 1100px) {
   .source-panel__body { grid-template-columns: 170px 1fr; }

@@ -1,5 +1,8 @@
 # FireLens BC R2 Full RAG Build Plan
 
+> Historical implementation plan. It is superseded by
+> `docs/TECHNICAL_HANDBOOK.md` and the V1 evidence ledger.
+
 Date: `2026-07-25`  
 Status: scoped R2 implementation sequence; architecture is governed by
 `docs/firelens_complete_system_design.md`  

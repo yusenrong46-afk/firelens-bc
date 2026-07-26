@@ -1,5 +1,9 @@
 # FireLens BC — Complete Learning-First System Design
 
+> Historical target design. Current implemented truth is maintained in
+> `docs/TECHNICAL_HANDBOOK.md`. Live-authority gates in this document are not
+> part of Static RAG V1.
+
 Date: `2026-07-25`  
 Status: target architecture; existing R1 ingestion/BM25 work is complete, while
 the new Gates 0–13 have not yet been executed  

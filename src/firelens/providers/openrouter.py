@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import httpx
 from pydantic import ValidationError
@@ -18,14 +20,11 @@ from firelens.contracts import (
 )
 from firelens.errors import ProviderError, ProviderErrorKind
 
-
 _CANONICAL_RESPONSE_MODELS: dict[str, frozenset[str]] = {
     "openai/text-embedding-3-small": frozenset(
         {"openai/text-embedding-3-small", "text-embedding-3-small"}
     ),
-    "cohere/rerank-4-pro": frozenset(
-        {"cohere/rerank-4-pro", "rerank-v4.0-pro"}
-    ),
+    "cohere/rerank-4-pro": frozenset({"cohere/rerank-4-pro", "rerank-v4.0-pro"}),
 }
 
 
@@ -44,7 +43,15 @@ class OpenRouterProvider:
         client: httpx.AsyncClient | None = None,
     ) -> None:
         self.config = config
-        self._client = client
+        self._owns_client = client is None
+        self._client = client or httpx.AsyncClient(timeout=self.config.request_timeout_seconds)
+        self._semaphore = asyncio.Semaphore(config.provider_max_concurrency)
+
+    async def aclose(self) -> None:
+        """Close only the client created by this provider."""
+
+        if self._owns_client:
+            await self._client.aclose()
 
     def _headers(self) -> dict[str, str]:
         if self.config.openrouter_api_key is None:
@@ -54,9 +61,7 @@ class OpenRouterProvider:
                 status_code=401,
             )
         return {
-            "Authorization": (
-                f"Bearer {self.config.openrouter_api_key.get_secret_value()}"
-            ),
+            "Authorization": (f"Bearer {self.config.openrouter_api_key.get_secret_value()}"),
             "Content-Type": "application/json",
             "HTTP-Referer": "https://firelens.local",
             "X-Title": "FireLens BC",
@@ -72,50 +77,62 @@ class OpenRouterProvider:
             preferences["zdr"] = True
         return preferences
 
-    async def _post(self, endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
-        owns_client = self._client is None
-        client = self._client or httpx.AsyncClient(
-            timeout=self.config.request_timeout_seconds
+    async def _post(self, endpoint: str, payload: dict[str, Any]) -> tuple[dict[str, Any], int]:
+        """Post with bounded same-model retries for transient failures only."""
+
+        last_error: ProviderError | None = None
+        async with self._semaphore:
+            for attempt in range(1, self.config.provider_max_attempts + 1):
+                try:
+                    response = await self._client.post(
+                        f"{self.config.openrouter_base_url}/{endpoint.lstrip('/')}",
+                        headers=self._headers(),
+                        json=payload,
+                    )
+                    try:
+                        body = response.json()
+                    except json.JSONDecodeError as exc:
+                        raise ProviderError(
+                            ProviderErrorKind.INVALID_RESPONSE,
+                            "OpenRouter returned a non-JSON response.",
+                            status_code=response.status_code,
+                        ) from exc
+                    if not isinstance(body, dict):
+                        raise ProviderError(
+                            ProviderErrorKind.INVALID_RESPONSE,
+                            "OpenRouter returned an unexpected response shape.",
+                            status_code=response.status_code,
+                        )
+                    if response.is_error or body.get("error"):
+                        self._raise_provider_error(response.status_code, body)
+                    return body, attempt
+                except httpx.TimeoutException as exc:
+                    last_error = ProviderError(
+                        ProviderErrorKind.TIMEOUT,
+                        "OpenRouter request timed out.",
+                        status_code=408,
+                        retryable=True,
+                    )
+                    last_error.__cause__ = exc
+                except httpx.HTTPError as exc:
+                    last_error = ProviderError(
+                        ProviderErrorKind.UNAVAILABLE,
+                        "OpenRouter could not be reached.",
+                        retryable=True,
+                    )
+                    last_error.__cause__ = exc
+                except ProviderError as exc:
+                    last_error = exc
+
+                if not last_error.retryable or attempt >= self.config.provider_max_attempts:
+                    raise last_error
+                delay = self.config.provider_retry_base_seconds * (2 ** (attempt - 1))
+                if delay:
+                    await asyncio.sleep(delay)
+
+        raise last_error or ProviderError(
+            ProviderErrorKind.UNKNOWN, "OpenRouter request failed."
         )
-        try:
-            response = await client.post(
-                f"{self.config.openrouter_base_url}/{endpoint.lstrip('/')}",
-                headers=self._headers(),
-                json=payload,
-            )
-            try:
-                body = response.json()
-            except json.JSONDecodeError as exc:
-                raise ProviderError(
-                    ProviderErrorKind.INVALID_RESPONSE,
-                    "OpenRouter returned a non-JSON response.",
-                    status_code=response.status_code,
-                ) from exc
-            if not isinstance(body, dict):
-                raise ProviderError(
-                    ProviderErrorKind.INVALID_RESPONSE,
-                    "OpenRouter returned an unexpected response shape.",
-                    status_code=response.status_code,
-                )
-            if response.is_error or body.get("error"):
-                self._raise_provider_error(response.status_code, body)
-            return body
-        except httpx.TimeoutException as exc:
-            raise ProviderError(
-                ProviderErrorKind.TIMEOUT,
-                "OpenRouter request timed out.",
-                status_code=408,
-                retryable=True,
-            ) from exc
-        except httpx.HTTPError as exc:
-            raise ProviderError(
-                ProviderErrorKind.UNAVAILABLE,
-                "OpenRouter could not be reached.",
-                retryable=True,
-            ) from exc
-        finally:
-            if owns_client:
-                await client.aclose()
 
     @staticmethod
     def _raise_provider_error(status: int, body: dict[str, Any]) -> None:
@@ -153,7 +170,8 @@ class OpenRouterProvider:
             kind,
             safe_messages[kind],
             status_code=code,
-            retryable=kind in {
+            retryable=kind
+            in {
                 ProviderErrorKind.RATE_LIMIT,
                 ProviderErrorKind.TIMEOUT,
                 ProviderErrorKind.UNAVAILABLE,
@@ -162,7 +180,7 @@ class OpenRouterProvider:
         )
 
     async def embed(self, texts: Sequence[str]) -> EmbeddingResponse:
-        body = await self._post(
+        body, attempts = await self._post(
             "embeddings",
             {
                 "model": self.config.embedding_model,
@@ -171,9 +189,7 @@ class OpenRouterProvider:
             },
         )
         try:
-            if not _model_identity_matches(
-                self.config.embedding_model, body.get("model")
-            ):
+            if not _model_identity_matches(self.config.embedding_model, body.get("model")):
                 raise ValueError("embedding model mismatch")
             rows = sorted(body["data"], key=lambda row: row["index"])
             vectors = [row["embedding"] for row in rows]
@@ -183,6 +199,7 @@ class OpenRouterProvider:
                 model=body.get("model", self.config.embedding_model),
                 vectors=vectors,
                 usage=body.get("usage") or {},
+                attempts=attempts,
             )
         except (KeyError, TypeError, ValueError, ValidationError) as exc:
             raise ProviderError(
@@ -197,7 +214,7 @@ class OpenRouterProvider:
         *,
         top_n: int,
     ) -> RerankResponse:
-        body = await self._post(
+        body, attempts = await self._post(
             "rerank",
             {
                 "model": self.config.rerank_model,
@@ -211,9 +228,7 @@ class OpenRouterProvider:
             if not _model_identity_matches(self.config.rerank_model, body.get("model")):
                 raise ValueError("rerank model mismatch")
             results = [
-                RerankResult(
-                    index=row["index"], relevance_score=row["relevance_score"]
-                )
+                RerankResult(index=row["index"], relevance_score=row["relevance_score"])
                 for row in body["results"]
             ]
             indices = [result.index for result in results]
@@ -226,9 +241,8 @@ class OpenRouterProvider:
             return RerankResponse(
                 model=body.get("model", self.config.rerank_model),
                 results=results,
-                usage=body.get("usage")
-                or (body.get("meta") or {}).get("billed_units")
-                or {},
+                usage=body.get("usage") or (body.get("meta") or {}).get("billed_units") or {},
+                attempts=attempts,
             )
         except (KeyError, TypeError, ValueError, ValidationError) as exc:
             raise ProviderError(
@@ -242,13 +256,14 @@ class OpenRouterProvider:
         *,
         output_schema: dict[str, Any],
     ) -> GenerationResponse:
-        body = await self._post(
+        body, attempts = await self._post(
             "chat/completions",
             {
                 "model": self.config.generation_model,
                 "messages": list(messages),
                 "stream": False,
                 "max_tokens": 1_200,
+                "temperature": self.config.generation_temperature,
                 "provider": self._provider_preferences(),
                 "response_format": {
                     "type": "json_schema",
@@ -261,9 +276,7 @@ class OpenRouterProvider:
             },
         )
         try:
-            if not _model_identity_matches(
-                self.config.generation_model, body.get("model")
-            ):
+            if not _model_identity_matches(self.config.generation_model, body.get("model")):
                 raise ValueError("generation model mismatch")
             content = body["choices"][0]["message"]["content"]
             payload = json.loads(content) if isinstance(content, str) else content
@@ -272,6 +285,7 @@ class OpenRouterProvider:
                 model=body.get("model", self.config.generation_model),
                 draft=draft,
                 usage=body.get("usage") or {},
+                attempts=attempts,
             )
         except (
             IndexError,

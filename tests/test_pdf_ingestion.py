@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from pypdf import PdfWriter
@@ -15,7 +15,6 @@ from firelens.ingestion.pdf import (
     sha256_file,
     write_jsonl,
 )
-
 
 SOURCE = {
     "source_id": "test_source",
@@ -37,7 +36,7 @@ class PdfIngestionUnitTests(unittest.TestCase):
             with pdf_path.open("wb") as stream:
                 writer.write(stream)
 
-            retrieved_at = datetime(2026, 7, 25, 12, tzinfo=timezone.utc)
+            retrieved_at = datetime(2026, 7, 25, 12, tzinfo=UTC)
             records = ingest_pdf(pdf_path, SOURCE, retrieved_at=retrieved_at)
 
             self.assertEqual([record.page_number for record in records], [1, 2])

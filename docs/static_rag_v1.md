@@ -1,5 +1,8 @@
 # Static RAG v1 engineering guide
 
+> Historical engineering guide. The current implemented architecture,
+> contracts, measurements, and operations live in `docs/TECHNICAL_HANDBOOK.md`.
+
 This guide explains what each layer owns and, equally importantly, what it is
 not allowed to decide.
 

@@ -46,6 +46,7 @@ class FireLensConfig(BaseModel):
     embedding_model: str = "openai/text-embedding-3-small"
     rerank_model: str = "cohere/rerank-4-pro"
     generation_model: str = "google/gemini-3.5-flash-lite"
+    generation_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
     bm25_top_k: int = Field(default=20, gt=0)
     vector_top_k: int = Field(default=20, gt=0)
     fused_top_k: int = Field(default=20, gt=0)
@@ -55,13 +56,19 @@ class FireLensConfig(BaseModel):
     max_evidence_spans: int = Field(default=5, gt=0)
     max_context_chars: int = Field(default=8_000, gt=0)
     request_timeout_seconds: float = Field(default=30.0, gt=0)
+    provider_max_attempts: int = Field(default=3, ge=1, le=3)
+    provider_retry_base_seconds: float = Field(default=0.25, ge=0)
+    provider_max_concurrency: int = Field(default=4, ge=1, le=16)
     embedding_batch_size: int = Field(default=64, gt=0)
+    trace_max_files: int = Field(default=250, ge=1)
+    trace_max_bytes: int = Field(default=50 * 1024 * 1024, ge=1)
+    frontend_dist_path: Path | None = None
     require_zdr: bool = False
     debug: bool = False
     trace_content: bool = False
 
     @classmethod
-    def from_env(cls, project_root: Path | None = None) -> "FireLensConfig":
+    def from_env(cls, project_root: Path | None = None) -> FireLensConfig:
         root = (project_root or Path.cwd()).resolve()
         file_values = _read_dotenv(root / ".env")
 
@@ -69,16 +76,16 @@ class FireLensConfig(BaseModel):
             return os.environ.get(name, file_values.get(name))
 
         key = setting("OPENROUTER_API_KEY")
+        frontend_dist = root / "prototype/firelens-rag-ui/dist/client"
         return cls(
             project_root=root,
             corpus_path=root / "data/processed/firelens_static_corpus.chunks.jsonl",
-            corpus_manifest_path=(
-                root / "data/processed/firelens_static_corpus.manifest.json"
-            ),
+            corpus_manifest_path=(root / "data/processed/firelens_static_corpus.manifest.json"),
             vector_matrix_path=root / "data/index/firelens_vectors.npy",
             vector_manifest_path=root / "data/index/firelens_vectors.manifest.json",
             embedding_cache_path=root / "data/index/embedding_cache.jsonl",
             trace_dir=root / "output/traces",
+            frontend_dist_path=frontend_dist,
             openrouter_api_key=SecretStr(key) if key else None,
             require_zdr=_bool_value(setting("FIRELENS_REQUIRE_ZDR")),
             debug=_bool_value(setting("FIRELENS_DEBUG")),

@@ -35,14 +35,8 @@ class ResponseStatus(StrEnum):
     ERROR = "error"
 
 
-class ConversationTurn(FrozenStrictModel):
-    role: Literal["user", "assistant"]
-    content: str = Field(min_length=1, max_length=2_000)
-
-
 class QueryRequest(StrictModel):
     question: str = Field(min_length=1, max_length=2_000)
-    history: list[ConversationTurn] = Field(default_factory=list, max_length=6)
 
     @field_validator("question")
     @classmethod
@@ -99,6 +93,8 @@ class RetrievalBundle(StrictModel):
     complete: bool = True
     errors: list[str] = Field(default_factory=list)
     timings_ms: dict[str, float] = Field(default_factory=dict)
+    provider_usage: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    provider_attempts: dict[str, int] = Field(default_factory=dict)
 
 
 class EvidenceSpan(FrozenStrictModel):
@@ -139,12 +135,15 @@ class SupportDecision(FrozenStrictModel):
     explanation: str
 
 
-class DraftClaim(StrictModel):
+class ClaimSupport(FrozenStrictModel):
+    evidence_id: str = Field(min_length=1)
+    quote: Annotated[str, Field(min_length=1, max_length=500)]
+
+
+class VerifiedClaim(FrozenStrictModel):
+    claim_id: str = Field(pattern=r"^C[1-9][0-9]*$")
     text: str = Field(min_length=1, max_length=600)
-    evidence_ids: list[str] = Field(min_length=1, max_length=5)
-    evidence_quotes: list[Annotated[str, Field(min_length=1, max_length=500)]] = Field(
-        min_length=1, max_length=5
-    )
+    supports: list[ClaimSupport] = Field(min_length=1, max_length=5)
 
     @field_validator("text")
     @classmethod
@@ -153,11 +152,12 @@ class DraftClaim(StrictModel):
             raise ValueError("claim text cannot be blank")
         return value
 
-    @field_validator("evidence_quotes")
+    @field_validator("supports")
     @classmethod
-    def reject_blank_quotes(cls, value: list[str]) -> list[str]:
-        if any(not quote.strip() for quote in value):
-            raise ValueError("evidence quotes cannot be blank")
+    def reject_duplicate_supports(cls, value: list[ClaimSupport]) -> list[ClaimSupport]:
+        pairs = [(item.evidence_id, item.quote) for item in value]
+        if len(pairs) != len(set(pairs)):
+            raise ValueError("claim support pairs must be unique")
         return value
 
 
@@ -205,6 +205,17 @@ class PublicSource(FrozenStrictModel):
     locator: str | None
 
 
+class PublicEvidence(FrozenStrictModel):
+    evidence_id: str
+    title: str
+    publisher: str
+    canonical_url: HttpUrl
+    locator: str | None
+    temporal_class: Literal["stable_guidance"]
+    primary_text: str
+    context_text: str
+
+
 class SearchResponse(StrictModel):
     trace_id: str
     plan: QueryPlan
@@ -217,8 +228,8 @@ class AskResponse(StrictModel):
     status: ResponseStatus
     trace_id: str
     answer: str | None = None
-    claims: list[DraftClaim] = Field(default_factory=list)
-    sources: list[PublicSource] = Field(default_factory=list)
+    claims: list[VerifiedClaim] = Field(default_factory=list)
+    evidence: list[PublicEvidence] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
     reason_code: str | None = None
     validation: ValidationReport | None = None
@@ -235,10 +246,22 @@ class HealthResponse(FrozenStrictModel):
     problems: list[str] = Field(default_factory=list)
 
 
+class LivenessResponse(FrozenStrictModel):
+    status: Literal["alive"] = "alive"
+
+
+class ErrorEnvelope(FrozenStrictModel):
+    trace_id: str
+    error_kind: str
+    message: str
+    retryable: bool = False
+
+
 class EmbeddingResponse(FrozenStrictModel):
     model: str
     vectors: list[list[float]]
     usage: dict[str, Any] = Field(default_factory=dict)
+    attempts: int = Field(default=1, ge=1)
 
 
 class RerankResult(FrozenStrictModel):
@@ -250,9 +273,11 @@ class RerankResponse(FrozenStrictModel):
     model: str
     results: list[RerankResult]
     usage: dict[str, Any] = Field(default_factory=dict)
+    attempts: int = Field(default=1, ge=1)
 
 
 class GenerationResponse(FrozenStrictModel):
     model: str
     draft: DraftAnswer
     usage: dict[str, Any] = Field(default_factory=dict)
+    attempts: int = Field(default=1, ge=1)

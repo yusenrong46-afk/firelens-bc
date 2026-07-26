@@ -7,13 +7,12 @@ import json
 import math
 import re
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Sequence
 
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.ingestion.pdf import IngestionError
-
 
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+(?:'[a-z0-9]+)?")
 DEFAULT_K1 = 1.5
@@ -92,14 +91,12 @@ class BM25Index:
         self.records = tuple(records)
         self.k1 = k1
         self.b = b
-        self._term_frequencies = [
-            Counter(tokenize(record.text)) for record in self.records
-        ]
+        self._term_frequencies = [Counter(tokenize(record.text)) for record in self.records]
         self._document_lengths = [
             sum(frequencies.values()) for frequencies in self._term_frequencies
         ]
-        self._average_document_length = (
-            sum(self._document_lengths) / len(self._document_lengths)
+        self._average_document_length = sum(self._document_lengths) / len(
+            self._document_lengths
         )
         self._document_frequencies = self._calculate_document_frequencies()
 
@@ -113,9 +110,7 @@ class BM25Index:
         document_frequency = self._document_frequencies.get(term, 0)
         document_count = len(self.records)
         return math.log(
-            1
-            + (document_count - document_frequency + 0.5)
-            / (document_frequency + 0.5)
+            1 + (document_count - document_frequency + 0.5) / (document_frequency + 0.5)
         )
 
     def _score_document(self, query_terms: set[str], document_index: int) -> float:
@@ -129,9 +124,7 @@ class BM25Index:
             if term_frequency == 0:
                 continue
 
-            denominator = term_frequency + self.k1 * (
-                1 - self.b + self.b * length_ratio
-            )
+            denominator = term_frequency + self.k1 * (1 - self.b + self.b * length_ratio)
             score += self._inverse_document_frequency(term) * (
                 term_frequency * (self.k1 + 1) / denominator
             )

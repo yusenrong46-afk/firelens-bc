@@ -5,9 +5,9 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from datetime import datetime, timezone
+from collections.abc import Sequence
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Sequence
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -16,7 +16,7 @@ from firelens.config import FireLensConfig
 from firelens.errors import IndexValidationError
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.providers.base import AIProvider
-
+from firelens.storage import atomic_binary_writer, atomic_text_writer, exclusive_file_lock
 
 INDEX_SCHEMA_VERSION = "firelens_vector_index.v1"
 CACHE_SCHEMA_VERSION = "firelens_embedding_cache.v1"
@@ -95,17 +95,14 @@ def _validate_vector(vector: Sequence[float], dimensions: int | None = None) -> 
     return len(vector)
 
 
-def _write_cache(
-    records: dict[tuple[str, str], EmbeddingCacheRecord], path: Path
-) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="\n") as stream:
+def _write_cache(records: dict[tuple[str, str], EmbeddingCacheRecord], path: Path) -> None:
+    with atomic_text_writer(path) as stream:
         for key in sorted(records):
             stream.write(records[key].model_dump_json())
             stream.write("\n")
 
 
-async def build_vector_index(
+async def _build_vector_index_unlocked(
     chunks: Sequence[ChunkRecord],
     *,
     corpus_version: str,
@@ -150,7 +147,7 @@ async def build_vector_index(
                 chunk_content_sha256=content_hash,
                 dimensions=dimensions,
                 vector=values,
-                created_at=datetime.now(timezone.utc).isoformat(),
+                created_at=datetime.now(UTC).isoformat(),
             )
 
     if dimensions is None or any(vector is None for vector in vectors):
@@ -162,8 +159,7 @@ async def build_vector_index(
         raise IndexValidationError("Embedding matrix contains invalid values.")
     matrix = matrix / norms
 
-    config.vector_matrix_path.parent.mkdir(parents=True, exist_ok=True)
-    with config.vector_matrix_path.open("wb") as stream:
+    with atomic_binary_writer(config.vector_matrix_path) as stream:
         np.save(stream, matrix, allow_pickle=False)
     _write_cache(cache, config.embedding_cache_path)
 
@@ -174,10 +170,25 @@ async def build_vector_index(
         dimensions=dimensions,
         chunk_ids=chunk_ids,
         matrix_sha256=sha256_file(config.vector_matrix_path),
-        created_at=datetime.now(timezone.utc).isoformat(),
+        created_at=datetime.now(UTC).isoformat(),
     )
-    config.vector_manifest_path.write_text(
-        json.dumps(manifest.model_dump(), indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    with atomic_text_writer(config.vector_manifest_path) as stream:
+        stream.write(json.dumps(manifest.model_dump(), indent=2, sort_keys=True) + "\n")
     return manifest
+
+
+async def build_vector_index(
+    chunks: Sequence[ChunkRecord],
+    *,
+    corpus_version: str,
+    config: FireLensConfig,
+    provider: AIProvider,
+) -> VectorManifest:
+    lock_path = config.vector_manifest_path.with_suffix(".lock")
+    with exclusive_file_lock(lock_path):
+        return await _build_vector_index_unlocked(
+            chunks,
+            corpus_version=corpus_version,
+            config=config,
+            provider=provider,
+        )

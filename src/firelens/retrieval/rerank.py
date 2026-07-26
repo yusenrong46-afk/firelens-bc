@@ -4,13 +4,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from firelens.contracts import RetrievalHit, RerankResponse
+from firelens.contracts import RerankResponse, RetrievalHit
 from firelens.errors import ProviderError, ProviderErrorKind
 
 
-def apply_rerank(
-    hits: Sequence[RetrievalHit], response: RerankResponse
-) -> list[RetrievalHit]:
+def apply_rerank(hits: Sequence[RetrievalHit], response: RerankResponse) -> list[RetrievalHit]:
     seen: set[int] = set()
     reranked: list[RetrievalHit] = []
     for rank, result in enumerate(response.results, start=1):
@@ -29,4 +27,3 @@ def apply_rerank(
             )
         )
     return reranked
-

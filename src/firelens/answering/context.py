@@ -68,15 +68,11 @@ def build_evidence_packet(
     config: FireLensConfig,
 ) -> EvidencePacket:
     by_id = {chunk.chunk_id: chunk for chunk in chunks}
-    by_parent_index = {
-        (chunk.parent_record_id, chunk.chunk_index): chunk for chunk in chunks
-    }
+    by_parent_index = {(chunk.parent_record_id, chunk.chunk_index): chunk for chunk in chunks}
     groups: list[dict[str, object]] = []
 
     for hit in reranked_hits[: config.max_evidence_spans]:
-        neighbor_ids = _candidate_chunk_ids(
-            hit, by_parent_index, config.neighbor_window
-        )
+        neighbor_ids = _candidate_chunk_ids(hit, by_parent_index, config.neighbor_window)
         matching_groups: list[dict[str, object]] = []
         for group in groups:
             group_chunk_ids = group["chunk_ids"]
@@ -99,9 +95,7 @@ def build_evidence_packet(
         target = matching_groups[0]
         target_chunk_ids = target["chunk_ids"]
         target_primary_hits = target["primary_hits"]
-        if not isinstance(target_chunk_ids, set) or not isinstance(
-            target_primary_hits, list
-        ):
+        if not isinstance(target_chunk_ids, set) or not isinstance(target_primary_hits, list):
             raise TypeError("Invalid internal evidence grouping state.")
         target_chunk_ids.update(neighbor_ids)
         target_primary_hits.append(hit)
@@ -165,9 +159,7 @@ def build_evidence_packet(
             text=quote,
         )
         for span in spans
-        for quote_number, quote in enumerate(
-            _exact_quote_segments(span.primary_text), start=1
-        )
+        for quote_number, quote in enumerate(_exact_quote_segments(span.primary_text), start=1)
     ]
     return EvidencePacket(
         question=question,

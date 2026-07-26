@@ -6,7 +6,6 @@ import re
 
 from firelens.contracts import DraftAnswer, EvidencePacket, ValidationReport
 
-
 _FORBIDDEN = (
     r"\bguarantee(?:d|s)?\s+(?:your\s+)?safety\b",
     r"\bguarantee(?:d|s)?\s+survival\b",
@@ -25,9 +24,7 @@ _LIVE_CLAIMS = (
 def validate_draft(draft: DraftAnswer, packet: EvidencePacket) -> ValidationReport:
     errors: list[str] = []
     evidence = {item.evidence_id: item for item in packet.items}
-    candidates = {
-        candidate.quote_id: candidate for candidate in packet.quote_candidates
-    }
+    candidates = {candidate.quote_id: candidate for candidate in packet.quote_candidates}
     citation_ids_valid = True
     quotes_exact = True
     policy_valid = True

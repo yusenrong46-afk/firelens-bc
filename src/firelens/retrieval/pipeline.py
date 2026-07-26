@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from time import perf_counter
-from typing import Sequence
 
 from firelens.config import FireLensConfig
 from firelens.contracts import QueryPlan, RetrievalBundle
@@ -37,6 +37,8 @@ class RetrievalPipeline:
             return RetrievalBundle(complete=False, errors=["no_retrieval_request"])
         query = plan.retrieval_requests[0].query
         timings: dict[str, float] = {}
+        provider_usage: dict[str, dict] = {}
+        provider_attempts: dict[str, int] = {}
 
         started = perf_counter()
         raw_bm25 = self.bm25.search(query, top_k=self.config.bm25_top_k)
@@ -62,6 +64,8 @@ class RetrievalPipeline:
             vector_hits = self.vector_index.search(
                 embedded.vectors[0], top_k=self.config.vector_top_k
             )
+            provider_usage["embedding"] = embedded.usage
+            provider_attempts["embedding"] = embedded.attempts
             timings["vector"] = (perf_counter() - started) * 1_000
         except ProviderError as exc:
             return RetrievalBundle(
@@ -69,6 +73,8 @@ class RetrievalPipeline:
                 complete=False,
                 errors=[exc.kind.value],
                 timings_ms=timings,
+                provider_usage=provider_usage,
+                provider_attempts=provider_attempts,
             )
         except (IndexValidationError, ValueError):
             return RetrievalBundle(
@@ -76,6 +82,8 @@ class RetrievalPipeline:
                 complete=False,
                 errors=[ProviderErrorKind.INVALID_RESPONSE.value],
                 timings_ms=timings,
+                provider_usage=provider_usage,
+                provider_attempts=provider_attempts,
             )
 
         started = perf_counter()
@@ -95,6 +103,8 @@ class RetrievalPipeline:
                 top_n=min(self.config.rerank_top_k, len(fused_hits)),
             )
             reranked_hits = apply_rerank(fused_hits, response)
+            provider_usage["rerank"] = response.usage
+            provider_attempts["rerank"] = response.attempts
             timings["rerank"] = (perf_counter() - started) * 1_000
         except ProviderError as exc:
             return RetrievalBundle(
@@ -104,6 +114,8 @@ class RetrievalPipeline:
                 complete=False,
                 errors=[exc.kind.value],
                 timings_ms=timings,
+                provider_usage=provider_usage,
+                provider_attempts=provider_attempts,
             )
 
         return RetrievalBundle(
@@ -112,4 +124,6 @@ class RetrievalPipeline:
             fused_hits=fused_hits,
             reranked_hits=reranked_hits,
             timings_ms=timings,
+            provider_usage=provider_usage,
+            provider_attempts=provider_attempts,
         )

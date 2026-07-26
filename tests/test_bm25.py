@@ -75,10 +75,7 @@ class BM25IntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         project_root = Path(__file__).resolve().parents[1]
-        chunks_path = (
-            project_root
-            / "data/processed/preparedbc_wildfire_guide.chunks.jsonl"
-        )
+        chunks_path = project_root / "data/processed/preparedbc_wildfire_guide.chunks.jsonl"
         if not chunks_path.exists():
             raise unittest.SkipTest("PreparedBC chunks have not been generated.")
         cls.index = BM25Index(load_chunk_records(chunks_path))
@@ -90,10 +87,7 @@ class BM25IntegrationTests(unittest.TestCase):
         *,
         top_k: int = 3,
     ) -> None:
-        pages = [
-            result.page_number
-            for result in self.index.search(query, top_k=top_k)
-        ]
+        pages = [result.page_number for result in self.index.search(query, top_k=top_k)]
         self.assertIn(expected_page, pages, msg=f"{query!r} returned pages {pages}")
 
     def test_evacuation_order_retrieval(self) -> None:

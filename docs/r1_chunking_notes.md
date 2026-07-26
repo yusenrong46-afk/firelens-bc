@@ -1,5 +1,8 @@
 # R1.2 Structure-Aware Chunking
 
+> Historical executed subsystem note. Current corpus invariants are recorded in
+> `docs/TECHNICAL_HANDBOOK.md`.
+
 Date: `2026-07-25`
 
 ## Purpose

@@ -1,5 +1,8 @@
 # R1 Pre-Embedding Checkpoint
 
+> Historical checkpoint. Current readiness, hashes, and release evidence are in
+> `docs/releases/V1_EVIDENCE.md`.
+
 Date: `2026-07-25`
 
 ## Outcome

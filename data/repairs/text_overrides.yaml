@@ -24,3 +24,51 @@ repairs:
       • Batteries
       • Whistle
       • Emergency plan
+  - source_id: firesmart_begins_at_home
+    page_number: 10
+    document_sha256: "c808a14bb873eb8b70930470976b0f2e091eed9cfdc1fe4b63d6325b4ae3c2ca"
+    review_status: codex_visual_reviewed
+    reason: >
+      The rendered spread is legible, but the PDF text layer interleaves several
+      visual columns. The replacement preserves the visible wording and orders
+      it by the page's headings. It was checked against the rendered page on
+      2026-07-26 and remains pending owner review.
+    replacement_text: |
+      Immediate Zone - 0 m to 1.5 m
+      The Immediate Zone is a non-combustible area that starts at the house and extends to a 1.5 metre perimeter around the home and attached structures, including decks. Reduce the chance of wind-blown embers igniting your home by starting with proactive measures outlined in this guide.
+
+      Doors
+      All doors into your home should be fire-rated and have a good seal. This is true for your garage doors, as well as entry doors.
+
+      Windows
+      Tempered or thermal (multi-paned) windows are recommended. Single-pane windows provide little resistance to heat from an advancing wildland fire.
+
+      Roof - Material
+      A Class-A fire-rated roof assembly offers the best protection. Metal, asphalt, clay, and composite rubber tiles are all options. Untreated wood shakes create a dangerous combination of combustible material and crevices for embers or sparks to enter. Refer to manufacturers' guidelines to maintain the fire resistance of your roof.
+
+      Roof - Maintenance
+      Every inside-corner of your roof is a place where debris and embers can collect. Regularly clean your roof of combustible materials.
+
+      Siding
+      Stucco, metal, brick, concrete, and fiber cement siding offer superior fire resistance. Logs and heavy timbers are also reasonably effective. Untreated wood and vinyl siding offer very little protection against wildland fire.
+
+      Gutters
+      Regularly remove debris from your gutters, as sparks and embers can easily ignite these dry materials. Consider screening your gutters with metal mesh to reduce debris that can accumulate.
+
+      Decks
+      It is important to sheathe-in the base of decks, balconies, and houses, as embers and sparks can collect under these spaces. Use fire-resistant material to reduce the risk of sparks and embers from igniting your home.
+
+      Chimney
+      A spark arrestor on your chimney will reduce the chance of sparks and embers from escaping and starting fires.
+
+      Ground-to-Siding Clearance
+      Siding is vulnerable when it ignites and when flames or embers get into the cavity behind it. With inadequate ground-to-siding clearance, accumulated embers can ignite combustible siding directly. 15 centimetres of ground-to-siding non-combustible clearance is recommended.
+
+      Eaves and Vents
+      While vents play an important role in removing moisture from attics, they create an opening for sparks and embers. Install vents made of non-combustible material with 3 millimetre screening, or ASTM fire-rated vents. Open eaves also create a surface for embers and direct heat. Properly fitted soffits and fascia help to reduce the risk of embers and heat from reaching the wooden rafters of your home.
+
+      Other - Attachments to Your Home
+      Wooden fences or boardwalks create a direct path from the fire to your home. Separating your house from a wooden fence with a metal gate can slow the advance of fire. Remember to cut the grass along your fence line, as long, dry grass easily ignites.
+
+      Other - Sheds and Outbuildings
+      Give sheds and outbuildings the same FireSmart considerations as you do for your home.

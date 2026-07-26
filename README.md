@@ -1,128 +1,98 @@
-# FireLens BC Static RAG v1
+# FireLens BC Static RAG V1
 
-FireLens BC answers questions about stable, approved British Columbia wildfire
-preparedness guidance. It does **not** report current fires, determine whether a
-location is safe, choose an evacuation route, or replace current official
-instructions.
-
-The v1 backend is deliberately small: local code owns retrieval, source
-metadata, policy, and validation; models only create embeddings, rank local
-passages, and propose a structured draft.
+FireLens BC answers single-turn questions from reviewed, stable British
+Columbia wildfire-preparedness guidance. It does not report current fires,
+select evacuation routes, predict conditions, or make personalized safety
+decisions.
 
 ```mermaid
 flowchart LR
     Q["Question"] --> P["Deterministic route"]
-    P --> B["BM25 top 20"]
-    P --> D["Dense top 20"]
-    B --> F["RRF fusion"]
-    D --> F
-    F --> R["Rerank 4 Pro"]
+    P -->|"static"| H["BM25 plus dense plus RRF"]
+    H --> R["Cohere Rerank 4 Pro"]
     R --> E["Local evidence spans"]
-    E --> S{"Evidence sufficient?"}
-    S -- "No" --> A["Typed abstention"]
-    S -- "Yes" --> G["Gemini structured draft"]
+    E --> G["Gemini structured proposal"]
     G --> V["Deterministic validation"]
-    V -- "Reject" --> A
-    V -- "Accept" --> O["Answer and local citations"]
+    V --> O["Claims with exact local support"]
+    P -->|"live or prohibited"| A["Typed abstention"]
+    V -->|"rejected"| A
 ```
 
-## Install
+Local code owns policy, retrieval, evidence, source metadata, validation, and
+public responses. All paid AI calls use OpenRouter. There is no hidden model or
+retrieval fallback.
 
-Python 3.11–3.14 is supported. Dependencies are pinned in `pyproject.toml`.
+## Quick start
 
-```bash
-cd /path/to/firelens-bc
-python3 -m venv .venv
-.venv/bin/python -m pip install -e '.[dev]'
-.venv/bin/python -m pytest -q
-```
-
-The normal test suite is offline and uses a deterministic fake provider. Real
-provider smoke tests are opt-in so tests cannot spend credits accidentally.
-
-## Configure OpenRouter safely
-
-Copy `.env.example` to `.env`, store a newly rotated key there, and never commit
-the file. The project ignores `.env`, vector artifacts, and request traces.
+Python 3.11–3.14 and Node/npm are supported. Dependencies are deterministically
+locked in `requirements.lock` and `package-lock.json`.
 
 ```bash
+make setup
 cp .env.example .env
-# Edit .env and set OPENROUTER_API_KEY to the rotated key.
+# Add a rotated OPENROUTER_API_KEY to the ignored .env file.
+make verify
+make run
 ```
 
-Configured model IDs:
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000). The production local
+process serves both the built Source Lens frontend and `/api/v1` from one
+origin. During frontend development, Vite proxies `/api` to the backend.
 
-- embeddings: `openai/text-embedding-3-small`
-- reranking: `cohere/rerank-4-pro`
-- generation: `google/gemini-3.5-flash-lite`
-
-Every provider request denies data-collecting endpoints, requires supported
-parameters, disables model/provider fallback, and optionally requires ZDR with
-`FIRELENS_REQUIRE_ZDR=true`.
-
-After rotating the key:
+## Commands
 
 ```bash
-FIRELENS_RUN_OPENROUTER_SMOKE=1 .venv/bin/python -m pytest \
-  tests/test_openrouter_smoke.py -q
+make verify              # lint, type checks, offline tests, UI build and browser tests
+make benchmark           # zero-cost 20-case safety/red-team run
+make benchmark-retrieval # four locked development retrieval configurations
+make benchmark-live      # cost-capped complete 100-case run
+make canary              # 30 repeated live generations
+make model-bakeoff       # identical-evidence Gemini comparison
+make live-smoke          # opt-in OpenRouter endpoint smoke tests
+```
+
+Corpus/index operations:
+
+```bash
+.venv/bin/firelens bootstrap-corpus
 .venv/bin/firelens build-index
+.venv/bin/firelens corpus-audit
 .venv/bin/firelens doctor
 ```
 
-## Use the backend
+CLI equivalents of the service are also available:
 
 ```bash
 .venv/bin/firelens search "What belongs in a grab-and-go bag?"
-.venv/bin/firelens ask "How often should I review my emergency plan?"
-.venv/bin/firelens serve --host 127.0.0.1 --port 8000
+.venv/bin/firelens ask "What does an evacuation alert mean?"
 ```
 
-HTTP endpoints:
+## API
 
-- `POST /search` exposes the plan, all four rankings, evidence spans, errors,
-  and timings.
-- `POST /ask` returns a validated answer or typed abstention.
-- `GET /health` reports corpus, index, and provider-configuration readiness.
-- `GET /debug/chunks/{chunk_id}` exists only with `FIRELENS_DEBUG=true`.
+- `POST /api/v1/ask` accepts only `{"question":"..."}` and returns a typed
+  answer, abstention, unavailable state, or error.
+- `GET /api/v1/health/live` reports process liveness.
+- `GET /api/v1/health/ready` validates corpus, index, and provider setup.
+- `/api/v1/search` and chunk inspection are development-only with
+  `FIRELENS_DEBUG=true`.
 
-Run the 20 existing questions as a diagnostic after the real pipeline works:
+Accepted claims include exact quote support and local evidence metadata. The
+model cannot provide URLs, publishers, locators, page numbers, or hashes.
 
-```bash
-.venv/bin/firelens evaluate \
-  --gold data/evaluation/gold_questions.yaml \
-  --output data/evaluation/rag_v1_diagnostic.json
-```
+## Current measured checkpoint
 
-That report records system behavior but intentionally sets
-`semantic_correctness_scored=false`. Human review is still required before it
-can become a release benchmark.
+- governed corpus: 8 sources, 180 chunks;
+- vector index: 180 × 1,536;
+- offline Python suite: 69 passed, 3 paid smoke tests skipped;
+- safety/red-team route and status accuracy: 100%;
+- citation ID and exact-quote validity: 100% on accepted claims;
+- complete live benchmark cost: $0.2444; answer p95: 3.14 seconds;
+- 30-call canary: no status variance; $0.1284;
+- reranker Recall@5: 81.82%, below the 95% release gate.
 
-## Current acceptance checkpoint
-
-- production index: 175 chunks, 1,536 dimensions;
-- offline suite: 48 passing tests, with 3 paid smoke tests skipped by default;
-- live OpenRouter smoke suite: embeddings, Rerank 4 Pro, and Gemini all pass;
-- real API path: `/search` exposes all four retrieval stages and `/ask` returns
-  a deterministically validated cited answer;
-- 20-question diagnostic: 17 validated answers, 3 expected live-data
-  abstentions, and 0 provider errors.
-
-The diagnostic remains unscored for semantic correctness. These counts prove
-execution, routing, traceability, and structural validation—not release-level
-answer quality.
-
-## Understand the code
-
-Start with [`docs/static_rag_v1.md`](docs/static_rag_v1.md). The main execution
-path is intentionally linear:
-
-1. `answering/intent.py` routes before any paid call.
-2. `retrieval/pipeline.py` runs BM25, dense retrieval, RRF, and reranking.
-3. `answering/context.py` reconstructs bounded same-parent evidence.
-4. `answering/service.py` decides support and orchestrates generation.
-5. `answering/validate.py` checks traceability and policy without pretending to
-   prove semantic entailment.
-6. `api.py` and `cli.py` expose the same service.
-
-The governed eight-source, 175-chunk JSONL corpus remains the canonical source
-for retrieval text and public source metadata.
+This is a fully implemented V1 candidate, not a release-qualified product.
+Semantic owner review and retrieval-quality improvement remain open. Read
+[`docs/TECHNICAL_HANDBOOK.md`](docs/TECHNICAL_HANDBOOK.md) for the architecture,
+operations, measured evidence, limitations, recovery steps, and code-reading
+guide. Exact release evidence and artifact hashes are in
+[`docs/releases/V1_EVIDENCE.md`](docs/releases/V1_EVIDENCE.md).

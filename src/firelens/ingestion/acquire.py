@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import mimetypes
 import urllib.request
 from pathlib import Path
@@ -11,7 +12,7 @@ from typing import Any
 import yaml
 
 from firelens.ingestion.pdf import IngestionError
-
+from firelens.storage import atomic_binary_writer
 
 USER_AGENT = "FireLens-BC-RAG/1.0 source-acquisition"
 
@@ -27,6 +28,13 @@ def _validate_payload(source: dict[str, Any], payload: bytes) -> None:
         raise IngestionError(f"{source['source_id']} did not return a PDF.")
     if source_type == "html" and b"<html" not in payload[:5000].lower():
         raise IngestionError(f"{source['source_id']} did not return HTML.")
+    expected_hash = source.get("expected_sha256")
+    actual_hash = hashlib.sha256(payload).hexdigest()
+    if not isinstance(expected_hash, str) or actual_hash != expected_hash:
+        raise IngestionError(
+            f"{source['source_id']} bytes do not match the reviewed SHA-256; "
+            "review the changed source before updating the registry."
+        )
 
 
 def acquire_source(source: dict[str, Any], project_root: Path) -> Path:
@@ -52,9 +60,28 @@ def acquire_source(source: dict[str, Any], project_root: Path) -> Path:
     _validate_payload(source, payload)
 
     destination = project_root / local_file
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_bytes(payload)
+    with atomic_binary_writer(destination) as stream:
+        stream.write(payload)
     return destination
+
+
+def acquire_registered_sources(
+    registry_path: Path,
+    project_root: Path,
+    *,
+    source_ids: set[str] | None = None,
+) -> list[tuple[str, Path]]:
+    selected = source_ids or set()
+    sources = [
+        source
+        for source in _load_sources(registry_path)
+        if source.get("local_file")
+        and source.get("corpus_action") != "exclude_live"
+        and (not selected or source["source_id"] in selected)
+    ]
+    if selected - {source["source_id"] for source in sources}:
+        raise IngestionError("One or more requested source IDs are unavailable.")
+    return [(source["source_id"], acquire_source(source, project_root)) for source in sources]
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -69,20 +96,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
-    selected = set(args.source_id or [])
-    sources = [
-        source
-        for source in _load_sources(args.registry)
-        if source.get("local_file")
-        and source.get("corpus_action") != "exclude_live"
-        and (not selected or source["source_id"] in selected)
-    ]
-    if selected - {source["source_id"] for source in sources}:
-        raise IngestionError("One or more requested source IDs are unavailable.")
-    for source in sources:
-        path = acquire_source(source, args.project_root)
+    for source_id, path in acquire_registered_sources(
+        args.registry,
+        args.project_root,
+        source_ids=set(args.source_id or []),
+    ):
         media_type, _ = mimetypes.guess_type(path.name)
-        print(f"Acquired {source['source_id']} -> {path} ({media_type or 'binary'})")
+        print(f"Acquired {source_id} -> {path} ({media_type or 'binary'})")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,8 @@ import hashlib
 import json
 import math
 import re
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from firelens.contracts import (
     DraftAnswer,
@@ -16,7 +17,6 @@ from firelens.contracts import (
     RerankResponse,
     RerankResult,
 )
-
 
 _TOKENS = re.compile(r"[a-z0-9]+")
 
@@ -65,8 +65,7 @@ class FakeProvider:
         return RerankResponse(
             model="fake/reranker",
             results=[
-                RerankResult(index=index, relevance_score=score)
-                for score, index in ranked
+                RerankResult(index=index, relevance_score=score) for score, index in ranked
             ],
         )
 

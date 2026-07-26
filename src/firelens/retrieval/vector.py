@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 import numpy as np
 from pydantic import ValidationError
@@ -16,23 +16,24 @@ from firelens.retrieval.embeddings import VectorManifest, sha256_file
 
 
 def retrieval_hit_from_chunk(chunk: ChunkRecord, **updates: object) -> RetrievalHit:
-    return RetrievalHit(
-        chunk_id=chunk.chunk_id,
-        parent_record_id=chunk.parent_record_id,
-        source_id=chunk.source_id,
-        title=chunk.title,
-        publisher=chunk.publisher,
-        canonical_url=chunk.canonical_url,
-        page_number=chunk.page_number,
-        section_title=chunk.section_title,
-        locator=chunk.locator,
-        temporal_class=chunk.temporal_class,
-        authority_class=chunk.authority_class,
-        document_sha256=chunk.document_sha256,
-        chunk_index=chunk.chunk_index,
-        text=chunk.text,
-        **updates,
-    )
+    payload: dict[str, object] = {
+        "chunk_id": chunk.chunk_id,
+        "parent_record_id": chunk.parent_record_id,
+        "source_id": chunk.source_id,
+        "title": chunk.title,
+        "publisher": chunk.publisher,
+        "canonical_url": chunk.canonical_url,
+        "page_number": chunk.page_number,
+        "section_title": chunk.section_title,
+        "locator": chunk.locator,
+        "temporal_class": chunk.temporal_class,
+        "authority_class": chunk.authority_class,
+        "document_sha256": chunk.document_sha256,
+        "chunk_index": chunk.chunk_index,
+        "text": chunk.text,
+    }
+    payload.update(updates)
+    return RetrievalHit.model_validate(payload)
 
 
 class VectorIndex:
@@ -67,7 +68,7 @@ class VectorIndex:
         corpus_path: Path,
         corpus_version: str,
         embedding_model: str,
-    ) -> "VectorIndex":
+    ) -> VectorIndex:
         if not matrix_path.is_file() or not manifest_path.is_file():
             raise IndexValidationError("Vector index files are missing.")
         try:

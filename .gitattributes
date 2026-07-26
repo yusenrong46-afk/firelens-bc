@@ -1,0 +1,2 @@
+# Preserve the byte-frozen benchmark fixture, including its historical final blank line.
+data/evaluation/benchmark_v1.yaml whitespace=-blank-at-eof

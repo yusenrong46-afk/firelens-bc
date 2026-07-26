@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import unittest
 from dataclasses import replace
 from pathlib import Path
@@ -48,8 +47,7 @@ class ChunkingUnitTests(unittest.TestCase):
 
     def test_chunks_inherit_exact_page_provenance(self) -> None:
         page = make_page(
-            "PreparedBC\nWildfire Preparedness Guide\n"
-            "EVACUATION ORDER\nLeave immediately.\n1"
+            "PreparedBC\nWildfire Preparedness Guide\nEVACUATION ORDER\nLeave immediately.\n1"
         )
         chunks = chunk_page_record(page)
 
@@ -137,18 +135,13 @@ class ChunkingUnitTests(unittest.TestCase):
         self.assertGreater(len(chunks), 1)
         self.assertTrue(all(chunk.page_number is None for chunk in chunks))
         self.assertTrue(all(chunk.source_type == "html" for chunk in chunks))
-        self.assertTrue(
-            all(chunk.locator == "section:stages-of-control" for chunk in chunks)
-        )
+        self.assertTrue(all(chunk.locator == "section:stages-of-control" for chunk in chunks))
 
 
 class ChunkingIntegrationTests(unittest.TestCase):
     def test_real_guide_keeps_critical_guidance_retrievable(self) -> None:
         project_root = Path(__file__).resolve().parents[1]
-        pages_path = (
-            project_root
-            / "data/processed/preparedbc_wildfire_guide.pages.jsonl"
-        )
+        pages_path = project_root / "data/processed/preparedbc_wildfire_guide.pages.jsonl"
         if not pages_path.exists():
             self.skipTest("PreparedBC page records have not been generated.")
 
@@ -163,9 +156,7 @@ class ChunkingIntegrationTests(unittest.TestCase):
 
         self.assertTrue(any("Food & water" in chunk.text for chunk in page_five))
         self.assertTrue(any("Bottled water" in chunk.text for chunk in page_six))
-        self.assertTrue(
-            any("must leave IMMEDIATELY" in chunk.text for chunk in page_eleven)
-        )
+        self.assertTrue(any("must leave IMMEDIATELY" in chunk.text for chunk in page_eleven))
         self.assertTrue(
             all(
                 chunk.parent_record_id.endswith(f":page:{chunk.page_number}")

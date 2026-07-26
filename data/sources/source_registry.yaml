@@ -23,6 +23,8 @@ sources:
     review_status: approved_static
     corpus_action: include
     local_file: data/raw/preparedbc_wildfire_guide.pdf
+    expected_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_reviewed_on: "2026-07-25"
     intended_use:
       - emergency planning
       - grab-and-go bags
@@ -42,6 +44,8 @@ sources:
     review_status: approved_static
     corpus_action: include
     local_file: data/raw/firesmart_begins_at_home.pdf
+    expected_sha256: c808a14bb873eb8b70930470976b0f2e091eed9cfdc1fe4b63d6325b4ae3c2ca
+    source_reviewed_on: "2026-07-25"
     intended_use:
       - home ignition zone
       - property risk reduction
@@ -59,6 +63,8 @@ sources:
     review_status: approved_static
     corpus_action: include
     local_file: data/raw/firesmart_information_guide.pdf
+    expected_sha256: 7623bf89601821be1a0a6d7d745f1d11a214d3195d65613c0eadcb4e71240071
+    source_reviewed_on: "2026-07-25"
     intended_use:
       - FireSmart concepts
       - home preparation actions
@@ -76,6 +82,8 @@ sources:
     review_status: approved_static
     corpus_action: include
     local_file: data/raw/firesmart_sprinkler_water_use.pdf
+    expected_sha256: 0ff63733942c4af1febc8145dfc5493556d33c9444668bc74d20679d6e3899a1
+    source_reviewed_on: "2026-07-25"
     intended_use:
       - structure protection sprinklers
       - evacuation-time sprinkler safety
@@ -93,6 +101,8 @@ sources:
     review_status: approved_static
     corpus_action: include
     local_file: data/raw/bcws_stages_of_control.html
+    expected_sha256: 07d62c0dd228af8dc13938491f8156952c54b8d3251038f0067ef42120967066
+    source_reviewed_on: "2026-07-25"
     intended_use:
       - interpreting wildfire stages of control
     known_limitations:
@@ -108,6 +118,8 @@ sources:
     review_status: approved_static
     corpus_action: include
     local_file: data/raw/bcws_wildfire_rank.html
+    expected_sha256: 3d3b394f144398bafc8986063f14c3d43161771e8423a13b49aaa8fcfdfe8345
+    source_reviewed_on: "2026-07-25"
     intended_use:
       - interpreting observed wildfire behaviour
     known_limitations:
@@ -139,6 +151,8 @@ sources:
     review_status: approved_reference_only
     corpus_action: exclude_duplicate
     local_file: data/raw/preparedbc_wildfire_web.html
+    expected_sha256: 48247542b5240754cbf62a765653de7db4c0c00b7c198fc7e4e25527226c71f1
+    source_reviewed_on: "2026-07-25"
     duplicate_of: preparedbc_wildfire_guide
     intended_use:
       - wildfire preparedness overview
@@ -156,6 +170,8 @@ sources:
     review_status: approved_static
     corpus_action: include
     local_file: data/raw/bccdc_wildfire_smoke.html
+    expected_sha256: 450b42fe63adfdf8baf17d5c79da78f586da6ec65205ae72fb292a57c383dcb0
+    source_reviewed_on: "2026-07-25"
     intended_use:
       - general health effects of wildfire smoke
       - public-health resources
@@ -172,6 +188,8 @@ sources:
     review_status: approved_static
     corpus_action: include
     local_file: data/raw/bccdc_smoke_health_factsheet.pdf
+    expected_sha256: 6e6d30e2170848695dc1b7e98198ee133aae5abe7d8903c606750db96096c4bf
+    source_reviewed_on: "2026-07-25"
     intended_use:
       - general wildfire-smoke health effects
       - recognizing general symptoms

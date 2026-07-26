@@ -1,5 +1,8 @@
 # R1.3 Deterministic BM25 Baseline
 
+> Historical executed subsystem note. Current retrieval configuration and
+> measured comparisons are recorded in `docs/TECHNICAL_HANDBOOK.md`.
+
 Date: `2026-07-25`
 
 ## Purpose

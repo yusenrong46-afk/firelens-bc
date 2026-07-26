@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -58,13 +58,11 @@ async def run_diagnostic(
         )
 
     statuses = Counter(row["response"]["status"] for row in rows)
-    reason_codes = Counter(
-        row["response"].get("reason_code") or "none" for row in rows
-    )
+    reason_codes = Counter(row["response"].get("reason_code") or "none" for row in rows)
     report = {
         "report_version": "firelens_rag_diagnostic.v1",
         "kind": "diagnostic_not_release_benchmark",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "dataset_version": dataset_version,
         "corpus_version": runtime.corpus_version,
         "models": {

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from firelens.answering.service import StaticRAGService
 from firelens.config import FireLensConfig
@@ -26,6 +25,7 @@ class Runtime:
     service: StaticRAGService | None = None
     problems: list[str] = field(default_factory=list)
     provider_configured: bool = False
+    provider: AIProvider | None = None
 
     @property
     def chunks_by_id(self) -> dict[str, ChunkRecord]:
@@ -44,6 +44,11 @@ class Runtime:
             chunk_count=len(self.chunks) if self.chunks else None,
             problems=self.problems,
         )
+
+    async def aclose(self) -> None:
+        close = getattr(self.provider, "aclose", None)
+        if close is not None:
+            await close()
 
 
 def load_corpus_resources(
@@ -113,6 +118,7 @@ def load_runtime(
         return runtime
 
     active_provider = provider or OpenRouterProvider(config)
+    runtime.provider = active_provider
     retrieval = RetrievalPipeline(
         chunks,
         vector_index=vector_index,
