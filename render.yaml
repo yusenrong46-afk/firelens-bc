@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: firelens-bc
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/v1/health/live
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: FIRELENS_REQUIRE_ZDR
+        value: "false"
+      - key: FIRELENS_DEBUG
+        value: "false"
+      - key: FIRELENS_TRACE_CONTENT
+        value: "false"

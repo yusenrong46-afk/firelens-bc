@@ -24,8 +24,12 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+!data/processed/firelens_static_corpus.chunks.jsonl
+!data/processed/firelens_static_corpus.manifest.json
 data/index/*
 !data/index/.gitkeep
+!data/index/firelens_vectors.npy
+!data/index/firelens_vectors.manifest.json
 output/*
 !output/.gitkeep
 tmp/
