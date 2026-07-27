@@ -10,14 +10,16 @@ from pathlib import Path
 import uvicorn
 
 from firelens.api import create_app
-from firelens.benchmark import run_benchmark
+from firelens.benchmark import run_benchmark, run_conversation_benchmark
 from firelens.canary import run_variability_canary
 from firelens.config import FireLensConfig
+from firelens.contextual_retrieval_experiment import run_contextual_retrieval_comparison
 from firelens.contracts import QueryRequest, ResponseStatus
 from firelens.corpus import build_corpus
 from firelens.corpus_audit import audit_corpus
 from firelens.ingestion.acquire import acquire_registered_sources
 from firelens.model_bakeoff import run_model_bakeoff
+from firelens.providers.fake import FakeProvider
 from firelens.providers.openrouter import OpenRouterProvider
 from firelens.rag_evaluate import run_diagnostic
 from firelens.retrieval.embeddings import build_vector_index
@@ -169,6 +171,57 @@ async def _benchmark(
         await runtime.aclose()
 
 
+def _vector_dimensions(config: FireLensConfig) -> int:
+    manifest = json.loads(config.vector_manifest_path.read_text(encoding="utf-8"))
+    dimensions = manifest.get("dimensions")
+    if not isinstance(dimensions, int) or dimensions <= 0:
+        raise ValueError("Vector manifest has no valid dimensions value")
+    return dimensions
+
+
+async def _conversation_benchmark(
+    config: FireLensConfig,
+    dataset: Path,
+    output: Path,
+    review_packet: Path,
+    splits: list[str] | None,
+    max_cost_usd: float | None,
+    *,
+    offline: bool,
+) -> int:
+    provider = FakeProvider(dimensions=_vector_dimensions(config)) if offline else None
+    runtime = load_runtime(config, provider=provider)
+    try:
+        if runtime.service is None:
+            _print(runtime.health())
+            return 2
+        report = await run_conversation_benchmark(
+            runtime,
+            dataset_path=dataset,
+            output_path=output,
+            review_packet_path=review_packet,
+            splits=set(splits or []),
+            max_cost_usd=max_cost_usd,
+            execution_mode="offline_fake" if offline else "live_provider",
+        )
+        _print(
+            {
+                "status": "saved",
+                "execution_mode": report["execution_mode"],
+                "output": str(output),
+                "review_packet": str(review_packet),
+                "case_count": report["case_count"],
+                "complete": report["complete"],
+                "metrics": report["metrics"],
+            }
+        )
+        return (
+            0 if report["complete"] and report["metrics"]["provider_failure_rate"] == 0 else 2
+        )
+    finally:
+        await runtime.aclose()
+
+
 async def _tune_retrieval(
     config: FireLensConfig,
     dataset: Path,
@@ -193,6 +246,32 @@ async def _tune_retrieval(
     )
     complete = all(item["complete"] for item in report["candidates"].values())
     return 0 if complete else 2
+
+
+async def _compare_contextual_retrieval(
+    config: FireLensConfig,
+    dataset: Path,
+    output: Path,
+    experiment_dir: Path,
+) -> int:
+    report = await run_contextual_retrieval_comparison(
+        config,
+        dataset_path=dataset,
+        output_path=output,
+        experiment_dir=experiment_dir,
+    )
+    _print(
+        {
+            "status": "saved",
+            "output": str(output),
+            "case_count": report["case_count"],
+            "selected_retrieval_text_strategy": report["selected_retrieval_text_strategy"],
+            "selection_reason": report["selection_reason"],
+            "reported_cost_usd": report["reported_cost_usd"],
+            "candidates": report["candidates"],
+        }
+    )
+    return 0 if report["safety_checks"]["passed"] else 2
 
 
 async def _canary(
@@ -295,6 +374,40 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         help="Stop before the next case once provider-reported cost reaches this value",
     )
+    conversation_benchmark = commands.add_parser(
+        "benchmark-conversation",
+        help="Run the strict V1.1 conversation addendum with direct observations",
+    )
+    conversation_benchmark.add_argument(
+        "--dataset",
+        type=Path,
+        default=Path("data/evaluation/benchmark_v1_1_conversation.yaml"),
+    )
+    conversation_benchmark.add_argument(
+        "--output",
+        type=Path,
+        default=Path("output/benchmark/v1_1_conversation_report.json"),
+    )
+    conversation_benchmark.add_argument(
+        "--review-packet",
+        type=Path,
+        default=Path("output/benchmark/v1_1_conversation_review.md"),
+    )
+    conversation_benchmark.add_argument(
+        "--split",
+        action="append",
+        choices=("development", "holdout", "red_team"),
+    )
+    conversation_benchmark.add_argument(
+        "--max-cost-usd",
+        type=float,
+        help="Stop before the next case once provider-reported cost reaches this value",
+    )
+    conversation_benchmark.add_argument(
+        "--offline",
+        action="store_true",
+        help="Use the deterministic fake provider; performs no paid or network calls",
+    )
     tune = commands.add_parser(
         "tune-retrieval", help="Compare the four locked retrieval configurations"
     )
@@ -305,6 +418,25 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("output/benchmark/v1_retrieval_comparison.json"),
     )
     tune.add_argument("--max-cost-usd", type=float, default=1.25)
+    contextual = commands.add_parser(
+        "compare-contextual-retrieval",
+        help="Compare raw, planned, and deterministic contextual retrieval",
+    )
+    contextual.add_argument(
+        "--dataset",
+        type=Path,
+        default=Path("data/evaluation/benchmark_v1_1_conversation.yaml"),
+    )
+    contextual.add_argument(
+        "--output",
+        type=Path,
+        default=Path("output/benchmark/v1_1_contextual_retrieval.json"),
+    )
+    contextual.add_argument(
+        "--experiment-dir",
+        type=Path,
+        default=Path("output/benchmark/contextual_retrieval_experiment"),
+    )
     canary = commands.add_parser("canary", help="Run the repeated-generation V1 canary")
     canary.add_argument(
         "--question",
@@ -385,6 +517,29 @@ def main() -> None:
                 )
             )
         )
+    if args.command == "benchmark-conversation":
+        dataset = (
+            args.dataset if args.dataset.is_absolute() else config.project_root / args.dataset
+        )
+        output = args.output if args.output.is_absolute() else config.project_root / args.output
+        review_packet = (
+            args.review_packet
+            if args.review_packet.is_absolute()
+            else config.project_root / args.review_packet
+        )
+        raise SystemExit(
+            asyncio.run(
+                _conversation_benchmark(
+                    config,
+                    dataset,
+                    output,
+                    review_packet,
+                    args.split,
+                    args.max_cost_usd,
+                    offline=args.offline,
+                )
+            )
+        )
     if args.command == "tune-retrieval":
         dataset = (
             args.dataset if args.dataset.is_absolute() else config.project_root / args.dataset
@@ -392,6 +547,19 @@ def main() -> None:
         output = args.output if args.output.is_absolute() else config.project_root / args.output
         raise SystemExit(
             asyncio.run(_tune_retrieval(config, dataset, output, args.max_cost_usd))
+        )
+    if args.command == "compare-contextual-retrieval":
+        dataset = (
+            args.dataset if args.dataset.is_absolute() else config.project_root / args.dataset
+        )
+        output = args.output if args.output.is_absolute() else config.project_root / args.output
+        experiment_dir = (
+            args.experiment_dir
+            if args.experiment_dir.is_absolute()
+            else config.project_root / args.experiment_dir
+        )
+        raise SystemExit(
+            asyncio.run(_compare_contextual_retrieval(config, dataset, output, experiment_dir))
         )
     if args.command == "canary":
         output = args.output if args.output.is_absolute() else config.project_root / args.output

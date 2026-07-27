@@ -10,7 +10,7 @@ from pydantic import SecretStr
 from rag_helpers import make_chunk, make_runtime, write_test_corpus
 
 from firelens.api import create_app
-from firelens.contracts import DraftAnswer
+from firelens.contracts import GroundedDraft
 from firelens.errors import ProviderError
 from firelens.providers.openrouter import OpenRouterProvider
 
@@ -154,6 +154,30 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(calls, 1)
         self.assertNotIn("secret detail", str(raised.exception))
 
+    async def test_unavailable_model_is_not_retried(self) -> None:
+        calls = 0
+
+        def handler(_request: httpx.Request) -> httpx.Response:
+            nonlocal calls
+            calls += 1
+            return httpx.Response(404, json={"error": {"code": 404}})
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "provider_retry_base_seconds": 0,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                with self.assertRaises(ProviderError) as raised:
+                    await OpenRouterProvider(config, client=client).embed(["water"])
+        self.assertEqual(calls, 1)
+        self.assertEqual(raised.exception.kind.value, "model_unavailable")
+        self.assertFalse(raised.exception.retryable)
+
     async def test_rerank_discards_provider_document_metadata(self) -> None:
         def handler(_request: httpx.Request) -> httpx.Response:
             return httpx.Response(
@@ -199,9 +223,102 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
             )
             async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
                 with self.assertRaises(ProviderError) as raised:
-                    await OpenRouterProvider(config, client=client).generate(
+                    await OpenRouterProvider(config, client=client).generate_grounded(
                         [{"role": "user", "content": "answer"}],
-                        output_schema=DraftAnswer.model_json_schema(),
+                        output_schema=GroundedDraft.model_json_schema(),
+                    )
+        self.assertEqual(raised.exception.kind.value, "invalid_response")
+
+    async def test_grounded_generation_uses_operation_owned_discriminator(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            requested_schema = json.loads(request.content)["response_format"]["json_schema"][
+                "schema"
+            ]
+            self.assertNotIn("answer_type", requested_schema["properties"])
+            self.assertNotIn("answer_type", requested_schema["required"])
+            return httpx.Response(
+                200,
+                json={
+                    "model": "google/gemini-3.5-flash-lite",
+                    "choices": [
+                        {
+                            "message": {
+                                "content": json.dumps(
+                                    {
+                                        "claims": [
+                                            {
+                                                "text": "Store water.",
+                                                "evidence_quote_ids": ["E1Q1"],
+                                            }
+                                        ],
+                                        "limitations": ["Static guidance only."],
+                                        "requires_live_verification": False,
+                                    }
+                                )
+                            }
+                        }
+                    ],
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "generation_model": "google/gemini-3.5-flash-lite",
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                response = await OpenRouterProvider(config, client=client).generate_grounded(
+                    [{"role": "user", "content": "answer"}],
+                    output_schema=GroundedDraft.model_json_schema(),
+                )
+        self.assertEqual(response.draft.answer_type, "grounded")
+
+    async def test_grounded_generation_rejects_model_owned_discriminator(self) -> None:
+        def handler(_request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "model": "google/gemini-3.5-flash-lite",
+                    "choices": [
+                        {
+                            "message": {
+                                "content": json.dumps(
+                                    {
+                                        "answer_type": "factual",
+                                        "claims": [
+                                            {
+                                                "text": "Store water.",
+                                                "evidence_quote_ids": ["E1Q1"],
+                                            }
+                                        ],
+                                        "limitations": ["Static guidance only."],
+                                        "requires_live_verification": False,
+                                    }
+                                )
+                            }
+                        }
+                    ],
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "generation_model": "google/gemini-3.5-flash-lite",
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                with self.assertRaises(ProviderError) as raised:
+                    await OpenRouterProvider(config, client=client).generate_grounded(
+                        [{"role": "user", "content": "answer"}],
+                        output_schema=GroundedDraft.model_json_schema(),
                     )
         self.assertEqual(raised.exception.kind.value, "invalid_response")
 

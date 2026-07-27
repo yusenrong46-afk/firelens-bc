@@ -1,12 +1,14 @@
-import { FormEvent, ReactNode, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useMemo, useRef, useState } from "react";
 import {
   ArrowSquareOut,
   CaretDown,
   CaretUp,
   Check,
+  ChatsCircle,
   Info,
   PaperPlaneTilt,
   Shield,
+  Trash,
   UserCircle,
   WarningCircle,
 } from "@phosphor-icons/react";
@@ -15,7 +17,13 @@ import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
 import "@fontsource/newsreader/500.css";
 import "@fontsource/newsreader/600.css";
-import { askFireLens, AskResponse, FireLensApiError } from "./api";
+import {
+  askFireLens,
+  AskResponse,
+  ConversationTurn,
+  FireLensApiError,
+  ResponseMode,
+} from "./api";
 import "./styles.css";
 
 type AnswerView = { kind: "answer"; question: string; response: AskResponse };
@@ -30,7 +38,44 @@ type ViewState = AnswerView | AbstentionView | MessageView;
 
 type Claim = NonNullable<AskResponse["claims"]>[number];
 type Evidence = NonNullable<AskResponse["evidence"]>[number];
-type Support = Claim["supports"][number];
+type Support = NonNullable<Claim["supports"]>[number];
+
+const INITIAL_SUGGESTIONS = [
+  "What belongs in a grab-and-go bag?",
+  "What is the difference between an evacuation alert and order?",
+  "How can I reduce wildfire risk around my home?",
+  "What should I know about wildfire smoke?",
+  "What do wildfire stages of control mean?",
+  "How do structure-protection sprinklers work?",
+];
+
+function getResponseMode(response: AskResponse): ResponseMode {
+  if (response.response_mode) return response.response_mode;
+  if (response.status === "abstention") return "abstention";
+  if ((response.claims ?? []).some((claim) => (claim.supports ?? []).length > 0)) {
+    return "grounded";
+  }
+  return "background";
+}
+
+function responseText(response: AskResponse): string {
+  if (response.answer) return response.answer;
+  const mode = getResponseMode(response);
+  if (mode === "capability") return "I can help you explore the reviewed FireLens guidance.";
+  if (mode === "scope_redirect") return "That request is outside the FireLens guidance collection.";
+  return "FireLens could not produce an answer for this request.";
+}
+
+function ResponseModeBadge({ mode }: { mode: ResponseMode }) {
+  const labels: Record<ResponseMode, string> = {
+    grounded: "Verified from FireLens sources",
+    background: "General background",
+    capability: "FireLens topics",
+    scope_redirect: "Outside FireLens scope",
+    abstention: "Official current information required",
+  };
+  return <span className={`response-badge response-badge--${mode}`}>{labels[mode]}</span>;
+}
 
 function ClaimButton({
   claim,
@@ -54,6 +99,16 @@ function ClaimButton({
       <span>{claim.text}</span>
       <span className="claim-check">{selected && <Check size={15} weight="bold" />}</span>
     </button>
+  );
+}
+
+function BackgroundClaim({ claim, index }: { claim: Claim; index: number }) {
+  return (
+    <div className="claim-card claim-card--background">
+      <span className="claim-number">{index + 1}</span>
+      <span>{claim.text}</span>
+      <Info size={18} aria-hidden="true" />
+    </div>
   );
 }
 
@@ -161,10 +216,14 @@ export function App() {
   const [lastQuestion, setLastQuestion] = useState("");
   const [selected, setSelected] = useState(0);
   const [view, setView] = useState<ViewState>({ kind: "idle" });
+  const [history, setHistory] = useState<ConversationTurn[]>([]);
+  const activeRequest = useRef<AbortController | null>(null);
 
   const answer = view.kind === "answer" ? view.response : undefined;
+  const response = view.kind === "answer" || view.kind === "abstention" ? view.response : undefined;
+  const mode = response ? getResponseMode(response) : undefined;
   const claims = answer?.claims ?? [];
-  const selectedClaim = claims[selected];
+  const selectedClaim = mode === "grounded" ? claims[selected] : undefined;
   const evidenceById = useMemo(
     () => new Map((answer?.evidence ?? []).map((item) => [item.evidence_id, item])),
     [answer],
@@ -173,20 +232,43 @@ export function App() {
     .map((support) => ({ support, evidence: evidenceById.get(support.evidence_id) }))
     .filter((item): item is { support: Support; evidence: Evidence } => Boolean(item.evidence));
 
+  const currentPairIsStored =
+    (view.kind === "answer" || view.kind === "abstention") &&
+    history.length >= 2 &&
+    history.at(-2)?.role === "user" &&
+    history.at(-2)?.content === view.question;
+  const earlierTurns = currentPairIsStored ? history.slice(0, -2) : history;
+  const suggestions = response?.suggested_questions?.length
+    ? response.suggested_questions.slice(0, 6)
+    : view.kind === "idle"
+      ? INITIAL_SUGGESTIONS
+      : [];
+
   async function submitQuestion(question: string) {
     const normalized = question.trim();
     if (!normalized) return;
+    const requestHistory = history.slice(-6);
+    activeRequest.current?.abort();
+    const controller = new AbortController();
+    activeRequest.current = controller;
     setLastQuestion(normalized);
     setSelected(0);
     setView({ kind: "loading", question: normalized });
     try {
-      const response = await askFireLens(normalized);
-      if (response.status === "answer") {
-        setView({ kind: "answer", question: normalized, response });
+      const nextResponse = await askFireLens(normalized, requestHistory, controller.signal);
+      const nextHistory: ConversationTurn[] = [
+        ...requestHistory,
+        { role: "user", content: normalized },
+        { role: "assistant", content: responseText(nextResponse) },
+      ];
+      setHistory(nextHistory.slice(-6));
+      if (nextResponse.status === "answer") {
+        setView({ kind: "answer", question: normalized, response: nextResponse });
       } else {
-        setView({ kind: "abstention", question: normalized, response });
+        setView({ kind: "abstention", question: normalized, response: nextResponse });
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
       if (error instanceof FireLensApiError) {
         setView({
           kind: error.detail.retryable ? "unavailable" : "error",
@@ -201,7 +283,18 @@ export function App() {
           message: "FireLens could not read the local service response.",
         });
       }
+    } finally {
+      if (activeRequest.current === controller) activeRequest.current = null;
     }
+  }
+
+  function clearHistory() {
+    activeRequest.current?.abort();
+    activeRequest.current = null;
+    setHistory([]);
+    setLastQuestion("");
+    setSelected(0);
+    setView({ kind: "idle" });
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -214,7 +307,7 @@ export function App() {
   const visibleQuestion = "question" in view && view.question ? view.question : undefined;
   const assistantText =
     view.kind === "answer" || view.kind === "abstention"
-      ? view.response.answer
+      ? responseText(view.response)
       : view.kind === "loading"
         ? "Searching the reviewed guidance and validating its evidence…"
         : view.kind === "unavailable" || view.kind === "error"
@@ -239,7 +332,26 @@ export function App() {
 
       <main className="workspace">
         <section className="conversation-panel" aria-label="Question and answer">
+          <div className="conversation-toolbar">
+            <span><ChatsCircle size={16} /> {history.length} of 6 turns in context</span>
+            {(history.length > 0 || view.kind !== "idle") && (
+              <button type="button" onClick={clearHistory} aria-label="Clear conversation history">
+                <Trash size={15} /> Clear
+              </button>
+            )}
+          </div>
           <div className="conversation-scroll" aria-live="polite">
+            {earlierTurns.length > 0 && (
+              <div className="history-group" aria-label="Earlier conversation">
+                <span className="panel-label">Earlier conversation</span>
+                {earlierTurns.map((turn, index) => (
+                  <div className={`history-turn history-turn--${turn.role}`} key={`${turn.role}-${index}-${turn.content}`}>
+                    <strong>{turn.role === "user" ? "You" : "FireLens"}</strong>
+                    <p>{turn.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
             {visibleQuestion && (
               <div className="question-block">
                 <span className="panel-label">Your question</span>
@@ -254,6 +366,7 @@ export function App() {
               <img src="/assets/firelens-mark.png" alt="" />
               <div>
                 <span className="assistant-name">FireLens BC</span>
+                {mode && <ResponseModeBadge mode={mode} />}
                 <p>{assistantText}</p>
                 {(view.kind === "unavailable" || (view.kind === "error" && view.retryable)) && (
                   <button className="retry-button" type="button" onClick={() => void submitQuestion(lastQuestion)}>
@@ -264,19 +377,23 @@ export function App() {
               </div>
             </div>
 
-            {view.kind === "answer" && (
+            {view.kind === "answer" && claims.length > 0 && (
               <div className="claim-group">
-                <span className="panel-label">Cited claims in this answer</span>
+                <span className="panel-label">
+                  {mode === "grounded" ? "Cited claims in this answer" : "General background in this answer"}
+                </span>
                 <div className="claim-list">
-                  {claims.map((claim, index) => (
-                    <ClaimButton
-                      key={claim.claim_id}
-                      claim={claim}
-                      index={index}
-                      selected={selected === index}
-                      onSelect={() => setSelected(index)}
-                    />
-                  ))}
+                  {claims.map((claim, index) => mode === "grounded" ? (
+                      <ClaimButton
+                        key={claim.claim_id}
+                        claim={claim}
+                        index={index}
+                        selected={selected === index}
+                        onSelect={() => setSelected(index)}
+                      />
+                    ) : (
+                      <BackgroundClaim key={claim.claim_id} claim={claim} index={index} />
+                    ))}
                 </div>
               </div>
             )}
@@ -288,6 +405,24 @@ export function App() {
                   <strong>FireLens did not generate guidance</strong>
                   <p>Reason: {view.response.reason_code || "insufficient evidence"}</p>
                   {(view.response.limitations ?? []).map((item) => <p key={item}>{item}</p>)}
+                </div>
+              </div>
+            )}
+
+            {suggestions.length > 0 && (
+              <div className="suggestion-group" aria-label="Suggested questions">
+                <span className="panel-label">Try asking</span>
+                <div>
+                  {suggestions.map((suggestion) => (
+                    <button
+                      type="button"
+                      key={suggestion}
+                      onClick={() => void submitQuestion(suggestion)}
+                      disabled={view.kind === "loading"}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
@@ -313,7 +448,7 @@ export function App() {
 
         <section className="evidence-panel" aria-label="Selected claim evidence">
           <div className="evidence-inner">
-            {view.kind === "answer" && selectedClaim ? (
+            {view.kind === "answer" && mode === "grounded" && selectedClaim ? (
               <>
                 <span className="selected-kicker">Selected claim {selected + 1}</span>
                 <h1>{selectedClaim.text}</h1>
@@ -331,6 +466,18 @@ export function App() {
                 ))}
                 <div className="access-date"><Shield size={17} weight="fill" /> Sources come from the reviewed local corpus.</div>
               </>
+            ) : view.kind === "answer" && mode === "background" ? (
+              <EvidencePlaceholder icon={<Info size={34} />} title="General background — no corpus evidence attached">
+                This explanation is related to wildfire preparedness, but its claims were not verified against the reviewed FireLens collection. Background claims cannot open an evidence panel.
+              </EvidencePlaceholder>
+            ) : view.kind === "answer" && mode === "capability" ? (
+              <EvidencePlaceholder icon={<ChatsCircle size={36} />} title="Explore the FireLens collection">
+                Choose a suggested question or ask in your own words. FireLens can discuss reviewed preparedness guidance and clearly labels when an answer uses general background.
+              </EvidencePlaceholder>
+            ) : view.kind === "answer" && mode === "scope_redirect" ? (
+              <EvidencePlaceholder icon={<Info size={34} />} title="Outside the FireLens collection">
+                FireLens keeps the conversation open for wildfire and preparedness topics. Completely unrelated requests receive a short redirect and suggested ways back into the collection.
+              </EvidencePlaceholder>
             ) : view.kind === "loading" ? (
               <EvidencePlaceholder icon={<span className="spinner" />} title="Building an evidence packet">
                 FireLens is retrieving, reranking, and validating local passages. No answer appears until every structural check passes.

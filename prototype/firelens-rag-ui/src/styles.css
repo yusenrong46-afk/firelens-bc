@@ -31,8 +31,18 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 
 .workspace { display: grid; grid-template-columns: minmax(410px, 32%) minmax(0, 1fr); height: calc(100vh - 123px); min-height: 700px; }
 .conversation-panel { min-width: 0; display: flex; flex-direction: column; background: #fff; border-right: 1px solid #d4d9dc; }
+.conversation-toolbar { min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 28px; color: #5c6d7d; border-bottom: 1px solid #e1e4e5; font-size: 9px; }
+.conversation-toolbar span, .conversation-toolbar button { display: inline-flex; align-items: center; gap: 6px; }
+.conversation-toolbar button { padding: 5px 7px; color: #4d5f70; background: transparent; border: 0; border-radius: 3px; cursor: pointer; font-size: 9px; font-weight: 600; }
+.conversation-toolbar button:hover { color: var(--copper); background: #fff8f3; }
 .conversation-scroll { flex: 1; overflow-y: auto; padding: 26px 28px 18px; }
 .panel-label { display: block; margin-bottom: 9px; color: #2b5e96; font-size: 10px; font-weight: 600; }
+.history-group { display: grid; gap: 7px; margin-bottom: 21px; padding-bottom: 20px; border-bottom: 1px solid #d8dde0; }
+.history-turn { max-width: 92%; padding: 9px 11px; border-radius: 5px; }
+.history-turn strong { display: block; margin-bottom: 4px; color: #53677c; font-size: 8px; text-transform: uppercase; letter-spacing: .06em; }
+.history-turn p { margin: 0; color: #31465d; font-size: 10px; line-height: 1.45; }
+.history-turn--user { justify-self: end; background: var(--blue-pale); }
+.history-turn--assistant { justify-self: start; background: #f3f4ef; }
 .question-block { padding: 0 15px 30px 0; border-bottom: 1px solid #d8dde0; }
 .question-line { display: flex; align-items: center; gap: 12px; }
 .question-line > svg { flex: 0 0 auto; color: var(--navy); }
@@ -42,6 +52,11 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .assistant-message { display: grid; grid-template-columns: 34px 1fr; gap: 10px; padding: 24px 0 31px; border-bottom: 1px solid #d8dde0; }
 .assistant-message img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
 .assistant-name { color: #2b5e96; font-size: 10px; font-weight: 600; }
+.response-badge { width: max-content; display: flex; align-items: center; margin-top: 7px; padding: 5px 8px; color: #214b39; background: var(--moss); border-radius: 999px; font-size: 8px; font-weight: 600; letter-spacing: .01em; }
+.response-badge--background { color: #654423; background: #f5e9d7; }
+.response-badge--abstention { color: #793d28; background: #fae5da; }
+.response-badge--capability { color: #2b527e; background: var(--blue-pale); }
+.response-badge--scope_redirect { color: #545d68; background: #edf0f1; }
 .assistant-message p { margin: 10px 0 0; color: #213651; font-size: 14px; line-height: 1.66; }
 .assistant-message--loading { opacity: .78; }
 .assistant-message--abstention, .assistant-message--unavailable, .assistant-message--error { background: #fffaf5; }
@@ -55,6 +70,14 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .claim-check { width: 18px; height: 18px; display: grid; place-items: center; margin-top: 1px; border: 1px solid #aab2b8; border-radius: 2px; color: transparent; }
 .claim-card--selected { border-color: var(--copper); box-shadow: 0 0 0 1px rgba(180,91,50,.08); }
 .claim-card--selected .claim-number, .claim-card--selected .claim-check { color: #fff; background: var(--copper); border-color: var(--copper); }
+.claim-card--background { min-height: 66px; cursor: default; background: #fffaf3; border-color: #e4d4bf; }
+.claim-card--background:hover { border-color: #e4d4bf; }
+.claim-card--background > svg { color: #8b633a; }
+.suggestion-group { margin-top: 20px; padding-top: 17px; border-top: 1px solid #d8dde0; }
+.suggestion-group > div { display: flex; flex-wrap: wrap; gap: 7px; }
+.suggestion-group button { padding: 8px 10px; color: #25476b; text-align: left; background: #f5f8fb; border: 1px solid #d4dce4; border-radius: 4px; cursor: pointer; font-size: 9px; line-height: 1.35; }
+.suggestion-group button:hover { color: #163a62; border-color: #9dabb8; background: #eef4fb; }
+.suggestion-group button:disabled { opacity: .5; cursor: default; }
 .composer { flex: 0 0 203px; min-height: 203px; padding: 19px 27px 24px; border-top: 1px solid #d4d9dc; }
 .composer-notice { display: block; margin-bottom: 6px; color: var(--green); font-size: 9px; font-weight: 600; }
 .composer-input { display: flex; min-height: 76px; border: 1px solid #1e3b62; border-radius: 5px; overflow: hidden; }
@@ -130,6 +153,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .official-link { max-width: 120px; font-size: 9px; text-align: right; }
   .boundary { height: auto; min-height: 45px; padding: 9px 16px; font-size: 9px; }
   .conversation-scroll { padding: 22px 17px 18px; }
+  .conversation-toolbar { padding-inline: 17px; }
   .composer { padding-inline: 17px; }
   .evidence-panel h1 { font-size: 34px; }
   .answer-claim { grid-template-columns: 20px 1fr; padding-block: 10px; }

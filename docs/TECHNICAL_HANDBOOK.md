@@ -1,297 +1,617 @@
 # FireLens BC Technical Handbook
 
-Date: 2026-07-26
-Status: authoritative living V1 source of truth
-Product state: V1 candidate implemented; release gates remain open
+Date: 2026-07-26 (America/Vancouver)
 
-## 1. Product boundary and non-goals
+Status: authoritative living V1.1 source of truth
 
-FireLens BC answers single-turn questions from a reviewed, versioned collection
-of stable British Columbia wildfire-preparedness guidance. It is not a current
-incident monitor, evacuation-route selector, prediction system, medical tool, or
-personalized safety decision-maker. A question requiring live or personalized
-facts must abstain before paid retrieval or generation.
+Product state: `engineering-complete, semantic acceptance pending`
 
-V1 is local and single-user. It deliberately excludes accounts, public hosting,
-maps, live wildfire/weather feeds, agents, graph RAG, vector databases,
-streaming, chat history, model fallback, automatic answer repair, and
-fine-tuning.
+Release state: **not release-qualified**
 
-## 2. Architecture and request sequence
+This handbook describes the code that runs now. Architecture proposals that
+predate V1.1 are historical context; ADRs in `docs/adr/` record why the current
+design was chosen.
+
+## 1. Product contract
+
+FireLens BC is a local, single-user conversational assistant over a reviewed,
+versioned collection of stable British Columbia wildfire-preparedness guidance.
+It should help a user discover the collection before they know what documents
+exist, answer supported questions with inspectable evidence, explain adjacent
+low-risk concepts with an unmistakable background label, and preserve enough
+bounded history to resolve a follow-up.
+
+FireLens is not a current incident monitor, emergency-warning system,
+evacuation-route selector, property-specific risk assessor, prediction system,
+or personalized medical/safety decision-maker. Questions requiring those
+capabilities stop at the deterministic boundary before any paid provider call.
+
+V1.1 deliberately excludes public hosting, accounts, long-term memory, maps,
+live wildfire/weather feeds, agents, graph RAG, a vector database, streaming,
+automatic answer repair, model fallback, and fine-tuning.
+
+### 1.1 Evidence modes are part of the public truth contract
+
+| Response mode | Meaning | Provider work | Citation rule |
+|---|---|---|---|
+| `capability` | Local overview of FireLens topics and example questions | none | no evidence claim |
+| `grounded` | Stable guidance directly supported by the reviewed corpus | plan, embed, rerank, generate | every claim requires exact local support |
+| `background` | Related, low-risk explanation not asserted as corpus-backed | plan, retrieval stages, background generation | corpus evidence is forbidden |
+| `scope_redirect` | Request is genuinely tangent | planner only | no evidence claim |
+| `abstention` | Live, predictive, personalized, unsafe, unsupported, or invalid | often none; may follow a failed stage | claims and evidence are forbidden |
+
+The system never blends grounded and general-background claims in one response.
+This is simpler to inspect and prevents a nearby retrieval result from being
+misrepresented as proof of an adjacent scientific explanation.
+
+## 2. End-to-end request sequence
 
 ```mermaid
-flowchart LR
-    Q["POST /api/v1/ask"] --> R["Deterministic route"]
-    R -->|"live or prohibited"| A["Typed abstention"]
-    R -->|"stable guidance"| H["BM25 20 plus dense 20"]
-    H --> F["RRF k=60, top 20"]
-    F --> X["Cohere Rerank 4 Pro, top 5"]
-    X --> E["Same-parent evidence spans"]
-    E --> G["Gemini structured proposal"]
-    G --> V["Local deterministic validator"]
-    V -->|"accepted"| O["Claims plus local support pairs"]
-    V -->|"rejected"| A
+flowchart TD
+    HTTP["POST /api/v1/ask"] --> CONTRACT["Strict QueryRequest"]
+    CONTRACT --> BOUNDARY["Deterministic safety and capability boundary"]
+    BOUNDARY -->|"live or prohibited"| ABSTAIN["Typed abstention"]
+    BOUNDARY -->|"capability"| LOCAL["Deterministic local overview"]
+    BOUNDARY -->|"related"| PLAN["Bounded structured planner"]
+    PLAN -->|"tangent"| REDIRECT["Local scope redirect"]
+    PLAN -->|"adjacent"| BG["Strict background draft and validator"]
+    PLAN -->|"grounded candidate"| RETRIEVE["Multi-query BM25 and dense"]
+    RETRIEVE --> RRF["One deduplicated RRF"]
+    RRF --> RERANK["Cohere Rerank 4 Pro"]
+    RERANK --> PACKET["Neighbor-aware evidence packet"]
+    PACKET --> SUPPORT{"Local support sufficient?"}
+    SUPPORT -->|"no"| ABSTAIN
+    SUPPORT -->|"yes"| DRAFT["Strict grounded Gemini draft"]
+    DRAFT --> VALIDATE["Deterministic structural and policy validation"]
+    VALIDATE -->|"reject"| ABSTAIN
+    VALIDATE -->|"accept"| RESPONSE["Claims plus exact support and local metadata"]
 ```
 
-Local code owns routing, source metadata, retrieval configuration, evidence
-construction, validation, traces, and public responses. OpenRouter supplies
-embeddings, reranking, and a bounded structured proposal. A required provider
-failure never changes the algorithm or requested model.
+`src/firelens/answering/service.py` is the explicit orchestration path. It is
+intentionally ordinary Python: each branch is visible, stage observations are
+typed, and there is no framework callback graph hiding control flow.
+
+### 2.1 Layer ownership
+
+| Layer | Primary code | Responsibility | Must not decide |
+|---|---|---|---|
+| Configuration | `config.py` | paths, models, limits, experimental retrieval defaults | answer content |
+| Contracts | `contracts.py` | legal state shapes between stages and over HTTP | semantic correctness |
+| Deterministic boundary | `answering/intent.py` | live/prohibited/capability checks, conservative deictic safety | grounded relevance |
+| Planner | `answering/planner.py` plus provider | relation and up to three standalone retrieval queries | safety override or answer text |
+| Retrieval | `retrieval/` | lexical/dense search, RRF, reranker mapping | public citations |
+| Evidence | `answering/context.py` | same-parent expansion, quote candidates, local support decision | model-generated metadata |
+| Generation | `answering/generate.py` | isolated background and grounded prompts/schemas | final acceptance |
+| Validation | `answering/validate.py` | exact IDs/quotes, structure, limitations, policy bounds | full semantic entailment |
+| Orchestration | `answering/service.py` | execute the one visible state machine | silent fallback |
+| Provider boundary | `providers/` | OpenRouter wire formats, retry/error normalization | product policy |
+| Interfaces | `api.py`, `cli.py` | HTTP/CLI status mapping and lifecycle | retrieval logic |
+| Evaluation | benchmark/experiment modules | stage metrics, costs, review packets | owner semantic approval |
+| Frontend | `prototype/firelens-rag-ui/` | explicit user states and source inspection | evidence construction |
 
 ## 3. Corpus and provenance
 
-- Registry: `data/sources/source_registry.yaml`.
-- Included corpus: eight `approved_static` sources and 180 chunks.
-- Canonical retrieval records: generated JSONL chunks.
-- Every included raw source has an expected SHA-256 and review date.
-- `firelens bootstrap-corpus` rejects changed upstream bytes and requires
-  explicit source review instead of silently ingesting them.
-- PDF pages and HTML sections retain stable IDs, publisher, canonical URL,
-  locator, authority class, temporal class, and document hash.
-- `firesmart_begins_at_home` page 10 has a hash-pinned, visually reviewed text
-  repair because its multi-column text layer was interleaved.
-- Raw bytes, chunks, vectors, reports, and traces are reproducible local
-  artifacts and remain untracked.
+The governed input is `data/sources/source_registry.yaml`. Eight sources are
+approved as stable guidance and produce 180 canonical chunk records. Generated
+raw bytes, corpus JSONL, vectors, traces, and benchmark output remain untracked;
+the registry, hash-pinned repair rules, benchmark definitions, and documentation
+are tracked.
 
-The corpus audit records topic, authority, temporal class, hash/freshness
-coverage, likely layout-heavy pages, and extraction flags in
-`data/evaluation/corpus_quality_v1.json`. Layout flags are review candidates,
-not automatic proof of bad extraction.
+Each canonical chunk preserves:
+
+- source and parent-record IDs;
+- publisher, title, canonical URL, and locator;
+- page or section context;
+- authority and temporal class;
+- source document SHA-256;
+- deterministic chunk index and text.
+
+`firelens bootstrap-corpus` downloads only registered sources, verifies expected
+hashes, applies reviewed hash-pinned repairs, and atomically writes the combined
+corpus and manifest. Changed upstream bytes fail with a source-review
+requirement. `firesmart_begins_at_home` page 10 has one visually reviewed repair
+for an interleaved multi-column text layer.
+
+The corpus audit in `data/evaluation/corpus_quality_v1.json` records topic,
+authority, temporal-class, freshness/hash coverage, likely table/layout pages,
+and extraction flags. A layout flag is a review candidate, not proof of an
+extraction defect.
+
+Current governed artifacts:
+
+| Artifact | State |
+|---|---|
+| Corpus version | `firelens_static_corpus.v1` |
+| Approved sources | 8 |
+| Canonical chunks | 180 |
+| Corpus JSONL SHA-256 | `a6a26b22c45b1a17e286f38fb2af45b5d4baaf70f6c4c729243668b1355caa2f` |
+| Corpus manifest SHA-256 | `ddeabeedc13778c1247d57be2c1e97d6e1cb311e672fa8e21d5f401e7f2821b3` |
 
 ## 4. Contracts and public API
 
-Strict Pydantic models reject unknown fields. V1 accepts only:
+Pydantic models use `extra="forbid"`; unknown fields are rejected rather than
+ignored. A V1.1 request contains a normalized question of at most 2,000
+characters and zero to six normalized conversation turns:
 
 ```json
-{"question": "What does an evacuation alert mean?"}
+{
+  "question": "Why does that matter?",
+  "history": [
+    {"role": "user", "content": "What belongs in a grab-and-go bag?"},
+    {"role": "assistant", "content": "The reviewed guide lists household supplies."}
+  ]
+}
 ```
 
-Conversation history is rejected rather than ignored. An accepted answer
-contains claims with unique `(evidence_id, exact_quote)` support pairs. Public
-publisher, URL, locator, temporal class, and surrounding passages are built
-from the local packet; the model cannot supply them.
+History is context, not authority. The deterministic router consults prior text
+only for a narrow deictic current question such as “What about right now?” or a
+high-risk antecedent such as “Should I do that?” This avoids an old live request
+poisoning a later self-contained stable-guidance question.
 
-Public routes:
+An accepted grounded response contains `PublicClaim` records with unique
+`(evidence_id, exact_quote)` support pairs. A background claim has
+`general_background` status and is structurally forbidden from carrying
+support. Publisher, URL, locator, temporal class, primary passage, and context
+are copied from the local evidence packet after validation; the model cannot
+provide them.
 
-- `POST /api/v1/ask`: answer, expected abstention, or typed upstream error.
+### 4.1 Routes
+
+- `POST /api/v1/ask`: public conversational result.
 - `GET /api/v1/health/live`: process liveness only.
-- `GET /api/v1/health/ready`: corpus, index, and provider configuration.
+- `GET /api/v1/health/ready`: corpus, vector index, and provider configuration.
+- `POST /api/v1/search`: development-only plan/ranking/evidence inspection.
+- `GET /api/v1/debug/chunks/{chunk_id}`: development-only canonical chunk view.
 
-Development-only routes, enabled with `FIRELENS_DEBUG=true`:
+Debug routes require `FIRELENS_DEBUG=true`. Expected abstentions are HTTP 200;
+invalid requests 400; malformed upstream responses 502; required provider
+unavailability 503; unexpected failures 500. Error envelopes contain a trace
+ID, safe error kind, retryability, and user-safe message.
 
-- `POST /api/v1/search`: plan, every ranking, evidence, errors, and timings.
-- `GET /api/v1/debug/chunks/{chunk_id}`: local chunk inspection.
+`docs/openapi.v1.json` is the tracked contract snapshot. `make openapi` exports
+it and regenerates `prototype/firelens-rag-ui/src/api-schema.d.ts`; verification
+therefore catches backend/frontend drift.
 
-Every error envelope contains a trace ID, safe kind, retryability, and a
-user-safe message. Expected abstentions return HTTP 200; invalid contracts 400;
-malformed upstream payloads 502; required provider unavailability 503; and
-unexpected failures 500.
+## 5. Routing and bounded planning
 
-The OpenAPI snapshot is `docs/openapi.v1.json`; `make verify` regenerates it and
-then regenerates `src/api-schema.d.ts`, so backend/frontend drift is visible.
+`answering/intent.py` runs before any paid work. Regular expressions and narrow
+history resolution conservatively identify:
 
-## 5. Retrieval and evidence reconstruction
+- live/current/predictive wildfire questions;
+- personalized evacuation or safety decisions;
+- personalized medical advice;
+- attempts to manipulate evidence or policy boundaries;
+- local capability/discovery questions.
 
-The retained V1 configuration is:
+Everything else begins as `related`; this is deliberately permissive so the
+assistant does not reject a question merely because the wording is not a corpus
+heading. The structured planner then returns exactly one relation:
 
-- BM25 top 20;
-- normalized cosine dense top 20;
-- RRF `k=60`, fused top 20;
-- Rerank 4 Pro top 5;
-- at most five evidence spans and 8,000 context characters;
-- one previous and next chunk only when they share the same parent record.
+- `grounded_candidate`: likely direct corpus support;
+- `adjacent`: wildfire/preparedness background without calibrated direct
+  support;
+- `tangent`: genuinely unrelated.
 
-The development-only four-way comparison evaluated current, 30/30 broader
-recall, RRF `k=30`, and top-eight context. All candidates were measured at the
-same Recall@5 selection cutoff. No candidate improved Recall@5 by the locked two
-percentage points without losing a safety condition, so the current settings
-remain. Top-eight breadth is reported separately and cannot masquerade as
-Recall@5.
+Non-tangent plans contain one to three normalized, deduplicated standalone
+retrieval queries. The planner schema prevents it from returning an answer,
+source metadata, claims, or policy decisions. A planner failure is a typed
+unavailable result; it does not fall back to ad hoc keyword routing.
 
-The embedding index is a normalized NumPy matrix with an ordered chunk-ID
-manifest, model, dimensions, corpus hash, and matrix hash. Startup rejects model,
-dimension, chunk-order, corpus-hash, or matrix-hash mismatch. Builds use an
-exclusive lock and atomic replacement.
+## 6. Retrieval and contextual indexing
 
-## 6. Generation and deterministic validation
+### 6.1 Current algorithm
 
-Configured models:
+For every planned retrieval query:
 
+1. BM25 returns 20 chunks.
+2. the query is embedded and normalized cosine search returns 20 chunks;
+3. every BM25 and dense ranking contributes to one deduplicated RRF;
+4. RRF keeps 20 chunks using `score(d) = Σ 1 / (60 + rank)`;
+5. Rerank 4 Pro receives the fused 20 and returns five.
+
+Repeated chunk IDs accumulate contributions but remain one candidate. Stable
+ties break by chunk ID. Per-query stage rankings and matched-query positions
+remain visible in `/api/v1/search` and traces.
+
+### 6.2 Retrieval text versus citation text
+
+V1.1 selected `metadata_context_v1`. Indexing and reranking see deterministic
+text containing publisher, document title, optional section, locator, temporal
+class, and the original passage. The canonical `chunk.text` remains unchanged
+and is the only text eligible for exact quotation.
+
+This separation is an important invariant:
+
+```text
+retrieval text = metadata context + canonical passage
+citation text  = canonical passage only
+```
+
+The development-only A/B/C experiment compared raw V1 questions, planned
+queries over original text, and the same planned queries over contextual text.
+It used eight grounded development cases, saved each planner decision once,
+opened no holdout, did not generate answers, and built candidate C under an
+isolated experiment directory. Candidate C improved Recall@5 from 87.5% to
+100%, so the main index was explicitly rebuilt with that versioned strategy.
+
+### 6.3 Index integrity
+
+The dense index is a normalized NumPy matrix plus an ordered chunk-ID manifest.
+The manifest records corpus version/hash, model, dimensions, retrieval-text
+strategy, chunk order, and matrix hash. Startup rejects a mismatch rather than
+serving a mixed corpus/index state. Document embeddings use a content-hash
+cache; query embeddings use a bounded in-memory LRU cache of 256 entries.
+
+Index builds use an exclusive lock and atomic replacement. Current index:
+
+| Field | Value |
+|---|---|
+| Shape | 180 × 1,536 |
+| Embedding model | `openai/text-embedding-3-small` |
+| Text strategy | `metadata_context_v1` |
+| Matrix SHA-256 | `68d6fe79c19c2f50068a2b50d373781f56517c05dfff22ec76228770e1d74b03` |
+| Manifest SHA-256 | `3024914bb9a263e5e2a3c8c5204e9bd8a63e073b5a7a41d02e52bbee585dbfc0` |
+
+## 7. Evidence reconstruction and support
+
+For each reranked primary chunk, `answering/context.py` may attach the previous
+and next chunks only when they share `parent_record_id`. Overlapping selections
+merge into one span. Primary text remains separate from surrounding context;
+neighbors provide definitions or conditions but are not silently presented as
+the cited passage.
+
+The packet is capped at five spans and 8,000 combined context characters. It
+contains bounded exact quote candidates with packet-specific IDs such as
+`E1Q1`. Generation may select only those quote IDs. The service then maps them
+back to public evidence IDs and exact strings.
+
+Local support logic abstains if retrieval is incomplete, no approved evidence
+exists, a temporal class is wrong, a required authority class is unavailable,
+or no direct support can fit. No reranker-score threshold is used: relevance
+scores are not assumed calibrated without development and sealed-holdout
+evidence.
+
+## 8. Generation, wire compatibility, and validation
+
+Configured paid models are:
+
+- planning and generation: `google/gemini-3.5-flash-lite`, temperature 0;
 - embeddings: `openai/text-embedding-3-small`;
-- reranking: `cohere/rerank-4-pro`;
-- generation: `google/gemini-3.5-flash-lite` at temperature 0.
+- reranking: `cohere/rerank-4-pro`.
 
-The generator sees only the normalized question, product boundary, evidence
-packet, required limitations, and output schema. Evidence text is explicitly
-untrusted data. The per-request JSON Schema enumerates the exact allowed quote
-IDs, preventing a passage ID such as `E1` from being substituted for a quote ID
-such as `E1Q1`.
+Grounded generation sees the original question, normalized question, product
+boundary, evidence packet, allowed quote IDs, required limitations, and strict
+JSON Schema. Background generation uses a different prompt and type with no
+evidence fields. Retrieved material and conversation text are explicitly marked
+as untrusted data.
 
-The validator checks structure, allowed answer type, claim support presence,
-quote-ID membership, exact quote occurrence in the primary passage, static/live
-policy, required limitations, prohibited language, duplicates, and length
-bounds. It proves traceability and policy conformance, not semantic entailment.
-A rejection becomes a typed abstention and never triggers hidden regeneration.
+### 8.1 Operation-owned draft families
 
-## 7. Provider reliability and failure semantics
+Grounded and background are already distinct provider methods with different
+prompts, schemas, and local result types. Their strict wire schemas therefore
+omit the redundant `answer_type` field instead of asking the model to select a
+family it does not control. After every model-supplied field passes the matching
+Pydantic contract, the provider method constructs the corresponding local typed
+draft. A model-supplied discriminator—including aliases such as `factual`—is an
+unexpected field and fails closed as an invalid provider response. No provider
+content is rewritten or repaired.
 
-One shared `httpx.AsyncClient` is owned by application lifespan and closed on
-shutdown. Calls are non-streaming, concurrency is capped at four, fallback is
-disabled, supported parameters are required, and data-collecting routes are
-denied. ZDR can be required with `FIRELENS_REQUIRE_ZDR=true` and then fails
-closed when unavailable.
+### 8.2 What deterministic validation proves
 
-Timeouts, rate limits, and transient upstream errors receive at most two retries
-after the first request, against the same model. Authentication, credit, policy,
-schema, and malformed-response failures are not retried. Traces record attempts,
-normalized usage, latency, and model identity without authorization headers or
-question content by default.
+The validator checks:
 
-## 8. Benchmark design and measured results
+- correct draft family and allowed answer type;
+- every grounded claim carries allowed quote IDs;
+- every quote ID exists in the current packet;
+- every selected quote occurs exactly in its primary passage;
+- background claims carry no evidence;
+- required limitations are present exactly;
+- static evidence does not imply current status;
+- prohibited language, injection artifacts, duplicates, and bounds are absent.
 
-`data/evaluation/benchmark_v1.yaml` is a strict 100-case dataset:
+Validation failure becomes a typed abstention. There is no invisible
+regeneration. These checks prove structural traceability and policy conformance;
+they do not prove that a claim is semantically entailed by its quotation or that
+all concepts required by a benchmark label were stated.
 
-- 60 development cases;
-- 20 sealed holdout cases;
-- 20 high-risk safety/red-team cases.
+## 9. OpenRouter boundary and reliability
 
-Dataset SHA-256:
-`75414daede41d029ecb233b380053546c279eb4ed33a201c19a5ceb5d2e6afef`.
-Holdout SHA-256:
-`d16eb54a8a9d88d27db776db83171d555a90cd8bdc971ce436349cbc238420fe`.
-The retrieval tuner opens only development cases; its report explicitly records
-`holdout_opened=false`.
+One shared `httpx.AsyncClient` belongs to application lifespan and closes
+gracefully. Requests are non-streaming, provider concurrency is capped at four,
+supported parameters are required, data-collecting routes are denied, and
+fallback is disabled. `FIRELENS_REQUIRE_ZDR=true` makes ZDR a fail-closed
+requirement.
 
-Latest complete live-provider run:
+Timeouts, 429 responses, and transient 5xx failures receive at most two retries
+after the first attempt, against the exact same requested model. Authentication,
+credit, policy, schema, and malformed-response failures are never retried.
+Returned model identity is checked. Normalized usage, attempts, latency, and
+model identity are observable; API keys and authorization headers are never
+logged.
 
-| Measure | Result | V1 gate |
-|---|---:|---:|
-| Safety route/status accuracy | 100% / 100% | 100% / 100% |
-| Citation ID / exact quote validity | 100% / 100% | 100% / 100% |
-| Reranker Recall@5 | 81.82% | at least 95% |
-| Route accuracy | 99% | reviewed cases must be correct |
-| Status accuracy | 86% | diagnostic |
-| Abstention precision / recall | 70.83% / 100% | safety set 100% / 100% |
-| Answer latency p95 | 3.14 s | at most 15 s |
-| Provider error rate | 0% | 0% expected |
-| Full benchmark cost | $0.2444 | within combined budget |
+An earlier benchmark repeat observed one rate limit that remained
+after all three bounded attempts. That explicit failure reduced run-level
+metrics rather than triggering a hidden provider or algorithm substitution. The
+final retained rerun completed cleanly. The difference is real provider
+variability and is discussed in Sections 11 and 16.
 
-The 30-call variability canary completed with one answer status, no reason-code
-variance, 100% structural acceptance, 2.45-second p95, and $0.1284 reported
-cost. Canary plus full benchmark cost $0.3728, below the $2 gate.
+## 10. Benchmark system
 
-These results do not prove semantic claim support, required-claim completeness,
-or zero unsupported claims. The generated review packet pairs every claim with
-local evidence for owner adjudication. All 20 high-risk cases plus 10 sampled
-ordinary cases still require owner review.
+### 10.1 V1.1 conversation benchmark
 
-## 9. Generation-model comparison
+`data/evaluation/benchmark_v1_1_conversation.yaml` is a strict 50-case suite:
 
-The development bake-off gave Gemini 3.5 Flash Lite, Gemini 3.1 Flash Lite, and
-Gemini 2.5 Flash Lite the same evidence packet per question. The first two had
-100% structural acceptance in the nine completed packets; 3.5 had lower sample
-p95 latency, while 2.5 was cheaper but had one structural rejection. Semantic
-quality is unscored, so 3.5 remains the default rather than being declared a
-winner.
+- 30 development, 10 sealed holdout, 10 red-team;
+- 10 capability, 10 contextual follow-up, 10 adjacent background, 10 tangent,
+  and 10 mixed-adversarial cases.
 
-## 10. Frontend architecture
+Each case declares the expected route, planner relation, status, response mode,
+evidence status, provider stages, required concepts, forbidden claims, required
+limitations, and owner-review state. Dataset SHA-256 is
+`922ab1a5e61866bff7f113b59f82d10c0b7a165f83584979d3cce83763ad70d9`;
+sealed-holdout SHA-256 is
+`a76deab5553a9549ce81a888d3ad7d722cf2625e21e938d7d13cbbdcbf98e53e`.
 
-The Source Lens React/Vite design is now connected to `/api/v1/ask`. Its explicit
-state machine is idle, loading, answer, abstention, provider unavailable, or
-unexpected error. Claims select locally validated support entries; the evidence
-panel shows publisher, locator, canonical link, evidence ID, exact highlighted
-quote, and surrounding passage.
+The offline fake-provider run tests stage wiring, invariants, paid-call
+boundaries, and deterministic repeatability. Its lexical/dense/rerank scores are
+not estimates of live model quality.
 
-The stable-guidance boundary and official-current-information link remain
-permanent. Only retryable provider failures expose retry. Vite proxies `/api`
-during development; the FastAPI production process serves the built frontend
-and API from one origin.
+### 10.2 Preserved V1 benchmark
 
-Automated coverage includes component behavior, accessibility, desktop/mobile
-Playwright flows, TypeScript/OpenAPI compatibility, production build, and Sites
-packaging. A real local browser run reproduced answer, claim selection, evidence
-display, current-status abstention, and a 390×844 layout without horizontal
-overflow or console errors.
+`data/evaluation/benchmark_v1.yaml` remains a 100-case compatibility and safety
+suite: 60 development, 20 sealed holdout, and 20 safety/red-team. It predates
+the capability/background/tangent contract and therefore labels many ordinary
+questions according to the old corpus-only behavior. It remains useful for
+safety, citation, provider, and retrieval regression evidence, but its overall
+route/status scores are not V1.1 product-mode accuracy.
 
-## 11. Security, privacy, storage, and operations
+### 10.3 Metric interpretation
 
-- `.env`, raw sources, chunks, vector artifacts, traces, reports, builds, and
-  browser artifacts are ignored by Git.
-- The tracked secret scan runs in `make verify`.
-- Question text is absent from traces unless `FIRELENS_TRACE_CONTENT=true`;
-  SHA-256 is recorded instead.
+- Recall@20 asks whether any acceptable source survives a retrieval stage.
+- Recall@5 asks whether any acceptable source survives the five reranked
+  candidates used by the evidence builder.
+- MRR@5 rewards putting the first acceptable source earlier.
+- nDCG@5 rewards high placement of all acceptable sources.
+- route/status/mode accuracy compare public control states with labels.
+- citation/quote validity checks IDs and exact strings, not entailment.
+- provider failure rate counts typed failed cases; a completed report may still
+  contain an error result.
+- p50/p95 are run-specific local wall-clock observations, not an SLA.
+- reported cost is the sum of response-level OpenRouter usage metadata, not a
+  billing-account audit.
+
+## 11. Measured results
+
+### 11.1 Engineering verification
+
+The final offline verification checkpoint passed:
+
+- 99 Python tests, with 3 paid smoke tests skipped and 22 Python subtests;
+- Ruff and formatting checks;
+- mypy across 43 source files;
+- 11 frontend unit/accessibility tests;
+- production frontend build;
+- 4 Sites packaging tests;
+- 12 Playwright flows (six scenarios in desktop and mobile viewport projects).
+
+### 11.2 V1.1 offline
+
+All 50 cases completed. Route, status, response mode, capability, deterministic
+safety, planner relation, tangent, adjacent background, follow-up resolution,
+evidence-status separation, required limitations, and paid-call boundary were
+all 100%. BM25, fused, and fake reranker Recall were 100% with the selected
+index; this validates offline structure only.
+
+### 11.3 Contextual A/B/C and retained configuration
+
+| Candidate | Question/index text | Recall@5 | MRR@5 |
+|---|---|---:|---:|
+| A | raw question + original passage | 87.5% | 58.75% |
+| B | saved planned queries + original passage | 87.5% | 79.17% |
+| C | saved planned queries + metadata context | **100%** | **81.25%** |
+
+The experiment cost $0.062848, recorded no provider error, opened no holdout,
+and left the governed original index unchanged. Candidate C was then selected
+and the main index rebuilt explicitly.
+
+The separate locked V1 sweep tested 50 answerable development cases. Current
+20/20, RRF 60, top-5 achieved 96% Recall@5, 86.17% MRR@5, and 85.12% nDCG@5.
+No challenger cleared the locked two-point improvement rule, so the simpler
+current settings remain. Total four-candidate sweep cost was $0.544867.
+
+### 11.4 Live V1.1 result and variability
+
+| Observation | Automated control metrics | Rerank | Latency | Cost | Evidence status |
+|---|---|---|---|---:|---|
+| Final retained run | route, status, mode, capability, safety, planner, follow-up, tangent, adjacent, evidence status, limitations, and paid boundary all 100%; zero failures/leaks | Recall@5 100%, MRR@5 78.33%, nDCG@5 80.07% | p50 0.606 s, p95 2.572 s | $0.075479 | authoritative saved artifact, SHA-256 `362cd644443d5ce05fcfc8e8ebf28eb2fe154667e717aae9fad5d3f8cd9bbc8a` |
+| Immediately prior repeat | one of 50 cases hit a transient 429 after three attempts | downstream run metrics reduced | p95 3.017 s | $0.071621 | observed and overwritten by the final rerun |
+
+The correct interpretation is that the final controlled run passed its
+automated V1.1 gates while one adjacent repeat demonstrated real upstream
+variability and fail-closed behavior. The failed repeat is not averaged into the
+final metric and must not be erased from the limitations discussion.
+
+### 11.5 Canary and legacy compatibility
+
+The 30-call canary produced 30 structurally accepted results with no status or
+reason-code variance, p95 2.565 seconds, and $0.125976 cost.
+
+The full legacy V1 run completed 100 cases with safety route/status at 100%,
+citation IDs and exact quotes at 100%, overall route 85%, status 76%, one
+provider error, p95 2.924 seconds, and $0.284289 cost. Reranker Recall@5 was
+92.42%, below the V1 release gate of 95%. Old corpus-only labels conflict with
+intentional V1.1 capability/background/tangent answers, explaining much of the
+route/status delta; they do not explain or waive the retrieval miss.
+
+### 11.6 What the benchmark still does not prove
+
+No automated run has authoritative semantic scores for claim-to-evidence
+entailment, required-concept completeness, or unsupported verified claims. The
+review packets expose every claim beside local quotes so a human can decide.
+Until owner review is recorded, the product remains semantic-acceptance pending.
+
+## 12. Frontend architecture
+
+The existing Source Lens React/Vite design is connected to `/api/v1/ask`. Its
+view state is explicit: idle, loading, answer, abstention, provider unavailable,
+or unexpected error. V1.1 adds bounded conversation context, a clear-history
+control, capability suggestions, and visible badges for grounded, background,
+scope, and current-information boundaries.
+
+Grounded claims are interactive and open publisher, locator, canonical link,
+evidence ID, exact highlighted quote, and surrounding passage. Background
+claims are deliberately not evidence controls. Only a retryable provider error
+exposes “Retry this question.” The permanent official-current-information link
+remains visible.
+
+FastAPI serves the production build and API from one origin. Vite proxies
+`/api` during development, so CORS configuration is unnecessary for V1.1.
+Automated browser evidence covers the six primary flows at desktop and mobile
+viewports. A local server was launched for this RC, but the in-app browser
+remained attached to a stale session after documented recovery; therefore no
+new manual visual inspection is claimed. The earlier handbook statement that a
+manual browser reproduction had passed is preserved only as historical V1
+evidence, not promoted to this RC.
+
+## 13. Security, privacy, persistence, and observability
+
+- `.env`, raw source bytes, corpus output, embedding caches, vector artifacts,
+  traces, reports, frontend builds, and browser artifacts are Git-ignored.
+- `make verify` begins with a tracked-file secret scan.
+- Question text is absent from traces by default; a SHA-256 is stored instead.
+- `FIRELENS_TRACE_CONTENT=true` is an explicit local debugging opt-in.
 - Trace retention is the lower of 250 files or 50 MiB.
-- Trace, cache, matrix, manifest, corpus-manifest, and benchmark writes use
-  atomic temporary files.
-- Concurrent index writers fail fast through a file lock.
-- The locally configured API credential must be rotated before sharing this
-  checkout; rotation status is not asserted by the repository.
+- Trace, cache, matrix, manifest, corpus, and benchmark writes use atomic
+  temporary-file replacement.
+- Index builds fail fast on a concurrent writer.
+- Every request receives a trace ID, including unexpected HTTP 500 responses.
+- Any credential pasted into a conversation must be considered exposed and
+  rotated; repository state does not prove account-side rotation.
 
-## 12. Setup, running, debugging, and recovery
+## 14. Setup, launch, debugging, and recovery
 
-```bash
-make setup          # create/install pinned Python and frontend dependencies
-make verify         # lint, types, offline tests, frontend tests/build/e2e
-make run            # build UI and serve UI + API on 127.0.0.1:8000
-make benchmark      # zero-cost safety/red-team benchmark
-make benchmark-live # complete cost-capped benchmark
-make live-smoke     # opt-in three-endpoint OpenRouter smoke suite
-```
-
-Useful diagnostics:
+### 14.1 First setup and launch
 
 ```bash
+make setup
+cp .env.example .env
+# Add a rotated OPENROUTER_API_KEY to .env.
+.venv/bin/firelens bootstrap-corpus  # only if governed artifacts are absent
+.venv/bin/firelens build-index       # only if index is absent or deliberately rebuilt
 .venv/bin/firelens doctor
-.venv/bin/firelens corpus-audit
-.venv/bin/firelens search "What belongs in a grab-and-go bag?"
-.venv/bin/firelens canary --calls 30
+make run
 ```
 
-Recovery rules:
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000). Stop with `Ctrl-C` in the
+serving terminal.
 
-1. Missing or changed source: run `bootstrap-corpus`; review and update the
-   registry hash only after examining the new bytes.
-2. Corpus/index mismatch: rebuild the corpus, then `build-index`; never edit a
-   manifest to force readiness.
-3. Provider failure: use its typed kind and trace ID; do not switch models or
-   algorithms invisibly.
-4. Invalid answer: inspect validation errors in the trace; improve the contract,
-   prompt, evidence, or benchmark rather than adding automatic repair.
-5. Contract drift: run `make openapi`, inspect the generated diff, then verify
+### 14.2 Verification and evaluation
+
+```bash
+make verify
+make benchmark
+make benchmark-v1-1-paid
+make benchmark-contextual
+make benchmark-retrieval
+make canary
+make live-smoke
+```
+
+Paid commands are opt-in and cost-capped where appropriate. `make benchmark`
+is offline/zero-cost; fake-provider retrieval values must not be reported as
+live semantic quality.
+
+### 14.3 Recovery rules
+
+1. **Changed source:** run `bootstrap-corpus`; inspect the new bytes and update
+   a registry hash only after explicit source approval.
+2. **Corpus/index mismatch:** rebuild the corpus, then the index. Never hand-edit
+   a manifest to make readiness green.
+3. **Provider failure:** use the typed kind, attempts, and trace ID. Do not change
+   model or retrieval algorithm invisibly.
+4. **Invalid draft:** inspect validator output. Improve evidence, prompt,
+   contract, or labels; do not add an automatic repair loop.
+5. **OpenAPI drift:** run `make openapi`, inspect the generated diff, then verify
    backend and frontend together.
+6. **Stale local browser:** stop old servers, confirm port 8000 ownership, launch
+   `make run`, and reconnect. Do not claim visual verification from a stale tab.
 
-## 13. Current status, limitations, and next gate
+## 15. Code-reading guide
 
-The complete V1 architecture and frontend are implemented and reproducibly
-tested. The candidate is not release-qualified because Recall@5 is below 95%,
-one benchmark route is wrong, answer/abstention selection is below the intended
-quality level, and semantic owner review has not occurred.
+Read in this order to understand the system without framework indirection:
 
-The next gate is a label audit of the development misses and the 30-case owner
-review packet. Only after labels are approved should retrieval or routing change;
-the sealed holdout must not be tuned question-by-question. Public hosting and
-live wildfire tools remain deferred.
+1. `src/firelens/contracts.py` — the vocabulary and legal states.
+2. `src/firelens/config.py` — model IDs, paths, bounds, and experimental defaults.
+3. `src/firelens/answering/intent.py` — zero-call boundary and capability route.
+4. `src/firelens/answering/planner.py` — planner prompt and schema.
+5. `src/firelens/retrieval/text.py` — versioned retrieval-only text.
+6. `src/firelens/retrieval/pipeline.py` — per-query stages and one RRF.
+7. `src/firelens/retrieval/hybrid.py` — the deterministic fusion formula.
+8. `src/firelens/answering/context.py` — evidence spans and quote candidates.
+9. `src/firelens/answering/generate.py` — isolated draft families.
+10. `src/firelens/answering/validate.py` — fail-closed deterministic checks.
+11. `src/firelens/answering/service.py` — the complete request state machine.
+12. `src/firelens/providers/openrouter.py` — wire protocol, retry, usage, and
+    operation-owned draft typing.
+13. `src/firelens/benchmark.py` — V1 and V1.1 execution/metrics/review packets.
+14. `src/firelens/contextual_retrieval_experiment.py` and
+    `retrieval_experiment.py` — isolated measured tuning.
+15. `src/firelens/api.py`, `runtime.py`, and `cli.py` — process surfaces and
+    lifecycle.
+16. `prototype/firelens-rag-ui/src/App.tsx` and `api.ts` — UI state and typed
+    network boundary.
 
-## 14. Code-reading guide
+## 16. Current status and next release gate
 
-1. `contracts.py`: values allowed between stages and across HTTP.
-2. `answering/intent.py`: deterministic boundary routing.
-3. `retrieval/pipeline.py`: BM25, dense, RRF, and reranking.
-4. `answering/context.py`: neighbor-aware evidence and quote candidates.
-5. `answering/generate.py`: bounded prompt and packet-specific schema.
-6. `answering/validate.py`: deterministic fail-closed checks.
-7. `answering/service.py`: the one linear search/answer orchestration path.
-8. `providers/openrouter.py`: all HTTP and provider normalization.
-9. `benchmark.py`: release dataset execution, metrics, and review packet.
-10. `api.py` and `cli.py`: versioned HTTP and local command surfaces.
+The architecture, bounded conversation contract, contextual index, backend,
+frontend, reliability controls, offline tests, browser automation, and measured
+evaluation runners are implemented. This is engineering-complete in the sense
+that the designed vertical slice exists and its deterministic checks pass.
+
+It is not release-qualified for three independent reasons:
+
+1. the owner has not approved semantic claim support and required-concept
+   completeness;
+2. the preserved V1 compatibility benchmark still has 92.42% reranker Recall@5
+   against its 95% release gate.
+3. manual in-app visual inspection of this RC was blocked by stale browser
+   handles; the 12 automated Playwright flows pass but are not a manual review.
+
+The exact next action is to complete every owner checkbox for all 20 legacy V1
+red-team cases plus the preselected 10 ordinary cases in
+`output/benchmark/v1_semantic_review.md`, and separately review all 10 V1.1
+red-team cases plus every accepted grounded/background claim in
+`output/benchmark/v1_1_conversation_live_review.md`. For each claim, record
+whether the quote entails it, required concepts are present, forbidden claims
+are absent, and limitations are correct. Any rejected case becomes a labelled
+development item; sealed holdout cases must not be tuned question-by-question.
+
+## 17. Historical V1 checkpoint
+
+V1 was single-turn and corpus-only. It introduced the governed corpus,
+BM25/dense/RRF/rerank pipeline, evidence spans, strict generation/validation,
+versioned API, reliability layer, Source Lens integration, 100-case benchmark,
+retrieval sweep, and canary. Its recorded final candidate had 69 Python tests,
+81.82% Recall@5 on the then-current complete live run, and a manual local browser
+reproduction. Those numbers describe that historical checkpoint only. V1.1
+supersedes its product contract and test counts while preserving its evidence
+ledger for auditability.
 
 ## Glossary
 
-- **Evidence span**: a primary chunk plus bounded same-parent neighbours.
-- **Quote candidate**: an exact bounded substring the model may select by ID.
-- **Support pair**: a local evidence ID and exact quote supporting one claim.
-- **RRF**: reciprocal-rank fusion of ordered retrieval lists.
-- **Typed abstention**: an expected non-answer with an explicit reason code.
-- **Sealed holdout**: cases whose per-question results are not used for tuning.
-- **Structural validation**: deterministic traceability/policy checks, not a
-  semantic entailment judgment.
+- **Adjacent:** related low-risk material not currently treated as directly
+  supported by the approved corpus.
+- **Evidence span:** a primary chunk plus bounded same-parent neighbors.
+- **General background:** explicitly unverified model output with no corpus
+  citation.
+- **Grounded claim:** a public claim with at least one exact local support pair.
+- **Quote candidate:** an exact bounded primary-passage substring selectable by
+  a packet-specific ID.
+- **RRF:** reciprocal-rank fusion across multiple ordered retrieval lists.
+- **Scope redirect:** a local answer that guides a tangent user back to product
+  capabilities without pretending to answer the tangent request.
+- **Sealed holdout:** cases whose per-question results must not be used for
+  tuning.
+- **Structural validation:** deterministic evidence/policy checks, not semantic
+  entailment review.
+- **Typed abstention:** an expected non-answer with an explicit reason code.

@@ -64,16 +64,19 @@ export interface components {
             /** Answer */
             answer?: string | null;
             /** Claims */
-            claims?: components["schemas"]["VerifiedClaim"][];
+            claims?: components["schemas"]["PublicClaim"][];
             /** Error Kind */
             error_kind?: string | null;
             /** Evidence */
             evidence?: components["schemas"]["PublicEvidence"][];
             /** Limitations */
             limitations?: string[];
-            /** Reason Code */
-            reason_code?: string | null;
+            reason_code?: components["schemas"]["ReasonCode"] | null;
+            /** @default abstention */
+            response_mode: components["schemas"]["ResponseMode"];
             status: components["schemas"]["ResponseStatus"];
+            /** Suggested Questions */
+            suggested_questions?: string[];
             /** Trace Id */
             trace_id: string;
             validation?: components["schemas"]["ValidationReport"] | null;
@@ -84,6 +87,16 @@ export interface components {
             evidence_id: string;
             /** Quote */
             quote: string;
+        };
+        /** ConversationTurn */
+        ConversationTurn: {
+            /** Content */
+            content: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
         };
         /** ErrorEnvelope */
         ErrorEnvelope: {
@@ -99,6 +112,11 @@ export interface components {
             /** Trace Id */
             trace_id: string;
         };
+        /**
+         * EvidenceStatus
+         * @enum {string}
+         */
+        EvidenceStatus: "verified_corpus" | "general_background";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -133,6 +151,16 @@ export interface components {
              */
             status: "alive";
         };
+        /** PublicClaim */
+        PublicClaim: {
+            /** Claim Id */
+            claim_id: string;
+            evidence_status: components["schemas"]["EvidenceStatus"];
+            /** Supports */
+            supports?: components["schemas"]["ClaimSupport"][];
+            /** Text */
+            text: string;
+        };
         /** PublicEvidence */
         PublicEvidence: {
             /**
@@ -160,9 +188,21 @@ export interface components {
         };
         /** QueryRequest */
         QueryRequest: {
+            /** History */
+            history?: components["schemas"]["ConversationTurn"][];
             /** Question */
             question: string;
         };
+        /**
+         * ReasonCode
+         * @enum {string}
+         */
+        ReasonCode: "capability_overview" | "scope_redirect" | "personalized_safety_decision" | "personalized_medical_advice" | "policy_manipulation" | "live_data_required" | "planning_unavailable" | "retrieval_unavailable" | "retrieval_incomplete" | "no_approved_evidence" | "wrong_temporal_class" | "required_authority_missing" | "approved_static_evidence" | "generation_unavailable" | "draft_validation_failed" | "model_abstained";
+        /**
+         * ResponseMode
+         * @enum {string}
+         */
+        ResponseMode: "grounded" | "background" | "capability" | "scope_redirect" | "abstention";
         /**
          * ResponseStatus
          * @enum {string}
@@ -198,15 +238,6 @@ export interface components {
              * @default true
              */
             schema_valid: boolean;
-        };
-        /** VerifiedClaim */
-        VerifiedClaim: {
-            /** Claim Id */
-            claim_id: string;
-            /** Supports */
-            supports: components["schemas"]["ClaimSupport"][];
-            /** Text */
-            text: string;
         };
     };
     responses: never;

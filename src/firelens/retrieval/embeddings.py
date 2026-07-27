@@ -13,9 +13,11 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from firelens.config import FireLensConfig
+from firelens.contracts import RetrievalTextStrategy
 from firelens.errors import IndexValidationError
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.providers.base import AIProvider
+from firelens.retrieval.text import render_retrieval_text
 from firelens.storage import atomic_binary_writer, atomic_text_writer, exclusive_file_lock
 
 INDEX_SCHEMA_VERSION = "firelens_vector_index.v1"
@@ -39,6 +41,7 @@ class EmbeddingCacheRecord(BaseModel):
 
     schema_version: str = CACHE_SCHEMA_VERSION
     model: str
+    retrieval_text_strategy: RetrievalTextStrategy = RetrievalTextStrategy.ORIGINAL_V1
     chunk_content_sha256: str
     dimensions: int = Field(gt=0)
     vector: list[float]
@@ -52,20 +55,23 @@ class VectorManifest(BaseModel):
     corpus_version: str
     corpus_sha256: str
     embedding_model: str
+    retrieval_text_strategy: RetrievalTextStrategy = RetrievalTextStrategy.ORIGINAL_V1
     dimensions: int = Field(gt=0)
     chunk_ids: list[str]
     matrix_sha256: str
     created_at: str
 
 
-def _cache_key(model: str, content_hash: str) -> tuple[str, str]:
-    return model, content_hash
+def _cache_key(
+    model: str, strategy: RetrievalTextStrategy, content_hash: str
+) -> tuple[str, str, str]:
+    return model, strategy.value, content_hash
 
 
-def load_embedding_cache(path: Path) -> dict[tuple[str, str], EmbeddingCacheRecord]:
+def load_embedding_cache(path: Path) -> dict[tuple[str, str, str], EmbeddingCacheRecord]:
     if not path.is_file():
         return {}
-    records: dict[tuple[str, str], EmbeddingCacheRecord] = {}
+    records: dict[tuple[str, str, str], EmbeddingCacheRecord] = {}
     with path.open(encoding="utf-8") as stream:
         for line_number, line in enumerate(stream, start=1):
             if not line.strip():
@@ -76,7 +82,9 @@ def load_embedding_cache(path: Path) -> dict[tuple[str, str], EmbeddingCacheReco
                 raise IndexValidationError(
                     f"Invalid embedding cache record on line {line_number}."
                 ) from exc
-            key = _cache_key(record.model, record.chunk_content_sha256)
+            key = _cache_key(
+                record.model, record.retrieval_text_strategy, record.chunk_content_sha256
+            )
             if key in records:
                 raise IndexValidationError("Embedding cache contains duplicate keys.")
             records[key] = record
@@ -95,7 +103,7 @@ def _validate_vector(vector: Sequence[float], dimensions: int | None = None) -> 
     return len(vector)
 
 
-def _write_cache(records: dict[tuple[str, str], EmbeddingCacheRecord], path: Path) -> None:
+def _write_cache(records: dict[tuple[str, str, str], EmbeddingCacheRecord], path: Path) -> None:
     with atomic_text_writer(path) as stream:
         for key in sorted(records):
             stream.write(records[key].model_dump_json())
@@ -123,8 +131,11 @@ async def _build_vector_index_unlocked(
     dimensions: int | None = None
 
     for index, chunk in enumerate(chunks):
-        content_hash = content_sha256(chunk.text)
-        record = cache.get(_cache_key(config.embedding_model, content_hash))
+        retrieval_text = render_retrieval_text(chunk, config.retrieval_text_strategy)
+        content_hash = content_sha256(retrieval_text)
+        record = cache.get(
+            _cache_key(config.embedding_model, config.retrieval_text_strategy, content_hash)
+        )
         if record is None:
             missing_indices.append(index)
             continue
@@ -134,16 +145,31 @@ async def _build_vector_index_unlocked(
 
     for start in range(0, len(missing_indices), config.embedding_batch_size):
         batch_indices = missing_indices[start : start + config.embedding_batch_size]
-        response = await provider.embed([chunks[index].text for index in batch_indices])
+        response = await provider.embed(
+            [
+                render_retrieval_text(chunks[index], config.retrieval_text_strategy)
+                for index in batch_indices
+            ]
+        )
         if len(response.vectors) != len(batch_indices):
             raise IndexValidationError("Provider returned the wrong embedding count.")
         for chunk_index, vector in zip(batch_indices, response.vectors, strict=True):
             dimensions = _validate_vector(vector, dimensions)
             values = [float(value) for value in vector]
             vectors[chunk_index] = values
-            content_hash = content_sha256(chunks[chunk_index].text)
-            cache[_cache_key(config.embedding_model, content_hash)] = EmbeddingCacheRecord(
+            retrieval_text = render_retrieval_text(
+                chunks[chunk_index], config.retrieval_text_strategy
+            )
+            content_hash = content_sha256(retrieval_text)
+            cache[
+                _cache_key(
+                    config.embedding_model,
+                    config.retrieval_text_strategy,
+                    content_hash,
+                )
+            ] = EmbeddingCacheRecord(
                 model=config.embedding_model,
+                retrieval_text_strategy=config.retrieval_text_strategy,
                 chunk_content_sha256=content_hash,
                 dimensions=dimensions,
                 vector=values,
@@ -167,6 +193,7 @@ async def _build_vector_index_unlocked(
         corpus_version=corpus_version,
         corpus_sha256=sha256_file(config.corpus_path),
         embedding_model=config.embedding_model,
+        retrieval_text_strategy=config.retrieval_text_strategy,
         dimensions=dimensions,
         chunk_ids=chunk_ids,
         matrix_sha256=sha256_file(config.vector_matrix_path),

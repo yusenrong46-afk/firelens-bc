@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import Sequence
+from copy import deepcopy
 from typing import Any
 
 import httpx
@@ -12,9 +13,12 @@ from pydantic import ValidationError
 
 from firelens.config import FireLensConfig
 from firelens.contracts import (
-    DraftAnswer,
+    BackgroundDraft,
     EmbeddingResponse,
     GenerationResponse,
+    GroundedDraft,
+    PlanningDecision,
+    PlanningResponse,
     RerankResponse,
     RerankResult,
 )
@@ -26,6 +30,39 @@ _CANONICAL_RESPONSE_MODELS: dict[str, frozenset[str]] = {
     ),
     "cohere/rerank-4-pro": frozenset({"cohere/rerank-4-pro", "rerank-v4.0-pro"}),
 }
+
+
+def _wire_draft_schema(output_schema: dict[str, Any]) -> dict[str, Any]:
+    """Remove the redundant local draft-family discriminator from the wire schema.
+
+    ``generate_grounded`` and ``generate_background`` already select distinct
+    provider operations, prompts, and schemas.  The model therefore has no
+    authority to choose the family.  Omitting that redundant field avoids
+    repairing provider output while keeping every model-supplied field under a
+    strict JSON Schema.
+    """
+
+    schema = deepcopy(output_schema)
+    properties = schema.get("properties")
+    if isinstance(properties, dict):
+        properties.pop("answer_type", None)
+    required = schema.get("required")
+    if isinstance(required, list):
+        schema["required"] = [field for field in required if field != "answer_type"]
+    return schema
+
+
+def _locally_type_draft(
+    payload: dict[str, Any], *, answer_type: str
+) -> GroundedDraft | BackgroundDraft:
+    """Add the operation-owned family only after rejecting wire discriminators."""
+
+    if "answer_type" in payload:
+        raise ValueError("provider returned a model-owned draft discriminator")
+    typed_payload = {"answer_type": answer_type, **payload}
+    if answer_type == "grounded":
+        return GroundedDraft.model_validate(typed_payload)
+    return BackgroundDraft.model_validate(typed_payload)
 
 
 def _model_identity_matches(requested: str, returned: object) -> bool:
@@ -81,54 +118,55 @@ class OpenRouterProvider:
         """Post with bounded same-model retries for transient failures only."""
 
         last_error: ProviderError | None = None
-        async with self._semaphore:
-            for attempt in range(1, self.config.provider_max_attempts + 1):
-                try:
+        for attempt in range(1, self.config.provider_max_attempts + 1):
+            try:
+                async with self._semaphore:
                     response = await self._client.post(
                         f"{self.config.openrouter_base_url}/{endpoint.lstrip('/')}",
                         headers=self._headers(),
                         json=payload,
                     )
-                    try:
-                        body = response.json()
-                    except json.JSONDecodeError as exc:
-                        raise ProviderError(
-                            ProviderErrorKind.INVALID_RESPONSE,
-                            "OpenRouter returned a non-JSON response.",
-                            status_code=response.status_code,
-                        ) from exc
-                    if not isinstance(body, dict):
-                        raise ProviderError(
-                            ProviderErrorKind.INVALID_RESPONSE,
-                            "OpenRouter returned an unexpected response shape.",
-                            status_code=response.status_code,
-                        )
-                    if response.is_error or body.get("error"):
-                        self._raise_provider_error(response.status_code, body)
-                    return body, attempt
-                except httpx.TimeoutException as exc:
-                    last_error = ProviderError(
-                        ProviderErrorKind.TIMEOUT,
-                        "OpenRouter request timed out.",
-                        status_code=408,
-                        retryable=True,
+                try:
+                    body = response.json()
+                except json.JSONDecodeError as exc:
+                    raise ProviderError(
+                        ProviderErrorKind.INVALID_RESPONSE,
+                        "OpenRouter returned a non-JSON response.",
+                        status_code=response.status_code,
+                    ) from exc
+                if not isinstance(body, dict):
+                    raise ProviderError(
+                        ProviderErrorKind.INVALID_RESPONSE,
+                        "OpenRouter returned an unexpected response shape.",
+                        status_code=response.status_code,
                     )
-                    last_error.__cause__ = exc
-                except httpx.HTTPError as exc:
-                    last_error = ProviderError(
-                        ProviderErrorKind.UNAVAILABLE,
-                        "OpenRouter could not be reached.",
-                        retryable=True,
-                    )
-                    last_error.__cause__ = exc
-                except ProviderError as exc:
-                    last_error = exc
+                if response.is_error or body.get("error"):
+                    self._raise_provider_error(response.status_code, body)
+                return body, attempt
+            except httpx.TimeoutException as exc:
+                last_error = ProviderError(
+                    ProviderErrorKind.TIMEOUT,
+                    "OpenRouter request timed out.",
+                    status_code=408,
+                    retryable=True,
+                )
+                last_error.__cause__ = exc
+            except httpx.HTTPError as exc:
+                last_error = ProviderError(
+                    ProviderErrorKind.UNAVAILABLE,
+                    "OpenRouter could not be reached.",
+                    retryable=True,
+                )
+                last_error.__cause__ = exc
+            except ProviderError as exc:
+                last_error = exc
 
-                if not last_error.retryable or attempt >= self.config.provider_max_attempts:
-                    raise last_error
-                delay = self.config.provider_retry_base_seconds * (2 ** (attempt - 1))
-                if delay:
-                    await asyncio.sleep(delay)
+            if not last_error.retryable or attempt >= self.config.provider_max_attempts:
+                raise last_error
+            delay = self.config.provider_retry_base_seconds * (2 ** (attempt - 1))
+            if delay:
+                # Sleeping outside the semaphore lets another local request run.
+                await asyncio.sleep(delay)
 
         raise last_error or ProviderError(
             ProviderErrorKind.UNKNOWN, "OpenRouter request failed."
@@ -175,7 +213,6 @@ class OpenRouterProvider:
                 ProviderErrorKind.RATE_LIMIT,
                 ProviderErrorKind.TIMEOUT,
                 ProviderErrorKind.UNAVAILABLE,
-                ProviderErrorKind.MODEL_UNAVAILABLE,
             },
         )
 
@@ -250,25 +287,27 @@ class OpenRouterProvider:
                 "OpenRouter returned invalid rerank results.",
             ) from exc
 
-    async def generate(
+    async def _chat_json(
         self,
         messages: Sequence[dict[str, str]],
         *,
         output_schema: dict[str, Any],
-    ) -> GenerationResponse:
+        schema_name: str,
+        max_tokens: int,
+    ) -> tuple[dict[str, Any], str, dict[str, Any], int]:
         body, attempts = await self._post(
             "chat/completions",
             {
                 "model": self.config.generation_model,
                 "messages": list(messages),
                 "stream": False,
-                "max_tokens": 1_200,
+                "max_tokens": max_tokens,
                 "temperature": self.config.generation_temperature,
                 "provider": self._provider_preferences(),
                 "response_format": {
                     "type": "json_schema",
                     "json_schema": {
-                        "name": "firelens_draft_answer",
+                        "name": schema_name,
                         "strict": True,
                         "schema": output_schema,
                     },
@@ -280,22 +319,79 @@ class OpenRouterProvider:
                 raise ValueError("generation model mismatch")
             content = body["choices"][0]["message"]["content"]
             payload = json.loads(content) if isinstance(content, str) else content
-            draft = DraftAnswer.model_validate(payload)
-            return GenerationResponse(
-                model=body.get("model", self.config.generation_model),
-                draft=draft,
-                usage=body.get("usage") or {},
-                attempts=attempts,
+            if not isinstance(payload, dict):
+                raise ValueError("structured response is not an object")
+            return (
+                payload,
+                str(body.get("model", self.config.generation_model)),
+                body.get("usage") or {},
+                attempts,
             )
-        except (
-            IndexError,
-            KeyError,
-            TypeError,
-            ValueError,
-            json.JSONDecodeError,
-            ValidationError,
-        ) as exc:
+        except (IndexError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
             raise ProviderError(
                 ProviderErrorKind.INVALID_RESPONSE,
-                "OpenRouter returned an invalid structured answer.",
+                "OpenRouter returned invalid structured JSON.",
             ) from exc
+
+    async def plan(
+        self,
+        messages: Sequence[dict[str, str]],
+        *,
+        output_schema: dict[str, Any],
+    ) -> PlanningResponse:
+        payload, model, usage, attempts = await self._chat_json(
+            messages,
+            output_schema=output_schema,
+            schema_name="firelens_query_plan",
+            max_tokens=500,
+        )
+        try:
+            decision = PlanningDecision.model_validate(payload)
+        except ValidationError as exc:
+            raise ProviderError(
+                ProviderErrorKind.INVALID_RESPONSE,
+                "OpenRouter returned an invalid structured plan.",
+            ) from exc
+        return PlanningResponse(model=model, decision=decision, usage=usage, attempts=attempts)
+
+    async def generate_grounded(
+        self,
+        messages: Sequence[dict[str, str]],
+        *,
+        output_schema: dict[str, Any],
+    ) -> GenerationResponse:
+        payload, model, usage, attempts = await self._chat_json(
+            messages,
+            output_schema=_wire_draft_schema(output_schema),
+            schema_name="firelens_grounded_answer",
+            max_tokens=1_200,
+        )
+        try:
+            draft = _locally_type_draft(payload, answer_type="grounded")
+        except (ValidationError, ValueError) as exc:
+            raise ProviderError(
+                ProviderErrorKind.INVALID_RESPONSE,
+                "OpenRouter returned an invalid grounded answer.",
+            ) from exc
+        return GenerationResponse(model=model, draft=draft, usage=usage, attempts=attempts)
+
+    async def generate_background(
+        self,
+        messages: Sequence[dict[str, str]],
+        *,
+        output_schema: dict[str, Any],
+    ) -> GenerationResponse:
+        payload, model, usage, attempts = await self._chat_json(
+            messages,
+            output_schema=_wire_draft_schema(output_schema),
+            schema_name="firelens_background_answer",
+            max_tokens=500,
+        )
+        try:
+            draft = _locally_type_draft(payload, answer_type="background")
+        except (ValidationError, ValueError) as exc:
+            raise ProviderError(
+                ProviderErrorKind.INVALID_RESPONSE,
+                "OpenRouter returned an invalid background answer.",
+            ) from exc
+        return GenerationResponse(model=model, draft=draft, usage=usage, attempts=attempts)

@@ -14,7 +14,7 @@ from firelens.answering.generate import draft_schema, generation_messages
 from firelens.answering.validate import validate_draft
 from firelens.benchmark import _mean, _percentile, _usage_cost, file_sha256, load_benchmark
 from firelens.config import FireLensConfig
-from firelens.contracts import QueryRequest, SupportStatus
+from firelens.contracts import GroundedDraft, QueryRequest, SupportStatus
 from firelens.errors import ProviderError
 from firelens.providers.openrouter import OpenRouterProvider
 from firelens.runtime import load_runtime
@@ -88,11 +88,13 @@ async def run_model_bakeoff(
                     break
                 started = perf_counter()
                 try:
-                    generated = await provider.generate(
-                        generation_messages(packet),
+                    generated = await provider.generate_grounded(
+                        generation_messages(packet, original_question=case.question),
                         output_schema=draft_schema(packet),
                     )
                     latency_ms = (perf_counter() - started) * 1_000
+                    if not isinstance(generated.draft, GroundedDraft):
+                        raise RuntimeError("generation candidate returned a non-grounded draft")
                     validation = validate_draft(generated.draft, packet)
                     cost = _usage_cost(generated.usage)
                     generation_cost += cost
@@ -104,7 +106,7 @@ async def run_model_bakeoff(
                             "model": model,
                             "provider_model": generated.model,
                             "answer_type": generated.draft.answer_type,
-                            "answer": generated.draft.answer,
+                            "answer": " ".join(claim.text for claim in generated.draft.claims),
                             "claims": [
                                 claim.model_dump(mode="json")
                                 for claim in generated.draft.claims

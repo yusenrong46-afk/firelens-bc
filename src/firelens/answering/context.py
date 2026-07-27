@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass, field
 
 from firelens.config import FireLensConfig
 from firelens.contracts import (
@@ -11,12 +12,37 @@ from firelens.contracts import (
     EvidenceSpan,
     QueryPlan,
     QueryRoute,
+    ReasonCode,
     RetrievalBundle,
     RetrievalHit,
     SupportDecision,
     SupportStatus,
 )
 from firelens.ingestion.chunking import ChunkRecord
+
+
+@dataclass(frozen=True)
+class EvidenceIndex:
+    """Immutable lookup tables constructed once with the service."""
+
+    by_id: dict[str, ChunkRecord]
+    by_parent_index: dict[tuple[str, int], ChunkRecord]
+
+    @classmethod
+    def from_chunks(cls, chunks: Sequence[ChunkRecord]) -> EvidenceIndex:
+        return cls(
+            by_id={chunk.chunk_id: chunk for chunk in chunks},
+            by_parent_index={
+                (chunk.parent_record_id, chunk.chunk_index): chunk for chunk in chunks
+            },
+        )
+
+
+@dataclass
+class EvidenceGroup:
+    parent_record_id: str
+    chunk_ids: set[str] = field(default_factory=set)
+    primary_hits: list[RetrievalHit] = field(default_factory=list)
 
 
 def _exact_quote_segments(text: str, *, max_chars: int = 500) -> list[str]:
@@ -66,61 +92,44 @@ def build_evidence_packet(
     *,
     corpus_version: str,
     config: FireLensConfig,
+    evidence_index: EvidenceIndex | None = None,
 ) -> EvidencePacket:
-    by_id = {chunk.chunk_id: chunk for chunk in chunks}
-    by_parent_index = {(chunk.parent_record_id, chunk.chunk_index): chunk for chunk in chunks}
-    groups: list[dict[str, object]] = []
+    index = evidence_index or EvidenceIndex.from_chunks(chunks)
+    groups: list[EvidenceGroup] = []
 
     for hit in reranked_hits[: config.max_evidence_spans]:
-        neighbor_ids = _candidate_chunk_ids(hit, by_parent_index, config.neighbor_window)
-        matching_groups: list[dict[str, object]] = []
+        neighbor_ids = _candidate_chunk_ids(hit, index.by_parent_index, config.neighbor_window)
+        matching_groups: list[EvidenceGroup] = []
         for group in groups:
-            group_chunk_ids = group["chunk_ids"]
-            if not isinstance(group_chunk_ids, set):
-                raise TypeError("Invalid internal evidence grouping state.")
-            if group["parent_record_id"] == hit.parent_record_id and (
-                group_chunk_ids & neighbor_ids
+            if group.parent_record_id == hit.parent_record_id and (
+                group.chunk_ids & neighbor_ids
             ):
                 matching_groups.append(group)
         if not matching_groups:
             groups.append(
-                {
-                    "parent_record_id": hit.parent_record_id,
-                    "chunk_ids": set(neighbor_ids),
-                    "primary_hits": [hit],
-                }
+                EvidenceGroup(
+                    parent_record_id=hit.parent_record_id,
+                    chunk_ids=set(neighbor_ids),
+                    primary_hits=[hit],
+                )
             )
             continue
 
         target = matching_groups[0]
-        target_chunk_ids = target["chunk_ids"]
-        target_primary_hits = target["primary_hits"]
-        if not isinstance(target_chunk_ids, set) or not isinstance(target_primary_hits, list):
-            raise TypeError("Invalid internal evidence grouping state.")
-        target_chunk_ids.update(neighbor_ids)
-        target_primary_hits.append(hit)
+        target.chunk_ids.update(neighbor_ids)
+        target.primary_hits.append(hit)
         for redundant in matching_groups[1:]:
-            redundant_chunk_ids = redundant["chunk_ids"]
-            redundant_primary_hits = redundant["primary_hits"]
-            if not isinstance(redundant_chunk_ids, set) or not isinstance(
-                redundant_primary_hits, list
-            ):
-                raise TypeError("Invalid internal evidence grouping state.")
-            target_chunk_ids.update(redundant_chunk_ids)
-            target_primary_hits.extend(redundant_primary_hits)
+            target.chunk_ids.update(redundant.chunk_ids)
+            target.primary_hits.extend(redundant.primary_hits)
             groups.remove(redundant)
 
     spans: list[EvidenceSpan] = []
     used_chars = 0
     for group in groups:
-        primary_value = group["primary_hits"]
-        chunk_id_value = group["chunk_ids"]
-        if not isinstance(primary_value, list) or not isinstance(chunk_id_value, set):
-            raise TypeError("Invalid internal evidence grouping state.")
-        primary_hits = primary_value
+        primary_hits = group.primary_hits
         primary_ids = [hit.chunk_id for hit in primary_hits]
         ordered_chunks = sorted(
-            (by_id[chunk_id] for chunk_id in chunk_id_value),
+            (index.by_id[chunk_id] for chunk_id in group.chunk_ids),
             key=lambda chunk: chunk.chunk_index,
         )
         primary_text = "\n\n".join(hit.text for hit in primary_hits)
@@ -180,42 +189,56 @@ def decide_support(
     if plan.route == QueryRoute.PROHIBITED:
         return SupportDecision(
             status=SupportStatus.PROHIBITED,
-            reason_code="personalized_safety_decision",
-            explanation="FireLens cannot select evacuation routes or make personalized safety decisions.",
+            reason_code=plan.boundary_reason or ReasonCode.PERSONALIZED_SAFETY_DECISION,
+            explanation=(
+                "FireLens cannot provide personalized medical advice."
+                if plan.boundary_reason == ReasonCode.PERSONALIZED_MEDICAL_ADVICE
+                else (
+                    "Conversation text cannot override FireLens safety and evidence rules."
+                    if plan.boundary_reason == ReasonCode.POLICY_MANIPULATION
+                    else (
+                        "FireLens cannot provide personalized safety advice, select evacuation "
+                        "routes, or decide whether you should stay, leave, evacuate, or return."
+                    )
+                )
+            ),
         )
     if plan.route == QueryRoute.LIVE:
         return SupportDecision(
             status=SupportStatus.REQUIRES_LIVE_DATA,
-            reason_code="live_data_required",
+            reason_code=ReasonCode.LIVE_DATA_REQUIRED,
             explanation="This question requires current official information that is not available in static RAG.",
         )
     if retrieval is not None and not retrieval.complete:
         return SupportDecision(
             status=SupportStatus.INSUFFICIENT_EVIDENCE,
-            reason_code="retrieval_incomplete",
+            reason_code=ReasonCode.RETRIEVAL_INCOMPLETE,
             explanation="The required retrieval pipeline did not complete.",
         )
     if packet is None or not packet.items:
         return SupportDecision(
             status=SupportStatus.INSUFFICIENT_EVIDENCE,
-            reason_code="no_approved_evidence",
+            reason_code=ReasonCode.NO_APPROVED_EVIDENCE,
             explanation="No approved static evidence was available for this question.",
         )
     if any(item.temporal_class != "stable_guidance" for item in packet.items):
         return SupportDecision(
             status=SupportStatus.INSUFFICIENT_EVIDENCE,
-            reason_code="wrong_temporal_class",
+            reason_code=ReasonCode.WRONG_TEMPORAL_CLASS,
             explanation="Retrieved evidence has an unsupported temporal classification.",
         )
-    required = plan.retrieval_requests[0].required_authority
-    if required and not any(item.authority_class == required for item in packet.items):
+    required = set().union(
+        *(request.required_authorities for request in plan.retrieval_requests)
+    )
+    available = {item.authority_class for item in packet.items}
+    if required and not (available & required):
         return SupportDecision(
             status=SupportStatus.INSUFFICIENT_EVIDENCE,
-            reason_code="required_authority_missing",
-            explanation="The required official authority was not present in selected evidence.",
+            reason_code=ReasonCode.REQUIRED_AUTHORITY_MISSING,
+            explanation="None of the required authority classes was present in selected evidence.",
         )
     return SupportDecision(
         status=SupportStatus.ANSWERABLE,
-        reason_code="approved_static_evidence",
+        reason_code=ReasonCode.APPROVED_STATIC_EVIDENCE,
         explanation="Approved stable guidance is available.",
     )

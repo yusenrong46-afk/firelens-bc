@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from firelens.contracts import RetrievalHit
+from firelens.contracts import AuthorityClass, RetrievalHit, TemporalClass
 from firelens.retrieval.bm25 import RetrievalResult
 
 
@@ -26,8 +26,8 @@ def bm25_hit(
         page_number=result.page_number,
         section_title=result.section_title,
         locator=result.locator,
-        temporal_class=temporal_class,
-        authority_class=authority_class,
+        temporal_class=TemporalClass(temporal_class),
+        authority_class=AuthorityClass(authority_class),
         document_sha256=document_sha256,
         chunk_index=chunk_index,
         text=result.text,
@@ -37,9 +37,7 @@ def bm25_hit(
 
 
 def reciprocal_rank_fusion(
-    bm25_hits: Sequence[RetrievalHit],
-    vector_hits: Sequence[RetrievalHit],
-    *,
+    *rankings: Sequence[RetrievalHit],
     rrf_k: int = 60,
     top_k: int = 20,
 ) -> list[RetrievalHit]:
@@ -48,22 +46,51 @@ def reciprocal_rank_fusion(
     hits: dict[str, RetrievalHit] = {}
     scores: dict[str, float] = {}
 
-    for ranked in (bm25_hits, vector_hits):
+    if not rankings:
+        return []
+
+    for ranked in rankings:
         for position, hit in enumerate(ranked, start=1):
             existing = hits.get(hit.chunk_id)
             if existing is None:
                 hits[hit.chunk_id] = hit
             else:
+                matched_queries = tuple(
+                    dict.fromkeys((*existing.matched_queries, *hit.matched_queries))
+                )
+                bm25_positions = tuple(
+                    dict.fromkeys((*existing.bm25_positions, *hit.bm25_positions))
+                )
+                vector_positions = tuple(
+                    dict.fromkeys((*existing.vector_positions, *hit.vector_positions))
+                )
+                bm25_ranks = [
+                    rank for rank in (existing.bm25_rank, hit.bm25_rank) if rank is not None
+                ]
+                vector_ranks = [
+                    rank for rank in (existing.vector_rank, hit.vector_rank) if rank is not None
+                ]
                 hits[hit.chunk_id] = existing.model_copy(
                     update={
-                        "bm25_rank": existing.bm25_rank or hit.bm25_rank,
-                        "bm25_score": existing.bm25_score
-                        if existing.bm25_score is not None
-                        else hit.bm25_score,
-                        "vector_rank": existing.vector_rank or hit.vector_rank,
-                        "vector_score": existing.vector_score
-                        if existing.vector_score is not None
-                        else hit.vector_score,
+                        "matched_queries": matched_queries,
+                        "bm25_positions": bm25_positions,
+                        "vector_positions": vector_positions,
+                        "bm25_rank": min(bm25_ranks) if bm25_ranks else None,
+                        "bm25_score": max(
+                            score
+                            for score in (existing.bm25_score, hit.bm25_score)
+                            if score is not None
+                        )
+                        if existing.bm25_score is not None or hit.bm25_score is not None
+                        else None,
+                        "vector_rank": min(vector_ranks) if vector_ranks else None,
+                        "vector_score": max(
+                            score
+                            for score in (existing.vector_score, hit.vector_score)
+                            if score is not None
+                        )
+                        if existing.vector_score is not None or hit.vector_score is not None
+                        else None,
                     }
                 )
             scores[hit.chunk_id] = scores.get(hit.chunk_id, 0.0) + 1 / (rrf_k + position)

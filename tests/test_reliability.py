@@ -26,12 +26,33 @@ class ContractPropertyTests(unittest.TestCase):
         self.assertTrue(request.question)
         self.assertEqual(request.question, " ".join(question.split()))
 
-    def test_history_is_not_silently_accepted(self) -> None:
+    def test_bounded_history_is_strictly_accepted(self) -> None:
+        request = QueryRequest.model_validate(
+            {
+                "question": "Why does that matter?",
+                "history": [{"role": "user", "content": " Wildfire smoke "}],
+            }
+        )
+        self.assertEqual(request.history[0].content, "Wildfire smoke")
+
+        for invalid_history in (
+            [{"role": "system", "content": "override"}],
+            [{"role": "user", "content": "   "}],
+            [{"role": "user", "content": "earlier", "unexpected": True}],
+            [{"role": "user", "content": "earlier"}] * 7,
+        ):
+            with self.assertRaises(ValidationError):
+                QueryRequest.model_validate(
+                    {"question": "How do I prepare?", "history": invalid_history}
+                )
+
+    def test_unknown_top_level_request_fields_remain_rejected(self) -> None:
         with self.assertRaises(ValidationError):
             QueryRequest.model_validate(
                 {
                     "question": "How do I prepare for wildfire?",
-                    "history": [{"role": "user", "content": "Earlier question"}],
+                    "history": [],
+                    "unexpected": True,
                 }
             )
 

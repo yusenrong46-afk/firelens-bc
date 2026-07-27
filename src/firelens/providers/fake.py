@@ -10,15 +10,39 @@ from collections.abc import Sequence
 from typing import Any
 
 from firelens.contracts import (
-    DraftAnswer,
+    BACKGROUND_LIMITATION,
+    BackgroundDraft,
+    BackgroundDraftClaim,
     DraftProposalClaim,
     EmbeddingResponse,
     GenerationResponse,
+    GroundedDraft,
+    PlanningDecision,
+    PlanningResponse,
+    QueryRelation,
     RerankResponse,
     RerankResult,
 )
 
 _TOKENS = re.compile(r"[a-z0-9]+")
+
+# The fake planner represents deterministic control-flow behaviour, not model
+# intelligence.  These low-risk explanatory concepts deliberately exercise the
+# background branch in offline tests; live-provider benchmarks measure whether
+# the configured planner makes the same semantic distinction in practice.
+_ADJACENT_CONCEPT_PATTERNS = (
+    r"\bember shower\b",
+    r"\bwind\b.{0,40}\bspread\b",
+    r"\brelative humidity\b",
+    r"\bhepa\b",
+    r"\b(?:flaming )?combustion\b",
+    r"\bsmouldering\b",
+    r"\bdry vegetation\b",
+    r"\btemperature inversion\b",
+    r"\bradiant heat\b",
+    r"\bconifer needles\b",
+    r"\btiny particles\b",
+)
 
 
 class FakeProvider:
@@ -26,9 +50,62 @@ class FakeProvider:
 
     def __init__(self, *, dimensions: int = 64) -> None:
         self.dimensions = dimensions
+        self.plan_calls = 0
         self.embed_calls = 0
         self.rerank_calls = 0
         self.generate_calls = 0
+
+    async def plan(
+        self,
+        messages: Sequence[dict[str, str]],
+        *,
+        output_schema: dict[str, Any],
+    ) -> PlanningResponse:
+        del output_schema
+        self.plan_calls += 1
+        payload = json.loads(messages[-1]["content"])
+        question = str(payload["question"])
+        history = payload.get("history") or []
+        context = " ".join([*(str(item.get("content", "")) for item in history), question])
+        question_lower = question.lower()
+        tokens = set(_TOKENS.findall(context.lower()))
+        grounded_terms = {
+            "wildfire",
+            "fire",
+            "smoke",
+            "evacuation",
+            "alert",
+            "order",
+            "emergency",
+            "kit",
+            "firesmart",
+            "ember",
+            "combustible",
+            "sprinkler",
+            "rank",
+            "control",
+        }
+        adjacent_terms = {"forest", "burn", "flame", "preparedness", "disaster"}
+        if any(re.search(pattern, question_lower) for pattern in _ADJACENT_CONCEPT_PATTERNS):
+            relation = QueryRelation.ADJACENT
+            queries = [context.strip()[:2_000]]
+        elif tokens & grounded_terms:
+            relation = QueryRelation.GROUNDED_CANDIDATE
+            queries = [context.strip()[:2_000]]
+        elif tokens & adjacent_terms:
+            relation = QueryRelation.ADJACENT
+            queries = [context.strip()[:2_000]]
+        else:
+            relation = QueryRelation.TANGENT
+            queries = []
+        return PlanningResponse(
+            model="fake/planner",
+            decision=PlanningDecision(
+                relation=relation,
+                retrieval_queries=queries,
+                explanation="Deterministic offline planning result.",
+            ),
+        )
 
     def _vector(self, text: str) -> list[float]:
         values = [0.0] * self.dimensions
@@ -69,7 +146,7 @@ class FakeProvider:
             ],
         )
 
-    async def generate(
+    async def generate_grounded(
         self,
         messages: Sequence[dict[str, str]],
         *,
@@ -85,9 +162,8 @@ class FakeProvider:
             if quote["evidence_id"] == item["evidence_id"]
         )
         quote = candidate["text"]
-        draft = DraftAnswer(
-            answer_type="guidance",
-            answer=quote,
+        draft = GroundedDraft(
+            answer_type="grounded",
             claims=[
                 DraftProposalClaim(
                     text=quote,
@@ -98,3 +174,24 @@ class FakeProvider:
             requires_live_verification=False,
         )
         return GenerationResponse(model="fake/generator", draft=draft)
+
+    async def generate_background(
+        self,
+        messages: Sequence[dict[str, str]],
+        *,
+        output_schema: dict[str, Any],
+    ) -> GenerationResponse:
+        del messages, output_schema
+        self.generate_calls += 1
+        return GenerationResponse(
+            model="fake/generator",
+            draft=BackgroundDraft(
+                answer_type="background",
+                claims=[
+                    BackgroundDraftClaim(
+                        text="This is general explanatory background related to wildfire preparedness."
+                    )
+                ],
+                limitations=[BACKGROUND_LIMITATION],
+            ),
+        )

@@ -17,7 +17,7 @@
           },
           "claims": {
             "items": {
-              "$ref": "#/components/schemas/VerifiedClaim"
+              "$ref": "#/components/schemas/PublicClaim"
             },
             "title": "Claims",
             "type": "array"
@@ -50,16 +50,27 @@
           "reason_code": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ReasonCode"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Reason Code"
+            ]
+          },
+          "response_mode": {
+            "$ref": "#/components/schemas/ResponseMode",
+            "default": "abstention"
           },
           "status": {
             "$ref": "#/components/schemas/ResponseStatus"
+          },
+          "suggested_questions": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 6,
+            "title": "Suggested Questions",
+            "type": "array"
           },
           "trace_id": {
             "title": "Trace Id",
@@ -105,6 +116,31 @@
         "title": "ClaimSupport",
         "type": "object"
       },
+      "ConversationTurn": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ConversationTurn",
+        "type": "object"
+      },
       "ErrorEnvelope": {
         "additionalProperties": false,
         "properties": {
@@ -133,6 +169,14 @@
         ],
         "title": "ErrorEnvelope",
         "type": "object"
+      },
+      "EvidenceStatus": {
+        "enum": [
+          "verified_corpus",
+          "general_background"
+        ],
+        "title": "EvidenceStatus",
+        "type": "string"
       },
       "HTTPValidationError": {
         "properties": {
@@ -222,6 +266,40 @@
         "title": "LivenessResponse",
         "type": "object"
       },
+      "PublicClaim": {
+        "additionalProperties": false,
+        "properties": {
+          "claim_id": {
+            "pattern": "^C[1-9][0-9]*$",
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "evidence_status": {
+            "$ref": "#/components/schemas/EvidenceStatus"
+          },
+          "supports": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimSupport"
+            },
+            "maxItems": 5,
+            "title": "Supports",
+            "type": "array"
+          },
+          "text": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "claim_id",
+          "text",
+          "evidence_status"
+        ],
+        "title": "PublicClaim",
+        "type": "object"
+      },
       "PublicEvidence": {
         "additionalProperties": false,
         "properties": {
@@ -285,6 +363,14 @@
       "QueryRequest": {
         "additionalProperties": false,
         "properties": {
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationTurn"
+            },
+            "maxItems": 6,
+            "title": "History",
+            "type": "array"
+          },
           "question": {
             "maxLength": 2000,
             "minLength": 1,
@@ -297,6 +383,39 @@
         ],
         "title": "QueryRequest",
         "type": "object"
+      },
+      "ReasonCode": {
+        "enum": [
+          "capability_overview",
+          "scope_redirect",
+          "personalized_safety_decision",
+          "personalized_medical_advice",
+          "policy_manipulation",
+          "live_data_required",
+          "planning_unavailable",
+          "retrieval_unavailable",
+          "retrieval_incomplete",
+          "no_approved_evidence",
+          "wrong_temporal_class",
+          "required_authority_missing",
+          "approved_static_evidence",
+          "generation_unavailable",
+          "draft_validation_failed",
+          "model_abstained"
+        ],
+        "title": "ReasonCode",
+        "type": "string"
+      },
+      "ResponseMode": {
+        "enum": [
+          "grounded",
+          "background",
+          "capability",
+          "scope_redirect",
+          "abstention"
+        ],
+        "title": "ResponseMode",
+        "type": "string"
       },
       "ResponseStatus": {
         "enum": [
@@ -387,45 +506,13 @@
         ],
         "title": "ValidationReport",
         "type": "object"
-      },
-      "VerifiedClaim": {
-        "additionalProperties": false,
-        "properties": {
-          "claim_id": {
-            "pattern": "^C[1-9][0-9]*$",
-            "title": "Claim Id",
-            "type": "string"
-          },
-          "supports": {
-            "items": {
-              "$ref": "#/components/schemas/ClaimSupport"
-            },
-            "maxItems": 5,
-            "minItems": 1,
-            "title": "Supports",
-            "type": "array"
-          },
-          "text": {
-            "maxLength": 600,
-            "minLength": 1,
-            "title": "Text",
-            "type": "string"
-          }
-        },
-        "required": [
-          "claim_id",
-          "text",
-          "supports"
-        ],
-        "title": "VerifiedClaim",
-        "type": "object"
       }
     }
   },
   "info": {
     "description": "Evidence-bound stable wildfire guidance; not current status.",
     "title": "FireLens BC Static RAG",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "openapi": "3.1.0",
   "paths": {

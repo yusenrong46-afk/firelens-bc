@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
@@ -6,12 +6,15 @@ import { App } from "../src/App";
 
 const answer = {
   status: "answer",
+  response_mode: "grounded",
   trace_id: "trace-123",
   answer: "Keep water and food in a grab-and-go bag.",
+  suggested_questions: ["How often should I review my emergency plan?"],
   claims: [
     {
       claim_id: "C1",
       text: "Keep water and food in a grab-and-go bag.",
+      evidence_status: "verified_corpus",
       supports: [{ evidence_id: "E1", quote: "Food & water" }],
     },
   ],
@@ -44,6 +47,36 @@ afterEach(() => {
 });
 
 describe("FireLens Source Lens", () => {
+  it("shows capability suggestions before the first question", () => {
+    render(<App />);
+    expect(screen.getByRole("button", { name: "What belongs in a grab-and-go bag?" })).toBeInTheDocument();
+    expect(screen.getByText("0 of 6 turns in context")).toBeInTheDocument();
+  });
+
+  it("renders a capability response with API suggestions and no evidence", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "capability",
+        trace_id: "trace-capability",
+        answer: "I can help you explore reviewed wildfire preparedness guidance.",
+        suggested_questions: ["How should I prepare a household emergency plan?"],
+        claims: [],
+        evidence: [],
+        limitations: [],
+      }), { status: 200 }),
+    ));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask a preparedness question"), "What can you help me with?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText("FireLens topics")).toBeInTheDocument();
+    expect(screen.getByText("Explore the FireLens collection")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "How should I prepare a household emergency plan?" })).toBeInTheDocument();
+    expect(screen.queryByText("Retrieved passage")).not.toBeInTheDocument();
+  });
+
   it("renders a verified answer and its local evidence", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
       new Response(JSON.stringify(answer), { status: 200 }),
@@ -54,17 +87,50 @@ describe("FireLens Source Lens", () => {
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByText("Cited claims in this answer")).toBeInTheDocument();
+    expect(screen.getByText("Verified from FireLens sources")).toBeInTheDocument();
     expect(screen.getAllByText("Keep water and food in a grab-and-go bag.").length).toBeGreaterThan(1);
     expect(screen.getByText("Food & water").tagName).toBe("MARK");
     expect(screen.getByText("PreparedBC")).toBeInTheDocument();
+  });
+
+  it("renders labelled background without an evidence interaction", async () => {
+    const backgroundClaim = "Embers can travel ahead of a wildfire front.";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "background",
+        trace_id: "trace-background",
+        answer: backgroundClaim,
+        suggested_questions: [],
+        claims: [{
+          claim_id: "C1",
+          text: backgroundClaim,
+          evidence_status: "general_background",
+          supports: [],
+        }],
+        evidence: [],
+        limitations: ["General background — not verified against the FireLens corpus."],
+      }), { status: 200 }),
+    ));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask a preparedness question"), "Why can embers be dangerous?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText("General background")).toBeInTheDocument();
+    expect(screen.getByText("General background — no corpus evidence attached")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: backgroundClaim })).not.toBeInTheDocument();
+    expect(screen.queryByText("Retrieved passage")).not.toBeInTheDocument();
   });
 
   it("renders a typed abstention without evidence", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
       new Response(JSON.stringify({
         status: "abstention",
+        response_mode: "abstention",
         trace_id: "trace-live",
         answer: "This question requires current official information.",
+        suggested_questions: [],
         claims: [],
         evidence: [],
         limitations: ["Static guidance cannot establish current status."],
@@ -77,8 +143,75 @@ describe("FireLens Source Lens", () => {
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByText("FireLens did not generate guidance")).toBeInTheDocument();
+    expect(screen.getByText("Official current information required")).toBeInTheDocument();
     expect(screen.getByText(/live_data_required/)).toBeInTheDocument();
     expect(screen.queryByText("Cited claims in this answer")).not.toBeInTheDocument();
+  });
+
+  it("sends completed turns with a follow-up question", async () => {
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(
+      new Response(JSON.stringify(answer), { status: 200 }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Ask a preparedness question"), "What should I pack?");
+    await user.click(screen.getByLabelText("Send question"));
+    await screen.findByText("2 of 6 turns in context");
+    await user.type(screen.getByLabelText("Ask a preparedness question"), "Why does that matter?");
+    await user.click(screen.getByLabelText("Send question"));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+    const firstPayload = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    const secondPayload = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
+    expect(firstPayload.history).toEqual([]);
+    expect(secondPayload.history).toEqual([
+      { role: "user", content: "What should I pack?" },
+      { role: "assistant", content: answer.answer },
+    ]);
+  });
+
+  it("bounds request history at six turns", async () => {
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(
+      new Response(JSON.stringify(answer), { status: 200 }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+
+    for (const question of ["Question one", "Question two", "Question three", "Question four"]) {
+      await user.type(screen.getByLabelText("Ask a preparedness question"), question);
+      await user.click(screen.getByLabelText("Send question"));
+      await screen.findByText(question);
+      await waitFor(() => expect(screen.getByLabelText("Ask a preparedness question")).not.toBeDisabled());
+    }
+
+    const fourthPayload = JSON.parse(String(fetchMock.mock.calls[3][1]?.body));
+    expect(fourthPayload.history).toHaveLength(6);
+    expect(fourthPayload.history[0]).toEqual({ role: "user", content: "Question one" });
+    expect(fourthPayload.history[5]).toEqual({ role: "assistant", content: answer.answer });
+  });
+
+  it("clears local context before the next request", async () => {
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(
+      new Response(JSON.stringify(answer), { status: 200 }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Ask a preparedness question"), "First question");
+    await user.click(screen.getByLabelText("Send question"));
+    await screen.findByText("2 of 6 turns in context");
+    await user.click(screen.getByLabelText("Clear conversation history"));
+    expect(screen.getByText("0 of 6 turns in context")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Ask a preparedness question"), "Fresh question");
+    await user.click(screen.getByLabelText("Send question"));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    const payload = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
+    expect(payload.history).toEqual([]);
   });
 
   it("offers retry only for a retryable provider failure", async () => {

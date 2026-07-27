@@ -76,6 +76,7 @@ class BM25Index:
         *,
         k1: float = DEFAULT_K1,
         b: float = DEFAULT_B,
+        retrieval_texts: Sequence[str] | None = None,
     ) -> None:
         if not records:
             raise ValueError("BM25 requires at least one chunk.")
@@ -88,10 +89,13 @@ class BM25Index:
         if len(set(chunk_ids)) != len(chunk_ids):
             raise ValueError("BM25 chunk IDs must be unique.")
 
+        if retrieval_texts is not None and len(retrieval_texts) != len(records):
+            raise ValueError("retrieval_texts must align with BM25 records")
         self.records = tuple(records)
         self.k1 = k1
         self.b = b
-        self._term_frequencies = [Counter(tokenize(record.text)) for record in self.records]
+        indexed_texts = retrieval_texts or [record.text for record in self.records]
+        self._term_frequencies = [Counter(tokenize(text)) for text in indexed_texts]
         self._document_lengths = [
             sum(frequencies.values()) for frequencies in self._term_frequencies
         ]
@@ -99,6 +103,10 @@ class BM25Index:
             self._document_lengths
         )
         self._document_frequencies = self._calculate_document_frequencies()
+        self._inverse_document_frequencies = {
+            term: self._calculate_inverse_document_frequency(frequency)
+            for term, frequency in self._document_frequencies.items()
+        }
 
     def _calculate_document_frequencies(self) -> Counter[str]:
         frequencies: Counter[str] = Counter()
@@ -106,11 +114,15 @@ class BM25Index:
             frequencies.update(term_frequencies.keys())
         return frequencies
 
-    def _inverse_document_frequency(self, term: str) -> float:
-        document_frequency = self._document_frequencies.get(term, 0)
+    def _calculate_inverse_document_frequency(self, document_frequency: int) -> float:
         document_count = len(self.records)
         return math.log(
             1 + (document_count - document_frequency + 0.5) / (document_frequency + 0.5)
+        )
+
+    def _inverse_document_frequency(self, term: str) -> float:
+        return self._inverse_document_frequencies.get(
+            term, self._calculate_inverse_document_frequency(0)
         )
 
     def _score_document(self, query_terms: set[str], document_index: int) -> float:

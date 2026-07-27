@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 from pydantic import ValidationError
 
-from firelens.contracts import RetrievalHit
+from firelens.contracts import RetrievalHit, RetrievalTextStrategy
 from firelens.errors import IndexValidationError
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.retrieval.embeddings import VectorManifest, sha256_file
@@ -68,6 +68,7 @@ class VectorIndex:
         corpus_path: Path,
         corpus_version: str,
         embedding_model: str,
+        retrieval_text_strategy: RetrievalTextStrategy,
     ) -> VectorIndex:
         if not matrix_path.is_file() or not manifest_path.is_file():
             raise IndexValidationError("Vector index files are missing.")
@@ -83,6 +84,8 @@ class VectorIndex:
             raise IndexValidationError("Vector index corpus hash does not match.")
         if manifest.embedding_model != embedding_model:
             raise IndexValidationError("Vector index embedding model does not match.")
+        if manifest.retrieval_text_strategy != retrieval_text_strategy:
+            raise IndexValidationError("Vector index retrieval text strategy does not match.")
         if manifest.matrix_sha256 != sha256_file(matrix_path):
             raise IndexValidationError("Vector matrix hash does not match.")
         try:

@@ -7,6 +7,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
+from firelens.contracts import RetrievalTextStrategy
+
 
 def _read_dotenv(path: Path) -> dict[str, str]:
     """Read a small dotenv file without adding another runtime dependency."""
@@ -44,6 +46,7 @@ class FireLensConfig(BaseModel):
     openrouter_api_key: SecretStr | None = Field(default=None, repr=False)
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     embedding_model: str = "openai/text-embedding-3-small"
+    retrieval_text_strategy: RetrievalTextStrategy = RetrievalTextStrategy.METADATA_CONTEXT_V1
     rerank_model: str = "cohere/rerank-4-pro"
     generation_model: str = "google/gemini-3.5-flash-lite"
     generation_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
@@ -60,6 +63,7 @@ class FireLensConfig(BaseModel):
     provider_retry_base_seconds: float = Field(default=0.25, ge=0)
     provider_max_concurrency: int = Field(default=4, ge=1, le=16)
     embedding_batch_size: int = Field(default=64, gt=0)
+    query_embedding_cache_size: int = Field(default=256, ge=0, le=4_096)
     trace_max_files: int = Field(default=250, ge=1)
     trace_max_bytes: int = Field(default=50 * 1024 * 1024, ge=1)
     frontend_dist_path: Path | None = None
@@ -87,6 +91,10 @@ class FireLensConfig(BaseModel):
             trace_dir=root / "output/traces",
             frontend_dist_path=frontend_dist,
             openrouter_api_key=SecretStr(key) if key else None,
+            retrieval_text_strategy=RetrievalTextStrategy(
+                setting("FIRELENS_RETRIEVAL_TEXT_STRATEGY")
+                or RetrievalTextStrategy.METADATA_CONTEXT_V1
+            ),
             require_zdr=_bool_value(setting("FIRELENS_REQUIRE_ZDR")),
             debug=_bool_value(setting("FIRELENS_DEBUG")),
             trace_content=_bool_value(setting("FIRELENS_TRACE_CONTENT")),

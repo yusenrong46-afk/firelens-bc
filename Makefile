@@ -2,7 +2,7 @@ PYTHON := .venv/bin/python
 FIRELENS := .venv/bin/firelens
 FRONTEND := prototype/firelens-rag-ui
 
-.PHONY: setup verify run benchmark benchmark-live benchmark-retrieval model-bakeoff canary live-smoke openapi secret-scan
+.PHONY: setup verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid model-bakeoff canary live-smoke openapi secret-scan
 
 setup:
 	@test -d .venv || python3 -m venv .venv
@@ -31,7 +31,9 @@ run:
 	npm --prefix $(FRONTEND) run build
 	$(FIRELENS) serve --host 127.0.0.1 --port 8000
 
-benchmark:
+benchmark: benchmark-v1-red-team benchmark-v1-1-zero-cost
+
+benchmark-v1-red-team:
 	$(FIRELENS) benchmark --split red_team \
 		--output output/benchmark/v1_red_team_report.json \
 		--review-packet output/benchmark/v1_red_team_review.md
@@ -41,8 +43,21 @@ benchmark-live:
 		--output output/benchmark/v1_report.json \
 		--review-packet output/benchmark/v1_semantic_review.md
 
+benchmark-v1-1-zero-cost:
+	$(FIRELENS) benchmark-conversation --offline \
+		--output output/benchmark/v1_1_conversation_offline_report.json \
+		--review-packet output/benchmark/v1_1_conversation_offline_review.md
+
+benchmark-v1-1-paid:
+	$(FIRELENS) benchmark-conversation --max-cost-usd 1.50 \
+		--output output/benchmark/v1_1_conversation_live_report.json \
+		--review-packet output/benchmark/v1_1_conversation_live_review.md
+
 benchmark-retrieval:
 	$(FIRELENS) tune-retrieval --max-cost-usd 1.25
+
+benchmark-contextual:
+	$(FIRELENS) compare-contextual-retrieval
 
 canary:
 	$(FIRELENS) canary --calls 30 --max-cost-usd 0.50

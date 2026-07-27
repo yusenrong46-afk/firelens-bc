@@ -112,6 +112,7 @@ def load_runtime(
             corpus_path=config.corpus_path,
             corpus_version=corpus_version,
             embedding_model=config.embedding_model,
+            retrieval_text_strategy=config.retrieval_text_strategy,
         )
     except IndexValidationError as exc:
         runtime.problems.append(str(exc))

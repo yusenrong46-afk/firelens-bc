@@ -5,8 +5,8 @@ from __future__ import annotations
 import os
 import unittest
 
-from firelens.answering.generate import draft_schema
 from firelens.config import FireLensConfig
+from firelens.contracts import GroundedDraft
 from firelens.providers.openrouter import OpenRouterProvider
 
 
@@ -34,14 +34,23 @@ class OpenRouterSmokeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.results[0].index, 0)
 
     async def test_generation_endpoint(self) -> None:
-        response = await self.provider.generate(
+        response = await self.provider.generate_grounded(
             [
                 {
                     "role": "system",
-                    "content": "Return the requested JSON. Abstain because no evidence is supplied.",
+                    "content": (
+                        "Return the requested JSON. Write one short grounded claim and cite "
+                        "the exact supplied quote ID E1Q1."
+                    ),
                 },
-                {"role": "user", "content": "Answer using no outside information."},
+                {
+                    "role": "user",
+                    "content": (
+                        "Question: What should an emergency kit contain? Evidence E1Q1: "
+                        "An emergency kit should include water."
+                    ),
+                },
             ],
-            output_schema=draft_schema(),
+            output_schema=GroundedDraft.model_json_schema(),
         )
-        self.assertEqual(response.draft.answer_type, "abstention")
+        self.assertEqual(response.draft.answer_type, "grounded")

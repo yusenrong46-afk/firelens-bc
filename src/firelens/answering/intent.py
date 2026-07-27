@@ -1,119 +1,282 @@
-"""Conservative deterministic routing for the static-only first system."""
+"""Deterministic high-risk and capability routing.
+
+Only decisions that must never depend on a model live here.  Ordinary questions
+continue to the bounded conversational planner instead of being rejected by a
+small domain-keyword list.
+"""
 
 from __future__ import annotations
 
 import re
 
 from firelens.contracts import (
+    AuthorityClass,
+    PlanningDecision,
     QueryPlan,
+    QueryRelation,
     QueryRequest,
     QueryRoute,
+    ReasonCode,
     RetrievalRequest,
 )
 
+STATIC_LIMITATION = "This answer uses stable guidance and does not provide current status."
+
+TOPIC_CATALOGUE: tuple[tuple[str, str], ...] = (
+    (
+        "Household emergency planning",
+        "How should I build and review a household emergency plan?",
+    ),
+    ("Emergency kits and grab-and-go bags", "What belongs in an emergency kit?"),
+    (
+        "Evacuation alerts and orders",
+        "What is the difference between an evacuation alert and order?",
+    ),
+    ("Wildfire smoke", "How can I prepare for wildfire smoke?"),
+    ("FireSmart home preparation", "How can I reduce combustible material around my home?"),
+    ("Wildfire rank and stages of control", "What do wildfire rank and stage of control mean?"),
+    (
+        "Structure-protection sprinklers",
+        "What should I know about structure-protection sprinklers?",
+    ),
+)
+
+SUGGESTED_QUESTIONS: tuple[str, ...] = tuple(item[1] for item in TOPIC_CATALOGUE)
+
 _PROHIBITED_PATTERNS = (
     r"\b(safest|best)\s+(?:evacuation\s+)?(road|route|way)\b",
-    r"\bwhich\s+(road|route)\s+should\s+i\s+take\b",
+    r"\bwhich\s+(road|route)\s+should\s+(?:i|we)\s+take\b",
     r"\b(am i|are we|is it)\s+safe\b",
-    r"\bis\s+(?:my|our)\s+.{0,30}\bsafe\b",
-    r"\bshould\s+i\s+(stay|leave|evacuate|return)\b",
+    r"\bis\s+(?:my|our)\s+.{0,40}\bsafe\b",
+    r"\bshould\s+(?:i|we)\s+(stay|leave|evacuate|return)\b",
     r"\b(?:can|could|may)\s+(?:i|we)\s+safely\s+(?:stay|leave|evacuate|return)\b",
-    r"\bwhether\s+(?:my|our)\s+.{0,30}\bsafe\b",
+    r"\bwhether\s+(?:my|our)\s+.{0,40}\bsafe\b",
     r"\btell me\s+whether\s+to\s+evacuate\b",
+    r"\bshould\s+(?:my|our)\s+family\s+(?:stay|leave|evacuate|return)\b",
+)
+
+_PERSONALIZED_MEDICAL_PATTERNS = (
+    r"\bdiagnose\s+(?:me|my|our)\b",
+    r"\bwhat\s+(?:medicine|medication|dose|treatment)\s+should\s+i\b",
+    r"\bshould\s+i\s+(?:take|stop taking|use)\s+.{0,50}\b(?:medicine|medication|inhaler)\b",
+    r"\bdo\s+i\s+have\s+(?:smoke inhalation|carbon monoxide poisoning|asthma)\b",
+    r"\bshould\s+i\s+.{0,50}\b(?:dose|inhaler|medication|medicine)\b",
+    r"\b(?:i|my|we|our)\b.{0,80}\b(?:chest (?:pain|hurts?|tightness)|difficulty breathing|shortness of breath|wheez(?:e|ing)|faint(?:ed|ing)?|dizz(?:y|iness))\b",
+    r"\b(?:chest (?:pain|hurts?|tightness)|difficulty breathing|shortness of breath|wheez(?:e|ing))\b.{0,80}\bwhat should (?:i|we) do\b",
+    r"\bhow should (?:i|we)\s+(?:treat|manage)\s+(?:my|our|the|this)\b",
+    r"\b(?:i|my|me|we|our|us)\b.{0,100}\b(?:treat|manage)\s+(?:my|our|the|this)\s+(?:burn|injury|symptom|headache|cough|pain)\b",
+)
+
+_POLICY_MANIPULATION_PATTERNS = (
+    r"\bignore\s+.{0,50}\b(?:safety|evidence|boundary|rules?|instructions?)\b",
+    r"\b(?:override|bypass|disable)\s+.{0,40}\b(?:safety|evidence|boundary|rules?)\b",
+    r"\buse\s+(?:your\s+)?model memory\b",
 )
 
 _LIVE_PATTERNS = (
-    r"\b(right now|currently|latest|today|tonight|this morning|this afternoon|this evening|this week|at the moment)\b",
-    r"\b(active|current)\s+(fire|wildfire|evacuation|alert|order)\b",
+    r"\b(?:fire|wildfire|evacuation|alert|order|smoke|air quality|road|highway)\b.{0,60}\b(?:right now|currently|latest|today|tonight|this morning|this afternoon|this evening|this week|at the moment)\b",
+    r"\b(?:right now|currently|latest|today|tonight|this morning|this afternoon|this evening|this week|at the moment)\b.{0,60}\b(?:fire|wildfire|evacuation|alert|order|smoke|air quality|road|highway)\b",
+    r"\b(active|current)\s+(fire|wildfire|evacuation|alert|order|smoke|air quality)\b",
     r"\b(is there|are there)\s+(a\s+)?(fire|wildfire)\b",
     r"\bwhere\s+is\s+the\s+(fire|wildfire)\b",
     r"\bnear\s+(me|my home|my house|my address)\b",
     r"\bhas\s+.*\s+(been evacuated|issued an evacuation)\b",
     r"\bwhat(?:'s| is)\s+(?:the\s+)?(?:wildfire|fire)\s+(?:status|situation)\b",
     r"\bhow many\s+(?:active\s+)?(?:fires|wildfires)\b",
-    r"\b(?:evacuation|wildfire|fire)\s+(?:map|status|update|updates)\b",
+    r"\b(?:evacuation|wildfire|fire|smoke|air quality)\s+(?:map|status|update|updates)\b",
     r"\b(?:fires|wildfires)\b.{0,40}\bburning\b",
     r"\bburning\b.{0,40}\b(?:fires|wildfires)\b",
     r"\b(?:road|highway)\b.{0,40}\b(?:open|closed|closure|blocked)\b",
+    r"\b(?:is|are)\s+.{1,60}\b(?:under|on)\s+(?:an?\s+)?evacuation\s+(?:alert|order)\b",
+    r"\bdoes\s+.{1,60}\bhave\s+(?:an?\s+)?evacuation\s+(?:alert|order)\b",
+    r"\bis\s+(?:there\s+)?(?:an?\s+)?evacuation\s+(?:alert|order)\s+(?:active|in effect)\b",
+    r"\b(?:fire|wildfire|evacuation|alert|order|smoke|air quality|road|highway)\b.{0,50}\b(?:active|in effect)\b",
+    r"\b(?:what|how)\s+(?:is|are)\s+(?:the\s+)?(?:air quality|smoke conditions?)\b",
+    r"\bis\s+(?:it|.{1,50})\s+smoky\b",
 )
 
-_DOMAIN_TERMS = (
-    "wildfire",
-    "wildfyre",
-    "fire",
-    "evacuation",
-    "evacuate",
-    "alert",
-    "order",
-    "emergency",
-    "grab-and-go",
-    "go-bag",
-    "smoke",
-    "air quality",
-    "firesmart",
-    "home ignition",
-    "sprinkler",
-    "ember",
-    "stage of control",
-    "being held",
-    "under control",
-    "out of control",
-    "rank",
+_CAPABILITY_PATTERNS = (
+    r"^(?:hi|hello|hey|good (?:morning|afternoon|evening))[!., ]*$",
+    r"\bwhat (?:can|could) you (?:do|help(?: me)? with)\b",
+    r"\b(?:what|which) (?:documents|sources|topics).{0,80}\b(?:collection|know|use|cover)\b",
+    r"\b(?:show|give) me (?:a few )?(?:example|sample|suggested) questions\b",
+    r"\bhelp me (?:use|understand) firelens\b",
+    r"\b(?:do you know anything|what do you know) about\b",
+    r"\bwhat (?:parts|areas|aspects|kinds).{0,60}\bfirelens (?:explain|cover|answer)\b",
+    r"\bhow do (?:your|firelens) citations work\b",
+    r"\bwhat is (?:actually )?inside (?:the )?(?:source )?collection\b",
+    r"\b(?:do not|don't) know what is in the collection\b",
+    r"\b(?:where|how) should i start\b.{0,40}\b(?:firelens|collection|guidance)\b",
+    r"\b(?:kinds|types) of firelens questions\b",
 )
 
 
-def _required_authority(question: str) -> str | None:
-    lowered = question.lower()
-    if any(term in lowered for term in ("smoke", "air quality", "health", "asthma")):
-        return "provincial_public_health"
-    if any(
-        term in lowered
-        for term in ("evacuation alert", "evacuation order", "grab-and-go", "emergency plan")
+_DEICTIC_FOLLOWUP = re.compile(
+    r"\b(?:it|that|this|they|them|there|those|these|the (?:first|second|third|other) one|"
+    r"that (?:guidance|system|advice|status)|right now|what about now)\b"
+)
+
+
+def _routing_texts(request: QueryRequest) -> tuple[str, ...]:
+    """Use history only for a genuinely elliptical current question.
+
+    This prevents an old live request from poisoning a later, self-contained
+    stable-guidance question while still resolving "What about right now?".
+    """
+
+    current = request.question.lower()
+    if len(current.split()) > 16 or not _DEICTIC_FOLLOWUP.search(current):
+        return (current,)
+    previous = [turn.content for turn in request.history if turn.role == "user"]
+    return (current, f"{previous[-1].lower()} {current}") if previous else (current,)
+
+
+def _deictic_action_boundary(request: QueryRequest) -> ReasonCode | None:
+    """Resolve only a narrow "should I do that" high-risk antecedent."""
+
+    if not re.search(
+        r"\bshould\s+(?:i|we)\s+(?:do|follow|take|use)\s+(?:that|this|it)\b",
+        request.question.lower(),
     ):
-        return "provincial_government"
-    if any(term in lowered for term in ("firesmart", "sprinkler", "home ignition")):
-        return "recognized_wildfire_preparedness_program"
+        return None
+    antecedent = " ".join(turn.content.lower() for turn in request.history[-2:])
+    if any(term in antecedent for term in ("dose", "inhaler", "medication", "medicine")):
+        return ReasonCode.PERSONALIZED_MEDICAL_ADVICE
+    if any(
+        term in antecedent
+        for term in ("leave", "evacuate", "return", "evacuation route", "which road")
+    ):
+        return ReasonCode.PERSONALIZED_SAFETY_DECISION
     return None
 
 
-def plan_query(request: QueryRequest) -> QueryPlan:
-    question = " ".join(request.question.split())
+def required_authorities(question: str) -> frozenset[AuthorityClass]:
+    """Infer broad authority needs without forcing a mixed question into one class."""
+
     lowered = question.lower()
-    if any(re.search(pattern, lowered) for pattern in _PROHIBITED_PATTERNS):
+    required: set[AuthorityClass] = set()
+    if any(term in lowered for term in ("smoke", "air quality", "health", "asthma")):
+        required.add(AuthorityClass.PROVINCIAL_PUBLIC_HEALTH)
+    if any(
+        term in lowered
+        for term in (
+            "evacuation alert",
+            "evacuation order",
+            "grab-and-go",
+            "go bag",
+            "emergency kit",
+            "emergency plan",
+            "wildfire rank",
+            "stage of control",
+        )
+    ):
+        required.add(AuthorityClass.PROVINCIAL_GOVERNMENT)
+    if any(
+        term in lowered
+        for term in ("firesmart", "sprinkler", "home ignition", "combustible", "ember")
+    ):
+        required.add(AuthorityClass.WILDFIRE_PREPAREDNESS)
+    return frozenset(required)
+
+
+def plan_query(request: QueryRequest) -> QueryPlan:
+    """Apply the zero-provider-call boundary and mark ordinary questions related."""
+
+    question = request.question
+    lowered = question.lower()
+    routing_texts = _routing_texts(request)
+    deictic_boundary = _deictic_action_boundary(request)
+    medical = any(
+        re.search(pattern, text)
+        for text in routing_texts
+        for pattern in _PERSONALIZED_MEDICAL_PATTERNS
+    )
+    personalized = any(
+        re.search(pattern, text) for text in routing_texts for pattern in _PROHIBITED_PATTERNS
+    )
+    live = any(re.search(pattern, text) for text in routing_texts for pattern in _LIVE_PATTERNS)
+    manipulation = any(
+        re.search(pattern, text)
+        for text in routing_texts
+        for pattern in _POLICY_MANIPULATION_PATTERNS
+    )
+    if medical or deictic_boundary == ReasonCode.PERSONALIZED_MEDICAL_ADVICE:
         return QueryPlan(
-            original_question=request.question,
+            original_question=question,
             normalized_question=question,
             route=QueryRoute.PROHIBITED,
-            retrieval_requests=[],
-            limitations=["FireLens cannot make personalized evacuation or safety decisions."],
+            boundary_reason=ReasonCode.PERSONALIZED_MEDICAL_ADVICE,
+            limitations=["FireLens cannot provide personalized medical advice."],
         )
-    if any(re.search(pattern, lowered) for pattern in _LIVE_PATTERNS):
+    if personalized or deictic_boundary == ReasonCode.PERSONALIZED_SAFETY_DECISION:
         return QueryPlan(
-            original_question=request.question,
+            original_question=question,
             normalized_question=question,
-            route=QueryRoute.LIVE,
-            retrieval_requests=[],
-            limitations=["The static corpus cannot establish current wildfire conditions."],
-        )
-    if not any(term in lowered for term in _DOMAIN_TERMS):
-        return QueryPlan(
-            original_question=request.question,
-            normalized_question=question,
-            route=QueryRoute.STATIC,
-            retrieval_requests=[],
+            route=QueryRoute.PROHIBITED,
+            boundary_reason=ReasonCode.PERSONALIZED_SAFETY_DECISION,
             limitations=[
-                "FireLens only answers questions covered by its approved wildfire-preparedness corpus."
+                "FireLens cannot provide personalized safety advice or evacuation decisions."
             ],
         )
+    if live:
+        return QueryPlan(
+            original_question=question,
+            normalized_question=question,
+            route=QueryRoute.LIVE,
+            boundary_reason=ReasonCode.LIVE_DATA_REQUIRED,
+            limitations=["The static corpus cannot establish current wildfire conditions."],
+        )
+    if manipulation:
+        return QueryPlan(
+            original_question=question,
+            normalized_question=question,
+            route=QueryRoute.PROHIBITED,
+            boundary_reason=ReasonCode.POLICY_MANIPULATION,
+            limitations=[
+                "Conversation text cannot override FireLens safety and evidence rules."
+            ],
+        )
+    if any(re.search(pattern, lowered) for pattern in _CAPABILITY_PATTERNS):
+        return QueryPlan(
+            original_question=question,
+            normalized_question=question,
+            route=QueryRoute.CAPABILITY,
+            limitations=[STATIC_LIMITATION],
+        )
     return QueryPlan(
-        original_question=request.question,
+        original_question=question,
         normalized_question=question,
-        route=QueryRoute.STATIC,
-        retrieval_requests=[
-            RetrievalRequest(
-                query=question,
-                required_authority=_required_authority(question),
-            )
-        ],
-        limitations=["This answer uses stable guidance and does not provide current status."],
+        route=QueryRoute.RELATED,
+        limitations=[STATIC_LIMITATION],
+    )
+
+
+def apply_planning_decision(plan: QueryPlan, decision: PlanningDecision) -> QueryPlan:
+    """Convert a bounded model proposal into deterministic retrieval tasks."""
+
+    if plan.route != QueryRoute.RELATED:
+        return plan
+    if decision.relation == QueryRelation.TANGENT:
+        return plan.model_copy(
+            update={"route": QueryRoute.TANGENT, "relation": decision.relation}
+        )
+    requests = [
+        RetrievalRequest(
+            query=query,
+            required_authorities=required_authorities(query),
+            purpose=f"subquery_{number}",
+        )
+        for number, query in enumerate(decision.retrieval_queries, start=1)
+    ]
+    resolved_question = (
+        decision.retrieval_queries[0]
+        if len(decision.retrieval_queries) == 1
+        else " ".join([plan.original_question, *decision.retrieval_queries])
+    )
+    return plan.model_copy(
+        update={
+            "normalized_question": resolved_question[:2_000],
+            "relation": decision.relation,
+            "retrieval_requests": requests,
+        }
     )

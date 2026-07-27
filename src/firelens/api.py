@@ -55,7 +55,7 @@ def create_app(
 
     app = FastAPI(
         title="FireLens BC Static RAG",
-        version="0.1.0",
+        version="0.1.1",
         description="Evidence-bound stable wildfire guidance; not current status.",
         lifespan=lifespan,
     )
