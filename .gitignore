@@ -34,3 +34,4 @@ data/index/*
 output/*
 !output/.gitkeep
 tmp/
+.vercel

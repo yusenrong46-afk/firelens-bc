@@ -92,6 +92,8 @@ class FireLensConfig(BaseModel):
             trace_dir=(
                 Path(configured_trace_dir).expanduser().resolve()
                 if configured_trace_dir
+                else Path("/tmp/firelens-traces")
+                if setting("VERCEL")
                 else root / "output/traces"
             ),
             frontend_dist_path=frontend_dist,
