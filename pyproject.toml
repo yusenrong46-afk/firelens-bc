@@ -33,6 +33,9 @@ dev = [
 [project.scripts]
 firelens = "firelens.cli:main"
 
+[tool.vercel.scripts]
+build = "python scripts/prepare_vercel_build.py"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "app.py": {
+      "includeFiles": [
+        "data/processed/firelens_static_corpus.chunks.jsonl",
+        "data/processed/firelens_static_corpus.manifest.json",
+        "data/index/firelens_vectors.npy",
+        "data/index/firelens_vectors.manifest.json"
+      ],
+      "maxDuration": 60
+    }
+  }
+}

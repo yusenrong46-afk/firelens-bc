@@ -15,6 +15,7 @@ htmlcov/
 # Frontend dependencies, generated bundles, and browser-test artifacts.
 **/node_modules/
 **/dist/
+/public/
 **/coverage/
 **/playwright-report/
 **/test-results/
