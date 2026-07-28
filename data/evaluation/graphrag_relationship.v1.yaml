@@ -1,0 +1,26 @@
+version: firelens_graphrag_relationship.v1
+cases:
+  - id: GR-01
+    question: Compare household evacuation preparation across PreparedBC and FireSmart guidance.
+  - id: GR-02
+    question: How do evacuation alert terms connect to household kit actions?
+  - id: GR-03
+    question: Connect home ignition zones, embers, and combustible-material recommendations.
+  - id: GR-04
+    question: Compare smoke preparedness with general household emergency planning.
+  - id: GR-05
+    question: Which authorities cover smoke health and which cover evacuation readiness?
+  - id: GR-06
+    question: Explain how stages of control differ from evacuation alert terminology.
+  - id: GR-07
+    question: Summarize common preparedness themes across all reviewed publishers.
+  - id: GR-08
+    question: Where do structure-protection sprinklers fit within broader home preparation?
+  - id: GR-09
+    question: Compare recommendations for documents, medication, water, and pet supplies.
+  - id: GR-10
+    question: Relate wildfire rank information to the limits of household decision-making.
+  - id: GR-11
+    question: Identify guidance shared by at least two authorities without merging their claims.
+  - id: GR-12
+    question: Explain the boundary between stable preparedness guidance and live official status.
