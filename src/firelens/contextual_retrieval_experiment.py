@@ -26,6 +26,7 @@ from firelens.benchmark import (
 )
 from firelens.config import FireLensConfig
 from firelens.contracts import (
+    DocumentContextResponse,
     EmbeddingResponse,
     GenerationResponse,
     PlanningDecision,
@@ -113,6 +114,25 @@ class _RecordingProvider:
         )
         if not isinstance(response, PlanningResponse):
             raise TypeError("provider returned the wrong planning response type")
+        return response
+
+    async def generate_contexts(
+        self,
+        messages: Sequence[dict[str, str]],
+        *,
+        output_schema: dict[str, Any],
+    ) -> DocumentContextResponse:
+        response = await self.delegate.generate_contexts(messages, output_schema=output_schema)
+        self.events.append(
+            {
+                "operation": "document_context",
+                "latency_ms": 0.0,
+                "usage": response.usage,
+                "attempts": response.attempts,
+                "model": response.model,
+                "error_kind": None,
+            }
+        )
         return response
 
     async def embed(self, texts: Sequence[str]) -> EmbeddingResponse:

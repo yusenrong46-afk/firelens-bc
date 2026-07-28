@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from firelens.config import FireLensConfig
 from firelens.contracts import RetrievalTextStrategy
+from firelens.document_context import context_map_for_chunks
 from firelens.errors import IndexValidationError
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.providers.base import AIProvider
@@ -129,9 +130,18 @@ async def _build_vector_index_unlocked(
     vectors: list[list[float] | None] = [None] * len(chunks)
     missing_indices: list[int] = []
     dimensions: int | None = None
+    document_contexts = (
+        context_map_for_chunks(chunks, config.document_context_path)
+        if config.retrieval_text_strategy == RetrievalTextStrategy.DOCUMENT_CONTEXT_V2
+        else {}
+    )
 
     for index, chunk in enumerate(chunks):
-        retrieval_text = render_retrieval_text(chunk, config.retrieval_text_strategy)
+        retrieval_text = render_retrieval_text(
+            chunk,
+            config.retrieval_text_strategy,
+            document_context=document_contexts.get(chunk.chunk_id),
+        )
         content_hash = content_sha256(retrieval_text)
         record = cache.get(
             _cache_key(config.embedding_model, config.retrieval_text_strategy, content_hash)
@@ -147,7 +157,11 @@ async def _build_vector_index_unlocked(
         batch_indices = missing_indices[start : start + config.embedding_batch_size]
         response = await provider.embed(
             [
-                render_retrieval_text(chunks[index], config.retrieval_text_strategy)
+                render_retrieval_text(
+                    chunks[index],
+                    config.retrieval_text_strategy,
+                    document_context=document_contexts.get(chunks[index].chunk_id),
+                )
                 for index in batch_indices
             ]
         )
@@ -158,7 +172,9 @@ async def _build_vector_index_unlocked(
             values = [float(value) for value in vector]
             vectors[chunk_index] = values
             retrieval_text = render_retrieval_text(
-                chunks[chunk_index], config.retrieval_text_strategy
+                chunks[chunk_index],
+                config.retrieval_text_strategy,
+                document_context=document_contexts.get(chunks[chunk_index].chunk_id),
             )
             content_hash = content_sha256(retrieval_text)
             cache[

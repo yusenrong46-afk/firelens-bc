@@ -6,7 +6,12 @@ from firelens.contracts import RetrievalTextStrategy
 from firelens.ingestion.chunking import ChunkRecord
 
 
-def render_retrieval_text(chunk: ChunkRecord, strategy: RetrievalTextStrategy) -> str:
+def render_retrieval_text(
+    chunk: ChunkRecord,
+    strategy: RetrievalTextStrategy,
+    *,
+    document_context: str | None = None,
+) -> str:
     """Return index/rerank text while preserving ``chunk.text`` for citations."""
 
     if strategy == RetrievalTextStrategy.ORIGINAL_V1:
@@ -27,4 +32,15 @@ def render_retrieval_text(chunk: ChunkRecord, strategy: RetrievalTextStrategy) -
             ]
         )
         return "\n".join(fields)
+    if strategy == RetrievalTextStrategy.DOCUMENT_CONTEXT_V2:
+        if document_context is None:
+            raise ValueError(f"missing document context for chunk {chunk.chunk_id}")
+        return "\n".join(
+            [
+                f"Document context: {document_context}",
+                f"Publisher: {chunk.publisher}",
+                f"Document: {chunk.title}",
+                f"Passage: {chunk.text}",
+            ]
+        )
     raise ValueError(f"Unsupported retrieval text strategy: {strategy}")

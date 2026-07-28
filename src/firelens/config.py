@@ -42,6 +42,7 @@ class FireLensConfig(BaseModel):
     vector_matrix_path: Path
     vector_manifest_path: Path
     embedding_cache_path: Path
+    document_context_path: Path
     trace_dir: Path
     openrouter_api_key: SecretStr | None = Field(default=None, repr=False)
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
@@ -89,6 +90,7 @@ class FireLensConfig(BaseModel):
             vector_matrix_path=root / "data/index/firelens_vectors.npy",
             vector_manifest_path=root / "data/index/firelens_vectors.manifest.json",
             embedding_cache_path=root / "data/index/embedding_cache.jsonl",
+            document_context_path=root / "data/index/document_context_v2.jsonl",
             trace_dir=(
                 Path(configured_trace_dir).expanduser().resolve()
                 if configured_trace_dir

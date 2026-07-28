@@ -8,7 +8,13 @@ from collections.abc import Sequence
 from time import perf_counter
 
 from firelens.config import FireLensConfig
-from firelens.contracts import QueryPlan, RetrievalBundle, RetrievalHit
+from firelens.contracts import (
+    QueryPlan,
+    RetrievalBundle,
+    RetrievalHit,
+    RetrievalTextStrategy,
+)
+from firelens.document_context import context_map_for_chunks
 from firelens.errors import IndexValidationError, ProviderError, ProviderErrorKind
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.providers.base import AIProvider
@@ -30,8 +36,18 @@ class RetrievalPipeline:
     ) -> None:
         self.chunks = tuple(chunks)
         self.by_id = {chunk.chunk_id: chunk for chunk in chunks}
+        self.document_contexts = (
+            context_map_for_chunks(chunks, config.document_context_path)
+            if config.retrieval_text_strategy == RetrievalTextStrategy.DOCUMENT_CONTEXT_V2
+            else {}
+        )
         retrieval_texts = [
-            render_retrieval_text(chunk, config.retrieval_text_strategy) for chunk in chunks
+            render_retrieval_text(
+                chunk,
+                config.retrieval_text_strategy,
+                document_context=self.document_contexts.get(chunk.chunk_id),
+            )
+            for chunk in chunks
         ]
         self.bm25 = BM25Index(chunks, retrieval_texts=retrieval_texts)
         self.vector_index = vector_index
@@ -227,7 +243,9 @@ class RetrievalPipeline:
                 plan.normalized_question,
                 [
                     render_retrieval_text(
-                        self.by_id[hit.chunk_id], self.config.retrieval_text_strategy
+                        self.by_id[hit.chunk_id],
+                        self.config.retrieval_text_strategy,
+                        document_context=self.document_contexts.get(hit.chunk_id),
                     )
                     for hit in fused_hits
                 ],

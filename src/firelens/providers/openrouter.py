@@ -14,6 +14,8 @@ from pydantic import ValidationError
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     BackgroundDraft,
+    DocumentContextDraft,
+    DocumentContextResponse,
     EmbeddingResponse,
     GenerationResponse,
     GroundedDraft,
@@ -353,6 +355,27 @@ class OpenRouterProvider:
                 "OpenRouter returned an invalid structured plan.",
             ) from exc
         return PlanningResponse(model=model, decision=decision, usage=usage, attempts=attempts)
+
+    async def generate_contexts(
+        self,
+        messages: Sequence[dict[str, str]],
+        *,
+        output_schema: dict[str, Any],
+    ) -> DocumentContextResponse:
+        payload, model, usage, attempts = await self._chat_json(
+            messages,
+            output_schema=output_schema,
+            schema_name="firelens_document_context",
+            max_tokens=1_800,
+        )
+        try:
+            draft = DocumentContextDraft.model_validate(payload)
+        except ValidationError as exc:
+            raise ProviderError(
+                ProviderErrorKind.INVALID_RESPONSE,
+                "OpenRouter returned invalid document contexts.",
+            ) from exc
+        return DocumentContextResponse(model=model, draft=draft, usage=usage, attempts=attempts)
 
     async def generate_grounded(
         self,

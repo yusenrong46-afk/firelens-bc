@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from typing import Any, Protocol
 
 from firelens.contracts import (
+    DocumentContextResponse,
     EmbeddingResponse,
     GenerationResponse,
     PlanningResponse,
@@ -14,6 +15,13 @@ from firelens.contracts import (
 
 
 class AIProvider(Protocol):
+    async def generate_contexts(
+        self,
+        messages: Sequence[dict[str, str]],
+        *,
+        output_schema: dict[str, Any],
+    ) -> DocumentContextResponse: ...
+
     async def plan(
         self,
         messages: Sequence[dict[str, str]],
