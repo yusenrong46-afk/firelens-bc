@@ -47,15 +47,26 @@ test.beforeEach(async ({ page }) => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          status: "abstention",
-          response_mode: "abstention",
+          status: "answer",
+          response_mode: "live",
           trace_id: "live-trace",
-          answer: "This question requires current official information.",
+          answer: "Current official information: Test Fire is Out of Control.",
           suggested_questions: [],
           claims: [],
           evidence: [],
-          limitations: ["Static guidance cannot establish current status."],
-          reason_code: "live_data_required",
+          limitations: ["No matching record is not a safety determination."],
+          live_results: [{
+            result_id: "incident:7",
+            kind: "incident",
+            authority: "BC Wildfire Service",
+            source_url: "https://example.test/incidents/7",
+            retrieved_at: "2026-07-28T12:00:00Z",
+            freshness: "fresh",
+            status: "Out of Control",
+            name: "Test Fire",
+            geometry_relation: "nearby",
+            geometry: { type: "Point", coordinates: [-123.5, 49.5] },
+          }],
         }),
       });
       return;
@@ -124,8 +135,8 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Ask a preparedness question").fill("What belongs in a grab-and-go bag?");
   await page.getByLabel("Send question").click();
-  await expect(page.getByText("Cited claims in this answer")).toBeVisible();
-  await expect(page.getByText("Verified from FireLens sources")).toBeVisible();
+  await expect(page.getByText("Sources supporting this answer")).toBeVisible();
+  await expect(page.getByText("Reviewed sources")).toBeVisible();
   await expect(page.locator("mark")).toHaveText("Food & water");
   await expect(page.getByText("PreparedBC")).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
@@ -138,7 +149,7 @@ test("labels general background and exposes no evidence control", async ({ page 
   await page.getByLabel("Send question").click();
   await expect(page.getByText("General background", { exact: true })).toBeVisible();
   await expect(page.getByText("General background — no corpus evidence attached")).toBeVisible();
-  await expect(page.getByText("Retrieved passage")).toHaveCount(0);
+  await expect(page.getByText("Source passage")).toHaveCount(0);
 });
 
 test("sends bounded conversation context and can clear it", async ({ page }) => {
@@ -171,14 +182,15 @@ test("redirects a completely tangent request", async ({ page }) => {
   await expect(page.getByText("Outside the FireLens collection", { exact: true })).toBeVisible();
 });
 
-test("shows a current-status abstention through keyboard submission", async ({ page }) => {
+test("shows official live records and a map through keyboard submission", async ({ page }) => {
   await page.goto("/");
   const question = page.getByLabel("Ask a preparedness question");
   await question.fill("Is there an active wildfire near me right now?");
   await question.press("Enter");
-  await expect(page.getByText("FireLens did not generate guidance")).toBeVisible();
-  await expect(page.getByText("Reason: live_data_required")).toBeVisible();
-  await expect(page.getByText("Cited claims in this answer")).toHaveCount(0);
+  await expect(page.getByText("Current BC wildfire information")).toBeVisible();
+  await expect(page.getByText("Test Fire", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Official wildfire records map" })).toBeVisible();
+  await expect(page.getByText("Sources supporting this answer")).toHaveCount(0);
 });
 
 test("offers retry for a transient provider outage", async ({ page }) => {

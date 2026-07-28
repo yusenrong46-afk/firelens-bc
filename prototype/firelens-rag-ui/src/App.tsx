@@ -1,4 +1,4 @@
-import { FormEvent, ReactNode, useMemo, useRef, useState } from "react";
+import { FormEvent, lazy, ReactNode, Suspense, useMemo, useRef, useState } from "react";
 import {
   ArrowSquareOut,
   CaretDown,
@@ -7,6 +7,7 @@ import {
   ChatsCircle,
   Info,
   PaperPlaneTilt,
+  Crosshair,
   Shield,
   Trash,
   UserCircle,
@@ -22,6 +23,7 @@ import {
   AskResponse,
   ConversationTurn,
   FireLensApiError,
+  LocationInput,
   ResponseMode,
 } from "./api";
 import "./styles.css";
@@ -39,6 +41,7 @@ type ViewState = AnswerView | AbstentionView | MessageView;
 type Claim = NonNullable<AskResponse["claims"]>[number];
 type Evidence = NonNullable<AskResponse["evidence"]>[number];
 type Support = NonNullable<Claim["supports"]>[number];
+const LiveMap = lazy(() => import("./LiveMap").then((module) => ({ default: module.LiveMap })));
 
 const INITIAL_SUGGESTIONS = [
   "What belongs in a grab-and-go bag?",
@@ -68,11 +71,14 @@ function responseText(response: AskResponse): string {
 
 function ResponseModeBadge({ mode }: { mode: ResponseMode }) {
   const labels: Record<ResponseMode, string> = {
-    grounded: "Verified from FireLens sources",
+    grounded: "Reviewed sources",
+    partial: "Partially supported",
     background: "General background",
     capability: "FireLens topics",
     scope_redirect: "Outside FireLens scope",
     abstention: "Official current information required",
+    live: "Official live records",
+    mixed: "Live records + reviewed guidance",
   };
   return <span className={`response-badge response-badge--${mode}`}>{labels[mode]}</span>;
 }
@@ -172,7 +178,6 @@ function SourcePanel({
               <div><dt>Document</dt><dd>{evidence.title}</dd></div>
               <div><dt>Locator</dt><dd>{evidence.locator || "Source passage"}</dd></div>
               <div><dt>Guidance type</dt><dd>Stable preparedness guidance</dd></div>
-              <div><dt>Evidence ID</dt><dd>{evidence.evidence_id}</dd></div>
             </dl>
             <div className="canonical">
               <strong>Canonical source</strong>
@@ -182,18 +187,8 @@ function SourcePanel({
             </div>
           </aside>
           <div className="passage">
-            <h2>Retrieved passage</h2>
+            <h2>Source passage</h2>
             <HighlightedPassage text={evidence.context_text} quote={support.quote} />
-            <div className="support-box">
-              <span className="support-icon"><Shield size={20} weight="duotone" /></span>
-              <div>
-                <h3>Traceability check passed</h3>
-                <p>
-                  The highlighted quotation is an exact substring of the local primary
-                  passage. Semantic support is evaluated separately in the reviewed benchmark.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -217,13 +212,17 @@ export function App() {
   const [selected, setSelected] = useState(0);
   const [view, setView] = useState<ViewState>({ kind: "idle" });
   const [history, setHistory] = useState<ConversationTurn[]>([]);
+  const [locationLabel, setLocationLabel] = useState("");
+  const [coarseLocation, setCoarseLocation] = useState<LocationInput | undefined>();
+  const [locationMessage, setLocationMessage] = useState("");
   const activeRequest = useRef<AbortController | null>(null);
 
   const answer = view.kind === "answer" ? view.response : undefined;
   const response = view.kind === "answer" || view.kind === "abstention" ? view.response : undefined;
   const mode = response ? getResponseMode(response) : undefined;
   const claims = answer?.claims ?? [];
-  const selectedClaim = mode === "grounded" ? claims[selected] : undefined;
+  const citedMode = mode === "grounded" || mode === "partial" || mode === "mixed";
+  const selectedClaim = citedMode ? claims[selected] : undefined;
   const evidenceById = useMemo(
     () => new Map((answer?.evidence ?? []).map((item) => [item.evidence_id, item])),
     [answer],
@@ -255,7 +254,15 @@ export function App() {
     setSelected(0);
     setView({ kind: "loading", question: normalized });
     try {
-      const nextResponse = await askFireLens(normalized, requestHistory, controller.signal);
+      const requestLocation = locationLabel.trim()
+        ? { label: locationLabel.trim(), radius_km: 50 }
+        : coarseLocation;
+      const nextResponse = await askFireLens(
+        normalized,
+        requestHistory,
+        requestLocation,
+        controller.signal,
+      );
       const nextHistory: ConversationTurn[] = [
         ...requestHistory,
         { role: "user", content: normalized },
@@ -294,7 +301,31 @@ export function App() {
     setHistory([]);
     setLastQuestion("");
     setSelected(0);
+    setLocationLabel("");
+    setCoarseLocation(undefined);
+    setLocationMessage("");
     setView({ kind: "idle" });
+  }
+
+  function useApproximateLocation() {
+    if (!navigator.geolocation) {
+      setLocationMessage("Location is not available in this browser.");
+      return;
+    }
+    setLocationMessage("Requesting permission…");
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setLocationLabel("");
+        setCoarseLocation({
+          latitude: Math.round(coords.latitude * 100) / 100,
+          longitude: Math.round(coords.longitude * 100) / 100,
+          radius_km: 50,
+        });
+        setLocationMessage("Approximate location ready for this session.");
+      },
+      () => setLocationMessage("Location was not shared."),
+      { enableHighAccuracy: false, maximumAge: 300_000, timeout: 8_000 },
+    );
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -321,13 +352,13 @@ export function App() {
           <img src="/assets/firelens-mark.png" alt="" />
           <span><strong>FireLens</strong> BC</span>
         </a>
-        <a className="official-link" href="https://www.emergencyinfobc.gov.bc.ca/" target="_blank" rel="noreferrer">
-          <ArrowSquareOut size={18} /> Official current information
+        <a className="official-link" href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
+          <ArrowSquareOut size={18} /> Official BCWS map
         </a>
       </header>
       <div className="boundary">
         <Shield size={17} />
-        <span>Official preparedness guidance — not current incident or evacuation status.</span>
+        <span>Reviewed preparedness guidance and official live records — not emergency direction.</span>
       </div>
 
       <main className="workspace">
@@ -373,17 +404,16 @@ export function App() {
                     Retry this question
                   </button>
                 )}
-                {view.kind === "answer" && <small>Trace: {view.response.trace_id}</small>}
               </div>
             </div>
 
             {view.kind === "answer" && claims.length > 0 && (
               <div className="claim-group">
                 <span className="panel-label">
-                  {mode === "grounded" ? "Cited claims in this answer" : "General background in this answer"}
+                  {citedMode ? "Sources supporting this answer" : "General background in this answer"}
                 </span>
                 <div className="claim-list">
-                  {claims.map((claim, index) => mode === "grounded" ? (
+                  {claims.map((claim, index) => citedMode ? (
                       <ClaimButton
                         key={claim.claim_id}
                         claim={claim}
@@ -442,13 +472,43 @@ export function App() {
                 <PaperPlaneTilt size={20} weight="fill" />
               </button>
             </div>
+            <div className="location-row">
+              <input
+                aria-label="City or community for live questions"
+                value={locationLabel}
+                onChange={(event) => {
+                  setLocationLabel(event.target.value);
+                  setCoarseLocation(undefined);
+                  setLocationMessage("");
+                }}
+                placeholder="City or community for live questions (optional)"
+                maxLength={120}
+                disabled={view.kind === "loading"}
+              />
+              <button type="button" onClick={useApproximateLocation} disabled={view.kind === "loading"}>
+                <Crosshair size={16} /> Use approximate location
+              </button>
+            </div>
+            {locationMessage && <p className="location-message" role="status">{locationMessage}</p>}
             <p><Info size={16} /> For property-specific risk assessments or current fire conditions, consult the appropriate official service.</p>
           </form>
         </section>
 
         <section className="evidence-panel" aria-label="Selected claim evidence">
           <div className="evidence-inner">
-            {view.kind === "answer" && mode === "grounded" && selectedClaim ? (
+            {view.kind === "answer" && (mode === "live" || mode === "mixed") && (view.response.live_results ?? []).length > 0 ? (
+              <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading the official map">Preparing map layers…</EvidencePlaceholder>}>
+                <LiveMap results={view.response.live_results ?? []} />
+                {mode === "mixed" && (view.response.evidence ?? []).length > 0 && (
+                  <div className="mixed-sources">
+                    <strong>Preparedness sources</strong>
+                    {(view.response.evidence ?? []).map((item) => (
+                      <a key={item.evidence_id} href={item.canonical_url} target="_blank" rel="noreferrer">{item.title}</a>
+                    ))}
+                  </div>
+                )}
+              </Suspense>
+            ) : view.kind === "answer" && citedMode && selectedClaim ? (
               <>
                 <span className="selected-kicker">Selected claim {selected + 1}</span>
                 <h1>{selectedClaim.text}</h1>
@@ -491,8 +551,8 @@ export function App() {
                 The failure was returned explicitly. FireLens did not substitute another model or answer from memory.
               </EvidencePlaceholder>
             ) : (
-              <EvidencePlaceholder icon={<Shield size={36} />} title="Inspect every cited claim">
-                Submit a stable preparedness question. An accepted answer will expose its exact quotations, local evidence IDs, publishers, and canonical source links here.
+              <EvidencePlaceholder icon={<Shield size={36} />} title="Ask, then inspect the source">
+                FireLens answers from reviewed guidance, or shows current official wildfire records when a live question requires them.
               </EvidencePlaceholder>
             )}
           </div>

@@ -86,8 +86,8 @@ describe("FireLens Source Lens", () => {
     await user.type(screen.getByLabelText("Ask a preparedness question"), "What goes in a grab-and-go bag?");
     await user.click(screen.getByLabelText("Send question"));
 
-    expect(await screen.findByText("Cited claims in this answer")).toBeInTheDocument();
-    expect(screen.getByText("Verified from FireLens sources")).toBeInTheDocument();
+    expect(await screen.findByText("Sources supporting this answer")).toBeInTheDocument();
+    expect(screen.getByText("Reviewed sources")).toBeInTheDocument();
     expect(screen.getAllByText("Keep water and food in a grab-and-go bag.").length).toBeGreaterThan(1);
     expect(screen.getByText("Food & water").tagName).toBe("MARK");
     expect(screen.getByText("PreparedBC")).toBeInTheDocument();
@@ -145,7 +145,41 @@ describe("FireLens Source Lens", () => {
     expect(await screen.findByText("FireLens did not generate guidance")).toBeInTheDocument();
     expect(screen.getByText("Official current information required")).toBeInTheDocument();
     expect(screen.getByText(/live_data_required/)).toBeInTheDocument();
-    expect(screen.queryByText("Cited claims in this answer")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sources supporting this answer")).not.toBeInTheDocument();
+  });
+
+  it("renders official live records in the map panel", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "live",
+        trace_id: "trace-live-map",
+        answer: "Current official information: Test Fire is Out of Control.",
+        claims: [],
+        evidence: [],
+        limitations: ["No matching record is not a safety determination."],
+        live_results: [{
+          result_id: "incident:7",
+          kind: "incident",
+          authority: "BC Wildfire Service",
+          source_url: "https://example.test/incidents/7",
+          retrieved_at: "2026-07-28T12:00:00Z",
+          freshness: "fresh",
+          status: "Out of Control",
+          name: "Test Fire",
+          geometry_relation: "nearby",
+          geometry: { type: "Point", coordinates: [-123.5, 49.5] },
+        }],
+      }), { status: 200 }),
+    ));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask a preparedness question"), "Is there an active wildfire now?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText("Current BC wildfire information")).toBeInTheDocument();
+    expect(screen.getAllByText("Official live records").length).toBeGreaterThan(0);
+    expect(screen.getByText("Test Fire")).toBeInTheDocument();
   });
 
   it("sends completed turns with a follow-up question", async () => {
@@ -244,7 +278,7 @@ describe("FireLens Source Lens", () => {
     const { container } = render(<App />);
     await user.type(screen.getByLabelText("Ask a preparedness question"), "What should I pack?");
     await user.click(screen.getByLabelText("Send question"));
-    await screen.findByText("Cited claims in this answer");
+    await screen.findByText("Sources supporting this answer");
     const result = await axe(container);
     expect(result.violations).toEqual([]);
   });
