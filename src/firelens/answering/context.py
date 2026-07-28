@@ -19,6 +19,46 @@ from firelens.contracts import (
     SupportStatus,
 )
 from firelens.ingestion.chunking import ChunkRecord
+from firelens.retrieval.bm25 import tokenize
+
+_ASPECT_STOPWORDS = {
+    "about",
+    "after",
+    "also",
+    "and",
+    "are",
+    "for",
+    "from",
+    "how",
+    "into",
+    "should",
+    "that",
+    "the",
+    "their",
+    "this",
+    "what",
+    "when",
+    "where",
+    "which",
+    "with",
+    "would",
+    "user",
+    "question",
+    "information",
+    "guidance",
+}
+
+
+def _aspect_supported(aspect: str, packet: EvidencePacket) -> bool:
+    required = {
+        token for token in tokenize(aspect) if token not in _ASPECT_STOPWORDS and len(token) > 1
+    }
+    if not required:
+        return False
+    available = set(tokenize(" ".join(item.primary_text for item in packet.items)))
+    overlap = required & available
+    minimum = 1 if len(required) == 1 else 2
+    return len(overlap) >= minimum and len(overlap) / len(required) >= 0.4
 
 
 @dataclass(frozen=True)
@@ -231,14 +271,37 @@ def decide_support(
         *(request.required_authorities for request in plan.retrieval_requests)
     )
     available = {item.authority_class for item in packet.items}
-    if required and not (available & required):
+    if required and not required.issubset(available):
         return SupportDecision(
             status=SupportStatus.INSUFFICIENT_EVIDENCE,
             reason_code=ReasonCode.REQUIRED_AUTHORITY_MISSING,
-            explanation="None of the required authority classes was present in selected evidence.",
+            explanation="One or more required authority classes were absent from selected evidence.",
         )
+    if plan.required_aspects:
+        supported_aspects = [
+            aspect for aspect in plan.required_aspects if _aspect_supported(aspect, packet)
+        ]
+        missing_aspects = [
+            aspect for aspect in plan.required_aspects if aspect not in supported_aspects
+        ]
+        if missing_aspects and not supported_aspects:
+            return SupportDecision(
+                status=SupportStatus.INSUFFICIENT_EVIDENCE,
+                reason_code=ReasonCode.NO_APPROVED_EVIDENCE,
+                explanation="The selected evidence does not directly cover the required answer aspects.",
+                missing_aspects=missing_aspects,
+            )
+        if missing_aspects:
+            return SupportDecision(
+                status=SupportStatus.PARTIAL,
+                reason_code=ReasonCode.RETRIEVAL_INCOMPLETE,
+                explanation="The selected evidence supports only part of the request.",
+                supported_aspects=supported_aspects,
+                missing_aspects=missing_aspects,
+            )
     return SupportDecision(
         status=SupportStatus.ANSWERABLE,
         reason_code=ReasonCode.APPROVED_STATIC_EVIDENCE,
         explanation="Approved stable guidance is available.",
+        supported_aspects=list(plan.required_aspects),
     )

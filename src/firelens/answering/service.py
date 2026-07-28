@@ -58,6 +58,7 @@ from firelens.contracts import (
 from firelens.errors import ProviderError
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.providers.base import AIProvider
+from firelens.retrieval.bm25 import BM25Index
 from firelens.retrieval.pipeline import RetrievalPipeline
 from firelens.traces import TraceRecorder
 
@@ -172,6 +173,7 @@ class StaticRAGService:
         self.chunks = tuple(chunks)
         self.evidence_index = EvidenceIndex.from_chunks(self.chunks)
         self.corpus_version = corpus_version
+        self.planning_index = BM25Index(self.chunks)
         self.retrieval = retrieval
         self.provider = provider
         self.config = config
@@ -181,6 +183,23 @@ class StaticRAGService:
             max_files=config.trace_max_files,
             max_bytes=config.trace_max_bytes,
         )
+
+    def _planning_candidates(self, question: str) -> list[dict[str, str]]:
+        """Expose bounded corpus vocabulary without treating snippets as evidence."""
+
+        candidates: list[dict[str, str]] = []
+        for result in self.planning_index.search(question, top_k=5):
+            snippet = " ".join(result.text.split())[:360]
+            candidates.append(
+                {
+                    "chunk_id": result.chunk_id,
+                    "source_id": result.source_id,
+                    "title": result.title,
+                    "section": result.section_title or "",
+                    "snippet": snippet,
+                }
+            )
+        return candidates
 
     async def _record_ask(
         self,
@@ -218,7 +237,10 @@ class StaticRAGService:
             planning_started = perf_counter()
             try:
                 planning = await self.provider.plan(
-                    planning_messages(request), output_schema=planning_schema()
+                    planning_messages(
+                        request, corpus_candidates=self._planning_candidates(request.question)
+                    ),
+                    output_schema=planning_schema(),
                 )
                 plan = apply_planning_decision(plan, planning.decision)
             except ProviderError as exc:
@@ -501,7 +523,7 @@ class StaticRAGService:
                 observer=observer,
             )
 
-        if search.support.status != SupportStatus.ANSWERABLE:
+        if search.support.status not in {SupportStatus.ANSWERABLE, SupportStatus.PARTIAL}:
             response = _safe_abstention(
                 trace_id,
                 answer=(
@@ -522,6 +544,16 @@ class StaticRAGService:
                 limitations=search.plan.limitations,
             )
             return await self._record_ask(request, response, route=route.value)
+        if search.support.status == SupportStatus.PARTIAL:
+            packet = packet.model_copy(
+                update={
+                    "limitations": [
+                        *packet.limitations,
+                        "Not supported by selected evidence: "
+                        + "; ".join(search.support.missing_aspects),
+                    ]
+                }
+            )
 
         started = perf_counter()
         try:
@@ -630,7 +662,11 @@ class StaticRAGService:
         response = AskResponse(
             status=ResponseStatus.ANSWER,
             trace_id=trace_id,
-            response_mode=ResponseMode.GROUNDED,
+            response_mode=(
+                ResponseMode.PARTIAL
+                if search.support.status == SupportStatus.PARTIAL
+                else ResponseMode.GROUNDED
+            ),
             answer=" ".join(claim.text.strip() for claim in public_claims),
             claims=public_claims,
             evidence=evidence,

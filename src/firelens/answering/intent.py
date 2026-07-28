@@ -44,7 +44,7 @@ TOPIC_CATALOGUE: tuple[tuple[str, str], ...] = (
 SUGGESTED_QUESTIONS: tuple[str, ...] = tuple(item[1] for item in TOPIC_CATALOGUE)
 
 _PROHIBITED_PATTERNS = (
-    r"\b(safest|best)\s+(?:evacuation\s+)?(road|route|way)\b",
+    r"\b(safest|best)\s+(?:(?:evacuation|escape)\s+)?(road|route|way)\b",
     r"\bwhich\s+(road|route)\s+should\s+(?:i|we)\s+take\b",
     r"\b(am i|are we|is it)\s+safe\b",
     r"\bis\s+(?:my|our)\s+.{0,40}\bsafe\b",
@@ -53,10 +53,14 @@ _PROHIBITED_PATTERNS = (
     r"\bwhether\s+(?:my|our)\s+.{0,40}\bsafe\b",
     r"\btell me\s+whether\s+to\s+evacuate\b",
     r"\bshould\s+(?:my|our)\s+family\s+(?:stay|leave|evacuate|return)\b",
+    r"\b(?:can|could|may)\s+(?:i|we)\s+(?:return|go back)\s+home\b",
+    r"\b(?:return|go back)\s+home\s+(?:yet|now|today|tonight)\b",
 )
 
 _PERSONALIZED_MEDICAL_PATTERNS = (
-    r"\bdiagnose\s+(?:me|my|our)\b",
+    r"\bdiagnos(?:e|is)\b.{0,80}\b(?:me|my|our|whether|cough|symptoms?)\b",
+    r"\bprescribe\b.{0,80}\b(?:me|my|for|smoke|headache|cough|medicine|medication)\b",
+    r"\bwhat\s+dose\s+of\s+.{0,60}\b(?:safe|take|use|for me)\b",
     r"\bwhat\s+(?:medicine|medication|dose|treatment)\s+should\s+i\b",
     r"\bshould\s+i\s+(?:take|stop taking|use)\s+.{0,50}\b(?:medicine|medication|inhaler)\b",
     r"\bdo\s+i\s+have\s+(?:smoke inhalation|carbon monoxide poisoning|asthma)\b",
@@ -278,5 +282,6 @@ def apply_planning_decision(plan: QueryPlan, decision: PlanningDecision) -> Quer
             "normalized_question": resolved_question[:2_000],
             "relation": decision.relation,
             "retrieval_requests": requests,
+            "required_aspects": decision.required_aspects,
         }
     )

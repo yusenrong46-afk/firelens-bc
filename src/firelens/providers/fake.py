@@ -13,6 +13,9 @@ from firelens.contracts import (
     BACKGROUND_LIMITATION,
     BackgroundDraft,
     BackgroundDraftClaim,
+    DocumentContextDraft,
+    DocumentContextItem,
+    DocumentContextResponse,
     DraftProposalClaim,
     EmbeddingResponse,
     GenerationResponse,
@@ -69,6 +72,16 @@ class FakeProvider:
         context = " ".join([*(str(item.get("content", "")) for item in history), question])
         question_lower = question.lower()
         tokens = set(_TOKENS.findall(context.lower()))
+        candidate_tokens = {
+            token
+            for candidate in payload.get("untrusted_corpus_candidates") or []
+            for token in _TOKENS.findall(
+                " ".join(str(value) for value in candidate.values()).lower()
+            )
+        }
+        distinctive_query_tokens = {
+            token for token in _TOKENS.findall(question_lower) if len(token) > 2
+        }
         grounded_terms = {
             "wildfire",
             "fire",
@@ -89,7 +102,7 @@ class FakeProvider:
         if any(re.search(pattern, question_lower) for pattern in _ADJACENT_CONCEPT_PATTERNS):
             relation = QueryRelation.ADJACENT
             queries = [context.strip()[:2_000]]
-        elif tokens & grounded_terms:
+        elif tokens & grounded_terms or distinctive_query_tokens & candidate_tokens:
             relation = QueryRelation.GROUNDED_CANDIDATE
             queries = [context.strip()[:2_000]]
         elif tokens & adjacent_terms:
@@ -105,6 +118,28 @@ class FakeProvider:
                 retrieval_queries=queries,
                 explanation="Deterministic offline planning result.",
             ),
+        )
+
+    async def generate_contexts(
+        self,
+        messages: Sequence[dict[str, str]],
+        *,
+        output_schema: dict[str, Any],
+    ) -> DocumentContextResponse:
+        del output_schema
+        payload = json.loads(messages[-1]["content"])
+        items = []
+        for chunk in payload["chunks"]:
+            context = (
+                f"This passage comes from {payload['document_title']} and belongs to the "
+                f"section {chunk.get('section') or 'general guidance'}. It provides reviewed "
+                "wildfire preparedness information whose exact wording remains in the raw passage "
+                "and should be used only to improve retrieval, never as citation evidence."
+            )
+            items.append(DocumentContextItem(chunk_id=chunk["chunk_id"], context=context))
+        return DocumentContextResponse(
+            model="fake/context-generator",
+            draft=DocumentContextDraft(items=items),
         )
 
     def _vector(self, text: str) -> list[float]:

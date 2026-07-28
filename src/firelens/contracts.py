@@ -7,6 +7,7 @@ corpus citation and a grounded answer cannot omit one.
 
 from __future__ import annotations
 
+from datetime import datetime
 from enum import StrEnum
 from typing import Annotated, Any, Literal
 
@@ -60,6 +61,9 @@ class ResponseMode(StrEnum):
     CAPABILITY = "capability"
     SCOPE_REDIRECT = "scope_redirect"
     ABSTENTION = "abstention"
+    PARTIAL = "partial"
+    LIVE = "live"
+    MIXED = "mixed"
 
 
 class AuthorityClass(StrEnum):
@@ -75,6 +79,7 @@ class TemporalClass(StrEnum):
 class RetrievalTextStrategy(StrEnum):
     ORIGINAL_V1 = "original_v1"
     METADATA_CONTEXT_V1 = "metadata_context_v1"
+    DOCUMENT_CONTEXT_V2 = "document_context_v2"
 
 
 class ReasonCode(StrEnum):
@@ -98,6 +103,7 @@ class ReasonCode(StrEnum):
 
 class SupportStatus(StrEnum):
     ANSWERABLE = "answerable"
+    PARTIAL = "partial"
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
     REQUIRES_LIVE_DATA = "requires_live_data"
     PROHIBITED = "prohibited"
@@ -122,9 +128,48 @@ class ConversationTurn(FrozenStrictModel):
         return normalized
 
 
+class LocationInput(FrozenStrictModel):
+    """Coarse, opt-in location used only for the current live-data request."""
+
+    label: str | None = Field(default=None, min_length=2, max_length=120)
+    latitude: float | None = Field(default=None, ge=48.0, le=61.0)
+    longitude: float | None = Field(default=None, ge=-140.0, le=-113.0)
+    radius_km: float = Field(default=50.0, ge=1.0, le=200.0)
+
+    @field_validator("label")
+    @classmethod
+    def reject_exact_address(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = " ".join(value.split())
+        lowered = normalized.casefold()
+        street_terms = (" street", " st ", " avenue", " ave ", " road", " rd ", " boulevard")
+        if any(character.isdigit() for character in normalized) or any(
+            term in f" {lowered} " for term in street_terms
+        ):
+            raise ValueError("use a community or place label, not an exact address")
+        return normalized
+
+    @field_validator("latitude", "longitude")
+    @classmethod
+    def round_coordinates(cls, value: float | None) -> float | None:
+        return round(value, 2) if value is not None else None
+
+    @model_validator(mode="after")
+    def require_one_location_form(self) -> LocationInput:
+        has_label = self.label is not None
+        has_coordinates = self.latitude is not None or self.longitude is not None
+        if has_label == has_coordinates:
+            raise ValueError("provide either a place label or coordinates")
+        if has_coordinates and (self.latitude is None or self.longitude is None):
+            raise ValueError("latitude and longitude must be provided together")
+        return self
+
+
 class QueryRequest(StrictModel):
     question: str = Field(min_length=1, max_length=2_000)
     history: list[ConversationTurn] = Field(default_factory=list, max_length=6)
+    location: LocationInput | None = None
 
     @field_validator("question")
     @classmethod
@@ -147,6 +192,9 @@ class PlanningDecision(FrozenStrictModel):
         default_factory=list, max_length=3
     )
     explanation: str = Field(min_length=1, max_length=300)
+    required_aspects: list[Annotated[str, Field(min_length=2, max_length=160)]] = Field(
+        default_factory=list, max_length=6
+    )
 
     @field_validator("retrieval_queries")
     @classmethod
@@ -180,6 +228,7 @@ class QueryPlan(FrozenStrictModel):
     relation: QueryRelation | None = None
     retrieval_requests: list[RetrievalRequest] = Field(default_factory=list, max_length=3)
     limitations: list[str] = Field(default_factory=list)
+    required_aspects: list[str] = Field(default_factory=list, max_length=6)
 
 
 class RetrievalHit(FrozenStrictModel):
@@ -260,6 +309,50 @@ class SupportDecision(FrozenStrictModel):
     status: SupportStatus
     reason_code: ReasonCode
     explanation: str
+    supported_aspects: list[str] = Field(default_factory=list)
+    missing_aspects: list[str] = Field(default_factory=list)
+
+
+class LiveResultKind(StrEnum):
+    INCIDENT = "incident"
+    PERIMETER = "perimeter"
+    EVACUATION = "evacuation"
+
+
+class GeometryRelation(StrEnum):
+    INSIDE = "inside"
+    NEARBY = "nearby"
+    OUTSIDE = "outside"
+    UNKNOWN = "unknown"
+
+
+class Freshness(StrEnum):
+    FRESH = "fresh"
+    STALE = "stale"
+
+
+class LiveResult(FrozenStrictModel):
+    result_id: str = Field(min_length=1, max_length=200)
+    kind: LiveResultKind
+    authority: str = "BC Wildfire Service"
+    source_url: HttpUrl
+    source_updated_at: datetime | None = None
+    retrieved_at: datetime
+    freshness: Freshness
+    status: str = Field(min_length=1, max_length=200)
+    name: str | None = Field(default=None, max_length=300)
+    incident_number: str | None = Field(default=None, max_length=100)
+    size_hectares: float | None = Field(default=None, ge=0)
+    issuer: str | None = Field(default=None, max_length=300)
+    geometry_relation: GeometryRelation = GeometryRelation.UNKNOWN
+    geometry: dict[str, Any]
+
+
+class LiveMapResponse(FrozenStrictModel):
+    generated_at: datetime
+    results: list[LiveResult]
+    unavailable_layers: list[LiveResultKind] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
 
 
 class ClaimSupport(FrozenStrictModel):
@@ -380,6 +473,7 @@ class AskResponse(StrictModel):
     reason_code: ReasonCode | None = None
     validation: ValidationReport | None = None
     error_kind: str | None = None
+    live_results: list[LiveResult] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_public_state(self) -> AskResponse:
@@ -390,7 +484,7 @@ class AskResponse(StrictModel):
         if len(evidence_ids) != len(set(evidence_ids)):
             raise ValueError("public evidence IDs must be unique")
 
-        if self.response_mode == ResponseMode.GROUNDED:
+        if self.response_mode in {ResponseMode.GROUNDED, ResponseMode.PARTIAL}:
             if self.status != ResponseStatus.ANSWER or not self.claims or not self.evidence:
                 raise ValueError("grounded responses require accepted claims")
             if any(
@@ -416,13 +510,21 @@ class AskResponse(StrictModel):
                 raise ValueError("background responses cannot expose evidence")
             if BACKGROUND_LIMITATION not in self.limitations:
                 raise ValueError("background response requires its visible limitation")
+        elif self.response_mode == ResponseMode.LIVE:
+            if self.status != ResponseStatus.ANSWER or not self.live_results or not self.answer:
+                raise ValueError("live responses require current official results")
+            if self.claims or self.evidence:
+                raise ValueError("live responses cannot present static evidence claims")
+        elif self.response_mode == ResponseMode.MIXED:
+            if self.status != ResponseStatus.ANSWER or not self.live_results or not self.answer:
+                raise ValueError("mixed responses require live results and an answer")
         elif self.response_mode in {ResponseMode.CAPABILITY, ResponseMode.SCOPE_REDIRECT}:
             if self.status != ResponseStatus.ANSWER or self.claims or self.evidence:
                 raise ValueError("local conversational responses cannot contain claims")
         else:
             if self.status not in {ResponseStatus.ABSTENTION, ResponseStatus.ERROR}:
                 raise ValueError("answer status requires a non-abstention response mode")
-            if self.claims or self.evidence:
+            if self.claims or self.evidence or self.live_results:
                 raise ValueError(
                     "abstention and error responses cannot contain evidence claims"
                 )
@@ -479,5 +581,29 @@ class PlanningResponse(FrozenStrictModel):
 class GenerationResponse(FrozenStrictModel):
     model: str
     draft: GroundedDraft | BackgroundDraft
+    usage: dict[str, Any] = Field(default_factory=dict)
+    attempts: int = Field(default=1, ge=1)
+
+
+class DocumentContextItem(FrozenStrictModel):
+    chunk_id: str = Field(min_length=1)
+    context: str = Field(min_length=20, max_length=800)
+
+    @field_validator("context")
+    @classmethod
+    def bound_context_words(cls, value: str) -> str:
+        normalized = " ".join(value.split())
+        if not 20 <= len(normalized.split()) <= 120:
+            raise ValueError("document context must contain 20 to 120 words")
+        return normalized
+
+
+class DocumentContextDraft(FrozenStrictModel):
+    items: list[DocumentContextItem] = Field(min_length=1, max_length=12)
+
+
+class DocumentContextResponse(FrozenStrictModel):
+    model: str
+    draft: DocumentContextDraft
     usage: dict[str, Any] = Field(default_factory=dict)
     attempts: int = Field(default=1, ge=1)
