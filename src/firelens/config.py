@@ -83,6 +83,7 @@ class FireLensConfig(BaseModel):
         key = setting("OPENROUTER_API_KEY")
         frontend_dist = root / "prototype/firelens-rag-ui/dist/client"
         configured_trace_dir = setting("FIRELENS_TRACE_DIR")
+        configured_document_context = setting("FIRELENS_DOCUMENT_CONTEXT_PATH")
         return cls(
             project_root=root,
             corpus_path=root / "data/processed/firelens_static_corpus.chunks.jsonl",
@@ -90,7 +91,11 @@ class FireLensConfig(BaseModel):
             vector_matrix_path=root / "data/index/firelens_vectors.npy",
             vector_manifest_path=root / "data/index/firelens_vectors.manifest.json",
             embedding_cache_path=root / "data/index/embedding_cache.jsonl",
-            document_context_path=root / "data/index/document_context_v2.jsonl",
+            document_context_path=(
+                Path(configured_document_context).expanduser().resolve()
+                if configured_document_context
+                else root / "data/index/document_context_v2.jsonl"
+            ),
             trace_dir=(
                 Path(configured_trace_dir).expanduser().resolve()
                 if configured_trace_dir

@@ -17,6 +17,7 @@ from firelens.contextual_retrieval_experiment import run_contextual_retrieval_co
 from firelens.contracts import QueryRequest, ResponseStatus
 from firelens.corpus import build_corpus
 from firelens.corpus_audit import audit_corpus
+from firelens.document_context import generate_document_context_sidecar
 from firelens.ingestion.acquire import acquire_registered_sources
 from firelens.model_bakeoff import run_model_bakeoff
 from firelens.providers.fake import FakeProvider
@@ -56,6 +57,27 @@ async def _build_index(config: FireLensConfig) -> int:
             "dimensions": manifest.dimensions,
             "model": manifest.embedding_model,
             "corpus_version": manifest.corpus_version,
+        }
+    )
+    return 0
+
+
+async def _generate_document_contexts(config: FireLensConfig, output: Path) -> int:
+    chunks, _corpus_version = load_corpus_resources(config)
+    provider = OpenRouterProvider(config)
+    try:
+        records = await generate_document_context_sidecar(
+            chunks, provider=provider, output_path=output
+        )
+    finally:
+        await provider.aclose()
+    _print(
+        {
+            "status": "generated",
+            "output": str(output),
+            "context_count": len(records),
+            "models": sorted({record.model_id for record in records}),
+            "prompt_sha256": records[0].prompt_sha256 if records else None,
         }
     )
     return 0
@@ -337,6 +359,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--output", type=Path, default=Path("data/evaluation/corpus_quality_v1.json")
     )
     commands.add_parser("build-index", help="Build or update the OpenRouter embedding index")
+    contexts = commands.add_parser(
+        "generate-document-contexts",
+        help="Generate the offline document_context_v2 retrieval sidecar",
+    )
+    contexts.add_argument("--output", type=Path)
     for command in ("search", "ask"):
         subparser = commands.add_parser(command)
         subparser.add_argument("question")
@@ -475,7 +502,13 @@ def main() -> None:
     if args.command == "bootstrap-corpus":
         raise SystemExit(_bootstrap_corpus(config))
     if args.command == "corpus-audit":
-        output = args.output if args.output.is_absolute() else config.project_root / args.output
+        output = (
+            config.document_context_path
+            if args.output is None
+            else args.output
+            if args.output.is_absolute()
+            else config.project_root / args.output
+        )
         report = audit_corpus(config.project_root, output)
         _print(
             {
@@ -489,6 +522,9 @@ def main() -> None:
         raise SystemExit(0)
     if args.command == "build-index":
         raise SystemExit(asyncio.run(_build_index(config)))
+    if args.command == "generate-document-contexts":
+        output = args.output if args.output.is_absolute() else config.project_root / args.output
+        raise SystemExit(asyncio.run(_generate_document_contexts(config, output)))
     if args.command in {"search", "ask"}:
         raise SystemExit(asyncio.run(_search_or_ask(config, args.question, args.command)))
     if args.command == "evaluate":
