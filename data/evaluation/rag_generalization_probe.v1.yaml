@@ -1,0 +1,470 @@
+dataset_version: rag_generalization_probe.v1
+generated_at: '2026-07-28T02:28:00.473222+00:00'
+case_count: 33
+cases:
+- id: GEN-NOVEL-01
+  suite: generalization
+  bucket: novel_doc_grounded
+  question: What unique whistle must a Cedar Ridge household grab-and-go bag include?
+  history: []
+  expected_modes:
+  - grounded
+  expects_citations: true
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Must cite novel Cedar Ridge evidence, not only old PreparedBC.
+- id: GEN-NOVEL-02
+  suite: generalization
+  bucket: novel_doc_grounded
+  question: What is the label on the amber signal whistle required by Cedar Ridge?
+  history: []
+  expected_modes:
+  - grounded
+  expects_citations: true
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Must cite novel Cedar Ridge evidence, not only old PreparedBC.
+- id: GEN-NOVEL-03
+  suite: generalization
+  bucket: novel_doc_grounded
+  question: Where should the amber signal whistle be placed in a Cedar Ridge bag?
+  history: []
+  expected_modes:
+  - grounded
+  expects_citations: true
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Must cite novel Cedar Ridge evidence, not only old PreparedBC.
+- id: GEN-NOVEL-04
+  suite: generalization
+  bucket: novel_doc_grounded
+  question: What electrolyte pouches does Cedar Ridge require, and how are they marked?
+  history: []
+  expected_modes:
+  - grounded
+  expects_citations: true
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Must cite novel Cedar Ridge evidence, not only old PreparedBC.
+- id: GEN-NOVEL-05
+  suite: generalization
+  bucket: novel_doc_grounded
+  question: Can a generic sports whistle replace the Cedar Ridge amber signal whistle?
+  history: []
+  expected_modes:
+  - grounded
+  expects_citations: true
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Must cite novel Cedar Ridge evidence, not only old PreparedBC.
+- id: GEN-NOVEL-06
+  suite: generalization
+  bucket: novel_doc_grounded
+  question: What two distinctive Cedar Ridge kit items are required besides ordinary
+    supplies?
+  history: []
+  expected_modes:
+  - grounded
+  expects_citations: true
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Must cite novel Cedar Ridge evidence, not only old PreparedBC.
+- id: GEN-NOVEL-07
+  suite: generalization
+  bucket: novel_doc_grounded
+  question: According to Cedar Ridge, what sits beside bottled water in the bag?
+  history: []
+  expected_modes:
+  - grounded
+  expects_citations: true
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Must cite novel Cedar Ridge evidence, not only old PreparedBC.
+- id: GEN-NOVEL-08
+  suite: generalization
+  bucket: novel_doc_grounded
+  question: What does CR-WHISTLE-9 refer to?
+  history: []
+  expected_modes:
+  - grounded
+  expects_citations: true
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Must cite novel Cedar Ridge evidence, not only old PreparedBC.
+- id: GEN-NOVEL-09
+  suite: generalization
+  bucket: novel_doc_grounded
+  question: What does CR-HYDRO-2 refer to?
+  history: []
+  expected_modes:
+  - grounded
+  expects_citations: true
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Must cite novel Cedar Ridge evidence, not only old PreparedBC.
+- id: GEN-NOVEL-10
+  suite: generalization
+  bucket: novel_doc_grounded
+  question: Summarize the Cedar Ridge Household Kit Supplement unique requirements.
+  history: []
+  expected_modes:
+  - grounded
+  expects_citations: true
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Must cite novel Cedar Ridge evidence, not only old PreparedBC.
+- id: GEN-CTRL-01
+  suite: generalization
+  bucket: novel_pollution_control
+  question: What belongs in a grab-and-go bag according to PreparedBC style guidance?
+  history: []
+  expected_modes:
+  - grounded
+  - background
+  - abstention
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Novel doc present; should not wrongly cite Cedar Ridge for old topics unless
+    truly relevant.
+- id: GEN-CTRL-02
+  suite: generalization
+  bucket: novel_pollution_control
+  question: What is the difference between an evacuation alert and an evacuation order?
+  history: []
+  expected_modes:
+  - grounded
+  - background
+  - abstention
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Novel doc present; should not wrongly cite Cedar Ridge for old topics unless
+    truly relevant.
+- id: GEN-CTRL-03
+  suite: generalization
+  bucket: novel_pollution_control
+  question: How can I reduce wildfire risk around my home using FireSmart ideas?
+  history: []
+  expected_modes:
+  - grounded
+  - background
+  - abstention
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Novel doc present; should not wrongly cite Cedar Ridge for old topics unless
+    truly relevant.
+- id: GEN-CTRL-04
+  suite: generalization
+  bucket: novel_pollution_control
+  question: What should I know about wildfire smoke health guidance?
+  history: []
+  expected_modes:
+  - grounded
+  - background
+  - abstention
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Novel doc present; should not wrongly cite Cedar Ridge for old topics unless
+    truly relevant.
+- id: GEN-CTRL-05
+  suite: generalization
+  bucket: novel_pollution_control
+  question: What do wildfire stages of control mean?
+  history: []
+  expected_modes:
+  - grounded
+  - background
+  - abstention
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: novel
+  notes: Novel doc present; should not wrongly cite Cedar Ridge for old topics unless
+    truly relevant.
+- id: GEN-CONF-01
+  suite: generalization
+  bucket: conflicting_dual_docs
+  question: What colour readiness tag does North Bend require on the grab-and-go bag
+    zipper?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - grounded
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: conflict
+  notes: Teal vs orange conflict; blended confident single colour without noting conflict
+    is a fail in report.
+- id: GEN-CONF-02
+  suite: generalization
+  bucket: conflicting_dual_docs
+  question: Do the North Bend checklists agree on the readiness tag colour?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - grounded
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: conflict
+  notes: ''
+- id: GEN-CONF-03
+  suite: generalization
+  bucket: conflicting_dual_docs
+  question: Which North Bend document should I follow for the tag colour?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - capability
+  - grounded
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: conflict
+  notes: ''
+- id: GEN-L1O-PB-01
+  suite: generalization
+  bucket: leave_one_out
+  question: What belongs in a wildfire grab-and-go bag?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_preparedbc
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-PB-02
+  suite: generalization
+  bucket: leave_one_out
+  question: What is the difference between an evacuation alert and an evacuation order?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_preparedbc
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-PB-03
+  suite: generalization
+  bucket: leave_one_out
+  question: What should I do when an evacuation order is issued?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_preparedbc
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-PB-04
+  suite: generalization
+  bucket: leave_one_out
+  question: What household emergency planning steps does PreparedBC recommend?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_preparedbc
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-PB-05
+  suite: generalization
+  bucket: leave_one_out
+  question: What documents should be copied into a grab-and-go bag?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_preparedbc
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-FS-01
+  suite: generalization
+  bucket: leave_one_out
+  question: What is the home ignition zone?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_firesmart
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-FS-02
+  suite: generalization
+  bucket: leave_one_out
+  question: How can I reduce combustible material around my home?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_firesmart
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-FS-03
+  suite: generalization
+  bucket: leave_one_out
+  question: What FireSmart actions help protect my house from embers?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_firesmart
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-FS-04
+  suite: generalization
+  bucket: leave_one_out
+  question: What should I know about FireSmart landscaping near my home?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_firesmart
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-FS-05
+  suite: generalization
+  bucket: leave_one_out
+  question: How do I prepare my property using FireSmart guidance?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_firesmart
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-SM-01
+  suite: generalization
+  bucket: leave_one_out
+  question: How can I reduce wildfire smoke exposure indoors?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_bccdc
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-SM-02
+  suite: generalization
+  bucket: leave_one_out
+  question: What should people with asthma know about wildfire smoke?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_bccdc
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-SM-03
+  suite: generalization
+  bucket: leave_one_out
+  question: What health advice exists for wildfire smoke?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_bccdc
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-SM-04
+  suite: generalization
+  bucket: leave_one_out
+  question: How do I protect indoor air during a smoke event?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_bccdc
+  notes: Held-out source removed; grounded overclaim is a failure.
+- id: GEN-L1O-SM-05
+  suite: generalization
+  bucket: leave_one_out
+  question: What does BCCDC say about wildfire smoke and health?
+  history: []
+  expected_modes:
+  - abstention
+  - background
+  - scope_redirect
+  - capability
+  expects_citations: false
+  forbid_substrings: []
+  require_substrings: []
+  corpus_profile: l1o_bccdc
+  notes: Held-out source removed; grounded overclaim is a failure.
