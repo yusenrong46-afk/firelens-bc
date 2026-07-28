@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/live/map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Live Map */
+        get: operations["live_map_api_v1_live_map_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -71,6 +88,8 @@ export interface components {
             evidence?: components["schemas"]["PublicEvidence"][];
             /** Limitations */
             limitations?: string[];
+            /** Live Results */
+            live_results?: components["schemas"]["LiveResult"][];
             reason_code?: components["schemas"]["ReasonCode"] | null;
             /** @default abstention */
             response_mode: components["schemas"]["ResponseMode"];
@@ -117,6 +136,16 @@ export interface components {
          * @enum {string}
          */
         EvidenceStatus: "verified_corpus" | "general_background";
+        /**
+         * Freshness
+         * @enum {string}
+         */
+        Freshness: "fresh" | "stale";
+        /**
+         * GeometryRelation
+         * @enum {string}
+         */
+        GeometryRelation: "inside" | "nearby" | "outside" | "unknown";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -142,6 +171,65 @@ export interface components {
              */
             status: "ready" | "not_ready";
         };
+        /** LiveMapResponse */
+        LiveMapResponse: {
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Limitations */
+            limitations?: string[];
+            /** Results */
+            results: components["schemas"]["LiveResult"][];
+            /** Unavailable Layers */
+            unavailable_layers?: components["schemas"]["LiveResultKind"][];
+        };
+        /** LiveResult */
+        LiveResult: {
+            /**
+             * Authority
+             * @default BC Wildfire Service
+             */
+            authority: string;
+            freshness: components["schemas"]["Freshness"];
+            /** Geometry */
+            geometry: {
+                [key: string]: unknown;
+            };
+            /** @default unknown */
+            geometry_relation: components["schemas"]["GeometryRelation"];
+            /** Incident Number */
+            incident_number?: string | null;
+            /** Issuer */
+            issuer?: string | null;
+            kind: components["schemas"]["LiveResultKind"];
+            /** Name */
+            name?: string | null;
+            /** Result Id */
+            result_id: string;
+            /**
+             * Retrieved At
+             * Format: date-time
+             */
+            retrieved_at: string;
+            /** Size Hectares */
+            size_hectares?: number | null;
+            /** Source Updated At */
+            source_updated_at?: string | null;
+            /**
+             * Source Url
+             * Format: uri
+             */
+            source_url: string;
+            /** Status */
+            status: string;
+        };
+        /**
+         * LiveResultKind
+         * @enum {string}
+         */
+        LiveResultKind: "incident" | "perimeter" | "evacuation";
         /** LivenessResponse */
         LivenessResponse: {
             /**
@@ -150,6 +238,23 @@ export interface components {
              * @constant
              */
             status: "alive";
+        };
+        /**
+         * LocationInput
+         * @description Coarse, opt-in location used only for the current live-data request.
+         */
+        LocationInput: {
+            /** Label */
+            label?: string | null;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
+            /**
+             * Radius Km
+             * @default 50
+             */
+            radius_km: number;
         };
         /** PublicClaim */
         PublicClaim: {
@@ -190,6 +295,7 @@ export interface components {
         QueryRequest: {
             /** History */
             history?: components["schemas"]["ConversationTurn"][];
+            location?: components["schemas"]["LocationInput"] | null;
             /** Question */
             question: string;
         };
@@ -202,7 +308,7 @@ export interface components {
          * ResponseMode
          * @enum {string}
          */
-        ResponseMode: "grounded" | "background" | "capability" | "scope_redirect" | "abstention";
+        ResponseMode: "grounded" | "background" | "capability" | "scope_redirect" | "abstention" | "partial" | "live" | "mixed";
         /**
          * ResponseStatus
          * @enum {string}
@@ -362,6 +468,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    live_map_api_v1_live_map_get: {
+        parameters: {
+            query?: {
+                bbox?: string | null;
+                layers?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveMapResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

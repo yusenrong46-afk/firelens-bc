@@ -47,6 +47,13 @@
             "title": "Limitations",
             "type": "array"
           },
+          "live_results": {
+            "items": {
+              "$ref": "#/components/schemas/LiveResult"
+            },
+            "title": "Live Results",
+            "type": "array"
+          },
           "reason_code": {
             "anyOf": [
               {
@@ -178,6 +185,24 @@
         "title": "EvidenceStatus",
         "type": "string"
       },
+      "Freshness": {
+        "enum": [
+          "fresh",
+          "stale"
+        ],
+        "title": "Freshness",
+        "type": "string"
+      },
+      "GeometryRelation": {
+        "enum": [
+          "inside",
+          "nearby",
+          "outside",
+          "unknown"
+        ],
+        "title": "GeometryRelation",
+        "type": "string"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -253,6 +278,172 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "LiveMapResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/LiveResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "unavailable_layers": {
+            "items": {
+              "$ref": "#/components/schemas/LiveResultKind"
+            },
+            "title": "Unavailable Layers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "generated_at",
+          "results"
+        ],
+        "title": "LiveMapResponse",
+        "type": "object"
+      },
+      "LiveResult": {
+        "additionalProperties": false,
+        "properties": {
+          "authority": {
+            "default": "BC Wildfire Service",
+            "title": "Authority",
+            "type": "string"
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "geometry": {
+            "additionalProperties": true,
+            "title": "Geometry",
+            "type": "object"
+          },
+          "geometry_relation": {
+            "$ref": "#/components/schemas/GeometryRelation",
+            "default": "unknown"
+          },
+          "incident_number": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incident Number"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LiveResultKind"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "result_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Result Id",
+            "type": "string"
+          },
+          "retrieved_at": {
+            "format": "date-time",
+            "title": "Retrieved At",
+            "type": "string"
+          },
+          "size_hectares": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Hectares"
+          },
+          "source_updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Updated At"
+          },
+          "source_url": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "title": "Source Url",
+            "type": "string"
+          },
+          "status": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result_id",
+          "kind",
+          "source_url",
+          "retrieved_at",
+          "freshness",
+          "status",
+          "geometry"
+        ],
+        "title": "LiveResult",
+        "type": "object"
+      },
+      "LiveResultKind": {
+        "enum": [
+          "incident",
+          "perimeter",
+          "evacuation"
+        ],
+        "title": "LiveResultKind",
+        "type": "string"
+      },
       "LivenessResponse": {
         "additionalProperties": false,
         "properties": {
@@ -264,6 +455,60 @@
           }
         },
         "title": "LivenessResponse",
+        "type": "object"
+      },
+      "LocationInput": {
+        "additionalProperties": false,
+        "description": "Coarse, opt-in location used only for the current live-data request.",
+        "properties": {
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "maximum": 61.0,
+                "minimum": 48.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "maximum": -113.0,
+                "minimum": -140.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "radius_km": {
+            "default": 50.0,
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Radius Km",
+            "type": "number"
+          }
+        },
+        "title": "LocationInput",
         "type": "object"
       },
       "PublicClaim": {
@@ -371,6 +616,16 @@
             "title": "History",
             "type": "array"
           },
+          "location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LocationInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "question": {
             "maxLength": 2000,
             "minLength": 1,
@@ -412,7 +667,10 @@
           "background",
           "capability",
           "scope_redirect",
-          "abstention"
+          "abstention",
+          "partial",
+          "live",
+          "mixed"
         ],
         "title": "ResponseMode",
         "type": "string"
@@ -638,6 +896,64 @@
           }
         },
         "summary": "Readiness"
+      }
+    },
+    "/api/v1/live/map": {
+      "get": {
+        "operationId": "live_map_api_v1_live_map_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bbox"
+            }
+          },
+          {
+            "in": "query",
+            "name": "layers",
+            "required": false,
+            "schema": {
+              "default": "incidents,perimeters,evacuations",
+              "maxLength": 100,
+              "title": "Layers",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveMapResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Live Map"
       }
     }
   }
