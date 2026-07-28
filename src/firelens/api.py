@@ -3,24 +3,32 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from firelens.answering.intent import plan_query
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     AskResponse,
     ErrorEnvelope,
     HealthResponse,
+    LiveMapResponse,
     LivenessResponse,
+    LiveResultKind,
     QueryRequest,
+    QueryRoute,
+    ReasonCode,
+    ResponseMode,
     ResponseStatus,
     SearchResponse,
 )
+from firelens.live import LiveDataService, LiveDataUnavailable
 from firelens.runtime import Runtime, load_runtime
 
 
@@ -41,17 +49,21 @@ def create_app(
     config: FireLensConfig | None = None,
     *,
     runtime: Runtime | None = None,
+    live_service: LiveDataService | None = None,
 ) -> FastAPI:
     active_config = config or FireLensConfig.from_env()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         app.state.runtime = runtime or load_runtime(active_config)
+        app.state.live_service = live_service or LiveDataService()
         try:
             yield
         finally:
             if runtime is None:
                 await app.state.runtime.aclose()
+            if live_service is None:
+                await app.state.live_service.aclose()
 
     app = FastAPI(
         title="FireLens BC Static RAG",
@@ -61,9 +73,28 @@ def create_app(
     )
     if runtime is not None:
         app.state.runtime = runtime
+    if live_service is not None:
+        app.state.live_service = live_service
 
     def current_runtime() -> Runtime:
         return app.state.runtime
+
+    def current_live_service() -> LiveDataService:
+        return app.state.live_service
+
+    def _static_mixed_question(question: str) -> str | None:
+        lowered = question.casefold()
+        if not any(
+            term in lowered for term in ("prepare", "kit", "bag", "smoke", "firesmart", "home")
+        ):
+            return None
+        if "smoke" in lowered:
+            return "How can households prepare for wildfire smoke?"
+        if any(term in lowered for term in ("firesmart", "home")):
+            return "How can households reduce wildfire risk around a home?"
+        if any(term in lowered for term in ("kit", "bag")):
+            return "What belongs in a household wildfire emergency kit?"
+        return "How should households prepare for wildfire?"
 
     def error_response(
         status_code: int,
@@ -116,6 +147,44 @@ def create_app(
     async def readiness() -> HealthResponse:
         return current_runtime().health()
 
+    @app.get("/api/v1/live/map", response_model=LiveMapResponse)
+    async def live_map(
+        bbox: str | None = Query(default=None, max_length=100),
+        layers: str = Query(default="incidents,perimeters,evacuations", max_length=100),
+    ):
+        layer_aliases = {
+            "incidents": LiveResultKind.INCIDENT,
+            "perimeters": LiveResultKind.PERIMETER,
+            "evacuations": LiveResultKind.EVACUATION,
+        }
+        requested = tuple(
+            layer_aliases[name]
+            for name in (part.strip() for part in layers.split(","))
+            if name in layer_aliases
+        )
+        if not requested:
+            return error_response(
+                400,
+                trace_id=uuid4().hex,
+                error_kind="invalid_request",
+                message="Select at least one supported live map layer.",
+            )
+        parsed_bbox = None
+        if bbox is not None:
+            try:
+                values = tuple(float(value) for value in bbox.split(","))
+                if len(values) != 4 or values[0] >= values[2] or values[1] >= values[3]:
+                    raise ValueError
+                parsed_bbox = values
+            except ValueError:
+                return error_response(
+                    400,
+                    trace_id=uuid4().hex,
+                    error_kind="invalid_request",
+                    message="bbox must be minLongitude,minLatitude,maxLongitude,maxLatitude.",
+                )
+        return await current_live_service().map_results(layers=requested, bbox=parsed_bbox)
+
     if active_config.debug:
 
         @app.post("/api/v1/search", response_model=SearchResponse)
@@ -145,6 +214,69 @@ def create_app(
                 error_kind="not_ready",
                 message="FireLens is not ready.",
                 retryable=True,
+            )
+        initial_plan = plan_query(request)
+        if initial_plan.route == QueryRoute.LIVE:
+            try:
+                live = (
+                    await current_live_service().nearby_results(request.location)
+                    if request.location is not None
+                    else await current_live_service().map_results(layers=tuple(LiveResultKind))
+                )
+            except LiveDataUnavailable:
+                live = LiveMapResponse(
+                    generated_at=datetime.now(UTC),
+                    results=[],
+                    unavailable_layers=list(LiveResultKind),
+                    limitations=["Official live sources are currently unavailable."],
+                )
+            if not live.results:
+                answer = (
+                    "No matching official record was found for this query. This does not mean "
+                    "the area is safe; check the issuing authority and BC Wildfire Service map."
+                    if len(live.unavailable_layers) < len(LiveResultKind)
+                    else "Official live wildfire sources are unavailable, so FireLens cannot establish current conditions."
+                )
+                return AskResponse(
+                    status=ResponseStatus.ABSTENTION,
+                    trace_id=uuid4().hex,
+                    response_mode=ResponseMode.ABSTENTION,
+                    answer=answer,
+                    reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+                    limitations=live.limitations,
+                )
+            shown = live.results[:100]
+            summary = "; ".join(
+                f"{item.name or item.incident_number or item.result_id}: {item.status}"
+                for item in shown[:5]
+            )
+            live_answer = "Current official information: " + summary
+            mixed_question = _static_mixed_question(request.question)
+            if mixed_question is not None:
+                static_response = await active_runtime.service.ask(
+                    QueryRequest(question=mixed_question, history=request.history)
+                )
+                if static_response.status == ResponseStatus.ANSWER and static_response.answer:
+                    return AskResponse(
+                        status=ResponseStatus.ANSWER,
+                        trace_id=static_response.trace_id,
+                        response_mode=ResponseMode.MIXED,
+                        answer=(
+                            live_answer + "\n\nPreparedness guidance: " + static_response.answer
+                        ),
+                        claims=static_response.claims,
+                        evidence=static_response.evidence,
+                        live_results=shown,
+                        limitations=[*live.limitations, *static_response.limitations],
+                        validation=static_response.validation,
+                    )
+            return AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id=uuid4().hex,
+                response_mode=ResponseMode.LIVE,
+                answer=live_answer,
+                live_results=shown,
+                limitations=live.limitations,
             )
         response = await active_runtime.service.ask(request)
         if response.status == ResponseStatus.ERROR:
