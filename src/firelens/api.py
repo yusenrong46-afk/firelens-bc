@@ -52,18 +52,19 @@ def create_app(
     live_service: LiveDataService | None = None,
 ) -> FastAPI:
     active_config = config or FireLensConfig.from_env()
+    active_live_service = live_service or LiveDataService()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         app.state.runtime = runtime or load_runtime(active_config)
-        app.state.live_service = live_service or LiveDataService()
+        app.state.live_service = active_live_service
         try:
             yield
         finally:
             if runtime is None:
                 await app.state.runtime.aclose()
             if live_service is None:
-                await app.state.live_service.aclose()
+                await active_live_service.aclose()
 
     app = FastAPI(
         title="FireLens BC Static RAG",
@@ -73,8 +74,7 @@ def create_app(
     )
     if runtime is not None:
         app.state.runtime = runtime
-    if live_service is not None:
-        app.state.live_service = live_service
+    app.state.live_service = active_live_service
 
     def current_runtime() -> Runtime:
         return app.state.runtime
@@ -217,6 +217,21 @@ def create_app(
             )
         initial_plan = plan_query(request)
         if initial_plan.route == QueryRoute.LIVE:
+            if request.location is None and any(
+                phrase in request.question.casefold()
+                for phrase in ("near me", "my home", "my house", "my address")
+            ):
+                return AskResponse(
+                    status=ResponseStatus.ABSTENTION,
+                    trace_id=uuid4().hex,
+                    response_mode=ResponseMode.ABSTENTION,
+                    answer=(
+                        "Share a city or approximate location for this live query, or open "
+                        "the official BC Wildfire Service map. FireLens does not infer location."
+                    ),
+                    reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+                    limitations=["No matching record is not a safety determination."],
+                )
             try:
                 live = (
                     await current_live_service().nearby_results(request.location)
