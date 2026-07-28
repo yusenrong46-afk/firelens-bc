@@ -27,38 +27,96 @@ _ASPECT_STOPWORDS = {
     "also",
     "and",
     "are",
+    "can",
+    "could",
+    "do",
+    "does",
     "for",
     "from",
     "how",
+    "i",
+    "is",
+    "it",
     "into",
+    "me",
+    "my",
+    "our",
+    "possible",
     "should",
     "that",
     "the",
     "their",
     "this",
+    "user",
+    "we",
     "what",
     "when",
     "where",
     "which",
     "with",
     "would",
-    "user",
+    "you",
+    "your",
     "question",
     "information",
     "guidance",
 }
 
+_ADMINISTRATIVE_STEMS = (
+    "apply",
+    "application",
+    "compensat",
+    "certif",
+    "deadline",
+    "eligib",
+    "permit",
+    "policy",
+    "register",
+    "registration",
+)
 
-def _aspect_supported(aspect: str, packet: EvidencePacket) -> bool:
+
+def _support_tokens(text: str) -> set[str]:
+    """Normalize a small, domain-stable set of morphological equivalents."""
+
+    normalized: set[str] = set()
+    for token in tokenize(text):
+        if token.startswith("prepar"):
+            normalized.add("prepare")
+        elif token.startswith("evacuat") or token in {"leave", "leaving"}:
+            normalized.add("evacuate")
+        elif token.startswith("famil") or token.startswith("household"):
+            normalized.add("household")
+        elif token.startswith("plan"):
+            normalized.add("plan")
+        elif token in {"bag", "bags", "kit", "kits"}:
+            normalized.add("kit")
+        elif token in {"phase", "phases", "stage", "stages"}:
+            normalized.add("stage")
+        elif token.endswith("s") and len(token) > 4:
+            normalized.add(token[:-1])
+        else:
+            normalized.add(token)
+    return normalized
+
+
+def _aspect_supported(
+    aspect: str, packet: EvidencePacket, *, minimum_ratio: float = 0.4
+) -> bool:
     required = {
-        token for token in tokenize(aspect) if token not in _ASPECT_STOPWORDS and len(token) > 1
+        token
+        for token in _support_tokens(aspect)
+        if token not in _ASPECT_STOPWORDS and len(token) > 1
     }
     if not required:
         return False
-    available = set(tokenize(" ".join(item.primary_text for item in packet.items)))
-    overlap = required & available
     minimum = 1 if len(required) == 1 else 2
-    return len(overlap) >= minimum and len(overlap) / len(required) >= 0.4
+    for item in packet.items:
+        available = _support_tokens(item.primary_text)
+        overlap = required & available
+        if len(overlap) >= minimum and len(overlap) / len(required) >= minimum_ratio:
+            return True
+    return False
 
 
 @dataclass(frozen=True)
@@ -277,6 +335,38 @@ def decide_support(
             reason_code=ReasonCode.REQUIRED_AUTHORITY_MISSING,
             explanation="One or more required authority classes were absent from selected evidence.",
         )
+    for request in plan.retrieval_requests:
+        if not request.required_authorities:
+            continue
+        authoritative_packet = packet.model_copy(
+            update={
+                "items": [
+                    item
+                    for item in packet.items
+                    if item.authority_class in request.required_authorities
+                ]
+            }
+        )
+        if not _aspect_supported(request.query, authoritative_packet):
+            return SupportDecision(
+                status=SupportStatus.INSUFFICIENT_EVIDENCE,
+                reason_code=ReasonCode.REQUIRED_AUTHORITY_MISSING,
+                explanation=(
+                    "The required authority appears in retrieval, but its evidence does not "
+                    "directly support the retrieval request."
+                ),
+            )
+    if any(stem in plan.original_question.casefold() for stem in _ADMINISTRATIVE_STEMS) and not (
+        _aspect_supported(plan.original_question, packet, minimum_ratio=0.8)
+    ):
+        return SupportDecision(
+            status=SupportStatus.INSUFFICIENT_EVIDENCE,
+            reason_code=ReasonCode.NO_APPROVED_EVIDENCE,
+            explanation=(
+                "The selected evidence mentions the topic but does not directly establish "
+                "the requested administrative process or policy."
+            ),
+        )
     if plan.required_aspects:
         supported_aspects = [
             aspect for aspect in plan.required_aspects if _aspect_supported(aspect, packet)
@@ -284,14 +374,35 @@ def decide_support(
         missing_aspects = [
             aspect for aspect in plan.required_aspects if aspect not in supported_aspects
         ]
-        if missing_aspects and not supported_aspects:
+        # A planner may over-decompose a simple question, but its rewrite may not
+        # lower the evidence bar. Only strong lexical coverage of the user's own
+        # wording can override a missing proposed aspect.
+        deictic_question = any(
+            marker in plan.original_question.casefold()
+            for marker in ("that", "those", "this", "simpler", "why does it", "why does that")
+        )
+        resolved_request_supported = deictic_question and any(
+            _aspect_supported(request.query, packet, minimum_ratio=0.6)
+            for request in plan.retrieval_requests
+        )
+        question_directly_supported = (
+            _aspect_supported(plan.original_question, packet, minimum_ratio=0.5)
+            or resolved_request_supported
+        )
+        explicit_multi_topic = len(plan.retrieval_requests) > 1 and any(
+            marker in f" {plan.original_question.casefold()} "
+            for marker in (" and ", " also ", " both ", ";")
+        )
+        if missing_aspects and not question_directly_supported and not (
+            supported_aspects and explicit_multi_topic
+        ):
             return SupportDecision(
                 status=SupportStatus.INSUFFICIENT_EVIDENCE,
                 reason_code=ReasonCode.NO_APPROVED_EVIDENCE,
                 explanation="The selected evidence does not directly cover the required answer aspects.",
                 missing_aspects=missing_aspects,
             )
-        if missing_aspects:
+        if missing_aspects and supported_aspects and explicit_multi_topic:
             return SupportDecision(
                 status=SupportStatus.PARTIAL,
                 reason_code=ReasonCode.RETRIEVAL_INCOMPLETE,

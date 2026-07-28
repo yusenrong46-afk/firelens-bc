@@ -23,9 +23,8 @@ _FORBIDDEN = (
     r"\b(?:stay|leave|evacuate|return)\s+(?:now|immediately)\b",
     r"\b(?:take|use)\s+(?:highway|road|route)\b",
     r"\byou (?:have|are experiencing)\s+(?:smoke inhalation|carbon monoxide poisoning|asthma)\b",
-    r"\b(?:take|use|stop)\s+.{0,40}\b(?:medicine|medication|dose|inhaler)\b",
+    r"\b(?:take|use|stop)\s+(?:your|an? extra|[0-9]+\s*(?:mg|mcg|ml))\b.{0,40}\b(?:medicine|medication|dose|inhaler)\b",
     r"\bif i were you\b.{0,60}\bi would\s+(?:stay|leave|evacuate|return)\b",
-    r"\bfor (?:you|your family|your household)\b.{0,60}\b(?:stay|leave|evacuat|return)",
     r"\b(?:staying|leaving|evacuating|returning)\s+would be\s+(?:the\s+)?(?:safest|best|right)\b",
 )
 
@@ -52,6 +51,8 @@ _SAFE_CONDITIONAL_STATUS = (
     # A generic glossary definition is not an assertion about an actual fire.
     # Keep this exemption narrow: indefinite subjects plus an explicit condition.
     r"\b(?:a|any)\s+(?:wildfire|fire)\s+(?:is|remains)\s+(?:active|burning|out of control|being held)\s+(?:if|when)\b",
+    r"\b(?:an?\s+)?evacuation order\s+(?:means|requires|directs|tells (?:people|residents|you) to)\b.{0,80}\b(?:leave|evacuate) immediately\b",
+    r"\bwhen\s+(?:an?\s+)?evacuation order is issued\b.{0,80}\b(?:leave|evacuate) immediately\b",
 )
 
 
@@ -76,17 +77,10 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
     is_guidance = draft.answer_type == "grounded"
     if is_guidance and not draft.claims:
         errors.append("guidance answer has no factual claims")
-    if is_guidance and not draft.limitations:
-        errors.append("guidance answer is missing its static-data limitation")
     if is_guidance:
         rendered_answer = " ".join(claim.text.strip() for claim in draft.claims)
         if len(rendered_answer) > 2_500:
             errors.append("rendered guidance answer is too long")
-    for limitation in packet.limitations:
-        if is_guidance and limitation not in draft.limitations:
-            policy_valid = False
-            errors.append("guidance answer is missing a required evidence limitation")
-
     for claim_number, claim in enumerate(draft.claims, start=1):
         if len(claim.evidence_quote_ids) != len(set(claim.evidence_quote_ids)):
             quotes_exact = False
@@ -112,10 +106,19 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
 
     combined = "\n".join(claim.text for claim in draft.claims)
     lowered = combined.lower()
-    if any(re.search(pattern, _policy_text(lowered)) for pattern in _FORBIDDEN):
+    policy_text = _policy_text(lowered)
+    forbidden_rule = next(
+        (
+            rule_number
+            for rule_number, pattern in enumerate(_FORBIDDEN, start=1)
+            if re.search(pattern, policy_text)
+        ),
+        None,
+    )
+    if forbidden_rule is not None:
         policy_valid = False
-        errors.append("answer contains prohibited or prompt-injection language")
-    if any(re.search(pattern, _policy_text(lowered)) for pattern in _LIVE_CLAIMS):
+        errors.append(f"answer violates deterministic policy rule P{forbidden_rule}")
+    if any(re.search(pattern, policy_text) for pattern in _LIVE_CLAIMS):
         policy_valid = False
         errors.append("answer makes a live claim from static evidence")
     return ValidationReport(

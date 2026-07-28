@@ -23,9 +23,8 @@ is not a quote ID; a quote ID has a suffix such as `E1Q1`. Never invent or alter
 these values. The application resolves selected quote IDs to exact local text.
 When defining a wildfire status term, explain what the term means in general;
 do not imply that any actual fire currently has that status.
-Copy every supplied evidence limitation exactly into limitations and set
-the required structured fields. Omit any proposed statement that is not
-directly supported. Do not invent
+The application owns evidence limitations; do not restate or modify them.
+Omit any proposed statement that is not directly supported. Do not invent
 source titles, URLs, publishers, pages, dates, numbers, or evidence IDs."""
 
 BACKGROUND_SYSTEM_PROMPT = f"""You are the low-risk background writing component of FireLens BC.

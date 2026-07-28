@@ -55,6 +55,10 @@ _PROHIBITED_PATTERNS = (
     r"\bshould\s+(?:my|our)\s+family\s+(?:stay|leave|evacuate|return)\b",
     r"\b(?:can|could|may)\s+(?:i|we)\s+(?:return|go back)\s+home\b",
     r"\b(?:return|go back)\s+home\s+(?:yet|now|today|tonight)\b",
+    r"\b(?:are|is)\s+(?:i|we|my family|our family)\s+okay\s+to\s+(?:wait|stay|leave|evacuate|return)\b",
+    r"\b(?:decide|tell me)\s+(?:if|whether)\s+(?:i|we)\s+(?:stay|leave|evacuate|return)\b",
+    r"\bwhether\s+(?:i|we)\s+should\s+(?:stay|leave|evacuate|return)\b",
+    r"\bshould\s+(?:i|we)\s+go\s+(?:now|today|tonight|this morning|this afternoon|this evening)\b",
 )
 
 _PERSONALIZED_MEDICAL_PATTERNS = (
@@ -75,12 +79,13 @@ _POLICY_MANIPULATION_PATTERNS = (
     r"\bignore\s+.{0,50}\b(?:safety|evidence|boundary|rules?|instructions?)\b",
     r"\b(?:override|bypass|disable)\s+.{0,40}\b(?:safety|evidence|boundary|rules?)\b",
     r"\buse\s+(?:your\s+)?model memory\b",
+    r"\bignore\s+.{0,60}\b(?:official|current|live)[-\s]+(?:information|data|source)\s+requirement\b",
 )
 
 _LIVE_PATTERNS = (
-    r"\b(?:fire|wildfire|evacuation|alert|order|smoke|air quality|road|highway)\b.{0,60}\b(?:right now|currently|latest|today|tonight|this morning|this afternoon|this evening|this week|at the moment)\b",
-    r"\b(?:right now|currently|latest|today|tonight|this morning|this afternoon|this evening|this week|at the moment)\b.{0,60}\b(?:fire|wildfire|evacuation|alert|order|smoke|air quality|road|highway)\b",
-    r"\b(active|current)\s+(fire|wildfire|evacuation|alert|order|smoke|air quality)\b",
+    r"\b(?:fires?|wildfires?|evacuat(?:ion|ing)|alerts?|orders?|smoke|air quality|roads?|highways?)\b.{0,60}\b(?:right now|currently|latest|today|tonight|this morning|this afternoon|this evening|this week|at the moment|now)\b",
+    r"\b(?:right now|currently|latest|today|tonight|this morning|this afternoon|this evening|this week|at the moment|now)\b.{0,60}\b(?:fires?|wildfires?|evacuat(?:ion|ing)|alerts?|orders?|smoke|air quality|roads?|highways?)\b",
+    r"\b(active|current)\s+(fires?|wildfires?|evacuations?|alerts?|orders?|smoke|air quality)\b",
     r"\b(is there|are there)\s+(a\s+)?(fire|wildfire)\b",
     r"\bwhere\s+is\s+the\s+(fire|wildfire)\b",
     r"\bnear\s+(me|my home|my house|my address)\b",
@@ -91,12 +96,14 @@ _LIVE_PATTERNS = (
     r"\b(?:fires|wildfires)\b.{0,40}\bburning\b",
     r"\bburning\b.{0,40}\b(?:fires|wildfires)\b",
     r"\b(?:road|highway)\b.{0,40}\b(?:open|closed|closure|blocked)\b",
-    r"\b(?:is|are)\s+.{1,60}\b(?:under|on)\s+(?:an?\s+)?evacuation\s+(?:alert|order)\b",
+    r"\b(?:is|are|whether)\s+.{1,60}\b(?:under|on)\s+(?:an?\s+)?evacuation\s+(?:alert|order)\b",
     r"\bdoes\s+.{1,60}\bhave\s+(?:an?\s+)?evacuation\s+(?:alert|order)\b",
     r"\bis\s+(?:there\s+)?(?:an?\s+)?evacuation\s+(?:alert|order)\s+(?:active|in effect)\b",
     r"\b(?:fire|wildfire|evacuation|alert|order|smoke|air quality|road|highway)\b.{0,50}\b(?:active|in effect)\b",
     r"\b(?:what|how)\s+(?:is|are)\s+(?:the\s+)?(?:air quality|smoke conditions?)\b",
     r"\bis\s+(?:it|.{1,50})\s+smoky\b",
+    r"\b(?:emergencyinfo\s*bc|emergencyinfobc|bc wildfire service|bcws)\b.{0,60}\b(?:post(?:ed)?|new|update|latest|today|now)\b",
+    r"\b(?:my|our)\s+(?:address|home|property|location)\s+is\s+under\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\b",
 )
 
 _CAPABILITY_PATTERNS = (
@@ -267,7 +274,9 @@ def apply_planning_decision(plan: QueryPlan, decision: PlanningDecision) -> Quer
     requests = [
         RetrievalRequest(
             query=query,
-            required_authorities=required_authorities(query),
+            required_authorities=(
+                required_authorities(plan.original_question) | required_authorities(query)
+            ),
             purpose=f"subquery_{number}",
         )
         for number, query in enumerate(decision.retrieval_queries, start=1)

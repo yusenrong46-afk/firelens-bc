@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from time import perf_counter
@@ -61,6 +62,22 @@ from firelens.providers.base import AIProvider
 from firelens.retrieval.bm25 import BM25Index
 from firelens.retrieval.pipeline import RetrievalPipeline
 from firelens.traces import TraceRecorder
+
+_CORPUS_IDENTIFIER = re.compile(r"\b[A-Z]{2,}(?:-[A-Z0-9]+)+\b")
+
+
+def _candidate_contains_identifier(
+    question: str, candidates: Sequence[Mapping[str, str]]
+) -> bool:
+    """Keep an exact corpus identifier from being dismissed as out of scope."""
+
+    identifiers = {match.group(0).casefold() for match in _CORPUS_IDENTIFIER.finditer(question)}
+    if not identifiers:
+        return False
+    candidate_text = " ".join(
+        value for candidate in candidates for value in candidate.values()
+    ).casefold()
+    return any(identifier in candidate_text for identifier in identifiers)
 
 
 @dataclass(frozen=True)
@@ -125,6 +142,26 @@ def _unique_claim_supports(
     return supports
 
 
+def _provider_abstention(
+    trace_id: str,
+    *,
+    reason_code: ReasonCode,
+    error_kind: str,
+    limitations: Sequence[str],
+) -> AskResponse:
+    """Fail closed without exposing a provider formatting failure as an answer."""
+
+    return AskResponse(
+        status=ResponseStatus.ABSTENTION,
+        trace_id=trace_id,
+        response_mode=ResponseMode.ABSTENTION,
+        answer="FireLens could not produce a validated answer from the available evidence.",
+        reason_code=reason_code,
+        error_kind=error_kind,
+        limitations=list(limitations),
+    )
+
+
 def _unavailable_response(
     trace_id: str,
     *,
@@ -132,6 +169,8 @@ def _unavailable_response(
     error_kind: str,
     limitations: Sequence[str],
 ) -> AskResponse:
+    """Preserve the typed infrastructure-error contract for failed retrieval stages."""
+
     return AskResponse(
         status=ResponseStatus.ERROR,
         trace_id=trace_id,
@@ -201,6 +240,16 @@ class StaticRAGService:
             )
         return candidates
 
+    def _planning_identifier_present(self, question: str) -> bool:
+        identifiers = {
+            match.group(0).casefold() for match in _CORPUS_IDENTIFIER.finditer(question)
+        }
+        return any(
+            identifier in result.text.casefold()
+            for identifier in identifiers
+            for result in self.planning_index.search(question, top_k=5)
+        )
+
     async def _record_ask(
         self,
         request: QueryRequest,
@@ -235,13 +284,35 @@ class StaticRAGService:
 
         if plan.route == QueryRoute.RELATED:
             planning_started = perf_counter()
+            planning_candidates = self._planning_candidates(request.question)
             try:
                 planning = await self.provider.plan(
                     planning_messages(
-                        request, corpus_candidates=self._planning_candidates(request.question)
+                        request, corpus_candidates=planning_candidates
                     ),
                     output_schema=planning_schema(),
                 )
+                if (
+                    planning.decision.relation == QueryRelation.TANGENT
+                    and (
+                        _candidate_contains_identifier(request.question, planning_candidates)
+                        or self._planning_identifier_present(request.question)
+                    )
+                ):
+                    planning = planning.model_copy(
+                        update={
+                            "decision": planning.decision.model_copy(
+                                update={
+                                    "relation": QueryRelation.GROUNDED_CANDIDATE,
+                                    "retrieval_queries": [request.question],
+                                    "required_aspects": [request.question],
+                                    "explanation": (
+                                        "An exact identifier appears in the current corpus preflight."
+                                    ),
+                                }
+                            )
+                        }
+                    )
                 plan = apply_planning_decision(plan, planning.decision)
             except ProviderError as exc:
                 bundle = RetrievalBundle(
@@ -372,7 +443,7 @@ class StaticRAGService:
                         error_kind=exc.kind.value,
                     )
                 )
-            response = _unavailable_response(
+            response = _provider_abstention(
                 trace_id,
                 reason_code=ReasonCode.GENERATION_UNAVAILABLE,
                 error_kind=exc.kind.value,
@@ -573,7 +644,7 @@ class StaticRAGService:
                         error_kind=exc.kind.value,
                     )
                 )
-            response = _unavailable_response(
+            response = _provider_abstention(
                 trace_id,
                 reason_code=ReasonCode.GENERATION_UNAVAILABLE,
                 error_kind=exc.kind.value,
@@ -670,7 +741,7 @@ class StaticRAGService:
             answer=" ".join(claim.text.strip() for claim in public_claims),
             claims=public_claims,
             evidence=evidence,
-            limitations=generated.draft.limitations,
+            limitations=packet.limitations,
             validation=validation,
         )
         return await self._record_ask(

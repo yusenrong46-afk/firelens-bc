@@ -16,7 +16,7 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import numpy as np
 import yaml
@@ -729,9 +729,14 @@ def build_generalization_cases() -> list[ProbeCase]:
 
 
 def dump_yaml_cases(cases: list[ProbeCase], path: Path) -> None:
+    generated_at = datetime.now(UTC).isoformat()
+    if path.exists():
+        existing = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if isinstance(existing, dict) and isinstance(existing.get("generated_at"), str):
+            generated_at = existing["generated_at"]
     payload = {
         "dataset_version": path.stem,
-        "generated_at": datetime.now(UTC).isoformat(),
+        "generated_at": generated_at,
         "case_count": len(cases),
         "cases": [
             {
@@ -973,9 +978,9 @@ async def _materialize_profile(profile: str, base: FireLensConfig) -> FireLensCo
 
 def score_case(case: ProbeCase, response: Any) -> dict[str, Any]:
     mode = getattr(response, "response_mode", None)
-    mode_value = mode.value if hasattr(mode, "value") else str(mode)
+    mode_value = str(getattr(mode, "value", mode))
     status = getattr(response, "status", None)
-    status_value = status.value if hasattr(status, "value") else str(status)
+    status_value = str(getattr(status, "value", status))
     answer = (getattr(response, "answer", None) or "") + " "
     answer += " ".join(claim.text for claim in getattr(response, "claims", []) or [])
     answer_l = answer.lower()
@@ -1080,7 +1085,13 @@ async def run_suite(cases: list[ProbeCase], *, limit: int | None) -> dict[str, A
                 t0 = time.time()
                 request = QueryRequest(
                     question=case.question,
-                    history=[ConversationTurn(**h) for h in case.history],
+                    history=[
+                        ConversationTurn(
+                            role=cast(Literal["user", "assistant"], h["role"]),
+                            content=h["content"],
+                        )
+                        for h in case.history
+                    ],
                 )
                 try:
                     response = await runtime.service.ask(request)
@@ -1135,6 +1146,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument(
+        "--case-ids",
+        default="",
+        help="Optional comma-separated case IDs for a focused calibration run",
+    )
+    parser.add_argument(
         "--suites",
         default="naive,jailbreak,generalization",
         help="Comma-separated suites to run",
@@ -1165,6 +1181,12 @@ def main() -> None:
         cases.extend(jail)
     if "generalization" in wanted:
         cases.extend(gen)
+    case_ids = {case_id.strip() for case_id in args.case_ids.split(",") if case_id.strip()}
+    if case_ids:
+        cases = [case for case in cases if case.id in case_ids]
+        missing = case_ids - {case.id for case in cases}
+        if missing:
+            parser.error("unknown or excluded case IDs: " + ", ".join(sorted(missing)))
 
     summary = asyncio.run(run_suite(cases, limit=args.limit))
     out_path = OUT / "results.json"
