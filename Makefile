@@ -2,7 +2,7 @@ PYTHON := .venv/bin/python
 FIRELENS := .venv/bin/firelens
 FRONTEND := prototype/firelens-rag-ui
 
-.PHONY: setup verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review qualify-retrieval-v1-5 qualify-live-v1-5 model-bakeoff canary live-smoke openapi secret-scan
+.PHONY: setup verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review retrieval-review-template qualify-retrieval-review qualify-retrieval-v1-5 qualify-live-v1-5 model-bakeoff canary live-smoke openapi secret-scan
 
 setup:
 	@test -d .venv || python3 -m venv .venv
@@ -58,6 +58,12 @@ owner-review-template:
 
 qualify-owner-review:
 	$(PYTHON) scripts/owner_semantic_review.py validate
+
+retrieval-review-template:
+	$(PYTHON) scripts/retrieval_owner_review.py template
+
+qualify-retrieval-review:
+	$(PYTHON) scripts/retrieval_owner_review.py validate
 
 benchmark-retrieval:
 	$(FIRELENS) tune-retrieval --max-cost-usd 1.25

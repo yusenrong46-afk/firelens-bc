@@ -1,0 +1,11 @@
+{
+  "manifest_version": "firelens_benchmark_manifest.v1",
+  "dataset_version": "firelens_v1_5_sealed_retrieval.v1",
+  "dataset_sha256": "178f7b2cbedb4b308c2e1e2eaf1a6e79855e854d2d0a277147bbd90081211564",
+  "holdout_case_count": 47,
+  "answerable_holdout_case_count": 47,
+  "holdout_sha256": "77dcd08b5994e3f480697b4b69088629085dd65e39d9916f61b43cecfcc9ba58",
+  "frozen_at": "2026-07-29T03:30:00Z",
+  "configuration_frozen_before_dataset": true,
+  "tuning_policy": "One qualification run after owner approval; no case-level tuning or relevance addendum."
+}

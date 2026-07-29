@@ -13,7 +13,12 @@ is unqualified. The relevant lab artifacts are
 
 1. Confirm the release branch and clean worktree with `git status --porcelain=v2 --branch`.
 2. Run `make verify`, then `git diff --exit-code` and `git diff --cached --exit-code`.
-3. Run `make qualify-retrieval-v1-5`; require owner-approved labels and `qualified: true`.
+3. Review the 47-case sealed-retrieval dataset against its original corpus chunks. Run
+   `make retrieval-review-template`, record the owner decisions in the hash-bound YAML sidecar,
+   then run `make qualify-retrieval-review`. Only after it reports `qualified: true`, run
+   `make qualify-retrieval-v1-5` exactly once without tuning; require all three repetitions to
+   reach at least 46/47 Recall@5. A miss requires a new versioned experiment and a newly frozen
+   holdout, never case-specific tuning against this sealed set.
 4. Run `.venv/bin/python scripts/run_limitation_probe.py --max-cost-usd 1.25`; require a
    complete report and all defined safety/quality gates.
 5. Run `make benchmark-v1-1-paid`, then `make owner-review-template`. Review the generated

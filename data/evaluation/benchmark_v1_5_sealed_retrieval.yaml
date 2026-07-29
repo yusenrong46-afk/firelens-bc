@@ -1,0 +1,580 @@
+dataset_version: firelens_v1_5_sealed_retrieval.v1
+frozen_at: '2026-07-29T03:30:00Z'
+cases:
+  - id: V1-HOLD-101
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: How does BC Wildfire Service use stages of control, and what do those stages summarize?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_stages_of_control
+        chunk_ids: [bcws_stages_of_control:section:stages-of-control:chunk:1]
+    required_concepts: [broad overview, current objectives and tactics]
+    adjudication_status: codex_draft
+    reviewer_notes: New post-configuration-freeze candidate; owner evidence review required.
+  - id: V1-HOLD-102
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: What conditions make BCWS describe a wildfire as out of control?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_stages_of_control
+        chunk_ids: [bcws_stages_of_control:section:out-of-control:chunk:1]
+    required_concepts: [spreading beyond perimeter or control line]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-103
+    split: holdout
+    category: false_premise
+    risk_level: ordinary
+    question: If a fire is being held, does that mean it has already been extinguished?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_stages_of_control
+        chunk_ids:
+          - bcws_stages_of_control:section:being-held:chunk:1
+          - bcws_stages_of_control:section:out:chunk:1
+    required_concepts: [projected to remain within boundary, not the same as out]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-104
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: When is a wildfire classified as under control, and what work may continue afterward?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_stages_of_control
+        chunk_ids: [bcws_stages_of_control:section:under-control:chunk:1]
+    required_concepts: [not projected to spread, patrol and hot spots]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-105
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: What does the BCWS control stage called out mean?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_stages_of_control
+        chunk_ids: [bcws_stages_of_control:section:out:chunk:1]
+    required_concepts: [extinguished or winter conditions, will not spread]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-106
+    split: holdout
+    category: paraphrase_ambiguity
+    risk_level: ordinary
+    question: Is a Wildfire of Note itself a separate suppression stage?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_stages_of_control
+        chunk_ids: [bcws_stages_of_control:section:frequently-asked-questions:chunk:1]
+    required_concepts: [increased public interest, access to response information]
+    forbidden_claims: [separate stage of control]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-107
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: What does the BCWS wildfire rank scale measure?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:wildfire-rank:chunk:1]
+    required_concepts: [rank 1 to 6, visual indicators, fire behaviour]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-108
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: Which visual signs characterize a rank 1 wildfire?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:characteristics:chunk:1]
+    required_concepts: [smouldering ground fire, white smoke, creeping spread]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-109
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: What direct-attack methods are examples for rank 1 fire behaviour?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:examples-of-firefighting-tactics:chunk:1]
+    required_concepts: [ground crews, hand tools, water delivery]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-110
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: How is rank 2 fire behaviour visually described?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:characteristics-2:chunk:1]
+    required_concepts: [surface fire, open flame, inconsistent flame front]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-111
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: Which firefighting approaches may be used for rank 2 conditions?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:examples-of-firefighting-tactics-2:chunk:1]
+    required_concepts: [direct attack, ground crews, control lines]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-112
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: What distinguishes rank 3 fire behaviour from a low-vigour surface fire?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:characteristics-3:chunk:1]
+    required_concepts: [organized flame front, occasional candling, moderate spread]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-113
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: Why might ground crews need aircraft support during rank 3 conditions?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:examples-of-firefighting-tactics-3:chunk:1]
+    required_concepts: [hand control lines challenged, air support]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-114
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: What smoke, flame-front, and spotting signs are associated with rank 4 behaviour?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:characteristics-4:chunk:1]
+    required_concepts: [grey to black smoke, organized flame front, short aerial bursts]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-115
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: Why can indirect tactics become necessary at rank 4?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:examples-of-firefighting-tactics-4:chunk:1]
+    required_concepts: [head attack may fail, indirect tactics]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-116
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: Which characteristics indicate rank 5 active crown-fire behaviour?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:characteristics-5:chunk:1]
+    required_concepts: [black to copper smoke, crown fire front, long-range spotting]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-117
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: What limited suppression options does BCWS describe for rank 5 fire behaviour?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:examples-of-firefighting-tactics-5:chunk:1]
+    required_concepts: [indirect attack, planned ignitions]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-118
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: What observable behaviour can occur during a rank 6 wildfire?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:characteristics-6:chunk:1]
+    required_concepts: [organized crown fire, long-range spotting, fireballs or whirls]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-119
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: Where are suppression efforts positioned under rank 6 conditions, and why?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:fire-suppression-strategy:chunk:1]
+    required_concepts: [extremely dangerous, well away from active fire]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-120
+    split: holdout
+    category: single_source
+    risk_level: high
+    question: Which groups does BCCDC identify as being at higher risk from wildfire smoke?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bccdc_wildfire_smoke
+        chunk_ids: [bccdc_wildfire_smoke:section:people-at-higher-risk:chunk:1]
+    required_concepts: [chronic conditions, pregnancy, children, older adults]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-121
+    split: holdout
+    category: single_source
+    risk_level: high
+    question: How can the smallest particles in wildfire smoke affect the lungs?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bccdc_wildfire_smoke
+        chunk_ids: [bccdc_wildfire_smoke:section:health-effects-of-wildfire-smoke:chunk:1]
+    required_concepts: [travel deep into lungs, irritation and inflammation]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-122
+    split: holdout
+    category: single_source
+    risk_level: high
+    question: What does BCCDC suggest using to create a cleaner-air space at home during smoke events?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bccdc_wildfire_smoke
+        chunk_ids: [bccdc_wildfire_smoke:section:protect-yourself-from-wildfire-smoke:chunk:1]
+    required_concepts: [portable HEPA or do-it-yourself air cleaner]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-123
+    split: holdout
+    category: single_source
+    risk_level: high
+    question: How should someone with a chronic condition prepare for smoky conditions according to BCCDC?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bccdc_wildfire_smoke
+        chunk_ids: [bccdc_wildfire_smoke:section:protect-yourself-from-wildfire-smoke:chunk:2]
+    required_concepts: [health-care management plan, rescue medication supply]
+    forbidden_claims: [personal medical diagnosis]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-124
+    split: holdout
+    category: multi_source
+    risk_level: ordinary
+    question: How is a wildfire behaviour rank different from a stage of control?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: bcws_wildfire_rank
+        chunk_ids: [bcws_wildfire_rank:section:wildfire-rank:chunk:1]
+      - source_id: bcws_stages_of_control
+        chunk_ids: [bcws_stages_of_control:section:stages-of-control:chunk:1]
+    required_concepts: [visual fire behaviour, response progress and tactics]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-125
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: What is the purpose of a household emergency plan before wildfire season?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:3:chunk:1]
+    required_concepts: [household response playbook, reduce anxiety]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-126
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: How often should a household revisit its emergency plan?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:4:chunk:1]
+    required_concepts: [at least annually, refresh stale information]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-127
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: Why should a wildfire plan include ways to stay connected with loved ones?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:4:chunk:2]
+    required_concepts: [communication stress, ability to respond]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-128
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: Why does PreparedBC recommend making a grab-and-go bag for each household member?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:4:chunk:3]
+    required_concepts: [may need to leave quickly, prepare in advance]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-129
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: In which locations does PreparedBC suggest keeping grab-and-go bags?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:6:chunk:2]
+    required_concepts: [home, work, vehicle]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-130
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: What should be prepared for pets in a wildfire grab-and-go bag?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:6:chunk:3]
+    required_concepts: [food and water, leash or carrier, records]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-131
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: What does PreparedBC recommend checking with an insurance representative before a wildfire?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:7:chunk:1]
+    required_concepts: [fire damage and loss coverage]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-132
+    split: holdout
+    category: multi_source
+    risk_level: ordinary
+    question: How do the PreparedBC and FireSmart guides divide the area closest to a home into priority zones?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:8:chunk:2]
+      - source_id: firesmart_begins_at_home
+        chunk_ids: [firesmart_begins_at_home:page:8:chunk:1]
+    required_concepts: [0 to 1.5 metres, 1.5 to 10 metres, 10 to 30 metres]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-133
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: Which vegetation and storage changes are recommended within 1.5 to 10 metres of a home?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:9:chunk:1]
+    required_concepts: [avoid flammable plants, mow lawns, move firewood]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-134
+    split: holdout
+    category: single_source
+    risk_level: high
+    question: What should a person understand an evacuation alert to mean?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:10:chunk:4]
+    required_concepts: [ready to leave on short notice]
+    forbidden_claims: [current local evacuation status]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-135
+    split: holdout
+    category: single_source
+    risk_level: high
+    question: What actions does PreparedBC attach to an evacuation order?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:11:chunk:2]
+    required_concepts: [leave immediately, follow official routes and directions]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-136
+    split: holdout
+    category: single_source
+    risk_level: high
+    question: What does an evacuation rescind indicate, and should people stop monitoring alerts afterward?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:11:chunk:3]
+    required_concepts: [official return, continue monitoring]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-137
+    split: holdout
+    category: single_source
+    risk_level: high
+    question: Whose wildfire evacuation instructions should residents follow?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:12:chunk:1]
+    required_concepts: [band office, municipality, regional district, local authority]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-138
+    split: holdout
+    category: multi_source
+    risk_level: high
+    question: What indoor-air steps do PreparedBC and BCCDC both recommend during wildfire smoke?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:13:chunk:2]
+      - source_id: bccdc_wildfire_smoke
+        chunk_ids: [bccdc_wildfire_smoke:section:protect-yourself-from-wildfire-smoke:chunk:1]
+    required_concepts: [cleaner filtered indoor air, reduce outdoor smoke entry]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-139
+    split: holdout
+    category: single_source
+    risk_level: high
+    question: When should an evacuated resident return home after a wildfire?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:15:chunk:1]
+    required_concepts: [only when officials say, follow designated routes]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-140
+    split: holdout
+    category: single_source
+    risk_level: high
+    question: What is the post-fire guidance for using household water and refrigerated food?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: preparedbc_wildfire_guide
+        chunk_ids: [preparedbc_wildfire_guide:page:15:chunk:4]
+    required_concepts: [wait for water clearance, discard unsafe refrigerated food]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-141
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: How far ahead of a wildland fire can embers and sparks travel according to the FireSmart home guide?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: firesmart_begins_at_home
+        chunk_ids: [firesmart_begins_at_home:page:5:chunk:2]
+    required_concepts: [up to two kilometres, ignite material near homes]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-142
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: Which roof assemblies and materials does the FireSmart home guide recommend?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: firesmart_begins_at_home
+        chunk_ids: [firesmart_begins_at_home:page:10:chunk:4]
+    required_concepts: [Class A, metal asphalt clay or composite]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-143
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: Why does FireSmart recommend cleaning and screening gutters?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: firesmart_begins_at_home
+        chunk_ids: [firesmart_begins_at_home:page:10:chunk:7]
+    required_concepts: [debris ignition, metal mesh]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-144
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: How can the underside of a deck be made less vulnerable to embers?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: firesmart_begins_at_home
+        chunk_ids: [firesmart_begins_at_home:page:10:chunk:8]
+    required_concepts: [sheathe in base, fire-resistant material]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-145
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: What tree spacing does FireSmart recommend to help reduce wildfire intensity?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: firesmart_begins_at_home
+        chunk_ids: [firesmart_begins_at_home:page:7:chunk:2]
+    required_concepts: [at least three metres apart]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-146
+    split: holdout
+    category: single_source
+    risk_level: ordinary
+    question: What area does the FireSmart guide call the Home Ignition Zone, and which priority areas compose it?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: firesmart_begins_at_home
+        chunk_ids: [firesmart_begins_at_home:page:8:chunk:1]
+    required_concepts: [within 30 metres, immediate intermediate and extended zones]
+    adjudication_status: codex_draft
+  - id: V1-HOLD-147
+    split: holdout
+    category: single_source
+    risk_level: high
+    question: Does FireSmart recommend that residents install their own structure-protection sprinkler systems?
+    expected_route: static
+    expected_status: answer
+    acceptable_evidence:
+      - source_id: firesmart_sprinkler_water_use
+        chunk_ids: [firesmart_sprinkler_water_use:page:2:chunk:3]
+    required_concepts: [does not recommend individual installation]
+    forbidden_claims: [activate while evacuating]
+    adjudication_status: codex_draft

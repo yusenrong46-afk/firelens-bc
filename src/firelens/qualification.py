@@ -20,6 +20,7 @@ from firelens.benchmark import (
     load_benchmark,
 )
 from firelens.contracts import QueryRequest
+from firelens.retrieval_review import validate_retrieval_owner_review
 from firelens.runtime import Runtime
 from firelens.storage import atomic_text_writer
 
@@ -37,6 +38,7 @@ async def run_frozen_retrieval_qualification(
     dataset_path: Path,
     dataset_manifest_path: Path,
     output_path: Path,
+    owner_review_path: Path | None = None,
     repetitions: int = 3,
     max_cost_usd: float | None = None,
 ) -> dict[str, Any]:
@@ -47,12 +49,16 @@ async def run_frozen_retrieval_qualification(
     if repetitions < 1 or repetitions > 5:
         raise ValueError("repetitions must be between one and five")
 
-    dataset = load_benchmark(dataset_path)
+    dataset = load_benchmark(dataset_path, require_release_shape=False)
     dataset_manifest = json.loads(dataset_manifest_path.read_text(encoding="utf-8"))
+    raw_dataset = yaml.safe_load(dataset_path.read_text(encoding="utf-8"))
+    if dataset_manifest.get("dataset_version") != raw_dataset.get("dataset_version"):
+        raise ValueError("V1 qualification manifest dataset version does not match")
     if dataset_manifest.get("dataset_sha256") != file_sha256(dataset_path):
         raise ValueError("V1 qualification manifest does not match the benchmark dataset")
-    raw_dataset = yaml.safe_load(dataset_path.read_text(encoding="utf-8"))
     holdout_payloads = [case for case in raw_dataset["cases"] if case.get("split") == "holdout"]
+    if dataset_manifest.get("holdout_case_count") != len(holdout_payloads):
+        raise ValueError("V1 qualification manifest holdout count does not match")
     holdout_sha256 = _holdout_sha256(holdout_payloads)
     if dataset_manifest.get("holdout_sha256") != holdout_sha256:
         raise ValueError("V1 holdout hash does not match the frozen manifest")
@@ -60,6 +66,14 @@ async def run_frozen_retrieval_qualification(
     cases = [
         case for case in dataset.cases if case.split == "holdout" and case.acceptable_evidence
     ]
+    declared_answerable_count = dataset_manifest.get("answerable_holdout_case_count")
+    if declared_answerable_count is not None and declared_answerable_count != len(cases):
+        raise ValueError("V1 qualification manifest answerable holdout count does not match")
+    if (
+        str(raw_dataset.get("dataset_version", "")).startswith("firelens_v1_5_sealed_retrieval")
+        and dataset_manifest.get("configuration_frozen_before_dataset") is not True
+    ):
+        raise ValueError("V1.5 sealed retrieval manifest must freeze configuration first")
     chunks_by_id = runtime.chunks_by_id
     reported_cost_usd = 0.0
     budget_exceeded = False
@@ -121,7 +135,12 @@ async def run_frozen_retrieval_qualification(
         == [row["reranked_chunk_ids"] for row in repetition_reports[0]["rows"]]
         for report in repetition_reports[1:]
     )
-    owner_approved = all(case.adjudication_status == "owner_approved" for case in cases)
+    owner_review = (
+        validate_retrieval_owner_review(dataset_path, owner_review_path)
+        if owner_review_path is not None and owner_review_path.exists()
+        else None
+    )
+    owner_approved = bool(owner_review and owner_review["qualified"])
     requested_gate_compatible = len(cases) == 47
     report = {
         "report_version": "firelens_frozen_retrieval_qualification.v1",
@@ -135,6 +154,7 @@ async def run_frozen_retrieval_qualification(
         "relevance_addendum_used": False,
         "adjudication_statuses": sorted({case.adjudication_status for case in cases}),
         "owner_approved": owner_approved,
+        "owner_review": owner_review,
         "case_count_per_repetition": len(cases),
         "repetitions": repetitions,
         "configuration": {
@@ -161,14 +181,16 @@ async def run_frozen_retrieval_qualification(
             *(
                 []
                 if owner_approved
-                else ["The frozen holdout labels remain codex_draft pending owner approval."]
+                else [
+                    "The sealed retrieval labels do not have a complete hash-bound owner approval."
+                ]
             ),
             *(
                 []
                 if requested_gate_compatible
                 else [
-                    "The independently frozen V1 holdout contains 16 retrieval-answerable "
-                    "cases, so it cannot prove the requested 46/47 gate."
+                    f"The frozen holdout contains {len(cases)} retrieval-answerable cases, "
+                    "so it cannot prove the requested 46/47 gate."
                 ]
             ),
         ],
