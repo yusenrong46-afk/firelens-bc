@@ -12,6 +12,7 @@ import asyncio
 import hashlib
 import json
 import re
+import subprocess
 import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -21,6 +22,9 @@ from typing import Any, Literal, cast
 import numpy as np
 import yaml
 
+from firelens.answering.generate import BACKGROUND_SYSTEM_PROMPT
+from firelens.answering.generate import SYSTEM_PROMPT as GENERATION_SYSTEM_PROMPT
+from firelens.answering.planner import SYSTEM_PROMPT as PLANNER_SYSTEM_PROMPT
 from firelens.benchmark import _usage_cost, _usage_total
 from firelens.config import FireLensConfig
 from firelens.contracts import ConversationTurn, QueryRequest, ResponseMode
@@ -37,9 +41,29 @@ from firelens.runtime import load_runtime
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "output" / "naive_user_probe"
 DATA_EVAL = ROOT / "data" / "evaluation"
+SUITE_PATHS = {
+    "naive": DATA_EVAL / "naive_user_probe.v1.yaml",
+    "jailbreak": DATA_EVAL / "rag_jailbreak_probe.v1.yaml",
+    "generalization": DATA_EVAL / "rag_generalization_probe.v1.yaml",
+}
 
 
 ExpectedMode = ResponseMode | Literal["grounded_or_background", "abstention_or_redirect"]
+
+
+def _text_sha256(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _git_commit() -> str | None:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return completed.stdout.strip() if completed.returncode == 0 else None
 
 
 @dataclass(frozen=True)
@@ -1063,11 +1087,12 @@ def score_case(
         )
 
     retrieved_source_ids: set[str] = set()
+    retrieved_chunks: dict[str, list[str]] = {}
     if execution is not None:
         for stage in ("bm25_hits", "vector_hits", "fused_hits", "reranked_hits"):
-            retrieved_source_ids.update(
-                hit.source_id for hit in getattr(execution.retrieval, stage, [])
-            )
+            hits = getattr(execution.retrieval, stage, [])
+            retrieved_source_ids.update(hit.source_id for hit in hits)
+            retrieved_chunks[stage] = [hit.chunk_id for hit in hits]
     poison_quarantine_ok = True
     if case.bucket == "indirect_poison":
         rejected = set((admission_manifest or {}).get("rejected_source_ids", []))
@@ -1099,6 +1124,7 @@ def score_case(
         "conflict_disclosure_ok": conflict_disclosure_ok,
         "poison_quarantine_ok": poison_quarantine_ok,
         "retrieved_source_ids": sorted(retrieved_source_ids),
+        "retrieved_chunks": retrieved_chunks,
         "forbid_hits": forbid_hits,
         "require_misses": require_misses,
         "passed": passed,
@@ -1106,6 +1132,7 @@ def score_case(
         "status": status_value,
         "reason_code": getattr(getattr(response, "reason_code", None), "value", None)
         or getattr(response, "reason_code", None),
+        "route": execution.plan.route.value if execution is not None else None,
         "answer": getattr(response, "answer", None),
         "evidence": evidence_source_ids,
         "claim_count": len(getattr(response, "claims", None) or []),
@@ -1247,6 +1274,42 @@ async def run_suite(
 
     summary = {
         "generated_at": datetime.now(UTC).isoformat(),
+        "qualification_manifest": {
+            "commit": _git_commit(),
+            "corpus": {
+                "chunks_sha256": sha256_file(base.corpus_path),
+                "manifest_sha256": sha256_file(base.corpus_manifest_path),
+                "vector_manifest_sha256": sha256_file(base.vector_manifest_path),
+            },
+            "datasets": {
+                suite: {
+                    "path": str(path.relative_to(ROOT)),
+                    "sha256": sha256_file(path),
+                    "case_count": sum(1 for case in selected if case.suite == suite),
+                }
+                for suite, path in SUITE_PATHS.items()
+                if any(case.suite == suite for case in selected)
+            },
+            "prompts": {
+                "planner_system_sha256": _text_sha256(PLANNER_SYSTEM_PROMPT),
+                "grounded_generation_system_sha256": _text_sha256(GENERATION_SYSTEM_PROMPT),
+                "background_generation_system_sha256": _text_sha256(BACKGROUND_SYSTEM_PROMPT),
+            },
+            "models": {
+                "embedding": base.embedding_model,
+                "rerank": base.rerank_model,
+                "generation_and_planning": base.generation_model,
+                "provider_base_url": base.openrouter_base_url,
+            },
+            "retrieval": {
+                "strategy": base.retrieval_text_strategy.value,
+                "bm25_top_k": base.bm25_top_k,
+                "vector_top_k": base.vector_top_k,
+                "fused_top_k": base.fused_top_k,
+                "rerank_top_k": base.rerank_top_k,
+                "rrf_k": base.rrf_k,
+            },
+        },
         "requested_case_count": len(selected),
         "case_count": len(results),
         "complete": len(results) == len(selected) and not budget_exceeded,
