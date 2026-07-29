@@ -103,6 +103,42 @@ class V15RoutingTests(unittest.TestCase):
             plan.retrieval_requests[0].required_authorities,
         )
 
+    def test_original_question_can_be_preserved_for_retrieval_and_reranking(self) -> None:
+        question = "What does identifier CR-WHISTLE-9 mean?"
+        plan = apply_planning_decision(
+            plan_query(QueryRequest(question=question)),
+            PlanningDecision(
+                relation=QueryRelation.GROUNDED_CANDIDATE,
+                retrieval_queries=["emergency whistle identifier"],
+                required_aspects=["identifier meaning"],
+                explanation="rewrite",
+            ),
+            preserve_original_question=True,
+            rerank_with_original_question=True,
+        )
+
+        self.assertEqual(plan.retrieval_requests[0].query, question)
+        self.assertEqual(plan.normalized_question, question)
+
+    def test_elliptical_followup_uses_resolved_planner_query(self) -> None:
+        plan = apply_planning_decision(
+            plan_query(QueryRequest(question="What does that mean?")),
+            PlanningDecision(
+                relation=QueryRelation.GROUNDED_CANDIDATE,
+                retrieval_queries=["evacuation alert definition"],
+                required_aspects=["alert meaning"],
+                explanation="resolved antecedent",
+            ),
+            preserve_original_question=True,
+            rerank_with_original_question=True,
+        )
+
+        self.assertEqual(
+            [request.query for request in plan.retrieval_requests],
+            ["evacuation alert definition"],
+        )
+        self.assertEqual(plan.normalized_question, "evacuation alert definition")
+
     def test_new_medical_paraphrases_are_prohibited(self) -> None:
         for question in (
             "Diagnose whether my cough is from wildfire smoke.",

@@ -4,7 +4,12 @@ import unittest
 from pathlib import Path
 
 from firelens.ingestion.chunking import ChunkRecord
-from firelens.retrieval.bm25 import BM25Index, load_chunk_records, tokenize
+from firelens.retrieval.bm25 import (
+    BM25Index,
+    load_chunk_records,
+    tokenize,
+    tokenize_with_identifiers,
+)
 
 
 def make_chunk(chunk_id: str, text: str, *, page_number: int = 1) -> ChunkRecord:
@@ -54,6 +59,33 @@ class BM25UnitTests(unittest.TestCase):
     def test_empty_or_punctuation_query_returns_no_results(self) -> None:
         index = BM25Index([make_chunk("source:page:1:chunk:1", "Some guidance")])
         self.assertEqual(index.search("..."), [])
+
+    def test_identifier_tokenizer_preserves_compound_code(self) -> None:
+        self.assertEqual(
+            tokenize_with_identifiers("Use CR-WHISTLE-9 with grab-and-go supplies."),
+            [
+                "use",
+                "cr",
+                "whistle",
+                "9",
+                "with",
+                "grab",
+                "and",
+                "go",
+                "supplies",
+                "crwhistle9",
+            ],
+        )
+
+    def test_identifier_token_distinguishes_similar_codes(self) -> None:
+        expected = make_chunk("expected", "The CR-WHISTLE-9 signal is amber.")
+        similar = make_chunk("similar", "The CR-WHISTLE-8 signal is amber.")
+
+        results = BM25Index([similar, expected], tokenizer=tokenize_with_identifiers).search(
+            "CR-WHISTLE-9", top_k=2
+        )
+
+        self.assertEqual(results[0].chunk_id, "expected")
 
     def test_duplicate_chunk_ids_are_rejected(self) -> None:
         chunk = make_chunk("duplicate", "Some guidance")

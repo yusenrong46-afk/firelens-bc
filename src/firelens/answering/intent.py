@@ -348,7 +348,13 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     )
 
 
-def apply_planning_decision(plan: QueryPlan, decision: PlanningDecision) -> QueryPlan:
+def apply_planning_decision(
+    plan: QueryPlan,
+    decision: PlanningDecision,
+    *,
+    preserve_original_question: bool = False,
+    rerank_with_original_question: bool = False,
+) -> QueryPlan:
     """Convert a bounded model proposal into deterministic retrieval tasks."""
 
     if plan.route != QueryRoute.RELATED:
@@ -357,6 +363,19 @@ def apply_planning_decision(plan: QueryPlan, decision: PlanningDecision) -> Quer
         return plan.model_copy(
             update={"route": QueryRoute.TANGENT, "relation": decision.relation}
         )
+    retrieval_queries = list(decision.retrieval_queries)
+    question_is_elliptical = bool(
+        len(plan.original_question.split()) <= 16
+        and _DEICTIC_FOLLOWUP.search(plan.original_question.casefold())
+    )
+    if preserve_original_question and not question_is_elliptical:
+        retrieval_queries = list(
+            dict.fromkeys(
+                query
+                for query in (plan.original_question, *retrieval_queries)
+                if query.casefold()
+            )
+        )[:3]
     requests = [
         RetrievalRequest(
             query=query,
@@ -365,13 +384,16 @@ def apply_planning_decision(plan: QueryPlan, decision: PlanningDecision) -> Quer
             ),
             purpose=f"subquery_{number}",
         )
-        for number, query in enumerate(decision.retrieval_queries, start=1)
+        for number, query in enumerate(retrieval_queries, start=1)
     ]
-    resolved_question = (
-        decision.retrieval_queries[0]
-        if len(decision.retrieval_queries) == 1
-        else " ".join([plan.original_question, *decision.retrieval_queries])
-    )
+    if rerank_with_original_question and not question_is_elliptical:
+        resolved_question = plan.original_question
+    else:
+        resolved_question = (
+            decision.retrieval_queries[0]
+            if len(decision.retrieval_queries) == 1
+            else " ".join([plan.original_question, *decision.retrieval_queries])
+        )
     return plan.model_copy(
         update={
             "normalized_question": resolved_question[:2_000],

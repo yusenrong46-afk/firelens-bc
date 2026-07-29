@@ -178,6 +178,32 @@ aggregated, so this table is intentionally limited to the final qualification se
 5. An anonymous Vercel preview, distributed rate limiting, and production rollback drill require
    external deployment approval and were not performed.
 
+## Continued retrieval optimization
+
+A later development-only query-policy experiment reused one set of planner decisions across four
+treatments, avoiding the earlier planner variance between candidates. The valid
+original-question retrieval treatment tied the current candidate at 97.87% Recall@5 and 84.04%
+MRR@5 while improving mean source coverage from 89.72% to 91.84%. That is not a qualifying Recall
+or MRR gain, so it was not promoted.
+
+The original-question reranking treatments were incomplete after OpenRouter returned HTTP 403.
+A read-only account-status check confirmed that the key's `$10` limit had been exhausted. Partial
+candidate scores were discarded. The run reported `$0.36941354` and produced ignored artifact
+SHA-256 `eb36fa47775c0d60bf27c0eca4b4e2c637bd5b8354e9ac0e7dbcdb936e547520`.
+
+A separate zero-provider-call lexical sweep evaluated compound-identifier tokens and bounded
+title, section, and locator weighting across 50 development cases. Field weighting changed BM25
+MRR@5 from 70.33% to 71.00% with Recall@5 unchanged at 88%; identifier tokens were neutral on the
+measured cases. Neither cleared the locked two-point Recall or three-point MRR rule. Production
+retrieval remains `metadata_context_v1`, 30/30/30 candidate pools, RRF 60, rerank 5. The ignored
+lexical artifact SHA-256 is
+`237551e0569b70e78eb9f17608f3e70b970323a471f51cd91bf8e6c0b295f778`.
+
+The non-paid post-experiment `make verify` run passed 138 Python tests, 10 skips, 36 subtests,
+Ruff, formatting, mypy, secret scanning, generated OpenAPI/TypeScript contracts, 12 frontend unit
+tests, the production build, 4 Sites tests, and 12 desktop/mobile Playwright flows. Generated-code
+checks left no unintended tracked diff.
+
 These are release blockers, so `codex/v1-5-release` remains untouched.
 
 ## Exact final commands

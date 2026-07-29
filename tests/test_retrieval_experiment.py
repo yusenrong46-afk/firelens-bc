@@ -76,7 +76,21 @@ def test_retrieval_selection_preserves_current_below_two_point_gain() -> None:
         }
     )
     assert selected == "current"
-    assert "two-point" in reason
+    assert "Recall@5 or MRR@5" in reason
+
+
+def test_retrieval_selection_accepts_material_mrr_gain_at_equal_recall() -> None:
+    current = _summary(0.98, 0.90)
+    candidate = _summary(0.98, 0.90)
+    current["stages"]["reranked"]["mrr"] = 0.90
+    candidate["stages"]["reranked"]["mrr"] = 0.94
+
+    selected, reason = select_retrieval_candidate(
+        {"current": current, "user_intent_preserved": candidate}
+    )
+
+    assert selected == "user_intent_preserved"
+    assert "MRR@5" in reason
 
 
 def test_retrieval_selection_requires_no_source_coverage_loss() -> None:

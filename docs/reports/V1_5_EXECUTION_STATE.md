@@ -87,9 +87,39 @@ Their hashes are recorded in `docs/reports/FIRELENS_V1_5_EVIDENCE.md`.
 4. Distributed production throttling and an anonymous preview remain external deployment gates;
    the application correctly labels its local rate guard as instance-local.
 
+## Maximized-optimization continuation
+
+- Query-policy comparison: one baseline planner decision was reused across all candidates. The
+  valid original-question retrieval treatment tied the current 97.87% Recall@5 and 84.04% MRR@5
+  and raised mean source coverage from 89.72% to 91.84%; this did not clear promotion.
+- Original-question reranking treatments were invalid because OpenRouter began returning HTTP 403
+  after the account limit was exhausted. Their partial scores are not evidence.
+- Query-policy attempt cost: `$0.36941354`; ignored artifact SHA-256
+  `eb36fa47775c0d60bf27c0eca4b4e2c637bd5b8354e9ac0e7dbcdb936e547520`.
+- Zero-cost lexical comparison: field weighting moved BM25 MRR@5 from 70.33% to 71.00% with
+  unchanged 88% Recall@5; identifier-preserving tokenization was neutral on these cases. Neither
+  cleared the three-point MRR or two-point Recall promotion rule.
+- Lexical artifact SHA-256:
+  `237551e0569b70e78eb9f17608f3e70b970323a471f51cd91bf8e6c0b295f778`.
+- Production query handling, BM25 tokenization, retrieval settings, and runtime models remain
+  unchanged.
+- Post-experiment `make verify`: 138 Python tests passed, 10 skipped, 36 subtests passed; Ruff,
+  formatting, mypy, secret scan, generated contracts, 12 frontend tests, production build, 4 Sites
+  tests, and 12 Playwright desktop/mobile flows passed.
+
 ## Next authorized action
 
-Do not populate `codex/v1-5-release`. The owner must review
-`output/benchmark/v1_1_conversation_live_review.md` and provide or approve an independent sealed
-retrieval set large enough to evaluate the 46/47 gate. After those inputs exist, rerun the frozen
-qualification and only then reconstruct the release branch from individually passing commits.
+The first development-only query-policy run used one baseline set of planner decisions and cost
+`$0.36941354`. The original-question retrieval variant completed and tied the baseline's 97.87%
+Recall@5 and 84.04% MRR@5 while slightly improving source coverage; it did not clear promotion.
+The two original-question reranking variants were invalidated by OpenRouter HTTP 403 responses.
+The read-only OpenRouter key-status endpoint then confirmed that the key's `$10` limit is exhausted
+(`limit_remaining: 0`, usage `$10.00670837`). Do not retry paid evaluation until the owner raises
+or replenishes that limit.
+
+Commit the reproducible negative experiment. Do not make another paid call until the owner raises
+or replenishes the OpenRouter key limit. After that, run one valid fixed-planner comparison; only
+a qualifying candidate may change production.
+
+Do not populate `codex/v1-5-release`. Owner review and a sufficiently large owner-approved sealed
+retrieval set remain mandatory even if the development experiment improves.

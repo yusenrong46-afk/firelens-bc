@@ -7,7 +7,7 @@ import json
 import math
 import re
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -15,8 +15,10 @@ from firelens.ingestion.chunking import ChunkRecord
 from firelens.ingestion.pdf import IngestionError
 
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+(?:'[a-z0-9]+)?")
+IDENTIFIER_PATTERN = re.compile(r"\b[a-zA-Z0-9]+(?:[-_/][a-zA-Z0-9]+){1,}\b")
 DEFAULT_K1 = 1.5
 DEFAULT_B = 0.75
+Tokenizer = Callable[[str], list[str]]
 
 
 @dataclass(frozen=True)
@@ -44,6 +46,20 @@ def tokenize(text: str) -> list[str]:
 
     normalized = text.lower().replace("’", "'")
     return TOKEN_PATTERN.findall(normalized)
+
+
+def tokenize_with_identifiers(text: str) -> list[str]:
+    """Preserve governed compound identifiers without dropping ordinary terms."""
+
+    tokens = tokenize(text)
+    identifiers: list[str] = []
+    for match in IDENTIFIER_PATTERN.findall(text):
+        if not any(character.isdigit() or character.isupper() for character in match):
+            continue
+        collapsed = "".join(TOKEN_PATTERN.findall(match.casefold()))
+        if collapsed and collapsed not in tokens and collapsed not in identifiers:
+            identifiers.append(collapsed)
+    return [*tokens, *identifiers]
 
 
 def load_chunk_records(path: Path) -> list[ChunkRecord]:
@@ -77,6 +93,7 @@ class BM25Index:
         k1: float = DEFAULT_K1,
         b: float = DEFAULT_B,
         retrieval_texts: Sequence[str] | None = None,
+        tokenizer: Tokenizer = tokenize,
     ) -> None:
         if not records:
             raise ValueError("BM25 requires at least one chunk.")
@@ -94,8 +111,9 @@ class BM25Index:
         self.records = tuple(records)
         self.k1 = k1
         self.b = b
+        self.tokenizer = tokenizer
         indexed_texts = retrieval_texts or [record.text for record in self.records]
-        self._term_frequencies = [Counter(tokenize(text)) for text in indexed_texts]
+        self._term_frequencies = [Counter(tokenizer(text)) for text in indexed_texts]
         self._document_lengths = [
             sum(frequencies.values()) for frequencies in self._term_frequencies
         ]
@@ -148,7 +166,7 @@ class BM25Index:
         if top_k < 1:
             raise ValueError("top_k must be at least one.")
 
-        query_terms = set(tokenize(query))
+        query_terms = set(self.tokenizer(query))
         if not query_terms:
             return []
 
