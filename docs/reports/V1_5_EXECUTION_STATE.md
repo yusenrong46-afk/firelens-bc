@@ -7,7 +7,7 @@ Updated: 2026-07-28 (America/Vancouver)
 - Canonical checkout: `/Users/thomas/Downloads/firelens-bc 2`
 - Canonical branch/commit: `improvement/rag-webapp-v2` at
   `209b4e5f8f16f13d7ac9af56a89e135f697ce052`
-- Canonical state: tracked-clean with 25 user-owned untracked files; read-only for this task
+- Canonical state: tracked-clean with 26 preserved untracked files; read-only for this task
 - Lab checkout/branch: `/Users/thomas/Downloads/firelens-bc-v1-5-lab` on
   `codex/v1-5-lab`
 - Final provenance-complete probe commit: `727110ec3c9626601fb4c04375eba4a1be572703`
