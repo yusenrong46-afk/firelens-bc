@@ -8,7 +8,8 @@ from firelens.benchmark import (
     load_relevance_addendum,
 )
 from firelens.config import FireLensConfig
-from firelens.retrieval_experiment import select_retrieval_candidate
+from firelens.contracts import QueryPlan, QueryRoute, RetrievalBundle, RetrievalRequest
+from firelens.retrieval_experiment import _candidate_row, select_retrieval_candidate
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -114,3 +115,33 @@ def test_retrieval_selection_uses_only_queries_that_invoke_static_retrieval() ->
     )
     assert selected == "rank_sensitive"
     assert "route-eligible" in reason
+
+
+def test_paid_retrieval_row_records_provenance_and_latency() -> None:
+    case = load_benchmark(ROOT / "data/evaluation/benchmark_v1.yaml").cases[0]
+    plan = QueryPlan(
+        route=QueryRoute.RELATED,
+        normalized_question=case.question,
+        original_question=case.question,
+        retrieval_requests=[RetrievalRequest(query=case.question)],
+    )
+    bundle = RetrievalBundle(
+        provider_models={"reranker": "provider/model"},
+        provider_attempts={"reranker": 2},
+        provider_usage={"reranker": {"prompt_tokens": 10, "total_tokens": 10}},
+        timings_ms={"reranker": 12.5},
+    )
+
+    row = _candidate_row(
+        case,
+        plan=plan,
+        bundle=bundle,
+        chunks_by_id={},
+        wall_latency_ms=20.0,
+    )
+
+    assert row["provider_models"] == {"reranker": "provider/model"}
+    assert row["provider_attempts"] == {"reranker": 2}
+    assert row["provider_tokens"]["total_tokens"] == 10
+    assert row["provider_timings_ms"] == {"reranker": 12.5}
+    assert row["wall_latency_ms"] == 20.0

@@ -31,7 +31,7 @@ diagnostic evidence, but it no longer authorizes promotion.
 
 ## Executed evidence in this qualification
 
-- `make verify`: 151 Python tests passed, 10 skipped, 36 subtests passed; Ruff,
+- `make verify`: 152 Python tests passed, 10 skipped, 36 subtests passed; Ruff,
   formatting, mypy over 51 source files, secret scan, generated OpenAPI/types,
   12 frontend tests, production build, 4 Sites tests, and 12 desktop/mobile
   Playwright flows all passed.
@@ -104,13 +104,14 @@ Their hashes are recorded in `docs/reports/FIRELENS_V1_5_EVIDENCE.md`.
 
 ## Maximized-optimization continuation
 
-- Query-policy comparison: one baseline planner decision was reused across all candidates. The
-  valid original-question retrieval treatment tied the current 97.87% Recall@5 and 84.04% MRR@5
-  and raised mean source coverage from 89.72% to 91.84%; this did not clear promotion.
-- Original-question reranking treatments were invalid because OpenRouter began returning HTTP 403
-  after the account limit was exhausted. Their partial scores are not evidence.
-- Query-policy attempt cost: `$0.36941354`; ignored artifact SHA-256
-  `eb36fa47775c0d60bf27c0eca4b4e2c637bd5b8354e9ac0e7dbcdb936e547520`.
+- The final fixed-planner query-policy comparison completed all 200 treatment rows with zero
+  provider errors. It recorded model IDs, attempts, 55,568 tokens, provider timings, wall latency,
+  and `$0.49713884` provider-reported cost. Artifact SHA-256:
+  `342b7f4a07103f79e9d6274579476ede1b0c5ebc065dd73d4a8520e9c2133c0e`.
+- On 47 route-eligible development cases, current retrieval retained 100% Recall@5, 85.46% MRR@5,
+  and 91.84% mean source coverage. Original-question retrieval and both original-question rerank
+  treatments fell to 97.87% Recall@5; none passed the locked promotion rule. Production remains
+  unchanged.
 - Zero-cost lexical comparison: field weighting moved BM25 MRR@5 from 70.33% to 71.00% with
   unchanged 88% Recall@5; identifier-preserving tokenization was neutral on these cases. Neither
   cleared the three-point MRR or two-point Recall promotion rule.
@@ -118,24 +119,16 @@ Their hashes are recorded in `docs/reports/FIRELENS_V1_5_EVIDENCE.md`.
   `237551e0569b70e78eb9f17608f3e70b970323a471f51cd91bf8e6c0b295f778`.
 - Production query handling, BM25 tokenization, retrieval settings, and runtime models remain
   unchanged.
-- Post-experiment `make verify`: 138 Python tests passed, 10 skipped, 36 subtests passed; Ruff,
+- Post-experiment `make verify`: 152 Python tests passed, 10 skipped, 36 subtests passed; Ruff,
   formatting, mypy, secret scan, generated contracts, 12 frontend tests, production build, 4 Sites
   tests, and 12 Playwright desktop/mobile flows passed.
 
 ## Next authorized action
 
-The first development-only query-policy run used one baseline set of planner decisions and cost
-`$0.36941354`. The original-question retrieval variant completed and tied the baseline's 97.87%
-Recall@5 and 84.04% MRR@5 while slightly improving source coverage; it did not clear promotion.
-The two original-question reranking variants were invalidated by OpenRouter HTTP 403 responses.
-The last read-only OpenRouter key-status check confirmed that the key's `$10` limit was exhausted
-(`limit_remaining: 0`, usage `$10.00670837`). Do not retry paid evaluation until the owner raises
-or replenishes that limit.
-
-Complete the two owner sidecars first. Do not make another paid call until the 47 retrieval labels
-are approved and the owner has raised or replenished the OpenRouter key limit. After that, run the
-sealed retrieval gate exactly once, then one valid fixed-planner comparison; only qualifying
-evidence may change production.
+The OpenRouter limit is now `$20`; the final read-only status check reported usage `$10.90011477`
+and `$9.09988523` remaining. The valid fixed-planner comparison is complete and retained current
+retrieval. Complete the two owner sidecars next. After the 47 retrieval labels are approved, run
+the sealed retrieval gate exactly once; only qualifying evidence may change production.
 
 Do not populate `codex/v1-5-release`. Both owner reviews and a passing one-time sealed retrieval
 run remain mandatory even if a development experiment improves.

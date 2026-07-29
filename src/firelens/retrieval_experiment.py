@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 from firelens.answering.intent import apply_planning_decision, plan_query
@@ -12,6 +13,7 @@ from firelens.benchmark import (
     _mean,
     _ranking_metrics,
     _usage_cost,
+    _usage_total,
     apply_relevance_addendum,
     file_sha256,
     load_benchmark,
@@ -135,6 +137,7 @@ def _candidate_row(
     plan: QueryPlan,
     bundle: RetrievalBundle,
     chunks_by_id: dict[str, Any],
+    wall_latency_ms: float,
 ) -> dict[str, Any]:
     rankings = {
         "bm25": [hit.chunk_id for hit in bundle.bm25_hits],
@@ -147,6 +150,14 @@ def _candidate_row(
         "retrieval_eligible": bool(plan.retrieval_requests),
         "complete": bundle.complete,
         "errors": bundle.errors,
+        "provider_models": bundle.provider_models,
+        "provider_attempts": bundle.provider_attempts,
+        "provider_tokens": {
+            name: _usage_total(bundle.provider_usage, name)
+            for name in ("prompt_tokens", "completion_tokens", "total_tokens")
+        },
+        "provider_timings_ms": bundle.timings_ms,
+        "wall_latency_ms": wall_latency_ms,
         "stage_metrics": {
             stage: _ranking_metrics(chunk_ids, case, chunks_by_id)
             for stage, chunk_ids in rankings.items()
@@ -200,7 +211,9 @@ async def run_retrieval_comparison(
             if max_cost_usd is not None and total_cost >= max_cost_usd:
                 break
             request = QueryRequest(question=case.question)
+            started = perf_counter()
             execution = await baseline_runtime.service.execute_search(request)
+            wall_latency_ms = (perf_counter() - started) * 1_000
             baseline_plan = execution.public_response.plan
             baseline_bundle = execution.observation.retrieval
             saved[case.id] = (
@@ -218,6 +231,7 @@ async def run_retrieval_comparison(
                 plan=baseline_plan,
                 bundle=baseline_bundle,
                 chunks_by_id=chunks_by_id,
+                wall_latency_ms=wall_latency_ms,
             )
             total_cost += float(row["reported_cost_usd"])
             current_rows.append(row)
@@ -241,6 +255,7 @@ async def run_retrieval_comparison(
                 if max_cost_usd is not None and total_cost >= max_cost_usd:
                     break
                 request, baseline_plan, decision, baseline_bundle = saved[case.id]
+                started = perf_counter()
                 if decision is None:
                     plan = baseline_plan
                     bundle = baseline_bundle
@@ -260,11 +275,13 @@ async def run_retrieval_comparison(
                         if plan.route == QueryRoute.RELATED and plan.retrieval_requests
                         else RetrievalBundle()
                     )
+                wall_latency_ms = (perf_counter() - started) * 1_000
                 row = _candidate_row(
                     case,
                     plan=plan,
                     bundle=bundle,
                     chunks_by_id=chunks_by_id,
+                    wall_latency_ms=wall_latency_ms,
                 )
                 total_cost += float(row["reported_cost_usd"])
                 rows.append(row)

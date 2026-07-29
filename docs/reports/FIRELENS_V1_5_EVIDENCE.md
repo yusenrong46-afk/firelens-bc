@@ -113,7 +113,7 @@ errors or framework overlays were observed.
 
 The current `make verify` run passed:
 
-- 151 Python tests, 10 skipped, and 36 subtests;
+- 152 Python tests, 10 skipped, and 36 subtests;
 - Ruff, formatting, mypy over 51 source files, and secret scan;
 - generated OpenAPI and TypeScript types with no residual diff;
 - 12 frontend unit tests and the production TypeScript/Vite build;
@@ -149,6 +149,7 @@ Generated evaluation outputs remain ignored rather than committed:
 | `v1_5_retrieval_owner_review.yaml` | `9cbfaa3c77a7f999fd23a3f23698d939b54a6231e007f08226334a07c1659a8f` |
 | `v1_5_retrieval_owner_review.md` | `5115a3e8880c97fcf0bded1feaa2ff1e04e15a22bcc4673200f27f89c105b056` |
 | `v1_5_owner_semantic_review.yaml` | `bf78f0a18f4eeb0f20d922e1d4ebf10ecef6724338c90189631f197d27705915` |
+| `v1_5_retrieval_comparison.json` | `342b7f4a07103f79e9d6274579476ede1b0c5ebc065dd73d4a8520e9c2133c0e` |
 
 The preserved failed retrieval report uses dataset SHA-256
 `75414daede41d029ecb233b380053546c279eb4ed33a201c19a5ceb5d2e6afef` and holdout SHA-256
@@ -183,23 +184,30 @@ aggregated, so this table is intentionally limited to the final qualification se
 2. The preserved 16-case independent result remains below 96% and cannot authorize promotion.
 3. Semantic correctness and unsupported-material-claim count remain unscored; the hash-bound
    50-case owner review remains 0/50 approved.
-4. The last account-status check found the OpenRouter key limit exhausted, so the invalid reranker
-   treatments cannot be rerun until the owner changes that external limit.
+4. The OpenRouter limit is restored and the fixed-planner reranker comparison is complete; no
+   candidate earned promotion. Paid sealed scoring remains blocked only by owner label review.
 5. An anonymous Vercel preview, distributed rate limiting, and production rollback drill require
    external deployment approval and were not performed.
 
 ## Continued retrieval optimization
 
-A later development-only query-policy experiment reused one set of planner decisions across four
-treatments, avoiding the earlier planner variance between candidates. The valid
-original-question retrieval treatment tied the current candidate at 97.87% Recall@5 and 84.04%
-MRR@5 while improving mean source coverage from 89.72% to 91.84%. That is not a qualifying Recall
-or MRR gain, so it was not promoted.
+A final development-only query-policy experiment reused one set of planner decisions across four
+treatments, avoiding planner variance between candidates. All 200 rows completed with zero
+provider errors and recorded exact model IDs, attempts, 55,568 tokens, provider-stage timings,
+wall latency, and `$0.49713884` provider-reported cost. The artifact SHA-256 is
+`342b7f4a07103f79e9d6274579476ede1b0c5ebc065dd73d4a8520e9c2133c0e`.
 
-The original-question reranking treatments were incomplete after OpenRouter returned HTTP 403.
-A read-only account-status check confirmed that the key's `$10` limit had been exhausted. Partial
-candidate scores were discarded. The run reported `$0.36941354` and produced ignored artifact
-SHA-256 `eb36fa47775c0d60bf27c0eca4b4e2c637bd5b8354e9ac0e7dbcdb936e547520`.
+On the 47 route-eligible development cases, current retrieval scored 100% Recall@5, 85.46% MRR@5,
+and 91.84% mean source coverage. Original-question reranking scored 97.87% / 78.72% / 92.20%;
+original-question retrieval scored 97.87% / 84.75% / 89.72%; and the combined treatment scored
+97.87% / 78.19% / 91.13%. All three alternatives lost one recall case and failed the locked gain
+rule, so current `metadata_context_v1`, 30/30/30, RRF 60, rerank 5 remains unchanged.
+
+One earlier complete rerun consumed `$0.48585084` before row-level provenance instrumentation was
+added; it was superseded rather than used as release evidence. Across those two complete reruns,
+reports summed to `$0.98298968`; the OpenRouter key-status usage increased by `$0.88840588`. The
+ledger keeps both values because provider-reported per-call cost and account status are distinct
+observations. The final key status was limit `$20`, usage `$10.90011477`, remaining `$9.09988523`.
 
 A separate zero-provider-call lexical sweep evaluated compound-identifier tokens and bounded
 title, section, and locator weighting across 50 development cases. Field weighting changed BM25
@@ -209,7 +217,7 @@ retrieval remains `metadata_context_v1`, 30/30/30 candidate pools, RRF 60, reran
 lexical artifact SHA-256 is
 `237551e0569b70e78eb9f17608f3e70b970323a471f51cd91bf8e6c0b295f778`.
 
-The non-paid post-experiment `make verify` run passed 138 Python tests, 10 skips, 36 subtests,
+The post-experiment `make verify` run passed 152 Python tests, 10 skips, 36 subtests,
 Ruff, formatting, mypy, secret scanning, generated OpenAPI/TypeScript contracts, 12 frontend unit
 tests, the production build, 4 Sites tests, and 12 desktop/mobile Playwright flows. Generated-code
 checks left no unintended tracked diff.
