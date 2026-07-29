@@ -474,6 +474,7 @@ class AskResponse(StrictModel):
     validation: ValidationReport | None = None
     error_kind: str | None = None
     live_results: list[LiveResult] = Field(default_factory=list)
+    unavailable_layers: list[LiveResultKind] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_public_state(self) -> AskResponse:
@@ -518,6 +519,21 @@ class AskResponse(StrictModel):
         elif self.response_mode == ResponseMode.MIXED:
             if self.status != ResponseStatus.ANSWER or not self.live_results or not self.answer:
                 raise ValueError("mixed responses require live results and an answer")
+            if not self.claims or not self.evidence:
+                raise ValueError("mixed responses require supported static claims")
+            if any(
+                claim.evidence_status != EvidenceStatus.VERIFIED_CORPUS for claim in self.claims
+            ):
+                raise ValueError("mixed responses contain only verified static claims")
+            supported_ids = {
+                support.evidence_id for claim in self.claims for support in claim.supports
+            }
+            if supported_ids != set(evidence_ids):
+                raise ValueError(
+                    "mixed claim supports and public evidence must reference the same IDs"
+                )
+            if self.validation is None or not self.validation.accepted:
+                raise ValueError("mixed responses require accepted static validation")
         elif self.response_mode in {ResponseMode.CAPABILITY, ResponseMode.SCOPE_REDIRECT}:
             if self.status != ResponseStatus.ANSWER or self.claims or self.evidence:
                 raise ValueError("local conversational responses cannot contain claims")

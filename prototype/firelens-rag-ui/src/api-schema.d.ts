@@ -98,6 +98,8 @@ export interface components {
             suggested_questions?: string[];
             /** Trace Id */
             trace_id: string;
+            /** Unavailable Layers */
+            unavailable_layers?: components["schemas"]["LiveResultKind"][];
             validation?: components["schemas"]["ValidationReport"] | null;
         };
         /** ClaimSupport */

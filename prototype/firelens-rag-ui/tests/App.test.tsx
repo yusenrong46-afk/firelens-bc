@@ -163,6 +163,7 @@ describe("FireLens Source Lens", () => {
           kind: "incident",
           authority: "BC Wildfire Service",
           source_url: "https://example.test/incidents/7",
+          source_updated_at: "2026-07-28T11:55:00Z",
           retrieved_at: "2026-07-28T12:00:00Z",
           freshness: "fresh",
           status: "Out of Control",
@@ -170,6 +171,7 @@ describe("FireLens Source Lens", () => {
           geometry_relation: "nearby",
           geometry: { type: "Point", coordinates: [-123.5, 49.5] },
         }],
+        unavailable_layers: ["evacuation"],
       }), { status: 200 }),
     ));
     const user = userEvent.setup();
@@ -180,6 +182,9 @@ describe("FireLens Source Lens", () => {
     expect(await screen.findByText("Current BC wildfire information")).toBeInTheDocument();
     expect(screen.getAllByText("Official live records").length).toBeGreaterThan(0);
     expect(screen.getByText("Test Fire")).toBeInTheDocument();
+    expect(screen.getByText(/Some official layers are unavailable: evacuation/)).toBeInTheDocument();
+    expect(screen.getByText(/Source updated/)).toBeInTheDocument();
+    expect(screen.getByText(/Retrieved/)).toBeInTheDocument();
   });
 
   it("sends completed turns with a follow-up question", async () => {

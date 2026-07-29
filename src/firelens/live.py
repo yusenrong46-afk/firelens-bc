@@ -54,7 +54,24 @@ class LiveDataUnavailable(RuntimeError):
 class _CacheEntry:
     fetched_monotonic: float
     retrieved_at: datetime
+    source_updated_at: datetime
     features: tuple[dict[str, Any], ...]
+
+
+_LAYER_SCHEMAS: dict[LiveResultKind, tuple[str, frozenset[str]]] = {
+    LiveResultKind.INCIDENT: (
+        "BCWS_ActiveFires_Points",
+        frozenset({"OBJECTID", "FIRE_STATUS", "FIRE_NUMBER", "INCIDENT_NAME"}),
+    ),
+    LiveResultKind.PERIMETER: (
+        "Fire Perimeters",
+        frozenset({"OBJECTID", "FIRE_STATUS", "FIRE_NUMBER", "FIRE_SIZE_HECTARES"}),
+    ),
+    LiveResultKind.EVACUATION: (
+        "Evacuation Orders and Alerts - View",
+        frozenset({"OBJECTID", "ORDER_ALERT_STATUS", "EVENT_TYPE", "DATE_MODIFIED"}),
+    ),
+}
 
 
 def _property(properties: dict[str, Any], *names: str) -> Any:
@@ -192,7 +209,33 @@ class LiveDataService:
             raise LiveDataUnavailable(f"{kind.value} source returned malformed features")
         return features, bool(payload.get("exceededTransferLimit"))
 
+    async def _source_metadata(self, kind: LiveResultKind) -> datetime:
+        response = await self.client.get(LAYER_URLS[kind], params={"f": "json"})
+        response.raise_for_status()
+        payload = response.json()
+        expected_name, required_fields = _LAYER_SCHEMAS[kind]
+        if not isinstance(payload, dict) or payload.get("name") != expected_name:
+            raise LiveDataUnavailable(f"{kind.value} source identity did not match")
+        fields = payload.get("fields")
+        if not isinstance(fields, list):
+            raise LiveDataUnavailable(f"{kind.value} source fields were unavailable")
+        field_names = {
+            item.get("name")
+            for item in fields
+            if isinstance(item, dict) and isinstance(item.get("name"), str)
+        }
+        if not required_fields.issubset(field_names):
+            raise LiveDataUnavailable(f"{kind.value} source schema did not match")
+        editing = payload.get("editingInfo")
+        updated = _timestamp(
+            editing.get("dataLastEditDate") if isinstance(editing, dict) else None
+        )
+        if updated is None:
+            raise LiveDataUnavailable(f"{kind.value} source has no authoritative update time")
+        return updated
+
     async def _refresh(self, kind: LiveResultKind) -> _CacheEntry:
+        source_updated_at = await self._source_metadata(kind)
         features: list[dict[str, Any]] = []
         offset = 0
         while True:
@@ -206,6 +249,7 @@ class LiveDataService:
         entry = _CacheEntry(
             fetched_monotonic=time.monotonic(),
             retrieved_at=datetime.now(UTC),
+            source_updated_at=source_updated_at,
             features=tuple(features),
         )
         self._cache[kind] = entry
@@ -249,6 +293,7 @@ class LiveDataService:
         *,
         retrieved_at: datetime,
         freshness: Freshness,
+        source_updated_at: datetime,
         location: tuple[float, float, float] | None = None,
     ) -> LiveResult:
         properties = feature["properties"]
@@ -267,22 +312,8 @@ class LiveDataService:
                 longitude=longitude,
                 radius_km=radius_km,
             )
-        updated = _timestamp(
-            _property(
-                properties,
-                "LAST_UPDATED_TIMESTAMP",
-                "DATE_MODIFIED",
-                "LAST_UPDATED",
-                "MODIFIED_ON",
-                "LOAD_DATE",
-                "TRACK_DATE",
-                "FIRE_OUT_DATE",
-                "IGNITION_DATE",
-                "EVENT_START_DATE",
-            )
-        )
-        if updated is None:
-            raise ValueError("official live record has no usable source timestamp")
+        record_updated = _timestamp(_property(properties, "DATE_MODIFIED"))
+        updated = record_updated or source_updated_at
         size = _property(properties, "FIRE_SIZE_HECTARES", "CURRENT_SIZE", "SIZE_HA")
         return LiveResult(
             result_id=f"{kind.value}:{object_id}",
@@ -386,6 +417,7 @@ class LiveDataService:
                         feature,
                         retrieved_at=entry.retrieved_at,
                         freshness=freshness,
+                        source_updated_at=entry.source_updated_at,
                     )
                 except (TypeError, ValueError):
                     continue
@@ -400,9 +432,14 @@ class LiveDataService:
             ],
         )
 
-    async def nearby_results(self, location: LocationInput) -> LiveMapResponse:
+    async def nearby_results(
+        self,
+        location: LocationInput,
+        *,
+        layers: tuple[LiveResultKind, ...] = tuple(LiveResultKind),
+    ) -> LiveMapResponse:
         latitude, longitude = await self.resolve_location(location)
-        response = await self.map_results(layers=tuple(LiveResultKind))
+        response = await self.map_results(layers=layers)
         related: list[LiveResult] = []
         for result in response.results:
             relation = geometry_relation(

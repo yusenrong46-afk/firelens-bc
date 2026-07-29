@@ -369,6 +369,22 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                 )
                 self.assertEqual(live.status_code, 200)
                 self.assertEqual(live.json()["status"], "abstention")
+                unsupported_live = await client.post(
+                    "/api/v1/ask",
+                    json={
+                        "question": "What is the current air quality in Vancouver from wildfire smoke?"
+                    },
+                )
+                self.assertEqual(unsupported_live.status_code, 200)
+                self.assertEqual(unsupported_live.json()["status"], "abstention")
+                self.assertIn("air quality", unsupported_live.json()["answer"])
+                localized_without_input = await client.post(
+                    "/api/v1/ask",
+                    json={"question": "Are there active wildfires near Kelowna today?"},
+                )
+                self.assertEqual(localized_without_input.status_code, 200)
+                self.assertEqual(localized_without_input.json()["status"], "abstention")
+                self.assertIn("approximate location", localized_without_input.json()["answer"])
                 stable = await client.post(
                     "/api/v1/ask",
                     json={"question": "What belongs in an emergency kit?"},

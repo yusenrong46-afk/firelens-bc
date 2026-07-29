@@ -60,6 +60,7 @@ test.beforeEach(async ({ page }) => {
             kind: "incident",
             authority: "BC Wildfire Service",
             source_url: "https://example.test/incidents/7",
+            source_updated_at: "2026-07-28T11:55:00Z",
             retrieved_at: "2026-07-28T12:00:00Z",
             freshness: "fresh",
             status: "Out of Control",
@@ -67,6 +68,7 @@ test.beforeEach(async ({ page }) => {
             geometry_relation: "nearby",
             geometry: { type: "Point", coordinates: [-123.5, 49.5] },
           }],
+          unavailable_layers: ["evacuation"],
         }),
       });
       return;
@@ -189,6 +191,9 @@ test("shows official live records and a map through keyboard submission", async 
   await question.press("Enter");
   await expect(page.getByText("Current BC wildfire information")).toBeVisible();
   await expect(page.getByText("Test Fire", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Some official layers are unavailable: evacuation/)).toBeVisible();
+  await expect(page.getByText(/Source updated/)).toBeVisible();
+  await expect(page.getByText(/Retrieved/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toBeVisible();
   await expect(page.getByText("Sources supporting this answer")).toHaveCount(0);
 });

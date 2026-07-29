@@ -7,10 +7,18 @@ from pathlib import Path
 from rag_helpers import make_chunk, make_runtime
 
 from firelens.answering.context import build_evidence_packet, decide_support
-from firelens.answering.intent import apply_planning_decision, plan_query
+from firelens.answering.intent import (
+    apply_planning_decision,
+    live_layers_for_question,
+    live_query_requires_location,
+    plan_query,
+    static_guidance_fragment,
+    unsupported_live_topics,
+)
 from firelens.answering.planner import planning_messages
 from firelens.contracts import (
     AuthorityClass,
+    LiveResultKind,
     PlanningDecision,
     QueryRelation,
     QueryRequest,
@@ -23,6 +31,32 @@ from firelens.contracts import (
 
 
 class V15RoutingTests(unittest.TestCase):
+    def test_live_intents_use_only_supported_official_layers(self) -> None:
+        self.assertEqual(
+            live_layers_for_question("What active wildfires are in BC today?"),
+            (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER),
+        )
+        self.assertEqual(live_layers_for_question("What is the current air quality?"), ())
+        self.assertEqual(
+            live_layers_for_question("What is the current air quality from wildfire smoke?"),
+            (),
+        )
+        self.assertEqual(
+            unsupported_live_topics("Are roads open and what is the AQHI?"),
+            ("air quality", "road conditions"),
+        )
+
+    def test_localized_live_question_requires_explicit_location_input(self) -> None:
+        self.assertTrue(live_query_requires_location("Are there fires near Kelowna today?"))
+        self.assertFalse(live_query_requires_location("How many active fires are in BC today?"))
+
+    def test_mixed_static_fragment_preserves_the_users_words(self) -> None:
+        question = "Are there fires near Kelowna today, and what should I pack in my go bag?"
+        self.assertEqual(
+            static_guidance_fragment(question),
+            "what should I pack in my go bag",
+        )
+
     def test_new_personal_safety_paraphrases_are_prohibited(self) -> None:
         for question in (
             "Can we return home yet after the evacuation?",

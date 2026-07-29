@@ -83,6 +83,13 @@
             "title": "Trace Id",
             "type": "string"
           },
+          "unavailable_layers": {
+            "items": {
+              "$ref": "#/components/schemas/LiveResultKind"
+            },
+            "title": "Unavailable Layers",
+            "type": "array"
+          },
           "validation": {
             "anyOf": [
               {

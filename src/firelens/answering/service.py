@@ -275,10 +275,14 @@ class StaticRAGService:
         return response
 
     async def execute_search(
-        self, request: QueryRequest, *, trace_id: str | None = None
+        self,
+        request: QueryRequest,
+        *,
+        trace_id: str | None = None,
+        allow_live: bool = True,
     ) -> SearchExecution:
         active_trace_id = trace_id or uuid4().hex
-        plan = plan_query(request)
+        plan = plan_query(request, allow_live=allow_live)
         planning: PlanningResponse | None = None
         packet: EvidencePacket | None = None
 
@@ -512,10 +516,14 @@ class StaticRAGService:
         )
 
     async def ask(
-        self, request: QueryRequest, *, observer: ExecutionObserver | None = None
+        self,
+        request: QueryRequest,
+        *,
+        observer: ExecutionObserver | None = None,
+        allow_live: bool = True,
     ) -> AskResponse:
         trace_id = uuid4().hex
-        execution = await self.execute_search(request, trace_id=trace_id)
+        execution = await self.execute_search(request, trace_id=trace_id, allow_live=allow_live)
         if observer is not None:
             observer.search = execution
         search = execution.public_response

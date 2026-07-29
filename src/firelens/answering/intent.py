@@ -11,6 +11,7 @@ import re
 
 from firelens.contracts import (
     AuthorityClass,
+    LiveResultKind,
     PlanningDecision,
     QueryPlan,
     QueryRelation,
@@ -106,6 +107,25 @@ _LIVE_PATTERNS = (
     r"\b(?:my|our)\s+(?:address|home|property|location)\s+is\s+under\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\b",
 )
 
+_UNSUPPORTED_LIVE_TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("air quality", ("air quality", "aqhi", "smoke conditions", "smoky")),
+    ("road conditions", ("road", "roads", "highway", "highways", "route closure")),
+)
+
+_STATIC_GUIDANCE_TERMS = (
+    "prepare",
+    "preparedness",
+    "kit",
+    "bag",
+    "firesmart",
+    "reduce wildfire risk",
+    "sprinkler",
+    "smoke exposure",
+    "protect from smoke",
+    "alert mean",
+    "order mean",
+)
+
 _CAPABILITY_PATTERNS = (
     r"^(?:hi|hello|hey|good (?:morning|afternoon|evening))[!., ]*$",
     r"\bwhat (?:can|could) you (?:do|help(?: me)? with)\b",
@@ -190,7 +210,73 @@ def required_authorities(question: str) -> frozenset[AuthorityClass]:
     return frozenset(required)
 
 
-def plan_query(request: QueryRequest) -> QueryPlan:
+def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
+    """Return only official layers that can answer the user's live intent."""
+
+    lowered = question.casefold()
+    layers: list[LiveResultKind] = []
+    fire_status_requested = any(
+        re.search(pattern, lowered)
+        for pattern in (
+            r"\b(?:active|current|latest)\s+(?:fires?|wildfires?)\b",
+            r"\b(?:fire|wildfire)\s+(?:status|situation|map|update|updates|perimeter)\b",
+            r"\b(?:is there|are there|where is)\b.{0,30}\b(?:fire|wildfire)\b",
+            r"\b(?:fires?|wildfires?)\b.{0,40}\b(?:burning|near|around|in bc|in british columbia)\b",
+            r"\b(?:bcws|bc wildfire service)\b.{0,50}\b(?:status|map|update|latest|fire)\b",
+        )
+    )
+    if fire_status_requested:
+        layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
+    if any(term in lowered for term in ("evacuation", "alert", "order", "emergencyinfobc")):
+        layers.append(LiveResultKind.EVACUATION)
+    return tuple(dict.fromkeys(layers))
+
+
+def unsupported_live_topics(question: str) -> tuple[str, ...]:
+    lowered = question.casefold()
+    return tuple(
+        label
+        for label, terms in _UNSUPPORTED_LIVE_TOPICS
+        if any(term in lowered for term in terms)
+    )
+
+
+def live_query_requires_location(question: str) -> bool:
+    """Require explicit coarse input for localized questions; never infer a place."""
+
+    lowered = question.casefold()
+    if any(term in lowered for term in ("near me", "my home", "my house", "my address")):
+        return True
+    match = re.search(r"\b(?:near|around|within|in)\s+([a-z][a-z .'-]{1,80})", lowered)
+    if match is None:
+        return False
+    place = match.group(1).strip(" .?'")
+    return not (
+        place.startswith("effect")
+        or place.startswith("bc")
+        or place.startswith("british columbia")
+        or place.startswith("the province")
+    )
+
+
+def static_guidance_fragment(question: str) -> str | None:
+    """Keep the user's own stable-guidance clause for a mixed live/static request."""
+
+    fragments = [
+        fragment.strip(" ,.?;")
+        for fragment in re.split(r"(?:[?;]|\b(?:and|also|plus)\b)", question, flags=re.I)
+    ]
+    selected = [
+        fragment
+        for fragment in fragments
+        if fragment and any(term in fragment.casefold() for term in _STATIC_GUIDANCE_TERMS)
+    ]
+    if not selected:
+        return None
+    return " and ".join(selected)[:2_000]
+
+
+def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     """Apply the zero-provider-call boundary and mark ordinary questions related."""
 
     question = request.question
@@ -229,7 +315,7 @@ def plan_query(request: QueryRequest) -> QueryPlan:
                 "FireLens cannot provide personalized safety advice or evacuation decisions."
             ],
         )
-    if live:
+    if live and allow_live:
         return QueryPlan(
             original_question=question,
             normalized_question=question,

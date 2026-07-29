@@ -498,7 +498,10 @@ export function App() {
           <div className="evidence-inner">
             {view.kind === "answer" && (mode === "live" || mode === "mixed") && (view.response.live_results ?? []).length > 0 ? (
               <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading the official map">Preparing map layers…</EvidencePlaceholder>}>
-                <LiveMap results={view.response.live_results ?? []} />
+                <LiveMap
+                  results={view.response.live_results ?? []}
+                  unavailableLayers={view.response.unavailable_layers ?? []}
+                />
                 {mode === "mixed" && (view.response.evidence ?? []).length > 0 && (
                   <div className="mixed-sources">
                     <strong>Preparedness sources</strong>

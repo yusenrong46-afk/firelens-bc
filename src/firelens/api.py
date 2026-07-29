@@ -12,7 +12,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from firelens.answering.intent import plan_query
+from firelens.answering.intent import (
+    live_layers_for_question,
+    live_query_requires_location,
+    plan_query,
+    static_guidance_fragment,
+    unsupported_live_topics,
+)
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     AskResponse,
@@ -81,20 +87,6 @@ def create_app(
 
     def current_live_service() -> LiveDataService:
         return app.state.live_service
-
-    def _static_mixed_question(question: str) -> str | None:
-        lowered = question.casefold()
-        if not any(
-            term in lowered for term in ("prepare", "kit", "bag", "smoke", "firesmart", "home")
-        ):
-            return None
-        if "smoke" in lowered:
-            return "How can households prepare for wildfire smoke?"
-        if any(term in lowered for term in ("firesmart", "home")):
-            return "How can households reduce wildfire risk around a home?"
-        if any(term in lowered for term in ("kit", "bag")):
-            return "What belongs in a household wildfire emergency kit?"
-        return "How should households prepare for wildfire?"
 
     def error_response(
         status_code: int,
@@ -217,10 +209,22 @@ def create_app(
             )
         initial_plan = plan_query(request)
         if initial_plan.route == QueryRoute.LIVE:
-            if request.location is None and any(
-                phrase in request.question.casefold()
-                for phrase in ("near me", "my home", "my house", "my address")
-            ):
+            layers = live_layers_for_question(request.question)
+            unsupported_topics = unsupported_live_topics(request.question)
+            if not layers:
+                topics = ", ".join(unsupported_topics) or "that live information"
+                return AskResponse(
+                    status=ResponseStatus.ABSTENTION,
+                    trace_id=uuid4().hex,
+                    response_mode=ResponseMode.ABSTENTION,
+                    answer=(
+                        f"FireLens V1.5 does not have an official live source for {topics}. "
+                        "It will not substitute wildfire incident records for the requested data."
+                    ),
+                    reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+                    limitations=["No matching record is not a safety determination."],
+                )
+            if request.location is None and live_query_requires_location(request.question):
                 return AskResponse(
                     status=ResponseStatus.ABSTENTION,
                     trace_id=uuid4().hex,
@@ -234,22 +238,22 @@ def create_app(
                 )
             try:
                 live = (
-                    await current_live_service().nearby_results(request.location)
+                    await current_live_service().nearby_results(request.location, layers=layers)
                     if request.location is not None
-                    else await current_live_service().map_results(layers=tuple(LiveResultKind))
+                    else await current_live_service().map_results(layers=layers)
                 )
             except LiveDataUnavailable:
                 live = LiveMapResponse(
                     generated_at=datetime.now(UTC),
                     results=[],
-                    unavailable_layers=list(LiveResultKind),
+                    unavailable_layers=list(layers),
                     limitations=["Official live sources are currently unavailable."],
                 )
             if not live.results:
                 answer = (
                     "No matching official record was found for this query. This does not mean "
                     "the area is safe; check the issuing authority and BC Wildfire Service map."
-                    if len(live.unavailable_layers) < len(LiveResultKind)
+                    if len(live.unavailable_layers) < len(layers)
                     else "Official live wildfire sources are unavailable, so FireLens cannot establish current conditions."
                 )
                 return AskResponse(
@@ -258,7 +262,15 @@ def create_app(
                     response_mode=ResponseMode.ABSTENTION,
                     answer=answer,
                     reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-                    limitations=live.limitations,
+                    limitations=[
+                        *live.limitations,
+                        *(
+                            ["Unsupported live topics: " + ", ".join(unsupported_topics)]
+                            if unsupported_topics
+                            else []
+                        ),
+                    ],
+                    unavailable_layers=live.unavailable_layers,
                 )
             shown = live.results[:100]
             summary = "; ".join(
@@ -266,12 +278,22 @@ def create_app(
                 for item in shown[:5]
             )
             live_answer = "Current official information: " + summary
-            mixed_question = _static_mixed_question(request.question)
+            mixed_question = static_guidance_fragment(request.question)
             if mixed_question is not None:
                 static_response = await active_runtime.service.ask(
-                    QueryRequest(question=mixed_question, history=request.history)
+                    QueryRequest(question=mixed_question, history=request.history),
+                    allow_live=False,
                 )
-                if static_response.status == ResponseStatus.ANSWER and static_response.answer:
+                if (
+                    static_response.status == ResponseStatus.ANSWER
+                    and static_response.response_mode
+                    in {ResponseMode.GROUNDED, ResponseMode.PARTIAL}
+                    and static_response.answer
+                    and static_response.claims
+                    and static_response.evidence
+                    and static_response.validation is not None
+                    and static_response.validation.accepted
+                ):
                     return AskResponse(
                         status=ResponseStatus.ANSWER,
                         trace_id=static_response.trace_id,
@@ -284,6 +306,7 @@ def create_app(
                         live_results=shown,
                         limitations=[*live.limitations, *static_response.limitations],
                         validation=static_response.validation,
+                        unavailable_layers=live.unavailable_layers,
                     )
             return AskResponse(
                 status=ResponseStatus.ANSWER,
@@ -291,7 +314,15 @@ def create_app(
                 response_mode=ResponseMode.LIVE,
                 answer=live_answer,
                 live_results=shown,
-                limitations=live.limitations,
+                limitations=[
+                    *live.limitations,
+                    *(
+                        ["Unsupported live topics: " + ", ".join(unsupported_topics)]
+                        if unsupported_topics
+                        else []
+                    ),
+                ],
+                unavailable_layers=live.unavailable_layers,
             )
         response = await active_runtime.service.ask(request)
         if response.status == ResponseStatus.ERROR:

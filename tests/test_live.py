@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from datetime import UTC, datetime
 
 import httpx
 from pydantic import ValidationError
@@ -12,6 +13,38 @@ from firelens.contracts import (
     LocationInput,
 )
 from firelens.live import LiveDataService, geometry_relation
+
+
+def _metadata(kind: LiveResultKind, *, updated: int = 1_760_000_000_000) -> dict:
+    definitions = {
+        LiveResultKind.INCIDENT: (
+            "BCWS_ActiveFires_Points",
+            ["OBJECTID", "FIRE_STATUS", "FIRE_NUMBER", "INCIDENT_NAME"],
+        ),
+        LiveResultKind.PERIMETER: (
+            "Fire Perimeters",
+            ["OBJECTID", "FIRE_STATUS", "FIRE_NUMBER", "FIRE_SIZE_HECTARES"],
+        ),
+        LiveResultKind.EVACUATION: (
+            "Evacuation Orders and Alerts - View",
+            ["OBJECTID", "ORDER_ALERT_STATUS", "EVENT_TYPE", "DATE_MODIFIED"],
+        ),
+    }
+    name, fields = definitions[kind]
+    return {
+        "name": name,
+        "editingInfo": {"dataLastEditDate": updated},
+        "fields": [{"name": field} for field in fields],
+    }
+
+
+def _kind_from_url(request: httpx.Request) -> LiveResultKind:
+    url = str(request.url)
+    if "Evacuation_Orders_and_Alerts" in url:
+        return LiveResultKind.EVACUATION
+    if "FirePerimeters" in url:
+        return LiveResultKind.PERIMETER
+    return LiveResultKind.INCIDENT
 
 
 class LocationContractTests(unittest.TestCase):
@@ -75,11 +108,13 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
     async def test_cache_becomes_visibly_stale_after_refresh_failure(self) -> None:
         calls = 0
 
-        def handler(_request: httpx.Request) -> httpx.Response:
+        def handler(request: httpx.Request) -> httpx.Response:
             nonlocal calls
             calls += 1
-            if calls > 1:
+            if calls > 2:
                 raise httpx.ReadTimeout("offline")
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
             return httpx.Response(
                 200,
                 json={
@@ -108,10 +143,17 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(first.results[0].freshness, Freshness.FRESH)
         self.assertEqual(second.results[0].freshness, Freshness.STALE)
         self.assertEqual(first.results[0].result_id, second.results[0].result_id)
+        self.assertEqual(
+            first.results[0].source_updated_at,
+            datetime.fromtimestamp(1_760_000_000, UTC),
+        )
 
     async def test_inactive_and_non_wildfire_records_are_not_displayed(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
-            is_evacuation = "Evacuation_Orders_and_Alerts" in str(request.url)
+            kind = _kind_from_url(request)
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(kind))
+            is_evacuation = kind == LiveResultKind.EVACUATION
             if is_evacuation:
                 properties = {
                     "OBJECTID": 8,
@@ -156,3 +198,47 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             )
         self.assertEqual(response.results, [])
         self.assertEqual(response.unavailable_layers, [LiveResultKind.EVACUATION])
+
+    async def test_ignition_date_cannot_pose_as_source_update_time(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            if not request.url.path.endswith("/query"):
+                payload = _metadata(LiveResultKind.INCIDENT)
+                payload["editingInfo"] = {}
+                return httpx.Response(200, json=payload)
+            return httpx.Response(
+                200,
+                json={
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "properties": {
+                                "OBJECTID": 7,
+                                "FIRE_STATUS": "Out of Control",
+                                "IGNITION_DATE": 1_750_000_000_000,
+                            },
+                            "geometry": {"type": "Point", "coordinates": [-123.5, 49.5]},
+                        }
+                    ],
+                },
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client).map_results(
+                layers=(LiveResultKind.INCIDENT,)
+            )
+        self.assertEqual(response.results, [])
+        self.assertEqual(response.unavailable_layers, [LiveResultKind.INCIDENT])
+
+    async def test_source_identity_and_required_fields_are_validated(self) -> None:
+        def handler(_request: httpx.Request) -> httpx.Response:
+            payload = _metadata(LiveResultKind.INCIDENT)
+            payload["name"] = "Unrelated public layer"
+            return httpx.Response(200, json=payload)
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client).map_results(
+                layers=(LiveResultKind.INCIDENT,)
+            )
+        self.assertEqual(response.results, [])
+        self.assertEqual(response.unavailable_layers, [LiveResultKind.INCIDENT])

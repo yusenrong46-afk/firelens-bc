@@ -4,6 +4,19 @@ import type { LatLngBoundsExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { LiveResult } from "./api";
 
+function formatTimestamp(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Timestamp unavailable";
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(parsed);
+}
+
 const BC_BOUNDS: LatLngBoundsExpression = [
   [48.2, -139.2],
   [60.1, -114.0],
@@ -37,7 +50,13 @@ function resultColour(kind: LiveResult["kind"]): string {
   return "#b42318";
 }
 
-export function LiveMap({ results }: { results: LiveResult[] }) {
+export function LiveMap({
+  results,
+  unavailableLayers = [],
+}: {
+  results: LiveResult[];
+  unavailableLayers?: string[];
+}) {
   const featureResults = useMemo(
     () => results.filter((result) => (result.geometry as { type?: string }).type !== "Point"),
     [results],
@@ -72,7 +91,11 @@ export function LiveMap({ results }: { results: LiveResult[] }) {
             }
             style={{ color: resultColour(result.kind), weight: 2, fillOpacity: 0.22 }}
           >
-            <Popup><strong>{result.name}</strong><br />{result.status}</Popup>
+            <Popup>
+              <strong>{result.name}</strong><br />
+              {result.status}<br />
+              Updated {formatTimestamp(result.source_updated_at)}
+            </Popup>
           </GeoJSON>
         ))}
         {pointResults.map((result) => {
@@ -84,16 +107,31 @@ export function LiveMap({ results }: { results: LiveResult[] }) {
               radius={7}
               pathOptions={{ color: "#fff", weight: 2, fillColor: resultColour(result.kind), fillOpacity: 1 }}
             >
-              <Popup><strong>{result.name}</strong><br />{result.status}</Popup>
+              <Popup>
+                <strong>{result.name}</strong><br />
+                {result.status}<br />
+                Updated {formatTimestamp(result.source_updated_at)}
+              </Popup>
             </CircleMarker>
           );
         })}
       </MapContainer>
+      {unavailableLayers.length > 0 && (
+        <p className="live-map__warning" role="status">
+          Some official layers are unavailable: {unavailableLayers.join(", ")}.
+          The records below do not represent those missing layers.
+        </p>
+      )}
       <ul className="live-list">
         {results.slice(0, 8).map((result) => (
           <li key={result.result_id}>
             <span className={`live-dot live-dot--${result.kind}`} />
-            <div><strong>{result.name}</strong><small>{result.status} · {result.freshness}</small></div>
+            <div>
+              <strong>{result.name}</strong>
+              <small>{result.status} · {result.freshness} · {result.authority}</small>
+              <small>Source updated {formatTimestamp(result.source_updated_at)}</small>
+              <small>Retrieved {formatTimestamp(result.retrieved_at)}</small>
+            </div>
             <a href={result.source_url} target="_blank" rel="noreferrer">Source</a>
           </li>
         ))}
