@@ -49,16 +49,18 @@ def write_test_corpus(root: Path, chunks: list[ChunkRecord]) -> FireLensConfig:
         "".join(json.dumps(asdict(chunk), sort_keys=True) + "\n" for chunk in chunks),
         encoding="utf-8",
     )
+    source_ids = sorted({chunk.source_id for chunk in chunks})
     manifest = {
         "corpus_version": "test-corpus.v1",
         "combined_chunk_count": len(chunks),
-        "included_source_count": 1,
+        "included_source_count": len(source_ids),
         "sources": [
             {
-                "source_id": "source-a",
+                "source_id": source_id,
                 "corpus_action": "include",
                 "review_status": "approved_static",
             }
+            for source_id in source_ids
         ],
     }
     (processed / "firelens_static_corpus.manifest.json").write_text(

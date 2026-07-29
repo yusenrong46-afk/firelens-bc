@@ -644,6 +644,13 @@ async def run_benchmark(
                     if row["validation"] is not None
                 ]
             ),
+            "claim_support_floor_validity_rate": _mean(
+                [
+                    float(row["validation"]["claim_support_valid"])
+                    for row in rows
+                    if row["validation"] is not None
+                ]
+            ),
             "policy_validation_rate": _mean(
                 [
                     float(row["validation"]["policy_valid"])
@@ -821,6 +828,9 @@ async def run_conversation_benchmark(
             response, case.expected_evidence_status
         )
         traceability_failures = _traceability_failure_count(response)
+        claim_support_floor_failure = int(
+            response.validation is not None and not response.validation.claim_support_valid
+        )
         background_leaks = (
             len(response.evidence) + sum(len(claim.supports) for claim in response.claims)
             if response.response_mode == ResponseMode.BACKGROUND
@@ -889,6 +899,7 @@ async def run_conversation_benchmark(
             "literal_forbidden_phrase_hits": literal_forbidden_hits,
             "background_citation_leak_count": background_leaks,
             "automated_traceability_failure_count": traceability_failures,
+            "claim_support_floor_failure_count": claim_support_floor_failure,
             "semantic_adjudication": "pending_owner_review",
             "reason_code": (
                 response.reason_code.value if response.reason_code is not None else None
@@ -1050,6 +1061,9 @@ async def run_conversation_benchmark(
             "unsupported_verified_claim_count_scored": False,
             "automated_traceability_failure_count": sum(
                 int(row["automated_traceability_failure_count"]) for row in rows
+            ),
+            "claim_support_floor_failure_count": sum(
+                int(row["claim_support_floor_failure_count"]) for row in rows
             ),
             "provider_failure_rate": _mean(
                 [float(row["actual_status"] == ResponseStatus.ERROR.value) for row in rows]

@@ -64,6 +64,7 @@ class ResponseMode(StrEnum):
     PARTIAL = "partial"
     LIVE = "live"
     MIXED = "mixed"
+    CONFLICT = "conflict"
 
 
 class AuthorityClass(StrEnum):
@@ -99,6 +100,7 @@ class ReasonCode(StrEnum):
     GENERATION_UNAVAILABLE = "generation_unavailable"
     DRAFT_VALIDATION_FAILED = "draft_validation_failed"
     MODEL_ABSTAINED = "model_abstained"
+    CONFLICTING_EVIDENCE = "conflicting_evidence"
 
 
 class SupportStatus(StrEnum):
@@ -107,6 +109,7 @@ class SupportStatus(StrEnum):
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
     REQUIRES_LIVE_DATA = "requires_live_data"
     PROHIBITED = "prohibited"
+    CONFLICT = "conflict"
 
 
 class ResponseStatus(StrEnum):
@@ -297,11 +300,19 @@ class EvidenceQuoteCandidate(FrozenStrictModel):
     text: Annotated[str, Field(min_length=1, max_length=500)]
 
 
+class EvidenceConflict(FrozenStrictModel):
+    conflict_id: str = Field(pattern=r"^X[1-9][0-9]*$")
+    quote_ids: list[str] = Field(min_length=2, max_length=4)
+    differing_terms: list[str] = Field(min_length=2, max_length=16)
+    explanation: str = Field(min_length=1, max_length=300)
+
+
 class EvidencePacket(FrozenStrictModel):
     question: str
     corpus_version: str
     items: list[EvidenceSpan]
     quote_candidates: list[EvidenceQuoteCandidate] = Field(default_factory=list)
+    conflicts: list[EvidenceConflict] = Field(default_factory=list, max_length=3)
     limitations: list[str] = Field(default_factory=list)
 
 
@@ -438,6 +449,7 @@ class ValidationReport(FrozenStrictModel):
     schema_valid: bool = True
     citation_ids_valid: bool
     quotes_exact: bool
+    claim_support_valid: bool = True
     policy_valid: bool
     errors: list[str] = Field(default_factory=list)
 
@@ -485,7 +497,11 @@ class AskResponse(StrictModel):
         if len(evidence_ids) != len(set(evidence_ids)):
             raise ValueError("public evidence IDs must be unique")
 
-        if self.response_mode in {ResponseMode.GROUNDED, ResponseMode.PARTIAL}:
+        if self.response_mode in {
+            ResponseMode.GROUNDED,
+            ResponseMode.PARTIAL,
+            ResponseMode.CONFLICT,
+        }:
             if self.status != ResponseStatus.ANSWER or not self.claims or not self.evidence:
                 raise ValueError("grounded responses require accepted claims")
             if any(
@@ -499,6 +515,10 @@ class AskResponse(StrictModel):
                 raise ValueError(
                     "grounded claim supports and public evidence must reference the same IDs"
                 )
+            if self.response_mode == ResponseMode.CONFLICT and (
+                self.validation is None or not self.validation.accepted
+            ):
+                raise ValueError("conflict responses require deterministic validation")
         elif self.response_mode == ResponseMode.BACKGROUND:
             if self.status != ResponseStatus.ANSWER or not self.claims:
                 raise ValueError("background responses require claims")

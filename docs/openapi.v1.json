@@ -690,7 +690,8 @@
           "approved_static_evidence",
           "generation_unavailable",
           "draft_validation_failed",
-          "model_abstained"
+          "model_abstained",
+          "conflicting_evidence"
         ],
         "title": "ReasonCode",
         "type": "string"
@@ -704,7 +705,8 @@
           "abstention",
           "partial",
           "live",
-          "mixed"
+          "mixed",
+          "conflict"
         ],
         "title": "ResponseMode",
         "type": "string"
@@ -767,6 +769,11 @@
           },
           "citation_ids_valid": {
             "title": "Citation Ids Valid",
+            "type": "boolean"
+          },
+          "claim_support_valid": {
+            "default": true,
+            "title": "Claim Support Valid",
             "type": "boolean"
           },
           "errors": {

@@ -11,6 +11,36 @@ from firelens.contracts import (
     GroundedDraft,
     ValidationReport,
 )
+from firelens.retrieval.bm25 import tokenize
+
+_CLAIM_STOPWORDS = frozenset(
+    {
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "at",
+        "be",
+        "by",
+        "for",
+        "from",
+        "in",
+        "is",
+        "it",
+        "of",
+        "on",
+        "or",
+        "that",
+        "the",
+        "their",
+        "this",
+        "to",
+        "with",
+        "you",
+        "your",
+    }
+)
 
 _FORBIDDEN = (
     r"\bguarantee(?:d|s)?\s+(?:your\s+)?safety\b",
@@ -66,12 +96,38 @@ def _policy_text(text: str) -> str:
     return text
 
 
+def _claim_has_direct_lexical_support(claim: str, quotes: list[str]) -> bool:
+    """Reject a citation attached to a materially unrelated generated claim.
+
+    This is a deterministic support floor, not a semantic-entailment score.
+    """
+
+    normalized_claim = " ".join(claim.casefold().split())
+    normalized_quotes = [" ".join(quote.casefold().split()) for quote in quotes]
+    if any(
+        normalized_claim in quote or quote in normalized_claim for quote in normalized_quotes
+    ):
+        return True
+    claim_tokens = {
+        token for token in tokenize(claim) if token not in _CLAIM_STOPWORDS and len(token) > 2
+    }
+    quote_tokens = {
+        token
+        for quote in quotes
+        for token in tokenize(quote)
+        if token not in _CLAIM_STOPWORDS and len(token) > 2
+    }
+    overlap = claim_tokens & quote_tokens
+    return len(overlap) >= 2 and len(overlap) / max(1, len(claim_tokens)) >= 0.25
+
+
 def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationReport:
     errors: list[str] = []
     evidence = {item.evidence_id: item for item in packet.items}
     candidates = {candidate.quote_id: candidate for candidate in packet.quote_candidates}
     citation_ids_valid = True
     quotes_exact = True
+    claim_support_valid = True
     policy_valid = True
 
     is_guidance = draft.answer_type == "grounded"
@@ -103,6 +159,13 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
         if not selected_candidates:
             citation_ids_valid = False
             errors.append(f"claim {claim_number} has no valid evidence quote ID")
+        elif not _claim_has_direct_lexical_support(
+            claim.text, [candidate.text for candidate in selected_candidates]
+        ):
+            claim_support_valid = False
+            errors.append(
+                f"claim {claim_number} lacks direct lexical support in its selected quotes"
+            )
 
     combined = "\n".join(claim.text for claim in draft.claims)
     lowered = combined.lower()
@@ -125,6 +188,7 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
         accepted=not errors,
         citation_ids_valid=citation_ids_valid,
         quotes_exact=quotes_exact,
+        claim_support_valid=claim_support_valid,
         policy_valid=policy_valid,
         errors=errors,
     )

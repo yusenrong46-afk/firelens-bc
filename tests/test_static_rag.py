@@ -582,6 +582,40 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(response.reason_code, "draft_validation_failed")
             self.assertFalse(response.validation.accepted)
 
+    async def test_exact_but_unrelated_citation_fails_claim_support_floor(self) -> None:
+        class UnrelatedClaimProvider(FakeProvider):
+            async def generate_grounded(self, messages, *, output_schema):
+                generated = await super().generate_grounded(
+                    messages, output_schema=output_schema
+                )
+                quote_id = generated.draft.claims[0].evidence_quote_ids[0]
+                return generated.model_copy(
+                    update={
+                        "draft": GroundedDraft(
+                            answer_type="grounded",
+                            claims=[
+                                DraftProposalClaim(
+                                    text="Highway 97 has reopened for public travel.",
+                                    evidence_quote_ids=[quote_id],
+                                )
+                            ],
+                        )
+                    }
+                )
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, _ = await make_runtime(
+                Path(directory), provider=UnrelatedClaimProvider()
+            )
+            response = await runtime.service.ask(
+                QueryRequest(question="What belongs in an emergency kit?")
+            )
+        self.assertEqual(response.status, ResponseStatus.ABSTENTION)
+        self.assertFalse(response.validation.claim_support_valid)
+        self.assertTrue(
+            any("direct lexical support" in error for error in response.validation.errors)
+        )
+
     async def test_wrong_generation_draft_type_is_replaced_by_safe_abstention(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             runtime, _, _ = await make_runtime(

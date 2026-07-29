@@ -79,6 +79,7 @@ function ResponseModeBadge({ mode }: { mode: ResponseMode }) {
     abstention: "Official current information required",
     live: "Official live records",
     mixed: "Live records + reviewed guidance",
+    conflict: "Conflicting reviewed sources",
   };
   return <span className={`response-badge response-badge--${mode}`}>{labels[mode]}</span>;
 }
@@ -221,7 +222,8 @@ export function App() {
   const response = view.kind === "answer" || view.kind === "abstention" ? view.response : undefined;
   const mode = response ? getResponseMode(response) : undefined;
   const claims = answer?.claims ?? [];
-  const citedMode = mode === "grounded" || mode === "partial" || mode === "mixed";
+  const citedMode =
+    mode === "grounded" || mode === "partial" || mode === "mixed" || mode === "conflict";
   const selectedClaim = citedMode ? claims[selected] : undefined;
   const evidenceById = useMemo(
     () => new Map((answer?.evidence ?? []).map((item) => [item.evidence_id, item])),

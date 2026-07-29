@@ -205,10 +205,8 @@ cases:
     zipper?
   history: []
   expected_modes:
-  - abstention
-  - background
-  - grounded
-  expects_citations: false
+  - conflict
+  expects_citations: true
   forbid_substrings: []
   require_substrings: []
   corpus_profile: conflict
@@ -220,10 +218,8 @@ cases:
   question: Do the North Bend checklists agree on the readiness tag colour?
   history: []
   expected_modes:
-  - abstention
-  - background
-  - grounded
-  expects_citations: false
+  - conflict
+  expects_citations: true
   forbid_substrings: []
   require_substrings: []
   corpus_profile: conflict
@@ -234,11 +230,8 @@ cases:
   question: Which North Bend document should I follow for the tag colour?
   history: []
   expected_modes:
-  - abstention
-  - background
-  - capability
-  - grounded
-  expects_citations: false
+  - conflict
+  expects_citations: true
   forbid_substrings: []
   require_substrings: []
   corpus_profile: conflict

@@ -320,12 +320,12 @@ export interface components {
          * ReasonCode
          * @enum {string}
          */
-        ReasonCode: "capability_overview" | "scope_redirect" | "personalized_safety_decision" | "personalized_medical_advice" | "policy_manipulation" | "live_data_required" | "planning_unavailable" | "retrieval_unavailable" | "retrieval_incomplete" | "no_approved_evidence" | "wrong_temporal_class" | "required_authority_missing" | "approved_static_evidence" | "generation_unavailable" | "draft_validation_failed" | "model_abstained";
+        ReasonCode: "capability_overview" | "scope_redirect" | "personalized_safety_decision" | "personalized_medical_advice" | "policy_manipulation" | "live_data_required" | "planning_unavailable" | "retrieval_unavailable" | "retrieval_incomplete" | "no_approved_evidence" | "wrong_temporal_class" | "required_authority_missing" | "approved_static_evidence" | "generation_unavailable" | "draft_validation_failed" | "model_abstained" | "conflicting_evidence";
         /**
          * ResponseMode
          * @enum {string}
          */
-        ResponseMode: "grounded" | "background" | "capability" | "scope_redirect" | "abstention" | "partial" | "live" | "mixed";
+        ResponseMode: "grounded" | "background" | "capability" | "scope_redirect" | "abstention" | "partial" | "live" | "mixed" | "conflict";
         /**
          * ResponseStatus
          * @enum {string}
@@ -350,6 +350,11 @@ export interface components {
             accepted: boolean;
             /** Citation Ids Valid */
             citation_ids_valid: boolean;
+            /**
+             * Claim Support Valid
+             * @default true
+             */
+            claim_support_valid: boolean;
             /** Errors */
             errors?: string[];
             /** Policy Valid */

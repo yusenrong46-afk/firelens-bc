@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from firelens.answering.service import StaticRAGService
 from firelens.config import FireLensConfig
 from firelens.contracts import HealthResponse
+from firelens.corpus_admission import audit_corpus_admission, blocking_findings
 from firelens.errors import CorpusValidationError, IndexValidationError
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.providers.base import AIProvider
@@ -87,6 +88,13 @@ def load_corpus_resources(
     approved_source_ids = {source.get("source_id") for source in included}
     if any(chunk.source_id not in approved_source_ids for chunk in chunks):
         raise CorpusValidationError("Static corpus contains an unapproved source.")
+    admission_findings = blocking_findings(audit_corpus_admission(chunks))
+    if admission_findings:
+        first = admission_findings[0]
+        raise CorpusValidationError(
+            "Static corpus failed deterministic admission: "
+            f"{first.source_id}/{first.chunk_id or 'source'} ({first.code})."
+        )
     return chunks, corpus_version
 
 

@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import difflib
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from firelens.config import FireLensConfig
 from firelens.contracts import (
+    EvidenceConflict,
     EvidencePacket,
     EvidenceQuoteCandidate,
     EvidenceSpan,
@@ -74,6 +77,8 @@ _ADMINISTRATIVE_STEMS = (
     "register",
     "registration",
 )
+
+_CONFLICT_CUES = frozenset({"is", "means", "must", "required", "shall", "should", "will"})
 
 
 def _support_tokens(text: str) -> set[str]:
@@ -168,6 +173,60 @@ def _exact_quote_segments(text: str, *, max_chars: int = 500) -> list[str]:
         if active:
             segments.append(active.rstrip("\n"))
     return [segment for segment in segments if segment.strip()]
+
+
+def _detect_conflicts(
+    spans: Sequence[EvidenceSpan],
+    candidates: Sequence[EvidenceQuoteCandidate],
+) -> list[EvidenceConflict]:
+    """Find near-matching prescriptive statements whose material terms differ."""
+
+    evidence = {span.evidence_id: span for span in spans}
+    conflicts: list[EvidenceConflict] = []
+    for left_index, left in enumerate(candidates):
+        left_span = evidence[left.evidence_id]
+        left_tokens = tokenize(left.text)
+        left_counter = Counter(left_tokens)
+        if not (_CONFLICT_CUES & set(left_tokens)):
+            continue
+        for right in candidates[left_index + 1 :]:
+            right_span = evidence[right.evidence_id]
+            if (
+                left_span.document_sha256 == right_span.document_sha256
+                or left_span.authority_class != right_span.authority_class
+            ):
+                continue
+            right_tokens = tokenize(right.text)
+            if not (_CONFLICT_CUES & set(right_tokens)):
+                continue
+            similarity = difflib.SequenceMatcher(
+                None,
+                " ".join(left_tokens),
+                " ".join(right_tokens),
+                autojunk=False,
+            ).ratio()
+            if similarity < 0.88:
+                continue
+            right_counter = Counter(right_tokens)
+            left_only = sorted((left_counter - right_counter).elements())
+            right_only = sorted((right_counter - left_counter).elements())
+            differing = sorted(set(left_only + right_only))
+            if not left_only or not right_only or not (2 <= len(differing) <= 16):
+                continue
+            conflicts.append(
+                EvidenceConflict(
+                    conflict_id=f"X{len(conflicts) + 1}",
+                    quote_ids=[left.quote_id, right.quote_id],
+                    differing_terms=differing,
+                    explanation=(
+                        "Approved sources contain near-matching prescriptive statements "
+                        "with materially different terms."
+                    ),
+                )
+            )
+            if len(conflicts) == 3:
+                return conflicts
+    return conflicts
 
 
 def _candidate_chunk_ids(
@@ -268,11 +327,13 @@ def build_evidence_packet(
         for span in spans
         for quote_number, quote in enumerate(_exact_quote_segments(span.primary_text), start=1)
     ]
+    conflicts = _detect_conflicts(spans, quote_candidates)
     return EvidencePacket(
         question=question,
         corpus_version=corpus_version,
         items=spans,
         quote_candidates=quote_candidates,
+        conflicts=conflicts,
         limitations=[
             "The evidence contains stable official guidance and does not establish current wildfire conditions."
         ],
@@ -324,6 +385,15 @@ def decide_support(
             status=SupportStatus.INSUFFICIENT_EVIDENCE,
             reason_code=ReasonCode.WRONG_TEMPORAL_CLASS,
             explanation="Retrieved evidence has an unsupported temporal classification.",
+        )
+    if packet.conflicts:
+        return SupportDecision(
+            status=SupportStatus.CONFLICT,
+            reason_code=ReasonCode.CONFLICTING_EVIDENCE,
+            explanation=(
+                "The selected approved sources contain conflicting guidance that must be "
+                "shown rather than resolved silently."
+            ),
         )
     required = set().union(
         *(request.required_authorities for request in plan.retrieval_requests)

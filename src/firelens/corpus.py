@@ -10,6 +10,11 @@ from typing import Any
 
 import yaml
 
+from firelens.corpus_admission import (
+    ADMISSION_POLICY_VERSION,
+    audit_corpus_admission,
+    blocking_findings,
+)
 from firelens.ingestion.chunking import (
     ChunkRecord,
     chunk_page_records,
@@ -132,6 +137,14 @@ def build_corpus(
         raise IngestionError("Combined corpus contains duplicate chunk IDs.")
     if not chunks:
         raise IngestionError("Combined corpus contains no chunks.")
+    admission_findings = audit_corpus_admission(chunks)
+    rejected = blocking_findings(admission_findings)
+    if rejected:
+        first = rejected[0]
+        raise IngestionError(
+            "Corpus admission rejected "
+            f"{first.source_id}/{first.chunk_id or 'source'}: {first.code}."
+        )
 
     corpus_path = output_dir / "firelens_static_corpus.chunks.jsonl"
     write_chunk_jsonl(chunks, corpus_path)
@@ -144,6 +157,10 @@ def build_corpus(
             entry.get("corpus_action") == "include" for entry in source_entries
         ),
         "combined_chunk_count": len(chunks),
+        "admission_policy_version": ADMISSION_POLICY_VERSION,
+        "admission_warnings": [
+            finding.as_dict() for finding in admission_findings if not finding.blocking
+        ],
         "sources": source_entries,
     }
     _write_manifest(manifest, output_dir / "firelens_static_corpus.manifest.json")
