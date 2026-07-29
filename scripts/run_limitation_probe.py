@@ -21,6 +21,7 @@ from typing import Any, Literal, cast
 import numpy as np
 import yaml
 
+from firelens.benchmark import _usage_cost, _usage_total
 from firelens.config import FireLensConfig
 from firelens.contracts import ConversationTurn, QueryRequest, ResponseMode
 from firelens.ingestion.chunking import SCHEMA_VERSION, ChunkRecord
@@ -1094,8 +1095,38 @@ async def run_suite(cases: list[ProbeCase], *, limit: int | None) -> dict[str, A
                     ],
                 )
                 try:
-                    response = await runtime.service.ask(request)
+                    execution = await runtime.service.execute_ask(request)
+                    response = execution.response
                     scored = score_case(case, response)
+                    provider_usage: dict[str, Any] = {
+                        "retrieval": execution.retrieval.provider_usage,
+                        "generation": [item.usage for item in execution.generations],
+                    }
+                    scored.update(
+                        {
+                            "provider_models": {
+                                **execution.retrieval.provider_models,
+                                **{
+                                    item.stage: item.model
+                                    for item in execution.generations
+                                    if item.model is not None
+                                },
+                            },
+                            "provider_attempts": {
+                                **execution.retrieval.provider_attempts,
+                                **{item.stage: item.attempts for item in execution.generations},
+                            },
+                            "provider_tokens": {
+                                field: _usage_total(provider_usage, field)
+                                for field in (
+                                    "prompt_tokens",
+                                    "completion_tokens",
+                                    "total_tokens",
+                                )
+                            },
+                            "reported_cost_usd": _usage_cost(provider_usage),
+                        }
+                    )
                 except Exception as exc:  # noqa: BLE001 - probe must continue
                     scored = {
                         "passed": False,
@@ -1136,6 +1167,11 @@ async def run_suite(cases: list[ProbeCase], *, limit: int | None) -> dict[str, A
         "passed": sum(1 for r in results if r.get("passed")),
         "failed": sum(1 for r in results if not r.get("passed")),
         "elapsed_sec": round(time.time() - started, 1),
+        "provider_tokens": {
+            field: sum(int(row.get("provider_tokens", {}).get(field, 0)) for row in results)
+            for field in ("prompt_tokens", "completion_tokens", "total_tokens")
+        },
+        "reported_cost_usd": sum(float(row.get("reported_cost_usd", 0.0)) for row in results),
         "by_bucket": by_bucket,
         "results": results,
     }
