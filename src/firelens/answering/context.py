@@ -356,9 +356,9 @@ def decide_support(
                     "directly support the retrieval request."
                 ),
             )
-    if any(stem in plan.original_question.casefold() for stem in _ADMINISTRATIVE_STEMS) and not (
-        _aspect_supported(plan.original_question, packet, minimum_ratio=0.8)
-    ):
+    if any(
+        stem in plan.original_question.casefold() for stem in _ADMINISTRATIVE_STEMS
+    ) and not (_aspect_supported(plan.original_question, packet, minimum_ratio=0.8)):
         return SupportDecision(
             status=SupportStatus.INSUFFICIENT_EVIDENCE,
             reason_code=ReasonCode.NO_APPROVED_EVIDENCE,
@@ -393,8 +393,10 @@ def decide_support(
             marker in f" {plan.original_question.casefold()} "
             for marker in (" and ", " also ", " both ", ";")
         )
-        if missing_aspects and not question_directly_supported and not (
-            supported_aspects and explicit_multi_topic
+        if (
+            missing_aspects
+            and not question_directly_supported
+            and not (supported_aspects and explicit_multi_topic)
         ):
             return SupportDecision(
                 status=SupportStatus.INSUFFICIENT_EVIDENCE,

@@ -361,7 +361,14 @@ class LiveDataService:
                     )
                     or ""
                 ).casefold()
-                if status in {"out", "inactive", "expired", "cancelled", "canceled", "rescinded"}:
+                if status in {
+                    "out",
+                    "inactive",
+                    "expired",
+                    "cancelled",
+                    "canceled",
+                    "rescinded",
+                }:
                     continue
                 if kind == LiveResultKind.EVACUATION:
                     event_type = str(_property(properties, "EVENT_TYPE") or "").casefold()

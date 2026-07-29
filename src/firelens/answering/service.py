@@ -287,17 +287,12 @@ class StaticRAGService:
             planning_candidates = self._planning_candidates(request.question)
             try:
                 planning = await self.provider.plan(
-                    planning_messages(
-                        request, corpus_candidates=planning_candidates
-                    ),
+                    planning_messages(request, corpus_candidates=planning_candidates),
                     output_schema=planning_schema(),
                 )
-                if (
-                    planning.decision.relation == QueryRelation.TANGENT
-                    and (
-                        _candidate_contains_identifier(request.question, planning_candidates)
-                        or self._planning_identifier_present(request.question)
-                    )
+                if planning.decision.relation == QueryRelation.TANGENT and (
+                    _candidate_contains_identifier(request.question, planning_candidates)
+                    or self._planning_identifier_present(request.question)
                 ):
                     planning = planning.model_copy(
                         update={
