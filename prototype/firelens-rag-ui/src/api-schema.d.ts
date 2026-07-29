@@ -155,18 +155,30 @@ export interface components {
         };
         /** HealthResponse */
         HealthResponse: {
+            /** Build Commit */
+            build_commit?: string | null;
             /** Chunk Count */
             chunk_count?: number | null;
             /** Corpus Ready */
             corpus_ready: boolean;
             /** Corpus Version */
             corpus_version?: string | null;
+            /** Deployment Id */
+            deployment_id?: string | null;
             /** Index Ready */
             index_ready: boolean;
             /** Problems */
             problems?: string[];
             /** Provider Configured */
             provider_configured: boolean;
+            /**
+             * Rate Limit Scope
+             * @default instance_local
+             * @constant
+             */
+            rate_limit_scope: "instance_local";
+            /** Release Version */
+            release_version: string;
             /**
              * Status
              * @enum {string}
@@ -399,6 +411,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -406,6 +427,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             /** @description Internal Server Error */

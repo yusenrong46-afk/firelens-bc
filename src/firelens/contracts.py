@@ -554,6 +554,10 @@ class HealthResponse(FrozenStrictModel):
     provider_configured: bool
     corpus_version: str | None = None
     chunk_count: int | None = None
+    release_version: str
+    build_commit: str | None = None
+    deployment_id: str | None = None
+    rate_limit_scope: Literal["instance_local"] = "instance_local"
     problems: list[str] = Field(default_factory=list)
 
 

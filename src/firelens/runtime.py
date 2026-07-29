@@ -42,6 +42,9 @@ class Runtime:
             provider_configured=self.provider_configured,
             corpus_version=self.corpus_version,
             chunk_count=len(self.chunks) if self.chunks else None,
+            release_version=self.config.release_version,
+            build_commit=self.config.build_commit,
+            deployment_id=self.config.deployment_id,
             problems=self.problems,
         )
 

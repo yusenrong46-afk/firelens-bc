@@ -1,20 +1,21 @@
-# FireLens BC V1.1 RC
+# FireLens BC V1.5 release candidate
 
 FireLens BC is a local, evidence-first conversational assistant for reviewed
-British Columbia wildfire-preparedness guidance. V1.1 can introduce its
-collection, answer document-grounded questions with exact local citations,
-provide clearly labelled low-risk background, resolve bounded follow-ups, and
-redirect genuinely unrelated requests. It still refuses current-incident,
-prediction, personalized evacuation, and personalized medical decisions.
+British Columbia wildfire-preparedness guidance. V1.5 adds bounded official
+incident, perimeter, and evacuation records plus a restrained map. Stable RAG
+claims still require exact local evidence; current records remain visibly
+separate and never authorize a personal safety decision.
 
-**Release status:** `engineering-complete, semantic acceptance pending`.
-The system is not release-qualified until owner semantic review is complete and
-the remaining legacy V1 retrieval gate is resolved.
+**Release status:** `lab candidate; qualification in progress`. Production
+remains on V1.1 until the V1.5 release branch passes every gate and receives
+owner approval.
 
 ```mermaid
 flowchart LR
     Q["Question plus at most 6 prior turns"] --> B["Deterministic safety boundary"]
-    B -->|"live or prohibited"| A["Typed abstention"]
+    B -->|"prohibited"| A["Typed abstention"]
+    B -->|"supported live intent"| L["Official BC ArcGIS adapters"]
+    L --> M["Typed records plus shared map"]
     B -->|"capability"| C["Local scope answer"]
     B -->|"ordinary"| P["Bounded planner"]
     P -->|"tangent"| T["Scope redirect"]
@@ -68,7 +69,10 @@ manifest merely to force readiness.
 | `grounded` | Directly supported stable guidance | Every claim has an exact quote and local source record |
 | `background` | Related low-risk explanation outside direct corpus support | Clearly labelled; no corpus citation is allowed |
 | `scope_redirect` | Completely tangent request | Redirects to FireLens topics |
-| `abstention` | Live, predictive, personalized, unsafe, or unvalidated request | No factual evidence claim is returned |
+| `partial` | Only some requested stable aspects have evidence | Returns supported claims and names missing aspects |
+| `live` | Supported current incident, perimeter, or evacuation question | Official metadata, source/retrieval times, and GeoJSON |
+| `mixed` | Supported live records plus supported stable guidance | Separates current records from exact-cited guidance |
+| `abstention` | Unsupported live source, predictive, personalized, unsafe, or unvalidated request | No factual evidence claim is returned |
 
 The background mode is intentionally separated from grounded RAG: it improves
 conversation breadth without making unverified material look document-backed.
@@ -81,6 +85,7 @@ make benchmark              # zero-cost V1 red-team plus V1.1 offline suite
 make benchmark-v1-1-paid    # cost-capped 50-case live conversation benchmark
 make benchmark-contextual   # development-only A/B/C retrieval-text experiment
 make benchmark-retrieval    # four locked V1 retrieval configurations
+make benchmark-retrieval-v1-5 # development comparison with hash-bound addendum
 make canary                 # 30 repeated live calls
 make model-bakeoff          # identical-evidence Gemini comparison
 make live-smoke             # opt-in OpenRouter endpoint smoke tests
@@ -96,7 +101,8 @@ CLI equivalents:
 
 ## API
 
-`POST /api/v1/ask` accepts a question and up to six bounded prior turns:
+`POST /api/v1/ask` accepts a question, up to six bounded prior turns, and an
+optional coarse location for supported live questions:
 
 ```json
 {
@@ -104,7 +110,8 @@ CLI equivalents:
   "history": [
     {"role": "user", "content": "What belongs in a grab-and-go bag?"},
     {"role": "assistant", "content": "The reviewed guide lists household supplies."}
-  ]
+  ],
+  "location": {"label": "Kelowna", "radius_km": 50}
 }
 ```
 
@@ -112,6 +119,8 @@ Other routes:
 
 - `GET /api/v1/health/live`: process liveness.
 - `GET /api/v1/health/ready`: corpus, index, and provider readiness.
+- `GET /api/v1/live/map?bbox=...&layers=incidents,perimeters,evacuations`:
+  official validated GeoJSON using the same adapters and cache as chat.
 - `POST /api/v1/search` and `GET /api/v1/debug/chunks/{chunk_id}`: development
   only when `FIRELENS_DEBUG=true`.
 
@@ -119,7 +128,7 @@ Strict contracts reject unknown fields. Public source metadata is always
 reconstructed from local corpus records; the model cannot supply publishers,
 URLs, locators, hashes, or page numbers.
 
-## Current measured checkpoint
+## Historical V1.1 checkpoint
 
 | Area | Result |
 |---|---:|
@@ -151,3 +160,18 @@ Further reading:
   detailed layer-by-layer report and result visualizations.
 - [`docs/adr/`](docs/adr/): immutable architecture decisions.
 - [`docs/learning/`](docs/learning/): textbook-style subsystem explanations.
+- [`docs/releases/V1_5_RUNBOOK.md`](docs/releases/V1_5_RUNBOOK.md): preview,
+  public verification, rate-limit boundary, and rollback procedure.
+
+## Public-operation boundary
+
+The application enforces a 64 KiB body limit and a privacy-preserving
+30-request-per-minute guard for `/api/v1/ask` and `/api/v1/live/map`. Client
+addresses are HMAC-hashed with an ephemeral process secret and are not logged or
+persisted. The health contract labels this guard `instance_local`: a serverless
+instance cannot provide a globally durable quota. Production must retain Vercel
+Firewall or equivalent platform rate limiting as the outer distributed control.
+
+Live location is optional, coarse, and request-scoped. Coordinates are rounded
+to two decimals. Exact-address labels are rejected, and location is not written
+to traces or ordinary application storage.

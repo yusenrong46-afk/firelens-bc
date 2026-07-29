@@ -31,6 +31,10 @@ def _bool_value(value: str | None, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _int_value(value: str | None, default: int) -> int:
+    return int(value) if value is not None else default
+
+
 class FireLensConfig(BaseModel):
     """Versioned experimental defaults for the first complete static pipeline."""
 
@@ -67,6 +71,12 @@ class FireLensConfig(BaseModel):
     query_embedding_cache_size: int = Field(default=256, ge=0, le=4_096)
     trace_max_files: int = Field(default=250, ge=1)
     trace_max_bytes: int = Field(default=50 * 1024 * 1024, ge=1)
+    anonymous_rate_limit: int = Field(default=30, ge=1, le=1_000)
+    anonymous_rate_window_seconds: int = Field(default=60, ge=1, le=3_600)
+    max_request_body_bytes: int = Field(default=65_536, ge=1_024, le=1_048_576)
+    release_version: str = "1.5.0-rc.1"
+    build_commit: str | None = None
+    deployment_id: str | None = None
     frontend_dist_path: Path | None = None
     require_zdr: bool = False
     debug: bool = False
@@ -112,4 +122,14 @@ class FireLensConfig(BaseModel):
             require_zdr=_bool_value(setting("FIRELENS_REQUIRE_ZDR")),
             debug=_bool_value(setting("FIRELENS_DEBUG")),
             trace_content=_bool_value(setting("FIRELENS_TRACE_CONTENT")),
+            anonymous_rate_limit=_int_value(setting("FIRELENS_RATE_LIMIT"), 30),
+            anonymous_rate_window_seconds=_int_value(
+                setting("FIRELENS_RATE_WINDOW_SECONDS"), 60
+            ),
+            max_request_body_bytes=_int_value(
+                setting("FIRELENS_MAX_REQUEST_BODY_BYTES"), 65_536
+            ),
+            release_version=setting("FIRELENS_RELEASE_VERSION") or "1.5.0-rc.1",
+            build_commit=setting("VERCEL_GIT_COMMIT_SHA") or setting("FIRELENS_BUILD_COMMIT"),
+            deployment_id=setting("VERCEL_DEPLOYMENT_ID") or setting("VERCEL_URL"),
         )

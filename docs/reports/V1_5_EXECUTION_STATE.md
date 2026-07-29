@@ -8,19 +8,16 @@ Updated: 2026-07-28 (America/Vancouver)
 - Canonical branch/commit: `improvement/rag-webapp-v2` at `209b4e5f8f16f13d7ac9af56a89e135f697ce052`
 - Canonical state: tracked-clean with 25 user-owned untracked files; read-only for this task
 - Lab checkout: `/Users/thomas/Downloads/firelens-bc-v1-5-lab`
-- Lab branch/commit: `codex/v1-5-lab` at `7e776918f65573e82928f4e2a412c175cfaf864e`
+- Lab branch/commit before the current operational patch: `codex/v1-5-lab` at
+  `fba79cc806b4968f26c685d379dcb0f782289115`
 - Release branch: `codex/v1-5-release` at the V1.1 baseline; no release worktree yet
 - Main and production: unchanged
 
 ## Current milestone
 
-Repair the existing lab candidate before qualification. Active hypotheses:
+Complete operational safeguards and then qualify the repaired lab candidate.
 
-1. Mixed answers must keep the user's actual question and preserve live partial-failure metadata.
-2. Live source timestamps must come from a genuine record modification or ArcGIS layer edit time,
-   never ignition or event-start time.
-3. Unsupported live domains such as roads and air quality must fail honestly instead of querying
-   unrelated wildfire layers.
+The live/mixed hypotheses were confirmed and repaired in `fba79cc`.
 
 ## Executed evidence in this goal
 
@@ -29,6 +26,10 @@ Repair the existing lab candidate before qualification. Active hypotheses:
 - Generated OpenAPI and TypeScript types left the tracked worktree clean.
 - Public ArcGIS metadata inspected for all three layers. Each exposes a layer
   `editingInfo.dataLastEditDate`; only evacuation records expose a direct `DATE_MODIFIED` field.
+- `fba79cc`: 33 targeted backend tests and 14 subtests, 12 frontend unit tests, production
+  build/typecheck, 12 desktop/mobile Playwright flows, mypy, Ruff, and formatting passed.
+- Operational safeguard patch: 25 request-guard/provider/live tests and 37 reliability/invariant
+  tests with 22 subtests passed; frontend tests and production build passed.
 
 ## Candidate and experiment state
 
@@ -43,13 +44,14 @@ Repair the existing lab candidate before qualification. Active hypotheses:
 - Existing relevance addendum is development evidence, not a sealed owner-adjudicated holdout.
 - Semantic claim support/completeness remains pending a valid release review surface.
 - Cached-live p95 and concurrency are unmeasured.
-- Operational rate limits, V1.5 identity, preview verification, and rollback documentation are incomplete.
+- Distributed production throttling still requires Vercel Firewall verification; the application
+  correctly reports its own guard as instance-local.
 - Release branch reconstruction has not started.
 
 ## Next action
 
-Repair live intent, timestamp, mixed-response, and partial-failure contracts with targeted tests.
+Run the complete lab verification, inspect the generated diff, and commit the operational milestone.
 
 Next verification command:
 
-`./.venv/bin/python -m pytest -q tests/test_live.py tests/test_v1_5_rag.py`
+`make verify && git diff --check`

@@ -2,7 +2,7 @@
 
 Date: 2026-07-26 (America/Vancouver)
 
-Status: authoritative living V1.1 source of truth
+Status: authoritative V1.1 architecture baseline; V1.5 release evidence is separate
 
 Product state: `engineering-complete, semantic acceptance pending`
 
@@ -26,7 +26,7 @@ evacuation-route selector, property-specific risk assessor, prediction system,
 or personalized medical/safety decision-maker. Questions requiring those
 capabilities stop at the deterministic boundary before any paid provider call.
 
-V1.1 deliberately excludes public hosting, accounts, long-term memory, maps,
+V1.1 deliberately excluded public hosting, accounts, long-term memory, maps,
 live wildfire/weather feeds, agents, graph RAG, a vector database, streaming,
 automatic answer repair, model fallback, and fine-tuning.
 

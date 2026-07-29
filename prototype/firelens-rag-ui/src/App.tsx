@@ -350,7 +350,7 @@ export function App() {
       <header className="topbar">
         <a className="brand" href="#top">
           <img src="/assets/firelens-mark.png" alt="" />
-          <span><strong>FireLens</strong> BC</span>
+          <span><strong>FireLens</strong> BC <small>V1.5 RC</small></span>
         </a>
         <a className="official-link" href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
           <ArrowSquareOut size={18} /> Official BCWS map

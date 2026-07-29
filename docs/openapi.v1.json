@@ -226,6 +226,17 @@
       "HealthResponse": {
         "additionalProperties": false,
         "properties": {
+          "build_commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Build Commit"
+          },
           "chunk_count": {
             "anyOf": [
               {
@@ -252,6 +263,17 @@
             ],
             "title": "Corpus Version"
           },
+          "deployment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deployment Id"
+          },
           "index_ready": {
             "title": "Index Ready",
             "type": "boolean"
@@ -267,6 +289,16 @@
             "title": "Provider Configured",
             "type": "boolean"
           },
+          "rate_limit_scope": {
+            "const": "instance_local",
+            "default": "instance_local",
+            "title": "Rate Limit Scope",
+            "type": "string"
+          },
+          "release_version": {
+            "title": "Release Version",
+            "type": "string"
+          },
           "status": {
             "enum": [
               "ready",
@@ -280,7 +312,8 @@
           "status",
           "corpus_ready",
           "index_ready",
-          "provider_configured"
+          "provider_configured",
+          "release_version"
         ],
         "title": "HealthResponse",
         "type": "object"
@@ -769,9 +802,9 @@
     }
   },
   "info": {
-    "description": "Evidence-bound stable wildfire guidance; not current status.",
-    "title": "FireLens BC Static RAG",
-    "version": "0.1.1"
+    "description": "Evidence-bound wildfire guidance plus bounded official incident, perimeter, and evacuation records. Not emergency direction.",
+    "title": "FireLens BC",
+    "version": "1.5.0-rc.1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -819,6 +852,16 @@
             },
             "description": "Not Found"
           },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -828,6 +871,16 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {

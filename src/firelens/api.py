@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -35,6 +35,7 @@ from firelens.contracts import (
     SearchResponse,
 )
 from firelens.live import LiveDataService, LiveDataUnavailable
+from firelens.request_guard import AnonymousRequestGuard
 from firelens.runtime import Runtime, load_runtime
 
 
@@ -44,6 +45,8 @@ def _error_status(error_kind: str | None) -> int:
 
 ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
     400: {"model": ErrorEnvelope},
+    413: {"model": ErrorEnvelope},
+    429: {"model": ErrorEnvelope},
     404: {"model": ErrorEnvelope},
     500: {"model": ErrorEnvelope},
     502: {"model": ErrorEnvelope},
@@ -59,6 +62,11 @@ def create_app(
 ) -> FastAPI:
     active_config = config or FireLensConfig.from_env()
     active_live_service = live_service or LiveDataService()
+    request_guard = AnonymousRequestGuard(
+        limit=active_config.anonymous_rate_limit,
+        window_seconds=active_config.anonymous_rate_window_seconds,
+        max_body_bytes=active_config.max_request_body_bytes,
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -73,9 +81,12 @@ def create_app(
                 await active_live_service.aclose()
 
     app = FastAPI(
-        title="FireLens BC Static RAG",
-        version="0.1.1",
-        description="Evidence-bound stable wildfire guidance; not current status.",
+        title="FireLens BC",
+        version=active_config.release_version,
+        description=(
+            "Evidence-bound wildfire guidance plus bounded official incident, perimeter, "
+            "and evacuation records. Not emergency direction."
+        ),
         lifespan=lifespan,
     )
     if runtime is not None:
@@ -103,6 +114,39 @@ def create_app(
             retryable=retryable,
         )
         return JSONResponse(status_code=status_code, content=envelope.model_dump())
+
+    @app.middleware("http")
+    async def bounded_anonymous_requests(request: Request, call_next):
+        guarded = request.url.path in {"/api/v1/ask", "/api/v1/live/map"}
+        if not guarded:
+            return await call_next(request)
+        body = await request.body()
+        if len(body) > request_guard.max_body_bytes:
+            return error_response(
+                413,
+                trace_id=uuid4().hex,
+                error_kind="request_too_large",
+                message="The request exceeded the FireLens public API size limit.",
+            )
+        decision = await request_guard.check(request_guard.anonymous_key(request))
+        if not decision.allowed:
+            response = error_response(
+                429,
+                trace_id=uuid4().hex,
+                error_kind="rate_limit",
+                message="The anonymous FireLens request limit was reached. Try again shortly.",
+                retryable=True,
+            )
+            response.headers["Retry-After"] = str(decision.retry_after_seconds)
+            response.headers["X-RateLimit-Limit"] = str(request_guard.limit)
+            response.headers["X-RateLimit-Remaining"] = "0"
+            response.headers["X-RateLimit-Scope"] = "instance-local"
+            return response
+        response = await call_next(request)
+        response.headers["X-RateLimit-Limit"] = str(request_guard.limit)
+        response.headers["X-RateLimit-Remaining"] = str(decision.remaining)
+        response.headers["X-RateLimit-Scope"] = "instance-local"
+        return response
 
     @app.exception_handler(RequestValidationError)
     async def request_validation_handler(_request, exc: RequestValidationError):

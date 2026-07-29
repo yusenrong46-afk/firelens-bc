@@ -348,6 +348,51 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ApiTests(unittest.IsolatedAsyncioTestCase):
+    async def test_public_request_bounds_and_build_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            config = config.model_copy(
+                update={
+                    "anonymous_rate_limit": 2,
+                    "anonymous_rate_window_seconds": 60,
+                    "max_request_body_bytes": 1_024,
+                    "release_version": "1.5.0-test",
+                    "build_commit": "abc123",
+                }
+            )
+            runtime.config = config
+            app = create_app(config, runtime=runtime)
+            transport = httpx.ASGITransport(app=app)
+            headers = {"x-forwarded-for": "203.0.113.10"}
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                health = await client.get("/api/v1/health/ready")
+                self.assertEqual(health.json()["release_version"], "1.5.0-test")
+                self.assertEqual(health.json()["build_commit"], "abc123")
+                self.assertEqual(health.json()["rate_limit_scope"], "instance_local")
+
+                first = await client.post(
+                    "/api/v1/ask", json={"question": "Hello"}, headers=headers
+                )
+                second = await client.post(
+                    "/api/v1/ask", json={"question": "Hello"}, headers=headers
+                )
+                denied = await client.post(
+                    "/api/v1/ask", json={"question": "Hello"}, headers=headers
+                )
+                self.assertEqual(first.headers["x-ratelimit-scope"], "instance-local")
+                self.assertEqual(second.headers["x-ratelimit-remaining"], "0")
+                self.assertEqual(denied.status_code, 429)
+                self.assertEqual(denied.json()["error_kind"], "rate_limit")
+                self.assertIn("retry-after", denied.headers)
+
+                oversized = await client.post(
+                    "/api/v1/ask",
+                    json={"question": "x" * 2_000},
+                    headers={"x-forwarded-for": "203.0.113.11"},
+                )
+                self.assertEqual(oversized.status_code, 413)
+                self.assertEqual(oversized.json()["error_kind"], "request_too_large")
+
     async def test_http_contracts_and_statuses(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             runtime, _, config = await make_runtime(Path(directory))
