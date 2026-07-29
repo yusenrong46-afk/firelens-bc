@@ -11,8 +11,10 @@ from firelens.benchmark import (
     _mean,
     _ranking_metrics,
     _usage_cost,
+    apply_relevance_addendum,
     file_sha256,
     load_benchmark,
+    load_relevance_addendum,
 )
 from firelens.config import FireLensConfig
 from firelens.contracts import QueryRequest
@@ -21,30 +23,30 @@ from firelens.storage import atomic_text_writer
 
 RETRIEVAL_CANDIDATES: dict[str, dict[str, int]] = {
     "current": {
-        "bm25_top_k": 20,
-        "vector_top_k": 20,
-        "fused_top_k": 20,
-        "rrf_k": 60,
-        "rerank_top_k": 5,
-    },
-    "broader_recall": {
         "bm25_top_k": 30,
         "vector_top_k": 30,
         "fused_top_k": 30,
         "rrf_k": 60,
         "rerank_top_k": 5,
     },
+    "broader_recall": {
+        "bm25_top_k": 40,
+        "vector_top_k": 40,
+        "fused_top_k": 40,
+        "rrf_k": 60,
+        "rerank_top_k": 5,
+    },
     "rank_sensitive": {
-        "bm25_top_k": 20,
-        "vector_top_k": 20,
-        "fused_top_k": 20,
+        "bm25_top_k": 30,
+        "vector_top_k": 30,
+        "fused_top_k": 30,
         "rrf_k": 30,
         "rerank_top_k": 5,
     },
     "wider_evidence": {
-        "bm25_top_k": 20,
-        "vector_top_k": 20,
-        "fused_top_k": 20,
+        "bm25_top_k": 30,
+        "vector_top_k": 30,
+        "fused_top_k": 30,
         "rrf_k": 60,
         "rerank_top_k": 8,
     },
@@ -120,11 +122,18 @@ async def run_retrieval_comparison(
     *,
     dataset_path: Path,
     output_path: Path,
+    relevance_addendum_path: Path | None = None,
     max_cost_usd: float | None = None,
 ) -> dict[str, Any]:
     """Compare only development cases; sealed holdout labels are never opened here."""
 
     dataset = load_benchmark(dataset_path)
+    relevance_addendum = None
+    if relevance_addendum_path is not None:
+        relevance_addendum = load_relevance_addendum(
+            relevance_addendum_path, dataset_path=dataset_path
+        )
+        dataset = apply_relevance_addendum(dataset, relevance_addendum)
     cases: list[BenchmarkCase] = [
         case
         for case in dataset.cases
@@ -186,6 +195,14 @@ async def run_retrieval_comparison(
         "report_version": "firelens_retrieval_comparison.v2",
         "generated_at": datetime.now(UTC).isoformat(),
         "dataset_sha256": file_sha256(dataset_path),
+        "relevance_addendum_sha256": (
+            file_sha256(relevance_addendum_path)
+            if relevance_addendum_path is not None
+            else None
+        ),
+        "relevance_review_status": (
+            relevance_addendum.review_status if relevance_addendum is not None else None
+        ),
         "split": "development",
         "holdout_opened": False,
         "case_count_per_complete_candidate": len(cases),

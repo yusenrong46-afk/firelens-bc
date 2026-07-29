@@ -2,7 +2,7 @@ PYTHON := .venv/bin/python
 FIRELENS := .venv/bin/firelens
 FRONTEND := prototype/firelens-rag-ui
 
-.PHONY: setup verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid model-bakeoff canary live-smoke openapi secret-scan
+.PHONY: setup verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid model-bakeoff canary live-smoke openapi secret-scan
 
 setup:
 	@test -d .venv || python3 -m venv .venv
@@ -55,6 +55,11 @@ benchmark-v1-1-paid:
 
 benchmark-retrieval:
 	$(FIRELENS) tune-retrieval --max-cost-usd 1.25
+
+benchmark-retrieval-v1-5:
+	$(FIRELENS) tune-retrieval --max-cost-usd 1.25 \
+		--relevance-addendum data/evaluation/benchmark_v1_5_relevance_addendum.yaml \
+		--output output/benchmark/v1_5_retrieval_comparison.json
 
 benchmark-contextual:
 	$(FIRELENS) compare-contextual-retrieval

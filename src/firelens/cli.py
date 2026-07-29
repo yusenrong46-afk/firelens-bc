@@ -248,12 +248,14 @@ async def _tune_retrieval(
     config: FireLensConfig,
     dataset: Path,
     output: Path,
+    relevance_addendum: Path | None,
     max_cost_usd: float | None,
 ) -> int:
     report = await run_retrieval_comparison(
         config,
         dataset_path=dataset,
         output_path=output,
+        relevance_addendum_path=relevance_addendum,
         max_cost_usd=max_cost_usd,
     )
     _print(
@@ -444,6 +446,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("output/benchmark/v1_retrieval_comparison.json"),
     )
+    tune.add_argument(
+        "--relevance-addendum",
+        type=Path,
+        help="Hash-bound supplemental relevance judgments; the base benchmark is unchanged",
+    )
     tune.add_argument("--max-cost-usd", type=float, default=1.25)
     contextual = commands.add_parser(
         "compare-contextual-retrieval",
@@ -587,8 +594,17 @@ def main() -> None:
             args.dataset if args.dataset.is_absolute() else config.project_root / args.dataset
         )
         output = args.output if args.output.is_absolute() else config.project_root / args.output
+        relevance_addendum = (
+            None
+            if args.relevance_addendum is None
+            else args.relevance_addendum
+            if args.relevance_addendum.is_absolute()
+            else config.project_root / args.relevance_addendum
+        )
         raise SystemExit(
-            asyncio.run(_tune_retrieval(config, dataset, output, args.max_cost_usd))
+            asyncio.run(
+                _tune_retrieval(config, dataset, output, relevance_addendum, args.max_cost_usd)
+            )
         )
     if args.command == "compare-contextual-retrieval":
         dataset = (

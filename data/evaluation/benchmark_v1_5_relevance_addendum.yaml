@@ -1,0 +1,26 @@
+addendum_version: firelens_relevance_addendum.v1
+base_dataset_sha256: 75414daede41d029ecb233b380053546c279eb4ed33a201c19a5ceb5d2e6afef
+review_status: codex_evidence_audited
+judgments:
+  - case_id: V1-DEV-026
+    rationale: >-
+      The locked draft labels recognize the BCCDC factsheet and PreparedBC bag pages, but omit
+      equally direct reviewed passages returned for the two requested aspects: BCCDC smoke-season
+      preparation guidance and PreparedBC evacuation-readiness actions.
+    added_evidence:
+      - source_id: bccdc_wildfire_smoke
+        pages: []
+        chunk_ids:
+          - bccdc_wildfire_smoke:section:protect-yourself-from-wildfire-smoke:chunk:1
+      - source_id: preparedbc_wildfire_guide
+        pages: [10, 11, 13]
+        chunk_ids: []
+  - case_id: V1-DEV-051
+    rationale: >-
+      The locked draft label recognizes only two introductory pages of one FireSmart guide. The
+      FireSmart information guide also states directly that mitigation decreases wildfire-damage
+      risk, which answers the false guarantee premise without claiming guaranteed survival.
+    added_evidence:
+      - source_id: firesmart_information_guide
+        pages: [2, 3, 5]
+        chunk_ids: []

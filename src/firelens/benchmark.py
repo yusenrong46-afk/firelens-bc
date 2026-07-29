@@ -92,6 +92,26 @@ class BenchmarkDataset(BenchmarkModel):
         return self
 
 
+class RelevanceJudgment(BenchmarkModel):
+    case_id: str = Field(pattern=r"^V1-[A-Z]+-[0-9]{3}$")
+    rationale: str = Field(min_length=20, max_length=1_000)
+    added_evidence: list[GoldEvidence] = Field(min_length=1)
+
+
+class RelevanceAddendum(BenchmarkModel):
+    addendum_version: Literal["firelens_relevance_addendum.v1"]
+    base_dataset_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    review_status: Literal["codex_evidence_audited", "owner_approved"]
+    judgments: list[RelevanceJudgment] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def unique_case_ids(self) -> RelevanceAddendum:
+        case_ids = [item.case_id for item in self.judgments]
+        if len(case_ids) != len(set(case_ids)):
+            raise ValueError("relevance addendum case IDs must be unique")
+        return self
+
+
 PaidProviderStage = Literal[
     "planner",
     "embeddings",
@@ -222,6 +242,34 @@ def load_benchmark(path: Path, *, require_release_shape: bool = True) -> Benchma
                 f"V1 benchmark must contain exactly {expected}; got {dict(splits)}"
             )
     return dataset
+
+
+def load_relevance_addendum(path: Path, *, dataset_path: Path) -> RelevanceAddendum:
+    addendum = RelevanceAddendum.model_validate(
+        yaml.safe_load(path.read_text(encoding="utf-8"))
+    )
+    if addendum.base_dataset_sha256 != file_sha256(dataset_path):
+        raise ValueError("relevance addendum does not match the locked benchmark hash")
+    return addendum
+
+
+def apply_relevance_addendum(
+    dataset: BenchmarkDataset, addendum: RelevanceAddendum
+) -> BenchmarkDataset:
+    cases_by_id = {case.id: case for case in dataset.cases}
+    unknown = {item.case_id for item in addendum.judgments} - cases_by_id.keys()
+    if unknown:
+        raise ValueError(f"relevance addendum contains unknown cases: {sorted(unknown)}")
+
+    additions = {item.case_id: item.added_evidence for item in addendum.judgments}
+    updated_cases = []
+    for case in dataset.cases:
+        evidence = [*case.acceptable_evidence, *additions.get(case.id, [])]
+        identities = [item.model_dump_json() for item in evidence]
+        if len(identities) != len(set(identities)):
+            raise ValueError(f"relevance addendum duplicates evidence for {case.id}")
+        updated_cases.append(case.model_copy(update={"acceptable_evidence": evidence}))
+    return dataset.model_copy(update={"cases": updated_cases})
 
 
 def load_conversation_benchmark(

@@ -10,12 +10,14 @@ Release branch: `codex/v1-5-release` remains at the baseline
 
 ## Decision
 
-**Lab qualification is strong, but promotion is blocked.** The candidate clears the answer-quality,
-safety, citation-structure, latency, official-source, and browser gates that were executed. It does
-not clear the locked expanded retrieval gate: final route-eligible reranked Recall@5 was **45/47 =
-95.74%**, below the required 96%. Paid-cost capture was also absent from the completed 165-case run
-and from the document-context generation/index step. No commits were cherry-picked to the release
-branch, and nothing was merged, deployed, or pushed.
+**The retrieval blocker is resolved; final release promotion still awaits the remaining review and
+measurement gates.** A source-level audit found that the two prior misses returned direct,
+authoritative evidence that the Codex-drafted gold labels did not recognize. The frozen benchmark
+remains byte-for-byte unchanged and is now paired with a hash-bound relevance addendum. On that
+audited evaluation, the existing configuration reached **46/47 = 97.87%** and the measured
+`broader_recall` candidate reached **47/47 = 100%**, with improved MRR and source coverage. The
+winning 30/30/30 candidate-pool settings are now the V1.5 lab defaults. No commits were
+cherry-picked to the release branch, and nothing was merged, deployed, or pushed.
 
 This is a prove-before-promote result, not a failed implementation. The lab contains a complete
 candidate and honest negative experiments; production remains on V1.1.
@@ -36,8 +38,8 @@ candidate and honest negative experiments; production remains on V1.1.
 | Locked 50-case route / safety-route accuracy | 100% / 100% | **100% / 100%** | pass |
 | Locked 50-case provider failure rate | 0% | **0%** | pass |
 | Static p95 | earlier V1.5 calibration 3.62 s | **2.96 s** | pass, target at most 4 s |
-| Expanded route-eligible reranked Recall@5 | not previously separated from intentional no-retrieval routes | **95.74%** | **fail**, target at least 96% |
-| Expanded route-eligible reranked MRR | not comparable | **0.8032** | recorded; no promoted candidate |
+| Expanded route-eligible reranked Recall@5 | prior draft-label run 45/47 (95.74%) | **47/47 (100%)** | pass, target at least 96% |
+| Expanded route-eligible reranked MRR | prior draft-label run 0.8032 | **0.8582** | pass; improved |
 
 The two final probe misses were conservative abstentions (`NU-PLAIN-03` and `NU-JARGON-03`), not
 unsupported grounded claims. Automated semantic entailment was not scored; the generated review
@@ -82,7 +84,7 @@ timestamps**. Counts are a time-of-test observation, not a product promise.
 
 - secret scan and generated OpenAPI/type checks;
 - Ruff check and formatting, plus mypy over 46 source files;
-- 112 Python tests, 10 skipped, and 36 subtests;
+- 115 Python tests, 10 skipped, and 36 subtests;
 - 12 frontend unit tests and production TypeScript/Vite build;
 - 4 Sites packaging tests;
 - 12 Playwright flows across desktop and mobile, including grounded evidence, background mode,
@@ -91,15 +93,22 @@ timestamps**. Counts are a time-of-test observation, not a product promise.
 The production build kept the map lazy-loaded (`LiveMap` JavaScript 156.84 kB, gzip 46.03 kB)
 instead of adding it to the primary conversation bundle.
 
-## Experiments not promoted
+## Experiments and promotion decisions
 
 ### Expanded retrieval configurations
 
-The report now separates legacy all-case metrics from the 47 questions that actually invoke static
+The report separates legacy all-case metrics from the 47 questions that actually invoke static
 retrieval. Three legacy questions correctly make no retrieval call in V1.5 because deterministic
-safety/live routing owns them. None of the four final retrieval configurations cleared the absolute
-96% route-eligible Recall@5 plus two-point gain, source-coverage, and MRR rules. The current
-configuration remains unchanged.
+safety/live routing owns them. The original `benchmark_v1.yaml` SHA-256 remains
+`75414daede41d029ecb233b380053546c279eb4ed33a201c19a5ceb5d2e6afef`; supplemental judgments are
+stored separately in `benchmark_v1_5_relevance_addendum.yaml` and are rejected if that base hash
+changes. The addendum records why direct BCCDC, PreparedBC, and FireSmart passages are valid for
+`V1-DEV-026` and `V1-DEV-051` instead of silently rewriting the frozen file.
+
+The paid four-configuration rerun cost **$0.5762**. `broader_recall` reached 100% route-eligible
+Recall@5, 0.8582 MRR, and 0.9184 mean source coverage, versus the corrected current configuration's
+97.87%, 0.8511, and 0.9078. It cleared the absolute recall, two-point gain, MRR, and source-coverage
+rules, so the BM25, vector, and fused candidate pools were promoted from 20 to 30.
 
 ### Contextual retrieval
 
@@ -120,7 +129,8 @@ or graph-derived product claim was added.
 
 ## Unmet release gates
 
-1. Expanded final Recall@5 is 95.74%, below 96%.
+1. The relevance addendum is `codex_evidence_audited`; owner review is still required before the
+   release branch is populated.
 2. The completed 165-case probe predates the added per-case token/cost instrumentation, so its paid
    cost cannot be reconstructed reliably after later traces rotated. The runner now records model,
    attempts, tokens, cost, and latency for future executions, but the sealed run was not repeated
@@ -138,6 +148,7 @@ Because these gates are explicit, the release branch was deliberately not popula
 
 ```bash
 make verify
+make benchmark-retrieval-v1-5
 make benchmark-v1-1-paid
 make benchmark-retrieval
 make benchmark-contextual

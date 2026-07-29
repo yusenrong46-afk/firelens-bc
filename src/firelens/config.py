@@ -51,9 +51,9 @@ class FireLensConfig(BaseModel):
     rerank_model: str = "cohere/rerank-4-pro"
     generation_model: str = "google/gemini-3.5-flash-lite"
     generation_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
-    bm25_top_k: int = Field(default=20, gt=0)
-    vector_top_k: int = Field(default=20, gt=0)
-    fused_top_k: int = Field(default=20, gt=0)
+    bm25_top_k: int = Field(default=30, gt=0)
+    vector_top_k: int = Field(default=30, gt=0)
+    fused_top_k: int = Field(default=30, gt=0)
     rerank_top_k: int = Field(default=5, gt=0)
     rrf_k: int = Field(default=60, gt=0)
     neighbor_window: int = Field(default=1, ge=0)
