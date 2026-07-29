@@ -274,8 +274,15 @@ class LiveDataService:
                 "DATE_MODIFIED",
                 "LAST_UPDATED",
                 "MODIFIED_ON",
+                "LOAD_DATE",
+                "TRACK_DATE",
+                "FIRE_OUT_DATE",
+                "IGNITION_DATE",
+                "EVENT_START_DATE",
             )
         )
+        if updated is None:
+            raise ValueError("official live record has no usable source timestamp")
         size = _property(properties, "FIRE_SIZE_HECTARES", "CURRENT_SIZE", "SIZE_HA")
         return LiveResult(
             result_id=f"{kind.value}:{object_id}",
@@ -343,20 +350,39 @@ class LiveDataService:
                 unavailable.append(kind)
                 continue
             for feature in entry.features:
+                properties = feature["properties"]
+                status = str(
+                    _property(
+                        properties,
+                        "FIRE_STATUS",
+                        "ORDER_ALERT_STATUS",
+                        "STATUS",
+                        "EVENT_STATUS",
+                    )
+                    or ""
+                ).casefold()
+                if status in {"out", "inactive", "expired", "cancelled", "canceled", "rescinded"}:
+                    continue
+                if kind == LiveResultKind.EVACUATION:
+                    event_type = str(_property(properties, "EVENT_TYPE") or "").casefold()
+                    if event_type and "fire" not in event_type:
+                        continue
                 if bounds is not None:
                     try:
                         if not shape(feature["geometry"]).intersects(bounds):
                             continue
                     except (TypeError, ValueError):
                         continue
-                results.append(
-                    self._to_result(
+                try:
+                    result = self._to_result(
                         kind,
                         feature,
                         retrieved_at=entry.retrieved_at,
                         freshness=freshness,
                     )
-                )
+                except (TypeError, ValueError):
+                    continue
+                results.append(result)
         return LiveMapResponse(
             generated_at=datetime.now(UTC),
             results=results,

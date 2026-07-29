@@ -336,7 +336,7 @@ class LiveResult(FrozenStrictModel):
     kind: LiveResultKind
     authority: str = "BC Wildfire Service"
     source_url: HttpUrl
-    source_updated_at: datetime | None = None
+    source_updated_at: datetime
     retrieved_at: datetime
     freshness: Freshness
     status: str = Field(min_length=1, max_length=200)

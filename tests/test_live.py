@@ -91,6 +91,7 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
                                 "OBJECTID": 7,
                                 "FIRE_STATUS": "Out of Control",
                                 "INCIDENT_NAME": "Test Fire",
+                                "IGNITION_DATE": 1_750_000_000_000,
                             },
                             "geometry": {"type": "Point", "coordinates": [-123.5, 49.5]},
                         }
@@ -107,6 +108,43 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(first.results[0].freshness, Freshness.FRESH)
         self.assertEqual(second.results[0].freshness, Freshness.STALE)
         self.assertEqual(first.results[0].result_id, second.results[0].result_id)
+
+    async def test_inactive_and_non_wildfire_records_are_not_displayed(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            is_evacuation = "Evacuation_Orders_and_Alerts" in str(request.url)
+            if is_evacuation:
+                properties = {
+                    "OBJECTID": 8,
+                    "ORDER_ALERT_STATUS": "Alert",
+                    "EVENT_TYPE": "Landslide",
+                    "DATE_MODIFIED": 1_750_000_000_000,
+                }
+            else:
+                properties = {
+                    "OBJECTID": 7,
+                    "FIRE_STATUS": "Out",
+                    "IGNITION_DATE": 1_750_000_000_000,
+                }
+            return httpx.Response(
+                200,
+                json={
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "properties": properties,
+                            "geometry": {"type": "Point", "coordinates": [-123.5, 49.5]},
+                        }
+                    ],
+                },
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client).map_results(
+                layers=(LiveResultKind.INCIDENT, LiveResultKind.EVACUATION)
+            )
+        self.assertEqual(response.results, [])
+        self.assertEqual(response.unavailable_layers, [])
 
     async def test_invalid_schema_fails_closed_per_layer(self) -> None:
         def handler(_request: httpx.Request) -> httpx.Response:

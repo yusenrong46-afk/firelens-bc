@@ -398,16 +398,9 @@
             "title": "Size Hectares"
           },
           "source_updated_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Updated At"
+            "format": "date-time",
+            "title": "Source Updated At",
+            "type": "string"
           },
           "source_url": {
             "format": "uri",
@@ -427,6 +420,7 @@
           "result_id",
           "kind",
           "source_url",
+          "source_updated_at",
           "retrieved_at",
           "freshness",
           "status",

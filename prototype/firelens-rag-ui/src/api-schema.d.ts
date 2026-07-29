@@ -215,8 +215,11 @@ export interface components {
             retrieved_at: string;
             /** Size Hectares */
             size_hectares?: number | null;
-            /** Source Updated At */
-            source_updated_at?: string | null;
+            /**
+             * Source Updated At
+             * Format: date-time
+             */
+            source_updated_at: string;
             /**
              * Source Url
              * Format: uri
