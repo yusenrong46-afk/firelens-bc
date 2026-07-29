@@ -2,7 +2,7 @@ PYTHON := .venv/bin/python
 FIRELENS := .venv/bin/firelens
 FRONTEND := prototype/firelens-rag-ui
 
-.PHONY: setup verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review retrieval-review-template qualify-retrieval-review qualify-retrieval-v1-5 qualify-live-v1-5 model-bakeoff canary live-smoke openapi secret-scan
+.PHONY: setup verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review retrieval-review-packet retrieval-review-template qualify-retrieval-review qualify-retrieval-v1-5 qualify-live-v1-5 model-bakeoff canary live-smoke openapi secret-scan
 
 setup:
 	@test -d .venv || python3 -m venv .venv
@@ -61,6 +61,9 @@ qualify-owner-review:
 
 retrieval-review-template:
 	$(PYTHON) scripts/retrieval_owner_review.py template
+
+retrieval-review-packet:
+	$(PYTHON) scripts/retrieval_owner_review.py packet
 
 qualify-retrieval-review:
 	$(PYTHON) scripts/retrieval_owner_review.py validate

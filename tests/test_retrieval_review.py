@@ -10,6 +10,7 @@ from firelens.retrieval_review import (
     RetrievalOwnerReview,
     build_retrieval_review_template,
     validate_retrieval_owner_review,
+    write_retrieval_review_packet,
 )
 
 
@@ -116,3 +117,34 @@ def test_blank_reviewer_is_rejected(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="reviewer must not be blank"):
         RetrievalOwnerReview.model_validate(payload)
+
+
+def test_packet_contains_original_chunk_and_review_checks(tmp_path: Path) -> None:
+    dataset_path = tmp_path / "dataset.yaml"
+    chunks_path = tmp_path / "chunks.jsonl"
+    packet_path = tmp_path / "review.md"
+    _dataset(dataset_path)
+    chunks_path.write_text(
+        "\n".join(
+            [
+                '{"chunk_id":"a","source_id":"source-a","title":"Source A",'
+                '"locator":"p. 1","authority_class":"official_guidance",'
+                '"text":"Being held means projected to stay within a boundary."}',
+                '{"chunk_id":"b","source_id":"source-b","title":"Source B",'
+                '"locator":"p. 2","authority_class":"official_guidance",'
+                '"text":"Under control means not projected to spread."}',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    payload = yaml.safe_load(dataset_path.read_text(encoding="utf-8"))
+    payload["cases"][0]["acceptable_evidence"][0]["chunk_ids"] = ["a"]
+    payload["cases"][1]["acceptable_evidence"][0]["chunk_ids"] = ["b"]
+    dataset_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    write_retrieval_review_packet(dataset_path, chunks_path, packet_path)
+
+    packet = packet_path.read_text(encoding="utf-8")
+    assert "Being held means projected to stay within a boundary." in packet
+    assert "question independently authored after configuration freeze" in packet
+    assert "Record the decisions only in the hash-bound YAML sidecar." in packet

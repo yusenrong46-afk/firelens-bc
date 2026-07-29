@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
@@ -76,6 +77,80 @@ def write_retrieval_review_template(
         encoding="utf-8",
     )
     return review
+
+
+def write_retrieval_review_packet(
+    dataset_path: Path,
+    corpus_chunks_path: Path,
+    output_path: Path,
+) -> None:
+    if output_path.exists():
+        raise FileExistsError(f"refusing to overwrite retrieval review packet: {output_path}")
+    dataset = load_benchmark(dataset_path, require_release_shape=False)
+    chunks = {
+        row["chunk_id"]: row
+        for row in (
+            json.loads(line)
+            for line in corpus_chunks_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        )
+    }
+    lines = [
+        "# FireLens V1.5 sealed retrieval label review",
+        "",
+        "Review every question without running or inspecting retrieval results. Confirm that the "
+        "question was independently authored after configuration freeze, that it is answerable "
+        "from the governed corpus, and that every listed original chunk is acceptable evidence. "
+        "Record the decisions only in the hash-bound YAML sidecar.",
+        "",
+        f"Dataset SHA-256: `{file_sha256(dataset_path)}`",
+        "",
+    ]
+    for case in dataset.cases:
+        if case.split != "holdout" or not case.acceptable_evidence:
+            continue
+        lines.extend(
+            [
+                f"## {case.id}",
+                "",
+                f"**Question:** {case.question}",
+                "",
+                f"**Required concepts:** {', '.join(case.required_concepts) or 'none'}",
+                "",
+                f"**Forbidden claims:** {', '.join(case.forbidden_claims) or 'none'}",
+                "",
+            ]
+        )
+        for gold in case.acceptable_evidence:
+            for chunk_id in gold.chunk_ids:
+                chunk = chunks.get(chunk_id)
+                if chunk is None:
+                    raise ValueError(f"review packet references unknown chunk: {chunk_id}")
+                lines.extend(
+                    [
+                        f"### Evidence `{chunk_id}`",
+                        "",
+                        f"- Source: {chunk['title']} (`{chunk['source_id']}`)",
+                        f"- Locator: {chunk.get('locator') or 'not supplied'}",
+                        f"- Authority: {chunk['authority_class']}",
+                        "",
+                        str(chunk["text"]),
+                        "",
+                    ]
+                )
+        lines.extend(
+            [
+                "- [ ] question independently authored after configuration freeze",
+                "- [ ] answerability label correct",
+                "- [ ] acceptable evidence label correct",
+                "- [ ] approve  [ ] reject  [ ] needs discussion",
+                "",
+                "---",
+                "",
+            ]
+        )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text("\n".join(lines), encoding="utf-8")
 
 
 def validate_retrieval_owner_review(

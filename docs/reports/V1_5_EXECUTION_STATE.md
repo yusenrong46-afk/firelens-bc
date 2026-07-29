@@ -11,6 +11,8 @@ Updated: 2026-07-28 (America/Vancouver)
 - Lab checkout/branch: `/Users/thomas/Downloads/firelens-bc-v1-5-lab` on
   `codex/v1-5-lab`
 - Final provenance-complete probe commit: `727110ec3c9626601fb4c04375eba4a1be572703`
+- Candidate code commit before this ledger update: `eca9119511d79e089526a6d163b8481c9c4a2205`
+- Owner semantic gate commit: `46ae83a`; sealed 47-case retrieval gate commit: `eca9119`
 - Release branch: `codex/v1-5-release` remains at the V1.1 baseline; no release
   worktree exists
 - Main and production: unchanged
@@ -19,21 +21,32 @@ Updated: 2026-07-28 (America/Vancouver)
 
 The lab implementation is complete enough for review and demonstration, but it is **not a
 production-qualified V1.5 release**. The release branch must remain at the baseline because the
-independently frozen retrieval holdout did not pass the 96% Recall@5 gate and its labels are not
-owner-approved. Semantic entailment review is also pending.
+previous independently frozen retrieval holdout did not pass the 96% Recall@5 gate. A new
+post-configuration-freeze 47-case candidate is now hash-frozen, but its relevance labels and the
+50-case semantic entailment review are both pending owner approval. The new sealed set has not
+been run against paid providers.
 
 Development evidence that used the Codex-authored relevance addendum is retained as useful
 diagnostic evidence, but it no longer authorizes promotion.
 
 ## Executed evidence in this qualification
 
-- `make verify`: 133 Python tests passed, 10 skipped, 36 subtests passed; Ruff,
-  formatting, mypy over 49 source files, secret scan, generated OpenAPI/types,
+- `make verify`: 151 Python tests passed, 10 skipped, 36 subtests passed; Ruff,
+  formatting, mypy over 51 source files, secret scan, generated OpenAPI/types,
   12 frontend tests, production build, 4 Sites tests, and 12 desktop/mobile
   Playwright flows all passed.
 - Frozen independent retrieval holdout: 16 answerable cases, three repetitions,
   Recall@5 `81.25%`, `87.5%`, and `87.5%`; rankings differed. The run used no relevance
   addendum and no tuning, but all labels remain `codex_draft`.
+- New sealed retrieval candidate: 47 unique answerable holdout cases, zero exact question overlap
+  with the preserved V1 benchmark, all 47 raw chunk IDs validated against the governed corpus,
+  dataset SHA-256 `178f7b2cbedb4b308c2e1e2eaf1a6e79855e854d2d0a277147bbd90081211564`.
+  The owner sidecar is hash-bound and currently 0/47 approved. The paid runner was exercised and
+  reported `paid_calls_started: false`; it cannot initialize the runtime until approval passes.
+  A human-readable packet contains all 47 questions and 51 exact original corpus passages.
+- Owner semantic review: hash-bound 50-case live-provider sidecar generated, currently 0/50
+  approved. Whitespace reviewer names, offline reports, wrong report counts, changed report hashes,
+  missing cases, and missing claims fail closed.
 - Provenance-complete limitation probe: `162/165` (`98.18%`), with per-case route,
   retrieval-stage chunk IDs, status, latency, models, attempts, tokens, and cost.
 - Novel-document grounding: `9/10`; corpus-gap, personal-safety, medical, poison-source,
@@ -41,9 +54,9 @@ diagnostic evidence, but it no longer authorizes promotion.
 - Paid 50-case conversation benchmark: response-mode/status accuracy `98%`, route and
   deterministic-safety accuracy `100%`, no provider failures, no automated traceability or
   lexical claim-support failures, and p95 `3.790 s`.
-- Real official-live qualification: all three ArcGIS layers available, 252 displayable records,
-  metadata complete, chat/map identifiers and statuses matched, and cached p95 `1.026 s` over
-  26 requests including concurrency `1`, `5`, and `20`.
+- Refreshed real official-live qualification at `eca9119`: all three ArcGIS layers available,
+  253 displayable records, metadata complete, chat/map identifiers and statuses matched, and
+  cached p95 `0.339 s` over 26 requests including concurrency `1`, `5`, and `20`.
 - Rendered browser verification covered anonymous homepage, live answer, mixed answer, grounded
   static answer, exact source passage, desktop map, and 390x844 mobile map-after-answer layout.
   No console errors or framework overlays were observed.
@@ -68,8 +81,11 @@ and two rendered static-generation checks. The final provenance-complete 165-cas
 Canonical ignored artifacts:
 
 - `output/benchmark/v1_5_frozen_holdout_retrieval.json`
+- `output/benchmark/v1_5_retrieval_owner_review.md`
+- `output/benchmark/v1_5_retrieval_owner_review.yaml`
 - `output/benchmark/v1_1_conversation_live_report.json`
 - `output/benchmark/v1_1_conversation_live_review.md`
+- `output/benchmark/v1_5_owner_semantic_review.yaml`
 - `output/naive_user_probe/results.json`
 - `output/qualification/v1_5_live.json`
 
@@ -77,13 +93,12 @@ Their hashes are recorded in `docs/reports/FIRELENS_V1_5_EVIDENCE.md`.
 
 ## Blocking gates
 
-1. Independent retrieval Recall@5 is below 96% and the frozen set contains only 16
-   retrieval-answerable cases, so it cannot prove the requested 46/47 gate.
-2. Retrieval and conversation labels are still `codex_draft`; the relevance addendum is
-   `codex_evidence_audited`, not `owner_approved`.
+1. The new 47-case sealed retrieval candidate is frozen but intentionally unopened. Its relevance
+   sidecar is 0/47 pending owner approval; only then may the one-time three-repetition paid gate run.
+2. The preserved 16-case independent run remains a failed historical result. Development results
+   and the Codex-authored relevance addendum do not authorize promotion.
 3. Automated checks establish exact traceability and a lexical support floor, not semantic
-   entailment. Owner review of the 50-case packet is required before claiming zero unsupported
-   material claims.
+   entailment. The hash-bound owner semantic review is 0/50 pending.
 4. Distributed production throttling and an anonymous preview remain external deployment gates;
    the application correctly labels its local rate guard as instance-local.
 
@@ -113,13 +128,14 @@ The first development-only query-policy run used one baseline set of planner dec
 `$0.36941354`. The original-question retrieval variant completed and tied the baseline's 97.87%
 Recall@5 and 84.04% MRR@5 while slightly improving source coverage; it did not clear promotion.
 The two original-question reranking variants were invalidated by OpenRouter HTTP 403 responses.
-The read-only OpenRouter key-status endpoint then confirmed that the key's `$10` limit is exhausted
+The last read-only OpenRouter key-status check confirmed that the key's `$10` limit was exhausted
 (`limit_remaining: 0`, usage `$10.00670837`). Do not retry paid evaluation until the owner raises
 or replenishes that limit.
 
-Commit the reproducible negative experiment. Do not make another paid call until the owner raises
-or replenishes the OpenRouter key limit. After that, run one valid fixed-planner comparison; only
-a qualifying candidate may change production.
+Complete the two owner sidecars first. Do not make another paid call until the 47 retrieval labels
+are approved and the owner has raised or replenished the OpenRouter key limit. After that, run the
+sealed retrieval gate exactly once, then one valid fixed-planner comparison; only qualifying
+evidence may change production.
 
-Do not populate `codex/v1-5-release`. Owner review and a sufficiently large owner-approved sealed
-retrieval set remain mandatory even if the development experiment improves.
+Do not populate `codex/v1-5-release`. Both owner reviews and a passing one-time sealed retrieval
+run remain mandatory even if a development experiment improves.

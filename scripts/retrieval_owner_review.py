@@ -9,6 +9,7 @@ from pathlib import Path
 
 from firelens.retrieval_review import (
     validate_retrieval_owner_review,
+    write_retrieval_review_packet,
     write_retrieval_review_template,
 )
 from firelens.storage import atomic_text_writer
@@ -28,6 +29,18 @@ def main() -> None:
     template = commands.add_parser("template")
     template.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
     template.add_argument("--output", type=Path, default=DEFAULT_REVIEW)
+    packet = commands.add_parser("packet")
+    packet.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
+    packet.add_argument(
+        "--corpus-chunks",
+        type=Path,
+        default=Path("data/processed/firelens_static_corpus.chunks.jsonl"),
+    )
+    packet.add_argument(
+        "--output",
+        type=Path,
+        default=Path("output/benchmark/v1_5_retrieval_owner_review.md"),
+    )
     validate = commands.add_parser("validate")
     validate.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
     validate.add_argument("--review", type=Path, default=DEFAULT_REVIEW)
@@ -48,6 +61,19 @@ def main() -> None:
                     "output": str(_path(args.output)),
                     "status": "template_created",
                 },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return
+
+    if args.command == "packet":
+        write_retrieval_review_packet(
+            _path(args.dataset), _path(args.corpus_chunks), _path(args.output)
+        )
+        print(
+            json.dumps(
+                {"output": str(_path(args.output)), "status": "packet_created"},
                 indent=2,
                 sort_keys=True,
             )

@@ -13,8 +13,9 @@ is unqualified. The relevant lab artifacts are
 
 1. Confirm the release branch and clean worktree with `git status --porcelain=v2 --branch`.
 2. Run `make verify`, then `git diff --exit-code` and `git diff --cached --exit-code`.
-3. Review the 47-case sealed-retrieval dataset against its original corpus chunks. Run
-   `make retrieval-review-template`, record the owner decisions in the hash-bound YAML sidecar,
+3. Run `make retrieval-review-packet` and review all 47 cases against the included original corpus
+   passages. Run `make retrieval-review-template`, record the owner decisions in the hash-bound
+   YAML sidecar,
    then run `make qualify-retrieval-review`. Only after it reports `qualified: true`, run
    `make qualify-retrieval-v1-5` exactly once without tuning; require all three repetitions to
    reach at least 46/47 Recall@5. A miss requires a new versioned experiment and a newly frozen

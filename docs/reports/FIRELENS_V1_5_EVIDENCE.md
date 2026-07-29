@@ -12,9 +12,10 @@ Release branch: `codex/v1-5-release` remains at the baseline
 
 **Do not promote this candidate yet.** V1.5 is implemented and its RAG, official-live mode, map,
 security boundaries, and browser experience have substantial executed evidence. However, the
-independently frozen retrieval holdout scored 81.25-87.5% Recall@5 across three repetitions,
-below the required 96%, and all holdout labels remain Codex drafts. The owner semantic-review gate
-is also open.
+previous independently frozen retrieval holdout scored 81.25-87.5% Recall@5 across three
+repetitions, below the required 96%. A new 47-case candidate has been frozen after configuration
+selection with zero exact overlap against the preserved benchmark, but its relevance labels and
+the owner semantic-review gate are still open. It has not been used for tuning or paid scoring.
 
 The earlier 100% result on 47 route-eligible development cases used a Codex-authored relevance
 addendum. It remains useful development evidence but is not sealed promotion evidence. No
@@ -35,9 +36,10 @@ Nothing was merged, pushed, deployed, or cherry-picked into the release branch.
 | Paid conversation response mode/status | earlier calibration 92% | **98%** | one conservative holdout miss |
 | Route / deterministic safety route | 100% / 100% | **100% / 100%** | pass |
 | Paid conversation static p95 | earlier calibration 3.62 s | **3.790 s** | pass, target <=4 s |
-| Frozen independent Recall@5 | unavailable | **81.25%, 87.5%, 87.5%** | fail, target >=96% |
+| Preserved independent Recall@5 | unavailable | **81.25%, 87.5%, 87.5%** | historical fail |
+| New 47-case sealed Recall@5 | unavailable | **not run; 0/47 owner-approved** | pending |
 | Frozen independent MRR@5 | unavailable | **0.6458, 0.7292, 0.6979** | not promotable |
-| Cached official-live p95 | unmeasured | **1.026 s** | pass, target <=4 s |
+| Cached official-live p95 | unmeasured | **0.339 s** | refreshed pass, target <=4 s |
 
 The final limitation probe's overall p95 was 3.646 seconds. Its answer-producing subset was
 4.353 seconds, a performance warning even though the locked conversation benchmark and overall
@@ -80,18 +82,19 @@ evacuation layers. It validates exact layer identities and required fields, pagi
 WGS84, uses pinned Shapely plus pyproj WGS84 geodesics, filters inactive/non-wildfire records, and
 shows authority, source URL, source update time, retrieval time, status, freshness, and geometry.
 
-The real-source qualification at commit `7fce82450766adf29fef0042256c471b2955e987` found:
+The refreshed real-source qualification at commit
+`eca9119511d79e089526a6d163b8481c9c4a2205` found:
 
 | Live check | Result |
 |---|---:|
-| Displayable official records | 252 |
+| Displayable official records | 253 |
 | Unavailable layers | 0 |
 | Missing required metadata | 0 |
-| Cold three-layer fetch | 5.280 s |
-| Cached p95, 26 API requests | 1.026 s |
-| Concurrency 1 p95 | 0.016 s |
-| Concurrency 5 p95 | 0.162 s |
-| Concurrency 20 p95 | 1.052 s |
+| Cold three-layer fetch | 5.797 s |
+| Cached p95, 26 API requests | 0.339 s |
+| Concurrency 1 p95 | 0.012 s |
+| Concurrency 5 p95 | 0.086 s |
+| Concurrency 20 p95 | 0.350 s |
 | Chat/map identifier and status agreement | pass |
 
 Fresh cache lasts five minutes. Refresh failure may expose visibly stale data only through 15
@@ -108,10 +111,10 @@ errors or framework overlays were observed.
 
 ## Executed qualification
 
-The final `make verify` run passed:
+The current `make verify` run passed:
 
-- 133 Python tests, 10 skipped, and 36 subtests;
-- Ruff, formatting, mypy over 49 source files, and secret scan;
+- 151 Python tests, 10 skipped, and 36 subtests;
+- Ruff, formatting, mypy over 51 source files, and secret scan;
 - generated OpenAPI and TypeScript types with no residual diff;
 - 12 frontend unit tests and the production TypeScript/Vite build;
 - 4 Sites packaging tests;
@@ -142,11 +145,18 @@ Generated evaluation outputs remain ignored rather than committed:
 | `v1_1_conversation_live_report.json` | `f2360bca6747d08a7863f9a47029aaef900a723a2734db2553bff6ec2397b62e` |
 | `v1_1_conversation_live_review.md` | `500cec1aa0ee923b5fcff012b489830e0c303074d8366d5f58b45f7d5386d676` |
 | `naive_user_probe/results.json` | `b6fad0e360c8f5c83700fe266ce51dd5e7d410132799cbe7b1883fd78e1b1980` |
-| `qualification/v1_5_live.json` | `16dcbe2c7c0d8d9d4d579a8b6fcc90aef64f5096576320bdc0671c6b78ea0bf7` |
+| `qualification/v1_5_live.json` | `b2811588c4fb2e67ddda34d56fbf57ce6fd12f9c752463e414a8b6aa9b443294` |
+| `v1_5_retrieval_owner_review.yaml` | `9cbfaa3c77a7f999fd23a3f23698d939b54a6231e007f08226334a07c1659a8f` |
+| `v1_5_retrieval_owner_review.md` | `5115a3e8880c97fcf0bded1feaa2ff1e04e15a22bcc4673200f27f89c105b056` |
+| `v1_5_owner_semantic_review.yaml` | `bf78f0a18f4eeb0f20d922e1d4ebf10ecef6724338c90189631f197d27705915` |
 
-The frozen retrieval report uses dataset SHA-256
+The preserved failed retrieval report uses dataset SHA-256
 `75414daede41d029ecb233b380053546c279eb4ed33a201c19a5ceb5d2e6afef` and holdout SHA-256
 `d16eb54a8a9d88d27db776db83171d555a90cd8bdc971ce436349cbc238420fe`.
+
+The new unscored sealed candidate uses dataset SHA-256
+`178f7b2cbedb4b308c2e1e2eaf1a6e79855e854d2d0a277147bbd90081211564` and holdout SHA-256
+`77dcd08b5994e3f480697b4b69088629085dd65e39d9916f61b43cecfcc9ba58`.
 
 ## Cost ledger
 
@@ -168,13 +178,13 @@ aggregated, so this table is intentionally limited to the final qualification se
 
 ## Unmet release gates
 
-1. Independent frozen Recall@5 did not reach 96%; repeated rankings were also not identical.
-2. The independent frozen set has only 16 retrieval-answerable cases and therefore cannot prove a
-   46/47 threshold.
-3. Frozen retrieval and conversation labels are `codex_draft`; the relevance addendum is not
-   owner-approved.
-4. Semantic correctness and unsupported-material-claim count remain unscored pending owner review
-   of `output/benchmark/v1_1_conversation_live_review.md`.
+1. The new 47-case sealed set is frozen and structurally valid but remains 0/47 owner-approved;
+   its paid Recall@5 gate has intentionally not run.
+2. The preserved 16-case independent result remains below 96% and cannot authorize promotion.
+3. Semantic correctness and unsupported-material-claim count remain unscored; the hash-bound
+   50-case owner review remains 0/50 approved.
+4. The last account-status check found the OpenRouter key limit exhausted, so the invalid reranker
+   treatments cannot be rerun until the owner changes that external limit.
 5. An anonymous Vercel preview, distributed rate limiting, and production rollback drill require
    external deployment approval and were not performed.
 
@@ -210,9 +220,14 @@ These are release blockers, so `codex/v1-5-release` remains untouched.
 
 ```bash
 make verify
+make retrieval-review-packet
+make retrieval-review-template
+make qualify-retrieval-review
 make qualify-retrieval-v1-5
 .venv/bin/python scripts/run_limitation_probe.py --max-cost-usd 1.25
 make benchmark-v1-1-paid
+make owner-review-template
+make qualify-owner-review
 make qualify-live-v1-5
 make run
 ```
