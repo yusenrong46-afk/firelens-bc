@@ -4,14 +4,24 @@ This runbook applies only to a clean `codex/v1-5-release` worktree reconstructed
 baseline `209b4e5f8f16f13d7ac9af56a89e135f697ce052`. It does not authorize a production
 deployment.
 
+Do not create that worktree while either the frozen retrieval report or owner semantic decision
+is unqualified. The relevant lab artifacts are
+`output/benchmark/v1_5_frozen_holdout_retrieval.json` and
+`output/benchmark/v1_1_conversation_live_review.md`.
+
 ## Preflight
 
 1. Confirm the release branch and clean worktree with `git status --porcelain=v2 --branch`.
 2. Run `make verify`, then `git diff --exit-code` and `git diff --cached --exit-code`.
-3. Run the sealed qualification commands recorded in `docs/reports/FIRELENS_V1_5_EVIDENCE.md`.
-4. Confirm `GET /api/v1/health/ready` reports the expected `release_version`, `build_commit`,
+3. Run `make qualify-retrieval-v1-5`; require owner-approved labels and `qualified: true`.
+4. Run `.venv/bin/python scripts/run_limitation_probe.py --max-cost-usd 1.25`; require a
+   complete report and all defined safety/quality gates.
+5. Run `make benchmark-v1-1-paid`; complete and approve the semantic review packet.
+6. Run `make qualify-live-v1-5`; require all official layers, matching chat/map records, and
+   cached p95 at or below four seconds.
+7. Confirm `GET /api/v1/health/ready` reports the expected `release_version`, `build_commit`,
    corpus version, chunk count, provider readiness, and `rate_limit_scope=instance_local`.
-5. Confirm the OpenRouter key is configured without printing it.
+8. Confirm the OpenRouter key is configured without printing it.
 
 ## Preview only
 
