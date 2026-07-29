@@ -13,6 +13,7 @@ from typing import Any
 
 import httpx
 from pydantic import HttpUrl
+from pyproj import Geod
 from shapely.geometry import Point, box, shape
 from shapely.ops import nearest_points
 
@@ -44,6 +45,7 @@ LAYER_URLS = {
     LiveResultKind.PERIMETER: FIRE_PERIMETERS_URL,
     LiveResultKind.EVACUATION: EVACUATIONS_URL,
 }
+WGS84_GEOD = Geod(ellps="WGS84")
 
 
 class LiveDataUnavailable(RuntimeError):
@@ -98,17 +100,9 @@ def _timestamp(value: Any) -> datetime | None:
     return None
 
 
-def _haversine_km(first: tuple[float, float], second: tuple[float, float]) -> float:
-    lon1, lat1 = first
-    lon2, lat2 = second
-    radius = 6_371.0
-    phi1, phi2 = math.radians(lat1), math.radians(lat2)
-    dphi = math.radians(lat2 - lat1)
-    dlambda = math.radians(lon2 - lon1)
-    value = (
-        math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
-    )
-    return 2 * radius * math.asin(math.sqrt(value))
+def _geodesic_km(first: tuple[float, float], second: tuple[float, float]) -> float:
+    _forward, _back, distance_m = WGS84_GEOD.inv(*first, *second)
+    return float(distance_m) / 1_000
 
 
 def geometry_relation(
@@ -122,14 +116,14 @@ def geometry_relation(
             return GeometryRelation.UNKNOWN
         point = Point(longitude, latitude)
         if isinstance(target, Point):
-            distance = _haversine_km((longitude, latitude), (float(target.x), float(target.y)))
+            distance = _geodesic_km((longitude, latitude), (float(target.x), float(target.y)))
         else:
             if target.contains(point) or target.touches(point):
                 return GeometryRelation.INSIDE
             nearest = nearest_points(point, target)[1]
-            distance = _haversine_km(
-                (longitude, latitude), (float(nearest.x), float(nearest.y))
-            )
+            distance = _geodesic_km((longitude, latitude), (float(nearest.x), float(nearest.y)))
+        if not math.isfinite(distance):
+            return GeometryRelation.UNKNOWN
         return GeometryRelation.NEARBY if distance <= radius_km else GeometryRelation.OUTSIDE
     except (TypeError, ValueError):
         return GeometryRelation.UNKNOWN

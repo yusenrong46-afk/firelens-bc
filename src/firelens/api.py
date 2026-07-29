@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from typing import Any
@@ -193,23 +194,33 @@ def create_app(
             "perimeters": LiveResultKind.PERIMETER,
             "evacuations": LiveResultKind.EVACUATION,
         }
+        layer_names = [part.strip() for part in layers.split(",") if part.strip()]
+        unknown_layers = sorted(set(layer_names) - layer_aliases.keys())
         requested = tuple(
-            layer_aliases[name]
-            for name in (part.strip() for part in layers.split(","))
-            if name in layer_aliases
+            dict.fromkeys(layer_aliases[name] for name in layer_names if name in layer_aliases)
         )
-        if not requested:
+        if not requested or unknown_layers:
+            detail = (
+                " Unsupported layers: " + ", ".join(unknown_layers) + "."
+                if unknown_layers
+                else ""
+            )
             return error_response(
                 400,
                 trace_id=uuid4().hex,
                 error_kind="invalid_request",
-                message="Select at least one supported live map layer.",
+                message="Select only supported live map layers." + detail,
             )
         parsed_bbox = None
         if bbox is not None:
             try:
                 values = tuple(float(value) for value in bbox.split(","))
-                if len(values) != 4 or values[0] >= values[2] or values[1] >= values[3]:
+                if (
+                    len(values) != 4
+                    or not all(math.isfinite(value) for value in values)
+                    or not (-180 <= values[0] < values[2] <= 180)
+                    or not (-90 <= values[1] < values[3] <= 90)
+                ):
                     raise ValueError
                 parsed_bbox = values
             except ValueError:

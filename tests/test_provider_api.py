@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -10,8 +11,9 @@ from pydantic import SecretStr
 from rag_helpers import make_chunk, make_runtime, write_test_corpus
 
 from firelens.api import create_app
-from firelens.contracts import GroundedDraft
+from firelens.contracts import GroundedDraft, LiveResultKind
 from firelens.errors import ProviderError
+from firelens.live import LiveDataService
 from firelens.providers.openrouter import OpenRouterProvider
 
 
@@ -348,6 +350,89 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ApiTests(unittest.IsolatedAsyncioTestCase):
+    async def test_live_chat_and_map_share_records_and_reject_invalid_queries(self) -> None:
+        updated = int(datetime(2026, 7, 28, tzinfo=UTC).timestamp() * 1000)
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(
+                    200,
+                    json={
+                        "name": "BCWS_ActiveFires_Points",
+                        "editingInfo": {"dataLastEditDate": updated},
+                        "fields": [
+                            {"name": name}
+                            for name in (
+                                "OBJECTID",
+                                "FIRE_STATUS",
+                                "FIRE_NUMBER",
+                                "INCIDENT_NAME",
+                            )
+                        ],
+                    },
+                )
+            return httpx.Response(
+                200,
+                json={
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "properties": {
+                                "OBJECTID": 17,
+                                "FIRE_STATUS": "Being Held",
+                                "FIRE_NUMBER": "K12345",
+                                "INCIDENT_NAME": "Contract Fire",
+                            },
+                            "geometry": {"type": "Point", "coordinates": [-123.5, 49.5]},
+                        }
+                    ],
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as upstream:
+                live_service = LiveDataService(client=upstream)
+                app = create_app(config, runtime=runtime, live_service=live_service)
+                transport = httpx.ASGITransport(app=app)
+                async with httpx.AsyncClient(
+                    transport=transport, base_url="http://test"
+                ) as client:
+                    chat = await client.post(
+                        "/api/v1/ask",
+                        json={"question": "Are there active wildfires in BC currently?"},
+                    )
+                    map_response = await client.get(
+                        "/api/v1/live/map", params={"layers": "incidents"}
+                    )
+                    unknown = await client.get(
+                        "/api/v1/live/map", params={"layers": "incidents,unknown"}
+                    )
+                    invalid_bbox = await client.get(
+                        "/api/v1/live/map", params={"bbox": "-181,49,-120,60"}
+                    )
+
+        self.assertEqual(chat.status_code, 200)
+        self.assertEqual(chat.json()["response_mode"], "live")
+        self.assertEqual(map_response.status_code, 200)
+        chat_records = {
+            (row["result_id"], row["status"]) for row in chat.json()["live_results"]
+        }
+        map_records = {
+            (row["result_id"], row["status"]) for row in map_response.json()["results"]
+        }
+        self.assertEqual(chat_records, map_records)
+        self.assertEqual(chat_records, {("incident:17", "Being Held")})
+        for row in map_response.json()["results"]:
+            self.assertEqual(row["kind"], LiveResultKind.INCIDENT.value)
+            self.assertTrue(row["authority"])
+            self.assertTrue(row["source_url"])
+            self.assertTrue(row["source_updated_at"])
+            self.assertTrue(row["retrieved_at"])
+        self.assertEqual(unknown.status_code, 400)
+        self.assertEqual(invalid_bbox.status_code, 400)
+
     async def test_public_request_bounds_and_build_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             runtime, _, config = await make_runtime(Path(directory))

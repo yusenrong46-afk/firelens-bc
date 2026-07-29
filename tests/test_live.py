@@ -148,6 +148,76 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             datetime.fromtimestamp(1_760_000_000, UTC),
         )
 
+    async def test_expired_stale_cache_fails_closed(self) -> None:
+        calls = 0
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal calls
+            calls += 1
+            if calls > 2:
+                raise httpx.ReadTimeout("offline")
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            return httpx.Response(
+                200,
+                json={
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "properties": {"OBJECTID": 7, "FIRE_STATUS": "Out of Control"},
+                            "geometry": {"type": "Point", "coordinates": [-123.5, 49.5]},
+                        }
+                    ],
+                },
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            service = LiveDataService(client=client, fresh_seconds=0, stale_if_error_seconds=0)
+            first = await service.map_results(layers=(LiveResultKind.INCIDENT,))
+            second = await service.map_results(layers=(LiveResultKind.INCIDENT,))
+        self.assertEqual(len(first.results), 1)
+        self.assertEqual(second.results, [])
+        self.assertEqual(second.unavailable_layers, [LiveResultKind.INCIDENT])
+
+    async def test_paginated_results_and_partial_layer_failure(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            kind = _kind_from_url(request)
+            if kind == LiveResultKind.EVACUATION:
+                return httpx.Response(200, json={"unexpected": []})
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(kind))
+            offset = int(request.url.params.get("resultOffset", "0"))
+            return httpx.Response(
+                200,
+                json={
+                    "type": "FeatureCollection",
+                    "exceededTransferLimit": offset == 0,
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "properties": {
+                                "OBJECTID": offset + 1,
+                                "FIRE_STATUS": "Out of Control",
+                            },
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": [-123.5 + offset, 49.5],
+                            },
+                        }
+                    ],
+                },
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client).map_results(
+                layers=(LiveResultKind.INCIDENT, LiveResultKind.EVACUATION)
+            )
+        self.assertEqual(
+            [result.result_id for result in response.results], ["incident:1", "incident:2"]
+        )
+        self.assertEqual(response.unavailable_layers, [LiveResultKind.EVACUATION])
+
     async def test_inactive_and_non_wildfire_records_are_not_displayed(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             kind = _kind_from_url(request)
