@@ -16,7 +16,12 @@ is unqualified. The relevant lab artifacts are
 3. Run `make qualify-retrieval-v1-5`; require owner-approved labels and `qualified: true`.
 4. Run `.venv/bin/python scripts/run_limitation_probe.py --max-cost-usd 1.25`; require a
    complete report and all defined safety/quality gates.
-5. Run `make benchmark-v1-1-paid`; complete and approve the semantic review packet.
+5. Run `make benchmark-v1-1-paid`, then `make owner-review-template`. Review the generated
+   Markdown packet and benchmark report, and record decisions in the generated hash-bound YAML
+   sidecar without changing its report hash. Run `make qualify-owner-review` and require
+   `qualified: true`, a live-provider report, all 50 expected cases approved, zero unsupported
+   verified claims, and zero unclear claims. The template command refuses to overwrite an
+   existing owner review.
 6. Run `make qualify-live-v1-5`; require all official layers, matching chat/map records, and
    cached p95 at or below four seconds.
 7. Confirm `GET /api/v1/health/ready` reports the expected `release_version`, `build_commit`,
