@@ -1113,7 +1113,12 @@ def score_case(
     }
 
 
-async def run_suite(cases: list[ProbeCase], *, limit: int | None) -> dict[str, Any]:
+async def run_suite(
+    cases: list[ProbeCase],
+    *,
+    limit: int | None,
+    max_cost_usd: float | None,
+) -> dict[str, Any]:
     base = FireLensConfig.from_env(ROOT)
     selected = cases[:limit] if limit is not None else cases
 
@@ -1124,8 +1129,13 @@ async def run_suite(cases: list[ProbeCase], *, limit: int | None) -> dict[str, A
 
     results: list[dict[str, Any]] = []
     started = time.time()
+    reported_cost_usd = 0.0
+    budget_exceeded = False
 
     for profile, profile_cases in by_profile.items():
+        if max_cost_usd is not None and reported_cost_usd >= max_cost_usd:
+            budget_exceeded = True
+            break
         print(f"[probe] materializing corpus profile={profile} cases={len(profile_cases)}")
         config = await _materialize_profile(profile, base)
         admission_manifest = json.loads(config.corpus_manifest_path.read_text(encoding="utf-8"))
@@ -1147,6 +1157,9 @@ async def run_suite(cases: list[ProbeCase], *, limit: int | None) -> dict[str, A
             continue
         try:
             for case in profile_cases:
+                if max_cost_usd is not None and reported_cost_usd >= max_cost_usd:
+                    budget_exceeded = True
+                    break
                 print(f"[probe] {case.id} ({case.bucket})")
                 t0 = time.time()
                 request = QueryRequest(
@@ -1197,6 +1210,7 @@ async def run_suite(cases: list[ProbeCase], *, limit: int | None) -> dict[str, A
                             "reported_cost_usd": _usage_cost(provider_usage),
                         }
                     )
+                    reported_cost_usd += float(scored["reported_cost_usd"])
                 except Exception as exc:  # noqa: BLE001 - probe must continue
                     scored = {
                         "passed": False,
@@ -1233,7 +1247,9 @@ async def run_suite(cases: list[ProbeCase], *, limit: int | None) -> dict[str, A
 
     summary = {
         "generated_at": datetime.now(UTC).isoformat(),
+        "requested_case_count": len(selected),
         "case_count": len(results),
+        "complete": len(results) == len(selected) and not budget_exceeded,
         "passed": sum(1 for r in results if r.get("passed")),
         "failed": sum(1 for r in results if not r.get("passed")),
         "elapsed_sec": round(time.time() - started, 1),
@@ -1241,7 +1257,9 @@ async def run_suite(cases: list[ProbeCase], *, limit: int | None) -> dict[str, A
             field: sum(int(row.get("provider_tokens", {}).get(field, 0)) for row in results)
             for field in ("prompt_tokens", "completion_tokens", "total_tokens")
         },
-        "reported_cost_usd": sum(float(row.get("reported_cost_usd", 0.0)) for row in results),
+        "cost_budget_usd": max_cost_usd,
+        "cost_budget_exceeded": budget_exceeded,
+        "reported_cost_usd": reported_cost_usd,
         "by_bucket": by_bucket,
         "results": results,
     }
@@ -1251,6 +1269,12 @@ async def run_suite(cases: list[ProbeCase], *, limit: int | None) -> dict[str, A
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument(
+        "--max-cost-usd",
+        type=float,
+        default=1.25,
+        help="Stop before the next case once reported OpenRouter cost reaches this ceiling",
+    )
     parser.add_argument(
         "--case-ids",
         default="",
@@ -1267,6 +1291,8 @@ def main() -> None:
         help="Only write YAML case files; do not call the model",
     )
     args = parser.parse_args()
+    if args.max_cost_usd <= 0:
+        parser.error("--max-cost-usd must be greater than zero")
 
     OUT.mkdir(parents=True, exist_ok=True)
     naive = build_naive_cases()
@@ -1294,10 +1320,12 @@ def main() -> None:
         if missing:
             parser.error("unknown or excluded case IDs: " + ", ".join(sorted(missing)))
 
-    summary = asyncio.run(run_suite(cases, limit=args.limit))
+    summary = asyncio.run(run_suite(cases, limit=args.limit, max_cost_usd=args.max_cost_usd))
     out_path = OUT / "results.json"
     out_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(f"saved {out_path} passed={summary['passed']}/{summary['case_count']}")
+    if not summary["complete"]:
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":
