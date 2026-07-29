@@ -46,6 +46,20 @@ Creating a preview is an external action and requires owner approval. Do not add
 Record the preview URL, deployment ID, Git commit, environment target, and command output in the
 release evidence ledger.
 
+Build the preview from the qualified release commit, verify that exact deployment, and promote
+that deployment rather than rebuilding production. Run the executable anonymous HTTP gate with:
+
+```bash
+.venv/bin/python scripts/qualify_preview.py \
+  --base-url https://PREVIEW_URL \
+  --expected-version 1.5.0-rc.1 \
+  --expected-commit FULL_RELEASE_COMMIT
+```
+
+This writes a compact machine-readable report to
+`output/qualification/v1_5_preview.json`. It does not claim browser accessibility, forced source
+failure, or firewall enforcement; those remain separately recorded gates.
+
 ## Anonymous verification
 
 From a logged-out browser and a separate HTTP client, verify:
@@ -68,6 +82,13 @@ The application guard is per warm instance and is deliberately reported that way
 production approval, verify an outer Vercel Firewall or equivalent distributed rate limit for the
 ask and live-map routes. Do not describe the in-process guard as a global quota.
 
+`make prepare-firewall` validates `config/vercel_firewall.v1.json` and renders pinned Vercel CLI
+commands without executing them. The two method-scoped IP rules begin in log-only mode at 150
+ask requests/minute and 300 map requests/minute. These are observation thresholds, not proven
+capacity limits. After owner-approved staging, observe at least 24 hours, inspect false positives
+and regional traffic, then propose enforcement as a separate reviewed change. The owner publishes
+all firewall changes.
+
 ## Rollback
 
 If a preview fails, stop promotion and keep production on V1.1. If an approved production release
@@ -78,3 +99,6 @@ later regresses:
 3. Re-run anonymous homepage, readiness, and grounded-answer checks.
 4. Record the failing V1.5 deployment ID and failure evidence without deleting it.
 5. Repair in the lab branch; do not patch production directly.
+
+Preview verification and rollback rehearsal must name deployment IDs. Never repair by creating a
+new unverified production build; promote the previously verified deployment artifact.

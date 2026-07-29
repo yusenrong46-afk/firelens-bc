@@ -1,0 +1,24 @@
+{
+  "schema_version": "firelens.vercel_firewall.v1",
+  "observation_period_hours": 24,
+  "rules": [
+    {
+      "name": "FireLens ask distributed rate observation",
+      "path": "/api/v1/ask",
+      "method": "POST",
+      "window_seconds": 60,
+      "requests": 150,
+      "keys": ["ip"],
+      "rate_limit_action": "log"
+    },
+    {
+      "name": "FireLens map distributed rate observation",
+      "path": "/api/v1/live/map",
+      "method": "GET",
+      "window_seconds": 60,
+      "requests": 300,
+      "keys": ["ip"],
+      "rate_limit_action": "log"
+    }
+  ]
+}
