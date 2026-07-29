@@ -523,7 +523,13 @@ def main() -> None:
     if args.command == "build-index":
         raise SystemExit(asyncio.run(_build_index(config)))
     if args.command == "generate-document-contexts":
-        output = args.output if args.output.is_absolute() else config.project_root / args.output
+        output = (
+            config.document_context_path
+            if args.output is None
+            else args.output
+            if args.output.is_absolute()
+            else config.project_root / args.output
+        )
         raise SystemExit(asyncio.run(_generate_document_contexts(config, output)))
     if args.command in {"search", "ask"}:
         raise SystemExit(asyncio.run(_search_or_ask(config, args.question, args.command)))

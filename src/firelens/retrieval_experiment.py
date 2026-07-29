@@ -53,20 +53,30 @@ RETRIEVAL_CANDIDATES: dict[str, dict[str, int]] = {
 
 def _candidate_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     complete = all(row["complete"] for row in rows)
-    stages: dict[str, dict[str, float]] = {}
-    for stage in ("bm25", "vector", "fused", "reranked"):
-        metrics = [row["stage_metrics"][stage] for row in rows]
-        stages[stage] = {
-            "recall": _mean([float(item["hit"]) for item in metrics]),
-            "mrr": _mean([float(item["reciprocal_rank"]) for item in metrics]),
-            "ndcg": _mean([float(item["ndcg"]) for item in metrics]),
-            "mean_source_coverage": _mean([float(item["source_coverage"]) for item in metrics]),
-        }
+    eligible_rows = [row for row in rows if row["retrieval_eligible"]]
+
+    def summarize(selected_rows: list[dict[str, Any]]) -> dict[str, dict[str, float]]:
+        stages: dict[str, dict[str, float]] = {}
+        for stage in ("bm25", "vector", "fused", "reranked"):
+            metrics = [row["stage_metrics"][stage] for row in selected_rows]
+            stages[stage] = {
+                "recall": _mean([float(item["hit"]) for item in metrics]),
+                "mrr": _mean([float(item["reciprocal_rank"]) for item in metrics]),
+                "ndcg": _mean([float(item["ndcg"]) for item in metrics]),
+                "mean_source_coverage": _mean(
+                    [float(item["source_coverage"]) for item in metrics]
+                ),
+            }
+        return stages
+
     return {
         "complete": complete,
         "case_count": len(rows),
+        "retrieval_eligible_case_count": len(eligible_rows),
         "reported_cost_usd": sum(float(row["reported_cost_usd"]) for row in rows),
-        "stages": stages,
+        # Keep the legacy all-case view so intentional no-retrieval routes remain visible.
+        "stages": summarize(rows),
+        "route_eligible_stages": summarize(eligible_rows),
     }
 
 
@@ -76,15 +86,17 @@ def select_retrieval_candidate(summaries: dict[str, dict[str, Any]]) -> tuple[st
     current = summaries["current"]
     if not current["complete"]:
         return "current", "current configuration did not complete; no change is safe"
-    current_rerank = current["stages"]["reranked"]
+    current_rerank = current.get("route_eligible_stages", current["stages"])["reranked"]
     eligible: list[tuple[float, float, float, str]] = []
     for name, summary in summaries.items():
         if name == "current" or not summary["complete"]:
             continue
-        rerank = summary["stages"]["reranked"]
+        rerank = summary.get("route_eligible_stages", summary["stages"])["reranked"]
         if (
-            rerank["recall"] >= current_rerank["recall"] + 0.02
+            rerank["recall"] >= 0.96
+            and rerank["recall"] >= current_rerank["recall"] + 0.02
             and rerank["mean_source_coverage"] >= current_rerank["mean_source_coverage"]
+            and rerank["mrr"] >= current_rerank["mrr"] - 0.02
         ):
             eligible.append(
                 (
@@ -97,7 +109,10 @@ def select_retrieval_candidate(summaries: dict[str, dict[str, Any]]) -> tuple[st
     if not eligible:
         return "current", "no candidate cleared the locked two-point safety rule"
     selected = max(eligible)[-1]
-    return selected, "candidate cleared the locked Recall@5 and source-coverage rule"
+    return selected, (
+        "candidate cleared 96% route-eligible Recall@5, two-point gain, MRR, and "
+        "source-coverage rules"
+    )
 
 
 async def run_retrieval_comparison(
@@ -146,6 +161,7 @@ async def run_retrieval_comparison(
                 rows.append(
                     {
                         "id": case.id,
+                        "retrieval_eligible": bool(response.plan.retrieval_requests),
                         "complete": bundle.complete,
                         "errors": bundle.errors,
                         "stage_metrics": {
@@ -167,7 +183,7 @@ async def run_retrieval_comparison(
 
     selected, reason = select_retrieval_candidate(summaries)
     report = {
-        "report_version": "firelens_retrieval_comparison.v1",
+        "report_version": "firelens_retrieval_comparison.v2",
         "generated_at": datetime.now(UTC).isoformat(),
         "dataset_sha256": file_sha256(dataset_path),
         "split": "development",
