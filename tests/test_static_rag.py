@@ -341,6 +341,27 @@ class WrongDraftTypeProvider(FakeProvider):
         )
 
 
+class PartlyUnsupportedProvider(FakeProvider):
+    async def generate_grounded(self, messages, *, output_schema):
+        generated = await super().generate_grounded(messages, output_schema=output_schema)
+        valid_claim = generated.draft.claims[0]
+        return generated.model_copy(
+            update={
+                "draft": generated.draft.model_copy(
+                    update={
+                        "claims": [
+                            valid_claim,
+                            DraftProposalClaim(
+                                text="Saturn has rings made of ice and rock.",
+                                evidence_quote_ids=valid_claim.evidence_quote_ids,
+                            ),
+                        ]
+                    }
+                )
+            }
+        )
+
+
 class MultiQueryProvider(FakeProvider):
     async def plan(self, messages, *, output_schema):
         del messages, output_schema
@@ -615,6 +636,21 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(
             any("direct lexical support" in error for error in response.validation.errors)
         )
+
+    async def test_valid_claims_are_salvaged_without_weakening_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, provider, _ = await make_runtime(
+                Path(directory), provider=PartlyUnsupportedProvider()
+            )
+            response = await runtime.service.ask(
+                QueryRequest(question="What belongs in an emergency kit?")
+            )
+            await runtime.aclose()
+        self.assertEqual(response.response_mode, ResponseMode.PARTIAL)
+        self.assertTrue(response.validation and response.validation.accepted)
+        self.assertNotIn("Saturn", response.answer)
+        self.assertEqual(provider.generate_calls, 2)
+        self.assertIn("omitted after validation", response.limitations[-1])
 
     async def test_wrong_generation_draft_type_is_replaced_by_safe_abstention(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

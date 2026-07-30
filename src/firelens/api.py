@@ -266,8 +266,67 @@ def create_app(
         if initial_plan.route == QueryRoute.LIVE:
             layers = live_layers_for_question(request.question)
             unsupported_topics = unsupported_live_topics(request.question)
+            mixed_question = static_guidance_fragment(request.question)
+            static_response = (
+                await active_runtime.service.ask(
+                    QueryRequest(question=mixed_question, history=request.history),
+                    allow_live=False,
+                )
+                if mixed_question is not None
+                else None
+            )
+
+            def supported_static_partial(
+                current_information: str,
+                *,
+                limitations: list[str],
+                unavailable_layers: list[LiveResultKind] | None = None,
+            ) -> AskResponse | None:
+                if not (
+                    static_response is not None
+                    and static_response.status == ResponseStatus.ANSWER
+                    and static_response.response_mode
+                    in {ResponseMode.GROUNDED, ResponseMode.PARTIAL}
+                    and static_response.answer
+                    and static_response.claims
+                    and static_response.evidence
+                    and static_response.validation is not None
+                    and static_response.validation.accepted
+                ):
+                    return None
+                return AskResponse(
+                    status=ResponseStatus.ANSWER,
+                    trace_id=static_response.trace_id,
+                    response_mode=ResponseMode.PARTIAL,
+                    answer=(
+                        "Current official information: "
+                        + current_information
+                        + "\n\nPreparedness guidance: "
+                        + static_response.answer
+                        + "\n\nUncertainty: the current-information part was not established."
+                    ),
+                    claims=static_response.claims,
+                    evidence=static_response.evidence,
+                    limitations=[*limitations, *static_response.limitations],
+                    reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+                    validation=static_response.validation,
+                    unavailable_layers=unavailable_layers or [],
+                )
+
             if not layers:
                 topics = ", ".join(unsupported_topics) or "that live information"
+                current_gap = (
+                    f"FireLens V1.5 does not have an official live source for {topics}."
+                )
+                partial = supported_static_partial(
+                    current_gap,
+                    limitations=[
+                        "No matching record is not a safety determination.",
+                        f"Unsupported live topics: {topics}",
+                    ],
+                )
+                if partial is not None:
+                    return partial
                 return AskResponse(
                     status=ResponseStatus.ABSTENTION,
                     trace_id=uuid4().hex,
@@ -280,6 +339,16 @@ def create_app(
                     limitations=["No matching record is not a safety determination."],
                 )
             if request.location is None and live_query_requires_location(request.question):
+                location_gap = (
+                    "A city or approximate location must be supplied in the location field; "
+                    "FireLens does not infer it from conversation text."
+                )
+                partial = supported_static_partial(
+                    location_gap,
+                    limitations=["No matching record is not a safety determination."],
+                )
+                if partial is not None:
+                    return partial
                 return AskResponse(
                     status=ResponseStatus.ABSTENTION,
                     trace_id=uuid4().hex,
@@ -311,6 +380,21 @@ def create_app(
                     if len(live.unavailable_layers) < len(layers)
                     else "Official live wildfire sources are unavailable, so FireLens cannot establish current conditions."
                 )
+                partial = supported_static_partial(
+                    answer,
+                    limitations=[
+                        *live.limitations,
+                        "No matching record is not a safety determination.",
+                        *(
+                            ["Unsupported live topics: " + ", ".join(unsupported_topics)]
+                            if unsupported_topics
+                            else []
+                        ),
+                    ],
+                    unavailable_layers=live.unavailable_layers,
+                )
+                if partial is not None:
+                    return partial
                 return AskResponse(
                     status=ResponseStatus.ABSTENTION,
                     trace_id=uuid4().hex,
@@ -333,12 +417,7 @@ def create_app(
                 for item in shown[:5]
             )
             live_answer = "Current official information: " + summary
-            mixed_question = static_guidance_fragment(request.question)
-            if mixed_question is not None:
-                static_response = await active_runtime.service.ask(
-                    QueryRequest(question=mixed_question, history=request.history),
-                    allow_live=False,
-                )
+            if static_response is not None:
                 if (
                     static_response.status == ResponseStatus.ANSWER
                     and static_response.response_mode

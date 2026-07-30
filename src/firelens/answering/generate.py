@@ -51,6 +51,30 @@ def generation_messages(
     ]
 
 
+def repair_generation_messages(
+    packet: EvidencePacket,
+    *,
+    original_question: str,
+    validation_errors: list[str],
+) -> list[dict[str, str]]:
+    """Request one narrower replacement after deterministic validation rejects a draft."""
+
+    payload = {
+        "original_question": original_question,
+        "resolved_question": packet.question,
+        "evidence": packet.model_dump(mode="json"),
+        "previous_validation_errors": validation_errors[:12],
+        "instruction": (
+            "Return a new JSON object required by the schema. Use fewer, narrower claims. "
+            "Do not repeat wording that lacks direct support in the selected exact quotes."
+        ),
+    }
+    return [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+    ]
+
+
 def draft_schema(packet: EvidencePacket | None = None) -> dict[str, Any]:
     schema = GroundedDraft.model_json_schema()
     if packet is not None:

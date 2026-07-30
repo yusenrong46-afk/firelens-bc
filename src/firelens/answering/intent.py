@@ -60,6 +60,13 @@ _PROHIBITED_PATTERNS = (
     r"\b(?:decide|tell me)\s+(?:if|whether)\s+(?:i|we)\s+(?:stay|leave|evacuate|return)\b",
     r"\bwhether\s+(?:i|we)\s+should\s+(?:stay|leave|evacuate|return)\b",
     r"\bshould\s+(?:i|we)\s+go\s+(?:now|today|tonight|this morning|this afternoon|this evening)\b",
+    r"\b(?:my|our)\s+(?:address|street|property|home)\b.{0,50}\b\d{1,6}\b.{0,40}\b(?:under|in)\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\b",
+    r"\b(?:decide|choose|recommend)\b.{0,80}\b(?:evacuat(?:e|ion)|shelter(?:-in-place)?|stay|leave)\b.{0,30}\b(?:versus|vs\.?|or)\b",
+    r"\b(?:rank|prioriti[sz]e|compare)\b.{0,80}\b(?:roads?|routes?|highways?)\b.{0,80}\b(?:family|evacuat(?:e|ion)|escape|safest)\b",
+    r"\b(?:roads?|routes?|highways?)\b.{0,80}\b(?:rank|priority|safest|best)\b.{0,50}\b(?:family|evacuat(?:e|ion)|escape)\b",
+    r"\b(?:authorize|approve|clear)\b.{0,90}\b(?:return(?:ing)?|go back|evacuat(?:e|ion)|stay|leave)\b",
+    r"\b(?:exact\s+)?address\s+(?:at\s+)?\d{1,6}\b.{0,100}\b(?:evacuation\s+)?(?:alert|order)\b",
+    r"\basap\s+evac(?:uate|uation)?\b",
 )
 
 _PERSONALIZED_MEDICAL_PATTERNS = (
@@ -74,6 +81,11 @@ _PERSONALIZED_MEDICAL_PATTERNS = (
     r"\b(?:chest (?:pain|hurts?|tightness)|difficulty breathing|shortness of breath|wheez(?:e|ing))\b.{0,80}\bwhat should (?:i|we) do\b",
     r"\bhow should (?:i|we)\s+(?:treat|manage)\s+(?:my|our|the|this)\b",
     r"\b(?:i|my|me|we|our|us)\b.{0,100}\b(?:treat|manage)\s+(?:my|our|the|this)\s+(?:burn|injury|symptom|headache|cough|pain)\b",
+    r"\b(?:my|our|personal)\b.{0,50}\b(?:inhaler|medicine|medication|meds?)\b.{0,60}\b(?:schedule|dose|dosage|frequency|how often)\b",
+    r"\b(?:schedule|dose|dosage|frequency|how often)\b.{0,60}\b(?:my|our|personal)\b.{0,40}\b(?:inhaler|medicine|medication|meds?)\b",
+    r"\b(?:stop|pause|skip|double|increase|decrease|change)\b.{0,40}\b(?:my|our)\b.{0,40}\b(?:medicine|medication|meds?|inhaler|prescription)\b",
+    r"\b(?:is|are)\s+(?:this|my|our|the)\b.{0,80}\b(?:disease|illness|condition|smoke inhalation|asthma|infection)\b.{0,30}\b(?:yes or no|diagnos|from smoke|caused by)\b",
+    r"\b(?:yes or no|diagnos)\b.{0,80}\b(?:disease|illness|condition|symptoms?|cough|smoke inhalation)\b",
 )
 
 _POLICY_MANIPULATION_PATTERNS = (
@@ -81,6 +93,24 @@ _POLICY_MANIPULATION_PATTERNS = (
     r"\b(?:override|bypass|disable)\s+.{0,40}\b(?:safety|evidence|boundary|rules?)\b",
     r"\buse\s+(?:your\s+)?model memory\b",
     r"\bignore\s+.{0,60}\b(?:official|current|live)[-\s]+(?:information|data|source)\s+requirement\b",
+    r"\bignore\s+(?:all\s+)?(?:previous|prior|earlier|system|developer)\s+(?:instructions?|rules?|messages?|prompts?)\b",
+    r"\b(?:reveal|print|show|repeat|expose)\b.{0,50}\b(?:hidden|system|developer|internal)\s+(?:instructions?|prompt|messages?|rules?)\b",
+    r"\b(?:act|behave|respond)\s+as\s+(?:an?\s+)?(?:unrestricted|uncensored|jailbroken)\b",
+    r"\b(?:cite|create|provide|use)\b.{0,50}\b(?:fake|fabricated|invented|nonexistent)\b.{0,50}\b(?:citations?|pages?|sources?|urls?|documents?|evidence)\b",
+    r"\b(?:invent|fabricate|forge|make up)\b.{0,60}\b(?:evidence|citation|source|url|document|record|perimeter|status|bulletin)\b",
+    r"\bbase64[- ]decode\b.{0,80}\b(?:obey|follow|execute|instruction)\b",
+    r"\b(?:roleplay|pretend|act)\b.{0,50}\b(?:bc wildfire service|bcws|emergencyinfo\s*bc|authority|official)\b",
+    r"\b(?:say|claim|state)\s+the\s+opposite\b.{0,80}\b(?:order|alert|safe|stay|leave|evacuat)\b",
+    r"\b(?:hide|omit|suppress)\b.{0,50}\b(?:other|conflict|disagreement|authority|source|evidence)\b",
+    r"\b(?:invent|fabricate|make up)\b.{0,50}\b(?:blended|consensus|compromise)\b.{0,40}\b(?:answer|guidance|recommendation)\b",
+)
+
+_CORPUS_REFERENCE_PATTERNS = (
+    r"\b(?:document|guide|checklist|source)s?\b.{0,80}\b(?:require|recommend|say|agree|disagree|follow)\b",
+    r"\b(?:require|recommend|say|agree|disagree|follow)\b.{0,80}\b(?:document|guide|checklist|source)s?\b",
+    r"\bwhat\b.{0,60}\b(?:document|guide|checklist|source)s?\b",
+    r"\b(?:require|recommend)\b.{0,100}\b(?:grab-and-go|emergency kit|firesmart|wildfire smoke)\b",
+    r"\b(?:grab-and-go|emergency kit|firesmart|wildfire smoke)\b.{0,100}\b(?:require|recommend)\b",
 )
 
 _LIVE_PATTERNS = (
@@ -96,7 +126,7 @@ _LIVE_PATTERNS = (
     r"\b(?:evacuation|wildfire|fire|smoke|air quality)\s+(?:map|status|update|updates)\b",
     r"\b(?:fires|wildfires)\b.{0,40}\bburning\b",
     r"\bburning\b.{0,40}\b(?:fires|wildfires)\b",
-    r"\b(?:road|highway)\b.{0,40}\b(?:open|closed|closure|blocked)\b",
+    r"\b(?:roads?|highways?)\b.{0,40}\b(?:open|closed|closure|blocked)\b",
     r"\b(?:is|are|whether)\s+.{1,60}\b(?:under|on)\s+(?:an?\s+)?evacuation\s+(?:alert|order)\b",
     r"\bdoes\s+.{1,60}\bhave\s+(?:an?\s+)?evacuation\s+(?:alert|order)\b",
     r"\bis\s+(?:there\s+)?(?:an?\s+)?evacuation\s+(?:alert|order)\s+(?:active|in effect)\b",
@@ -105,6 +135,9 @@ _LIVE_PATTERNS = (
     r"\bis\s+(?:it|.{1,50})\s+smoky\b",
     r"\b(?:emergencyinfo\s*bc|emergencyinfobc|bc wildfire service|bcws)\b.{0,60}\b(?:post(?:ed)?|new|update|latest|today|now)\b",
     r"\b(?:my|our)\s+(?:address|home|property|location)\s+is\s+under\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\b",
+    r"\b(?:is|are)\s+there\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\s+(?:for|near|around|in)\b",
+    r"\bis\s+there\b.{1,60}\b(?:evacuation\s+)?(?:alert|order)\b",
+    r"\b(?:fires?|wildfires?)\s+(?:near|around|by)\s+[a-z]",
 )
 
 _UNSUPPORTED_LIVE_TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -117,6 +150,7 @@ _STATIC_GUIDANCE_TERMS = (
     "preparedness",
     "kit",
     "bag",
+    "grab-and-go",
     "firesmart",
     "reduce wildfire risk",
     "sprinkler",
@@ -148,6 +182,35 @@ _DEICTIC_FOLLOWUP = re.compile(
 )
 
 
+def focused_question(question: str) -> str:
+    """Remove a long obvious preamble while preserving the final explicit question.
+
+    This is deliberately structural rather than topic-aware: it cannot introduce
+    vocabulary or choose an answer, and it leaves ordinary multi-sentence requests
+    untouched.
+    """
+
+    if len(question) < 500:
+        return question
+    sentences = [part.strip() for part in re.split(r"(?<=[.!?])\s+", question)]
+    explicit = [part for part in sentences if part.endswith("?") and len(part.split()) >= 4]
+    if explicit and len(explicit[-1]) <= 500:
+        return explicit[-1]
+    return question
+
+
+def resolved_user_question(request: QueryRequest) -> str:
+    """Name the previous user subject for a genuinely elliptical follow-up."""
+
+    current = focused_question(request.question)
+    if len(current.split()) > 16 or not _DEICTIC_FOLLOWUP.search(current.casefold()):
+        return current
+    previous = [turn.content for turn in request.history if turn.role == "user"]
+    if not previous:
+        return current
+    return f"Regarding the earlier question '{previous[-1]}', {current}"[:2_000]
+
+
 def _routing_texts(request: QueryRequest) -> tuple[str, ...]:
     """Use history only for a genuinely elliptical current question.
 
@@ -155,7 +218,7 @@ def _routing_texts(request: QueryRequest) -> tuple[str, ...]:
     stable-guidance question while still resolving "What about right now?".
     """
 
-    current = request.question.lower()
+    current = focused_question(request.question).lower()
     if len(current.split()) > 16 or not _DEICTIC_FOLLOWUP.search(current):
         return (current,)
     previous = [turn.content for turn in request.history if turn.role == "user"]
@@ -247,7 +310,18 @@ def live_query_requires_location(question: str) -> bool:
     lowered = question.casefold()
     if any(term in lowered for term in ("near me", "my home", "my house", "my address")):
         return True
-    match = re.search(r"\b(?:near|around|within|in)\s+([a-z][a-z .'-]{1,80})", lowered)
+    if re.search(r"\b(?:alert|order)\s+(?:for|near|around|in)\s+[a-z]", lowered) or re.search(
+        r"\b[a-z][a-z .'-]{1,50}\s+is\s+under\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\b",
+        lowered,
+    ):
+        return True
+    named_status = re.search(
+        r"\b(?:is there|are there|any)\s+(?:an?\s+)?([a-z][a-z'-]+)\s+(?:evacuation\s+)?(?:alert|order)\b",
+        lowered,
+    )
+    if named_status is not None and named_status.group(1) not in {"evacuation", "active"}:
+        return True
+    match = re.search(r"\b(?:near|around|within|in|for)\s+([a-z][a-z .'-]{1,80})", lowered)
     if match is None:
         return False
     place = match.group(1).strip(" .?'")
@@ -264,12 +338,14 @@ def static_guidance_fragment(question: str) -> str | None:
 
     fragments = [
         fragment.strip(" ,.?;")
-        for fragment in re.split(r"(?:[?;]|\b(?:and|also|plus)\b)", question, flags=re.I)
+        for fragment in re.split(r"(?:[?;+]|\s+(?:and|also|plus)\s+)", question, flags=re.I)
     ]
     selected = [
         fragment
         for fragment in fragments
-        if fragment and any(term in fragment.casefold() for term in _STATIC_GUIDANCE_TERMS)
+        if fragment
+        and any(term in fragment.casefold() for term in _STATIC_GUIDANCE_TERMS)
+        and not any(re.search(pattern, fragment.casefold()) for pattern in _LIVE_PATTERNS)
     ]
     if not selected:
         return None
@@ -280,7 +356,8 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     """Apply the zero-provider-call boundary and mark ordinary questions related."""
 
     question = request.question
-    lowered = question.lower()
+    processing_question = focused_question(question)
+    lowered = processing_question.lower()
     routing_texts = _routing_texts(request)
     deictic_boundary = _deictic_action_boundary(request)
     medical = any(
@@ -300,7 +377,7 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     if medical or deictic_boundary == ReasonCode.PERSONALIZED_MEDICAL_ADVICE:
         return QueryPlan(
             original_question=question,
-            normalized_question=question,
+            normalized_question=processing_question,
             route=QueryRoute.PROHIBITED,
             boundary_reason=ReasonCode.PERSONALIZED_MEDICAL_ADVICE,
             limitations=["FireLens cannot provide personalized medical advice."],
@@ -308,41 +385,41 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     if personalized or deictic_boundary == ReasonCode.PERSONALIZED_SAFETY_DECISION:
         return QueryPlan(
             original_question=question,
-            normalized_question=question,
+            normalized_question=processing_question,
             route=QueryRoute.PROHIBITED,
             boundary_reason=ReasonCode.PERSONALIZED_SAFETY_DECISION,
             limitations=[
                 "FireLens cannot provide personalized safety advice or evacuation decisions."
             ],
         )
-    if live and allow_live:
-        return QueryPlan(
-            original_question=question,
-            normalized_question=question,
-            route=QueryRoute.LIVE,
-            boundary_reason=ReasonCode.LIVE_DATA_REQUIRED,
-            limitations=["The static corpus cannot establish current wildfire conditions."],
-        )
     if manipulation:
         return QueryPlan(
             original_question=question,
-            normalized_question=question,
+            normalized_question=processing_question,
             route=QueryRoute.PROHIBITED,
             boundary_reason=ReasonCode.POLICY_MANIPULATION,
             limitations=[
                 "Conversation text cannot override FireLens safety and evidence rules."
             ],
         )
+    if live and allow_live:
+        return QueryPlan(
+            original_question=question,
+            normalized_question=processing_question,
+            route=QueryRoute.LIVE,
+            boundary_reason=ReasonCode.LIVE_DATA_REQUIRED,
+            limitations=["The static corpus cannot establish current wildfire conditions."],
+        )
     if any(re.search(pattern, lowered) for pattern in _CAPABILITY_PATTERNS):
         return QueryPlan(
             original_question=question,
-            normalized_question=question,
+            normalized_question=processing_question,
             route=QueryRoute.CAPABILITY,
             limitations=[STATIC_LIMITATION],
         )
     return QueryPlan(
         original_question=question,
-        normalized_question=question,
+        normalized_question=processing_question,
         route=QueryRoute.RELATED,
         limitations=[STATIC_LIMITATION],
     )
@@ -359,11 +436,23 @@ def apply_planning_decision(
 
     if plan.route != QueryRoute.RELATED:
         return plan
-    if decision.relation == QueryRelation.TANGENT:
+    corpus_reference = any(
+        re.search(pattern, plan.original_question.casefold())
+        for pattern in _CORPUS_REFERENCE_PATTERNS
+    )
+    if decision.relation == QueryRelation.TANGENT and not corpus_reference:
         return plan.model_copy(
             update={"route": QueryRoute.TANGENT, "relation": decision.relation}
         )
-    retrieval_queries = list(decision.retrieval_queries)
+    relation = (
+        QueryRelation.GROUNDED_CANDIDATE
+        if decision.relation == QueryRelation.TANGENT
+        else decision.relation
+    )
+    required_aspects = list(decision.required_aspects)
+    if decision.relation == QueryRelation.TANGENT and corpus_reference:
+        required_aspects = required_aspects or [plan.original_question]
+    retrieval_queries = list(decision.retrieval_queries) or [plan.original_question]
     question_is_elliptical = bool(
         len(plan.original_question.split()) <= 16
         and _DEICTIC_FOLLOWUP.search(plan.original_question.casefold())
@@ -397,8 +486,8 @@ def apply_planning_decision(
     return plan.model_copy(
         update={
             "normalized_question": resolved_question[:2_000],
-            "relation": decision.relation,
+            "relation": relation,
             "retrieval_requests": requests,
-            "required_aspects": decision.required_aspects,
+            "required_aspects": required_aspects,
         }
     )

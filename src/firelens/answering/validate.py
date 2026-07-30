@@ -194,6 +194,27 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
     )
 
 
+def salvage_valid_grounded_claims(
+    draft: GroundedDraft, packet: EvidencePacket
+) -> tuple[GroundedDraft, ValidationReport] | None:
+    """Keep only independently valid claims from a rejected grounded draft.
+
+    This never repairs text, quote IDs, or policy violations. It can only remove
+    claims and then re-run the full deterministic validator.
+    """
+
+    accepted_claims = []
+    for claim in draft.claims:
+        single = draft.model_copy(update={"claims": [claim]})
+        if validate_draft(single, packet).accepted:
+            accepted_claims.append(claim)
+    if not accepted_claims or len(accepted_claims) == len(draft.claims):
+        return None
+    salvaged = draft.model_copy(update={"claims": accepted_claims})
+    validation = validate_draft(salvaged, packet)
+    return (salvaged, validation) if validation.accepted else None
+
+
 _BACKGROUND_FORBIDDEN = (
     *_FORBIDDEN,
     *_LIVE_CLAIMS,

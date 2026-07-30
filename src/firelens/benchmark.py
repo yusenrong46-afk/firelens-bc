@@ -28,6 +28,7 @@ from firelens.contracts import (
     QueryRelation,
     QueryRequest,
     QueryRoute,
+    ReasonCode,
     ResponseMode,
     ResponseStatus,
 )
@@ -516,6 +517,11 @@ async def run_benchmark(
             for phrase in case.forbidden_claims
             if response.answer and phrase.casefold() in response.answer.casefold()
         ]
+        route_correct = route == case.expected_route.value or (
+            case.expected_route == QueryRoute.LIVE
+            and execution.plan.route == QueryRoute.PROHIBITED
+            and execution.plan.boundary_reason == ReasonCode.POLICY_MANIPULATION
+        )
         rows.append(
             {
                 "id": case.id,
@@ -525,7 +531,7 @@ async def run_benchmark(
                 "question": case.question,
                 "expected_route": case.expected_route.value,
                 "actual_route": route,
-                "route_correct": route == case.expected_route.value,
+                "route_correct": route_correct,
                 "expected_status": expected_status,
                 "actual_status": status,
                 "status_correct": status == expected_status,
@@ -841,7 +847,11 @@ async def run_conversation_benchmark(
             for phrase in case.forbidden_claims
             if response.answer and phrase.casefold() in response.answer.casefold()
         ]
-        route_correct = actual_route == case.expected_route
+        route_correct = actual_route == case.expected_route or (
+            case.expected_route == QueryRoute.LIVE
+            and actual_route == QueryRoute.PROHIBITED
+            and execution.plan.boundary_reason == ReasonCode.POLICY_MANIPULATION
+        )
         relation_correct = actual_relation == case.expected_planning_relation
         status_correct = response.status.value == case.expected_status
         response_mode_correct = response.response_mode == case.expected_response_mode

@@ -515,6 +515,38 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(localized_without_input.status_code, 200)
                 self.assertEqual(localized_without_input.json()["status"], "abstention")
                 self.assertIn("approximate location", localized_without_input.json()["answer"])
+                mixed_without_location = await client.post(
+                    "/api/v1/ask",
+                    json={
+                        "question": (
+                            "Are there fires near Kelowna today, and what belongs in an "
+                            "emergency kit?"
+                        )
+                    },
+                )
+                self.assertEqual(mixed_without_location.status_code, 200)
+                self.assertEqual(mixed_without_location.json()["response_mode"], "partial")
+                self.assertIn(
+                    "Current official information", mixed_without_location.json()["answer"]
+                )
+                self.assertIn("Preparedness guidance", mixed_without_location.json()["answer"])
+                self.assertTrue(mixed_without_location.json()["claims"])
+                unsupported_mixed = await client.post(
+                    "/api/v1/ask",
+                    json={
+                        "question": (
+                            "Are roads closed to Vernon and what belongs in an emergency kit?"
+                        )
+                    },
+                )
+                self.assertEqual(unsupported_mixed.status_code, 200)
+                self.assertEqual(unsupported_mixed.json()["response_mode"], "partial")
+                self.assertTrue(
+                    any(
+                        "road conditions" in limitation
+                        for limitation in unsupported_mixed.json()["limitations"]
+                    )
+                )
                 stable = await client.post(
                     "/api/v1/ask",
                     json={"question": "What belongs in an emergency kit?"},

@@ -21,15 +21,21 @@ from firelens.answering.generate import (
     background_schema,
     draft_schema,
     generation_messages,
+    repair_generation_messages,
 )
 from firelens.answering.intent import (
     SUGGESTED_QUESTIONS,
     TOPIC_CATALOGUE,
     apply_planning_decision,
     plan_query,
+    resolved_user_question,
 )
 from firelens.answering.planner import planning_messages, planning_schema
-from firelens.answering.validate import validate_background_draft, validate_draft
+from firelens.answering.validate import (
+    salvage_valid_grounded_claims,
+    validate_background_draft,
+    validate_draft,
+)
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     AskResponse,
@@ -350,10 +356,11 @@ class StaticRAGService:
 
         if plan.route == QueryRoute.RELATED:
             planning_started = perf_counter()
-            planning_candidates = self._planning_candidates(request.question)
+            planning_candidates = self._planning_candidates(plan.normalized_question)
+            planning_request = request.model_copy(update={"question": plan.normalized_question})
             try:
                 planning = await self.provider.plan(
-                    planning_messages(request, corpus_candidates=planning_candidates),
+                    planning_messages(planning_request, corpus_candidates=planning_candidates),
                     output_schema=planning_schema(),
                 )
                 if planning.decision.relation == QueryRelation.TANGENT and (
@@ -706,9 +713,10 @@ class StaticRAGService:
             )
 
         started = perf_counter()
+        generation_question = resolved_user_question(request)
         try:
             generated = await self.provider.generate_grounded(
-                generation_messages(packet, original_question=request.question),
+                generation_messages(packet, original_question=generation_question),
                 output_schema=draft_schema(packet),
             )
         except ProviderError as exc:
@@ -750,7 +758,8 @@ class StaticRAGService:
                 limitations=packet.limitations,
             )
             return await self._record_ask(request, response, route=route.value)
-        validation = validate_draft(generated.draft, packet)
+        active_draft = generated.draft
+        validation = validate_draft(active_draft, packet)
         if observer is not None:
             observer.generations.append(
                 GenerationObservation(
@@ -762,23 +771,96 @@ class StaticRAGService:
                     validation=validation,
                 )
             )
+        salvaged = False
         if not validation.accepted:
-            response = _safe_abstention(
-                trace_id,
-                answer="The generated answer did not pass FireLens validation.",
-                reason_code=ReasonCode.DRAFT_VALIDATION_FAILED,
-                limitations=packet.limitations,
-            ).model_copy(update={"validation": validation})
-            return await self._record_ask(
-                request,
-                response,
-                route=route.value,
-                model=generated.model,
-                generation_ms=generation_ms,
-                generation_usage=generated.usage,
-                generation_attempts=generated.attempts,
-                validation=validation.model_dump(mode="json"),
-            )
+            original_draft = active_draft
+            original_validation = validation
+            repaired_draft: GroundedDraft | None = None
+            repair_validation: ValidationReport | None = None
+            repair_started = perf_counter()
+            try:
+                repaired = await self.provider.generate_grounded(
+                    repair_generation_messages(
+                        packet,
+                        original_question=generation_question,
+                        validation_errors=validation.errors,
+                    ),
+                    output_schema=draft_schema(packet),
+                )
+            except ProviderError as exc:
+                if observer is not None:
+                    observer.generations.append(
+                        GenerationObservation(
+                            stage="grounded_repair",
+                            model=None,
+                            usage={},
+                            attempts=0,
+                            latency_ms=(perf_counter() - repair_started) * 1_000,
+                            error_kind=exc.kind.value,
+                        )
+                    )
+            else:
+                repair_ms = (perf_counter() - repair_started) * 1_000
+                repaired_draft = (
+                    repaired.draft if isinstance(repaired.draft, GroundedDraft) else None
+                )
+                repair_validation = (
+                    validate_draft(repaired_draft, packet)
+                    if repaired_draft is not None
+                    else ValidationReport(
+                        accepted=False,
+                        schema_valid=False,
+                        citation_ids_valid=False,
+                        quotes_exact=False,
+                        claim_support_valid=False,
+                        policy_valid=False,
+                        errors=["repair did not return a grounded draft"],
+                    )
+                )
+                if observer is not None:
+                    observer.generations.append(
+                        GenerationObservation(
+                            stage="grounded_repair",
+                            model=repaired.model,
+                            usage=repaired.usage,
+                            attempts=repaired.attempts,
+                            latency_ms=repair_ms,
+                            validation=repair_validation,
+                        )
+                    )
+                if repair_validation.accepted and repaired_draft is not None:
+                    generated = repaired
+                    active_draft = repaired_draft
+                    validation = repair_validation
+                    generation_ms += repair_ms
+
+            if not validation.accepted:
+                salvage = (
+                    salvage_valid_grounded_claims(repaired_draft, packet)
+                    if repaired_draft is not None
+                    else None
+                ) or salvage_valid_grounded_claims(original_draft, packet)
+                if salvage is not None:
+                    active_draft, validation = salvage
+                    salvaged = True
+                else:
+                    validation = repair_validation or original_validation
+                    response = _safe_abstention(
+                        trace_id,
+                        answer="The generated answer did not pass FireLens validation.",
+                        reason_code=ReasonCode.DRAFT_VALIDATION_FAILED,
+                        limitations=packet.limitations,
+                    ).model_copy(update={"validation": validation})
+                    return await self._record_ask(
+                        request,
+                        response,
+                        route=route.value,
+                        model=generated.model,
+                        generation_ms=generation_ms,
+                        generation_usage=generated.usage,
+                        generation_attempts=generated.attempts,
+                        validation=validation.model_dump(mode="json"),
+                    )
 
         quote_candidates = {
             candidate.quote_id: candidate for candidate in packet.quote_candidates
@@ -790,7 +872,7 @@ class StaticRAGService:
                 evidence_status=EvidenceStatus.VERIFIED_CORPUS,
                 supports=_unique_claim_supports(claim.evidence_quote_ids, quote_candidates),
             )
-            for claim_index, claim in enumerate(generated.draft.claims, start=1)
+            for claim_index, claim in enumerate(active_draft.claims, start=1)
         ]
         cited_ids = {
             support.evidence_id for claim in public_claims for support in claim.supports
@@ -814,13 +896,20 @@ class StaticRAGService:
             trace_id=trace_id,
             response_mode=(
                 ResponseMode.PARTIAL
-                if search.support.status == SupportStatus.PARTIAL
+                if search.support.status == SupportStatus.PARTIAL or salvaged
                 else ResponseMode.GROUNDED
             ),
             answer=" ".join(claim.text.strip() for claim in public_claims),
             claims=public_claims,
             evidence=evidence,
-            limitations=packet.limitations,
+            limitations=[
+                *packet.limitations,
+                *(
+                    ["Unsupported generated statements were omitted after validation."]
+                    if salvaged
+                    else []
+                ),
+            ],
             validation=validation,
         )
         return await self._record_ask(
