@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import math
 from contextlib import asynccontextmanager
 from time import perf_counter
@@ -24,6 +25,7 @@ from firelens.contracts import (
     LiveResultKind,
     QueryRequest,
     QueryRoute,
+    ResponseMode,
     ResponseStatus,
     SearchResponse,
 )
@@ -287,12 +289,7 @@ def create_app(
                 )
             return await active_runtime.service.search(request)
 
-    @app.post(
-        "/api/v1/ask",
-        response_model=AskResponse,
-        responses=ERROR_RESPONSES,
-    )
-    async def ask(request: QueryRequest):
+    async def answer_request(request: QueryRequest):
         request_started = perf_counter()
         active_runtime = current_runtime()
         if active_runtime.service is None:
@@ -335,6 +332,33 @@ def create_app(
                 in {"rate_limit", "timeout", "unavailable", "model_unavailable"},
             )
         return response
+
+    @app.post(
+        "/api/v1/ask",
+        response_model=AskResponse,
+        responses=ERROR_RESPONSES,
+    )
+    async def ask(request: QueryRequest):
+        try:
+            async with asyncio.timeout(active_config.public_request_deadline_seconds):
+                return await answer_request(request)
+        except TimeoutError:
+            trace_id = uuid4().hex
+            log_operation(
+                trace_id=trace_id,
+                route="deadline",
+                response_mode=ResponseMode.ABSTENTION.value,
+                latency_ms=active_config.public_request_deadline_seconds * 1_000,
+                provider_stages=(),
+                error_category="timeout",
+            )
+            return error_response(
+                503,
+                trace_id=trace_id,
+                error_kind="timeout",
+                message="FireLens could not complete the request within its public deadline.",
+                retryable=True,
+            )
 
     if active_config.debug and active_config.deployment_environment != "production":
 

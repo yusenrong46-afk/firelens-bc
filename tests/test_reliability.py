@@ -10,7 +10,7 @@ from hypothesis import strategies as st
 from pydantic import ValidationError
 from rag_helpers import make_chunk
 
-from firelens.contracts import QueryRequest
+from firelens.contracts import ConversationTurn, QueryRequest
 from firelens.errors import IndexValidationError
 from firelens.retrieval.embeddings import load_embedding_cache
 from firelens.retrieval.hybrid import reciprocal_rank_fusion
@@ -20,6 +20,14 @@ from firelens.traces import TraceRecorder
 
 
 class ContractPropertyTests(unittest.TestCase):
+    def test_valid_long_answer_can_round_trip_as_assistant_history(self) -> None:
+        answer = "A" * 2_500
+
+        turn = ConversationTurn(role="assistant", content=answer)
+        request = QueryRequest(question="What does that mean?", history=[turn])
+
+        self.assertEqual(request.history[0].content, answer)
+
     @given(st.text(min_size=1, max_size=2_000).filter(lambda value: bool(value.strip())))
     def test_question_normalization_is_nonblank(self, question: str) -> None:
         request = QueryRequest(question=question)

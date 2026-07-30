@@ -36,6 +36,10 @@ def _int_value(value: str | None, default: int) -> int:
     return int(value) if value is not None else default
 
 
+def _float_value(value: str | None, default: float) -> float:
+    return float(value) if value is not None else default
+
+
 class FireLensConfig(BaseModel):
     """Versioned experimental defaults for the first complete static pipeline."""
 
@@ -65,6 +69,7 @@ class FireLensConfig(BaseModel):
     max_evidence_spans: int = Field(default=5, gt=0)
     max_context_chars: int = Field(default=8_000, gt=0)
     request_timeout_seconds: float = Field(default=30.0, gt=0)
+    public_request_deadline_seconds: float = Field(default=45.0, gt=0, le=55.0)
     provider_max_attempts: int = Field(default=3, ge=1, le=3)
     provider_retry_base_seconds: float = Field(default=0.25, ge=0)
     provider_max_concurrency: int = Field(default=4, ge=1, le=16)
@@ -139,6 +144,9 @@ class FireLensConfig(BaseModel):
             ),
             max_request_body_bytes=_int_value(
                 setting("FIRELENS_MAX_REQUEST_BODY_BYTES"), 65_536
+            ),
+            public_request_deadline_seconds=_float_value(
+                setting("FIRELENS_PUBLIC_REQUEST_DEADLINE_SECONDS"), 45.0
             ),
             release_version=setting("FIRELENS_RELEASE_VERSION") or "1.5.0-rc.1",
             build_commit=setting("VERCEL_GIT_COMMIT_SHA") or setting("FIRELENS_BUILD_COMMIT"),

@@ -197,10 +197,7 @@ def _detect_conflicts(
             continue
         for right in candidates[left_index + 1 :]:
             right_span = evidence[right.evidence_id]
-            if (
-                left_span.document_sha256 == right_span.document_sha256
-                or left_span.authority_class != right_span.authority_class
-            ):
+            if left_span.document_sha256 == right_span.document_sha256:
                 continue
             right_tokens = tokenize(right.text)
             if not (_CONFLICT_CUES & set(right_tokens)):

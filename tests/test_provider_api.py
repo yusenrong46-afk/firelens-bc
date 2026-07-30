@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import tempfile
 import unittest
@@ -351,6 +352,38 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ApiTests(unittest.IsolatedAsyncioTestCase):
+    async def test_public_deadline_cancels_slow_live_work(self) -> None:
+        class SlowLiveService:
+            def __init__(self) -> None:
+                self.cancelled = False
+
+            async def map_results(self, *args, **kwargs):
+                try:
+                    await asyncio.sleep(1)
+                except asyncio.CancelledError:
+                    self.cancelled = True
+                    raise
+
+            async def nearby_results(self, *args, **kwargs):
+                return await self.map_results(*args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            config = config.model_copy(update={"public_request_deadline_seconds": 0.01})
+            runtime.config = config
+            live_service = SlowLiveService()
+            app = create_app(config, runtime=runtime, live_service=live_service)
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                response = await client.post(
+                    "/api/v1/ask",
+                    json={"question": "What active wildfires are in BC currently?"},
+                )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["error_kind"], "timeout")
+        self.assertTrue(live_service.cancelled)
+
     async def test_declared_oversized_body_is_rejected_before_reading(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             runtime, _, config = await make_runtime(Path(directory))

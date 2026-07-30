@@ -120,7 +120,7 @@ class ResponseStatus(StrEnum):
 
 class ConversationTurn(FrozenStrictModel):
     role: Literal["user", "assistant"]
-    content: str = Field(min_length=1, max_length=2_000)
+    content: str = Field(min_length=1, max_length=6_000)
 
     @field_validator("content")
     @classmethod

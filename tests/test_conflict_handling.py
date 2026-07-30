@@ -7,10 +7,46 @@ from pathlib import Path
 
 from rag_helpers import make_chunk, make_runtime
 
-from firelens.contracts import QueryRequest, ResponseMode, ResponseStatus
+from firelens.contracts import AuthorityClass, QueryRequest, ResponseMode, ResponseStatus
 
 
 class ConflictHandlingTests(unittest.IsolatedAsyncioTestCase):
+    async def test_cross_authority_material_difference_is_surfaced(self) -> None:
+        alpha = replace(
+            make_chunk(
+                "alpha",
+                "Residents must attach one teal readiness tag to the emergency bag zipper.",
+            ),
+            title="Provincial Readiness Guide",
+            publisher="Government of British Columbia",
+            authority_class=AuthorityClass.PROVINCIAL_GOVERNMENT.value,
+            document_sha256="a" * 64,
+        )
+        beta = replace(
+            make_chunk(
+                "beta",
+                "Residents must attach one orange readiness tag to the emergency bag zipper.",
+                parent="parent-b",
+            ),
+            source_id="source-b",
+            title="Wildfire Readiness Guide",
+            publisher="FireSmart BC",
+            authority_class=AuthorityClass.WILDFIRE_PREPAREDNESS.value,
+            document_sha256="b" * 64,
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, provider, _config = await make_runtime(
+                Path(directory), chunks=[alpha, beta]
+            )
+            response = await runtime.service.ask(
+                QueryRequest(question="What colour readiness tag belongs on the emergency bag?")
+            )
+
+        self.assertEqual(response.response_mode, ResponseMode.CONFLICT)
+        self.assertEqual(response.reason_code, "conflicting_evidence")
+        self.assertEqual(provider.generate_calls, 0)
+
     async def test_near_matching_prescriptive_sources_return_visible_conflict(self) -> None:
         alpha_text = (
             "The required primary marking colour for the North Bend household readiness tag "

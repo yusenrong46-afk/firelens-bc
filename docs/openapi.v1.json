@@ -134,7 +134,7 @@
         "additionalProperties": false,
         "properties": {
           "content": {
-            "maxLength": 2000,
+            "maxLength": 6000,
             "minLength": 1,
             "title": "Content",
             "type": "string"
