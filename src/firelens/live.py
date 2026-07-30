@@ -138,11 +138,13 @@ class LiveDataService:
         client: httpx.AsyncClient | None = None,
         fresh_seconds: float = 300,
         stale_if_error_seconds: float = 900,
+        max_pages: int = 100,
     ) -> None:
         self.client = client or httpx.AsyncClient(timeout=10.0, follow_redirects=True)
         self._owns_client = client is None
         self.fresh_seconds = fresh_seconds
         self.stale_if_error_seconds = stale_if_error_seconds
+        self.max_pages = max_pages
         self._cache: dict[LiveResultKind, _CacheEntry] = {}
         self._locks = {kind: asyncio.Lock() for kind in LiveResultKind}
 
@@ -187,6 +189,7 @@ class LiveDataService:
                 "f": "geojson",
                 "resultOffset": offset,
                 "resultRecordCount": 1000,
+                "orderByFields": "OBJECTID ASC",
             },
         )
         response.raise_for_status()
@@ -231,15 +234,31 @@ class LiveDataService:
     async def _refresh(self, kind: LiveResultKind) -> _CacheEntry:
         source_updated_at = await self._source_metadata(kind)
         features: list[dict[str, Any]] = []
+        seen_feature_ids: set[str] = set()
+        seen_pages: set[tuple[str, ...]] = set()
         offset = 0
-        while True:
+        for _page_number in range(self.max_pages):
             page, exceeded = await self._fetch_page(kind, offset=offset)
-            features.extend(page)
+            page_ids = tuple(self._feature_identity(kind, feature) for feature in page)
+            if page and page_ids in seen_pages:
+                raise LiveDataUnavailable(f"{kind.value} source repeated a result page")
+            seen_pages.add(page_ids)
+            new_features = [
+                feature
+                for feature, feature_id in zip(page, page_ids, strict=True)
+                if feature_id not in seen_feature_ids
+            ]
+            if page and not new_features:
+                raise LiveDataUnavailable(f"{kind.value} source pagination made no progress")
+            features.extend(new_features)
+            seen_feature_ids.update(self._feature_identity(kind, item) for item in new_features)
             if not exceeded and len(page) < 1000:
                 break
             if not page:
                 break
             offset += len(page)
+        else:
+            raise LiveDataUnavailable(f"{kind.value} source exceeded the pagination limit")
         entry = _CacheEntry(
             fetched_monotonic=time.monotonic(),
             retrieved_at=datetime.now(UTC),
@@ -248,6 +267,14 @@ class LiveDataService:
         )
         self._cache[kind] = entry
         return entry
+
+    @staticmethod
+    def _feature_identity(kind: LiveResultKind, feature: dict[str, Any]) -> str:
+        properties = feature["properties"]
+        object_id = _property(properties, "OBJECTID", "objectid", "GlobalID", "FIRE_NUMBER")
+        if object_id is not None:
+            return f"{kind.value}:{object_id}"
+        return hashlib.sha256(json.dumps(feature, sort_keys=True).encode("utf-8")).hexdigest()
 
     async def _features(self, kind: LiveResultKind) -> tuple[_CacheEntry, Freshness]:
         cached = self._cache.get(kind)
@@ -416,14 +443,19 @@ class LiveDataService:
                 except (TypeError, ValueError):
                     continue
                 results.append(result)
+        limitations = [
+            "Official records can change quickly; confirm emergency directions with the issuing authority.",
+            "No matching record is not a safety determination.",
+        ]
+        if any(result.freshness == Freshness.STALE for result in results):
+            limitations.append(
+                "A refresh failed; cached records are stale and are not current conditions."
+            )
         return LiveMapResponse(
             generated_at=datetime.now(UTC),
-            results=results,
+            results=sorted(results, key=lambda result: (result.kind.value, result.result_id)),
             unavailable_layers=unavailable,
-            limitations=[
-                "Official records can change quickly; confirm emergency directions with the issuing authority.",
-                "No matching record is not a safety determination.",
-            ],
+            limitations=limitations,
         )
 
     async def nearby_results(
@@ -442,6 +474,15 @@ class LiveDataService:
                 longitude=longitude,
                 radius_km=location.radius_km,
             )
-            if relation in {GeometryRelation.INSIDE, GeometryRelation.NEARBY}:
+            if relation in {
+                GeometryRelation.INSIDE,
+                GeometryRelation.NEARBY,
+                GeometryRelation.UNKNOWN,
+            }:
                 related.append(result.model_copy(update={"geometry_relation": relation}))
-        return response.model_copy(update={"results": related})
+        limitations = list(response.limitations)
+        if any(result.geometry_relation == GeometryRelation.UNKNOWN for result in related):
+            limitations.append(
+                "Some official records could not be located spatially; check them directly with the issuing authority."
+            )
+        return response.model_copy(update={"results": related, "limitations": limitations})

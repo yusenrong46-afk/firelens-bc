@@ -13,6 +13,7 @@ from firelens.answering.intent import (
 )
 from firelens.contracts import (
     AskResponse,
+    Freshness,
     LiveMapResponse,
     LiveResultKind,
     QueryRequest,
@@ -188,7 +189,14 @@ class LiveAnswerCoordinator:
             f"{item.name or item.incident_number or item.result_id}: {item.status}"
             for item in shown[:5]
         )
-        live_answer = "Current official information: " + summary
+        freshnesses = {item.freshness for item in shown}
+        if freshnesses == {Freshness.STALE}:
+            live_label = "Cached official information (refresh failed): "
+        elif Freshness.STALE in freshnesses:
+            live_label = "Official information (includes stale cached records): "
+        else:
+            live_label = "Current official information: "
+        live_answer = live_label + summary
         if (
             static_result is not None
             and static_result.status == ResponseStatus.ANSWER

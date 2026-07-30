@@ -105,6 +105,74 @@ class GeometryTests(unittest.TestCase):
 
 
 class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
+    async def test_nearby_results_keep_records_with_unknown_geometry(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(LiveResultKind.EVACUATION))
+            return httpx.Response(
+                200,
+                json={
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "properties": {
+                                "OBJECTID": 12,
+                                "ORDER_ALERT_STATUS": "Order",
+                                "EVENT_TYPE": "Wildfire",
+                                "DATE_MODIFIED": 1_760_000_000_000,
+                            },
+                            "geometry": {"type": "Polygon", "coordinates": []},
+                        }
+                    ],
+                },
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client).nearby_results(
+                LocationInput(latitude=49.5, longitude=-123.5),
+                layers=(LiveResultKind.EVACUATION,),
+            )
+
+        self.assertEqual([result.result_id for result in response.results], ["evacuation:12"])
+        self.assertEqual(response.results[0].geometry_relation, GeometryRelation.UNKNOWN)
+        self.assertTrue(any("could not be located" in item for item in response.limitations))
+
+    async def test_repeated_full_page_fails_closed_instead_of_looping(self) -> None:
+        calls = 0
+        features = [
+            {
+                "type": "Feature",
+                "properties": {"OBJECTID": index, "FIRE_STATUS": "Out of Control"},
+                "geometry": {"type": "Point", "coordinates": [-123.5, 49.5]},
+            }
+            for index in range(1_000)
+        ]
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal calls
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            calls += 1
+            self.assertEqual(request.url.params.get("orderByFields"), "OBJECTID ASC")
+            return httpx.Response(
+                200,
+                json={
+                    "type": "FeatureCollection",
+                    "exceededTransferLimit": True,
+                    "features": features,
+                },
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client, max_pages=3).map_results(
+                layers=(LiveResultKind.INCIDENT,)
+            )
+
+        self.assertEqual(response.results, [])
+        self.assertEqual(response.unavailable_layers, [LiveResultKind.INCIDENT])
+        self.assertEqual(calls, 2)
+
     async def test_cache_becomes_visibly_stale_after_refresh_failure(self) -> None:
         calls = 0
 

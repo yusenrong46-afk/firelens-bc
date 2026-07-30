@@ -50,6 +50,12 @@ function resultColour(kind: LiveResult["kind"]): string {
   return "#b42318";
 }
 
+function isRenderableGeometry(result: LiveResult): boolean {
+  const geometry = result.geometry as { type?: string; coordinates?: unknown };
+  if (!Array.isArray(geometry.coordinates) || geometry.coordinates.length === 0) return false;
+  return ["Point", "Polygon", "MultiPolygon"].includes(geometry.type ?? "");
+}
+
 export function LiveMap({
   results,
   unavailableLayers = [],
@@ -58,12 +64,17 @@ export function LiveMap({
   unavailableLayers?: string[];
 }) {
   const [tileUnavailable, setTileUnavailable] = useState(false);
+  const includesStale = results.some((result) => result.freshness === "stale");
   const featureResults = useMemo(
-    () => results.filter((result) => (result.geometry as { type?: string }).type !== "Point"),
+    () => results.filter(
+      (result) => isRenderableGeometry(result) && (result.geometry as { type?: string }).type !== "Point",
+    ),
     [results],
   );
   const pointResults = useMemo(
-    () => results.filter((result) => (result.geometry as { type?: string }).type === "Point"),
+    () => results.filter(
+      (result) => isRenderableGeometry(result) && (result.geometry as { type?: string }).type === "Point",
+    ),
     [results],
   );
   const resultSignature = results.map((result) => result.result_id).join("|");
@@ -73,8 +84,12 @@ export function LiveMap({
     <section className="live-map" aria-label="Official wildfire records map">
       <div className="live-map__heading">
         <div>
-          <span>Official live records</span>
-          <h1>Current BC wildfire information</h1>
+          <span>{includesStale ? "Official cached records" : "Official live records"}</span>
+          <h1>
+            {includesStale
+              ? "BC wildfire information — includes stale records"
+              : "Current BC wildfire information"}
+          </h1>
         </div>
         <a href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
           Open BCWS map
