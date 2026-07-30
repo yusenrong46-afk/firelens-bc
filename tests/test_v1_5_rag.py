@@ -45,6 +45,19 @@ class V15RoutingTests(unittest.TestCase):
         plan = plan_query(QueryRequest(question=question))
         self.assertEqual(plan.normalized_question, focused_question(question))
 
+    def test_long_preamble_cannot_hide_a_personal_safety_request(self) -> None:
+        question = " ".join(
+            [
+                "Should I stay home instead of evacuating?",
+                *[f"Background sentence {index}." for index in range(45)],
+                "What belongs in an emergency kit?",
+            ]
+        )
+
+        plan = plan_query(QueryRequest(question=question))
+
+        self.assertEqual(plan.route, QueryRoute.PROHIBITED)
+
     def test_elliptical_generation_question_uses_only_the_previous_user_subject(self) -> None:
         request = QueryRequest(
             question="Why does that matter?",

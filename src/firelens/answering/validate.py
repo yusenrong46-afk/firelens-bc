@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 
+from firelens.answering.semantic_invariants import preservation_errors
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
     BackgroundDraft,
@@ -189,6 +190,13 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
             errors.append(
                 f"claim {claim_number} lacks direct lexical support in its selected quotes"
             )
+        else:
+            invariant_errors = preservation_errors(
+                claim.text, [candidate.text for candidate in selected_candidates]
+            )
+            if invariant_errors:
+                claim_support_valid = False
+                errors.extend(f"claim {claim_number} {message}" for message in invariant_errors)
 
     enumerated_sections = _enumerated_evidence_sections(packet)
     missing_sections = [

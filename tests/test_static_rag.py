@@ -224,6 +224,103 @@ class ContractTests(unittest.TestCase):
         self.assertTrue(report.accepted)
         self.assertTrue(report.policy_valid)
 
+    def test_validator_rejects_safety_action_inversion(self) -> None:
+        chunk = make_chunk(
+            "a",
+            "If an evacuation order is issued, you must leave the area immediately.",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [chunk])
+            packet = build_evidence_packet(
+                "What does an evacuation order require?",
+                [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
+                [chunk],
+                corpus_version="test-corpus.v1",
+                config=config,
+            )
+        draft = GroundedDraft(
+            answer_type="grounded",
+            claims=[
+                DraftProposalClaim(
+                    text="If an evacuation order is issued, you must remain home immediately.",
+                    evidence_quote_ids=[packet.quote_candidates[0].quote_id],
+                )
+            ],
+            limitations=packet.limitations,
+        )
+
+        report = validate_draft(draft, packet)
+
+        self.assertFalse(report.accepted)
+        self.assertFalse(report.claim_support_valid)
+        self.assertTrue(any("action" in error for error in report.errors))
+
+    def test_validator_rejects_unsupported_quantity_and_duration(self) -> None:
+        cases = (
+            (
+                "The Immediate Zone extends 1.5 metres from the home.",
+                "The Immediate Zone extends 15 metres from the home.",
+            ),
+            (
+                "Leave immediately when an evacuation order is issued.",
+                "Wait 60 minutes before leaving when an evacuation order is issued.",
+            ),
+        )
+        for quote, claim in cases:
+            with self.subTest(claim=claim), tempfile.TemporaryDirectory() as directory:
+                chunk = make_chunk("a", quote)
+                config = write_test_corpus(Path(directory), [chunk])
+                packet = build_evidence_packet(
+                    "What does the guidance say?",
+                    [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
+                    [chunk],
+                    corpus_version="test-corpus.v1",
+                    config=config,
+                )
+                draft = GroundedDraft(
+                    answer_type="grounded",
+                    claims=[
+                        DraftProposalClaim(
+                            text=claim,
+                            evidence_quote_ids=[packet.quote_candidates[0].quote_id],
+                        )
+                    ],
+                    limitations=packet.limitations,
+                )
+
+                report = validate_draft(draft, packet)
+
+                self.assertFalse(report.accepted)
+                self.assertFalse(report.claim_support_valid)
+                self.assertTrue(any("quantity" in error for error in report.errors))
+
+    def test_validator_allows_faithful_quantity_paraphrase(self) -> None:
+        chunk = make_chunk(
+            "a",
+            "Maintain a non-combustible area extending 1.5 metres around the home.",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [chunk])
+            packet = build_evidence_packet(
+                "How wide is the non-combustible area?",
+                [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
+                [chunk],
+                corpus_version="test-corpus.v1",
+                config=config,
+            )
+        draft = GroundedDraft(
+            answer_type="grounded",
+            claims=[
+                DraftProposalClaim(
+                    text="The non-combustible area extends 1.5 m around the home.",
+                    evidence_quote_ids=[packet.quote_candidates[0].quote_id],
+                )
+            ],
+            limitations=packet.limitations,
+        )
+
+        self.assertTrue(validate_draft(draft, packet).accepted)
+
     def test_validator_requires_every_retrieved_section_in_an_enumerated_answer(self) -> None:
         chunks = [
             make_chunk(
