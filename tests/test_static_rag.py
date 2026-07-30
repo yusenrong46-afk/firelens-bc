@@ -138,6 +138,10 @@ class ContractTests(unittest.TestCase):
             plan = plan_query(QueryRequest(question=question))
             self.assertEqual(plan.route, QueryRoute.LIVE)
 
+    def test_context_free_what_now_is_a_capability_request(self) -> None:
+        plan = plan_query(QueryRequest(question="what now"))
+        self.assertEqual(plan.route, QueryRoute.CAPABILITY)
+
     def test_validator_rejects_unknown_evidence_and_non_exact_quotes(self) -> None:
         chunk = make_chunk("a", "Store water in clean containers.")
         with tempfile.TemporaryDirectory() as directory:
@@ -271,6 +275,36 @@ class ContractTests(unittest.TestCase):
         self.assertFalse(report.accepted)
         self.assertFalse(report.claim_support_valid)
         self.assertTrue(any("Gamma Stage" in error for error in report.errors))
+
+    def test_generation_prompts_preserve_supported_enumerated_items(self) -> None:
+        from firelens.answering.generate import SYSTEM_PROMPT, repair_generation_messages
+
+        chunks = [
+            make_chunk("a", "Alpha Stage\nAlpha stage means first.", parent="alpha"),
+            make_chunk("b", "Beta Stage\nBeta stage means second.", parent="beta"),
+            make_chunk("c", "Gamma Stage\nGamma stage means third.", parent="gamma"),
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), chunks)
+            packet = build_evidence_packet(
+                "What do the stages mean?",
+                [
+                    retrieval_hit_from_chunk(chunk, rerank_rank=index)
+                    for index, chunk in enumerate(chunks, start=1)
+                ],
+                chunks,
+                corpus_version="test-corpus.v1",
+                config=config,
+            )
+        messages = repair_generation_messages(
+            packet,
+            original_question="What do the stages mean?",
+            validation_errors=[
+                "enumerated answer omits retrieved evidence sections: Beta Stage"
+            ],
+        )
+        self.assertIn("cover every requested item", SYSTEM_PROMPT)
+        self.assertIn("retain every requested item", messages[-1]["content"])
 
 
 class IndexTests(unittest.IsolatedAsyncioTestCase):
@@ -597,6 +631,16 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
                     for claim in response.claims
                 )
             )
+
+    async def test_mixed_unrelated_and_supported_clauses_are_redirected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            provider = AdjacentProvider()
+            runtime, _, _ = await make_runtime(Path(directory), provider=provider)
+            response = await runtime.service.ask(
+                QueryRequest(question="Explain ocean tides, then explain emergency kits.")
+            )
+            self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
+            self.assertEqual(provider.generate_calls, 0)
 
     async def test_explicit_source_reference_overrides_adjacent_planner_result(self) -> None:
         chunk = replace(

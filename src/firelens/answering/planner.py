@@ -23,6 +23,11 @@ answerable aspects that the evidence would need to support.
 A tangent request must have no retrieval queries. Do not provide source
 metadata, policy decisions, claims, or answer text.
 
+If one request mixes a genuinely unrelated subject with a wildfire subject,
+classify the whole request as tangent. Do not blend an unrelated answer with a
+wildfire answer; the application will invite the user to ask the wildfire part
+as a focused question.
+
 Use grounded_candidate for procedures, definitions, and recommendations that
 are directly supported by the corpus candidates. Use adjacent for broader
 low-risk explanations of fire science, fire ecology, weather concepts,

@@ -65,6 +65,32 @@ from firelens.traces import TraceRecorder
 
 _CORPUS_IDENTIFIER = re.compile(r"\b[A-Z]{2,}(?:-[A-Z0-9]+)+\b")
 _REFERENCE_TOKEN = re.compile(r"[a-z0-9]+")
+_MIXED_SCOPE_SPLIT = re.compile(r"\b(?:then|after that|before that)\b|[;+]", re.I)
+_MIXED_SCOPE_STOPWORDS = {
+    "a",
+    "about",
+    "and",
+    "explain",
+    "for",
+    "how",
+    "i",
+    "in",
+    "is",
+    "me",
+    "of",
+    "please",
+    "the",
+    "to",
+    "what",
+}
+
+
+def _scope_token(token: str) -> str:
+    """Normalize only a simple English plural for conservative overlap checks."""
+
+    return token[:-1] if len(token) >= 4 and token.endswith("s") else token
+
+
 _GENERIC_SOURCE_WORDS = {
     "bc",
     "british",
@@ -121,6 +147,41 @@ def _candidate_source_reference_present(
             ):
                 return True
     return False
+
+
+def _mixed_scope_request(question: str, candidates: Sequence[Mapping[str, str]]) -> bool:
+    """Detect a sequenced corpus-supported clause plus an unrelated clause.
+
+    Candidate snippets are used only as vocabulary. This conservative boundary
+    requires a clear clause separator, one clause with at least two candidate
+    terms, and another substantive clause with no candidate terms.
+    """
+
+    clauses = [
+        clause.strip() for clause in _MIXED_SCOPE_SPLIT.split(question) if clause.strip()
+    ]
+    if len(clauses) < 2:
+        return False
+    candidate_tokens = {
+        _scope_token(token)
+        for candidate in candidates
+        for token in _REFERENCE_TOKEN.findall(" ".join(candidate.values()).casefold())
+        if len(token) >= 3 and token not in _MIXED_SCOPE_STOPWORDS
+    }
+    overlap_counts: list[int] = []
+    substantive_counts: list[int] = []
+    for clause in clauses:
+        tokens = {
+            _scope_token(token)
+            for token in _REFERENCE_TOKEN.findall(clause.casefold())
+            if len(token) >= 3 and token not in _MIXED_SCOPE_STOPWORDS
+        }
+        overlap_counts.append(len(tokens & candidate_tokens))
+        substantive_counts.append(len(tokens))
+    return any(count >= 2 for count in overlap_counts) and any(
+        overlap == 0 and substantive >= 2
+        for overlap, substantive in zip(overlap_counts, substantive_counts, strict=True)
+    )
 
 
 @dataclass(frozen=True)
@@ -396,7 +457,23 @@ class StaticRAGService:
                     planning_messages(planning_request, corpus_candidates=planning_candidates),
                     output_schema=planning_schema(),
                 )
-                if planning.decision.relation in {
+                if _mixed_scope_request(request.question, planning_candidates):
+                    planning = planning.model_copy(
+                        update={
+                            "decision": planning.decision.model_copy(
+                                update={
+                                    "relation": QueryRelation.TANGENT,
+                                    "retrieval_queries": [],
+                                    "required_aspects": [],
+                                    "explanation": (
+                                        "The request mixes a corpus-supported clause with an "
+                                        "unrelated clause and must be asked as a focused question."
+                                    ),
+                                }
+                            )
+                        }
+                    )
+                elif planning.decision.relation in {
                     QueryRelation.TANGENT,
                     QueryRelation.ADJACENT,
                 } and (

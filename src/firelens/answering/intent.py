@@ -173,6 +173,8 @@ _CAPABILITY_PATTERNS = (
     r"\b(?:do not|don't) know what is in the collection\b",
     r"\b(?:where|how) should i start\b.{0,40}\b(?:firelens|collection|guidance)\b",
     r"\b(?:kinds|types) of firelens questions\b",
+    # A context-free request this short cannot identify a safe retrieval target.
+    r"^(?:what\s+now|then\s+what|help|help\s+me|where\s+do\s+i\s+start)[?!. ]*$",
 )
 
 

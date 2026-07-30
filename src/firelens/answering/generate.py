@@ -25,7 +25,10 @@ When defining a wildfire status term, explain what the term means in general;
 do not imply that any actual fire currently has that status.
 The application owns evidence limitations; do not restate or modify them.
 Omit any proposed statement that is not directly supported. Do not invent
-source titles, URLs, publishers, pages, dates, numbers, or evidence IDs."""
+source titles, URLs, publishers, pages, dates, numbers, or evidence IDs.
+When the question asks what a set of stages, types, categories, levels, zones,
+or steps mean, cover every requested item represented by the supplied evidence.
+Do not silently omit a supported item to make an answer shorter."""
 
 BACKGROUND_SYSTEM_PROMPT = f"""You are the low-risk background writing component of FireLens BC.
 The request is related to wildfire or preparedness but the local corpus did not
@@ -65,8 +68,10 @@ def repair_generation_messages(
         "evidence": packet.model_dump(mode="json"),
         "previous_validation_errors": validation_errors[:12],
         "instruction": (
-            "Return a new JSON object required by the schema. Use fewer, narrower claims. "
-            "Do not repeat wording that lacks direct support in the selected exact quotes."
+            "Return a new JSON object required by the schema. Remove or narrow only claims "
+            "that failed validation. Do not repeat wording that lacks direct support in the "
+            "selected exact quotes. If the question asks what an enumerated set means, retain "
+            "every requested item represented by the supplied evidence."
         ),
     }
     return [
