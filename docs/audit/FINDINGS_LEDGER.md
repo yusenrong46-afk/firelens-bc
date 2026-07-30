@@ -21,7 +21,7 @@ by GP-008. They are not duplicated as independent rows.
 | GP-006 | P1 | VERIFIED | `tests/test_conflict_handling.py::ConflictHandlingTests::test_authority_precedence_matrix_surfaces_material_differences`; `test_date_and_jurisdiction_differences_surface_without_precedence`; `test_different_non_prescriptive_passages_do_not_invent_conflict` | `1a47099`, `7381037` | The explicit matrix passes for same authority, provincial/public-health, provincial/FireSmart, provincial/local, version/date, jurisdiction, and complementary guidance. No automatic precedence hides a material difference. Fast and full gates pass. |
 | GP-007 | P1 | VERIFIED | `tests/test_provider_api.py::ApiTests::test_public_deadline_cancels_every_provider_stage`; `test_caller_cancellation_reaches_active_provider_stage`; `test_public_deadline_cancels_slow_live_work`; `test_public_deadline_cancels_slow_live_map_work` | `1a47099`, `6ad68aa`, `d4f6ddf` | Planner, embedding, reranking, generation, repair, live ask, and live map all receive deadline cancellation; direct caller cancellation also reaches the active provider coroutine. Active-operation bookkeeping is tracked separately as CF-010. Fast and full gates pass. |
 | GP-008 | P2 | VERIFIED | `tests/test_live.py::LiveDataServiceTests::test_record_ceiling_fails_closed_and_is_visible`; `test_bbox_is_sent_to_arcgis_and_retained_as_local_backstop`; `test_layer_definition_can_be_injected_without_code_path_duplication`; `test_repeated_full_page_fails_closed_instead_of_looping` | `2577462`, `9dc82d6` | Typed injectable layer definitions own URL/identity/schema. Pagination has page/record/dedup/repeat/progress bounds; ArcGIS receives bbox envelopes, bbox-keyed caches stay isolated, and local valid-geometry filtering remains a backstop without hiding malformed records. Fast and full gates pass. |
-| GP-009 | P2 | OPEN | pending | pending | Question-support floor exists, but there is no constrained aspect/source-diverse selection before the top-five evidence cut. |
+| GP-009 | P2 | VERIFIED | `tests/test_v1_5_rag.py::V15RoutingTests::test_evidence_cut_preserves_required_aspect_and_source_diversity` | `deb490b` | Before the bounded evidence cut, deterministic selection reserves directly matched aspect slots, then relevant unseen-source slots, then fills in reranker order. Both reservations require at least 40% normalized overlap, preventing one-token promotion. Focused, broader RAG, fast, and full gates pass. |
 | GP-010 | P2 | OPEN | `tests/test_reliability.py::ContractPropertyTests::test_valid_long_answer_can_round_trip_as_assistant_history` | `1a47099` | One grounded-length regression exists. Prove round-trip bounds for every response mode or add a server-issued bounded history representation. |
 | CF-004 | P2 | VERIFIED | `tests/test_security_operations.py::SecurityOperationTests::test_production_never_registers_debug_routes` | `b3e202a` | Production environment prevents debug-route registration even when the debug flag is true. |
 | CF-008 | P2 | OPEN | pending | pending | Audit enumerated claim salvage; any dropped supported member must be disclosed explicitly in partial limitations. |
@@ -88,6 +88,11 @@ by GP-008. They are not duplicated as independent rows.
   records as unknown, retaining CF-001's safety behavior.
 - 2026-07-30: GP-008 global verification passed at `9dc82d6` after resolving import-format and
   offline-qualification compatibility findings; status advanced to VERIFIED.
+- 2026-07-30: GP-009 fail-first regression demonstrates that a fixed top-five rank cut can remove
+  a required aspect and distinct supporting source before sufficiency checks run.
+- 2026-07-30: The corrected GP-009 regression (synchronous and actually executed) now passes;
+  the first async-on-`TestCase` version was rejected as a false-pass harness defect.
+- 2026-07-30: GP-009 global verification passed at `deb490b`; status advanced to VERIFIED.
 
 ## Final report
 
