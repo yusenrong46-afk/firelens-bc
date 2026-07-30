@@ -121,6 +121,27 @@ def _claim_has_direct_lexical_support(claim: str, quotes: list[str]) -> bool:
     return len(overlap) >= 2 and len(overlap) / max(1, len(claim_tokens)) >= 0.25
 
 
+def _enumerated_evidence_sections(packet: EvidencePacket) -> dict[str, str]:
+    """Identify a retrieved multi-section set that an enumerative answer must cover."""
+
+    question = packet.question.casefold()
+    if not re.search(r"\b(?:stages|types|categories|levels|zones|steps)\b", question):
+        return {}
+    if not re.search(r"\b(?:what|which|mean|explain|describe|list|summari[sz]e)\b", question):
+        return {}
+    by_source: dict[str, dict[str, str]] = {}
+    for item in packet.items:
+        first_line = item.primary_text.splitlines()[0].strip()
+        words = first_line.split()
+        if not 1 <= len(words) <= 6 or len(first_line) > 60:
+            continue
+        if first_line.endswith((".", "?", "!", ":", ";")):
+            continue
+        by_source.setdefault(item.source_id, {})[item.evidence_id] = first_line
+    eligible = [sections for sections in by_source.values() if len(sections) >= 3]
+    return max(eligible, key=len) if eligible else {}
+
+
 def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationReport:
     errors: list[str] = []
     evidence = {item.evidence_id: item for item in packet.items}
@@ -129,6 +150,7 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
     quotes_exact = True
     claim_support_valid = True
     policy_valid = True
+    cited_evidence_ids: set[str] = set()
 
     is_guidance = draft.answer_type == "grounded"
     if is_guidance and not draft.claims:
@@ -156,6 +178,7 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
                 errors.append(f"claim {claim_number} quote {quote_id} is not exact")
                 continue
             selected_candidates.append(candidate)
+            cited_evidence_ids.add(candidate.evidence_id)
         if not selected_candidates:
             citation_ids_valid = False
             errors.append(f"claim {claim_number} has no valid evidence quote ID")
@@ -166,6 +189,19 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
             errors.append(
                 f"claim {claim_number} lacks direct lexical support in its selected quotes"
             )
+
+    enumerated_sections = _enumerated_evidence_sections(packet)
+    missing_sections = [
+        heading
+        for evidence_id, heading in enumerated_sections.items()
+        if evidence_id not in cited_evidence_ids
+    ]
+    if missing_sections:
+        claim_support_valid = False
+        errors.append(
+            "enumerated answer omits retrieved evidence sections: "
+            + "; ".join(missing_sections)
+        )
 
     combined = "\n".join(claim.text for claim in draft.claims)
     lowered = combined.lower()

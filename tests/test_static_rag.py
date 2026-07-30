@@ -219,6 +219,58 @@ class ContractTests(unittest.TestCase):
         self.assertTrue(report.accepted)
         self.assertTrue(report.policy_valid)
 
+    def test_validator_requires_every_retrieved_section_in_an_enumerated_answer(self) -> None:
+        chunks = [
+            make_chunk(
+                "a",
+                "Alpha Stage\nAlpha stage means the first response condition.",
+                parent="alpha",
+            ),
+            make_chunk(
+                "b",
+                "Beta Stage\nBeta stage means the second response condition.",
+                parent="beta",
+            ),
+            make_chunk(
+                "c",
+                "Gamma Stage\nGamma stage means the third response condition.",
+                parent="gamma",
+            ),
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), chunks)
+            packet = build_evidence_packet(
+                "What do the response stages mean?",
+                [
+                    retrieval_hit_from_chunk(chunk, rerank_rank=index)
+                    for index, chunk in enumerate(chunks, start=1)
+                ],
+                chunks,
+                corpus_version="test-corpus.v1",
+                config=config,
+            )
+        quote_ids = {
+            candidate.evidence_id: candidate.quote_id for candidate in packet.quote_candidates
+        }
+        draft = GroundedDraft(
+            answer_type="grounded",
+            claims=[
+                DraftProposalClaim(
+                    text="Alpha stage means the first response condition.",
+                    evidence_quote_ids=[quote_ids["E1"]],
+                ),
+                DraftProposalClaim(
+                    text="Beta stage means the second response condition.",
+                    evidence_quote_ids=[quote_ids["E2"]],
+                ),
+            ],
+            limitations=packet.limitations,
+        )
+        report = validate_draft(draft, packet)
+        self.assertFalse(report.accepted)
+        self.assertFalse(report.claim_support_valid)
+        self.assertTrue(any("Gamma Stage" in error for error in report.errors))
+
 
 class IndexTests(unittest.IsolatedAsyncioTestCase):
     async def test_embedding_cache_reuse_and_manifest_validation(self) -> None:
