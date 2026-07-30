@@ -1028,7 +1028,11 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(response.validation and response.validation.accepted)
         self.assertNotIn("Saturn", response.answer)
         self.assertEqual(provider.generate_calls, 2)
-        self.assertIn("omitted after validation", response.limitations[-1])
+        self.assertEqual(
+            response.limitations[-1],
+            "This answer is incomplete: 1 generated item was omitted after validation. "
+            "Do not treat the remaining items as a complete list.",
+        )
 
     async def test_wrong_generation_draft_type_is_replaced_by_safe_abstention(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
