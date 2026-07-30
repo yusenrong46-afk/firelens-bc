@@ -31,7 +31,11 @@ from firelens.ingestion.pdf import (
 from firelens.ingestion.pdf import (
     write_jsonl as write_page_jsonl,
 )
-from firelens.ingestion.repairs import apply_text_repairs, load_text_repairs
+from firelens.ingestion.repairs import (
+    apply_text_repairs,
+    load_text_repairs,
+    validate_chunk_repair_provenance,
+)
 from firelens.storage import atomic_text_writer
 
 CORPUS_VERSION = "firelens_static_corpus.v1"
@@ -95,7 +99,10 @@ def build_corpus(
         if source["source_type"] == "pdf":
             page_records = ingest_pdf(raw_path, source, retrieved_at=timestamp)
             relevant_repairs = [
-                repair for repair in repairs if repair["source_id"] == source_id
+                repair
+                for repair in repairs
+                if repair["source_id"] == source_id
+                and repair["review_status"] == "human_verified"
             ]
             if relevant_repairs:
                 page_records = apply_text_repairs(page_records, relevant_repairs)
@@ -145,6 +152,7 @@ def build_corpus(
             "Corpus admission rejected "
             f"{first.source_id}/{first.chunk_id or 'source'}: {first.code}."
         )
+    validate_chunk_repair_provenance(chunks, repairs)
 
     corpus_path = output_dir / "firelens_static_corpus.chunks.jsonl"
     write_chunk_jsonl(chunks, corpus_path)
@@ -158,6 +166,7 @@ def build_corpus(
         ),
         "combined_chunk_count": len(chunks),
         "admission_policy_version": ADMISSION_POLICY_VERSION,
+        "repair_provenance_policy": "human_verified_only.v1",
         "admission_warnings": [
             finding.as_dict() for finding in admission_findings if not finding.blocking
         ],

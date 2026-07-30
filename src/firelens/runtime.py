@@ -11,6 +11,8 @@ from firelens.contracts import HealthResponse
 from firelens.corpus_admission import audit_corpus_admission, blocking_findings
 from firelens.errors import CorpusValidationError, IndexValidationError
 from firelens.ingestion.chunking import ChunkRecord
+from firelens.ingestion.pdf import IngestionError
+from firelens.ingestion.repairs import load_text_repairs, validate_chunk_repair_provenance
 from firelens.providers.base import AIProvider
 from firelens.providers.openrouter import OpenRouterProvider
 from firelens.retrieval.bm25 import load_chunk_records
@@ -88,6 +90,13 @@ def load_corpus_resources(
     approved_source_ids = {source.get("source_id") for source in included}
     if any(chunk.source_id not in approved_source_ids for chunk in chunks):
         raise CorpusValidationError("Static corpus contains an unapproved source.")
+    if manifest.get("repair_provenance_policy") != "human_verified_only.v1":
+        raise CorpusValidationError("Static corpus repair provenance policy is missing.")
+    try:
+        repairs = load_text_repairs(config.project_root / "data/repairs/text_overrides.yaml")
+        validate_chunk_repair_provenance(chunks, repairs)
+    except (IngestionError, OSError, ValueError) as exc:
+        raise CorpusValidationError(str(exc)) from exc
     admission_findings = blocking_findings(audit_corpus_admission(chunks))
     if admission_findings:
         first = admission_findings[0]

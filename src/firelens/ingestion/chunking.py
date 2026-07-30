@@ -8,6 +8,7 @@ import re
 from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Literal
 
 from firelens.ingestion.html import SectionRecord
 from firelens.ingestion.pdf import IngestionError, PageRecord
@@ -43,6 +44,7 @@ class ChunkRecord:
     source_type: str = "pdf"
     section_id: str | None = None
     locator: str | None = None
+    review_provenance: Literal["native_text", "human_verified_repair"] = "native_text"
 
 
 def load_page_records(path: Path) -> list[PageRecord]:
@@ -226,6 +228,13 @@ def chunk_page_record(
         packed.append((active_section, active_text))
     packed = _merge_short_chunks(packed)
 
+    if "automated_visual_reviewed_text_repair" in record.quality_flags:
+        raise IngestionError("An unapproved automated repair cannot be chunked.")
+    review_provenance = (
+        "human_verified_repair"
+        if "human_reviewed_text_repair" in record.quality_flags
+        else "native_text"
+    )
     chunks: list[ChunkRecord] = []
     for chunk_index, (section_title, text) in enumerate(packed, start=1):
         chunks.append(
@@ -249,6 +258,7 @@ def chunk_page_record(
                 source_type="pdf",
                 section_id=None,
                 locator=f"page:{record.page_number}",
+                review_provenance=review_provenance,
             )
         )
     return chunks
@@ -351,6 +361,7 @@ def chunk_section_record(
                 source_type="html",
                 section_id=record.section_id,
                 locator=f"section:{record.section_id}",
+                review_provenance="native_text",
             )
         )
     return chunks

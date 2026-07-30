@@ -917,7 +917,7 @@ questions:
 
 
 class RealCorpusRAGIntegrationTests(unittest.IsolatedAsyncioTestCase):
-    async def test_all_180_real_chunks_complete_the_offline_pipeline(self) -> None:
+    async def test_all_reviewed_real_chunks_complete_the_offline_pipeline(self) -> None:
         project_root = Path(__file__).resolve().parents[1]
         base = FireLensConfig.from_env(project_root)
         with tempfile.TemporaryDirectory() as directory:
@@ -932,7 +932,16 @@ class RealCorpusRAGIntegrationTests(unittest.IsolatedAsyncioTestCase):
                 }
             )
             chunks, corpus_version = load_corpus_resources(config)
-            self.assertEqual(len(chunks), 180)
+            self.assertEqual(len(chunks), 170)
+            self.assertFalse(
+                any(
+                    chunk.source_id == "firesmart_begins_at_home" and chunk.page_number == 10
+                    for chunk in chunks
+                )
+            )
+            self.assertTrue(
+                any(chunk.review_provenance == "human_verified_repair" for chunk in chunks)
+            )
             provider = FakeProvider()
             await build_vector_index(
                 chunks,

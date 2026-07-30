@@ -249,6 +249,7 @@ class RetrievalHit(FrozenStrictModel):
     document_sha256: str
     chunk_index: int
     text: str
+    review_provenance: Literal["native_text", "human_verified_repair"] = "native_text"
     matched_queries: tuple[str, ...] = ()
     bm25_positions: tuple[int, ...] = ()
     vector_positions: tuple[int, ...] = ()
@@ -292,6 +293,7 @@ class EvidenceSpan(FrozenStrictModel):
     temporal_class: TemporalClass
     authority_class: AuthorityClass
     document_sha256: str
+    review_provenance: Literal["native_text", "human_verified_repair"] = "native_text"
 
 
 class EvidenceQuoteCandidate(FrozenStrictModel):

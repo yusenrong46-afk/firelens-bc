@@ -320,6 +320,7 @@ def build_evidence_packet(
                 temporal_class=hit.temporal_class,
                 authority_class=hit.authority_class,
                 document_sha256=hit.document_sha256,
+                review_provenance=hit.review_provenance,
             )
         )
         used_chars += len(context_text)

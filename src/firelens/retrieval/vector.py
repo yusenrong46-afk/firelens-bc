@@ -31,6 +31,7 @@ def retrieval_hit_from_chunk(chunk: ChunkRecord, **updates: object) -> Retrieval
         "document_sha256": chunk.document_sha256,
         "chunk_index": chunk.chunk_index,
         "text": chunk.text,
+        "review_provenance": chunk.review_provenance,
     }
     payload.update(updates)
     return RetrievalHit.model_validate(payload)
