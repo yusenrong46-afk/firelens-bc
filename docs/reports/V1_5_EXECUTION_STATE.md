@@ -1,24 +1,26 @@
 # FireLens BC V1.5 execution state
 
-Updated: 2026-07-29 (America/Vancouver)
+Updated: 2026-07-30 (America/Vancouver)
 
 ## Repository truth
 
-- Hardening worktree: `/Users/thomas/Downloads/firelens-bc-v1-5-lab`
-- Hardening branch: `codex/v1-5-hardening`
+- Review worktree: `/Users/thomas/Downloads/firelens-bc-v1-5-lab`
+- Current maintenance branch: `maintenance/v1-5-repository-polish`
+- V1.5 hardening baseline on `main`: `fc1c7d0bb55aa18c94b2e6540cd6590c5385ad7c`
 - Qualified code candidate: `91fc37e8bfd866b710e0b614d95ecbbfc1e5139e`
 - Candidate baseline: `ba42b74`
 - V1.1 baseline: `209b4e5f8f16f13d7ac9af56a89e135f697ce052`
-- `codex/v1-5-release`: still exactly `209b4e5`; no release worktree exists
-- Main, production, and the original checkout: unchanged
+- A dedicated release-reconstruction worktree has not been created.
+- `main` contains the review candidate. Production identity must be verified separately.
 
 ## Current decision
 
-The codebase-hardening implementation is complete, but V1.5 is **not release-qualified**.
+The codebase-hardening implementation is complete and the candidate is available on `main` for
+independent review, but V1.5 is **not release-qualified**.
 The latest complete paid hard probe is `104/105`; its only failed corpus-gap case was fixed and
 then passed a commit-bound focused run, but that does not substitute for a new complete `105/105`
 run. The owner-reviewed retrieval and semantic gates are also incomplete. Do not reconstruct the
-release branch, create a preview, merge, or deploy.
+claim completion of the deferred qualification gates or deploy on their basis.
 
 ## Current evidence
 
@@ -46,16 +48,20 @@ release branch, create a preview, merge, or deploy.
 - Semantic review: `38/50` approved and 12 rejected. Reviewer name and review timestamp are
   absent, so the validator returns unqualified even though it records zero unclear claims and zero
   unsupported verified claims among accepted entries.
+- The neutral automated-review label migration changed dataset hashes without changing questions,
+  evidence expectations, or decisions. Regenerate the ignored pending review sidecars before
+  resuming owner review; validators intentionally reject sidecars bound to the prior hashes.
 - The one-time, three-repetition sealed retrieval run has not been authorized or executed.
 - Anonymous preview, distributed rate-limit verification, rollback rehearsal, owner comparison
-  approval, main merge, and production deployment have not occurred.
+  approval, and verified production deployment have not occurred. Moving the source candidate to
+  `main` for external review did not complete those gates.
 
 ## Next authorized action
 
-Resolve the two retrieval-review discussions and the twelve rejected semantic cases, add the
-actual reviewer identity and timestamp, and revalidate both sidecars. Only then run the sealed
-retrieval gate exactly once. Separately, run one complete hard probe at the unchanged candidate;
-it must report `105/105`. Release reconstruction remains blocked until both conditions pass.
+Use independent engineering feedback to prepare a final bounded improvement pass. Later, resolve
+the two retrieval-review discussions and twelve rejected semantic cases, add the actual reviewer
+identity and timestamp, and revalidate both sidecars. Then run the sealed retrieval gate exactly
+once and one complete hard probe at the unchanged candidate; the hard probe must report `105/105`.
 
 See `docs/reports/V1_5_HARDENING_QUALIFICATION.md` for artifact hashes, commands, commit
 dispositions, and the complete gate ledger.

@@ -52,16 +52,16 @@ class TextRepairTests(unittest.TestCase):
         with self.assertRaisesRegex(IngestionError, "did not match"):
             apply_text_repairs([make_page()], [repair])
 
-    def test_codex_visual_review_is_labeled_separately(self) -> None:
+    def test_automated_visual_review_is_labeled_separately(self) -> None:
         repair = {
             "source_id": "source",
             "page_number": 5,
             "document_sha256": "correct-hash",
             "replacement_text": "Visually checked source text " * 5,
-            "review_status": "codex_visual_reviewed",
+            "review_status": "automated_visual_reviewed",
         }
         repaired = apply_text_repairs([make_page()], [repair])[0]
-        self.assertIn("codex_visual_reviewed_text_repair", repaired.quality_flags)
+        self.assertIn("automated_visual_reviewed_text_repair", repaired.quality_flags)
         self.assertNotIn("human_reviewed_text_repair", repaired.quality_flags)
 
 

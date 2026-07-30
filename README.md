@@ -6,9 +6,11 @@ incident, perimeter, and evacuation records plus a restrained map. Stable RAG
 claims still require exact local evidence; current records remain visibly
 separate and never authorize a personal safety decision.
 
-**Release status:** `lab candidate; qualification in progress`. Production
-remains on V1.1 until the V1.5 release branch passes every gate and receives
-owner approval.
+**Release status:** `main review candidate; owner qualification deferred`.
+The source candidate is available on `main` for independent engineering review.
+The complete paid probe rerun and owner retrieval and semantic reviews remain
+deferred; this README does not claim that the current production deployment has
+been qualified as V1.5.
 
 ```mermaid
 flowchart LR

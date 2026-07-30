@@ -99,7 +99,7 @@
       "extraction_status": "text_extracted",
       "page_number": 10,
       "quality_flags": [
-        "codex_visual_reviewed_text_repair"
+        "automated_visual_reviewed_text_repair"
       ],
       "source_id": "firesmart_begins_at_home"
     },
@@ -192,7 +192,7 @@
       "note": "Conservative layout candidate; detector may include design boxes and does not prove that a semantic table exists.",
       "page_number": 10,
       "quality_flags": [
-        "codex_visual_reviewed_text_repair"
+        "automated_visual_reviewed_text_repair"
       ],
       "review_priority": "high",
       "source_id": "firesmart_begins_at_home"

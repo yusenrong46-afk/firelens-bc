@@ -2,9 +2,9 @@
 
 ## Comparison target
 
-- Source visual truth: `/Users/thomas/.codex/generated_images/019f9c35-9f47-7e01-996e-cf99476084a4/exec-1729e51f-70b8-467f-9521-91a68f140f37.png`
-- Implementation screenshot: `/Users/thomas/Downloads/firelens-bc 2/prototype/firelens-rag-ui/implementation-approved.png`
-- Combined comparison: `/Users/thomas/Downloads/firelens-bc 2/prototype/firelens-rag-ui/comparison-approved.png`
+- Reference design: `comparison-approved.png` (left panel)
+- Implementation screenshot: `implementation-approved.png`
+- Combined comparison: `comparison-approved.png`
 - Viewport: 1488 × 1058 CSS px
 - Source pixels: 1487 × 1058
 - Implementation pixels: 1488 × 1058
@@ -16,10 +16,10 @@
 
 No actionable P0, P1, or P2 differences remain.
 
-- Fonts and typography: Newsreader and Inter reproduce the reference's editorial serif/display and compact sans-serif UI hierarchy. Headline wrapping, source titles, labels, body copy, metadata, and timestamps retain the source hierarchy. The implementation's densest small copy is marginally lighter than the generated reference; this is acceptable P3 refinement.
+- Fonts and typography: Newsreader and Inter reproduce the reference's editorial serif/display and compact sans-serif UI hierarchy. Headline wrapping, source titles, labels, body copy, metadata, and timestamps retain the source hierarchy. The implementation's densest small copy is marginally lighter than the reference design; this is acceptable P3 refinement.
 - Spacing and layout rhythm: the 32/68 split, header and boundary rows, fixed conversation composer, evidence insets, claim-card cadence, expanded-source anatomy, and secondary-source position match the reference. No clipping or horizontal overflow occurs at the comparison viewport.
 - Colors and visual tokens: ivory/white surfaces, navy type, forest-green evidence states, copper claim selection, pale blue question bubble, and pale moss highlights map closely to the reference. No gradients were introduced.
-- Image quality and asset fidelity: the FireLens tree/mountain mark is a dedicated generated raster asset, rendered sharply at header and message sizes. Standard interface symbols come from one consistent icon library. No placeholder, CSS-drawn, inline-SVG, or emoji assets remain.
+- Image quality and asset fidelity: the FireLens tree/mountain mark is a dedicated project raster asset, rendered sharply at header and message sizes. Standard interface symbols come from one consistent icon library. No placeholder, CSS-drawn, inline-SVG, or emoji assets remain.
 - Copy and content: the question, answer, three cited claims, selected claim, evidence passage, metadata, access date, and preparedness boundary reproduce the selected design's visible content and safety intent.
 - Interaction and accessibility: claim selection, primary and secondary source disclosure, official/source links, composer submit, disabled submit, keyboard focus, and reduced-motion handling are implemented. Semantic regions and accessible control names are present.
 - Responsive behavior: at 768 × 900 the two panes stack without horizontal overflow; claim cards and composer remain usable, and the evidence workspace follows below the conversation.
@@ -57,7 +57,7 @@ A separate crop was not needed: the native-height combined comparison keeps the 
 ## Follow-up polish
 
 - P3: tune small metadata optical weight if a later brand typography spec becomes available.
-- P3: replace the generated brand mark with an official FireLens vector/raster export if one is created.
+- P3: replace the current brand mark with a production FireLens vector or raster export if one is created.
 
 ## Implementation checklist
 

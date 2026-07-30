@@ -1,7 +1,7 @@
 {
   "manifest_version": "firelens_conversation_benchmark_manifest.v1",
   "dataset_version": "firelens_benchmark.v1_1_conversation",
-  "dataset_sha256": "922ab1a5e61866bff7f113b59f82d10c0b7a165f83584979d3cce83763ad70d9",
+  "dataset_sha256": "cec624121e9c22e7fd92e209a47ba4d93a3dcb3a4de19190c4125d4cb3d95e5f",
   "case_count": 50,
   "split_counts": {
     "development": 30,
@@ -16,10 +16,12 @@
     "mixed_adversarial": 10
   },
   "holdout_case_count": 10,
-  "holdout_sha256": "a76deab5553a9549ce81a888d3ad7d722cf2625e21e938d7d13cbbdcbf98e53e",
+  "holdout_sha256": "0bbb116138569a47ad9ec9a46256f9cbae6b79be3d0cfb0a721f3a70a89f14af",
   "holdout_hash_method": "SHA-256 of compact, key-sorted JSON containing dataset_version and holdout cases in dataset order",
-  "parent_v1_dataset_sha256": "75414daede41d029ecb233b380053546c279eb4ed33a201c19a5ceb5d2e6afef",
+  "parent_v1_dataset_sha256": "c0e8499ff0ce74b1706e5c4b54b8382dae271479329e7f743a802882503e932c",
   "frozen_at": "2026-07-26T00:00:00Z",
   "tuning_policy": "Development cases only; sealed holdout case-level results must not be used for tuning.",
-  "owner_review_status": "pending"
+  "owner_review_status": "pending",
+  "metadata_migration": "Tool-specific automated-review labels were renamed; case questions and expectations are unchanged.",
+  "metadata_migrated_at": "2026-07-30T00:00:00Z"
 }

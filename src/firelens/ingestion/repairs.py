@@ -29,7 +29,7 @@ def load_text_repairs(path: Path) -> list[dict[str, Any]]:
         missing = sorted(field for field in required if not repair.get(field))
         if missing:
             raise IngestionError(f"Text repair {index} is missing required fields: {missing}.")
-        if repair["review_status"] not in {"human_verified", "codex_visual_reviewed"}:
+        if repair["review_status"] not in {"human_verified", "automated_visual_reviewed"}:
             raise IngestionError(f"Text repair {index} is not approved for corpus use.")
     return repairs
 
@@ -66,7 +66,7 @@ def apply_text_repairs(
         repair_flag = (
             "human_reviewed_text_repair"
             if repair["review_status"] == "human_verified"
-            else "codex_visual_reviewed_text_repair"
+            else "automated_visual_reviewed_text_repair"
         )
         repaired.append(
             replace(

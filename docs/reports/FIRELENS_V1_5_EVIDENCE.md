@@ -9,11 +9,11 @@ Date: 2026-07-29 (America/Vancouver)
 
 Baseline: `209b4e5f8f16f13d7ac9af56a89e135f697ce052`
 
-Lab branch: `codex/v1-5-lab`
+Historical experimental phase: V1.5 lab
 
-Hardening branch: `codex/v1-5-hardening`, based on `ba42b74`
+Historical hardening phase: based on `ba42b74`
 
-Release branch: `codex/v1-5-release` remains at the baseline
+Dedicated release reconstruction: not completed
 
 ## Release decision
 
@@ -164,12 +164,16 @@ Generated evaluation outputs remain ignored rather than committed:
 | `v1_5_retrieval_comparison.json` | `342b7f4a07103f79e9d6274579476ede1b0c5ebc065dd73d4a8520e9c2133c0e` |
 
 The preserved failed retrieval report uses dataset SHA-256
-`75414daede41d029ecb233b380053546c279eb4ed33a201c19a5ceb5d2e6afef` and holdout SHA-256
-`d16eb54a8a9d88d27db776db83171d555a90cd8bdc971ce436349cbc238420fe`.
+`c0e8499ff0ce74b1706e5c4b54b8382dae271479329e7f743a802882503e932c` and holdout SHA-256
+`ab1a5105c80b907aa0765496105f3178f50d0fb8dbaecf1d9932e790a43834ae`.
 
 The new unscored sealed candidate uses dataset SHA-256
-`178f7b2cbedb4b308c2e1e2eaf1a6e79855e854d2d0a277147bbd90081211564` and holdout SHA-256
-`77dcd08b5994e3f480697b4b69088629085dd65e39d9916f61b43cecfcc9ba58`.
+`33b8811f8a984e53be3d19c1874cd89df317943df9309dc048539d5f2876b6e4` and holdout SHA-256
+`9dbdf45ce6f94e1c6d46893b6d50fe642f75a245e0a6309892eee03e6337443a`.
+
+These current hashes include the 2026-07-30 metadata-only migration from tool-specific automated
+review labels to neutral provenance labels. Questions, evidence expectations, and owner decisions
+were not changed. Pending ignored review sidecars must be regenerated against the new hashes.
 
 ## Cost ledger
 
@@ -234,7 +238,7 @@ Ruff, formatting, mypy, secret scanning, generated OpenAPI/TypeScript contracts,
 tests, the production build, 4 Sites tests, and 12 desktop/mobile Playwright flows. Generated-code
 checks left no unintended tracked diff.
 
-These are release blockers, so `codex/v1-5-release` remains untouched.
+These are release blockers, so dedicated release reconstruction remains incomplete.
 
 ## Exact final commands
 

@@ -66,7 +66,7 @@ class BenchmarkSchemaTests(unittest.TestCase):
         )
         self.assertEqual(
             file_sha256(path),
-            "922ab1a5e61866bff7f113b59f82d10c0b7a165f83584979d3cce83763ad70d9",
+            "cec624121e9c22e7fd92e209a47ba4d93a3dcb3a4de19190c4125d4cb3d95e5f",
         )
         manifest = json.loads(
             (root / "data/evaluation/benchmark_v1_1_conversation.manifest.json").read_text(

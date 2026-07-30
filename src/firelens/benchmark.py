@@ -68,7 +68,7 @@ class BenchmarkCase(BenchmarkModel):
     required_concepts: list[str] = Field(default_factory=list)
     forbidden_claims: list[str] = Field(default_factory=list)
     required_limitations: list[str] = Field(default_factory=list)
-    adjudication_status: Literal["codex_draft", "owner_approved"] = "codex_draft"
+    adjudication_status: Literal["automated_draft", "owner_approved"] = "automated_draft"
     reviewer_notes: str = ""
 
     @model_validator(mode="after")
@@ -102,7 +102,7 @@ class RelevanceJudgment(BenchmarkModel):
 class RelevanceAddendum(BenchmarkModel):
     addendum_version: Literal["firelens_relevance_addendum.v1"]
     base_dataset_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
-    review_status: Literal["codex_evidence_audited", "owner_approved"]
+    review_status: Literal["automated_evidence_audited", "owner_approved"]
     judgments: list[RelevanceJudgment] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -148,7 +148,7 @@ class ConversationBenchmarkCase(BenchmarkModel):
     forbidden_claims: list[str] = Field(default_factory=list)
     required_limitations: list[str] = Field(default_factory=list)
     expected_paid_provider_stages: list[PaidProviderStage] = Field(default_factory=list)
-    adjudication_status: Literal["codex_draft", "owner_approved"] = "codex_draft"
+    adjudication_status: Literal["automated_draft", "owner_approved"] = "automated_draft"
     reviewer_notes: str = ""
 
     @model_validator(mode="after")

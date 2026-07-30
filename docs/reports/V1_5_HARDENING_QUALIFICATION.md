@@ -2,6 +2,10 @@
 
 Date: 2026-07-29 (America/Vancouver)
 
+This is the historical hardening qualification snapshot. The candidate was subsequently placed on
+`main` for independent engineering review while the paid rerun and owner reviews were explicitly
+deferred. That decision does not change the gate results recorded below.
+
 ## Decision
 
 **HARDENING COMPLETE; RELEASE BLOCKED.** The internal seams, permanent evaluation runner, CI,
@@ -137,7 +141,7 @@ it does not authorize cherry-picking today.
 2. Resolve and sign the 50-case semantic review.
 3. Run the sealed retrieval gate exactly once and require at least 46/47 Recall@5 in every run.
 4. Run one unchanged-candidate complete hard probe and require 105/105.
-5. Reconstruct `codex/v1-5-release` from `209b4e5` using only approved commits.
+5. Reconstruct `release/v1.5` from `209b4e5` using only approved commits.
 6. Prove release-tree equality and rerun all gates from a clean release worktree.
 7. Create and qualify an anonymous preview, verify distributed limiting, and rehearse rollback.
 8. Obtain owner approval before main merge; production deployment remains a separate action.

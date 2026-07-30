@@ -1,6 +1,6 @@
 addendum_version: firelens_relevance_addendum.v1
-base_dataset_sha256: 75414daede41d029ecb233b380053546c279eb4ed33a201c19a5ceb5d2e6afef
-review_status: codex_evidence_audited
+base_dataset_sha256: c0e8499ff0ce74b1706e5c4b54b8382dae271479329e7f743a802882503e932c
+review_status: automated_evidence_audited
 judgments:
   - case_id: V1-DEV-026
     rationale: >-

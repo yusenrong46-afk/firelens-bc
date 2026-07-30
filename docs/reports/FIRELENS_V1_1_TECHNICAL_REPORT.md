@@ -351,8 +351,8 @@ follow-up, adjacent background, tangent, and mixed adversarial.
 
 Each case records expected route, relation, status, response mode, evidence
 status, provider stages, required concepts, forbidden claims, limitations, and
-owner-review status. Dataset SHA-256 is `922ab1a5...d70d9`; holdout SHA-256 is
-`a76deab5...e53e`.
+owner-review status. Dataset SHA-256 is `cec62412...95e5f`; holdout SHA-256 is
+`0bbb1161...14af`.
 
 The offline run uses deterministic providers to test architecture. The paid run
 uses the configured OpenRouter models. Offline fake retrieval numbers are never

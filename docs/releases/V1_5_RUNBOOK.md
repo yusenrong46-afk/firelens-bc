@@ -1,6 +1,6 @@
 # FireLens BC V1.5 release-candidate runbook
 
-This runbook applies only to a clean `codex/v1-5-release` worktree reconstructed from
+This runbook applies only to a clean `release/v1.5` worktree reconstructed from
 baseline `209b4e5f8f16f13d7ac9af56a89e135f697ce052`. It does not authorize a production
 deployment.
 

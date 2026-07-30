@@ -1,11 +1,13 @@
 {
   "manifest_version": "firelens_benchmark_manifest.v1",
   "dataset_version": "firelens_v1_5_sealed_retrieval.v1",
-  "dataset_sha256": "178f7b2cbedb4b308c2e1e2eaf1a6e79855e854d2d0a277147bbd90081211564",
+  "dataset_sha256": "33b8811f8a984e53be3d19c1874cd89df317943df9309dc048539d5f2876b6e4",
   "holdout_case_count": 47,
   "answerable_holdout_case_count": 47,
-  "holdout_sha256": "77dcd08b5994e3f480697b4b69088629085dd65e39d9916f61b43cecfcc9ba58",
+  "holdout_sha256": "9dbdf45ce6f94e1c6d46893b6d50fe642f75a245e0a6309892eee03e6337443a",
   "frozen_at": "2026-07-29T03:30:00Z",
   "configuration_frozen_before_dataset": true,
-  "tuning_policy": "One qualification run after owner approval; no case-level tuning or relevance addendum."
+  "tuning_policy": "One qualification run after owner approval; no case-level tuning or relevance addendum.",
+  "metadata_migration": "Tool-specific automated-review labels were renamed; case questions and expectations are unchanged.",
+  "metadata_migrated_at": "2026-07-30T00:00:00Z"
 }

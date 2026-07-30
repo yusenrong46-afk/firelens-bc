@@ -36,7 +36,7 @@ the production configuration. Retaining their reproducibility code is not runtim
 Dropping experiment commits from the middle of the sequence was tested and produced a different,
 under-qualified tree because later gate and report commits evolved on top of them.
 
-After both owner reviews qualify, replay the complete lab history into `codex/v1-5-release`, rerun
+After both owner reviews qualify, replay the approved history into `release/v1.5`, rerun
 `make verify` from that clean worktree, and confirm the resulting tree matches the approved lab
 candidate before creating any preview.
 

@@ -361,9 +361,9 @@ variability and is discussed in Sections 11 and 16.
 Each case declares the expected route, planner relation, status, response mode,
 evidence status, provider stages, required concepts, forbidden claims, required
 limitations, and owner-review state. Dataset SHA-256 is
-`922ab1a5e61866bff7f113b59f82d10c0b7a165f83584979d3cce83763ad70d9`;
+`cec624121e9c22e7fd92e209a47ba4d93a3dcb3a4de19190c4125d4cb3d95e5f`;
 sealed-holdout SHA-256 is
-`a76deab5553a9549ce81a888d3ad7d722cf2625e21e938d7d13cbbdcbf98e53e`.
+`0bbb116138569a47ad9ec9a46256f9cbae6b79be3d0cfb0a721f3a70a89f14af`.
 
 The offline fake-provider run tests stage wiring, invariants, paid-call
 boundaries, and deterministic repeatability. Its lexical/dense/rerank scores are

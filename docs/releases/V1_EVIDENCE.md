@@ -126,8 +126,8 @@ Recall was 100% for BM25, fused, and the fake reranker; fake dense Recall was
 
 | Dataset | Cases/splits | Dataset SHA-256 | Sealed-holdout SHA-256 |
 |---|---|---|---|
-| V1.1 conversation | 50: 30 dev, 10 holdout, 10 red-team | `922ab1a5e61866bff7f113b59f82d10c0b7a165f83584979d3cce83763ad70d9` | `a76deab5553a9549ce81a888d3ad7d722cf2625e21e938d7d13cbbdcbf98e53e` |
-| V1 compatibility | 100: 60 dev, 20 holdout, 20 red-team | `75414daede41d029ecb233b380053546c279eb4ed33a201c19a5ceb5d2e6afef` | `d16eb54a8a9d88d27db776db83171d555a90cd8bdc971ce436349cbc238420fe` |
+| V1.1 conversation | 50: 30 dev, 10 holdout, 10 red-team | `cec624121e9c22e7fd92e209a47ba4d93a3dcb3a4de19190c4125d4cb3d95e5f` | `0bbb116138569a47ad9ec9a46256f9cbae6b79be3d0cfb0a721f3a70a89f14af` |
+| V1 compatibility | 100: 60 dev, 20 holdout, 20 red-team | `c0e8499ff0ce74b1706e5c4b54b8382dae271479329e7f743a802882503e932c` | `ab1a5105c80b907aa0765496105f3178f50d0fb8dbaecf1d9932e790a43834ae` |
 
 V1.1 manifest SHA-256:
 `7a2ba273c60f415447eaad83d51778c8b2ce8e46e3ea1efe24f5688d3386319f`.

@@ -12,7 +12,7 @@ cases:
       - source_id: bcws_stages_of_control
         chunk_ids: [bcws_stages_of_control:section:stages-of-control:chunk:1]
     required_concepts: [broad overview, current objectives and tactics]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
     reviewer_notes: New post-configuration-freeze candidate; owner evidence review required.
   - id: V1-HOLD-102
     split: holdout
@@ -25,7 +25,7 @@ cases:
       - source_id: bcws_stages_of_control
         chunk_ids: [bcws_stages_of_control:section:out-of-control:chunk:1]
     required_concepts: [spreading beyond perimeter or control line]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-103
     split: holdout
     category: false_premise
@@ -39,7 +39,7 @@ cases:
           - bcws_stages_of_control:section:being-held:chunk:1
           - bcws_stages_of_control:section:out:chunk:1
     required_concepts: [projected to remain within boundary, not the same as out]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-104
     split: holdout
     category: single_source
@@ -51,7 +51,7 @@ cases:
       - source_id: bcws_stages_of_control
         chunk_ids: [bcws_stages_of_control:section:under-control:chunk:1]
     required_concepts: [not projected to spread, patrol and hot spots]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-105
     split: holdout
     category: single_source
@@ -63,7 +63,7 @@ cases:
       - source_id: bcws_stages_of_control
         chunk_ids: [bcws_stages_of_control:section:out:chunk:1]
     required_concepts: [extinguished or winter conditions, will not spread]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-106
     split: holdout
     category: paraphrase_ambiguity
@@ -76,7 +76,7 @@ cases:
         chunk_ids: [bcws_stages_of_control:section:frequently-asked-questions:chunk:1]
     required_concepts: [increased public interest, access to response information]
     forbidden_claims: [separate stage of control]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-107
     split: holdout
     category: single_source
@@ -88,7 +88,7 @@ cases:
       - source_id: bcws_wildfire_rank
         chunk_ids: [bcws_wildfire_rank:section:wildfire-rank:chunk:1]
     required_concepts: [rank 1 to 6, visual indicators, fire behaviour]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-108
     split: holdout
     category: single_source
@@ -100,7 +100,7 @@ cases:
       - source_id: bcws_wildfire_rank
         chunk_ids: [bcws_wildfire_rank:section:characteristics:chunk:1]
     required_concepts: [smouldering ground fire, white smoke, creeping spread]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-109
     split: holdout
     category: single_source
@@ -112,7 +112,7 @@ cases:
       - source_id: bcws_wildfire_rank
         chunk_ids: [bcws_wildfire_rank:section:examples-of-firefighting-tactics:chunk:1]
     required_concepts: [ground crews, hand tools, water delivery]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-110
     split: holdout
     category: single_source
@@ -124,7 +124,7 @@ cases:
       - source_id: bcws_wildfire_rank
         chunk_ids: [bcws_wildfire_rank:section:characteristics-2:chunk:1]
     required_concepts: [surface fire, open flame, inconsistent flame front]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-111
     split: holdout
     category: single_source
@@ -136,7 +136,7 @@ cases:
       - source_id: bcws_wildfire_rank
         chunk_ids: [bcws_wildfire_rank:section:examples-of-firefighting-tactics-2:chunk:1]
     required_concepts: [direct attack, ground crews, control lines]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-112
     split: holdout
     category: single_source
@@ -148,7 +148,7 @@ cases:
       - source_id: bcws_wildfire_rank
         chunk_ids: [bcws_wildfire_rank:section:characteristics-3:chunk:1]
     required_concepts: [organized flame front, occasional candling, moderate spread]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-113
     split: holdout
     category: single_source
@@ -160,7 +160,7 @@ cases:
       - source_id: bcws_wildfire_rank
         chunk_ids: [bcws_wildfire_rank:section:examples-of-firefighting-tactics-3:chunk:1]
     required_concepts: [hand control lines challenged, air support]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-114
     split: holdout
     category: single_source
@@ -172,7 +172,7 @@ cases:
       - source_id: bcws_wildfire_rank
         chunk_ids: [bcws_wildfire_rank:section:characteristics-4:chunk:1]
     required_concepts: [grey to black smoke, organized flame front, short aerial bursts]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-115
     split: holdout
     category: single_source
@@ -184,7 +184,7 @@ cases:
       - source_id: bcws_wildfire_rank
         chunk_ids: [bcws_wildfire_rank:section:examples-of-firefighting-tactics-4:chunk:1]
     required_concepts: [head attack may fail, indirect tactics]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-116
     split: holdout
     category: single_source
@@ -196,7 +196,7 @@ cases:
       - source_id: bcws_wildfire_rank
         chunk_ids: [bcws_wildfire_rank:section:characteristics-5:chunk:1]
     required_concepts: [black to copper smoke, crown fire front, long-range spotting]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-117
     split: holdout
     category: single_source
@@ -208,7 +208,7 @@ cases:
       - source_id: bcws_wildfire_rank
         chunk_ids: [bcws_wildfire_rank:section:examples-of-firefighting-tactics-5:chunk:1]
     required_concepts: [indirect attack, planned ignitions]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-118
     split: holdout
     category: single_source
@@ -220,7 +220,7 @@ cases:
       - source_id: bcws_wildfire_rank
         chunk_ids: [bcws_wildfire_rank:section:characteristics-6:chunk:1]
     required_concepts: [organized crown fire, long-range spotting, fireballs or whirls]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-119
     split: holdout
     category: single_source
@@ -232,7 +232,7 @@ cases:
       - source_id: bcws_wildfire_rank
         chunk_ids: [bcws_wildfire_rank:section:fire-suppression-strategy:chunk:1]
     required_concepts: [extremely dangerous, well away from active fire]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-120
     split: holdout
     category: single_source
@@ -244,7 +244,7 @@ cases:
       - source_id: bccdc_wildfire_smoke
         chunk_ids: [bccdc_wildfire_smoke:section:people-at-higher-risk:chunk:1]
     required_concepts: [chronic conditions, pregnancy, children, older adults]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-121
     split: holdout
     category: single_source
@@ -256,7 +256,7 @@ cases:
       - source_id: bccdc_wildfire_smoke
         chunk_ids: [bccdc_wildfire_smoke:section:health-effects-of-wildfire-smoke:chunk:1]
     required_concepts: [travel deep into lungs, irritation and inflammation]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-122
     split: holdout
     category: single_source
@@ -268,7 +268,7 @@ cases:
       - source_id: bccdc_wildfire_smoke
         chunk_ids: [bccdc_wildfire_smoke:section:protect-yourself-from-wildfire-smoke:chunk:1]
     required_concepts: [portable HEPA or do-it-yourself air cleaner]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-123
     split: holdout
     category: single_source
@@ -281,7 +281,7 @@ cases:
         chunk_ids: [bccdc_wildfire_smoke:section:protect-yourself-from-wildfire-smoke:chunk:2]
     required_concepts: [health-care management plan, rescue medication supply]
     forbidden_claims: [personal medical diagnosis]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-124
     split: holdout
     category: multi_source
@@ -295,7 +295,7 @@ cases:
       - source_id: bcws_stages_of_control
         chunk_ids: [bcws_stages_of_control:section:stages-of-control:chunk:1]
     required_concepts: [visual fire behaviour, response progress and tactics]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-125
     split: holdout
     category: single_source
@@ -307,7 +307,7 @@ cases:
       - source_id: preparedbc_wildfire_guide
         chunk_ids: [preparedbc_wildfire_guide:page:3:chunk:1]
     required_concepts: [household response playbook, reduce anxiety]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-126
     split: holdout
     category: single_source
@@ -319,7 +319,7 @@ cases:
       - source_id: preparedbc_wildfire_guide
         chunk_ids: [preparedbc_wildfire_guide:page:4:chunk:1]
     required_concepts: [at least annually, refresh stale information]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-127
     split: holdout
     category: single_source
@@ -331,7 +331,7 @@ cases:
       - source_id: preparedbc_wildfire_guide
         chunk_ids: [preparedbc_wildfire_guide:page:4:chunk:2]
     required_concepts: [communication stress, ability to respond]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-128
     split: holdout
     category: single_source
@@ -343,7 +343,7 @@ cases:
       - source_id: preparedbc_wildfire_guide
         chunk_ids: [preparedbc_wildfire_guide:page:4:chunk:3]
     required_concepts: [may need to leave quickly, prepare in advance]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-129
     split: holdout
     category: single_source
@@ -355,7 +355,7 @@ cases:
       - source_id: preparedbc_wildfire_guide
         chunk_ids: [preparedbc_wildfire_guide:page:6:chunk:2]
     required_concepts: [home, work, vehicle]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-130
     split: holdout
     category: single_source
@@ -367,7 +367,7 @@ cases:
       - source_id: preparedbc_wildfire_guide
         chunk_ids: [preparedbc_wildfire_guide:page:6:chunk:3]
     required_concepts: [food and water, leash or carrier, records]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-131
     split: holdout
     category: single_source
@@ -379,7 +379,7 @@ cases:
       - source_id: preparedbc_wildfire_guide
         chunk_ids: [preparedbc_wildfire_guide:page:7:chunk:1]
     required_concepts: [fire damage and loss coverage]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-132
     split: holdout
     category: multi_source
@@ -393,7 +393,7 @@ cases:
       - source_id: firesmart_begins_at_home
         chunk_ids: [firesmart_begins_at_home:page:8:chunk:1]
     required_concepts: [0 to 1.5 metres, 1.5 to 10 metres, 10 to 30 metres]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-133
     split: holdout
     category: single_source
@@ -405,7 +405,7 @@ cases:
       - source_id: preparedbc_wildfire_guide
         chunk_ids: [preparedbc_wildfire_guide:page:9:chunk:1]
     required_concepts: [avoid flammable plants, mow lawns, move firewood]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-134
     split: holdout
     category: single_source
@@ -418,7 +418,7 @@ cases:
         chunk_ids: [preparedbc_wildfire_guide:page:10:chunk:4]
     required_concepts: [ready to leave on short notice]
     forbidden_claims: [current local evacuation status]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-135
     split: holdout
     category: single_source
@@ -430,7 +430,7 @@ cases:
       - source_id: preparedbc_wildfire_guide
         chunk_ids: [preparedbc_wildfire_guide:page:11:chunk:2]
     required_concepts: [leave immediately, follow official routes and directions]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-136
     split: holdout
     category: single_source
@@ -442,7 +442,7 @@ cases:
       - source_id: preparedbc_wildfire_guide
         chunk_ids: [preparedbc_wildfire_guide:page:11:chunk:3]
     required_concepts: [official return, continue monitoring]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-137
     split: holdout
     category: single_source
@@ -454,7 +454,7 @@ cases:
       - source_id: preparedbc_wildfire_guide
         chunk_ids: [preparedbc_wildfire_guide:page:12:chunk:1]
     required_concepts: [band office, municipality, regional district, local authority]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-138
     split: holdout
     category: multi_source
@@ -468,7 +468,7 @@ cases:
       - source_id: bccdc_wildfire_smoke
         chunk_ids: [bccdc_wildfire_smoke:section:protect-yourself-from-wildfire-smoke:chunk:1]
     required_concepts: [cleaner filtered indoor air, reduce outdoor smoke entry]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-139
     split: holdout
     category: single_source
@@ -480,7 +480,7 @@ cases:
       - source_id: preparedbc_wildfire_guide
         chunk_ids: [preparedbc_wildfire_guide:page:15:chunk:1]
     required_concepts: [only when officials say, follow designated routes]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-140
     split: holdout
     category: single_source
@@ -492,7 +492,7 @@ cases:
       - source_id: preparedbc_wildfire_guide
         chunk_ids: [preparedbc_wildfire_guide:page:15:chunk:4]
     required_concepts: [wait for water clearance, discard unsafe refrigerated food]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-141
     split: holdout
     category: single_source
@@ -504,7 +504,7 @@ cases:
       - source_id: firesmart_begins_at_home
         chunk_ids: [firesmart_begins_at_home:page:5:chunk:2]
     required_concepts: [up to two kilometres, ignite material near homes]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-142
     split: holdout
     category: single_source
@@ -516,7 +516,7 @@ cases:
       - source_id: firesmart_begins_at_home
         chunk_ids: [firesmart_begins_at_home:page:10:chunk:4]
     required_concepts: [Class A, metal asphalt clay or composite]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-143
     split: holdout
     category: single_source
@@ -528,7 +528,7 @@ cases:
       - source_id: firesmart_begins_at_home
         chunk_ids: [firesmart_begins_at_home:page:10:chunk:7]
     required_concepts: [debris ignition, metal mesh]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-144
     split: holdout
     category: single_source
@@ -540,7 +540,7 @@ cases:
       - source_id: firesmart_begins_at_home
         chunk_ids: [firesmart_begins_at_home:page:10:chunk:8]
     required_concepts: [sheathe in base, fire-resistant material]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-145
     split: holdout
     category: single_source
@@ -552,7 +552,7 @@ cases:
       - source_id: firesmart_begins_at_home
         chunk_ids: [firesmart_begins_at_home:page:7:chunk:2]
     required_concepts: [at least three metres apart]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-146
     split: holdout
     category: single_source
@@ -564,7 +564,7 @@ cases:
       - source_id: firesmart_begins_at_home
         chunk_ids: [firesmart_begins_at_home:page:8:chunk:1]
     required_concepts: [within 30 metres, immediate intermediate and extended zones]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
   - id: V1-HOLD-147
     split: holdout
     category: single_source
@@ -577,4 +577,4 @@ cases:
         chunk_ids: [firesmart_sprinkler_water_use:page:2:chunk:3]
     required_concepts: [does not recommend individual installation]
     forbidden_claims: [activate while evacuating]
-    adjudication_status: codex_draft
+    adjudication_status: automated_draft
