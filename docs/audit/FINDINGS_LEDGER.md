@@ -107,6 +107,8 @@ by GP-008. They are not duplicated as independent rows.
 - 2026-07-30: CF-010 fail-first lifecycle matrix covers success, typed provider failure,
   unexpected failure, timeout, and direct caller cancellation.
 - 2026-07-30: CF-010 global verification passed at `026bbaa`; status advanced to VERIFIED.
+- 2026-07-30: Three-finding semantic checkpoint after CF-008 through CF-010 passed:
+  five adversarial/faithful tests, fourteen subtests, zero failures.
 
 ## Final report
 
