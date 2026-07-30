@@ -3,7 +3,7 @@ services:
     name: firelens-bc
     runtime: docker
     plan: free
-    healthCheckPath: /api/v1/health/live
+    healthCheckPath: /api/v1/health/ready
     envVars:
       - key: OPENROUTER_API_KEY
         sync: false

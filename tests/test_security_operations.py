@@ -41,6 +41,26 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(debug_chunk.status_code, 404)
         self.assertEqual(debug_search.status_code, 404)
 
+    async def test_debug_routes_stay_disabled_in_production_when_flag_is_set(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            config = config.model_copy(
+                update={"debug": True, "deployment_environment": "production"}
+            )
+            runtime.config = config
+            app = create_app(config, runtime=runtime)
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                debug_chunk = await client.get("/api/v1/debug/chunks/chunk-a0")
+                debug_search = await client.post(
+                    "/api/v1/search", json={"question": "emergency kit"}
+                )
+            await runtime.aclose()
+
+        self.assertEqual(debug_chunk.status_code, 404)
+        self.assertEqual(debug_search.status_code, 404)
+
     async def test_operational_log_excludes_question_location_and_evidence(self) -> None:
         stream = io.StringIO()
         handler = logging.StreamHandler(stream)

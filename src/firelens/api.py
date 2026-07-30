@@ -8,7 +8,7 @@ from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
-from fastapi import FastAPI, Query, Request
+from fastapi import FastAPI, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -62,6 +62,7 @@ def create_app(
         limit=active_config.anonymous_rate_limit,
         window_seconds=active_config.anonymous_rate_window_seconds,
         max_body_bytes=active_config.max_request_body_bytes,
+        trusted_proxy_platform=active_config.trusted_proxy_platform,
     )
 
     @asynccontextmanager
@@ -116,14 +117,24 @@ def create_app(
         guarded = request.url.path in {"/api/v1/ask", "/api/v1/live/map"}
         if not guarded:
             return await call_next(request)
-        body = await request.body()
-        if len(body) > request_guard.max_body_bytes:
-            return error_response(
-                413,
-                trace_id=uuid4().hex,
-                error_kind="request_too_large",
-                message="The request exceeded the FireLens public API size limit.",
-            )
+        declared_length = request.headers.get("content-length")
+        if declared_length is not None:
+            try:
+                declared_bytes = int(declared_length)
+            except ValueError:
+                return error_response(
+                    400,
+                    trace_id=uuid4().hex,
+                    error_kind="invalid_request",
+                    message="The Content-Length header was invalid.",
+                )
+            if declared_bytes < 0 or declared_bytes > request_guard.max_body_bytes:
+                return error_response(
+                    413,
+                    trace_id=uuid4().hex,
+                    error_kind="request_too_large",
+                    message="The request exceeded the FireLens public API size limit.",
+                )
         decision = await request_guard.check(request_guard.anonymous_key(request))
         if not decision.allowed:
             response = error_response(
@@ -138,6 +149,17 @@ def create_app(
             response.headers["X-RateLimit-Remaining"] = "0"
             response.headers["X-RateLimit-Scope"] = "instance-local"
             return response
+        bounded_body = bytearray()
+        async for chunk in request.stream():
+            if len(bounded_body) + len(chunk) > request_guard.max_body_bytes:
+                return error_response(
+                    413,
+                    trace_id=uuid4().hex,
+                    error_kind="request_too_large",
+                    message="The request exceeded the FireLens public API size limit.",
+                )
+            bounded_body.extend(chunk)
+        request._body = bytes(bounded_body)
         response = await call_next(request)
         response.headers["X-RateLimit-Limit"] = str(request_guard.limit)
         response.headers["X-RateLimit-Remaining"] = str(decision.remaining)
@@ -196,8 +218,11 @@ def create_app(
         return LivenessResponse()
 
     @app.get("/api/v1/health/ready", response_model=HealthResponse)
-    async def readiness() -> HealthResponse:
-        return current_runtime().health()
+    async def readiness(response: Response) -> HealthResponse:
+        health = current_runtime().health()
+        if health.status != "ready":
+            response.status_code = 503
+        return health
 
     @app.get("/api/v1/live/map", response_model=LiveMapResponse)
     async def live_map(
@@ -247,7 +272,7 @@ def create_app(
                 )
         return await current_live_service().map_results(layers=requested, bbox=parsed_bbox)
 
-    if active_config.debug:
+    if active_config.debug and active_config.deployment_environment != "production":
 
         @app.post("/api/v1/search", response_model=SearchResponse)
         async def search(request: QueryRequest):
@@ -311,7 +336,7 @@ def create_app(
             )
         return response
 
-    if active_config.debug:
+    if active_config.debug and active_config.deployment_environment != "production":
 
         @app.get("/api/v1/debug/chunks/{chunk_id}")
         async def debug_chunk(chunk_id: str):

@@ -15,6 +15,7 @@ from firelens.contracts import GroundedDraft, LiveResultKind
 from firelens.errors import ProviderError
 from firelens.live import LiveDataService
 from firelens.providers.openrouter import OpenRouterProvider
+from firelens.runtime import Runtime
 
 
 class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
@@ -350,6 +351,63 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ApiTests(unittest.IsolatedAsyncioTestCase):
+    async def test_declared_oversized_body_is_rejected_before_reading(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            config = config.model_copy(update={"max_request_body_bytes": 1_024})
+            runtime.config = config
+            app = create_app(config, runtime=runtime)
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                response = await client.post(
+                    "/api/v1/ask",
+                    content=b"{}",
+                    headers={"content-length": "2048", "content-type": "application/json"},
+                )
+
+        self.assertEqual(response.status_code, 413)
+        self.assertEqual(response.json()["error_kind"], "request_too_large")
+
+    async def test_chunked_oversized_body_stops_consuming_after_limit(self) -> None:
+        yielded = 0
+
+        async def body():
+            nonlocal yielded
+            yielded += 1
+            yield b"x" * 800
+            yielded += 1
+            yield b"y" * 800
+            yielded += 1
+            raise AssertionError("middleware consumed beyond the bounded rejection point")
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            config = config.model_copy(update={"max_request_body_bytes": 1_024})
+            runtime.config = config
+            app = create_app(config, runtime=runtime)
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                response = await client.post(
+                    "/api/v1/ask", content=body(), headers={"content-type": "application/json"}
+                )
+
+        self.assertEqual(response.status_code, 413)
+        self.assertEqual(yielded, 2)
+
+    async def test_not_ready_uses_503_while_liveness_remains_200(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            runtime = Runtime(config=config, problems=["provider unavailable"])
+            app = create_app(config, runtime=runtime)
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                alive = await client.get("/api/v1/health/live")
+                ready = await client.get("/api/v1/health/ready")
+
+        self.assertEqual(alive.status_code, 200)
+        self.assertEqual(ready.status_code, 503)
+        self.assertEqual(ready.json()["status"], "not_ready")
+
     async def test_live_chat_and_map_share_records_and_reject_invalid_queries(self) -> None:
         updated = int(datetime(2026, 7, 28, tzinfo=UTC).timestamp() * 1000)
 
