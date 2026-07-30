@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from rag_helpers import make_chunk, make_runtime
@@ -18,6 +19,7 @@ from firelens.answering.intent import (
     unsupported_live_topics,
 )
 from firelens.answering.planner import planning_messages
+from firelens.config import FireLensConfig
 from firelens.contracts import (
     AuthorityClass,
     LiveResultKind,
@@ -44,6 +46,64 @@ class V15RoutingTests(unittest.TestCase):
         )
         plan = plan_query(QueryRequest(question=question))
         self.assertEqual(plan.normalized_question, focused_question(question))
+
+    def test_evidence_cut_preserves_required_aspect_and_source_diversity(self) -> None:
+        chunks = [
+            make_chunk(
+                f"water-{index}",
+                f"Water storage guidance repeated passage {index}.",
+                parent=f"water-parent-{index}",
+                index=index,
+            )
+            for index in range(5)
+        ]
+        medication = replace(
+            make_chunk(
+                "medication",
+                "Keep a current medication supply in the household emergency kit.",
+                parent="medication-parent",
+                index=5,
+            ),
+            source_id="medication-source",
+            title="Medication Preparedness Guide",
+            document_sha256="b" * 64,
+        )
+        chunks.append(medication)
+        hits = [
+            RetrievalHit(
+                chunk_id=chunk.chunk_id,
+                parent_record_id=chunk.parent_record_id,
+                source_id=chunk.source_id,
+                title=chunk.title,
+                publisher=chunk.publisher,
+                canonical_url=chunk.canonical_url,
+                page_number=chunk.page_number,
+                section_title=chunk.section_title,
+                locator=chunk.locator,
+                temporal_class=chunk.temporal_class,
+                authority_class=chunk.authority_class,
+                document_sha256=chunk.document_sha256,
+                chunk_index=chunk.chunk_index,
+                text=chunk.text,
+            )
+            for chunk in chunks
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            config = FireLensConfig.from_env(Path(directory))
+            packet = build_evidence_packet(
+                "What water and medication belong in an emergency kit?",
+                hits,
+                chunks,
+                corpus_version="test",
+                config=config,
+                selection_aspects=("water storage", "medication supply"),
+            )
+
+        self.assertEqual(len(packet.items), config.max_evidence_spans)
+        self.assertIn("medication-source", {item.source_id for item in packet.items})
+        self.assertTrue(
+            any("medication supply" in item.primary_text.casefold() for item in packet.items)
+        )
 
     def test_long_preamble_cannot_hide_a_personal_safety_request(self) -> None:
         question = " ".join(

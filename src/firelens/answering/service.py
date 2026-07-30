@@ -533,6 +533,14 @@ class StaticRAGService:
                         corpus_version=self.corpus_version,
                         config=self.config,
                         evidence_index=self.evidence_index,
+                        selection_aspects=tuple(
+                            dict.fromkeys(
+                                [
+                                    *plan.required_aspects,
+                                    *(request.query for request in plan.retrieval_requests),
+                                ]
+                            )
+                        ),
                     )
                 else:
                     bundle = RetrievalBundle()

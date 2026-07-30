@@ -254,6 +254,66 @@ def _candidate_chunk_ids(
     }
 
 
+def _selection_overlap(text: str, target: str) -> float:
+    required = {
+        token
+        for token in _support_tokens(target)
+        if token not in _ASPECT_STOPWORDS and len(token) > 1
+    }
+    if not required:
+        return 0.0
+    available = _support_tokens(text)
+    return len(required & available) / len(required)
+
+
+def _select_evidence_hits(
+    question: str,
+    reranked_hits: Sequence[RetrievalHit],
+    *,
+    limit: int,
+    selection_aspects: Sequence[str],
+) -> list[RetrievalHit]:
+    """Retain ranked relevance while reserving bounded slots for aspects and sources."""
+
+    pool = list(reranked_hits[: max(limit * 4, limit)])
+    if len(pool) <= limit:
+        return pool
+    targets = list(dict.fromkeys([*selection_aspects, question]))
+    selected: set[int] = set()
+
+    for target in targets:
+        ranked = sorted(
+            (
+                (_selection_overlap(hit.text, target), index)
+                for index, hit in enumerate(pool)
+                if index not in selected
+            ),
+            key=lambda item: (-item[0], item[1]),
+        )
+        if ranked and ranked[0][0] >= 0.4:
+            selected.add(ranked[0][1])
+        if len(selected) == limit:
+            break
+
+    selected_sources = {pool[index].source_id for index in selected}
+    for index, hit in enumerate(pool):
+        if len(selected) == limit:
+            break
+        if index in selected or hit.source_id in selected_sources:
+            continue
+        if max((_selection_overlap(hit.text, target) for target in targets), default=0.0) < 0.4:
+            continue
+        selected.add(index)
+        selected_sources.add(hit.source_id)
+
+    for index in range(len(pool)):
+        if len(selected) == limit:
+            break
+        selected.add(index)
+
+    return [pool[index] for index in sorted(selected)]
+
+
 def build_evidence_packet(
     question: str,
     reranked_hits: Sequence[RetrievalHit],
@@ -262,11 +322,18 @@ def build_evidence_packet(
     corpus_version: str,
     config: FireLensConfig,
     evidence_index: EvidenceIndex | None = None,
+    selection_aspects: Sequence[str] = (),
 ) -> EvidencePacket:
     index = evidence_index or EvidenceIndex.from_chunks(chunks)
     groups: list[EvidenceGroup] = []
 
-    for hit in reranked_hits[: config.max_evidence_spans]:
+    selected_hits = _select_evidence_hits(
+        question,
+        reranked_hits,
+        limit=config.max_evidence_spans,
+        selection_aspects=selection_aspects,
+    )
+    for hit in selected_hits:
         neighbor_ids = _candidate_chunk_ids(hit, index.by_parent_index, config.neighbor_window)
         matching_groups: list[EvidenceGroup] = []
         for group in groups:

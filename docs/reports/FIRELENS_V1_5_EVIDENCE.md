@@ -67,6 +67,9 @@ static-query gate passed.
 - Required aspects and authority requirements feed an aspect-to-evidence matrix. Models propose
   quote IDs; deterministic validation owns quote identity, exact text, authority, coverage,
   conflict disclosure, and accepted/partial/unsupported status.
+- Before the bounded evidence cut, deterministic selection reserves slots for directly matched
+  required aspects and relevant distinct sources, then fills remaining slots in reranker order.
+  A single low-overlap token cannot earn an aspect or diversity slot.
 - Exact citations and a lexical claim-to-quote floor are automated. They do not prove semantic
   entailment; the owner review packet remains authoritative for that release gate.
 - Corpus admission quarantines prompt-injection sources before indexing or retrieval, rejects
