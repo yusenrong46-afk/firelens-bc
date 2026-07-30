@@ -725,6 +725,24 @@ class StaticRAGService:
         allow_live: bool = True,
     ) -> AskResponse:
         trace_id = uuid4().hex
+        try:
+            return await self._ask_with_trace(
+                request,
+                trace_id=trace_id,
+                observer=observer,
+                allow_live=allow_live,
+            )
+        finally:
+            self._active_operations.pop(trace_id, None)
+
+    async def _ask_with_trace(
+        self,
+        request: QueryRequest,
+        *,
+        trace_id: str,
+        observer: ExecutionObserver | None,
+        allow_live: bool,
+    ) -> AskResponse:
         operation_started = perf_counter()
         execution = await self.execute_search(request, trace_id=trace_id, allow_live=allow_live)
         self._active_operations[trace_id] = (

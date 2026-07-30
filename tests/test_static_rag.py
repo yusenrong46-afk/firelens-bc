@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import tempfile
 import unittest
@@ -741,7 +742,82 @@ class FailingPlanner(FakeProvider):
         )
 
 
+class FailingGroundedProvider(FakeProvider):
+    async def generate_grounded(self, messages, *, output_schema):
+        del messages, output_schema
+        raise ProviderError(ProviderErrorKind.UNAVAILABLE, "generation unavailable")
+
+
+class UnexpectedGroundedErrorProvider(FakeProvider):
+    async def generate_grounded(self, messages, *, output_schema):
+        del messages, output_schema
+        raise RuntimeError("unexpected generation failure")
+
+
+class BlockingGroundedProvider(FakeProvider):
+    def __init__(self) -> None:
+        super().__init__()
+        self.entered = asyncio.Event()
+
+    async def generate_grounded(self, messages, *, output_schema):
+        del messages, output_schema
+        self.entered.set()
+        await asyncio.Event().wait()
+        raise AssertionError("blocking provider should be cancelled")
+
+
 class ServiceTests(unittest.IsolatedAsyncioTestCase):
+    async def test_active_operations_clear_after_success_and_provider_failure(self) -> None:
+        for provider in (FakeProvider(), FailingGroundedProvider()):
+            with self.subTest(provider=type(provider).__name__):
+                with tempfile.TemporaryDirectory() as directory:
+                    runtime, _, _ = await make_runtime(Path(directory), provider=provider)
+                    await runtime.service.ask(
+                        QueryRequest(question="What belongs in an emergency kit?")
+                    )
+                    self.assertFalse(runtime.service._active_operations)
+                    await runtime.aclose()
+
+    async def test_active_operations_clear_after_unexpected_exception(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, _ = await make_runtime(
+                Path(directory), provider=UnexpectedGroundedErrorProvider()
+            )
+            with self.assertRaisesRegex(RuntimeError, "unexpected generation failure"):
+                await runtime.service.ask(
+                    QueryRequest(question="What belongs in an emergency kit?")
+                )
+            self.assertFalse(runtime.service._active_operations)
+            await runtime.aclose()
+
+    async def test_active_operations_clear_after_timeout(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            provider = BlockingGroundedProvider()
+            runtime, _, _ = await make_runtime(Path(directory), provider=provider)
+            with self.assertRaises(TimeoutError):
+                await asyncio.wait_for(
+                    runtime.service.ask(
+                        QueryRequest(question="What belongs in an emergency kit?")
+                    ),
+                    timeout=0.05,
+                )
+            self.assertFalse(runtime.service._active_operations)
+            await runtime.aclose()
+
+    async def test_active_operations_clear_after_caller_cancellation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            provider = BlockingGroundedProvider()
+            runtime, _, _ = await make_runtime(Path(directory), provider=provider)
+            request = asyncio.create_task(
+                runtime.service.ask(QueryRequest(question="What belongs in an emergency kit?"))
+            )
+            await asyncio.wait_for(provider.entered.wait(), timeout=1)
+            request.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await request
+            self.assertFalse(runtime.service._active_operations)
+            await runtime.aclose()
+
     def test_history_is_used_only_for_genuinely_elliptical_safety_followups(self) -> None:
         safe_after_live = QueryRequest.model_validate(
             {
