@@ -94,7 +94,8 @@ offline policy and state-machine behavior only.
 - No distributed-rate-limit claim was made. Vercel documents that its request headers overwrite
   forwarding input (<https://examples.vercel.com/docs/headers/request-headers>) and that WAF rate
   limiting is an external action (<https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting>).
-  The repository's log-only rule preparation is not enforcement.
+  The report baseline used log-only rule preparation. The later GP-004 remediation prepares an
+  enforced deny rule, but publication and cross-instance preview proof remain external gates.
 - No merge, push, preview, firewall publication, or deployment occurred.
 
 ## Remaining risk and release blockers

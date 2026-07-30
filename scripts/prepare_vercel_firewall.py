@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate and render log-only Vercel Firewall rate-limit staging commands."""
+"""Validate and render enforced Vercel Firewall rate-limit commands without publishing."""
 
 from __future__ import annotations
 
@@ -60,8 +60,8 @@ def load_plan(path: Path) -> dict[str, Any]:
             raise ValueError("rate-limit request thresholds must be between 30 and 10000")
         if rule["keys"] != ["ip"]:
             raise ValueError("V1.5 anonymous rate limits must use only the IP key")
-        if rule["rate_limit_action"] != "log":
-            raise ValueError("new V1.5 firewall rules must begin in log-only mode")
+        if rule["rate_limit_action"] != "deny":
+            raise ValueError("public V1.5 firewall rules must use an enforced deny action")
         names.add(name)
         routes.add((path_value, method))
     return payload
@@ -94,7 +94,7 @@ def render_command(rule: dict[str, Any]) -> list[str]:
         "--rate-limit-keys",
         "ip",
         "--rate-limit-action",
-        "log",
+        rule["rate_limit_action"],
     ]
 
 
@@ -118,13 +118,13 @@ def main() -> None:
             )
         )
         return
-    print("Validated log-only firewall plan. No external state was changed.\n")
+    print("Validated enforced firewall plan. No external state was changed.\n")
     for command in commands:
         print(shlex.join(command))
     print(
-        "\nAfter owner-approved staging, observe for at least "
-        f"{plan['observation_period_hours']} hours. Review firewall logs and false positives "
-        "before proposing enforcement. The owner must publish any rule change."
+        "\nThe rendered rules deny excess requests when published. Review thresholds for at least "
+        f"{plan['observation_period_hours']} hours in an owner-approved preview. "
+        "This tool never publishes rules; the owner must authorize every external change."
     )
 
 

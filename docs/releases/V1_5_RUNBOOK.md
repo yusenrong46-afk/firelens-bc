@@ -89,14 +89,15 @@ using per-client observations as evidence. Vercel documents the platform-overwri
 headers at <https://examples.vercel.com/docs/headers/request-headers>.
 
 `make prepare-firewall` validates `config/vercel_firewall.v1.json` and renders pinned Vercel CLI
-commands without executing them. The two method-scoped IP rules begin in log-only mode at 150
-ask requests/minute and 300 map requests/minute. These are observation thresholds, not proven
-capacity limits. After owner-approved staging, observe at least 24 hours, inspect false positives
-and regional traffic, then propose enforcement as a separate reviewed change. The owner publishes
-all firewall changes.
+commands without executing them. The two method-scoped IP rules use an enforced deny action at
+150 ask requests/minute and 300 map requests/minute. These are conservative initial thresholds,
+not proven capacity limits. In an owner-approved preview, observe at least 24 hours, inspect false
+positives and regional traffic, then adjust through a separate reviewed change if evidence requires
+it. The owner publishes all firewall changes; repository tooling never publishes automatically.
 
-Vercel's rate-limit action is an external distributed control; log-only rules do not block
-requests. See <https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting>.
+Vercel's rate-limit action becomes a distributed control only after the rendered rule is published
+and verified on the target deployment. A committed deny plan is preparation, not deployment
+evidence. See <https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting>.
 
 ## Rollback
 

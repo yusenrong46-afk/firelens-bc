@@ -72,8 +72,9 @@ of live-model semantic quality, production latency, provider reliability, or Ope
 - Anonymous preview, browser accessibility review, externally enforced distributed rate limit,
   rollback rehearsal, release-tree reconstruction/equality, and owner approval.
 
-The in-repository Vercel firewall rules remain log-only preparation. They are not a distributed
-enforcement claim and cannot be promoted without an owner-approved external change.
+The in-repository Vercel firewall plan now renders enforced deny rules but does not publish them.
+It is not a distributed-enforcement claim until an owner-approved preview proves the external
+rule is active and shared across instances.
 
 ## Next authorized action
 
