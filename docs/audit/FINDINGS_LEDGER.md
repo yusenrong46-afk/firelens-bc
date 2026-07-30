@@ -18,7 +18,7 @@ by GP-008. They are not duplicated as independent rows.
 | GP-005 | P1 | VERIFIED | `tests/test_provider_api.py::ApiTests::test_chunked_oversized_body_stops_consuming_after_limit`; `test_misleading_declared_length_cannot_bypass_streaming_cap`; `test_concurrent_oversized_bodies_are_independently_bounded` | `b3e202a`, `7f633b1` | Streaming enforcement passes measured missing/misleading-length and eight-request concurrency coverage, stopping at the first rejecting frame without consuming a third frame. Fast and full zero-cost gates pass. |
 | CF-001 | P1 | VERIFIED | `tests/test_live.py::LiveDataServiceTests::test_nearby_results_keep_records_with_unknown_geometry`; `tests/test_live_answering.py::LiveAnswerCoordinatorTests::test_unknown_geometry_is_disclosed_without_hiding_record` | `2577462` | Malformed/unknown geometry remains visible with an explicit limitation instead of becoming a false no-result. |
 | CF-002 | P1 | VERIFIED | `tests/test_v1_5_rag.py::V15RoutingTests::test_long_preamble_cannot_hide_a_personal_safety_request` | `bfac0b5` | Safety classification uses the full raw question; focused text remains retrieval-only. |
-| GP-006 | P1 | OPEN | `tests/test_conflict_handling.py` | `1a47099` | Cross-authority skip was removed. Freeze and execute an explicit precedence/conflict matrix before verification. |
+| GP-006 | P1 | VERIFIED | `tests/test_conflict_handling.py::ConflictHandlingTests::test_authority_precedence_matrix_surfaces_material_differences`; `test_date_and_jurisdiction_differences_surface_without_precedence`; `test_different_non_prescriptive_passages_do_not_invent_conflict` | `1a47099`, `7381037` | The explicit matrix passes for same authority, provincial/public-health, provincial/FireSmart, provincial/local, version/date, jurisdiction, and complementary guidance. No automatic precedence hides a material difference. Fast and full gates pass. |
 | GP-007 | P1 | OPEN | `tests/test_provider_api.py` | `1a47099`, `6ad68aa` | Ask/map total deadlines cancel slow live work. Add stage-wide planner/embed/rerank/generation/repair and caller-cancellation coverage, then audit active-operation cleanup. |
 | GP-008 | P2 | OPEN | `tests/test_live.py` | `2577462` | Stable order, dedup, repeat detection, progress, and page ceiling exist. Add record ceiling, server-side bbox/local filtering, and config-driven layer definitions. |
 | GP-009 | P2 | OPEN | pending | pending | Question-support floor exists, but there is no constrained aspect/source-diverse selection before the top-five evidence cut. |
@@ -68,6 +68,11 @@ by GP-008. They are not duplicated as independent rows.
   the implementation fix is credited to `b3e202a` and the remaining change is durable proof.
 - 2026-07-30: GP-005 global verification passed after one formatter-only retry at `7f633b1`;
   status advanced to VERIFIED.
+- 2026-07-30: GP-006 explicit authority/date/jurisdiction/complementary matrix was added before
+  implementation; the local-authority case exposes the missing authority type.
+- 2026-07-30: GP-006 focused matrix passes after adding the missing typed local-authority class;
+  behavior and evidence documentation now state that authority labels never imply precedence.
+- 2026-07-30: GP-006 global verification passed at `7381037`; status advanced to VERIFIED.
 
 ## Final report
 
