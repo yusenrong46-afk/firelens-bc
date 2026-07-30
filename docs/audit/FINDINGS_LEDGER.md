@@ -24,7 +24,7 @@ by GP-008. They are not duplicated as independent rows.
 | GP-009 | P2 | VERIFIED | `tests/test_v1_5_rag.py::V15RoutingTests::test_evidence_cut_preserves_required_aspect_and_source_diversity` | `deb490b` | Before the bounded evidence cut, deterministic selection reserves directly matched aspect slots, then relevant unseen-source slots, then fills in reranker order. Both reservations require at least 40% normalized overlap, preventing one-token promotion. Focused, broader RAG, fast, and full gates pass. |
 | GP-010 | P2 | VERIFIED | `tests/test_reliability.py::ContractPropertyTests::test_every_response_mode_has_server_bounded_assistant_history`; `prototype/firelens-rag-ui/tests/App.test.tsx::uses the server-bounded assistant history representation` | `a0a4b4f` | Every response with a public answer receives a deterministic, normalized assistant-history representation capped at 6,000 characters. The response contract rejects spoofed history, the UI uses the bounded representation for follow-up context, and the full visible answer remains unchanged. Fast and full gates pass. |
 | CF-004 | P2 | VERIFIED | `tests/test_security_operations.py::SecurityOperationTests::test_production_never_registers_debug_routes` | `b3e202a` | Production environment prevents debug-route registration even when the debug flag is true. |
-| CF-008 | P2 | OPEN | pending | pending | Audit enumerated claim salvage; any dropped supported member must be disclosed explicitly in partial limitations. |
+| CF-008 | P2 | VERIFIED | `tests/test_static_rag.py::ServiceTests::test_valid_claims_are_salvaged_without_weakening_validation` | `bd66d4b` | Deterministic salvage still exposes only independently validated claims. Every salvage response now reports the exact omitted-item count and explicitly warns that the remainder is not a complete list. Fast and full gates pass. |
 | CF-009 | P3 | OPEN | pending | pending | Audit tangent-token promotion in evidence/support routing and add a fail-first regression. |
 | CF-010 | P3 | OPEN | pending | pending | `_active_operations` cleanup is not yet proven for success, provider failure, timeout, or caller cancellation. |
 | CF-011 | P3 | OPEN | pending | pending | CSP still contains `style-src 'unsafe-inline'`; remove it without breaking the built UI or map. |
@@ -98,6 +98,9 @@ by GP-008. They are not duplicated as independent rows.
 - 2026-07-30: GP-010 global verification passed at `a0a4b4f`; status advanced to VERIFIED.
 - 2026-07-30: Three-finding semantic checkpoint after GP-008 through GP-010 passed:
   five adversarial/faithful tests, fourteen subtests, zero failures.
+- 2026-07-30: CF-008 fail-first regression now requires explicit incomplete-list disclosure
+  after deterministic claim salvage.
+- 2026-07-30: CF-008 global verification passed at `bd66d4b`; status advanced to VERIFIED.
 
 ## Final report
 
