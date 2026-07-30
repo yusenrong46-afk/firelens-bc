@@ -1,8 +1,8 @@
 # FireLens BC Technical Handbook
 
-Date: 2026-07-26 (America/Vancouver)
+Date: 2026-07-29 (America/Vancouver)
 
-Status: authoritative V1.1 architecture baseline; V1.5 release evidence is separate
+Status: authoritative V1.5 release-candidate architecture; qualification evidence is separate
 
 Product state: `engineering-complete, semantic acceptance pending`
 
@@ -28,7 +28,10 @@ capabilities stop at the deterministic boundary before any paid provider call.
 
 V1.1 deliberately excluded public hosting, accounts, long-term memory, maps,
 live wildfire/weather feeds, agents, graph RAG, a vector database, streaming,
-automatic answer repair, model fallback, and fine-tuning.
+automatic answer repair, model fallback, and fine-tuning. V1.5 adds bounded
+official incident, perimeter, and evacuation queries, a restrained map, and the
+single same-evidence repair defined by ADR 0009. It still excludes accounts,
+long-term memory, agents, GraphRAG promotion, model fallback, and fine-tuning.
 
 ### 1.1 Evidence modes are part of the public truth contract
 
@@ -36,9 +39,12 @@ automatic answer repair, model fallback, and fine-tuning.
 |---|---|---|---|
 | `capability` | Local overview of FireLens topics and example questions | none | no evidence claim |
 | `grounded` | Stable guidance directly supported by the reviewed corpus | plan, embed, rerank, generate | every claim requires exact local support |
+| `partial` | Only the supported portion of a requested grounded or live answer | bounded work for the available portion | every static claim requires exact local support; gaps are explicit |
 | `background` | Related, low-risk explanation not asserted as corpus-backed | plan, retrieval stages, background generation | corpus evidence is forbidden |
+| `live` | Current records returned from supported official BC data layers | official data fetch only | authority, source URL, update time, and retrieval time are required |
+| `mixed` | Visibly separated official live records and stable corpus guidance | official data plus grounded static path | live provenance and static exact support remain separate |
 | `scope_redirect` | Request is genuinely tangent | planner only | no evidence claim |
-| `abstention` | Live, predictive, personalized, unsafe, unsupported, or invalid | often none; may follow a failed stage | claims and evidence are forbidden |
+| `abstention` | Unsafe, unsupported, unavailable, or invalid request/result | often none; may follow a failed stage | material claims and evidence are forbidden |
 
 The system never blends grounded and general-background claims in one response.
 This is simpler to inspect and prevents a nearby retrieval result from being
@@ -63,8 +69,12 @@ flowchart TD
     SUPPORT -->|"no"| ABSTAIN
     SUPPORT -->|"yes"| DRAFT["Strict grounded Gemini draft"]
     DRAFT --> VALIDATE["Deterministic structural and policy validation"]
-    VALIDATE -->|"reject"| ABSTAIN
     VALIDATE -->|"accept"| RESPONSE["Claims plus exact support and local metadata"]
+    VALIDATE -->|"reject once"| REPAIR["One repair using the same evidence packet"]
+    REPAIR --> REVALIDATE["Same deterministic validation"]
+    REVALIDATE -->|"accept"| RESPONSE
+    REVALIDATE -->|"independently valid subset"| PARTIAL["Supported partial answer"]
+    REVALIDATE -->|"unsupported"| ABSTAIN
 ```
 
 `src/firelens/answering/service.py` is the explicit orchestration path. It is
@@ -529,8 +539,9 @@ live semantic quality.
    a manifest to make readiness green.
 3. **Provider failure:** use the typed kind, attempts, and trace ID. Do not change
    model or retrieval algorithm invisibly.
-4. **Invalid draft:** inspect validator output. Improve evidence, prompt,
-   contract, or labels; do not add an automatic repair loop.
+4. **Invalid draft:** inspect the first validation, the ADR 0009 repair, and the
+   second validation. Never add another repair, new retrieval, or provider
+   fallback to rescue the answer.
 5. **OpenAPI drift:** run `make openapi`, inspect the generated diff, then verify
    backend and frontend together.
 6. **Stale local browser:** stop old servers, confirm port 8000 ownership, launch

@@ -120,8 +120,9 @@ never recorded.
 | Live or prohibited question | `200`, typed support decision | `200`, abstention |
 | Required provider unavailable | `200`, incomplete stages | `503`, typed error |
 | Malformed provider response | `200`, incomplete stages | `502`, typed error |
-| Draft fails citation/policy checks | n/a | `200`, abstention |
+| Draft and its one bounded repair fail citation/policy checks | n/a | `200`, supported partial or abstention |
 | Invalid request body | `400` | `400` |
 
-There is no automatic answer repair because it would hide the first failure and
-make system behavior harder to inspect.
+V1.5 permits one observable repair using the unchanged evidence packet. The
+same deterministic checks run again, and a second failure can expose only an
+independently valid subset or an abstention. ADR 0009 defines the boundary.

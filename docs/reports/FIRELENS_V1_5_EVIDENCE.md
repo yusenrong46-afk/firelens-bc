@@ -1,10 +1,12 @@
 # FireLens BC V1.5 lab evidence ledger
 
-Date: 2026-07-28 (America/Vancouver)
+Date: 2026-07-29 (America/Vancouver)
 
 Baseline: `209b4e5f8f16f13d7ac9af56a89e135f697ce052`
 
 Lab branch: `codex/v1-5-lab`
+
+Hardening branch: `codex/v1-5-hardening`, based on `ba42b74`
 
 Release branch: `codex/v1-5-release` remains at the baseline
 
@@ -17,11 +19,16 @@ repetitions, below the required 96%. A new 47-case candidate has been frozen aft
 selection with zero exact overlap against the preserved benchmark, but its relevance labels and
 the owner semantic-review gate are still open. It has not been used for tuning or paid scoring.
 
-The earlier 100% result on 47 route-eligible development cases used a Codex-authored relevance
+The earlier 100% result on 47 route-eligible development cases used a non-owner-reviewed relevance
 addendum. It remains useful development evidence but is not sealed promotion evidence. No
 benchmark question or retrieved answer from the frozen holdout was used for tuning.
 
 Nothing was merged, pushed, deployed, or cherry-picked into the release branch.
+
+Later regression evidence records `105/105` hard-probe cases and `33/33`
+generalization cases at `a093bf0`, with `18/18` desktop/mobile browser flows at
+`ba42b74`. These results remain development evidence and do not substitute for
+the sealed owner-review gates.
 
 ## Baseline versus candidate
 

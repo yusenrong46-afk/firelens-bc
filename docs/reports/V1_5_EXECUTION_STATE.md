@@ -1,6 +1,6 @@
 # FireLens BC V1.5 execution state
 
-Updated: 2026-07-28 (America/Vancouver)
+Updated: 2026-07-29 (America/Vancouver)
 
 ## Repository truth
 
@@ -8,8 +8,8 @@ Updated: 2026-07-28 (America/Vancouver)
 - Canonical branch/commit: `improvement/rag-webapp-v2` at
   `209b4e5f8f16f13d7ac9af56a89e135f697ce052`
 - Canonical state: tracked-clean with 26 preserved untracked files; read-only for this task
-- Lab checkout/branch: `/Users/thomas/Downloads/firelens-bc-v1-5-lab` on
-  `codex/v1-5-lab`
+- Candidate checkout/branch: `/Users/thomas/Downloads/firelens-bc-v1-5-lab` on
+  `codex/v1-5-hardening`, created from `ba42b74`
 - Final provenance-complete probe commit: `727110ec3c9626601fb4c04375eba4a1be572703`
 - Candidate code commit before this ledger update: `eca9119511d79e089526a6d163b8481c9c4a2205`
 - Owner semantic gate commit: `46ae83a`; sealed 47-case retrieval gate commit: `eca9119`
@@ -26,8 +26,13 @@ post-configuration-freeze 47-case candidate is now hash-frozen, but its relevanc
 50-case semantic entailment review are both pending owner approval. The new sealed set has not
 been run against paid providers.
 
-Development evidence that used the Codex-authored relevance addendum is retained as useful
+Development evidence that used the non-owner-reviewed relevance addendum is retained as useful
 diagnostic evidence, but it no longer authorizes promotion.
+
+Post-ledger regression evidence records `105/105` hard-probe cases and `33/33`
+generalization cases at `a093bf0`, followed by `18/18` desktop/mobile browser
+flows at `ba42b74`. These results justify hardening work but do not replace the
+owner-reviewed retrieval and semantic gates.
 
 ## Executed evidence in this qualification
 
@@ -96,7 +101,7 @@ Their hashes are recorded in `docs/reports/FIRELENS_V1_5_EVIDENCE.md`.
 1. The new 47-case sealed retrieval candidate is frozen but intentionally unopened. Its relevance
    sidecar is 0/47 pending owner approval; only then may the one-time three-repetition paid gate run.
 2. The preserved 16-case independent run remains a failed historical result. Development results
-   and the Codex-authored relevance addendum do not authorize promotion.
+   and the non-owner-reviewed relevance addendum do not authorize promotion.
 3. Automated checks establish exact traceability and a lexical support floor, not semantic
    entailment. The hash-bound owner semantic review is 0/50 pending.
 4. Distributed production throttling and an anonymous preview remain external deployment gates;

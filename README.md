@@ -26,13 +26,20 @@ flowchart LR
     E --> D["Gemini structured draft"]
     D --> V["Deterministic validator"]
     V -->|"accepted"| O["Claims plus exact local support"]
-    V -->|"rejected"| A
+    V -->|"rejected once"| X["One same-packet repair"]
+    X --> V2["Same deterministic validator"]
+    V2 -->|"accepted"| O
+    V2 -->|"valid subset"| PARTIAL["Supported partial answer"]
+    V2 -->|"unsupported"| A
 ```
 
 Local Python code owns policy, routing, retrieval, source metadata, evidence
 construction, validation, and public responses. OpenRouter supplies bounded
 planning, embeddings, reranking, and generation. There is no hidden model
-substitution, retrieval fallback, answer repair, or model-memory fallback.
+substitution, retrieval fallback, provider fallback, or model-memory fallback.
+A rejected grounded draft may receive exactly one same-evidence repair;
+deterministic validation still owns acceptance, partial salvage, and abstention.
+See [ADR 0009](docs/adr/0009-bounded-grounded-answer-repair.md).
 
 ## Quick start
 
