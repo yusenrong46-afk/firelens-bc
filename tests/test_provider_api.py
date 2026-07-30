@@ -453,6 +453,77 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status_code, 413)
         self.assertEqual(yielded, 2)
 
+    async def test_misleading_declared_length_cannot_bypass_streaming_cap(self) -> None:
+        consumed_bytes = 0
+
+        async def body():
+            nonlocal consumed_bytes
+            for value in (b"x" * 700, b"y" * 700):
+                consumed_bytes += len(value)
+                yield value
+            raise AssertionError("middleware consumed beyond the rejecting frame")
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            config = config.model_copy(update={"max_request_body_bytes": 1_024})
+            runtime.config = config
+            app = create_app(config, runtime=runtime)
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                response = await client.post(
+                    "/api/v1/ask",
+                    content=body(),
+                    headers={
+                        "content-length": "100",
+                        "content-type": "application/json",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 413)
+        self.assertEqual(consumed_bytes, 1_400)
+
+    async def test_concurrent_oversized_bodies_are_independently_bounded(self) -> None:
+        request_count = 8
+        consumed_frames = [0] * request_count
+        consumed_bytes = [0] * request_count
+
+        async def body(index: int):
+            for value in (b"x" * 700, b"y" * 700):
+                consumed_frames[index] += 1
+                consumed_bytes[index] += len(value)
+                yield value
+                await asyncio.sleep(0)
+            raise AssertionError("middleware consumed beyond the rejecting frame")
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            config = config.model_copy(
+                update={
+                    "anonymous_rate_limit": request_count,
+                    "max_request_body_bytes": 1_024,
+                }
+            )
+            runtime.config = config
+            app = create_app(config, runtime=runtime)
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                responses = await asyncio.gather(
+                    *(
+                        client.post(
+                            "/api/v1/ask",
+                            content=body(index),
+                            headers={"content-type": "application/json"},
+                        )
+                        for index in range(request_count)
+                    )
+                )
+
+        self.assertEqual(
+            [response.status_code for response in responses], [413] * request_count
+        )
+        self.assertEqual(consumed_frames, [2] * request_count)
+        self.assertEqual(consumed_bytes, [1_400] * request_count)
+
     async def test_not_ready_uses_503_while_liveness_remains_200(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
