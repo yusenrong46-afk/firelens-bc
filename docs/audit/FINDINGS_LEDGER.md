@@ -49,6 +49,9 @@ by GP-008. They are not duplicated as independent rows.
 - 2026-07-30: GP-003 focused backend, UI, and desktop/mobile browser regressions pass;
   status advanced to FIXED pending the fast and global zero-cost gates.
 - 2026-07-30: GP-003 global verification passed at `5555396`; status advanced to VERIFIED.
+- 2026-07-30: Three-finding checkpoint after GP-001 through GP-003: the dedicated adversarial
+  grounding and faithful-paraphrase set passed (`5` tests, `14` subtests); observed acceptance
+  regressions: zero.
 
 ## Final report
 
