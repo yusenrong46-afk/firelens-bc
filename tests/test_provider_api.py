@@ -12,9 +12,15 @@ from pydantic import SecretStr
 from rag_helpers import make_chunk, make_runtime, write_test_corpus
 
 from firelens.api import create_app
-from firelens.contracts import GroundedDraft, LiveResultKind
+from firelens.contracts import (
+    DraftProposalClaim,
+    GenerationResponse,
+    GroundedDraft,
+    LiveResultKind,
+)
 from firelens.errors import ProviderError
 from firelens.live import LiveDataService
+from firelens.providers.fake import FakeProvider
 from firelens.providers.openrouter import OpenRouterProvider
 from firelens.runtime import Runtime
 
@@ -352,6 +358,123 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ApiTests(unittest.IsolatedAsyncioTestCase):
+    async def test_public_deadline_cancels_every_provider_stage(self) -> None:
+        class StageBlockingProvider(FakeProvider):
+            def __init__(self, stage: str) -> None:
+                super().__init__()
+                self.stage = stage
+                self.armed = False
+                self.cancelled_stage: str | None = None
+                self.entered = asyncio.Event()
+                self.repair_attempt = 0
+
+            async def block(self, stage: str) -> None:
+                if not self.armed or self.stage != stage:
+                    return
+                self.entered.set()
+                try:
+                    await asyncio.sleep(10)
+                except asyncio.CancelledError:
+                    self.cancelled_stage = stage
+                    raise
+
+            async def plan(self, messages, *, output_schema):
+                await self.block("planner")
+                return await super().plan(messages, output_schema=output_schema)
+
+            async def embed(self, texts):
+                await self.block("embedding")
+                return await super().embed(texts)
+
+            async def rerank(self, query, documents, *, top_n):
+                await self.block("reranking")
+                return await super().rerank(query, documents, top_n=top_n)
+
+            async def generate_grounded(self, messages, *, output_schema):
+                if self.stage == "repair" and self.armed:
+                    self.repair_attempt += 1
+                    if self.repair_attempt == 1:
+                        return GenerationResponse(
+                            model="fake/invalid-generator",
+                            draft=GroundedDraft(
+                                answer_type="grounded",
+                                claims=[
+                                    DraftProposalClaim(
+                                        text="Unsupported first attempt.",
+                                        evidence_quote_ids=["UNKNOWN"],
+                                    )
+                                ],
+                                limitations=[],
+                                requires_live_verification=False,
+                            ),
+                        )
+                    await self.block("repair")
+                else:
+                    await self.block("generation")
+                return await super().generate_grounded(messages, output_schema=output_schema)
+
+        for stage in ("planner", "embedding", "reranking", "generation", "repair"):
+            with self.subTest(stage=stage), tempfile.TemporaryDirectory() as directory:
+                provider = StageBlockingProvider(stage)
+                runtime, _, config = await make_runtime(Path(directory), provider=provider)
+                provider.armed = True
+                config = config.model_copy(update={"public_request_deadline_seconds": 0.02})
+                runtime.config = config
+                app = create_app(config, runtime=runtime)
+                transport = httpx.ASGITransport(app=app)
+                async with httpx.AsyncClient(
+                    transport=transport, base_url="http://test"
+                ) as client:
+                    response = await client.post(
+                        "/api/v1/ask",
+                        json={"question": "What belongs in an emergency kit?"},
+                    )
+                await runtime.aclose()
+
+                self.assertEqual(response.status_code, 503)
+                self.assertEqual(response.json()["error_kind"], "timeout")
+                self.assertEqual(provider.cancelled_stage, stage)
+
+    async def test_caller_cancellation_reaches_active_provider_stage(self) -> None:
+        class BlockingPlanner(FakeProvider):
+            def __init__(self) -> None:
+                super().__init__()
+                self.armed = False
+                self.entered = asyncio.Event()
+                self.cancelled = False
+
+            async def plan(self, messages, *, output_schema):
+                if not self.armed:
+                    return await super().plan(messages, output_schema=output_schema)
+                self.entered.set()
+                try:
+                    await asyncio.sleep(10)
+                except asyncio.CancelledError:
+                    self.cancelled = True
+                    raise
+
+        with tempfile.TemporaryDirectory() as directory:
+            provider = BlockingPlanner()
+            runtime, _, config = await make_runtime(Path(directory), provider=provider)
+            provider.armed = True
+            runtime.config = config
+            app = create_app(config, runtime=runtime)
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                request = asyncio.create_task(
+                    client.post(
+                        "/api/v1/ask",
+                        json={"question": "What belongs in an emergency kit?"},
+                    )
+                )
+                await asyncio.wait_for(provider.entered.wait(), timeout=1)
+                request.cancel()
+                with self.assertRaises(asyncio.CancelledError):
+                    await request
+            await runtime.aclose()
+
+        self.assertTrue(provider.cancelled)
+
     async def test_public_deadline_cancels_slow_live_map_work(self) -> None:
         class SlowLiveService:
             def __init__(self) -> None:
