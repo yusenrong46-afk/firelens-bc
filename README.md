@@ -93,10 +93,18 @@ make benchmark-v1-1-paid    # cost-capped 50-case live conversation benchmark
 make benchmark-contextual   # development-only A/B/C retrieval-text experiment
 make benchmark-retrieval    # four locked V1 retrieval configurations
 make benchmark-retrieval-v1-5 # development comparison with hash-bound addendum
+.venv/bin/python scripts/run_hard_probe.py --mode offline
+.venv/bin/python scripts/run_hard_probe.py --mode qualified --max-cost-usd 0.25
 make canary                 # 30 repeated live calls
 make model-bakeoff          # identical-evidence Gemini comparison
 make live-smoke             # opt-in OpenRouter endpoint smoke tests
 ```
+
+The permanent hard probe is public regression data, not a sealed release
+holdout. Offline mode uses controlled provider and live-data doubles. Qualified
+mode uses the production OpenRouter boundary and refuses to start without an
+explicit positive cost ceiling. Each report binds the commit, dataset, corpus,
+retrieval strategy, provider stages, attempts, tokens, cost, and latency.
 
 CLI equivalents:
 
