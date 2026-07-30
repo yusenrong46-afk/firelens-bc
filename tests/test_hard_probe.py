@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.run_hard_probe import file_sha256, load_dataset
+from scripts.run_hard_probe import _cost_limit_reached, file_sha256, load_dataset
 
 
 class HardProbeDatasetTests(unittest.TestCase):
@@ -31,3 +31,11 @@ class HardProbeDatasetTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "hash"):
                 load_dataset(changed, self.manifest_path)
+
+    def test_zero_cost_ceiling_does_not_block_offline_mode(self) -> None:
+        self.assertFalse(
+            _cost_limit_reached(mode="offline", current_cost=0.0, max_cost_usd=0.0)
+        )
+        self.assertTrue(
+            _cost_limit_reached(mode="qualified", current_cost=0.0, max_cost_usd=0.0)
+        )
