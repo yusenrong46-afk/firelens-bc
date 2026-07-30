@@ -370,6 +370,16 @@ class ContractTests(unittest.TestCase):
                 "The preparedness guide was updated in 2025.",
                 "date",
             ),
+            (
+                "PreparedBC says households should prepare an emergency kit.",
+                "FireSmart BC says households should prepare an emergency kit.",
+                "authority",
+            ),
+            (
+                "Residents in Kamloops should keep an emergency kit ready.",
+                "Residents in Kelowna should keep an emergency kit ready.",
+                "location",
+            ),
         )
         for quote, claim, expected_error in cases:
             with self.subTest(claim=claim), tempfile.TemporaryDirectory() as directory:
@@ -419,6 +429,14 @@ class ContractTests(unittest.TestCase):
             (
                 "The preparedness guide was updated in 2024.",
                 "The guide's preparedness content was updated in 2024.",
+            ),
+            (
+                "PreparedBC says households should prepare an emergency kit.",
+                "PreparedBC says an emergency kit should be prepared by households.",
+            ),
+            (
+                "Residents in Kamloops should keep an emergency kit ready.",
+                "In Kamloops, residents should keep an emergency kit ready.",
             ),
         )
         for quote, claim in cases:

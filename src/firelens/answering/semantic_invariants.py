@@ -106,6 +106,22 @@ _OPTIONALITY_PRESERVER = re.compile(
 )
 _NEGATION = re.compile(r"\b(?:do not|don't|must not|should not|never|cannot|can't)\b", re.I)
 _CLAUSE = re.compile(r"[^.!?;:]+")
+_AUTHORITY_ALIASES = {
+    "bc centre for disease control": ("bc centre for disease control", "bccdc"),
+    "bc wildfire service": ("bc wildfire service", "bcws"),
+    "emergencyinfobc": ("emergencyinfobc",),
+    "firesmart bc": ("firesmart bc",),
+    "firesmart canada": ("firesmart canada",),
+    "government of british columbia": (
+        "government of british columbia",
+        "province of british columbia",
+    ),
+    "preparedbc": ("preparedbc",),
+}
+_LOCATION = re.compile(
+    r"\b(?:in|near|within|around|across)\s+"
+    r"(?P<name>[A-Z][A-Za-z'-]*(?:\s+[A-Z][A-Za-z'-]*){0,3})\b"
+)
 
 
 def _normalized_quantities(text: str) -> set[tuple[str, str]]:
@@ -143,10 +159,30 @@ def _normalized_dates(text: str) -> set[str]:
     return {" ".join(match.group().casefold().split()) for match in _DATE.finditer(text)}
 
 
-def preservation_errors(claim: str, quotes: list[str]) -> list[str]:
+def _mentioned_authorities(text: str) -> set[str]:
+    lowered = text.casefold()
+    return {
+        authority
+        for authority, aliases in _AUTHORITY_ALIASES.items()
+        if any(re.search(rf"(?<!\w){re.escape(alias)}(?!\w)", lowered) for alias in aliases)
+    }
+
+
+def _mentioned_locations(text: str) -> set[str]:
+    return {
+        " ".join(match.group("name").casefold().split()) for match in _LOCATION.finditer(text)
+    }
+
+
+def preservation_errors(
+    claim: str,
+    quotes: list[str],
+    source_contexts: list[str] | None = None,
+) -> list[str]:
     """Return closed, deterministic reasons a claim mutates its selected quotes."""
 
     combined_quotes = "\n".join(quotes)
+    allowed_context = "\n".join([combined_quotes, *(source_contexts or [])])
     errors: list[str] = []
 
     claim_quantities = _normalized_quantities(claim)
@@ -159,6 +195,24 @@ def preservation_errors(claim: str, quotes: list[str]) -> list[str]:
     introduced_dates = sorted(_normalized_dates(claim) - _normalized_dates(combined_quotes))
     if introduced_dates:
         errors.append("introduces an unsupported date: " + ", ".join(introduced_dates))
+
+    introduced_authorities = sorted(
+        _mentioned_authorities(claim) - _mentioned_authorities(allowed_context)
+    )
+    if introduced_authorities:
+        errors.append(
+            "introduces or substitutes an unsupported authority: "
+            + ", ".join(introduced_authorities)
+        )
+
+    introduced_locations = sorted(
+        _mentioned_locations(claim) - _mentioned_locations(allowed_context)
+    )
+    if introduced_locations:
+        errors.append(
+            "introduces or substitutes an unsupported location: "
+            + ", ".join(introduced_locations)
+        )
 
     lowered_claim = claim.casefold()
     lowered_quotes = combined_quotes.casefold()

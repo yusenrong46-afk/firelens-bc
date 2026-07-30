@@ -165,6 +165,7 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
             quotes_exact = False
             errors.append(f"claim {claim_number} repeats an evidence quote ID")
         selected_candidates = []
+        selected_source_contexts: list[str] = []
         for quote_id in claim.evidence_quote_ids:
             candidate = candidates.get(quote_id)
             if candidate is None:
@@ -179,6 +180,19 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
                 errors.append(f"claim {claim_number} quote {quote_id} is not exact")
                 continue
             selected_candidates.append(candidate)
+            selected_source_contexts.append(
+                " ".join(
+                    str(value)
+                    for value in (
+                        item.title,
+                        item.publisher,
+                        item.canonical_url,
+                        item.locator,
+                        item.section_title,
+                    )
+                    if value
+                )
+            )
             cited_evidence_ids.add(candidate.evidence_id)
         if not selected_candidates:
             citation_ids_valid = False
@@ -192,7 +206,9 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
             )
         else:
             invariant_errors = preservation_errors(
-                claim.text, [candidate.text for candidate in selected_candidates]
+                claim.text,
+                [candidate.text for candidate in selected_candidates],
+                selected_source_contexts,
             )
             if invariant_errors:
                 claim_support_valid = False
