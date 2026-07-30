@@ -1,5 +1,10 @@
 # FireLens BC V1.5 lab evidence ledger
 
+> Historical pre-hardening snapshot. For the current candidate, gate counts, artifact hashes,
+> and release decision, use `V1_5_HARDENING_QUALIFICATION.md` and
+> `V1_5_EXECUTION_STATE.md`. Values below are retained as commit-bound history and must not be
+> read as the current release state.
+
 Date: 2026-07-29 (America/Vancouver)
 
 Baseline: `209b4e5f8f16f13d7ac9af56a89e135f697ce052`
