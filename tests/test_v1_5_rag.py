@@ -372,3 +372,100 @@ class V15CorpusAwareTests(unittest.IsolatedAsyncioTestCase):
             decision = decide_support(plan, packet, RetrievalBundle())
             await runtime.aclose()
         self.assertEqual(decision.status, SupportStatus.INSUFFICIENT_EVIDENCE)
+
+    async def test_bylaw_template_request_requires_direct_administrative_support(self) -> None:
+        chunks = [
+            make_chunk(
+                "a",
+                "FireSmart principles can be integrated into long-term home renovations.",
+            )
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _provider, config = await make_runtime(Path(directory), chunks=chunks)
+            hit = RetrievalHit(
+                chunk_id="a",
+                parent_record_id=chunks[0].parent_record_id,
+                source_id=chunks[0].source_id,
+                title=chunks[0].title,
+                publisher=chunks[0].publisher,
+                canonical_url=chunks[0].canonical_url,
+                page_number=chunks[0].page_number,
+                section_title=chunks[0].section_title,
+                locator=chunks[0].locator,
+                temporal_class=chunks[0].temporal_class,
+                authority_class=chunks[0].authority_class,
+                document_sha256=chunks[0].document_sha256,
+                chunk_index=chunks[0].chunk_index,
+                text=chunks[0].text,
+            )
+            question = "What is the municipal bylaw template for mandatory renovations?"
+            packet = build_evidence_packet(
+                question,
+                [hit],
+                chunks,
+                corpus_version="test",
+                config=config,
+            )
+            plan = apply_planning_decision(
+                plan_query(QueryRequest(question=question)),
+                PlanningDecision(
+                    relation=QueryRelation.GROUNDED_CANDIDATE,
+                    retrieval_queries=["FireSmart home renovations"],
+                    required_aspects=["municipal mandatory renovation bylaw template"],
+                    explanation="nearby topic only",
+                ),
+            )
+            decision = decide_support(plan, packet, RetrievalBundle())
+            await runtime.aclose()
+        self.assertEqual(decision.status, SupportStatus.INSUFFICIENT_EVIDENCE)
+
+    async def test_original_question_can_satisfy_authority_support_after_broad_rewrite(
+        self,
+    ) -> None:
+        chunks = [
+            make_chunk(
+                "a",
+                "FireSmart activities reduce wildfire risk around a home.",
+                authority=AuthorityClass.WILDFIRE_PREPAREDNESS.value,
+            )
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _provider, config = await make_runtime(Path(directory), chunks=chunks)
+            hit = RetrievalHit(
+                chunk_id="a",
+                parent_record_id=chunks[0].parent_record_id,
+                source_id=chunks[0].source_id,
+                title=chunks[0].title,
+                publisher=chunks[0].publisher,
+                canonical_url=chunks[0].canonical_url,
+                page_number=chunks[0].page_number,
+                section_title=chunks[0].section_title,
+                locator=chunks[0].locator,
+                temporal_class=chunks[0].temporal_class,
+                authority_class=chunks[0].authority_class,
+                document_sha256=chunks[0].document_sha256,
+                chunk_index=chunks[0].chunk_index,
+                text=chunks[0].text,
+            )
+            question = "How can I reduce wildfire risk around my home?"
+            packet = build_evidence_packet(
+                question,
+                [hit],
+                chunks,
+                corpus_version="test",
+                config=config,
+            )
+            plan = apply_planning_decision(
+                plan_query(QueryRequest(question=question)),
+                PlanningDecision(
+                    relation=QueryRelation.GROUNDED_CANDIDATE,
+                    retrieval_queries=[
+                        "FireSmart roof siding windows vegetation priority zones"
+                    ],
+                    required_aspects=[],
+                    explanation="broad rewrite",
+                ),
+            )
+            decision = decide_support(plan, packet, RetrievalBundle())
+            await runtime.aclose()
+        self.assertEqual(decision.status, SupportStatus.ANSWERABLE)

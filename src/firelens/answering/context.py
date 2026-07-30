@@ -68,14 +68,17 @@ _ASPECT_STOPWORDS = {
 _ADMINISTRATIVE_STEMS = (
     "apply",
     "application",
+    "bylaw",
     "compensat",
     "certif",
     "deadline",
     "eligib",
+    "mandat",
     "permit",
     "policy",
     "register",
     "registration",
+    "template",
 )
 
 _CONFLICT_CUES = frozenset({"is", "means", "must", "required", "shall", "should", "will"})
@@ -417,7 +420,10 @@ def decide_support(
                 ]
             }
         )
-        if not _aspect_supported(request.query, authoritative_packet):
+        if not (
+            _aspect_supported(request.query, authoritative_packet)
+            or _aspect_supported(plan.original_question, authoritative_packet)
+        ):
             return SupportDecision(
                 status=SupportStatus.INSUFFICIENT_EVIDENCE,
                 reason_code=ReasonCode.REQUIRED_AUTHORITY_MISSING,
