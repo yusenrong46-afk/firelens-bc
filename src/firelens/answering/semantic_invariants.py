@@ -2,8 +2,9 @@
 
 These checks intentionally do not attempt general semantic entailment. They
 reject a small set of material mutations that must never be authorized by
-lexical overlap alone: changed quantities, inverted evacuation actions, and
-stronger directive language than the cited text supports.
+lexical overlap alone: changed quantities or dates, status substitutions,
+removed conditions, inverted safety actions, and stronger directive language
+than the cited text supports.
 """
 
 from __future__ import annotations
@@ -73,6 +74,38 @@ _STRONG_DIRECTIVE = re.compile(
     r"directs?\s+(?:people|residents|you)?\s*to|never)\b",
     re.IGNORECASE,
 )
+_DATE = re.compile(
+    r"\b(?:19|20)\d{2}-\d{2}-\d{2}\b|"
+    r"\b(?:january|february|march|april|may|june|july|august|september|"
+    r"october|november|december)\s+\d{1,2}(?:,\s*(?:19|20)\d{2})?\b|"
+    r"\b(?:19|20)\d{2}\b",
+    re.IGNORECASE,
+)
+_STATUS_GROUPS = (
+    ("evacuation alert", "evacuation order"),
+    ("out of control", "being held", "under control"),
+)
+_MATERIAL_CONDITION = re.compile(
+    r"\b(?:if|unless|until|only if|only when|only after|provided that)\b",
+    re.IGNORECASE,
+)
+_CONDITION_PRESERVER = re.compile(
+    r"\b(?:if|when|unless|until|before|after|only if|only when|only after|"
+    r"provided that)\b",
+    re.IGNORECASE,
+)
+_OPTIONAL_CONDITION = re.compile(
+    r"\b(?:if|unless)\b[^,.;]{0,80}\b(?:permits?|permitted|possible|safe|able|"
+    r"authorized|instructed|required|feasible)\b",
+    re.IGNORECASE,
+)
+_OPTIONALITY_PRESERVER = re.compile(
+    r"\b(?:permits?|permitted|possible|safe|able|authorized|instructed|required|"
+    r"feasible)\b",
+    re.IGNORECASE,
+)
+_NEGATION = re.compile(r"\b(?:do not|don't|must not|should not|never|cannot|can't)\b", re.I)
+_CLAUSE = re.compile(r"[^.!?;:]+")
 
 
 def _normalized_quantities(text: str) -> set[tuple[str, str]]:
@@ -93,6 +126,23 @@ def _directive_actions(text: str) -> set[str]:
     return {name for name, pattern in _ACTION_PATTERNS.items() if pattern.search(text)}
 
 
+def _action_polarities(text: str) -> dict[str, set[bool]]:
+    """Return whether each safety action is negated within its own clause."""
+
+    polarities: dict[str, set[bool]] = {}
+    for clause_match in _CLAUSE.finditer(text):
+        clause = clause_match.group()
+        negated = bool(_NEGATION.search(clause))
+        for name, pattern in _ACTION_PATTERNS.items():
+            if pattern.search(clause):
+                polarities.setdefault(name, set()).add(negated)
+    return polarities
+
+
+def _normalized_dates(text: str) -> set[str]:
+    return {" ".join(match.group().casefold().split()) for match in _DATE.finditer(text)}
+
+
 def preservation_errors(claim: str, quotes: list[str]) -> list[str]:
     """Return closed, deterministic reasons a claim mutates its selected quotes."""
 
@@ -105,6 +155,34 @@ def preservation_errors(claim: str, quotes: list[str]) -> list[str]:
     if introduced_quantities:
         rendered = ", ".join(f"{number} {unit}" for number, unit in introduced_quantities)
         errors.append(f"introduces an unsupported quantity or unit: {rendered}")
+
+    introduced_dates = sorted(_normalized_dates(claim) - _normalized_dates(combined_quotes))
+    if introduced_dates:
+        errors.append("introduces an unsupported date: " + ", ".join(introduced_dates))
+
+    lowered_claim = claim.casefold()
+    lowered_quotes = combined_quotes.casefold()
+    for status_group in _STATUS_GROUPS:
+        claimed_statuses = {status for status in status_group if status in lowered_claim}
+        quoted_statuses = {status for status in status_group if status in lowered_quotes}
+        if claimed_statuses and not claimed_statuses.issubset(quoted_statuses):
+            errors.append("changes a protected incident or evacuation status")
+            break
+
+    if _MATERIAL_CONDITION.search(combined_quotes) and not _CONDITION_PRESERVER.search(claim):
+        errors.append("removes a material condition from its quotes")
+    elif _OPTIONAL_CONDITION.search(combined_quotes) and not _OPTIONALITY_PRESERVER.search(
+        claim
+    ):
+        errors.append("removes a material condition from its quotes")
+
+    claim_polarities = _action_polarities(claim)
+    quote_polarities = _action_polarities(combined_quotes)
+    if any(
+        action in quote_polarities and not polarities.issubset(quote_polarities[action])
+        for action, polarities in claim_polarities.items()
+    ):
+        errors.append("changes the polarity of a safety action")
 
     claim_actions = _directive_actions(claim)
     quote_actions = _directive_actions(combined_quotes)

@@ -321,6 +321,103 @@ class ContractTests(unittest.TestCase):
 
         self.assertTrue(validate_draft(draft, packet).accepted)
 
+    def test_validator_rejects_protected_semantic_mutations(self) -> None:
+        cases = (
+            (
+                "An evacuation alert means be ready to leave.",
+                "An evacuation order means be ready to leave.",
+                "status",
+            ),
+            (
+                "If time permits, close all windows before leaving.",
+                "Close all windows before leaving.",
+                "condition",
+            ),
+            (
+                "Do not return until the evacuation order is rescinded.",
+                "Return before the evacuation order is rescinded.",
+                "polarity",
+            ),
+            (
+                "The preparedness guide was updated in 2024.",
+                "The preparedness guide was updated in 2025.",
+                "date",
+            ),
+        )
+        for quote, claim, expected_error in cases:
+            with self.subTest(claim=claim), tempfile.TemporaryDirectory() as directory:
+                chunk = make_chunk("a", quote)
+                config = write_test_corpus(Path(directory), [chunk])
+                packet = build_evidence_packet(
+                    "What does the guidance say?",
+                    [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
+                    [chunk],
+                    corpus_version="test-corpus.v1",
+                    config=config,
+                )
+                draft = GroundedDraft(
+                    answer_type="grounded",
+                    claims=[
+                        DraftProposalClaim(
+                            text=claim,
+                            evidence_quote_ids=[packet.quote_candidates[0].quote_id],
+                        )
+                    ],
+                    limitations=packet.limitations,
+                )
+
+                report = validate_draft(draft, packet)
+
+                self.assertFalse(report.accepted)
+                self.assertFalse(report.claim_support_valid)
+                self.assertTrue(
+                    any(expected_error in error for error in report.errors),
+                    report.errors,
+                )
+
+    def test_validator_allows_preserved_conditions_statuses_polarity_and_dates(self) -> None:
+        cases = (
+            (
+                "If time permits, close all windows before leaving.",
+                "When feasible, close all windows before leaving.",
+            ),
+            (
+                "An evacuation alert means be ready to leave.",
+                "An evacuation alert means being ready to leave.",
+            ),
+            (
+                "Do not return until the evacuation order is rescinded.",
+                "Do not return until the evacuation order is rescinded.",
+            ),
+            (
+                "The preparedness guide was updated in 2024.",
+                "The guide's preparedness content was updated in 2024.",
+            ),
+        )
+        for quote, claim in cases:
+            with self.subTest(claim=claim), tempfile.TemporaryDirectory() as directory:
+                chunk = make_chunk("a", quote)
+                config = write_test_corpus(Path(directory), [chunk])
+                packet = build_evidence_packet(
+                    "What does the guidance say?",
+                    [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
+                    [chunk],
+                    corpus_version="test-corpus.v1",
+                    config=config,
+                )
+                draft = GroundedDraft(
+                    answer_type="grounded",
+                    claims=[
+                        DraftProposalClaim(
+                            text=claim,
+                            evidence_quote_ids=[packet.quote_candidates[0].quote_id],
+                        )
+                    ],
+                    limitations=packet.limitations,
+                )
+
+                self.assertTrue(validate_draft(draft, packet).accepted)
+
     def test_validator_requires_every_retrieved_section_in_an_enumerated_answer(self) -> None:
         chunks = [
             make_chunk(
