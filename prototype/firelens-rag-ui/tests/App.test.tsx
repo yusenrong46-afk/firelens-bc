@@ -213,6 +213,34 @@ describe("FireLens Source Lens", () => {
     ]);
   });
 
+  it("uses the server-bounded assistant history representation", async () => {
+    const longAnswer = "A".repeat(7_000);
+    const boundedHistory = `${"A".repeat(5_997)}...`;
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(
+      new Response(JSON.stringify({
+        ...answer,
+        answer: longAnswer,
+        history_text: boundedHistory,
+      }), { status: 200 }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Ask a preparedness question"), "Question one");
+    await user.click(screen.getByLabelText("Send question"));
+    await screen.findByText("2 of 6 turns in context");
+    await user.type(screen.getByLabelText("Ask a preparedness question"), "Question two");
+    await user.click(screen.getByLabelText("Send question"));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+    const secondPayload = JSON.parse(fetchMock.mock.calls[1][1].body as string);
+    expect(secondPayload.history[1]).toEqual({
+      role: "assistant",
+      content: boundedHistory,
+    });
+  });
+
   it("bounds request history at six turns", async () => {
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(
       new Response(JSON.stringify(answer), { status: 200 }),

@@ -29,6 +29,20 @@ class FrozenStrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
+ASSISTANT_HISTORY_LIMIT = 6_000
+
+
+def bounded_assistant_history(text: str) -> str:
+    """Return the deterministic representation allowed in a later request."""
+
+    normalized = " ".join(text.split())
+    if not normalized:
+        raise ValueError("assistant history cannot be blank")
+    if len(normalized) <= ASSISTANT_HISTORY_LIMIT:
+        return normalized
+    return normalized[: ASSISTANT_HISTORY_LIMIT - 3].rstrip() + "..."
+
+
 class QueryRoute(StrEnum):
     CAPABILITY = "capability"
     RELATED = "related"
@@ -509,6 +523,11 @@ class AskResponse(StrictModel):
     trace_id: str
     response_mode: ResponseMode = ResponseMode.ABSTENTION
     answer: str | None = None
+    history_text: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=ASSISTANT_HISTORY_LIMIT,
+    )
     claims: list[PublicClaim] = Field(default_factory=list)
     evidence: list[PublicEvidence] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
@@ -522,6 +541,16 @@ class AskResponse(StrictModel):
 
     @model_validator(mode="after")
     def validate_public_state(self) -> AskResponse:
+        if self.answer is None:
+            if self.history_text is not None:
+                raise ValueError("history text requires a public answer")
+        else:
+            expected_history = bounded_assistant_history(self.answer)
+            if self.history_text is None:
+                self.history_text = expected_history
+            elif self.history_text != expected_history:
+                raise ValueError("history text must be derived from the public answer")
+
         claim_ids = [claim.claim_id for claim in self.claims]
         if len(claim_ids) != len(set(claim_ids)):
             raise ValueError("public claim IDs must be unique")

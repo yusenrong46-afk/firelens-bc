@@ -59,6 +59,19 @@
             "title": "Evidence",
             "type": "array"
           },
+          "history_text": {
+            "anyOf": [
+              {
+                "maxLength": 6000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "History Text"
+          },
           "limitations": {
             "items": {
               "type": "string"

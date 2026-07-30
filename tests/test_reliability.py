@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -10,7 +11,23 @@ from hypothesis import strategies as st
 from pydantic import ValidationError
 from rag_helpers import make_chunk
 
-from firelens.contracts import ConversationTurn, QueryRequest
+from firelens.contracts import (
+    BACKGROUND_LIMITATION,
+    AggregateFreshness,
+    AskResponse,
+    ClaimSupport,
+    ConversationTurn,
+    EvidenceStatus,
+    Freshness,
+    LiveResult,
+    LiveResultKind,
+    PublicClaim,
+    PublicEvidence,
+    QueryRequest,
+    ResponseMode,
+    ResponseStatus,
+    ValidationReport,
+)
 from firelens.errors import IndexValidationError
 from firelens.retrieval.embeddings import load_embedding_cache
 from firelens.retrieval.hybrid import reciprocal_rank_fusion
@@ -20,6 +37,128 @@ from firelens.traces import TraceRecorder
 
 
 class ContractPropertyTests(unittest.TestCase):
+    def test_every_response_mode_has_server_bounded_assistant_history(self) -> None:
+        long_answer = "word " * 1_500
+        timestamp = datetime(2026, 7, 30, tzinfo=UTC)
+        validation = ValidationReport(
+            accepted=True,
+            citation_ids_valid=True,
+            quotes_exact=True,
+            claim_support_valid=True,
+            policy_valid=True,
+        )
+        grounded_claim = PublicClaim(
+            claim_id="C1",
+            text="Keep water in an emergency kit.",
+            evidence_status=EvidenceStatus.VERIFIED_CORPUS,
+            supports=[ClaimSupport(evidence_id="E1", quote="Keep water")],
+        )
+        background_claim = PublicClaim(
+            claim_id="C1",
+            text="Wildfire smoke can affect air quality.",
+            evidence_status=EvidenceStatus.GENERAL_BACKGROUND,
+        )
+        evidence = PublicEvidence(
+            evidence_id="E1",
+            title="Preparedness Guide",
+            publisher="PreparedBC",
+            canonical_url="https://example.test/guide.pdf",
+            locator="PDF page 1",
+            temporal_class="stable_guidance",
+            primary_text="Keep water",
+            context_text="Keep water in an emergency kit.",
+        )
+        live = LiveResult(
+            result_id="incident:1",
+            kind=LiveResultKind.INCIDENT,
+            source_url="https://example.test/live",
+            source_updated_at=timestamp,
+            retrieved_at=timestamp,
+            freshness=Freshness.FRESH,
+            status="Out of Control",
+            name="Test Fire",
+            geometry={"type": "Point", "coordinates": [-123.5, 49.5]},
+        )
+        responses = {
+            ResponseMode.GROUNDED: AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id="grounded",
+                response_mode=ResponseMode.GROUNDED,
+                answer=long_answer,
+                claims=[grounded_claim],
+                evidence=[evidence],
+            ),
+            ResponseMode.PARTIAL: AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id="partial",
+                response_mode=ResponseMode.PARTIAL,
+                answer=long_answer,
+                claims=[grounded_claim],
+                evidence=[evidence],
+            ),
+            ResponseMode.CONFLICT: AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id="conflict",
+                response_mode=ResponseMode.CONFLICT,
+                answer=long_answer,
+                claims=[grounded_claim],
+                evidence=[evidence],
+                validation=validation,
+            ),
+            ResponseMode.BACKGROUND: AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id="background",
+                response_mode=ResponseMode.BACKGROUND,
+                answer=long_answer,
+                claims=[background_claim],
+                limitations=[BACKGROUND_LIMITATION],
+            ),
+            ResponseMode.CAPABILITY: AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id="capability",
+                response_mode=ResponseMode.CAPABILITY,
+                answer=long_answer,
+            ),
+            ResponseMode.SCOPE_REDIRECT: AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id="scope",
+                response_mode=ResponseMode.SCOPE_REDIRECT,
+                answer=long_answer,
+            ),
+            ResponseMode.ABSTENTION: AskResponse(
+                status=ResponseStatus.ABSTENTION,
+                trace_id="abstention",
+                response_mode=ResponseMode.ABSTENTION,
+                answer=long_answer,
+            ),
+            ResponseMode.LIVE: AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id="live",
+                response_mode=ResponseMode.LIVE,
+                answer=long_answer,
+                live_results=[live],
+                aggregate_freshness=AggregateFreshness.FRESH,
+            ),
+            ResponseMode.MIXED: AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id="mixed",
+                response_mode=ResponseMode.MIXED,
+                answer=long_answer,
+                claims=[grounded_claim],
+                evidence=[evidence],
+                validation=validation,
+                live_results=[live],
+                aggregate_freshness=AggregateFreshness.FRESH,
+            ),
+        }
+
+        self.assertEqual(set(responses), set(ResponseMode))
+        for mode, response in responses.items():
+            with self.subTest(mode=mode):
+                turn = ConversationTurn(role="assistant", content=response.history_text)
+                self.assertLessEqual(len(turn.content), 6_000)
+                self.assertTrue(turn.content.endswith("..."))
+
     def test_valid_long_answer_can_round_trip_as_assistant_history(self) -> None:
         answer = "A" * 2_500
 

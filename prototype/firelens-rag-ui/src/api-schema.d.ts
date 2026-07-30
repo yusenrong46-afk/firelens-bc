@@ -92,6 +92,8 @@ export interface components {
             error_kind?: string | null;
             /** Evidence */
             evidence?: components["schemas"]["PublicEvidence"][];
+            /** History Text */
+            history_text?: string | null;
             /** Limitations */
             limitations?: string[];
             /** Live Results */

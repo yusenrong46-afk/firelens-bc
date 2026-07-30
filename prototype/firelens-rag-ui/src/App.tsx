@@ -287,7 +287,7 @@ export function App() {
       const nextHistory: ConversationTurn[] = [
         ...requestHistory,
         { role: "user", content: normalized },
-        { role: "assistant", content: responseText(nextResponse) },
+        { role: "assistant", content: nextResponse.history_text ?? responseText(nextResponse) },
       ];
       setHistory(nextHistory.slice(-6));
       if (nextResponse.status === "answer") {
