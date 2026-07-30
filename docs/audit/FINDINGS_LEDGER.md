@@ -78,6 +78,9 @@ by GP-008. They are not duplicated as independent rows.
 - 2026-07-30: All focused GP-007 deadline/cancellation regressions pass without another runtime
   patch; the shared deadline fix is credited to `1a47099` and `6ad68aa`.
 - 2026-07-30: GP-007 global verification passed at `d4f6ddf`; status advanced to VERIFIED.
+- 2026-07-30: Three-finding checkpoint after GP-005 through GP-007: the dedicated adversarial
+  grounding and faithful-paraphrase set passed (`5` tests, `14` subtests); observed acceptance
+  regressions remain zero.
 
 ## Final report
 
