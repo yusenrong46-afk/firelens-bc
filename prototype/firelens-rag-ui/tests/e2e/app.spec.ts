@@ -226,6 +226,11 @@ test("shows official live records and a map through keyboard submission", async 
   await expect(page.getByText(/Source updated/)).toBeVisible();
   await expect(page.getByText(/Retrieved/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toBeVisible();
+  const marker = page.locator(".leaflet-interactive");
+  await expect(marker).toHaveCount(1);
+  await marker.click();
+  await expect(page.locator(".leaflet-popup").getByText("Test Fire", { exact: true })).toBeVisible();
+  await expect(page.getByText("No matching record is not a safety determination.")).toBeVisible();
   await expect(page.getByText("Sources supporting this answer")).toHaveCount(0);
 });
 
