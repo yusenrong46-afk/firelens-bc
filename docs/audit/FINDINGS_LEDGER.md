@@ -13,7 +13,7 @@ by GP-008. They are not duplicated as independent rows.
 |---|---|---|---|---|---|
 | GP-001 | P0 | VERIFIED | `tests/test_static_rag.py::ContractTests::test_validator_rejects_safety_action_inversion`; `test_validator_rejects_unsupported_quantity_and_duration`; `test_validator_rejects_protected_semantic_mutations` | `bfac0b5`, `be3cb4e`, `d68006d` | Added fail-closed authority-alias and explicit-location preservation using quote plus immutable local source context. Focused regressions, the 92-test fast gate, and full zero-cost verification pass. |
 | GP-002 | P1 | VERIFIED | `tests/test_repairs.py::RepairProvenanceContractTests::test_human_repair_provenance_reaches_public_evidence`; `prototype/firelens-rag-ui/tests/App.test.tsx` | `73d811b`, `2987bd5`, `0742cb0` | Public evidence preserves typed repair provenance and the source detail discloses a human-verified transcription. Focused, fast, full, generated-contract, UI, and browser gates pass. |
-| GP-003 | P1 | OPEN | `tests/test_live_answering.py`; `prototype/firelens-rag-ui/tests/e2e/app.spec.ts` | `2577462` | Stale heading/limitations were fixed. Audit typed aggregate state, badge, ARIA, list, and mixed freshness before verification. |
+| GP-003 | P1 | VERIFIED | `tests/test_live_answering.py::LiveAnswerCoordinatorTests::test_stale_records_are_never_described_as_current`; `test_mixed_freshness_has_typed_state_and_no_current_wording`; `prototype/firelens-rag-ui/tests/e2e/app.spec.ts` | `2577462`, `5555396` | API responses carry validated aggregate freshness. Answer copy, limitations, badge, map heading, ARIA warning, rows, nearby filtering, and mixed freshness agree. Focused, fast, full, UI, build, and browser gates pass. |
 | GP-004 | P1 | OPEN | `tests/test_request_guard.py`; `tests/test_security_operations.py` | `b3e202a` | Arbitrary X-Forwarded-For is rejected. Repository edge rules remain log-only and need an enforceable distributed policy plus offline configuration tests. |
 | GP-005 | P1 | OPEN | `tests/test_provider_api.py` | `b3e202a` | Declared and streamed oversize requests fail early. Add explicit byte-consumption and concurrent-request regressions before verification. |
 | CF-001 | P1 | VERIFIED | `tests/test_live.py::LiveDataServiceTests::test_nearby_results_keep_records_with_unknown_geometry`; `tests/test_live_answering.py::LiveAnswerCoordinatorTests::test_unknown_geometry_is_disclosed_without_hiding_record` | `2577462` | Malformed/unknown geometry remains visible with an explicit limitation instead of becoming a false no-result. |
@@ -44,6 +44,11 @@ by GP-008. They are not duplicated as independent rows.
 - 2026-07-30: GP-002 focused backend and UI regressions pass with the generated public contract;
   status advanced to FIXED pending the global zero-cost gate.
 - 2026-07-30: GP-002 global verification passed at `0742cb0`; status advanced to VERIFIED.
+- 2026-07-30: GP-003 completion regressions were added for all-stale and mixed-freshness API
+  responses plus badge and screen-reader warning order.
+- 2026-07-30: GP-003 focused backend, UI, and desktop/mobile browser regressions pass;
+  status advanced to FIXED pending the fast and global zero-cost gates.
+- 2026-07-30: GP-003 global verification passed at `5555396`; status advanced to VERIFIED.
 
 ## Final report
 
