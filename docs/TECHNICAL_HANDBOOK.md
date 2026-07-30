@@ -510,7 +510,7 @@ evidence, not promoted to this RC.
 - `.env`, raw source bytes, corpus output, embedding caches, vector artifacts,
   traces, reports, frontend builds, and browser artifacts are Git-ignored.
 - `make verify` begins with a tracked-file secret scan.
-- Every response receives a restrictive content policy and standard browser
+- Every API response receives a restrictive content policy and standard browser
   security headers; API responses are marked `no-store`.
 - Debug search and chunk routes do not exist unless debug mode is explicitly
   enabled, and a production-import test keeps experiment modules out of startup.

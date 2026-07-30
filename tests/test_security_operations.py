@@ -34,7 +34,10 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
             await runtime.aclose()
 
         self.assertEqual(health.status_code, 200)
-        self.assertIn("default-src 'self'", health.headers["content-security-policy"])
+        content_policy = health.headers["content-security-policy"]
+        self.assertIn("default-src 'self'", content_policy)
+        self.assertIn("style-src 'self'", content_policy)
+        self.assertNotIn("'unsafe-inline'", content_policy)
         self.assertEqual(health.headers["x-content-type-options"], "nosniff")
         self.assertEqual(health.headers["x-frame-options"], "DENY")
         self.assertEqual(health.headers["referrer-policy"], "no-referrer")
