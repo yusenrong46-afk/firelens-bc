@@ -11,7 +11,7 @@ by GP-008. They are not duplicated as independent rows.
 
 | ID | Severity | Status | Repro test path | Fix commit | Notes |
 |---|---|---|---|---|---|
-| GP-001 | P0 | VERIFIED | `tests/test_static_rag.py::ContractTests::test_validator_rejects_safety_action_inversion`; `test_validator_rejects_unsupported_quantity_and_duration`; `test_validator_rejects_protected_semantic_mutations` | `bfac0b5`, `be3cb4e` | Fail-first cases reproduced action inversion, 60-minute fabrication, 1.5 m to 15 m, status, condition, polarity, and date mutations. Authority and location coverage requires completion audit before final report. |
+| GP-001 | P0 | VERIFIED | `tests/test_static_rag.py::ContractTests::test_validator_rejects_safety_action_inversion`; `test_validator_rejects_unsupported_quantity_and_duration`; `test_validator_rejects_protected_semantic_mutations` | `bfac0b5`, `be3cb4e`, `d68006d` | Added fail-closed authority-alias and explicit-location preservation using quote plus immutable local source context. Focused regressions, the 92-test fast gate, and full zero-cost verification pass. |
 | GP-002 | P1 | OPEN | `tests/test_repairs.py` | `73d811b`, `2987bd5` | Human-only repair admission and typed backend provenance exist. Audit API/UI propagation and add any missing pinned regression before verification. |
 | GP-003 | P1 | OPEN | `tests/test_live_answering.py`; `prototype/firelens-rag-ui/tests/e2e/app.spec.ts` | `2577462` | Stale heading/limitations were fixed. Audit typed aggregate state, badge, ARIA, list, and mixed freshness before verification. |
 | GP-004 | P1 | OPEN | `tests/test_request_guard.py`; `tests/test_security_operations.py` | `b3e202a` | Arbitrary X-Forwarded-For is rejected. Repository edge rules remain log-only and need an enforceable distributed policy plus offline configuration tests. |
@@ -34,6 +34,11 @@ by GP-008. They are not duplicated as independent rows.
 - 2026-07-30: Ledger created from the deduplicated audit input. Existing commits were credited
   only where a pinned test and observed pre-fix failure were already available. All partially
   covered findings remain OPEN until their full stated scope is proven.
+- 2026-07-30: GP-001 reopened during the completion audit; authority and location mutation
+  regressions were added before implementation.
+- 2026-07-30: GP-001 focused regressions and the complete fast gate pass after the authority and
+  location preservation fix; status advanced to FIXED pending the global zero-cost gate.
+- 2026-07-30: GP-001 global verification passed at `d68006d`; status advanced to VERIFIED.
 
 ## Final report
 
