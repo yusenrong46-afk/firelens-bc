@@ -27,7 +27,7 @@ by GP-008. They are not duplicated as independent rows.
 | CF-008 | P2 | VERIFIED | `tests/test_static_rag.py::ServiceTests::test_valid_claims_are_salvaged_without_weakening_validation` | `bd66d4b` | Deterministic salvage still exposes only independently validated claims. Every salvage response now reports the exact omitted-item count and explicitly warns that the remainder is not a complete list. Fast and full gates pass. |
 | CF-009 | P3 | VERIFIED | `tests/test_static_rag.py::ServiceTests::test_single_shared_source_token_does_not_promote_tangent_query`; `test_explicit_source_reference_overrides_adjacent_planner_result` | `e21a180` | A single shared source-title token can no longer override a tangent planner decision or trigger embedding/reranking. Explicit source references require at least two distinctive matching tokens; the existing multi-token source-reference path remains covered. Fast and full gates pass. |
 | CF-010 | P3 | VERIFIED | `tests/test_static_rag.py::ServiceTests::test_active_operations_clear_after_success_and_provider_failure`; `test_active_operations_clear_after_unexpected_exception`; `test_active_operations_clear_after_timeout`; `test_active_operations_clear_after_caller_cancellation` | `026bbaa` | The public ask boundary owns cleanup in a `finally`, covering search, generation, recording, normal returns, typed provider failure, unexpected exceptions, timeout, and direct cancellation. The lifecycle matrix, fast gate, and full gate pass. |
-| CF-011 | P3 | OPEN | pending | pending | CSP still contains `style-src 'unsafe-inline'`; remove it without breaking the built UI or map. |
+| CF-011 | P3 | VERIFIED | `tests/test_security_operations.py::SecurityAndOperationsTests::test_security_headers_and_production_debug_boundary`; production build; desktop/mobile map Playwright flows | `4eb1f64` | API responses now use `style-src 'self'` with no `unsafe-inline`. The handbook accurately scopes the policy to API responses. Production UI build, Sites packaging, and all 18 desktop/mobile browser tests—including live map, tile failure, and stale/partial states—pass. |
 
 ## Iteration log
 
@@ -109,6 +109,9 @@ by GP-008. They are not duplicated as independent rows.
 - 2026-07-30: CF-010 global verification passed at `026bbaa`; status advanced to VERIFIED.
 - 2026-07-30: Three-finding semantic checkpoint after CF-008 through CF-010 passed:
   five adversarial/faithful tests, fourteen subtests, zero failures.
+- 2026-07-30: CF-011 fail-first header regression requires a self-only style policy
+  with no `unsafe-inline`; existing build and map browser tests remain the compatibility gate.
+- 2026-07-30: CF-011 global verification passed at `4eb1f64`; status advanced to VERIFIED.
 
 ## Final report
 
