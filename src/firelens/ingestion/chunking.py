@@ -230,7 +230,7 @@ def chunk_page_record(
 
     if "automated_visual_reviewed_text_repair" in record.quality_flags:
         raise IngestionError("An unapproved automated repair cannot be chunked.")
-    review_provenance = (
+    review_provenance: Literal["native_text", "human_verified_repair"] = (
         "human_verified_repair"
         if "human_reviewed_text_repair" in record.quality_flags
         else "native_text"
