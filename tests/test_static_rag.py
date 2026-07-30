@@ -224,6 +224,33 @@ class ContractTests(unittest.TestCase):
         self.assertTrue(report.accepted)
         self.assertTrue(report.policy_valid)
 
+    def test_validator_allows_quoted_evacuation_order_definition(self) -> None:
+        chunk = make_chunk(
+            "a",
+            "Evacuation Order\nThis means you are at risk and must leave IMMEDIATELY.",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [chunk])
+            packet = build_evidence_packet(
+                "What does an evacuation order mean?",
+                [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
+                [chunk],
+                corpus_version="test-corpus.v1",
+                config=config,
+            )
+        draft = GroundedDraft(
+            answer_type="grounded",
+            claims=[
+                DraftProposalClaim(
+                    text=chunk.text,
+                    evidence_quote_ids=[packet.quote_candidates[0].quote_id],
+                )
+            ],
+            limitations=packet.limitations,
+        )
+
+        self.assertTrue(validate_draft(draft, packet).accepted)
+
     def test_validator_rejects_safety_action_inversion(self) -> None:
         chunk = make_chunk(
             "a",
@@ -832,6 +859,21 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             runtime, _, _ = await make_runtime(Path(directory), provider=provider)
             response = await runtime.service.ask(
                 QueryRequest(question="Explain ocean tides, then explain emergency kits.")
+            )
+            self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
+            self.assertEqual(provider.generate_calls, 0)
+
+    async def test_mixed_scope_redirect_is_not_overridden_by_a_corpus_topic(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            chunks = [
+                make_chunk(
+                    "rank",
+                    "Wildfire ranks describe observed fire behaviour on a scale from 1 to 6.",
+                )
+            ]
+            runtime, provider, _ = await make_runtime(Path(directory), chunks=chunks)
+            response = await runtime.service.ask(
+                QueryRequest(question="Explain ocean tides, then explain wildfire ranks.")
             )
             self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
             self.assertEqual(provider.generate_calls, 0)

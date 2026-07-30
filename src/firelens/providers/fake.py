@@ -28,6 +28,22 @@ from firelens.contracts import (
 )
 
 _TOKENS = re.compile(r"[a-z0-9]+")
+_QUESTION_STOPWORDS = {
+    "about",
+    "are",
+    "does",
+    "for",
+    "from",
+    "how",
+    "the",
+    "what",
+    "when",
+    "where",
+    "which",
+    "who",
+    "why",
+    "with",
+}
 
 # The fake planner represents deterministic control-flow behaviour, not model
 # intelligence.  These low-risk explanatory concepts deliberately exercise the
@@ -80,7 +96,9 @@ class FakeProvider:
             )
         }
         distinctive_query_tokens = {
-            token for token in _TOKENS.findall(question_lower) if len(token) > 2
+            token
+            for token in _TOKENS.findall(question_lower)
+            if len(token) > 2 and token not in _QUESTION_STOPWORDS
         }
         grounded_terms = {
             "wildfire",
@@ -90,6 +108,7 @@ class FakeProvider:
             "alert",
             "order",
             "emergency",
+            "bag",
             "kit",
             "firesmart",
             "ember",
@@ -102,7 +121,7 @@ class FakeProvider:
         if any(re.search(pattern, question_lower) for pattern in _ADJACENT_CONCEPT_PATTERNS):
             relation = QueryRelation.ADJACENT
             queries = [context.strip()[:2_000]]
-        elif tokens & grounded_terms or distinctive_query_tokens & candidate_tokens:
+        elif tokens & grounded_terms or len(distinctive_query_tokens & candidate_tokens) >= 2:
             relation = QueryRelation.GROUNDED_CANDIDATE
             queries = [context.strip()[:2_000]]
         elif tokens & adjacent_terms:
@@ -190,22 +209,37 @@ class FakeProvider:
         del output_schema
         self.generate_calls += 1
         payload = json.loads(messages[-1]["content"])
-        item = payload["evidence"]["items"][0]
-        candidate = next(
-            quote
-            for quote in payload["evidence"]["quote_candidates"]
-            if quote["evidence_id"] == item["evidence_id"]
-        )
-        quote = candidate["text"]
+        evidence = payload["evidence"]
+        items = evidence["items"]
+        selected_items = [items[0]]
+        question = str(
+            payload.get("original_question") or payload.get("resolved_question") or ""
+        ).casefold()
+        if re.search(r"\b(?:stages|types|categories|levels|zones|steps)\b", question):
+            by_source: dict[str, list[dict[str, Any]]] = {}
+            for item in items:
+                by_source.setdefault(str(item["source_id"]), []).append(item)
+            enumerated_groups = [group for group in by_source.values() if len(group) >= 3]
+            if enumerated_groups:
+                selected_items = max(enumerated_groups, key=len)
+        candidates = [
+            next(
+                quote
+                for quote in evidence["quote_candidates"]
+                if quote["evidence_id"] == item["evidence_id"]
+            )
+            for item in selected_items
+        ]
         draft = GroundedDraft(
             answer_type="grounded",
             claims=[
                 DraftProposalClaim(
-                    text=quote,
+                    text=candidate["text"],
                     evidence_quote_ids=[candidate["quote_id"]],
                 )
+                for candidate in candidates
             ],
-            limitations=payload["evidence"].get("limitations", []),
+            limitations=evidence.get("limitations", []),
             requires_live_verification=False,
         )
         return GenerationResponse(model="fake/generator", draft=draft)

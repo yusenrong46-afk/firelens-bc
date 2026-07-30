@@ -82,7 +82,7 @@ _SAFE_CONDITIONAL_STATUS = (
     # A generic glossary definition is not an assertion about an actual fire.
     # Keep this exemption narrow: indefinite subjects plus an explicit condition.
     r"\b(?:a|any)\s+(?:wildfire|fire)\s+(?:is|remains)\s+(?:active|burning|out of control|being held)\s+(?:if|when)\b",
-    r"\b(?:an?\s+)?evacuation order\s+(?:means|requires|directs|tells (?:people|residents|you) to)\b.{0,80}\b(?:leave|evacuate) immediately\b",
+    r"\b(?:an?\s+)?evacuation order\s+(?:this\s+)?(?:means|requires|directs|tells (?:people|residents|you) to)\b.{0,80}\b(?:leave|evacuate) immediately\b",
     r"\bwhen\s+(?:an?\s+)?evacuation order is issued\b.{0,80}\b(?:leave|evacuate) immediately\b",
 )
 

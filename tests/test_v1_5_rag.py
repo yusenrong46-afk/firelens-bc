@@ -282,6 +282,53 @@ class V15RoutingTests(unittest.TestCase):
 
 
 class V15CorpusAwareTests(unittest.IsolatedAsyncioTestCase):
+    async def test_selected_evidence_must_directly_support_the_user_question(self) -> None:
+        chunk = make_chunk(
+            "a",
+            "Structure protection sprinklers are deployed by trained first responders.",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _provider, config = await make_runtime(Path(directory), chunks=[chunk])
+            hit = RetrievalHit(
+                chunk_id=chunk.chunk_id,
+                parent_record_id=chunk.parent_record_id,
+                source_id=chunk.source_id,
+                title=chunk.title,
+                publisher=chunk.publisher,
+                canonical_url=chunk.canonical_url,
+                page_number=chunk.page_number,
+                section_title=chunk.section_title,
+                locator=chunk.locator,
+                temporal_class=chunk.temporal_class,
+                authority_class=chunk.authority_class,
+                document_sha256=chunk.document_sha256,
+                chunk_index=chunk.chunk_index,
+                text=chunk.text,
+            )
+            packet = build_evidence_packet(
+                "What are aircraft licensing rules for volunteer pilots?",
+                [hit],
+                [chunk],
+                corpus_version="test",
+                config=config,
+            )
+            plan = apply_planning_decision(
+                plan_query(
+                    QueryRequest(
+                        question="What are aircraft licensing rules for volunteer pilots?"
+                    )
+                ),
+                PlanningDecision(
+                    relation=QueryRelation.GROUNDED_CANDIDATE,
+                    retrieval_queries=["aircraft licensing rules for volunteer pilots"],
+                    explanation="candidate retrieval",
+                ),
+            )
+            decision = decide_support(plan, packet, RetrievalBundle())
+            await runtime.aclose()
+
+        self.assertEqual(decision.status, SupportStatus.INSUFFICIENT_EVIDENCE)
+
     async def test_novel_identifier_can_enter_retrieval_from_current_corpus(self) -> None:
         chunks = [
             make_chunk(

@@ -179,7 +179,7 @@ def _mixed_scope_request(question: str, candidates: Sequence[Mapping[str, str]])
         overlap_counts.append(len(tokens & candidate_tokens))
         substantive_counts.append(len(tokens))
     return any(count >= 2 for count in overlap_counts) and any(
-        overlap == 0 and substantive >= 2
+        overlap <= 1 and substantive >= 2
         for overlap, substantive in zip(overlap_counts, substantive_counts, strict=True)
     )
 
@@ -452,12 +452,14 @@ class StaticRAGService:
             planning_started = perf_counter()
             planning_candidates = self._planning_candidates(plan.normalized_question)
             planning_request = request.model_copy(update={"question": plan.normalized_question})
+            mixed_scope = False
             try:
                 planning = await self.provider.plan(
                     planning_messages(planning_request, corpus_candidates=planning_candidates),
                     output_schema=planning_schema(),
                 )
                 if _mixed_scope_request(request.question, planning_candidates):
+                    mixed_scope = True
                     planning = planning.model_copy(
                         update={
                             "decision": planning.decision.model_copy(
@@ -498,7 +500,18 @@ class StaticRAGService:
                             )
                         }
                     )
-                plan = apply_planning_decision(plan, planning.decision)
+                plan = (
+                    plan.model_copy(
+                        update={
+                            "route": QueryRoute.TANGENT,
+                            "relation": QueryRelation.TANGENT,
+                            "retrieval_requests": [],
+                            "required_aspects": [],
+                        }
+                    )
+                    if mixed_scope
+                    else apply_planning_decision(plan, planning.decision)
+                )
             except ProviderError as exc:
                 bundle = RetrievalBundle(
                     complete=False,

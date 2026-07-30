@@ -38,31 +38,40 @@ _ASPECT_STOPWORDS = {
     "from",
     "how",
     "i",
+    "in",
     "is",
     "it",
     "into",
     "me",
     "my",
     "our",
+    "on",
     "possible",
     "should",
     "that",
     "the",
     "their",
     "this",
+    "to",
     "user",
     "we",
     "what",
     "when",
     "where",
     "which",
+    "who",
     "with",
     "would",
     "you",
     "your",
     "question",
+    "say",
+    "simpler",
+    "difference",
     "information",
     "guidance",
+    "word",
+    "words",
 }
 
 _ADMINISTRATIVE_STEMS = (
@@ -389,6 +398,20 @@ def decide_support(
             status=SupportStatus.INSUFFICIENT_EVIDENCE,
             reason_code=ReasonCode.WRONG_TEMPORAL_CLASS,
             explanation="Retrieved evidence has an unsupported temporal classification.",
+        )
+    support_queries = [
+        plan.original_question,
+        *(request.query for request in plan.retrieval_requests),
+    ]
+    if not any(
+        _aspect_supported(query, packet, minimum_ratio=0.5) for query in support_queries
+    ):
+        return SupportDecision(
+            status=SupportStatus.INSUFFICIENT_EVIDENCE,
+            reason_code=ReasonCode.NO_APPROVED_EVIDENCE,
+            explanation=(
+                "The selected evidence does not directly support the user's question."
+            ),
         )
     if packet.conflicts:
         return SupportDecision(
