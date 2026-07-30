@@ -14,7 +14,7 @@ by GP-008. They are not duplicated as independent rows.
 | GP-001 | P0 | VERIFIED | `tests/test_static_rag.py::ContractTests::test_validator_rejects_safety_action_inversion`; `test_validator_rejects_unsupported_quantity_and_duration`; `test_validator_rejects_protected_semantic_mutations` | `bfac0b5`, `be3cb4e`, `d68006d` | Added fail-closed authority-alias and explicit-location preservation using quote plus immutable local source context. Focused regressions, the 92-test fast gate, and full zero-cost verification pass. |
 | GP-002 | P1 | VERIFIED | `tests/test_repairs.py::RepairProvenanceContractTests::test_human_repair_provenance_reaches_public_evidence`; `prototype/firelens-rag-ui/tests/App.test.tsx` | `73d811b`, `2987bd5`, `0742cb0` | Public evidence preserves typed repair provenance and the source detail discloses a human-verified transcription. Focused, fast, full, generated-contract, UI, and browser gates pass. |
 | GP-003 | P1 | VERIFIED | `tests/test_live_answering.py::LiveAnswerCoordinatorTests::test_stale_records_are_never_described_as_current`; `test_mixed_freshness_has_typed_state_and_no_current_wording`; `prototype/firelens-rag-ui/tests/e2e/app.spec.ts` | `2577462`, `5555396` | API responses carry validated aggregate freshness. Answer copy, limitations, badge, map heading, ARIA warning, rows, nearby filtering, and mixed freshness agree. Focused, fast, full, UI, build, and browser gates pass. |
-| GP-004 | P1 | OPEN | `tests/test_request_guard.py`; `tests/test_security_operations.py` | `b3e202a` | Arbitrary X-Forwarded-For is rejected. Repository edge rules remain log-only and need an enforceable distributed policy plus offline configuration tests. |
+| GP-004 | P1 | BLOCKED | `tests/test_request_guard.py::RequestGuardTests::test_untrusted_forwarding_headers_cannot_rotate_identity`; `test_vercel_identity_uses_only_the_platform_owned_header`; `tests/test_release_operations.py::test_firewall_plan_is_enforced_method_scoped_and_not_auto_published`; `test_firewall_plan_rejects_log_only_rules` | `b3e202a`, `39c5d7c` | Repository scope is verified: trusted identity, enforced deny plan, no auto-publish, fast and full gates pass. External cross-instance enforcement cannot be verified without an owner-authorized preview and firewall publication, both forbidden in this zero-network loop. Recovery: authorize a preview, publish the rendered rules, and run the two-instance quota probe. |
 | GP-005 | P1 | OPEN | `tests/test_provider_api.py` | `b3e202a` | Declared and streamed oversize requests fail early. Add explicit byte-consumption and concurrent-request regressions before verification. |
 | CF-001 | P1 | VERIFIED | `tests/test_live.py::LiveDataServiceTests::test_nearby_results_keep_records_with_unknown_geometry`; `tests/test_live_answering.py::LiveAnswerCoordinatorTests::test_unknown_geometry_is_disclosed_without_hiding_record` | `2577462` | Malformed/unknown geometry remains visible with an explicit limitation instead of becoming a false no-result. |
 | CF-002 | P1 | VERIFIED | `tests/test_v1_5_rag.py::V15RoutingTests::test_long_preamble_cannot_hide_a_personal_safety_request` | `bfac0b5` | Safety classification uses the full raw question; focused text remains retrieval-only. |
@@ -52,6 +52,16 @@ by GP-008. They are not duplicated as independent rows.
 - 2026-07-30: Three-finding checkpoint after GP-001 through GP-003: the dedicated adversarial
   grounding and faithful-paraphrase set passed (`5` tests, `14` subtests); observed acceptance
   regressions: zero.
+- 2026-07-30: GP-004 fail-first policy regression reproduced that the committed edge plan is
+  observation-only; trusted-proxy identity regressions remain green.
+- 2026-07-30: GP-004 focused policy tests and local command rendering pass with enforced deny
+  actions and `publish_authorized=false`; status advanced to FIXED pending the global gate.
+- 2026-07-30: GP-004 repository changes passed the fast and global gates at `39c5d7c`. External
+  verification reached the three-attempt hard stop: (1) repository policy inspection proves only
+  desired configuration, (2) the renderer confirms `publish_authorized=false` and changes no
+  external state, and (3) the task's zero-network/no-publication boundary prevents a preview
+  cross-instance probe. Status is BLOCKED only for that external proof; exact recovery is recorded
+  in the finding row.
 
 ## Final report
 
