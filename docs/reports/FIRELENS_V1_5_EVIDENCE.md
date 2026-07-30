@@ -73,7 +73,10 @@ static-query gate passed.
   malformed/pathological sources and duplicate document hashes, and preserves near-duplicate
   warnings for version/conflict review.
 - Conflicting prescriptive sources produce a typed `conflict` response with both original sources;
-  summaries or graph outputs never become citation authority.
+  summaries or graph outputs never become citation authority. FireLens does not infer legal or
+  operational precedence from an authority label alone. The deterministic matrix covers same-
+  authority, provincial/public-health, provincial/FireSmart, provincial/local, version/date, and
+  jurisdiction differences while preserving complementary guidance as non-conflicting.
 
 ## Contextual retrieval and GraphRAG
 

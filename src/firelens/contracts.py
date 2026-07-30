@@ -71,6 +71,7 @@ class AuthorityClass(StrEnum):
     PROVINCIAL_GOVERNMENT = "provincial_government"
     PROVINCIAL_PUBLIC_HEALTH = "provincial_public_health"
     WILDFIRE_PREPAREDNESS = "recognized_wildfire_preparedness_program"
+    LOCAL_AUTHORITY = "local_authority"
 
 
 class TemporalClass(StrEnum):
