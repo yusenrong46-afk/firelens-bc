@@ -42,6 +42,37 @@ test.beforeEach(async ({ page }) => {
     const request = route.request().postDataJSON() as AskRequest;
     seenRequests.push(request);
     const question = request.question;
+    if (question.includes("stale official")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "answer",
+          response_mode: "live",
+          trace_id: "stale-live-trace",
+          answer: "Current official information: cached Test Fire record.",
+          suggested_questions: [],
+          claims: [],
+          evidence: [],
+          limitations: ["A refresh failed; this cached record is visibly stale."],
+          live_results: [{
+            result_id: "incident:stale-7",
+            kind: "incident",
+            authority: "BC Wildfire Service",
+            source_url: "https://example.test/incidents/stale-7",
+            source_updated_at: "2026-07-28T11:55:00Z",
+            retrieved_at: "2026-07-28T12:00:00Z",
+            freshness: "stale",
+            status: "Out of Control",
+            name: "Cached Test Fire",
+            geometry_relation: "nearby",
+            geometry: { type: "Point", coordinates: [-123.5, 49.5] },
+          }],
+          unavailable_layers: ["evacuation"],
+        }),
+      });
+      return;
+    }
     if (question.includes("active wildfire")) {
       await route.fulfill({
         status: 200,
@@ -196,6 +227,37 @@ test("shows official live records and a map through keyboard submission", async 
   await expect(page.getByText(/Retrieved/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toBeVisible();
   await expect(page.getByText("Sources supporting this answer")).toHaveCount(0);
+});
+
+test("keeps official text usable when basemap tiles fail", async ({ page }) => {
+  await page.route("https://*.tile.openstreetmap.org/**", (route) => route.abort());
+  await page.goto("/");
+  const question = page.getByLabel("Ask a preparedness question");
+  await question.fill("Is there an active wildfire near me right now?");
+  await question.press("Enter");
+  await expect(page.getByText("Current official information: Test Fire is Out of Control.")).toBeVisible();
+  await expect(page.getByText("Test Fire", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Basemap tiles are unavailable/)).toBeVisible();
+});
+
+test("shows stale and partial-layer state without hiding records", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Ask a preparedness question").fill("Show stale official wildfire records");
+  await page.getByLabel("Send question").click();
+  await expect(page.getByText("Cached Test Fire", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Out of Control · stale · BC Wildfire Service/)).toBeVisible();
+  await expect(page.getByText(/Some official layers are unavailable: evacuation/)).toBeVisible();
+});
+
+test("opens an official source link with keyboard activation", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Ask a preparedness question").fill("Is there an active wildfire near me right now?");
+  await page.getByLabel("Send question").press("Enter");
+  const source = page.getByRole("link", { name: "Source", exact: true });
+  await expect(source).toBeVisible();
+  await expect(source).toHaveAttribute("href", "https://example.test/incidents/7");
+  const [popup] = await Promise.all([page.waitForEvent("popup"), source.press("Enter")]);
+  expect(popup).toBeTruthy();
 });
 
 test("offers retry for a transient provider outage", async ({ page }) => {

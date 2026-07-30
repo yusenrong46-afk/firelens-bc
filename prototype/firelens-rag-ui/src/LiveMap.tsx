@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CircleMarker, GeoJSON, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import type { LatLngBoundsExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -57,6 +57,7 @@ export function LiveMap({
   results: LiveResult[];
   unavailableLayers?: string[];
 }) {
+  const [tileUnavailable, setTileUnavailable] = useState(false);
   const featureResults = useMemo(
     () => results.filter((result) => (result.geometry as { type?: string }).type !== "Point"),
     [results],
@@ -65,6 +66,8 @@ export function LiveMap({
     () => results.filter((result) => (result.geometry as { type?: string }).type === "Point"),
     [results],
   );
+  const resultSignature = results.map((result) => result.result_id).join("|");
+  useEffect(() => setTileUnavailable(false), [resultSignature]);
 
   return (
     <section className="live-map" aria-label="Official wildfire records map">
@@ -81,6 +84,7 @@ export function LiveMap({
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          eventHandlers={{ tileerror: () => setTileUnavailable(true) }}
         />
         <FitResults results={results} />
         {featureResults.map((result) => (
@@ -116,6 +120,11 @@ export function LiveMap({
           );
         })}
       </MapContainer>
+      {tileUnavailable && (
+        <p className="live-map__warning" role="status">
+          Basemap tiles are unavailable. The official text records below remain usable.
+        </p>
+      )}
       {unavailableLayers.length > 0 && (
         <p className="live-map__warning" role="status">
           Some official layers are unavailable: {unavailableLayers.join(", ")}.
