@@ -131,6 +131,7 @@ class V15RoutingTests(unittest.TestCase):
     def test_current_official_status_paraphrases_require_live_data(self) -> None:
         for question in (
             "Are there active wildfires in BC currently?",
+            "Is the McDougall Creek fire current?",
             "Did EmergencyInfoBC post anything new today?",
             "Tell me whether my address is under an evacuation order.",
             "Tell me whether my address is under an order.",

@@ -133,6 +133,7 @@ _LIVE_PATTERNS = (
     r"\b(?:fire|wildfire|evacuation|alert|order|smoke|air quality|road|highway)\b.{0,50}\b(?:active|in effect)\b",
     r"\b(?:what|how)\s+(?:is|are)\s+(?:the\s+)?(?:air quality|smoke conditions?)\b",
     r"\bis\s+(?:it|.{1,50})\s+smoky\b",
+    r"\b(?:fires?|wildfires?)\b.{0,60}\b(?:current|updated|up[- ]to[- ]date)\b",
     r"\b(?:emergencyinfo\s*bc|emergencyinfobc|bc wildfire service|bcws)\b.{0,60}\b(?:post(?:ed)?|new|update|latest|today|now)\b",
     r"\b(?:my|our)\s+(?:address|home|property|location)\s+is\s+under\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\b",
     r"\b(?:is|are)\s+there\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\s+(?:for|near|around|in)\b",
