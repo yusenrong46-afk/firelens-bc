@@ -42,7 +42,7 @@ def _error_status(error_kind: str | None) -> int:
 
 ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
     400: {"model": ErrorEnvelope},
-    413: {"model": ErrorEnvelope},
+    413: {"model": ErrorEnvelope, "description": "Content Too Large"},
     429: {"model": ErrorEnvelope},
     404: {"model": ErrorEnvelope},
     500: {"model": ErrorEnvelope},

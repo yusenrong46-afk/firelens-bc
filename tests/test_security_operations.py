@@ -12,7 +12,7 @@ from pathlib import Path
 import httpx
 from rag_helpers import make_runtime
 
-from firelens.api import create_app
+from firelens.api import ERROR_RESPONSES, create_app
 from firelens.operational_logging import LOGGER_NAME
 
 
@@ -118,6 +118,9 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ProductionImportBoundaryTests(unittest.TestCase):
+    def test_openapi_413_description_is_explicit_and_stable(self) -> None:
+        self.assertEqual(ERROR_RESPONSES[413]["description"], "Content Too Large")
+
     def test_production_entrypoint_does_not_import_experiments(self) -> None:
         experiment_modules = {
             "firelens.contextual_retrieval_experiment",
