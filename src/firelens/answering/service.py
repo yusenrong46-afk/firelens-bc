@@ -64,6 +64,22 @@ from firelens.retrieval.pipeline import RetrievalPipeline
 from firelens.traces import TraceRecorder
 
 _CORPUS_IDENTIFIER = re.compile(r"\b[A-Z]{2,}(?:-[A-Z0-9]+)+\b")
+_REFERENCE_TOKEN = re.compile(r"[a-z0-9]+")
+_GENERIC_SOURCE_WORDS = {
+    "bc",
+    "british",
+    "columbia",
+    "document",
+    "emergency",
+    "guide",
+    "guidance",
+    "household",
+    "information",
+    "kit",
+    "preparedness",
+    "service",
+    "wildfire",
+}
 
 
 def _candidate_contains_identifier(
@@ -78,6 +94,33 @@ def _candidate_contains_identifier(
         value for candidate in candidates for value in candidate.values()
     ).casefold()
     return any(identifier in candidate_text for identifier in identifiers)
+
+
+def _candidate_source_reference_present(
+    question: str, candidates: Sequence[Mapping[str, str]]
+) -> bool:
+    """Recognize explicit source names without treating snippets as answer evidence."""
+
+    question_tokens = set(_REFERENCE_TOKEN.findall(question.casefold()))
+    for candidate in candidates:
+        for candidate_field in ("title", "publisher", "source_id"):
+            tokens = [
+                token
+                for token in _REFERENCE_TOKEN.findall(
+                    candidate.get(candidate_field, "").casefold()
+                )
+                if token not in _GENERIC_SOURCE_WORDS
+            ]
+            distinctive = list(dict.fromkeys(tokens))
+            if len(distinctive) >= 2 and set(distinctive).issubset(question_tokens):
+                return True
+            if (
+                len(distinctive) == 1
+                and len(distinctive[0]) >= 5
+                and distinctive[0] in question_tokens
+            ):
+                return True
+    return False
 
 
 @dataclass(frozen=True)
@@ -271,6 +314,7 @@ class StaticRAGService:
                     "chunk_id": result.chunk_id,
                     "source_id": result.source_id,
                     "title": result.title,
+                    "publisher": result.publisher,
                     "section": result.section_title or "",
                     "snippet": snippet,
                 }
@@ -352,9 +396,15 @@ class StaticRAGService:
                     planning_messages(planning_request, corpus_candidates=planning_candidates),
                     output_schema=planning_schema(),
                 )
-                if planning.decision.relation == QueryRelation.TANGENT and (
+                if planning.decision.relation in {
+                    QueryRelation.TANGENT,
+                    QueryRelation.ADJACENT,
+                } and (
                     _candidate_contains_identifier(request.question, planning_candidates)
                     or self._planning_identifier_present(request.question)
+                    or _candidate_source_reference_present(
+                        request.question, planning_candidates
+                    )
                 ):
                     planning = planning.model_copy(
                         update={
@@ -364,7 +414,8 @@ class StaticRAGService:
                                     "retrieval_queries": [request.question],
                                     "required_aspects": [request.question],
                                     "explanation": (
-                                        "An exact identifier appears in the current corpus preflight."
+                                        "An explicit source reference appears in the current "
+                                        "corpus preflight."
                                     ),
                                 }
                             )

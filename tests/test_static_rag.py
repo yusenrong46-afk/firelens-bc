@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -596,6 +597,30 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
                     for claim in response.claims
                 )
             )
+
+    async def test_explicit_source_reference_overrides_adjacent_planner_result(self) -> None:
+        chunk = replace(
+            make_chunk(
+                "cedar-1",
+                "Bottled water sits beside a hand-crank radio in the bag.",
+            ),
+            source_id="cedar_ridge_household_kit",
+            title="Cedar Ridge Household Kit",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            provider = AdjacentProvider()
+            runtime, _, _ = await make_runtime(
+                Path(directory), provider=provider, chunks=[chunk]
+            )
+            response = await runtime.service.ask(
+                QueryRequest(
+                    question="According to Cedar Ridge, what sits beside bottled water?"
+                )
+            )
+            await runtime.aclose()
+
+        self.assertEqual(response.response_mode, ResponseMode.GROUNDED)
+        self.assertEqual(response.evidence[0].title, "Cedar Ridge Household Kit")
 
     async def test_complete_fake_pipeline_exposes_every_retrieval_stage(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
