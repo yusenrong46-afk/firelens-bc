@@ -90,6 +90,7 @@ framework callback graph hides control flow.
 | Configuration | `config.py` | paths, models, limits, experimental retrieval defaults | answer content |
 | Contracts | `contracts.py` | legal state shapes between stages and over HTTP | semantic correctness |
 | Deterministic boundary | `answering/intent.py` | live/prohibited/capability checks, conservative deictic safety | grounded relevance |
+| Live answer coordination | `live_answering.py` | supported layers, location requirements, outage semantics, static/live separation, mixed and partial composition | HTTP status codes or serialization |
 | Planner | `answering/planner.py` plus provider | relation and up to three standalone retrieval queries | safety override or answer text |
 | Retrieval | `retrieval/` | lexical/dense search, RRF, reranker mapping | public citations |
 | Evidence | `answering/context.py` | same-parent expansion, quote candidates, local support decision | model-generated metadata |

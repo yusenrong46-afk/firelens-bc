@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import math
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -13,13 +12,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from firelens.answering.intent import (
-    live_layers_for_question,
-    live_query_requires_location,
-    plan_query,
-    static_guidance_fragment,
-    unsupported_live_topics,
-)
+from firelens.answering.intent import plan_query
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     AskResponse,
@@ -30,12 +23,11 @@ from firelens.contracts import (
     LiveResultKind,
     QueryRequest,
     QueryRoute,
-    ReasonCode,
-    ResponseMode,
     ResponseStatus,
     SearchResponse,
 )
-from firelens.live import LiveDataService, LiveDataUnavailable
+from firelens.live import LiveDataService
+from firelens.live_answering import LiveAnswerCoordinator
 from firelens.request_guard import AnonymousRequestGuard
 from firelens.runtime import Runtime, load_runtime
 
@@ -63,6 +55,7 @@ def create_app(
 ) -> FastAPI:
     active_config = config or FireLensConfig.from_env()
     active_live_service = live_service or LiveDataService()
+    live_coordinator = LiveAnswerCoordinator(active_live_service)
     request_guard = AnonymousRequestGuard(
         limit=active_config.anonymous_rate_limit,
         window_seconds=active_config.anonymous_rate_window_seconds,
@@ -264,200 +257,16 @@ def create_app(
             )
         initial_plan = plan_query(request)
         if initial_plan.route == QueryRoute.LIVE:
-            layers = live_layers_for_question(request.question)
-            unsupported_topics = unsupported_live_topics(request.question)
-            mixed_question = static_guidance_fragment(request.question)
+            static_request = live_coordinator.static_request(request)
             static_response = (
                 await active_runtime.service.ask(
-                    QueryRequest(question=mixed_question, history=request.history),
+                    static_request,
                     allow_live=False,
                 )
-                if mixed_question is not None
+                if static_request is not None
                 else None
             )
-
-            def supported_static_partial(
-                current_information: str,
-                *,
-                limitations: list[str],
-                unavailable_layers: list[LiveResultKind] | None = None,
-            ) -> AskResponse | None:
-                if not (
-                    static_response is not None
-                    and static_response.status == ResponseStatus.ANSWER
-                    and static_response.response_mode
-                    in {ResponseMode.GROUNDED, ResponseMode.PARTIAL}
-                    and static_response.answer
-                    and static_response.claims
-                    and static_response.evidence
-                    and static_response.validation is not None
-                    and static_response.validation.accepted
-                ):
-                    return None
-                return AskResponse(
-                    status=ResponseStatus.ANSWER,
-                    trace_id=static_response.trace_id,
-                    response_mode=ResponseMode.PARTIAL,
-                    answer=(
-                        "Current official information: "
-                        + current_information
-                        + "\n\nPreparedness guidance: "
-                        + static_response.answer
-                        + "\n\nUncertainty: the current-information part was not established."
-                    ),
-                    claims=static_response.claims,
-                    evidence=static_response.evidence,
-                    limitations=[*limitations, *static_response.limitations],
-                    reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-                    validation=static_response.validation,
-                    unavailable_layers=unavailable_layers or [],
-                )
-
-            if not layers:
-                topics = ", ".join(unsupported_topics) or "that live information"
-                current_gap = (
-                    f"FireLens V1.5 does not have an official live source for {topics}."
-                )
-                partial = supported_static_partial(
-                    current_gap,
-                    limitations=[
-                        "No matching record is not a safety determination.",
-                        f"Unsupported live topics: {topics}",
-                    ],
-                )
-                if partial is not None:
-                    return partial
-                return AskResponse(
-                    status=ResponseStatus.ABSTENTION,
-                    trace_id=uuid4().hex,
-                    response_mode=ResponseMode.ABSTENTION,
-                    answer=(
-                        f"FireLens V1.5 does not have an official live source for {topics}. "
-                        "It will not substitute wildfire incident records for the requested data."
-                    ),
-                    reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-                    limitations=["No matching record is not a safety determination."],
-                )
-            if request.location is None and live_query_requires_location(request.question):
-                location_gap = (
-                    "A city or approximate location must be supplied in the location field; "
-                    "FireLens does not infer it from conversation text."
-                )
-                partial = supported_static_partial(
-                    location_gap,
-                    limitations=["No matching record is not a safety determination."],
-                )
-                if partial is not None:
-                    return partial
-                return AskResponse(
-                    status=ResponseStatus.ABSTENTION,
-                    trace_id=uuid4().hex,
-                    response_mode=ResponseMode.ABSTENTION,
-                    answer=(
-                        "Share a city or approximate location for this live query, or open "
-                        "the official BC Wildfire Service map. FireLens does not infer location."
-                    ),
-                    reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-                    limitations=["No matching record is not a safety determination."],
-                )
-            try:
-                live = (
-                    await current_live_service().nearby_results(request.location, layers=layers)
-                    if request.location is not None
-                    else await current_live_service().map_results(layers=layers)
-                )
-            except LiveDataUnavailable:
-                live = LiveMapResponse(
-                    generated_at=datetime.now(UTC),
-                    results=[],
-                    unavailable_layers=list(layers),
-                    limitations=["Official live sources are currently unavailable."],
-                )
-            if not live.results:
-                answer = (
-                    "No matching official record was found for this query. This does not mean "
-                    "the area is safe; check the issuing authority and BC Wildfire Service map."
-                    if len(live.unavailable_layers) < len(layers)
-                    else "Official live wildfire sources are unavailable, so FireLens cannot establish current conditions."
-                )
-                partial = supported_static_partial(
-                    answer,
-                    limitations=[
-                        *live.limitations,
-                        "No matching record is not a safety determination.",
-                        *(
-                            ["Unsupported live topics: " + ", ".join(unsupported_topics)]
-                            if unsupported_topics
-                            else []
-                        ),
-                    ],
-                    unavailable_layers=live.unavailable_layers,
-                )
-                if partial is not None:
-                    return partial
-                return AskResponse(
-                    status=ResponseStatus.ABSTENTION,
-                    trace_id=uuid4().hex,
-                    response_mode=ResponseMode.ABSTENTION,
-                    answer=answer,
-                    reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-                    limitations=[
-                        *live.limitations,
-                        *(
-                            ["Unsupported live topics: " + ", ".join(unsupported_topics)]
-                            if unsupported_topics
-                            else []
-                        ),
-                    ],
-                    unavailable_layers=live.unavailable_layers,
-                )
-            shown = live.results[:100]
-            summary = "; ".join(
-                f"{item.name or item.incident_number or item.result_id}: {item.status}"
-                for item in shown[:5]
-            )
-            live_answer = "Current official information: " + summary
-            if static_response is not None:
-                if (
-                    static_response.status == ResponseStatus.ANSWER
-                    and static_response.response_mode
-                    in {ResponseMode.GROUNDED, ResponseMode.PARTIAL}
-                    and static_response.answer
-                    and static_response.claims
-                    and static_response.evidence
-                    and static_response.validation is not None
-                    and static_response.validation.accepted
-                ):
-                    return AskResponse(
-                        status=ResponseStatus.ANSWER,
-                        trace_id=static_response.trace_id,
-                        response_mode=ResponseMode.MIXED,
-                        answer=(
-                            live_answer + "\n\nPreparedness guidance: " + static_response.answer
-                        ),
-                        claims=static_response.claims,
-                        evidence=static_response.evidence,
-                        live_results=shown,
-                        limitations=[*live.limitations, *static_response.limitations],
-                        validation=static_response.validation,
-                        unavailable_layers=live.unavailable_layers,
-                    )
-            return AskResponse(
-                status=ResponseStatus.ANSWER,
-                trace_id=uuid4().hex,
-                response_mode=ResponseMode.LIVE,
-                answer=live_answer,
-                live_results=shown,
-                limitations=[
-                    *live.limitations,
-                    *(
-                        ["Unsupported live topics: " + ", ".join(unsupported_topics)]
-                        if unsupported_topics
-                        else []
-                    ),
-                ],
-                unavailable_layers=live.unavailable_layers,
-            )
+            return await live_coordinator.answer(request, static_response)
         response = await active_runtime.service.ask(request)
         if response.status == ResponseStatus.ERROR:
             return error_response(
