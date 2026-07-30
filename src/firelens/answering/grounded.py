@@ -304,6 +304,7 @@ class GroundedAnswerEngine:
                 canonical_url=HttpUrl(item.canonical_url),
                 locator=item.locator,
                 temporal_class=TemporalClass.STABLE_GUIDANCE,
+                review_provenance=item.review_provenance,
                 primary_text=item.primary_text,
                 context_text=item.context_text,
             )

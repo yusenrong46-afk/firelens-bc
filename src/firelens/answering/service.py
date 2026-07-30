@@ -308,6 +308,7 @@ def _conflict_response(trace_id: str, packet: EvidencePacket) -> AskResponse:
                 canonical_url=HttpUrl(span.canonical_url),
                 locator=span.locator,
                 temporal_class=TemporalClass.STABLE_GUIDANCE,
+                review_provenance=span.review_provenance,
                 primary_text=span.primary_text,
                 context_text=span.context_text,
             )

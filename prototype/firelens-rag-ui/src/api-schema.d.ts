@@ -301,6 +301,12 @@ export interface components {
             /** Publisher */
             publisher: string;
             /**
+             * Review Provenance
+             * @default native_text
+             * @enum {string}
+             */
+            review_provenance: "native_text" | "human_verified_repair";
+            /**
              * Temporal Class
              * @constant
              */

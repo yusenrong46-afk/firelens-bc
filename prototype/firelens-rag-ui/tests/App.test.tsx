@@ -26,6 +26,7 @@ const answer = {
       canonical_url: "https://example.test/guide.pdf",
       locator: "PDF page 5",
       temporal_class: "stable_guidance",
+      review_provenance: "human_verified_repair",
       primary_text: "Grab-and-Go Bag: Food & water",
       context_text: "Grab-and-Go Bag: Food & water and emergency supplies.",
     },
@@ -91,6 +92,7 @@ describe("FireLens Source Lens", () => {
     expect(screen.getAllByText("Keep water and food in a grab-and-go bag.").length).toBeGreaterThan(1);
     expect(screen.getByText("Food & water").tagName).toBe("MARK");
     expect(screen.getByText("PreparedBC")).toBeInTheDocument();
+    expect(screen.getByText("Human-verified source transcription")).toBeInTheDocument();
   });
 
   it("renders labelled background without an evidence interaction", async () => {

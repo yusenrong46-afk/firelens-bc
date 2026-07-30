@@ -463,6 +463,7 @@ class PublicEvidence(FrozenStrictModel):
     canonical_url: HttpUrl
     locator: str | None
     temporal_class: Literal[TemporalClass.STABLE_GUIDANCE]
+    review_provenance: Literal["native_text", "human_verified_repair"] = "native_text"
     primary_text: str
     context_text: str
 

@@ -616,6 +616,15 @@
             "title": "Publisher",
             "type": "string"
           },
+          "review_provenance": {
+            "default": "native_text",
+            "enum": [
+              "native_text",
+              "human_verified_repair"
+            ],
+            "title": "Review Provenance",
+            "type": "string"
+          },
           "temporal_class": {
             "const": "stable_guidance",
             "title": "Temporal Class",

@@ -179,6 +179,9 @@ function SourcePanel({
               <div><dt>Document</dt><dd>{evidence.title}</dd></div>
               <div><dt>Locator</dt><dd>{evidence.locator || "Source passage"}</dd></div>
               <div><dt>Guidance type</dt><dd>Stable preparedness guidance</dd></div>
+              {evidence.review_provenance === "human_verified_repair" && (
+                <div><dt>Text review</dt><dd>Human-verified source transcription</dd></div>
+              )}
             </dl>
             <div className="canonical">
               <strong>Canonical source</strong>
