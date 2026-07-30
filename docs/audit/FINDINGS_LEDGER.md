@@ -115,6 +115,69 @@ by GP-008. They are not duplicated as independent rows.
 
 ## Final report
 
-Pending. Append the findings-to-commits-to-tests table, blocked items, faithful-paraphrase
-false-abstention delta, final zero-cost commands, and the explicitly deferred paid/human gates only
-after every row is VERIFIED or validly BLOCKED.
+### Candidate identity and disposition
+
+- Branch: `maintenance/v1-5-principal-remediation`.
+- Audited base: `fc1c7d0bb55aa18c94b2e6540cd6590c5385ad7c`.
+- Qualified source candidate: `faf79940aacdf0a6c943e0e726c477d46aefd2e3`.
+- Canonical findings: 17 total; 16 VERIFIED and 1 validly BLOCKED.
+- The findings table above is the final findings-to-commits-to-tests map. Every row names its
+  pinned regression path, implementation commit, final status, and observed gate evidence.
+- The original dirty checkout was not modified. Its untracked evaluation and research files were
+  preserved. No branch was pushed, merged, deployed, or published.
+
+The repository-actionable remediation is complete. This is not a production-release approval:
+GP-004 still requires external proof, and the deferred paid and human gates below remain mandatory.
+
+### Blocked item
+
+GP-004 is BLOCKED only for external distributed enforcement proof. The repository now ignores
+ordinary forwarding headers, accepts the platform-owned identity only in an identified Vercel
+environment, keeps the instance-local limiter as defense in depth, and renders an enforced,
+method-scoped edge deny plan with publication disabled. Local tests cannot prove that two deployed
+instances share the published quota. Recovery requires owner authorization to create a preview,
+publish the reviewed edge rules, and execute the documented two-instance quota probe. Those actions
+were outside this zero-network, no-publication loop.
+
+### Faithful-paraphrase false-abstention delta
+
+Observed delta: **0** relative to the post-GP-001 semantic-gate baseline. The fixed acceptance set
+(`test_validator_allows_faithful_quantity_paraphrase` and
+`test_validator_allows_preserved_conditions_statuses_polarity_and_dates`) passed at every required
+three-finding checkpoint and on the final candidate. The final combined adversarial/acceptance run
+passed 5 tests and 14 subtests. This is a bounded regression result, not a claim about unreviewed
+real-world questions; the human semantic review remains required.
+
+### Final zero-cost qualification
+
+All commands ran locally with fakes and fixtures. No OpenRouter, Gemini, Cohere, ArcGIS, geocoder,
+or other external service was called.
+
+| Command | Final result |
+|---|---|
+| Dedicated adversarial grounding plus faithful paraphrases | 5 passed, 14 subtests passed |
+| `make verify` | secret scan and generated-contract checks clean; Ruff and formatting clean; mypy clean; 221 Python tests passed, 10 skipped, 102 subtests passed; 13 UI tests passed; production build passed; 4 Sites tests passed; 18 Playwright tests passed |
+| `PYTHONPATH=src .venv/bin/python -m pytest -q tests/test_reliability.py -rs` | 13 passed, 9 subtests passed; Hypothesis-backed reliability tests executed |
+| `git diff --exit-code` | clean after generated-file checks |
+| `npm --prefix prototype/firelens-rag-ui test` | 13 passed |
+| `npm --prefix prototype/firelens-rag-ui run build` | TypeScript typecheck and production build passed |
+
+### Foundation alignment
+
+- Deterministic code remains authoritative for safety, semantic invariants, citation validation,
+  freshness, geometry, schemas, request limits, and release disposition.
+- Models still propose only within bounded contracts; no model or lexical shortcut can promote
+  rejected evidence.
+- No framework, model, reranker, retrieval strategy, corpus, live source, or provider fallback was
+  changed. No dependency was added.
+- Public request contracts remain compatible. The response gained only an optional,
+  server-derived bounded history field; visible answer text remains unchanged.
+- Changes are isolated in one reviewable finding per implementation commit, with a separate durable
+  evidence update. Generated OpenAPI and TypeScript files were regenerated, never hand-edited.
+
+### Explicitly deferred release gates
+
+The paid 105-case probe rerun, sealed retrieval review, and 50-case human semantic review were OUT
+OF SCOPE for this loop and are still required before release. They must be executed against the
+exact promoted candidate after GP-004's preview enforcement is verified. Historical results do not
+qualify this tree, and no production-readiness claim should be made until those gates pass.
