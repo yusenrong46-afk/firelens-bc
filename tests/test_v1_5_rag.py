@@ -399,26 +399,35 @@ class V15CorpusAwareTests(unittest.IsolatedAsyncioTestCase):
                 chunk_index=chunks[0].chunk_index,
                 text=chunks[0].text,
             )
-            question = "What is the municipal bylaw template for mandatory renovations?"
-            packet = build_evidence_packet(
-                question,
-                [hit],
-                chunks,
-                corpus_version="test",
-                config=config,
+            questions = (
+                "What is the municipal bylaw template for mandatory renovations?",
+                "What is the exact dollar fine for combustibles near a home?",
             )
-            plan = apply_planning_decision(
-                plan_query(QueryRequest(question=question)),
-                PlanningDecision(
-                    relation=QueryRelation.GROUNDED_CANDIDATE,
-                    retrieval_queries=["FireSmart home renovations"],
-                    required_aspects=["municipal mandatory renovation bylaw template"],
-                    explanation="nearby topic only",
-                ),
-            )
-            decision = decide_support(plan, packet, RetrievalBundle())
+            decisions = []
+            for question in questions:
+                packet = build_evidence_packet(
+                    question,
+                    [hit],
+                    chunks,
+                    corpus_version="test",
+                    config=config,
+                )
+                plan = apply_planning_decision(
+                    plan_query(QueryRequest(question=question)),
+                    PlanningDecision(
+                        relation=QueryRelation.GROUNDED_CANDIDATE,
+                        retrieval_queries=["FireSmart home renovations"],
+                        required_aspects=[question],
+                        explanation="nearby topic only",
+                    ),
+                )
+                decisions.append(decide_support(plan, packet, RetrievalBundle()))
             await runtime.aclose()
-        self.assertEqual(decision.status, SupportStatus.INSUFFICIENT_EVIDENCE)
+        self.assertTrue(
+            all(
+                decision.status == SupportStatus.INSUFFICIENT_EVIDENCE for decision in decisions
+            )
+        )
 
     async def test_original_question_can_satisfy_authority_support_after_broad_rewrite(
         self,
