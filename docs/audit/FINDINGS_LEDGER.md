@@ -22,7 +22,7 @@ by GP-008. They are not duplicated as independent rows.
 | GP-007 | P1 | VERIFIED | `tests/test_provider_api.py::ApiTests::test_public_deadline_cancels_every_provider_stage`; `test_caller_cancellation_reaches_active_provider_stage`; `test_public_deadline_cancels_slow_live_work`; `test_public_deadline_cancels_slow_live_map_work` | `1a47099`, `6ad68aa`, `d4f6ddf` | Planner, embedding, reranking, generation, repair, live ask, and live map all receive deadline cancellation; direct caller cancellation also reaches the active provider coroutine. Active-operation bookkeeping is tracked separately as CF-010. Fast and full gates pass. |
 | GP-008 | P2 | VERIFIED | `tests/test_live.py::LiveDataServiceTests::test_record_ceiling_fails_closed_and_is_visible`; `test_bbox_is_sent_to_arcgis_and_retained_as_local_backstop`; `test_layer_definition_can_be_injected_without_code_path_duplication`; `test_repeated_full_page_fails_closed_instead_of_looping` | `2577462`, `9dc82d6` | Typed injectable layer definitions own URL/identity/schema. Pagination has page/record/dedup/repeat/progress bounds; ArcGIS receives bbox envelopes, bbox-keyed caches stay isolated, and local valid-geometry filtering remains a backstop without hiding malformed records. Fast and full gates pass. |
 | GP-009 | P2 | VERIFIED | `tests/test_v1_5_rag.py::V15RoutingTests::test_evidence_cut_preserves_required_aspect_and_source_diversity` | `deb490b` | Before the bounded evidence cut, deterministic selection reserves directly matched aspect slots, then relevant unseen-source slots, then fills in reranker order. Both reservations require at least 40% normalized overlap, preventing one-token promotion. Focused, broader RAG, fast, and full gates pass. |
-| GP-010 | P2 | OPEN | `tests/test_reliability.py::ContractPropertyTests::test_valid_long_answer_can_round_trip_as_assistant_history` | `1a47099` | One grounded-length regression exists. Prove round-trip bounds for every response mode or add a server-issued bounded history representation. |
+| GP-010 | P2 | VERIFIED | `tests/test_reliability.py::ContractPropertyTests::test_every_response_mode_has_server_bounded_assistant_history`; `prototype/firelens-rag-ui/tests/App.test.tsx::uses the server-bounded assistant history representation` | `a0a4b4f` | Every response with a public answer receives a deterministic, normalized assistant-history representation capped at 6,000 characters. The response contract rejects spoofed history, the UI uses the bounded representation for follow-up context, and the full visible answer remains unchanged. Fast and full gates pass. |
 | CF-004 | P2 | VERIFIED | `tests/test_security_operations.py::SecurityOperationTests::test_production_never_registers_debug_routes` | `b3e202a` | Production environment prevents debug-route registration even when the debug flag is true. |
 | CF-008 | P2 | OPEN | pending | pending | Audit enumerated claim salvage; any dropped supported member must be disclosed explicitly in partial limitations. |
 | CF-009 | P3 | OPEN | pending | pending | Audit tangent-token promotion in evidence/support routing and add a fail-first regression. |
@@ -93,6 +93,11 @@ by GP-008. They are not duplicated as independent rows.
 - 2026-07-30: The corrected GP-009 regression (synchronous and actually executed) now passes;
   the first async-on-`TestCase` version was rejected as a false-pass harness defect.
 - 2026-07-30: GP-009 global verification passed at `deb490b`; status advanced to VERIFIED.
+- 2026-07-30: GP-010 fail-first backend/UI regressions were added for a server-bounded assistant
+  history representation across all response modes.
+- 2026-07-30: GP-010 global verification passed at `a0a4b4f`; status advanced to VERIFIED.
+- 2026-07-30: Three-finding semantic checkpoint after GP-008 through GP-010 passed:
+  five adversarial/faithful tests, fourteen subtests, zero failures.
 
 ## Final report
 
