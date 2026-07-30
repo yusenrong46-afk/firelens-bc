@@ -15,7 +15,7 @@ by GP-008. They are not duplicated as independent rows.
 | GP-002 | P1 | VERIFIED | `tests/test_repairs.py::RepairProvenanceContractTests::test_human_repair_provenance_reaches_public_evidence`; `prototype/firelens-rag-ui/tests/App.test.tsx` | `73d811b`, `2987bd5`, `0742cb0` | Public evidence preserves typed repair provenance and the source detail discloses a human-verified transcription. Focused, fast, full, generated-contract, UI, and browser gates pass. |
 | GP-003 | P1 | VERIFIED | `tests/test_live_answering.py::LiveAnswerCoordinatorTests::test_stale_records_are_never_described_as_current`; `test_mixed_freshness_has_typed_state_and_no_current_wording`; `prototype/firelens-rag-ui/tests/e2e/app.spec.ts` | `2577462`, `5555396` | API responses carry validated aggregate freshness. Answer copy, limitations, badge, map heading, ARIA warning, rows, nearby filtering, and mixed freshness agree. Focused, fast, full, UI, build, and browser gates pass. |
 | GP-004 | P1 | BLOCKED | `tests/test_request_guard.py::RequestGuardTests::test_untrusted_forwarding_headers_cannot_rotate_identity`; `test_vercel_identity_uses_only_the_platform_owned_header`; `tests/test_release_operations.py::test_firewall_plan_is_enforced_method_scoped_and_not_auto_published`; `test_firewall_plan_rejects_log_only_rules` | `b3e202a`, `39c5d7c` | Repository scope is verified: trusted identity, enforced deny plan, no auto-publish, fast and full gates pass. External cross-instance enforcement cannot be verified without an owner-authorized preview and firewall publication, both forbidden in this zero-network loop. Recovery: authorize a preview, publish the rendered rules, and run the two-instance quota probe. |
-| GP-005 | P1 | OPEN | `tests/test_provider_api.py` | `b3e202a` | Declared and streamed oversize requests fail early. Add explicit byte-consumption and concurrent-request regressions before verification. |
+| GP-005 | P1 | VERIFIED | `tests/test_provider_api.py::ApiTests::test_chunked_oversized_body_stops_consuming_after_limit`; `test_misleading_declared_length_cannot_bypass_streaming_cap`; `test_concurrent_oversized_bodies_are_independently_bounded` | `b3e202a`, `7f633b1` | Streaming enforcement passes measured missing/misleading-length and eight-request concurrency coverage, stopping at the first rejecting frame without consuming a third frame. Fast and full zero-cost gates pass. |
 | CF-001 | P1 | VERIFIED | `tests/test_live.py::LiveDataServiceTests::test_nearby_results_keep_records_with_unknown_geometry`; `tests/test_live_answering.py::LiveAnswerCoordinatorTests::test_unknown_geometry_is_disclosed_without_hiding_record` | `2577462` | Malformed/unknown geometry remains visible with an explicit limitation instead of becoming a false no-result. |
 | CF-002 | P1 | VERIFIED | `tests/test_v1_5_rag.py::V15RoutingTests::test_long_preamble_cannot_hide_a_personal_safety_request` | `bfac0b5` | Safety classification uses the full raw question; focused text remains retrieval-only. |
 | GP-006 | P1 | OPEN | `tests/test_conflict_handling.py` | `1a47099` | Cross-authority skip was removed. Freeze and execute an explicit precedence/conflict matrix before verification. |
@@ -62,6 +62,12 @@ by GP-008. They are not duplicated as independent rows.
   external state, and (3) the task's zero-network/no-publication boundary prevents a preview
   cross-instance probe. Status is BLOCKED only for that external proof; exact recovery is recorded
   in the finding row.
+- 2026-07-30: GP-005 completion regressions added explicit byte/frame accounting for misleading
+  lengths and eight concurrent oversized request bodies.
+- 2026-07-30: All four focused GP-005 body-boundary tests passed without another runtime patch;
+  the implementation fix is credited to `b3e202a` and the remaining change is durable proof.
+- 2026-07-30: GP-005 global verification passed after one formatter-only retry at `7f633b1`;
+  status advanced to VERIFIED.
 
 ## Final report
 
