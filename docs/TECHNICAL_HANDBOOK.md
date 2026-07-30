@@ -491,6 +491,10 @@ evidence, not promoted to this RC.
 - `.env`, raw source bytes, corpus output, embedding caches, vector artifacts,
   traces, reports, frontend builds, and browser artifacts are Git-ignored.
 - `make verify` begins with a tracked-file secret scan.
+- Every response receives a restrictive content policy and standard browser
+  security headers; API responses are marked `no-store`.
+- Debug search and chunk routes do not exist unless debug mode is explicitly
+  enabled, and a production-import test keeps experiment modules out of startup.
 - Question text is absent from traces by default; a SHA-256 is stored instead.
 - `FIRELENS_TRACE_CONTENT=true` is an explicit local debugging opt-in.
 - Trace retention is the lower of 250 files or 50 MiB.
@@ -498,6 +502,9 @@ evidence, not promoted to this RC.
   temporary-file replacement.
 - Index builds fail fast on a concurrent writer.
 - Every request receives a trace ID, including unexpected HTTP 500 responses.
+- Normal operational logs contain only trace ID, route, response mode, latency,
+  provider-stage names, and an error category. Questions, locations,
+  coordinates, evidence text, and secrets are outside the logging interface.
 - Any credential pasted into a conversation must be considered exposed and
   rotated; repository state does not prove account-side rotation.
 

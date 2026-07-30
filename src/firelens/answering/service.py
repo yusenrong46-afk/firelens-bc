@@ -57,6 +57,7 @@ from firelens.contracts import (
 )
 from firelens.errors import ProviderError
 from firelens.ingestion.chunking import ChunkRecord
+from firelens.operational_logging import log_operation
 from firelens.providers.base import AIProvider
 from firelens.retrieval.bm25 import BM25Index
 from firelens.retrieval.pipeline import RetrievalPipeline
@@ -250,6 +251,7 @@ class StaticRAGService:
         self.retrieval = retrieval
         self.provider = provider
         self.grounded_answers = GroundedAnswerEngine(provider)
+        self._active_operations: dict[str, tuple[float, tuple[str, ...]]] = {}
         self.config = config
         self.trace_recorder = trace_recorder or TraceRecorder(
             config.trace_dir,
@@ -293,6 +295,26 @@ class StaticRAGService:
         route: str,
         **details: object,
     ) -> AskResponse:
+        operation = self._active_operations.pop(response.trace_id, None)
+        if operation is not None:
+            started, provider_stages = operation
+            visible_stages = list(provider_stages)
+            if details.get("model"):
+                visible_stages.append(
+                    "background_generation"
+                    if response.response_mode == ResponseMode.BACKGROUND
+                    else "grounded_generation"
+                )
+            if isinstance(details.get("repair_count"), int) and details["repair_count"]:
+                visible_stages.append("grounded_repair")
+            log_operation(
+                trace_id=response.trace_id,
+                route=route,
+                response_mode=response.response_mode.value,
+                latency_ms=(perf_counter() - started) * 1_000,
+                provider_stages=visible_stages,
+                error_category=response.error_kind,
+            )
         await self.trace_recorder.record(
             response.trace_id,
             question=request.question,
@@ -559,7 +581,12 @@ class StaticRAGService:
         allow_live: bool = True,
     ) -> AskResponse:
         trace_id = uuid4().hex
+        operation_started = perf_counter()
         execution = await self.execute_search(request, trace_id=trace_id, allow_live=allow_live)
+        self._active_operations[trace_id] = (
+            operation_started,
+            tuple(execution.observation.retrieval.provider_models),
+        )
         if observer is not None:
             observer.search = execution
         search = execution.public_response

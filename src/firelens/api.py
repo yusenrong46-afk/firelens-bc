@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from contextlib import asynccontextmanager
+from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
@@ -28,6 +29,7 @@ from firelens.contracts import (
 )
 from firelens.live import LiveDataService
 from firelens.live_answering import LiveAnswerCoordinator
+from firelens.operational_logging import log_operation
 from firelens.request_guard import AnonymousRequestGuard
 from firelens.runtime import Runtime, load_runtime
 
@@ -142,6 +144,26 @@ def create_app(
         response.headers["X-RateLimit-Scope"] = "instance-local"
         return response
 
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self'; "
+            "font-src 'self' data:; object-src 'none'; base-uri 'self'; "
+            "frame-ancestors 'none'; form-action 'self'"
+        )
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(self)"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        if request.url.path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-store"
+        return response
+
     @app.exception_handler(RequestValidationError)
     async def request_validation_handler(_request, exc: RequestValidationError):
         details = [
@@ -246,6 +268,7 @@ def create_app(
         responses=ERROR_RESPONSES,
     )
     async def ask(request: QueryRequest):
+        request_started = perf_counter()
         active_runtime = current_runtime()
         if active_runtime.service is None:
             return error_response(
@@ -266,7 +289,16 @@ def create_app(
                 if static_request is not None
                 else None
             )
-            return await live_coordinator.answer(request, static_response)
+            live_response = await live_coordinator.answer(request, static_response)
+            log_operation(
+                trace_id=live_response.trace_id,
+                route=QueryRoute.LIVE.value,
+                response_mode=live_response.response_mode.value,
+                latency_ms=(perf_counter() - request_started) * 1_000,
+                provider_stages=(),
+                error_category=live_response.error_kind,
+            )
+            return live_response
         response = await active_runtime.service.ask(request)
         if response.status == ResponseStatus.ERROR:
             return error_response(
