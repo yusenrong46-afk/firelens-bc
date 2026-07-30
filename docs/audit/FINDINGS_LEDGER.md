@@ -14,7 +14,7 @@ by GP-008. They are not duplicated as independent rows.
 | GP-001 | P0 | VERIFIED | `tests/test_static_rag.py::ContractTests::test_validator_rejects_safety_action_inversion`; `test_validator_rejects_unsupported_quantity_and_duration`; `test_validator_rejects_protected_semantic_mutations` | `bfac0b5`, `be3cb4e`, `d68006d` | Added fail-closed authority-alias and explicit-location preservation using quote plus immutable local source context. Focused regressions, the 92-test fast gate, and full zero-cost verification pass. |
 | GP-002 | P1 | VERIFIED | `tests/test_repairs.py::RepairProvenanceContractTests::test_human_repair_provenance_reaches_public_evidence`; `prototype/firelens-rag-ui/tests/App.test.tsx` | `73d811b`, `2987bd5`, `0742cb0` | Public evidence preserves typed repair provenance and the source detail discloses a human-verified transcription. Focused, fast, full, generated-contract, UI, and browser gates pass. |
 | GP-003 | P1 | VERIFIED | `tests/test_live_answering.py::LiveAnswerCoordinatorTests::test_stale_records_are_never_described_as_current`; `test_mixed_freshness_has_typed_state_and_no_current_wording`; `prototype/firelens-rag-ui/tests/e2e/app.spec.ts` | `2577462`, `5555396` | API responses carry validated aggregate freshness. Answer copy, limitations, badge, map heading, ARIA warning, rows, nearby filtering, and mixed freshness agree. Focused, fast, full, UI, build, and browser gates pass. |
-| GP-004 | P1 | BLOCKED | `tests/test_request_guard.py::RequestGuardTests::test_untrusted_forwarding_headers_cannot_rotate_identity`; `test_vercel_identity_uses_only_the_platform_owned_header`; `tests/test_release_operations.py::test_firewall_plan_is_enforced_method_scoped_and_not_auto_published`; `test_firewall_plan_rejects_log_only_rules` | `b3e202a`, `39c5d7c` | Repository scope is verified: trusted identity, enforced deny plan, no auto-publish, fast and full gates pass. External cross-instance enforcement cannot be verified without an owner-authorized preview and firewall publication, both forbidden in this zero-network loop. Recovery: authorize a preview, publish the rendered rules, and run the two-instance quota probe. |
+| GP-004 | P1 | BLOCKED | `tests/test_request_guard.py::RequestGuardTests::test_untrusted_forwarding_headers_cannot_rotate_identity`; `test_vercel_identity_uses_only_the_platform_owned_header`; `tests/test_release_operations.py::test_firewall_plan_is_enforced_method_scoped_and_not_auto_published`; `test_firewall_plan_rejects_log_only_rules` | `b3e202a`, `39c5d7c` | Repository scope is verified: trusted identity, enforced deny plan, no auto-publish, fast and full gates pass. The plan was rendered again without publication. External cross-instance enforcement still requires an explicitly approved preview, a preview-scoped provider key, owner-published firewall rules, and the two-instance quota probe. |
 | GP-005 | P1 | VERIFIED | `tests/test_provider_api.py::ApiTests::test_chunked_oversized_body_stops_consuming_after_limit`; `test_misleading_declared_length_cannot_bypass_streaming_cap`; `test_concurrent_oversized_bodies_are_independently_bounded` | `b3e202a`, `7f633b1` | Streaming enforcement passes measured missing/misleading-length and eight-request concurrency coverage, stopping at the first rejecting frame without consuming a third frame. Fast and full zero-cost gates pass. |
 | CF-001 | P1 | VERIFIED | `tests/test_live.py::LiveDataServiceTests::test_nearby_results_keep_records_with_unknown_geometry`; `tests/test_live_answering.py::LiveAnswerCoordinatorTests::test_unknown_geometry_is_disclosed_without_hiding_record` | `2577462` | Malformed/unknown geometry remains visible with an explicit limitation instead of becoming a false no-result. |
 | CF-002 | P1 | VERIFIED | `tests/test_v1_5_rag.py::V15RoutingTests::test_long_preamble_cannot_hide_a_personal_safety_request` | `bfac0b5` | Safety classification uses the full raw question; focused text remains retrieval-only. |
@@ -112,6 +112,18 @@ by GP-008. They are not duplicated as independent rows.
 - 2026-07-30: CF-011 fail-first header regression requires a self-only style policy
   with no `unsafe-inline`; existing build and map browser tests remain the compatibility gate.
 - 2026-07-30: CF-011 global verification passed at `4eb1f64`; status advanced to VERIFIED.
+- 2026-07-30: Continuation audit found that the sealed retrieval review packet could not be
+  generated because three cases referenced quarantined, non-human repair text. A fail-first
+  production-packet regression reproduced the issue. V2 replaced those cases and two earlier
+  semantically ambiguous labels using governed raw chunks before any V2 ranking was inspected.
+- 2026-07-30: The V2 retrieval packet and 47-case hash-bound review template were generated
+  successfully. Engineering pre-review recommends all 47 corrected labels for human confirmation;
+  reviewer identity and timestamp remain intentionally blank.
+- 2026-07-30: The permanent hard-probe runner was corrected so an explicit zero-dollar ceiling is
+  valid in offline mode. The complete offline probe then passed 105/105 with no network calls.
+- 2026-07-30: The review branch was pushed for independent inspection and linked locally to the
+  existing Vercel project. Preview publication was not attempted after the platform required
+  explicit owner approval. Production was not changed.
 
 ## Final report
 
@@ -119,12 +131,15 @@ by GP-008. They are not duplicated as independent rows.
 
 - Branch: `maintenance/v1-5-principal-remediation`.
 - Audited base: `fc1c7d0bb55aa18c94b2e6540cd6590c5385ad7c`.
-- Qualified source candidate: `faf79940aacdf0a6c943e0e726c477d46aefd2e3`.
+- Principal-remediation zero-cost source candidate: `ff6e54e2f006f01a573a1ea657c7609a5e892951`.
+- The release-review candidate is always the current branch `HEAD`; every paid, human, preview, and
+  promotion artifact must record that exact value rather than relying on this narrative file.
 - Canonical findings: 17 total; 16 VERIFIED and 1 validly BLOCKED.
 - The findings table above is the final findings-to-commits-to-tests map. Every row names its
   pinned regression path, implementation commit, final status, and observed gate evidence.
 - The original dirty checkout was not modified. Its untracked evaluation and research files were
-  preserved. No branch was pushed, merged, deployed, or published.
+  preserved. The review branch was pushed; no branch was merged, and no preview or production
+  deployment was published.
 
 The repository-actionable remediation is complete. This is not a production-release approval:
 GP-004 still requires external proof, and the deferred paid and human gates below remain mandatory.
@@ -177,7 +192,9 @@ or other external service was called.
 
 ### Explicitly deferred release gates
 
-The paid 105-case probe rerun, sealed retrieval review, and 50-case human semantic review were OUT
-OF SCOPE for this loop and are still required before release. They must be executed against the
-exact promoted candidate after GP-004's preview enforcement is verified. Historical results do not
-qualify this tree, and no production-readiness claim should be made until those gates pass.
+The offline 105-case probe now passes. The paid 105-case probe, named human approval of the corrected
+47-case retrieval packet, one three-repetition paid retrieval run, a fresh 50-case human semantic
+review, owner-approved preview qualification, and cross-instance firewall enforcement remain
+required. Historical reports do not qualify this tree, and no production-readiness claim should be
+made until those gates pass. Exact recovery commands and artifact paths are in
+`docs/audit/RELEASE_REVIEW_HANDOFF.md`.
