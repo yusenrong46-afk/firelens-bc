@@ -114,6 +114,24 @@ def create_app(
         )
         return JSONResponse(status_code=status_code, content=envelope.model_dump())
 
+    def deadline_response(route: str) -> JSONResponse:
+        trace_id = uuid4().hex
+        log_operation(
+            trace_id=trace_id,
+            route=route,
+            response_mode=ResponseMode.ABSTENTION.value,
+            latency_ms=active_config.public_request_deadline_seconds * 1_000,
+            provider_stages=(),
+            error_category="timeout",
+        )
+        return error_response(
+            503,
+            trace_id=trace_id,
+            error_kind="timeout",
+            message="FireLens could not complete the request within its public deadline.",
+            retryable=True,
+        )
+
     @app.middleware("http")
     async def bounded_anonymous_requests(request: Request, call_next):
         guarded = request.url.path in {"/api/v1/ask", "/api/v1/live/map"}
@@ -226,8 +244,7 @@ def create_app(
             response.status_code = 503
         return health
 
-    @app.get("/api/v1/live/map", response_model=LiveMapResponse)
-    async def live_map(
+    async def map_request(
         bbox: str | None = Query(default=None, max_length=100),
         layers: str = Query(default="incidents,perimeters,evacuations", max_length=100),
     ):
@@ -273,6 +290,21 @@ def create_app(
                     message="bbox must be minLongitude,minLatitude,maxLongitude,maxLatitude.",
                 )
         return await current_live_service().map_results(layers=requested, bbox=parsed_bbox)
+
+    @app.get(
+        "/api/v1/live/map",
+        response_model=LiveMapResponse,
+        responses=ERROR_RESPONSES,
+    )
+    async def live_map(
+        bbox: str | None = Query(default=None, max_length=100),
+        layers: str = Query(default="incidents,perimeters,evacuations", max_length=100),
+    ):
+        try:
+            async with asyncio.timeout(active_config.public_request_deadline_seconds):
+                return await map_request(bbox, layers)
+        except TimeoutError:
+            return deadline_response("live_map")
 
     if active_config.debug and active_config.deployment_environment != "production":
 
@@ -343,22 +375,7 @@ def create_app(
             async with asyncio.timeout(active_config.public_request_deadline_seconds):
                 return await answer_request(request)
         except TimeoutError:
-            trace_id = uuid4().hex
-            log_operation(
-                trace_id=trace_id,
-                route="deadline",
-                response_mode=ResponseMode.ABSTENTION.value,
-                latency_ms=active_config.public_request_deadline_seconds * 1_000,
-                provider_stages=(),
-                error_category="timeout",
-            )
-            return error_response(
-                503,
-                trace_id=trace_id,
-                error_kind="timeout",
-                message="FireLens could not complete the request within its public deadline.",
-                retryable=True,
-            )
+            return deadline_response("ask")
 
     if active_config.debug and active_config.deployment_environment != "production":
 
