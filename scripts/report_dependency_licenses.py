@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Create a machine-readable Python and npm license inventory."""
+
+from __future__ import annotations
+
+import argparse
+import importlib.metadata
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+PROHIBITED = {"AGPL-3.0", "GPL-3.0", "SSPL-1.0"}
+
+
+def python_licenses() -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for distribution in importlib.metadata.distributions():
+        name = distribution.metadata.get("Name")
+        if not name:
+            continue
+        license_value = distribution.metadata.get(
+            "License-Expression"
+        ) or distribution.metadata.get("License")
+        rows.append(
+            {
+                "name": name,
+                "version": distribution.version,
+                "license": (license_value or "UNKNOWN").strip(),
+            }
+        )
+    return sorted(rows, key=lambda row: row["name"].casefold())
+
+
+def node_licenses(lock_path: Path) -> list[dict[str, str]]:
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    rows: list[dict[str, str]] = []
+    for package_path, metadata in (lock.get("packages") or {}).items():
+        if not package_path or not isinstance(metadata, dict):
+            continue
+        rows.append(
+            {
+                "name": package_path.removeprefix("node_modules/"),
+                "version": str(metadata.get("version") or "UNKNOWN"),
+                "license": str(metadata.get("license") or "UNKNOWN"),
+            }
+        )
+    return sorted(rows, key=lambda row: row["name"].casefold())
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    report = {
+        "python": python_licenses(),
+        "node": node_licenses(ROOT / "prototype/firelens-rag-ui/package-lock.json"),
+    }
+    prohibited = [
+        f"{ecosystem}:{row['name']}:{row['license']}"
+        for ecosystem, rows in report.items()
+        for row in rows
+        if row["license"] in PROHIBITED
+    ]
+    report["prohibited"] = prohibited
+    args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    if prohibited:
+        raise SystemExit("Prohibited dependency licenses:\n" + "\n".join(prohibited))
+    print(f"Recorded {len(report['python'])} Python and {len(report['node'])} npm licenses.")
+
+
+if __name__ == "__main__":
+    main()
