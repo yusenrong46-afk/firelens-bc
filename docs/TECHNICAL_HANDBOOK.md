@@ -77,9 +77,11 @@ flowchart TD
     REVALIDATE -->|"unsupported"| ABSTAIN
 ```
 
-`src/firelens/answering/service.py` is the explicit orchestration path. It is
-intentionally ordinary Python: each branch is visible, stage observations are
-typed, and there is no framework callback graph hiding control flow.
+`src/firelens/answering/service.py` owns routing and retrieval orchestration.
+`src/firelens/answering/grounded.py` owns bounded generation, repair, claim
+salvage, deterministic validation, and public citation construction. Both are
+ordinary Python: each branch is visible, stage observations are typed, and no
+framework callback graph hides control flow.
 
 ### 2.1 Layer ownership
 

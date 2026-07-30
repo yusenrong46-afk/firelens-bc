@@ -647,13 +647,16 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_fabricated_citation_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            runtime, _, _ = await make_runtime(Path(directory), provider=BadCitationProvider())
+            runtime, provider, _ = await make_runtime(
+                Path(directory), provider=BadCitationProvider()
+            )
             response = await runtime.service.ask(
                 QueryRequest(question="What belongs in an emergency kit?")
             )
             self.assertEqual(response.status, ResponseStatus.ABSTENTION)
             self.assertEqual(response.reason_code, "draft_validation_failed")
             self.assertFalse(response.validation.accepted)
+            self.assertEqual(provider.generate_calls, 2, "only one repair is permitted")
 
     async def test_exact_but_unrelated_citation_fails_claim_support_floor(self) -> None:
         class UnrelatedClaimProvider(FakeProvider):
