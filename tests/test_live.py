@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 import httpx
 from pydantic import ValidationError
 
+import firelens.live as live_module
 from firelens.contracts import (
     Freshness,
     GeometryRelation,
@@ -105,6 +106,98 @@ class GeometryTests(unittest.TestCase):
 
 
 class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
+    async def test_record_ceiling_fails_closed_and_is_visible(self) -> None:
+        features = [
+            {
+                "type": "Feature",
+                "properties": {"OBJECTID": index, "FIRE_STATUS": "Out of Control"},
+                "geometry": {"type": "Point", "coordinates": [-123.5, 49.5]},
+            }
+            for index in range(3)
+        ]
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            return httpx.Response(
+                200,
+                json={"type": "FeatureCollection", "features": features},
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client, max_records=2).map_results(
+                layers=(LiveResultKind.INCIDENT,)
+            )
+
+        self.assertEqual(response.results, [])
+        self.assertEqual(response.unavailable_layers, [LiveResultKind.INCIDENT])
+        self.assertTrue(any("bounded retrieval" in item for item in response.limitations))
+
+    async def test_bbox_is_sent_to_arcgis_and_retained_as_local_backstop(self) -> None:
+        requested_geometry: str | None = None
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal requested_geometry
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            requested_geometry = request.url.params.get("geometry")
+            self.assertEqual(request.url.params.get("geometryType"), "esriGeometryEnvelope")
+            self.assertEqual(request.url.params.get("spatialRel"), "esriSpatialRelIntersects")
+            self.assertEqual(request.url.params.get("inSR"), "4326")
+            return httpx.Response(
+                200,
+                json={
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "properties": {"OBJECTID": 1, "FIRE_STATUS": "Out of Control"},
+                            "geometry": {"type": "Point", "coordinates": [-123.5, 49.5]},
+                        },
+                        {
+                            "type": "Feature",
+                            "properties": {"OBJECTID": 2, "FIRE_STATUS": "Out of Control"},
+                            "geometry": {"type": "Point", "coordinates": [-120.0, 55.0]},
+                        },
+                    ],
+                },
+            )
+
+        bbox = (-124.0, 49.0, -123.0, 50.0)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client).map_results(
+                layers=(LiveResultKind.INCIDENT,), bbox=bbox
+            )
+
+        self.assertEqual(requested_geometry, ",".join(str(value) for value in bbox))
+        self.assertEqual([item.result_id for item in response.results], ["incident:1"])
+
+    async def test_layer_definition_can_be_injected_without_code_path_duplication(self) -> None:
+        definition = live_module.LayerDefinition(
+            url="https://official.example.test/custom-layer/0",
+            expected_name="Custom Incidents",
+            required_fields=frozenset(
+                {"OBJECTID", "FIRE_STATUS", "FIRE_NUMBER", "INCIDENT_NAME"}
+            ),
+        )
+        requested_hosts: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requested_hosts.append(request.url.host)
+            if not request.url.path.endswith("/query"):
+                payload = _metadata(LiveResultKind.INCIDENT)
+                payload["name"] = "Custom Incidents"
+                return httpx.Response(200, json=payload)
+            return httpx.Response(200, json={"type": "FeatureCollection", "features": []})
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            await LiveDataService(
+                client=client,
+                layer_definitions={LiveResultKind.INCIDENT: definition},
+            ).map_results(layers=(LiveResultKind.INCIDENT,))
+
+        self.assertEqual(set(requested_hosts), {"official.example.test"})
+
     async def test_nearby_results_keep_records_with_unknown_geometry(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             if not request.url.path.endswith("/query"):

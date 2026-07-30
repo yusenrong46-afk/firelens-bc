@@ -94,8 +94,12 @@ or graph-derived production path was introduced.
 
 One `LiveDataService` powers chat and map for the official incident, perimeter, and wildfire
 evacuation layers. It validates exact layer identities and required fields, paginates GeoJSON in
-WGS84, uses pinned Shapely plus pyproj WGS84 geodesics, filters inactive/non-wildfire records, and
-shows authority, source URL, source update time, retrieval time, status, freshness, and geometry.
+WGS84 through one typed injectable layer-definition map, and enforces stable ordering, page,
+record, duplicate, repeat-page, and no-progress bounds. Map and nearby requests send ArcGIS
+envelope filters while retaining local Shapely filtering as a backstop; bbox-specific cache keys
+prevent spatial results from contaminating province-wide results. Pinned Shapely plus pyproj WGS84
+geodesics filter inactive/non-wildfire records and determine geometry relations. Responses show
+authority, source URL, source update time, retrieval time, status, freshness, and geometry.
 
 The refreshed real-source qualification at commit
 `eca9119511d79e089526a6d163b8481c9c4a2205` found:
