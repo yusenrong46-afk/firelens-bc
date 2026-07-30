@@ -35,3 +35,4 @@ output/*
 !output/.gitkeep
 tmp/
 .vercel
+.env*
