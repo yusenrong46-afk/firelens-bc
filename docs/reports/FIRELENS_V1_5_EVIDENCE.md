@@ -1,9 +1,9 @@
 # FireLens BC V1.5 lab evidence ledger
 
 > Historical pre-hardening snapshot. For the current candidate, gate counts, artifact hashes,
-> and release decision, use `V1_5_HARDENING_QUALIFICATION.md` and
+> and release decision, use `V1_5_PRINCIPAL_REMEDIATION.md` and
 > `V1_5_EXECUTION_STATE.md`. Values below are retained as commit-bound history and must not be
-> read as the current release state.
+> read as the current release state or current 170-chunk corpus identity.
 
 Date: 2026-07-29 (America/Vancouver)
 
@@ -171,9 +171,9 @@ The new unscored sealed candidate uses dataset SHA-256
 `33b8811f8a984e53be3d19c1874cd89df317943df9309dc048539d5f2876b6e4` and holdout SHA-256
 `9dbdf45ce6f94e1c6d46893b6d50fe642f75a245e0a6309892eee03e6337443a`.
 
-These current hashes include the 2026-07-30 metadata-only migration from tool-specific automated
-review labels to neutral provenance labels. Questions, evidence expectations, and owner decisions
-were not changed. Pending ignored review sidecars must be regenerated against the new hashes.
+Those snapshot hashes include the 2026-07-30 metadata-only review-label migration. The later
+remediation quarantined an unapproved repaired page and changed the production corpus/index
+hashes, so all pending ignored review sidecars must be regenerated against the remediated tree.
 
 ## Cost ledger
 

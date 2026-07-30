@@ -6,6 +6,10 @@ This is the historical hardening qualification snapshot. The candidate was subse
 `main` for independent engineering review while the paid rerun and owner reviews were explicitly
 deferred. That decision does not change the gate results recorded below.
 
+This snapshot is superseded for current-code decisions by
+`docs/reports/V1_5_PRINCIPAL_REMEDIATION.md`. Its counts and hashes describe the earlier
+180-chunk candidate, not the remediated 170-chunk tree.
+
 ## Decision
 
 **HARDENING COMPLETE; RELEASE BLOCKED.** The internal seams, permanent evaluation runner, CI,

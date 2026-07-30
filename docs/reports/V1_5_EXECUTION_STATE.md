@@ -4,64 +4,82 @@ Updated: 2026-07-30 (America/Vancouver)
 
 ## Repository truth
 
-- Review worktree: `/Users/thomas/Downloads/firelens-bc-v1-5-lab`
-- Current maintenance branch: `maintenance/v1-5-repository-polish`
-- V1.5 hardening baseline on `main`: `fc1c7d0bb55aa18c94b2e6540cd6590c5385ad7c`
-- Qualified code candidate: `91fc37e8bfd866b710e0b614d95ecbbfc1e5139e`
-- Candidate baseline: `ba42b74`
+- Remediation worktree: `/Users/thomas/Downloads/firelens-bc-v1-5-lab`
+- Remediation branch: `maintenance/v1-5-principal-remediation`
+- Remediation base: `d49a33e99464dbcdf35126b66aa8fb28ac657ba5`
+- Earlier V1.5 candidate on `main`: `fc1c7d0bb55aa18c94b2e6540cd6590c5385ad7c`
 - V1.1 baseline: `209b4e5f8f16f13d7ac9af56a89e135f697ce052`
+- The original dirty checkout, `main`, release branches, production, and secrets were not modified.
 - A dedicated release-reconstruction worktree has not been created.
-- `main` contains the review candidate. Production identity must be verified separately.
 
 ## Current decision
 
-The codebase-hardening implementation is complete and the candidate is available on `main` for
-independent review, but V1.5 is **not release-qualified**.
-The latest complete paid hard probe is `104/105`; its only failed corpus-gap case was fixed and
-then passed a commit-bound focused run, but that does not substitute for a new complete `105/105`
-run. The owner-reviewed retrieval and semantic gates are also incomplete. Do not reconstruct the
-claim completion of the deferred qualification gates or deploy on their basis.
+The principal-remediation implementation is locally verified, but V1.5 remains **not
+release-qualified**. The remediated branch is the next review candidate; it has not been merged,
+pushed, previewed, or deployed.
 
-## Current evidence
+The corpus changed from 180 to 170 chunks because ten chunks derived from a FireSmart page repair
+were not backed by human approval. The unapproved page remains in the repair registry as
+`pending_owner_review`, but is absent from the runtime corpus and vector index. All older paid,
+retrieval, latency, and semantic reports remain historical evidence for their recorded commits;
+they do not qualify the new corpus hash.
 
-- `make verify`: secret scan, generated-contract drift, Ruff, formatting, mypy over 54 source
-  files, 179 Python tests, 66 subtests, 12 UI tests, production build, 4 Sites tests, and 18
-  desktop/mobile Playwright tests passed. Ten Python tests were intentionally skipped.
-- Qualified hard probe at `ac0e437`: `104/105`, `$0.15027268`, 103.5 seconds. The sole failure was
-  `C09`; commit `91fc37e` added the general fine/penalty/fee corpus-gap guard, and a commit-bound
-  focused rerun passed `1/1` for `$0.00317272`.
-- Static-query p95 in that complete run: `3.7526 s`, below the four-second target.
-- Generalization at `91fc37e`: `33/33`, including novel-document grounding `10/10`, conflict
-  `3/3`, pollution controls `5/5`, and leave-one-out protections `15/15`; 96,641 tokens and
-  `$0.12189258`.
-- Official-live qualification at `91fc37e`: all three layers available, metadata complete,
-  chat/map IDs and statuses matched, all 26 cached/concurrent requests succeeded, and cached p95
-  was `0.3794 s`. Cold fetch was `4.7981 s` and is not the cached-live target.
-- Dependency audit: npm audit reported zero vulnerabilities after the lockfile override update;
-  the isolated Python audit reported no known vulnerabilities.
-- Public API schemas and retrieval/model/live-source configuration remain unchanged.
+## Current local evidence
 
-## Human and external gates
+- Full repository verification passes on the remediated code: secret scan, generated OpenAPI and
+  TypeScript contract checks, Ruff, formatting, mypy, Python tests, frontend tests, production
+  build, Sites packaging, and desktop/mobile Playwright. The final run recorded 203 Python tests
+  passed, 10 opt-in network/paid tests skipped, 76 Python subtests, 12 frontend tests, 4 Sites
+  packaging tests, and 18 Playwright flows.
+- The permanent hard probe passes `105/105` in `offline` mode with controlled provider and live
+  doubles and zero paid calls. The same run initially exposed ten failures; general question-to-
+  evidence support, mixed-scope routing, deterministic evaluator fidelity, and status-definition
+  validation were corrected before the clean result.
+- Focused adversarial tests reproduce and close action inversion, changed quantities/dates,
+  evacuation-status substitution, removed conditions, safety-action polarity, cross-authority
+  conflict, irrelevant citations, unapproved repair provenance, stale live wording, unknown
+  geometry, pagination, proxy spoofing, oversized streaming bodies, production debug exposure,
+  readiness status, conversation-history round-trip, and public request deadlines.
+- Runtime corpus: 8 sources, 170 chunks, SHA-256
+  `d5fcd794f9ec0486a256ae511366fde982254342b7d07b9c83a21ea8ead291eb`.
+- Runtime vector matrix: 170 × 1,536, SHA-256
+  `fd0b171488809c5a87f3aee5c912b07358231cac6478bb621f6d2fc79d41efb7`.
 
-- Sealed retrieval review: `45/47` decisions approved; `V1-HOLD-106` and `V1-HOLD-141` need
-  discussion. Reviewer name and review timestamp are absent, so the validator returns unqualified.
-- Semantic review: `38/50` approved and 12 rejected. Reviewer name and review timestamp are
-  absent, so the validator returns unqualified even though it records zero unclear claims and zero
-  unsupported verified claims among accepted entries.
-- The neutral automated-review label migration changed dataset hashes without changing questions,
-  evidence expectations, or decisions. Regenerate the ignored pending review sidecars before
-  resuming owner review; validators intentionally reject sidecars bound to the prior hashes.
-- The one-time, three-repetition sealed retrieval run has not been authorized or executed.
-- Anonymous preview, distributed rate-limit verification, rollback rehearsal, owner comparison
-  approval, and verified production deployment have not occurred. Moving the source candidate to
-  `main` for external review did not complete those gates.
+Offline hard-probe success validates deterministic wiring and policy behavior. It is not evidence
+of live-model semantic quality, production latency, provider reliability, or OpenRouter cost.
+
+## Foundation alignment
+
+- Deterministic code still owns safety, evidence admission, exact citations, protected-fact
+  preservation, conflicts, freshness, geometry, schemas, and final answer acceptance.
+- Models remain bounded proposal writers. No runtime LLM judge, fallback provider, GraphRAG path,
+  new model, new corpus source, retrieval configuration, framework, or public response shape was
+  introduced.
+- Exact quote identity remains provenance evidence, not a claim of general entailment. Human
+  semantic review remains mandatory.
+- Live chat and map continue to share one typed data service. Degraded and stale states are
+  explicit and no-result wording does not imply safety.
+- The public surface remains the existing conversation plus evidence/map panel.
+
+## Human, paid, and external gates still open
+
+- Complete 105-case qualified OpenRouter hard-probe rerun on the remediated commit and corpus.
+- Regenerated and signed 47-case retrieval review, followed by the one-time three-repetition
+  sealed retrieval run requiring at least 46/47 Recall@5 in every repetition.
+- Regenerated and signed 50-case semantic review with zero unsupported or unclear material claims.
+- Fresh generalization, novel-document, live-source, cached-live latency, and concurrency evidence
+  bound to the remediated commit.
+- Anonymous preview, browser accessibility review, externally enforced distributed rate limit,
+  rollback rehearsal, release-tree reconstruction/equality, and owner approval.
+
+The in-repository Vercel firewall rules remain log-only preparation. They are not a distributed
+enforcement claim and cannot be promoted without an owner-approved external change.
 
 ## Next authorized action
 
-Use independent engineering feedback to prepare a final bounded improvement pass. Later, resolve
-the two retrieval-review discussions and twelve rejected semantic cases, add the actual reviewer
-identity and timestamp, and revalidate both sidecars. Then run the sealed retrieval gate exactly
-once and one complete hard probe at the unchanged candidate; the hard probe must report `105/105`.
+Review the remediation report and diff. If accepted, publish only this review branch for external
+inspection. Complete the deferred paid and human gates on an unchanged commit before reconstructing
+a release branch. Merge and production deployment remain separate owner-approved actions.
 
-See `docs/reports/V1_5_HARDENING_QUALIFICATION.md` for artifact hashes, commands, commit
-dispositions, and the complete gate ledger.
+See `docs/reports/V1_5_PRINCIPAL_REMEDIATION.md` for the finding ledger, implementation commits,
+executed commands, and remaining-risk discussion.

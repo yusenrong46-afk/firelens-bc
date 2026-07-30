@@ -1,10 +1,10 @@
 # FireLens BC Technical Handbook
 
-Date: 2026-07-29 (America/Vancouver)
+Date: 2026-07-30 (America/Vancouver)
 
 Status: authoritative V1.5 release-candidate architecture; qualification evidence is separate
 
-Product state: `engineering-complete, semantic acceptance pending`
+Product state: `principal-remediation candidate, semantic acceptance pending`
 
 Release state: **not release-qualified**
 
@@ -21,10 +21,11 @@ exist, answer supported questions with inspectable evidence, explain adjacent
 low-risk concepts with an unmistakable background label, and preserve enough
 bounded history to resolve a follow-up.
 
-FireLens is not a current incident monitor, emergency-warning system,
-evacuation-route selector, property-specific risk assessor, prediction system,
-or personalized medical/safety decision-maker. Questions requiring those
-capabilities stop at the deterministic boundary before any paid provider call.
+V1.5 can look up bounded current records from three official BC layers, but it
+is not an emergency-warning system, evacuation-route selector,
+property-specific risk assessor, prediction system, or personalized
+medical/safety decision-maker. Questions requiring those capabilities stop at
+the deterministic boundary before any paid provider call.
 
 V1.1 deliberately excluded public hosting, accounts, long-term memory, maps,
 live wildfire/weather feeds, agents, graph RAG, a vector database, streaming,
@@ -56,7 +57,9 @@ misrepresented as proof of an adjacent scientific explanation.
 flowchart TD
     HTTP["POST /api/v1/ask"] --> CONTRACT["Strict QueryRequest"]
     CONTRACT --> BOUNDARY["Deterministic safety and capability boundary"]
-    BOUNDARY -->|"live or prohibited"| ABSTAIN["Typed abstention"]
+    BOUNDARY -->|"prohibited"| ABSTAIN["Typed abstention"]
+    BOUNDARY -->|"live"| LIVE["Official typed live-data service"]
+    LIVE --> LIVEOUT["Live or mixed answer plus shared map records"]
     BOUNDARY -->|"capability"| LOCAL["Deterministic local overview"]
     BOUNDARY -->|"related"| PLAN["Bounded structured planner"]
     PLAN -->|"tangent"| REDIRECT["Local scope redirect"]
@@ -105,7 +108,7 @@ framework callback graph hides control flow.
 ## 3. Corpus and provenance
 
 The governed input is `data/sources/source_registry.yaml`. Eight sources are
-approved as stable guidance and produce 180 canonical chunk records. Generated
+approved as stable guidance and currently produce 170 canonical chunk records. Generated
 raw bytes, corpus JSONL, vectors, traces, and benchmark output remain untracked;
 the registry, hash-pinned repair rules, benchmark definitions, and documentation
 are tracked.
@@ -120,10 +123,12 @@ Each canonical chunk preserves:
 - deterministic chunk index and text.
 
 `firelens bootstrap-corpus` downloads only registered sources, verifies expected
-hashes, applies reviewed hash-pinned repairs, and atomically writes the combined
-corpus and manifest. Changed upstream bytes fail with a source-review
-requirement. `firesmart_begins_at_home` page 10 has one visually reviewed repair
-for an interleaved multi-column text layer.
+hashes, applies only `human_verified` hash-pinned repairs, and atomically writes
+the combined corpus and manifest. Changed upstream bytes fail with a
+source-review requirement. The PreparedBC page-5 repair is human-verified and
+retains explicit repair provenance. The proposed `firesmart_begins_at_home`
+page-10 repair remains `pending_owner_review`; its ten prior derived chunks are
+quarantined from both the corpus and vector index.
 
 The corpus audit in `data/evaluation/corpus_quality_v1.json` records topic,
 authority, temporal-class, freshness/hash coverage, likely table/layout pages,
@@ -136,15 +141,18 @@ Current governed artifacts:
 |---|---|
 | Corpus version | `firelens_static_corpus.v1` |
 | Approved sources | 8 |
-| Canonical chunks | 180 |
-| Corpus JSONL SHA-256 | `a6a26b22c45b1a17e286f38fb2af45b5d4baaf70f6c4c729243668b1355caa2f` |
-| Corpus manifest SHA-256 | `ddeabeedc13778c1247d57be2c1e97d6e1cb311e672fa8e21d5f401e7f2821b3` |
+| Canonical chunks | 170 |
+| Corpus JSONL SHA-256 | `d5fcd794f9ec0486a256ae511366fde982254342b7d07b9c83a21ea8ead291eb` |
+| Corpus manifest SHA-256 | `2d0d6b9b445f5ab0ef59e7f19bd0dce058a93f3a93b9599338702b95058ed687` |
+| Repair admission | `human_verified_only.v1` |
 
 ## 4. Contracts and public API
 
 Pydantic models use `extra="forbid"`; unknown fields are rejected rather than
-ignored. A V1.1 request contains a normalized question of at most 2,000
-characters and zero to six normalized conversation turns:
+ignored. A V1.5 request contains a normalized question of at most 2,000
+characters and zero to six normalized conversation turns of at most 6,000
+characters each. The history bound is deliberately large enough to round-trip
+a valid generated answer without relaxing the total 64 KiB request cap:
 
 ```json
 {
@@ -173,10 +181,13 @@ provide them.
 - `POST /api/v1/ask`: public conversational result.
 - `GET /api/v1/health/live`: process liveness only.
 - `GET /api/v1/health/ready`: corpus, vector index, and provider configuration.
+- `GET /api/v1/live/map`: validated official incident, perimeter, and evacuation GeoJSON.
 - `POST /api/v1/search`: development-only plan/ranking/evidence inspection.
 - `GET /api/v1/debug/chunks/{chunk_id}`: development-only canonical chunk view.
 
-Debug routes require `FIRELENS_DEBUG=true`. Expected abstentions are HTTP 200;
+Debug routes require `FIRELENS_DEBUG=true` and a non-production environment;
+they are not registered in production. Readiness returns HTTP 503 when its
+typed status is not ready. Expected abstentions are HTTP 200;
 invalid requests 400; malformed upstream responses 502; required provider
 unavailability 503; unexpected failures 500. Error envelopes contain a trace
 ID, safe error kind, retryability, and user-safe message.
@@ -259,11 +270,11 @@ Index builds use an exclusive lock and atomic replacement. Current index:
 
 | Field | Value |
 |---|---|
-| Shape | 180 × 1,536 |
+| Shape | 170 × 1,536 |
 | Embedding model | `openai/text-embedding-3-small` |
 | Text strategy | `metadata_context_v1` |
-| Matrix SHA-256 | `68d6fe79c19c2f50068a2b50d373781f56517c05dfff22ec76228770e1d74b03` |
-| Manifest SHA-256 | `3024914bb9a263e5e2a3c8c5204e9bd8a63e073b5a7a41d02e52bbee585dbfc0` |
+| Matrix SHA-256 | `fd0b171488809c5a87f3aee5c912b07358231cac6478bb621f6d2fc79d41efb7` |
+| Manifest SHA-256 | `437181a2a9aa03498b4bb4de2445d0e0b0bf3fe1c4d4fa76a50019d31f3f1046` |
 
 ## 7. Evidence reconstruction and support
 
@@ -317,15 +328,19 @@ The validator checks:
 - every grounded claim carries allowed quote IDs;
 - every quote ID exists in the current packet;
 - every selected quote occurs exactly in its primary passage;
+- protected quantities, units, dates, incident/evacuation statuses, material
+  conditions, safety-action polarity, and directive strength are preserved;
 - background claims carry no evidence;
 - required limitations are present exactly;
 - static evidence does not imply current status;
 - prohibited language, injection artifacts, duplicates, and bounds are absent.
 
-Validation failure becomes a typed abstention. There is no invisible
-regeneration. These checks prove structural traceability and policy conformance;
-they do not prove that a claim is semantically entailed by its quotation or that
-all concepts required by a benchmark label were stated.
+Validation failure permits exactly one observable same-packet repair under ADR
+0009. The repaired draft is validated by the same deterministic checks; only an
+independently valid subset may survive as `partial`, otherwise FireLens
+abstains. These checks prove structural traceability and a closed set of
+high-risk semantic invariants. They do not prove general semantic entailment or
+that every concept required by a benchmark label was stated.
 
 ## 9. OpenRouter boundary and reliability
 
@@ -341,6 +356,10 @@ credit, policy, schema, and malformed-response failures are never retried.
 Returned model identity is checked. Normalized usage, attempts, latency, and
 model identity are observable; API keys and authorization headers are never
 logged.
+
+The public ask route has a 45-second end-to-end deadline, shorter than the
+platform function ceiling. Deadline expiry cancels downstream work and returns
+a typed retryable 503. Provider calls retain their tighter per-attempt timeout.
 
 An earlier benchmark repeat observed one rate limit that remained
 after all three bounded attempts. That explicit failure reduced run-level
@@ -395,7 +414,7 @@ route/status scores are not V1.1 product-mode accuracy.
 
 ## 11. Measured results
 
-### 11.1 Engineering verification
+### 11.1 Historical V1.1 engineering verification
 
 The final offline verification checkpoint passed:
 
@@ -584,28 +603,28 @@ Read in this order to understand the system without framework indirection:
 
 ## 16. Current status and next release gate
 
-The architecture, bounded conversation contract, contextual index, backend,
-frontend, reliability controls, offline tests, browser automation, and measured
-evaluation runners are implemented. This is engineering-complete in the sense
-that the designed vertical slice exists and its deterministic checks pass.
+The principal-remediation branch implements the intended vertical slice and
+passes its current local deterministic, build, and browser checks. It is not
+release-qualified: quarantining an unapproved repaired page changed the corpus
+and vector hashes, so older paid and retrieval artifacts are historical for the
+commits that produced them.
 
-It is not release-qualified for three independent reasons:
+The remaining gates are deliberately separate:
 
-1. the owner has not approved semantic claim support and required-concept
-   completeness;
-2. the preserved V1 compatibility benchmark still has 92.42% reranker Recall@5
-   against its 95% release gate.
-3. manual in-app visual inspection of this RC was blocked by stale browser
-   handles; the 12 automated Playwright flows pass but are not a manual review.
+1. rerun the complete qualified 105-case probe on the unchanged remediated
+   commit through OpenRouter;
+2. regenerate, complete, and sign the 47-case retrieval and 50-case semantic
+   owner reviews against the new corpus identity;
+3. execute the sealed three-repetition retrieval gate exactly once after the
+   retrieval review qualifies, requiring at least 46/47 Recall@5 each time;
+4. refresh generalization, novel-document, official-live, cached-latency, and
+   concurrency evidence at the same commit; and
+5. qualify an anonymous preview, external distributed limiting, accessibility,
+   rollback, and release-tree equality before owner-approved promotion.
 
-The exact next action is to complete every owner checkbox for all 20 legacy V1
-red-team cases plus the preselected 10 ordinary cases in
-`output/benchmark/v1_semantic_review.md`, and separately review all 10 V1.1
-red-team cases plus every accepted grounded/background claim in
-`output/benchmark/v1_1_conversation_live_review.md`. For each claim, record
-whether the quote entails it, required concepts are present, forbidden claims
-are absent, and limitations are correct. Any rejected case becomes a labelled
-development item; sealed holdout cases must not be tuned question-by-question.
+No release claim may replace human entailment/completeness review with exact
+quote checks or the offline fake-provider result. Rejected cases may become
+labelled development work; sealed cases must not be tuned question-by-question.
 
 ## 17. Historical V1 checkpoint
 
