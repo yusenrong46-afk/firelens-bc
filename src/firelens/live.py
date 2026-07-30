@@ -24,6 +24,7 @@ from firelens.contracts import (
     LiveResult,
     LiveResultKind,
     LocationInput,
+    aggregate_live_freshness,
 )
 
 ACTIVE_FIRES_URL = (
@@ -454,6 +455,7 @@ class LiveDataService:
         return LiveMapResponse(
             generated_at=datetime.now(UTC),
             results=sorted(results, key=lambda result: (result.kind.value, result.result_id)),
+            aggregate_freshness=aggregate_live_freshness(results),
             unavailable_layers=unavailable,
             limitations=limitations,
         )
@@ -485,4 +487,10 @@ class LiveDataService:
             limitations.append(
                 "Some official records could not be located spatially; check them directly with the issuing authority."
             )
-        return response.model_copy(update={"results": related, "limitations": limitations})
+        return response.model_copy(
+            update={
+                "results": related,
+                "aggregate_freshness": aggregate_live_freshness(related),
+                "limitations": limitations,
+            }
+        )

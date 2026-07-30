@@ -1,9 +1,28 @@
 {
   "components": {
     "schemas": {
+      "AggregateFreshness": {
+        "enum": [
+          "fresh",
+          "stale",
+          "mixed"
+        ],
+        "title": "AggregateFreshness",
+        "type": "string"
+      },
       "AskResponse": {
         "additionalProperties": false,
         "properties": {
+          "aggregate_freshness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AggregateFreshness"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "answer": {
             "anyOf": [
               {
@@ -321,6 +340,16 @@
       "LiveMapResponse": {
         "additionalProperties": false,
         "properties": {
+          "aggregate_freshness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AggregateFreshness"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "generated_at": {
             "format": "date-time",
             "title": "Generated At",

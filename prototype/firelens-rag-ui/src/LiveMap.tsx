@@ -58,13 +58,22 @@ function isRenderableGeometry(result: LiveResult): boolean {
 
 export function LiveMap({
   results,
+  aggregateFreshness,
   unavailableLayers = [],
 }: {
   results: LiveResult[];
+  aggregateFreshness?: "fresh" | "stale" | "mixed";
   unavailableLayers?: string[];
 }) {
   const [tileUnavailable, setTileUnavailable] = useState(false);
-  const includesStale = results.some((result) => result.freshness === "stale");
+  const freshnessState = aggregateFreshness ?? (
+    results.every((result) => result.freshness === "stale")
+      ? "stale"
+      : results.some((result) => result.freshness === "stale")
+        ? "mixed"
+        : "fresh"
+  );
+  const includesStale = freshnessState !== "fresh";
   const featureResults = useMemo(
     () => results.filter(
       (result) => isRenderableGeometry(result) && (result.geometry as { type?: string }).type !== "Point",
@@ -84,17 +93,35 @@ export function LiveMap({
     <section className="live-map" aria-label="Official wildfire records map">
       <div className="live-map__heading">
         <div>
-          <span>{includesStale ? "Official cached records" : "Official live records"}</span>
+          <span>
+            {freshnessState === "stale"
+              ? "Official cached records"
+              : freshnessState === "mixed"
+                ? "Official records — mixed freshness"
+                : "Official live records"}
+          </span>
           <h1>
-            {includesStale
+            {freshnessState === "stale"
               ? "BC wildfire information — includes stale records"
-              : "Current BC wildfire information"}
+              : freshnessState === "mixed"
+                ? "BC wildfire information — mixed freshness"
+                : "Current BC wildfire information"}
           </h1>
         </div>
         <a href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
           Open BCWS map
         </a>
       </div>
+      {freshnessState === "stale" && (
+        <p className="live-map__warning" role="status">
+          Cached official records; refresh failed. These records may be outdated.
+        </p>
+      )}
+      {freshnessState === "mixed" && (
+        <p className="live-map__warning" role="status">
+          Official records include stale cached data because a refresh failed. Check each record timestamp.
+        </p>
+      )}
       <MapContainer bounds={BC_BOUNDS} scrollWheelZoom={false} aria-label="Interactive map of official wildfire records">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

@@ -12,14 +12,15 @@ from firelens.answering.intent import (
     unsupported_live_topics,
 )
 from firelens.contracts import (
+    AggregateFreshness,
     AskResponse,
-    Freshness,
     LiveMapResponse,
     LiveResultKind,
     QueryRequest,
     ReasonCode,
     ResponseMode,
     ResponseStatus,
+    aggregate_live_freshness,
 )
 from firelens.live import LiveDataService, LiveDataUnavailable
 
@@ -29,6 +30,21 @@ class LiveAnswerCoordinator:
 
     def __init__(self, live_service: LiveDataService) -> None:
         self.live_service = live_service
+
+    @staticmethod
+    def _freshness_limitation(state: AggregateFreshness) -> str | None:
+        if state == AggregateFreshness.STALE:
+            return "Cached official records; refresh failed. These records may be outdated."
+        if state == AggregateFreshness.MIXED:
+            return (
+                "Official records include stale cached data because a refresh failed; "
+                "some records may be outdated."
+            )
+        return None
+
+    @staticmethod
+    def _unique_limitations(*groups: list[str]) -> list[str]:
+        return list(dict.fromkeys(item for group in groups for item in group if item))
 
     @staticmethod
     def static_request(request: QueryRequest) -> QueryRequest | None:
@@ -189,14 +205,20 @@ class LiveAnswerCoordinator:
             f"{item.name or item.incident_number or item.result_id}: {item.status}"
             for item in shown[:5]
         )
-        freshnesses = {item.freshness for item in shown}
-        if freshnesses == {Freshness.STALE}:
+        aggregate_freshness = aggregate_live_freshness(shown)
+        assert aggregate_freshness is not None
+        if aggregate_freshness == AggregateFreshness.STALE:
             live_label = "Cached official information (refresh failed): "
-        elif Freshness.STALE in freshnesses:
+        elif aggregate_freshness == AggregateFreshness.MIXED:
             live_label = "Official information (includes stale cached records): "
         else:
             live_label = "Current official information: "
         live_answer = live_label + summary
+        freshness_limitation = self._freshness_limitation(aggregate_freshness)
+        live_limitations = self._unique_limitations(
+            live.limitations,
+            [freshness_limitation] if freshness_limitation else [],
+        )
         if (
             static_result is not None
             and static_result.status == ResponseStatus.ANSWER
@@ -215,7 +237,10 @@ class LiveAnswerCoordinator:
                 claims=static_result.claims,
                 evidence=static_result.evidence,
                 live_results=shown,
-                limitations=[*live.limitations, *static_result.limitations],
+                aggregate_freshness=aggregate_freshness,
+                limitations=self._unique_limitations(
+                    live_limitations, static_result.limitations
+                ),
                 validation=static_result.validation,
                 unavailable_layers=live.unavailable_layers,
             )
@@ -225,13 +250,16 @@ class LiveAnswerCoordinator:
             response_mode=ResponseMode.LIVE,
             answer=live_answer,
             live_results=shown,
-            limitations=[
-                *live.limitations,
-                *(
-                    ["Unsupported live topics: " + ", ".join(unsupported_topics)]
-                    if unsupported_topics
-                    else []
-                ),
-            ],
+            aggregate_freshness=aggregate_freshness,
+            limitations=self._unique_limitations(
+                live_limitations,
+                [
+                    *(
+                        ["Unsupported live topics: " + ", ".join(unsupported_topics)]
+                        if unsupported_topics
+                        else []
+                    ),
+                ],
+            ),
             unavailable_layers=live.unavailable_layers,
         )

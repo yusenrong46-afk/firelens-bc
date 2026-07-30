@@ -76,8 +76,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AggregateFreshness
+         * @enum {string}
+         */
+        AggregateFreshness: "fresh" | "stale" | "mixed";
         /** AskResponse */
         AskResponse: {
+            aggregate_freshness?: components["schemas"]["AggregateFreshness"] | null;
             /** Answer */
             answer?: string | null;
             /** Claims */
@@ -187,6 +193,7 @@ export interface components {
         };
         /** LiveMapResponse */
         LiveMapResponse: {
+            aggregate_freshness?: components["schemas"]["AggregateFreshness"] | null;
             /**
              * Generated At
              * Format: date-time

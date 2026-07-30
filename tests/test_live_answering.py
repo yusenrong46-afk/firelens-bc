@@ -67,8 +67,42 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(response.response_mode, ResponseMode.LIVE)
+        self.assertEqual(response.aggregate_freshness, "stale")
         self.assertNotIn("Current official information", response.answer)
         self.assertIn("Cached official information", response.answer)
+        self.assertTrue(
+            any("refresh failed" in item.casefold() for item in response.limitations)
+        )
+
+    async def test_mixed_freshness_has_typed_state_and_no_current_wording(self) -> None:
+        timestamp = datetime(2026, 7, 28, tzinfo=UTC)
+        live = LiveMapResponse(
+            generated_at=timestamp,
+            results=[
+                LiveResult(
+                    result_id=f"incident:{index}",
+                    kind=LiveResultKind.INCIDENT,
+                    source_url=f"https://example.test/live/{index}",
+                    source_updated_at=timestamp,
+                    retrieved_at=timestamp,
+                    freshness=freshness,
+                    status="Out of Control",
+                    name=f"Test Fire {index}",
+                    geometry={"type": "Point", "coordinates": [-123.5, 49.5]},
+                )
+                for index, freshness in enumerate((Freshness.FRESH, Freshness.STALE), start=1)
+            ],
+        )
+        coordinator = LiveAnswerCoordinator(cast(Any, FixedLiveService(live)))
+
+        response = await coordinator.answer(
+            QueryRequest(question="What active wildfires are in BC currently?"), None
+        )
+
+        self.assertEqual(response.aggregate_freshness, "mixed")
+        self.assertNotIn("current", response.answer.casefold())
+        self.assertNotIn("latest", response.answer.casefold())
+        self.assertTrue(any("stale cached" in item.casefold() for item in response.limitations))
 
     async def test_missing_location_fails_before_live_fetch(self) -> None:
         live_service = UnexpectedLiveService()
