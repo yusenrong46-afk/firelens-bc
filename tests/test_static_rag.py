@@ -716,6 +716,20 @@ class AdjacentProvider(FakeProvider):
         )
 
 
+class TangentProvider(FakeProvider):
+    async def plan(self, messages, *, output_schema):
+        del messages, output_schema
+        self.plan_calls += 1
+        return PlanningResponse(
+            model="fake/planner",
+            decision=PlanningDecision(
+                relation=QueryRelation.TANGENT,
+                retrieval_queries=[],
+                explanation="The question is outside the corpus scope.",
+            ),
+        )
+
+
 class FailingPlanner(FakeProvider):
     async def plan(self, messages, *, output_schema):
         del messages, output_schema
@@ -919,6 +933,36 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(response.response_mode, ResponseMode.GROUNDED)
         self.assertEqual(response.evidence[0].title, "Cedar Ridge Household Kit")
+
+    async def test_single_shared_source_token_does_not_promote_tangent_query(self) -> None:
+        chunk = replace(
+            make_chunk(
+                "phoenix-1",
+                "The Phoenix guide says to store water and shelf-stable food in an emergency kit.",
+            ),
+            title="Phoenix Preparedness Guide",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            provider = TangentProvider()
+            runtime, _, _ = await make_runtime(
+                Path(directory), provider=provider, chunks=[chunk]
+            )
+            initial_provider_calls = (provider.embed_calls, provider.rerank_calls)
+            execution = await runtime.service.execute_search(
+                QueryRequest(question="Why did the Phoenix wildfire affect restaurant prices?")
+            )
+            await runtime.aclose()
+
+        self.assertIsNotNone(execution.observation.planning)
+        self.assertEqual(
+            execution.observation.planning.decision.relation,
+            QueryRelation.TANGENT,
+        )
+        self.assertFalse(execution.public_response.plan.retrieval_requests)
+        self.assertEqual(
+            (provider.embed_calls, provider.rerank_calls),
+            initial_provider_calls,
+        )
 
     async def test_complete_fake_pipeline_exposes_every_retrieval_stage(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

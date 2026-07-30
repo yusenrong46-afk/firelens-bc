@@ -140,12 +140,6 @@ def _candidate_source_reference_present(
             distinctive = list(dict.fromkeys(tokens))
             if len(distinctive) >= 2 and set(distinctive).issubset(question_tokens):
                 return True
-            if (
-                len(distinctive) == 1
-                and len(distinctive[0]) >= 5
-                and distinctive[0] in question_tokens
-            ):
-                return True
     return False
 
 
