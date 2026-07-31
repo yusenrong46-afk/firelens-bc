@@ -362,19 +362,20 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     processing_question = focused_question(question)
     lowered = processing_question.lower()
     routing_texts = _routing_texts(request)
+    safety_texts = (question.lower(),)
     deictic_boundary = _deictic_action_boundary(request)
     medical = any(
         re.search(pattern, text)
-        for text in routing_texts
+        for text in safety_texts
         for pattern in _PERSONALIZED_MEDICAL_PATTERNS
     )
     personalized = any(
-        re.search(pattern, text) for text in routing_texts for pattern in _PROHIBITED_PATTERNS
+        re.search(pattern, text) for text in safety_texts for pattern in _PROHIBITED_PATTERNS
     )
     live = any(re.search(pattern, text) for text in routing_texts for pattern in _LIVE_PATTERNS)
     manipulation = any(
         re.search(pattern, text)
-        for text in routing_texts
+        for text in safety_texts
         for pattern in _POLICY_MANIPULATION_PATTERNS
     )
     if medical or deictic_boundary == ReasonCode.PERSONALIZED_MEDICAL_ADVICE:

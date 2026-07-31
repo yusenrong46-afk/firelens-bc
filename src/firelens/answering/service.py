@@ -140,12 +140,6 @@ def _candidate_source_reference_present(
             distinctive = list(dict.fromkeys(tokens))
             if len(distinctive) >= 2 and set(distinctive).issubset(question_tokens):
                 return True
-            if (
-                len(distinctive) == 1
-                and len(distinctive[0]) >= 5
-                and distinctive[0] in question_tokens
-            ):
-                return True
     return False
 
 
@@ -179,7 +173,7 @@ def _mixed_scope_request(question: str, candidates: Sequence[Mapping[str, str]])
         overlap_counts.append(len(tokens & candidate_tokens))
         substantive_counts.append(len(tokens))
     return any(count >= 2 for count in overlap_counts) and any(
-        overlap == 0 and substantive >= 2
+        overlap <= 1 and substantive >= 2
         for overlap, substantive in zip(overlap_counts, substantive_counts, strict=True)
     )
 
@@ -308,6 +302,7 @@ def _conflict_response(trace_id: str, packet: EvidencePacket) -> AskResponse:
                 canonical_url=HttpUrl(span.canonical_url),
                 locator=span.locator,
                 temporal_class=TemporalClass.STABLE_GUIDANCE,
+                review_provenance=span.review_provenance,
                 primary_text=span.primary_text,
                 context_text=span.context_text,
             )
@@ -452,12 +447,14 @@ class StaticRAGService:
             planning_started = perf_counter()
             planning_candidates = self._planning_candidates(plan.normalized_question)
             planning_request = request.model_copy(update={"question": plan.normalized_question})
+            mixed_scope = False
             try:
                 planning = await self.provider.plan(
                     planning_messages(planning_request, corpus_candidates=planning_candidates),
                     output_schema=planning_schema(),
                 )
                 if _mixed_scope_request(request.question, planning_candidates):
+                    mixed_scope = True
                     planning = planning.model_copy(
                         update={
                             "decision": planning.decision.model_copy(
@@ -498,7 +495,18 @@ class StaticRAGService:
                             )
                         }
                     )
-                plan = apply_planning_decision(plan, planning.decision)
+                plan = (
+                    plan.model_copy(
+                        update={
+                            "route": QueryRoute.TANGENT,
+                            "relation": QueryRelation.TANGENT,
+                            "retrieval_requests": [],
+                            "required_aspects": [],
+                        }
+                    )
+                    if mixed_scope
+                    else apply_planning_decision(plan, planning.decision)
+                )
             except ProviderError as exc:
                 bundle = RetrievalBundle(
                     complete=False,
@@ -519,6 +527,14 @@ class StaticRAGService:
                         corpus_version=self.corpus_version,
                         config=self.config,
                         evidence_index=self.evidence_index,
+                        selection_aspects=tuple(
+                            dict.fromkeys(
+                                [
+                                    *plan.required_aspects,
+                                    *(request.query for request in plan.retrieval_requests),
+                                ]
+                            )
+                        ),
                     )
                 else:
                     bundle = RetrievalBundle()
@@ -709,6 +725,24 @@ class StaticRAGService:
         allow_live: bool = True,
     ) -> AskResponse:
         trace_id = uuid4().hex
+        try:
+            return await self._ask_with_trace(
+                request,
+                trace_id=trace_id,
+                observer=observer,
+                allow_live=allow_live,
+            )
+        finally:
+            self._active_operations.pop(trace_id, None)
+
+    async def _ask_with_trace(
+        self,
+        request: QueryRequest,
+        *,
+        trace_id: str,
+        observer: ExecutionObserver | None,
+        allow_live: bool,
+    ) -> AskResponse:
         operation_started = perf_counter()
         execution = await self.execute_search(request, trace_id=trace_id, allow_live=allow_live)
         self._active_operations[trace_id] = (

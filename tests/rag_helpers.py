@@ -62,9 +62,15 @@ def write_test_corpus(root: Path, chunks: list[ChunkRecord]) -> FireLensConfig:
             }
             for source_id in source_ids
         ],
+        "repair_provenance_policy": "human_verified_only.v1",
     }
     (processed / "firelens_static_corpus.manifest.json").write_text(
         json.dumps(manifest), encoding="utf-8"
+    )
+    repairs = root / "data" / "repairs"
+    repairs.mkdir(parents=True, exist_ok=True)
+    (repairs / "text_overrides.yaml").write_text(
+        'repair_registry_version: "test.v1"\nrepairs: []\n', encoding="utf-8"
     )
     return FireLensConfig.from_env(root).model_copy(
         update={"embedding_model": "fake/embedding", "debug": True}

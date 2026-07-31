@@ -12,7 +12,7 @@ from pathlib import Path
 import httpx
 from rag_helpers import make_runtime
 
-from firelens.api import create_app
+from firelens.api import ERROR_RESPONSES, create_app
 from firelens.operational_logging import LOGGER_NAME
 
 
@@ -34,10 +34,33 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
             await runtime.aclose()
 
         self.assertEqual(health.status_code, 200)
-        self.assertIn("default-src 'self'", health.headers["content-security-policy"])
+        content_policy = health.headers["content-security-policy"]
+        self.assertIn("default-src 'self'", content_policy)
+        self.assertIn("style-src 'self'", content_policy)
+        self.assertNotIn("'unsafe-inline'", content_policy)
         self.assertEqual(health.headers["x-content-type-options"], "nosniff")
         self.assertEqual(health.headers["x-frame-options"], "DENY")
         self.assertEqual(health.headers["referrer-policy"], "no-referrer")
+        self.assertEqual(debug_chunk.status_code, 404)
+        self.assertEqual(debug_search.status_code, 404)
+
+    async def test_debug_routes_stay_disabled_in_production_when_flag_is_set(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            config = config.model_copy(
+                update={"debug": True, "deployment_environment": "production"}
+            )
+            runtime.config = config
+            app = create_app(config, runtime=runtime)
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                debug_chunk = await client.get("/api/v1/debug/chunks/chunk-a0")
+                debug_search = await client.post(
+                    "/api/v1/search", json={"question": "emergency kit"}
+                )
+            await runtime.aclose()
+
         self.assertEqual(debug_chunk.status_code, 404)
         self.assertEqual(debug_search.status_code, 404)
 
@@ -95,6 +118,9 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ProductionImportBoundaryTests(unittest.TestCase):
+    def test_openapi_413_description_is_explicit_and_stable(self) -> None:
+        self.assertEqual(ERROR_RESPONSES[413]["description"], "Content Too Large")
+
     def test_production_entrypoint_does_not_import_experiments(self) -> None:
         experiment_modules = {
             "firelens.contextual_retrieval_experiment",

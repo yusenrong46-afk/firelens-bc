@@ -50,11 +50,12 @@ test.beforeEach(async ({ page }) => {
           status: "answer",
           response_mode: "live",
           trace_id: "stale-live-trace",
-          answer: "Current official information: cached Test Fire record.",
+          answer: "Cached official information (refresh failed): cached Test Fire record.",
           suggested_questions: [],
           claims: [],
           evidence: [],
           limitations: ["A refresh failed; this cached record is visibly stale."],
+          aggregate_freshness: "stale",
           live_results: [{
             result_id: "incident:stale-7",
             kind: "incident",
@@ -249,7 +250,16 @@ test("shows stale and partial-layer state without hiding records", async ({ page
   await page.goto("/");
   await page.getByLabel("Ask a preparedness question").fill("Show stale official wildfire records");
   await page.getByLabel("Send question").click();
+  await expect(page.getByText("BC wildfire information — includes stale records")).toBeVisible();
+  await expect(page.getByText(/Cached official information \(refresh failed\)/)).toBeVisible();
+  await expect(page.getByText("Official cached records", { exact: true })).toHaveCount(2);
+  const staleWarning = page.getByRole("status").filter({ hasText: "Cached official records; refresh failed" });
+  await expect(staleWarning).toBeVisible();
+  await expect(page.getByText("Current BC wildfire information")).toHaveCount(0);
   await expect(page.getByText("Cached Test Fire", { exact: true })).toBeVisible();
+  expect(await staleWarning.evaluate((warning) => Boolean(
+    warning.compareDocumentPosition(document.querySelector(".live-list")!) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ))).toBe(true);
   await expect(page.getByText(/Out of Control · stale · BC Wildfire Service/)).toBeVisible();
   await expect(page.getByText(/Some official layers are unavailable: evacuation/)).toBeVisible();
 });

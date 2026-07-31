@@ -40,6 +40,7 @@ type ViewState = AnswerView | AbstentionView | MessageView;
 
 type Claim = NonNullable<AskResponse["claims"]>[number];
 type Evidence = NonNullable<AskResponse["evidence"]>[number];
+type AggregateFreshness = NonNullable<AskResponse["aggregate_freshness"]>;
 type Support = NonNullable<Claim["supports"]>[number];
 const LiveMap = lazy(() => import("./LiveMap").then((module) => ({ default: module.LiveMap })));
 
@@ -69,7 +70,13 @@ function responseText(response: AskResponse): string {
   return "FireLens could not produce an answer for this request.";
 }
 
-function ResponseModeBadge({ mode }: { mode: ResponseMode }) {
+function ResponseModeBadge({
+  mode,
+  aggregateFreshness,
+}: {
+  mode: ResponseMode;
+  aggregateFreshness?: AggregateFreshness;
+}) {
   const labels: Record<ResponseMode, string> = {
     grounded: "Reviewed sources",
     partial: "Partially supported",
@@ -81,6 +88,15 @@ function ResponseModeBadge({ mode }: { mode: ResponseMode }) {
     mixed: "Live records + reviewed guidance",
     conflict: "Conflicting reviewed sources",
   };
+  if (mode === "live" && aggregateFreshness === "stale") {
+    labels.live = "Official cached records";
+  } else if (mode === "live" && aggregateFreshness === "mixed") {
+    labels.live = "Official records — mixed freshness";
+  } else if (mode === "mixed" && aggregateFreshness === "stale") {
+    labels.mixed = "Cached records + reviewed guidance";
+  } else if (mode === "mixed" && aggregateFreshness === "mixed") {
+    labels.mixed = "Mixed-freshness records + reviewed guidance";
+  }
   return <span className={`response-badge response-badge--${mode}`}>{labels[mode]}</span>;
 }
 
@@ -179,6 +195,9 @@ function SourcePanel({
               <div><dt>Document</dt><dd>{evidence.title}</dd></div>
               <div><dt>Locator</dt><dd>{evidence.locator || "Source passage"}</dd></div>
               <div><dt>Guidance type</dt><dd>Stable preparedness guidance</dd></div>
+              {evidence.review_provenance === "human_verified_repair" && (
+                <div><dt>Text review</dt><dd>Human-verified source transcription</dd></div>
+              )}
             </dl>
             <div className="canonical">
               <strong>Canonical source</strong>
@@ -268,7 +287,7 @@ export function App() {
       const nextHistory: ConversationTurn[] = [
         ...requestHistory,
         { role: "user", content: normalized },
-        { role: "assistant", content: responseText(nextResponse) },
+        { role: "assistant", content: nextResponse.history_text ?? responseText(nextResponse) },
       ];
       setHistory(nextHistory.slice(-6));
       if (nextResponse.status === "answer") {
@@ -399,7 +418,12 @@ export function App() {
               <img src="/assets/firelens-mark.png" alt="" />
               <div>
                 <span className="assistant-name">FireLens BC</span>
-                {mode && <ResponseModeBadge mode={mode} />}
+                {mode && (
+                  <ResponseModeBadge
+                    mode={mode}
+                    aggregateFreshness={response?.aggregate_freshness ?? undefined}
+                  />
+                )}
                 <p>{assistantText}</p>
                 {(view.kind === "unavailable" || (view.kind === "error" && view.retryable)) && (
                   <button className="retry-button" type="button" onClick={() => void submitQuestion(lastQuestion)}>
@@ -502,6 +526,7 @@ export function App() {
               <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading the official map">Preparing map layers…</EvidencePlaceholder>}>
                 <LiveMap
                   results={view.response.live_results ?? []}
+                  aggregateFreshness={view.response.aggregate_freshness ?? undefined}
                   unavailableLayers={view.response.unavailable_layers ?? []}
                 />
                 {mode === "mixed" && (view.response.evidence ?? []).length > 0 && (

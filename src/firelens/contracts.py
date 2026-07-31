@@ -29,6 +29,20 @@ class FrozenStrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
+ASSISTANT_HISTORY_LIMIT = 6_000
+
+
+def bounded_assistant_history(text: str) -> str:
+    """Return the deterministic representation allowed in a later request."""
+
+    normalized = " ".join(text.split())
+    if not normalized:
+        raise ValueError("assistant history cannot be blank")
+    if len(normalized) <= ASSISTANT_HISTORY_LIMIT:
+        return normalized
+    return normalized[: ASSISTANT_HISTORY_LIMIT - 3].rstrip() + "..."
+
+
 class QueryRoute(StrEnum):
     CAPABILITY = "capability"
     RELATED = "related"
@@ -71,6 +85,7 @@ class AuthorityClass(StrEnum):
     PROVINCIAL_GOVERNMENT = "provincial_government"
     PROVINCIAL_PUBLIC_HEALTH = "provincial_public_health"
     WILDFIRE_PREPAREDNESS = "recognized_wildfire_preparedness_program"
+    LOCAL_AUTHORITY = "local_authority"
 
 
 class TemporalClass(StrEnum):
@@ -120,7 +135,7 @@ class ResponseStatus(StrEnum):
 
 class ConversationTurn(FrozenStrictModel):
     role: Literal["user", "assistant"]
-    content: str = Field(min_length=1, max_length=2_000)
+    content: str = Field(min_length=1, max_length=6_000)
 
     @field_validator("content")
     @classmethod
@@ -249,6 +264,7 @@ class RetrievalHit(FrozenStrictModel):
     document_sha256: str
     chunk_index: int
     text: str
+    review_provenance: Literal["native_text", "human_verified_repair"] = "native_text"
     matched_queries: tuple[str, ...] = ()
     bm25_positions: tuple[int, ...] = ()
     vector_positions: tuple[int, ...] = ()
@@ -292,6 +308,7 @@ class EvidenceSpan(FrozenStrictModel):
     temporal_class: TemporalClass
     authority_class: AuthorityClass
     document_sha256: str
+    review_provenance: Literal["native_text", "human_verified_repair"] = "native_text"
 
 
 class EvidenceQuoteCandidate(FrozenStrictModel):
@@ -342,6 +359,12 @@ class Freshness(StrEnum):
     STALE = "stale"
 
 
+class AggregateFreshness(StrEnum):
+    FRESH = "fresh"
+    STALE = "stale"
+    MIXED = "mixed"
+
+
 class LiveResult(FrozenStrictModel):
     result_id: str = Field(min_length=1, max_length=200)
     kind: LiveResultKind
@@ -362,8 +385,29 @@ class LiveResult(FrozenStrictModel):
 class LiveMapResponse(FrozenStrictModel):
     generated_at: datetime
     results: list[LiveResult]
+    aggregate_freshness: AggregateFreshness | None = None
     unavailable_layers: list[LiveResultKind] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_aggregate_freshness(self) -> LiveMapResponse:
+        expected = aggregate_live_freshness(self.results)
+        if self.aggregate_freshness is not None and self.aggregate_freshness != expected:
+            raise ValueError("aggregate freshness must match the returned live records")
+        return self
+
+
+def aggregate_live_freshness(
+    results: list[LiveResult],
+) -> AggregateFreshness | None:
+    freshnesses = {item.freshness for item in results}
+    if not freshnesses:
+        return None
+    if freshnesses == {Freshness.FRESH}:
+        return AggregateFreshness.FRESH
+    if freshnesses == {Freshness.STALE}:
+        return AggregateFreshness.STALE
+    return AggregateFreshness.MIXED
 
 
 class ClaimSupport(FrozenStrictModel):
@@ -461,6 +505,7 @@ class PublicEvidence(FrozenStrictModel):
     canonical_url: HttpUrl
     locator: str | None
     temporal_class: Literal[TemporalClass.STABLE_GUIDANCE]
+    review_provenance: Literal["native_text", "human_verified_repair"] = "native_text"
     primary_text: str
     context_text: str
 
@@ -478,6 +523,11 @@ class AskResponse(StrictModel):
     trace_id: str
     response_mode: ResponseMode = ResponseMode.ABSTENTION
     answer: str | None = None
+    history_text: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=ASSISTANT_HISTORY_LIMIT,
+    )
     claims: list[PublicClaim] = Field(default_factory=list)
     evidence: list[PublicEvidence] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
@@ -486,10 +536,21 @@ class AskResponse(StrictModel):
     validation: ValidationReport | None = None
     error_kind: str | None = None
     live_results: list[LiveResult] = Field(default_factory=list)
+    aggregate_freshness: AggregateFreshness | None = None
     unavailable_layers: list[LiveResultKind] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_public_state(self) -> AskResponse:
+        if self.answer is None:
+            if self.history_text is not None:
+                raise ValueError("history text requires a public answer")
+        else:
+            expected_history = bounded_assistant_history(self.answer)
+            if self.history_text is None:
+                self.history_text = expected_history
+            elif self.history_text != expected_history:
+                raise ValueError("history text must be derived from the public answer")
+
         claim_ids = [claim.claim_id for claim in self.claims]
         if len(claim_ids) != len(set(claim_ids)):
             raise ValueError("public claim IDs must be unique")
@@ -536,6 +597,8 @@ class AskResponse(StrictModel):
                 raise ValueError("live responses require current official results")
             if self.claims or self.evidence:
                 raise ValueError("live responses cannot present static evidence claims")
+            if self.aggregate_freshness != aggregate_live_freshness(self.live_results):
+                raise ValueError("live response requires matching aggregate freshness")
         elif self.response_mode == ResponseMode.MIXED:
             if self.status != ResponseStatus.ANSWER or not self.live_results or not self.answer:
                 raise ValueError("mixed responses require live results and an answer")
@@ -554,6 +617,8 @@ class AskResponse(StrictModel):
                 )
             if self.validation is None or not self.validation.accepted:
                 raise ValueError("mixed responses require accepted static validation")
+            if self.aggregate_freshness != aggregate_live_freshness(self.live_results):
+                raise ValueError("mixed response requires matching aggregate freshness")
         elif self.response_mode in {ResponseMode.CAPABILITY, ResponseMode.SCOPE_REDIRECT}:
             if self.status != ResponseStatus.ANSWER or self.claims or self.evidence:
                 raise ValueError("local conversational responses cannot contain claims")
@@ -564,6 +629,8 @@ class AskResponse(StrictModel):
                 raise ValueError(
                     "abstention and error responses cannot contain evidence claims"
                 )
+        if not self.live_results and self.aggregate_freshness is not None:
+            raise ValueError("aggregate freshness requires live results")
         return self
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import tempfile
 import unittest
@@ -223,6 +224,245 @@ class ContractTests(unittest.TestCase):
         report = validate_draft(draft, packet)
         self.assertTrue(report.accepted)
         self.assertTrue(report.policy_valid)
+
+    def test_validator_allows_quoted_evacuation_order_definition(self) -> None:
+        chunk = make_chunk(
+            "a",
+            "Evacuation Order\nThis means you are at risk and must leave IMMEDIATELY.",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [chunk])
+            packet = build_evidence_packet(
+                "What does an evacuation order mean?",
+                [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
+                [chunk],
+                corpus_version="test-corpus.v1",
+                config=config,
+            )
+        draft = GroundedDraft(
+            answer_type="grounded",
+            claims=[
+                DraftProposalClaim(
+                    text=chunk.text,
+                    evidence_quote_ids=[packet.quote_candidates[0].quote_id],
+                )
+            ],
+            limitations=packet.limitations,
+        )
+
+        self.assertTrue(validate_draft(draft, packet).accepted)
+
+    def test_validator_rejects_safety_action_inversion(self) -> None:
+        chunk = make_chunk(
+            "a",
+            "If an evacuation order is issued, you must leave the area immediately.",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [chunk])
+            packet = build_evidence_packet(
+                "What does an evacuation order require?",
+                [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
+                [chunk],
+                corpus_version="test-corpus.v1",
+                config=config,
+            )
+        draft = GroundedDraft(
+            answer_type="grounded",
+            claims=[
+                DraftProposalClaim(
+                    text="If an evacuation order is issued, you must remain home immediately.",
+                    evidence_quote_ids=[packet.quote_candidates[0].quote_id],
+                )
+            ],
+            limitations=packet.limitations,
+        )
+
+        report = validate_draft(draft, packet)
+
+        self.assertFalse(report.accepted)
+        self.assertFalse(report.claim_support_valid)
+        self.assertTrue(any("action" in error for error in report.errors))
+
+    def test_validator_rejects_unsupported_quantity_and_duration(self) -> None:
+        cases = (
+            (
+                "The Immediate Zone extends 1.5 metres from the home.",
+                "The Immediate Zone extends 15 metres from the home.",
+            ),
+            (
+                "Leave immediately when an evacuation order is issued.",
+                "Wait 60 minutes before leaving when an evacuation order is issued.",
+            ),
+        )
+        for quote, claim in cases:
+            with self.subTest(claim=claim), tempfile.TemporaryDirectory() as directory:
+                chunk = make_chunk("a", quote)
+                config = write_test_corpus(Path(directory), [chunk])
+                packet = build_evidence_packet(
+                    "What does the guidance say?",
+                    [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
+                    [chunk],
+                    corpus_version="test-corpus.v1",
+                    config=config,
+                )
+                draft = GroundedDraft(
+                    answer_type="grounded",
+                    claims=[
+                        DraftProposalClaim(
+                            text=claim,
+                            evidence_quote_ids=[packet.quote_candidates[0].quote_id],
+                        )
+                    ],
+                    limitations=packet.limitations,
+                )
+
+                report = validate_draft(draft, packet)
+
+                self.assertFalse(report.accepted)
+                self.assertFalse(report.claim_support_valid)
+                self.assertTrue(any("quantity" in error for error in report.errors))
+
+    def test_validator_allows_faithful_quantity_paraphrase(self) -> None:
+        chunk = make_chunk(
+            "a",
+            "Maintain a non-combustible area extending 1.5 metres around the home.",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [chunk])
+            packet = build_evidence_packet(
+                "How wide is the non-combustible area?",
+                [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
+                [chunk],
+                corpus_version="test-corpus.v1",
+                config=config,
+            )
+        draft = GroundedDraft(
+            answer_type="grounded",
+            claims=[
+                DraftProposalClaim(
+                    text="The non-combustible area extends 1.5 m around the home.",
+                    evidence_quote_ids=[packet.quote_candidates[0].quote_id],
+                )
+            ],
+            limitations=packet.limitations,
+        )
+
+        self.assertTrue(validate_draft(draft, packet).accepted)
+
+    def test_validator_rejects_protected_semantic_mutations(self) -> None:
+        cases = (
+            (
+                "An evacuation alert means be ready to leave.",
+                "An evacuation order means be ready to leave.",
+                "status",
+            ),
+            (
+                "If time permits, close all windows before leaving.",
+                "Close all windows before leaving.",
+                "condition",
+            ),
+            (
+                "Do not return until the evacuation order is rescinded.",
+                "Return before the evacuation order is rescinded.",
+                "polarity",
+            ),
+            (
+                "The preparedness guide was updated in 2024.",
+                "The preparedness guide was updated in 2025.",
+                "date",
+            ),
+            (
+                "PreparedBC says households should prepare an emergency kit.",
+                "FireSmart BC says households should prepare an emergency kit.",
+                "authority",
+            ),
+            (
+                "Residents in Kamloops should keep an emergency kit ready.",
+                "Residents in Kelowna should keep an emergency kit ready.",
+                "location",
+            ),
+        )
+        for quote, claim, expected_error in cases:
+            with self.subTest(claim=claim), tempfile.TemporaryDirectory() as directory:
+                chunk = make_chunk("a", quote)
+                config = write_test_corpus(Path(directory), [chunk])
+                packet = build_evidence_packet(
+                    "What does the guidance say?",
+                    [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
+                    [chunk],
+                    corpus_version="test-corpus.v1",
+                    config=config,
+                )
+                draft = GroundedDraft(
+                    answer_type="grounded",
+                    claims=[
+                        DraftProposalClaim(
+                            text=claim,
+                            evidence_quote_ids=[packet.quote_candidates[0].quote_id],
+                        )
+                    ],
+                    limitations=packet.limitations,
+                )
+
+                report = validate_draft(draft, packet)
+
+                self.assertFalse(report.accepted)
+                self.assertFalse(report.claim_support_valid)
+                self.assertTrue(
+                    any(expected_error in error for error in report.errors),
+                    report.errors,
+                )
+
+    def test_validator_allows_preserved_conditions_statuses_polarity_and_dates(self) -> None:
+        cases = (
+            (
+                "If time permits, close all windows before leaving.",
+                "When feasible, close all windows before leaving.",
+            ),
+            (
+                "An evacuation alert means be ready to leave.",
+                "An evacuation alert means being ready to leave.",
+            ),
+            (
+                "Do not return until the evacuation order is rescinded.",
+                "Do not return until the evacuation order is rescinded.",
+            ),
+            (
+                "The preparedness guide was updated in 2024.",
+                "The guide's preparedness content was updated in 2024.",
+            ),
+            (
+                "PreparedBC says households should prepare an emergency kit.",
+                "PreparedBC says an emergency kit should be prepared by households.",
+            ),
+            (
+                "Residents in Kamloops should keep an emergency kit ready.",
+                "In Kamloops, residents should keep an emergency kit ready.",
+            ),
+        )
+        for quote, claim in cases:
+            with self.subTest(claim=claim), tempfile.TemporaryDirectory() as directory:
+                chunk = make_chunk("a", quote)
+                config = write_test_corpus(Path(directory), [chunk])
+                packet = build_evidence_packet(
+                    "What does the guidance say?",
+                    [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
+                    [chunk],
+                    corpus_version="test-corpus.v1",
+                    config=config,
+                )
+                draft = GroundedDraft(
+                    answer_type="grounded",
+                    claims=[
+                        DraftProposalClaim(
+                            text=claim,
+                            evidence_quote_ids=[packet.quote_candidates[0].quote_id],
+                        )
+                    ],
+                    limitations=packet.limitations,
+                )
+
+                self.assertTrue(validate_draft(draft, packet).accepted)
 
     def test_validator_requires_every_retrieved_section_in_an_enumerated_answer(self) -> None:
         chunks = [
@@ -477,6 +717,20 @@ class AdjacentProvider(FakeProvider):
         )
 
 
+class TangentProvider(FakeProvider):
+    async def plan(self, messages, *, output_schema):
+        del messages, output_schema
+        self.plan_calls += 1
+        return PlanningResponse(
+            model="fake/planner",
+            decision=PlanningDecision(
+                relation=QueryRelation.TANGENT,
+                retrieval_queries=[],
+                explanation="The question is outside the corpus scope.",
+            ),
+        )
+
+
 class FailingPlanner(FakeProvider):
     async def plan(self, messages, *, output_schema):
         del messages, output_schema
@@ -488,7 +742,82 @@ class FailingPlanner(FakeProvider):
         )
 
 
+class FailingGroundedProvider(FakeProvider):
+    async def generate_grounded(self, messages, *, output_schema):
+        del messages, output_schema
+        raise ProviderError(ProviderErrorKind.UNAVAILABLE, "generation unavailable")
+
+
+class UnexpectedGroundedErrorProvider(FakeProvider):
+    async def generate_grounded(self, messages, *, output_schema):
+        del messages, output_schema
+        raise RuntimeError("unexpected generation failure")
+
+
+class BlockingGroundedProvider(FakeProvider):
+    def __init__(self) -> None:
+        super().__init__()
+        self.entered = asyncio.Event()
+
+    async def generate_grounded(self, messages, *, output_schema):
+        del messages, output_schema
+        self.entered.set()
+        await asyncio.Event().wait()
+        raise AssertionError("blocking provider should be cancelled")
+
+
 class ServiceTests(unittest.IsolatedAsyncioTestCase):
+    async def test_active_operations_clear_after_success_and_provider_failure(self) -> None:
+        for provider in (FakeProvider(), FailingGroundedProvider()):
+            with self.subTest(provider=type(provider).__name__):
+                with tempfile.TemporaryDirectory() as directory:
+                    runtime, _, _ = await make_runtime(Path(directory), provider=provider)
+                    await runtime.service.ask(
+                        QueryRequest(question="What belongs in an emergency kit?")
+                    )
+                    self.assertFalse(runtime.service._active_operations)
+                    await runtime.aclose()
+
+    async def test_active_operations_clear_after_unexpected_exception(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, _ = await make_runtime(
+                Path(directory), provider=UnexpectedGroundedErrorProvider()
+            )
+            with self.assertRaisesRegex(RuntimeError, "unexpected generation failure"):
+                await runtime.service.ask(
+                    QueryRequest(question="What belongs in an emergency kit?")
+                )
+            self.assertFalse(runtime.service._active_operations)
+            await runtime.aclose()
+
+    async def test_active_operations_clear_after_timeout(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            provider = BlockingGroundedProvider()
+            runtime, _, _ = await make_runtime(Path(directory), provider=provider)
+            with self.assertRaises(TimeoutError):
+                await asyncio.wait_for(
+                    runtime.service.ask(
+                        QueryRequest(question="What belongs in an emergency kit?")
+                    ),
+                    timeout=0.05,
+                )
+            self.assertFalse(runtime.service._active_operations)
+            await runtime.aclose()
+
+    async def test_active_operations_clear_after_caller_cancellation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            provider = BlockingGroundedProvider()
+            runtime, _, _ = await make_runtime(Path(directory), provider=provider)
+            request = asyncio.create_task(
+                runtime.service.ask(QueryRequest(question="What belongs in an emergency kit?"))
+            )
+            await asyncio.wait_for(provider.entered.wait(), timeout=1)
+            request.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await request
+            self.assertFalse(runtime.service._active_operations)
+            await runtime.aclose()
+
     def test_history_is_used_only_for_genuinely_elliptical_safety_followups(self) -> None:
         safe_after_live = QueryRequest.model_validate(
             {
@@ -642,6 +971,21 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
             self.assertEqual(provider.generate_calls, 0)
 
+    async def test_mixed_scope_redirect_is_not_overridden_by_a_corpus_topic(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            chunks = [
+                make_chunk(
+                    "rank",
+                    "Wildfire ranks describe observed fire behaviour on a scale from 1 to 6.",
+                )
+            ]
+            runtime, provider, _ = await make_runtime(Path(directory), chunks=chunks)
+            response = await runtime.service.ask(
+                QueryRequest(question="Explain ocean tides, then explain wildfire ranks.")
+            )
+            self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
+            self.assertEqual(provider.generate_calls, 0)
+
     async def test_explicit_source_reference_overrides_adjacent_planner_result(self) -> None:
         chunk = replace(
             make_chunk(
@@ -665,6 +1009,36 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(response.response_mode, ResponseMode.GROUNDED)
         self.assertEqual(response.evidence[0].title, "Cedar Ridge Household Kit")
+
+    async def test_single_shared_source_token_does_not_promote_tangent_query(self) -> None:
+        chunk = replace(
+            make_chunk(
+                "phoenix-1",
+                "The Phoenix guide says to store water and shelf-stable food in an emergency kit.",
+            ),
+            title="Phoenix Preparedness Guide",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            provider = TangentProvider()
+            runtime, _, _ = await make_runtime(
+                Path(directory), provider=provider, chunks=[chunk]
+            )
+            initial_provider_calls = (provider.embed_calls, provider.rerank_calls)
+            execution = await runtime.service.execute_search(
+                QueryRequest(question="Why did the Phoenix wildfire affect restaurant prices?")
+            )
+            await runtime.aclose()
+
+        self.assertIsNotNone(execution.observation.planning)
+        self.assertEqual(
+            execution.observation.planning.decision.relation,
+            QueryRelation.TANGENT,
+        )
+        self.assertFalse(execution.public_response.plan.retrieval_requests)
+        self.assertEqual(
+            (provider.embed_calls, provider.rerank_calls),
+            initial_provider_calls,
+        )
 
     async def test_complete_fake_pipeline_exposes_every_retrieval_stage(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -774,7 +1148,11 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(response.validation and response.validation.accepted)
         self.assertNotIn("Saturn", response.answer)
         self.assertEqual(provider.generate_calls, 2)
-        self.assertIn("omitted after validation", response.limitations[-1])
+        self.assertEqual(
+            response.limitations[-1],
+            "This answer is incomplete: 1 generated item was omitted after validation. "
+            "Do not treat the remaining items as a complete list.",
+        )
 
     async def test_wrong_generation_draft_type_is_replaced_by_safe_abstention(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -820,7 +1198,7 @@ questions:
 
 
 class RealCorpusRAGIntegrationTests(unittest.IsolatedAsyncioTestCase):
-    async def test_all_180_real_chunks_complete_the_offline_pipeline(self) -> None:
+    async def test_all_reviewed_real_chunks_complete_the_offline_pipeline(self) -> None:
         project_root = Path(__file__).resolve().parents[1]
         base = FireLensConfig.from_env(project_root)
         with tempfile.TemporaryDirectory() as directory:
@@ -835,7 +1213,16 @@ class RealCorpusRAGIntegrationTests(unittest.IsolatedAsyncioTestCase):
                 }
             )
             chunks, corpus_version = load_corpus_resources(config)
-            self.assertEqual(len(chunks), 180)
+            self.assertEqual(len(chunks), 170)
+            self.assertFalse(
+                any(
+                    chunk.source_id == "firesmart_begins_at_home" and chunk.page_number == 10
+                    for chunk in chunks
+                )
+            )
+            self.assertTrue(
+                any(chunk.review_provenance == "human_verified_repair" for chunk in chunks)
+            )
             provider = FakeProvider()
             await build_vector_index(
                 chunks,

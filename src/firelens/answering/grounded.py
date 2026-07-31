@@ -195,6 +195,7 @@ class GroundedAnswerEngine:
             )
 
         salvaged = False
+        salvaged_claim_count = 0
         if not validation.accepted:
             original_draft = active_draft
             original_validation = validation
@@ -253,14 +254,20 @@ class GroundedAnswerEngine:
                     attempts = repaired.attempts
 
             if not validation.accepted:
-                salvage = (
-                    salvage_valid_grounded_claims(repaired_draft, evidence_packet)
-                    if repaired_draft is not None
-                    else None
-                ) or salvage_valid_grounded_claims(original_draft, evidence_packet)
+                salvage = None
+                salvage_source: GroundedDraft | None = None
+                for candidate in (repaired_draft, original_draft):
+                    if candidate is None:
+                        continue
+                    salvage = salvage_valid_grounded_claims(candidate, evidence_packet)
+                    if salvage is not None:
+                        salvage_source = candidate
+                        break
                 if salvage is not None:
                     active_draft, validation = salvage
                     salvaged = True
+                    assert salvage_source is not None
+                    salvaged_claim_count = len(salvage_source.claims) - len(active_draft.claims)
                 else:
                     validation = repair_validation or original_validation
                     response = self._abstention(
@@ -304,6 +311,7 @@ class GroundedAnswerEngine:
                 canonical_url=HttpUrl(item.canonical_url),
                 locator=item.locator,
                 temporal_class=TemporalClass.STABLE_GUIDANCE,
+                review_provenance=item.review_provenance,
                 primary_text=item.primary_text,
                 context_text=item.context_text,
             )
@@ -322,7 +330,13 @@ class GroundedAnswerEngine:
             limitations=[
                 *evidence_packet.limitations,
                 *(
-                    ["Unsupported generated statements were omitted after validation."]
+                    [
+                        "This answer is incomplete: "
+                        f"{salvaged_claim_count} generated "
+                        f"{'item was' if salvaged_claim_count == 1 else 'items were'} "
+                        "omitted after validation. Do not treat the remaining items "
+                        "as a complete list."
+                    ]
                     if salvaged
                     else []
                 ),

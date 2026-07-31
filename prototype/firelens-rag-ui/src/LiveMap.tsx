@@ -50,20 +50,40 @@ function resultColour(kind: LiveResult["kind"]): string {
   return "#b42318";
 }
 
+function isRenderableGeometry(result: LiveResult): boolean {
+  const geometry = result.geometry as { type?: string; coordinates?: unknown };
+  if (!Array.isArray(geometry.coordinates) || geometry.coordinates.length === 0) return false;
+  return ["Point", "Polygon", "MultiPolygon"].includes(geometry.type ?? "");
+}
+
 export function LiveMap({
   results,
+  aggregateFreshness,
   unavailableLayers = [],
 }: {
   results: LiveResult[];
+  aggregateFreshness?: "fresh" | "stale" | "mixed";
   unavailableLayers?: string[];
 }) {
   const [tileUnavailable, setTileUnavailable] = useState(false);
+  const freshnessState = aggregateFreshness ?? (
+    results.every((result) => result.freshness === "stale")
+      ? "stale"
+      : results.some((result) => result.freshness === "stale")
+        ? "mixed"
+        : "fresh"
+  );
+  const includesStale = freshnessState !== "fresh";
   const featureResults = useMemo(
-    () => results.filter((result) => (result.geometry as { type?: string }).type !== "Point"),
+    () => results.filter(
+      (result) => isRenderableGeometry(result) && (result.geometry as { type?: string }).type !== "Point",
+    ),
     [results],
   );
   const pointResults = useMemo(
-    () => results.filter((result) => (result.geometry as { type?: string }).type === "Point"),
+    () => results.filter(
+      (result) => isRenderableGeometry(result) && (result.geometry as { type?: string }).type === "Point",
+    ),
     [results],
   );
   const resultSignature = results.map((result) => result.result_id).join("|");
@@ -73,13 +93,35 @@ export function LiveMap({
     <section className="live-map" aria-label="Official wildfire records map">
       <div className="live-map__heading">
         <div>
-          <span>Official live records</span>
-          <h1>Current BC wildfire information</h1>
+          <span>
+            {freshnessState === "stale"
+              ? "Official cached records"
+              : freshnessState === "mixed"
+                ? "Official records — mixed freshness"
+                : "Official live records"}
+          </span>
+          <h1>
+            {freshnessState === "stale"
+              ? "BC wildfire information — includes stale records"
+              : freshnessState === "mixed"
+                ? "BC wildfire information — mixed freshness"
+                : "Current BC wildfire information"}
+          </h1>
         </div>
         <a href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
           Open BCWS map
         </a>
       </div>
+      {freshnessState === "stale" && (
+        <p className="live-map__warning" role="status">
+          Cached official records; refresh failed. These records may be outdated.
+        </p>
+      )}
+      {freshnessState === "mixed" && (
+        <p className="live-map__warning" role="status">
+          Official records include stale cached data because a refresh failed. Check each record timestamp.
+        </p>
+      )}
       <MapContainer bounds={BC_BOUNDS} scrollWheelZoom={false} aria-label="Interactive map of official wildfire records">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

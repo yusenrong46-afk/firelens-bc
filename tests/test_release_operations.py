@@ -12,7 +12,7 @@ from scripts.prepare_vercel_firewall import load_plan, render_command
 from scripts.qualify_preview import qualify_preview
 
 
-def test_firewall_plan_is_log_only_and_method_scoped() -> None:
+def test_firewall_plan_is_enforced_method_scoped_and_not_auto_published() -> None:
     root = Path(__file__).resolve().parents[1]
     plan = load_plan(root / "config/vercel_firewall.v1.json")
 
@@ -22,31 +22,31 @@ def test_firewall_plan_is_log_only_and_method_scoped() -> None:
     }
     for rule in plan["rules"]:
         command = render_command(rule)
-        assert command[-2:] == ["--rate-limit-action", "log"]
+        assert command[-2:] == ["--rate-limit-action", "deny"]
         assert "--condition" in command
         assert "--yes" not in command
 
 
-def test_firewall_plan_rejects_immediate_enforcement() -> None:
+def test_firewall_plan_rejects_log_only_rules() -> None:
     payload = {
         "schema_version": "firelens.vercel_firewall.v1",
         "observation_period_hours": 24,
         "rules": [
             {
-                "name": "unsafe",
+                "name": "observation-only",
                 "path": "/api/v1/ask",
                 "method": "POST",
                 "window_seconds": 60,
                 "requests": 150,
                 "keys": ["ip"],
-                "rate_limit_action": "deny",
+                "rate_limit_action": "log",
             }
         ],
     }
     with tempfile.TemporaryDirectory() as directory:
         path = Path(directory) / "plan.json"
         path.write_text(json.dumps(payload), encoding="utf-8")
-        with pytest.raises(ValueError, match="log-only"):
+        with pytest.raises(ValueError, match="enforced"):
             load_plan(path)
 
 

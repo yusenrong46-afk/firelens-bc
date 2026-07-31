@@ -1,9 +1,18 @@
 from __future__ import annotations
 
 import unittest
+from datetime import UTC, datetime
 from typing import Any, cast
 
-from firelens.contracts import QueryRequest, ResponseMode, ResponseStatus
+from firelens.contracts import (
+    Freshness,
+    LiveMapResponse,
+    LiveResult,
+    LiveResultKind,
+    QueryRequest,
+    ResponseMode,
+    ResponseStatus,
+)
 from firelens.live_answering import LiveAnswerCoordinator
 
 
@@ -20,7 +29,81 @@ class UnexpectedLiveService:
         raise AssertionError("supported-layer policy must run before a live fetch")
 
 
+class FixedLiveService:
+    def __init__(self, response: LiveMapResponse) -> None:
+        self.response = response
+
+    async def map_results(self, *args, **kwargs):
+        return self.response
+
+    async def nearby_results(self, *args, **kwargs):
+        return self.response
+
+
 class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
+    async def test_stale_records_are_never_described_as_current(self) -> None:
+        timestamp = datetime(2026, 7, 28, tzinfo=UTC)
+        live = LiveMapResponse(
+            generated_at=timestamp,
+            results=[
+                LiveResult(
+                    result_id="incident:1",
+                    kind=LiveResultKind.INCIDENT,
+                    source_url="https://example.test/live",
+                    source_updated_at=timestamp,
+                    retrieved_at=timestamp,
+                    freshness=Freshness.STALE,
+                    status="Out of Control",
+                    name="Test Fire",
+                    geometry={"type": "Point", "coordinates": [-123.5, 49.5]},
+                )
+            ],
+            limitations=["A refresh failed; cached records may be stale."],
+        )
+        coordinator = LiveAnswerCoordinator(cast(Any, FixedLiveService(live)))
+
+        response = await coordinator.answer(
+            QueryRequest(question="What active wildfires are in BC currently?"), None
+        )
+
+        self.assertEqual(response.response_mode, ResponseMode.LIVE)
+        self.assertEqual(response.aggregate_freshness, "stale")
+        self.assertNotIn("Current official information", response.answer)
+        self.assertIn("Cached official information", response.answer)
+        self.assertTrue(
+            any("refresh failed" in item.casefold() for item in response.limitations)
+        )
+
+    async def test_mixed_freshness_has_typed_state_and_no_current_wording(self) -> None:
+        timestamp = datetime(2026, 7, 28, tzinfo=UTC)
+        live = LiveMapResponse(
+            generated_at=timestamp,
+            results=[
+                LiveResult(
+                    result_id=f"incident:{index}",
+                    kind=LiveResultKind.INCIDENT,
+                    source_url=f"https://example.test/live/{index}",
+                    source_updated_at=timestamp,
+                    retrieved_at=timestamp,
+                    freshness=freshness,
+                    status="Out of Control",
+                    name=f"Test Fire {index}",
+                    geometry={"type": "Point", "coordinates": [-123.5, 49.5]},
+                )
+                for index, freshness in enumerate((Freshness.FRESH, Freshness.STALE), start=1)
+            ],
+        )
+        coordinator = LiveAnswerCoordinator(cast(Any, FixedLiveService(live)))
+
+        response = await coordinator.answer(
+            QueryRequest(question="What active wildfires are in BC currently?"), None
+        )
+
+        self.assertEqual(response.aggregate_freshness, "mixed")
+        self.assertNotIn("current", response.answer.casefold())
+        self.assertNotIn("latest", response.answer.casefold())
+        self.assertTrue(any("stale cached" in item.casefold() for item in response.limitations))
+
     async def test_missing_location_fails_before_live_fetch(self) -> None:
         live_service = UnexpectedLiveService()
         coordinator = LiveAnswerCoordinator(cast(Any, live_service))

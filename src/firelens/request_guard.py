@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import hmac
+import ipaddress
 import os
 import time
 from collections.abc import Callable
@@ -36,6 +37,7 @@ class AnonymousRequestGuard:
         window_seconds: int,
         max_body_bytes: int,
         max_clients: int = 10_000,
+        trusted_proxy_platform: str = "none",
         clock: Callable[[], float] = time.monotonic,
         secret: bytes | None = None,
     ) -> None:
@@ -43,15 +45,25 @@ class AnonymousRequestGuard:
         self.window_seconds = window_seconds
         self.max_body_bytes = max_body_bytes
         self.max_clients = max_clients
+        if trusted_proxy_platform not in {"none", "vercel"}:
+            raise ValueError("trusted_proxy_platform must be none or vercel")
+        self.trusted_proxy_platform = trusted_proxy_platform
         self.clock = clock
         self._secret = secret or os.urandom(32)
         self._windows: dict[str, _Window] = {}
         self._lock = asyncio.Lock()
 
     def anonymous_key(self, request: Request) -> str:
-        forwarded = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
         peer = request.client.host if request.client is not None else "unknown"
-        raw = forwarded or peer
+        raw = peer
+        if self.trusted_proxy_platform == "vercel":
+            forwarded = (
+                request.headers.get("x-vercel-forwarded-for", "").split(",", 1)[0].strip()
+            )
+            try:
+                raw = str(ipaddress.ip_address(forwarded))
+            except ValueError:
+                raw = peer
         return hmac.new(self._secret, raw.encode("utf-8"), hashlib.sha256).hexdigest()
 
     async def check(self, key: str) -> RateLimitDecision:

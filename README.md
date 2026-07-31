@@ -6,10 +6,10 @@ incident, perimeter, and evacuation records plus a restrained map. Stable RAG
 claims still require exact local evidence; current records remain visibly
 separate and never authorize a personal safety decision.
 
-**Release status:** `main review candidate; owner qualification deferred`.
-The source candidate is available on `main` for independent engineering review.
-The complete paid probe rerun and owner retrieval and semantic reviews remain
-deferred; this README does not claim that the current production deployment has
+**Release status:** `principal-remediation candidate; owner qualification deferred`.
+`main` still contains the earlier review candidate. The complete paid probe
+rerun and owner retrieval and semantic reviews remain deferred; this README
+does not claim that the remediated branch or current production deployment has
 been qualified as V1.5.
 
 ```mermaid
@@ -145,6 +145,12 @@ Strict contracts reject unknown fields. Public source metadata is always
 reconstructed from local corpus records; the model cannot supply publishers,
 URLs, locators, hashes, or page numbers.
 
+The current V1.5 corpus contains 170 native or human-verified chunks across
+eight approved sources and a 170 × 1,536 vector index. Ten chunks derived from
+a FireSmart page repair are quarantined until that replacement text receives
+human approval. Runtime startup verifies the repair registry, chunk provenance,
+corpus hash, vector row order, and matrix hash together.
+
 ## Historical V1.1 checkpoint
 
 | Area | Result |
@@ -171,6 +177,8 @@ claim completeness. The exact owner-review action and artifact hashes are in
 
 Further reading:
 
+- [`docs/reports/V1_5_PRINCIPAL_REMEDIATION.md`](docs/reports/V1_5_PRINCIPAL_REMEDIATION.md):
+  current finding ledger, fixes, evidence, and remaining release blockers.
 - [`docs/TECHNICAL_HANDBOOK.md`](docs/TECHNICAL_HANDBOOK.md): authoritative
   architecture, contracts, operations, and code-reading guide.
 - [`docs/reports/FIRELENS_V1_1_TECHNICAL_REPORT.md`](docs/reports/FIRELENS_V1_1_TECHNICAL_REPORT.md):
@@ -185,9 +193,16 @@ Further reading:
 The application enforces a 64 KiB body limit and a privacy-preserving
 30-request-per-minute guard for `/api/v1/ask` and `/api/v1/live/map`. Client
 addresses are HMAC-hashed with an ephemeral process secret and are not logged or
-persisted. The health contract labels this guard `instance_local`: a serverless
-instance cannot provide a globally durable quota. Production must retain Vercel
-Firewall or equivalent platform rate limiting as the outer distributed control.
+persisted. Forwarded client IPs are ignored unless the deployment is explicitly
+identified as Vercel, where only Vercel's platform-owned forwarding header is
+accepted. A public answer also has a 45-second total deadline. The health
+contract labels the in-process guard `instance_local`: a serverless instance
+cannot provide a globally durable quota. Production must retain Vercel Firewall
+or equivalent platform rate limiting as the outer distributed control.
+
+Readiness returns HTTP 503 when the corpus, index, or required provider
+configuration is unavailable. Debug routes are never registered in production,
+even if the debug flag is set.
 
 Live location is optional, coarse, and request-scoped. Coordinates are rounded
 to two decimals. Exact-address labels are rejected, and location is not written

@@ -148,3 +148,17 @@ def test_packet_contains_original_chunk_and_review_checks(tmp_path: Path) -> Non
     assert "Being held means projected to stay within a boundary." in packet
     assert "question independently authored after configuration freeze" in packet
     assert "Record the decisions only in the hash-bound YAML sidecar." in packet
+
+
+def test_sealed_release_packet_references_only_governed_corpus_chunks(
+    tmp_path: Path,
+) -> None:
+    root = Path(__file__).resolve().parents[1]
+
+    write_retrieval_review_packet(
+        root / "data/evaluation/benchmark_v1_5_sealed_retrieval.yaml",
+        root / "data/processed/firelens_static_corpus.chunks.jsonl",
+        tmp_path / "sealed-review.md",
+    )
+
+    assert (tmp_path / "sealed-review.md").is_file()

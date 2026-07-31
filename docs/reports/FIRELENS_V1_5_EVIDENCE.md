@@ -1,9 +1,9 @@
 # FireLens BC V1.5 lab evidence ledger
 
 > Historical pre-hardening snapshot. For the current candidate, gate counts, artifact hashes,
-> and release decision, use `V1_5_HARDENING_QUALIFICATION.md` and
+> and release decision, use `V1_5_PRINCIPAL_REMEDIATION.md` and
 > `V1_5_EXECUTION_STATE.md`. Values below are retained as commit-bound history and must not be
-> read as the current release state.
+> read as the current release state or current 170-chunk corpus identity.
 
 Date: 2026-07-29 (America/Vancouver)
 
@@ -67,13 +67,19 @@ static-query gate passed.
 - Required aspects and authority requirements feed an aspect-to-evidence matrix. Models propose
   quote IDs; deterministic validation owns quote identity, exact text, authority, coverage,
   conflict disclosure, and accepted/partial/unsupported status.
+- Before the bounded evidence cut, deterministic selection reserves slots for directly matched
+  required aspects and relevant distinct sources, then fills remaining slots in reranker order.
+  A single low-overlap token cannot earn an aspect or diversity slot.
 - Exact citations and a lexical claim-to-quote floor are automated. They do not prove semantic
   entailment; the owner review packet remains authoritative for that release gate.
 - Corpus admission quarantines prompt-injection sources before indexing or retrieval, rejects
   malformed/pathological sources and duplicate document hashes, and preserves near-duplicate
   warnings for version/conflict review.
 - Conflicting prescriptive sources produce a typed `conflict` response with both original sources;
-  summaries or graph outputs never become citation authority.
+  summaries or graph outputs never become citation authority. FireLens does not infer legal or
+  operational precedence from an authority label alone. The deterministic matrix covers same-
+  authority, provincial/public-health, provincial/FireSmart, provincial/local, version/date, and
+  jurisdiction differences while preserving complementary guidance as non-conflicting.
 
 ## Contextual retrieval and GraphRAG
 
@@ -91,8 +97,12 @@ or graph-derived production path was introduced.
 
 One `LiveDataService` powers chat and map for the official incident, perimeter, and wildfire
 evacuation layers. It validates exact layer identities and required fields, paginates GeoJSON in
-WGS84, uses pinned Shapely plus pyproj WGS84 geodesics, filters inactive/non-wildfire records, and
-shows authority, source URL, source update time, retrieval time, status, freshness, and geometry.
+WGS84 through one typed injectable layer-definition map, and enforces stable ordering, page,
+record, duplicate, repeat-page, and no-progress bounds. Map and nearby requests send ArcGIS
+envelope filters while retaining local Shapely filtering as a backstop; bbox-specific cache keys
+prevent spatial results from contaminating province-wide results. Pinned Shapely plus pyproj WGS84
+geodesics filter inactive/non-wildfire records and determine geometry relations. Responses show
+authority, source URL, source update time, retrieval time, status, freshness, and geometry.
 
 The refreshed real-source qualification at commit
 `eca9119511d79e089526a6d163b8481c9c4a2205` found:
@@ -171,9 +181,9 @@ The new unscored sealed candidate uses dataset SHA-256
 `33b8811f8a984e53be3d19c1874cd89df317943df9309dc048539d5f2876b6e4` and holdout SHA-256
 `9dbdf45ce6f94e1c6d46893b6d50fe642f75a245e0a6309892eee03e6337443a`.
 
-These current hashes include the 2026-07-30 metadata-only migration from tool-specific automated
-review labels to neutral provenance labels. Questions, evidence expectations, and owner decisions
-were not changed. Pending ignored review sidecars must be regenerated against the new hashes.
+Those snapshot hashes include the 2026-07-30 metadata-only review-label migration. The later
+remediation quarantined an unapproved repaired page and changed the production corpus/index
+hashes, so all pending ignored review sidecars must be regenerated against the remediated tree.
 
 ## Cost ledger
 

@@ -1,5 +1,5 @@
-dataset_version: firelens_v1_5_sealed_retrieval.v1
-frozen_at: '2026-07-29T03:30:00Z'
+dataset_version: firelens_v1_5_sealed_retrieval.v2
+frozen_at: '2026-07-30T23:16:22Z'
 cases:
   - id: V1-HOLD-101
     split: holdout
@@ -68,14 +68,13 @@ cases:
     split: holdout
     category: paraphrase_ambiguity
     risk_level: ordinary
-    question: Is a Wildfire of Note itself a separate suppression stage?
+    question: Why does BCWS mark an incident as a Wildfire of Note, and how does it appear on the wildfire map?
     expected_route: static
     expected_status: answer
     acceptable_evidence:
       - source_id: bcws_stages_of_control
         chunk_ids: [bcws_stages_of_control:section:frequently-asked-questions:chunk:1]
-    required_concepts: [increased public interest, access to response information]
-    forbidden_claims: [separate stage of control]
+    required_concepts: [increased public interest, access to response information, flame icon]
     adjudication_status: automated_draft
   - id: V1-HOLD-107
     split: holdout
@@ -497,49 +496,49 @@ cases:
     split: holdout
     category: single_source
     risk_level: ordinary
-    question: How far ahead of a wildland fire can embers and sparks travel according to the FireSmart home guide?
+    question: How can breaks in a path of flammable objects help protect a home from direct flame?
     expected_route: static
     expected_status: answer
     acceptable_evidence:
       - source_id: firesmart_begins_at_home
-        chunk_ids: [firesmart_begins_at_home:page:5:chunk:2]
-    required_concepts: [up to two kilometres, ignite material near homes]
+        chunk_ids: [firesmart_begins_at_home:page:5:chunk:4]
+    required_concepts: [flammable objects create a path, create breaks in the path]
     adjudication_status: automated_draft
   - id: V1-HOLD-142
     split: holdout
     category: single_source
     risk_level: ordinary
-    question: Which roof assemblies and materials does the FireSmart home guide recommend?
+    question: What can radiant heat from a wildland fire do to a home, and how close can the flames be?
     expected_route: static
     expected_status: answer
     acceptable_evidence:
       - source_id: firesmart_begins_at_home
-        chunk_ids: [firesmart_begins_at_home:page:10:chunk:4]
-    required_concepts: [Class A, metal asphalt clay or composite]
+        chunk_ids: [firesmart_begins_at_home:page:5:chunk:3]
+    required_concepts: [melt siding, break windows, within 30 metres]
     adjudication_status: automated_draft
   - id: V1-HOLD-143
     split: holdout
     category: single_source
     risk_level: ordinary
-    question: Why does FireSmart recommend cleaning and screening gutters?
+    question: Which mulches should be avoided within 10 metres of a home, and which alternatives reduce wildfire risk?
     expected_route: static
     expected_status: answer
     acceptable_evidence:
       - source_id: firesmart_begins_at_home
-        chunk_ids: [firesmart_begins_at_home:page:10:chunk:7]
-    required_concepts: [debris ignition, metal mesh]
+        chunk_ids: [firesmart_begins_at_home:page:12:chunk:1]
+    required_concepts: [avoid bark or pine needle mulch, gravel or crushed rock mulch]
     adjudication_status: automated_draft
   - id: V1-HOLD-144
     split: holdout
     category: single_source
     risk_level: ordinary
-    question: How can the underside of a deck be made less vulnerable to embers?
+    question: Where should a burn barrel be placed, and how should the area around it be maintained?
     expected_route: static
     expected_status: answer
     acceptable_evidence:
       - source_id: firesmart_begins_at_home
-        chunk_ids: [firesmart_begins_at_home:page:10:chunk:8]
-    required_concepts: [sheathe in base, fire-resistant material]
+        chunk_ids: [firesmart_begins_at_home:page:12:chunk:3]
+    required_concepts: [away from structures and trees, three metres free of combustible material]
     adjudication_status: automated_draft
   - id: V1-HOLD-145
     split: holdout

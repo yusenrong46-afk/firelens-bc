@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 
+from firelens.answering.semantic_invariants import preservation_errors
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
     BackgroundDraft,
@@ -81,7 +82,7 @@ _SAFE_CONDITIONAL_STATUS = (
     # A generic glossary definition is not an assertion about an actual fire.
     # Keep this exemption narrow: indefinite subjects plus an explicit condition.
     r"\b(?:a|any)\s+(?:wildfire|fire)\s+(?:is|remains)\s+(?:active|burning|out of control|being held)\s+(?:if|when)\b",
-    r"\b(?:an?\s+)?evacuation order\s+(?:means|requires|directs|tells (?:people|residents|you) to)\b.{0,80}\b(?:leave|evacuate) immediately\b",
+    r"\b(?:an?\s+)?evacuation order\s+(?:this\s+)?(?:means|requires|directs|tells (?:people|residents|you) to)\b.{0,80}\b(?:leave|evacuate) immediately\b",
     r"\bwhen\s+(?:an?\s+)?evacuation order is issued\b.{0,80}\b(?:leave|evacuate) immediately\b",
 )
 
@@ -164,6 +165,7 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
             quotes_exact = False
             errors.append(f"claim {claim_number} repeats an evidence quote ID")
         selected_candidates = []
+        selected_source_contexts: list[str] = []
         for quote_id in claim.evidence_quote_ids:
             candidate = candidates.get(quote_id)
             if candidate is None:
@@ -178,6 +180,19 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
                 errors.append(f"claim {claim_number} quote {quote_id} is not exact")
                 continue
             selected_candidates.append(candidate)
+            selected_source_contexts.append(
+                " ".join(
+                    str(value)
+                    for value in (
+                        item.title,
+                        item.publisher,
+                        item.canonical_url,
+                        item.locator,
+                        item.section_title,
+                    )
+                    if value
+                )
+            )
             cited_evidence_ids.add(candidate.evidence_id)
         if not selected_candidates:
             citation_ids_valid = False
@@ -189,6 +204,15 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
             errors.append(
                 f"claim {claim_number} lacks direct lexical support in its selected quotes"
             )
+        else:
+            invariant_errors = preservation_errors(
+                claim.text,
+                [candidate.text for candidate in selected_candidates],
+                selected_source_contexts,
+            )
+            if invariant_errors:
+                claim_support_valid = False
+                errors.extend(f"claim {claim_number} {message}" for message in invariant_errors)
 
     enumerated_sections = _enumerated_evidence_sections(packet)
     missing_sections = [

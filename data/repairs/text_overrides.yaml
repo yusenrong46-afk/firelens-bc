@@ -27,7 +27,7 @@ repairs:
   - source_id: firesmart_begins_at_home
     page_number: 10
     document_sha256: "c808a14bb873eb8b70930470976b0f2e091eed9cfdc1fe4b63d6325b4ae3c2ca"
-    review_status: automated_visual_reviewed
+    review_status: pending_owner_review
     reason: >
       The rendered spread is legible, but the PDF text layer interleaves several
       visual columns. The replacement preserves the visible wording and orders

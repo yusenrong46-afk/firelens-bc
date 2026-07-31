@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
@@ -35,6 +36,10 @@ def _int_value(value: str | None, default: int) -> int:
     return int(value) if value is not None else default
 
 
+def _float_value(value: str | None, default: float) -> float:
+    return float(value) if value is not None else default
+
+
 class FireLensConfig(BaseModel):
     """Versioned experimental defaults for the first complete static pipeline."""
 
@@ -64,6 +69,7 @@ class FireLensConfig(BaseModel):
     max_evidence_spans: int = Field(default=5, gt=0)
     max_context_chars: int = Field(default=8_000, gt=0)
     request_timeout_seconds: float = Field(default=30.0, gt=0)
+    public_request_deadline_seconds: float = Field(default=45.0, gt=0, le=55.0)
     provider_max_attempts: int = Field(default=3, ge=1, le=3)
     provider_retry_base_seconds: float = Field(default=0.25, ge=0)
     provider_max_concurrency: int = Field(default=4, ge=1, le=16)
@@ -81,6 +87,8 @@ class FireLensConfig(BaseModel):
     require_zdr: bool = False
     debug: bool = False
     trace_content: bool = False
+    deployment_environment: Literal["local", "preview", "production"] = "local"
+    trusted_proxy_platform: Literal["none", "vercel"] = "none"
 
     @classmethod
     def from_env(cls, project_root: Path | None = None) -> FireLensConfig:
@@ -94,6 +102,14 @@ class FireLensConfig(BaseModel):
         frontend_dist = root / "prototype/firelens-rag-ui/dist/client"
         configured_trace_dir = setting("FIRELENS_TRACE_DIR")
         configured_document_context = setting("FIRELENS_DOCUMENT_CONTEXT_PATH")
+        environment_setting = setting("FIRELENS_ENVIRONMENT") or setting("VERCEL_ENV")
+        configured_environment: Literal["local", "preview", "production"]
+        if environment_setting == "preview":
+            configured_environment = "preview"
+        elif environment_setting == "production" or setting("RENDER"):
+            configured_environment = "production"
+        else:
+            configured_environment = "local"
         return cls(
             project_root=root,
             corpus_path=root / "data/processed/firelens_static_corpus.chunks.jsonl",
@@ -129,7 +145,12 @@ class FireLensConfig(BaseModel):
             max_request_body_bytes=_int_value(
                 setting("FIRELENS_MAX_REQUEST_BODY_BYTES"), 65_536
             ),
+            public_request_deadline_seconds=_float_value(
+                setting("FIRELENS_PUBLIC_REQUEST_DEADLINE_SECONDS"), 45.0
+            ),
             release_version=setting("FIRELENS_RELEASE_VERSION") or "1.5.0-rc.1",
             build_commit=setting("VERCEL_GIT_COMMIT_SHA") or setting("FIRELENS_BUILD_COMMIT"),
             deployment_id=setting("VERCEL_DEPLOYMENT_ID") or setting("VERCEL_URL"),
+            deployment_environment=configured_environment,
+            trusted_proxy_platform="vercel" if setting("VERCEL") else "none",
         )

@@ -3,22 +3,22 @@
   "observation_period_hours": 24,
   "rules": [
     {
-      "name": "FireLens ask distributed rate observation",
+      "name": "FireLens ask distributed rate enforcement",
       "path": "/api/v1/ask",
       "method": "POST",
       "window_seconds": 60,
       "requests": 150,
       "keys": ["ip"],
-      "rate_limit_action": "log"
+      "rate_limit_action": "deny"
     },
     {
-      "name": "FireLens map distributed rate observation",
+      "name": "FireLens map distributed rate enforcement",
       "path": "/api/v1/live/map",
       "method": "GET",
       "window_seconds": 60,
       "requests": 300,
       "keys": ["ip"],
-      "rate_limit_action": "log"
+      "rate_limit_action": "deny"
     }
   ]
 }

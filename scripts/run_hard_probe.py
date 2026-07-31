@@ -92,6 +92,14 @@ def file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _cost_limit_reached(*, mode: str, current_cost: float, max_cost_usd: float | None) -> bool:
+    """Apply paid-call ceilings only when the probe can incur provider cost."""
+
+    return bool(
+        mode == "qualified" and max_cost_usd is not None and current_cost >= max_cost_usd
+    )
+
+
 def load_dataset(path: Path, manifest_path: Path) -> HardProbeDataset:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     actual_hash = file_sha256(path)
@@ -410,7 +418,11 @@ async def run(args: argparse.Namespace) -> int:
         ) as client:
             for case in selected:
                 current_cost = sum(float(row["cost_usd"]) for row in results)
-                if args.max_cost_usd is not None and current_cost >= args.max_cost_usd:
+                if _cost_limit_reached(
+                    mode=args.mode,
+                    current_cost=current_cost,
+                    max_cost_usd=args.max_cost_usd,
+                ):
                     raise RuntimeError("hard-probe cost ceiling reached before the next case")
                 results.append(await _run_case(case, runtime, client, config.trace_dir))
     finally:
@@ -418,7 +430,11 @@ async def run(args: argparse.Namespace) -> int:
         await live_service.aclose()
 
     total_cost = sum(float(row["cost_usd"]) for row in results)
-    if args.max_cost_usd is not None and total_cost > args.max_cost_usd:
+    if (
+        args.mode == "qualified"
+        and args.max_cost_usd is not None
+        and total_cost > args.max_cost_usd
+    ):
         raise RuntimeError("hard-probe cost ceiling exceeded")
     by_section: dict[str, Counter[str]] = defaultdict(Counter)
     for row in results:

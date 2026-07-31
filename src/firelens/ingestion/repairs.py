@@ -11,6 +11,10 @@ import yaml
 
 from firelens.ingestion.pdf import IngestionError, PageRecord
 
+REPAIR_REVIEW_STATUSES = frozenset(
+    {"human_verified", "pending_owner_review", "automated_visual_reviewed"}
+)
+
 
 def load_text_repairs(path: Path) -> list[dict[str, Any]]:
     """Load reviewed repairs and validate the fields that make them auditable."""
@@ -29,8 +33,8 @@ def load_text_repairs(path: Path) -> list[dict[str, Any]]:
         missing = sorted(field for field in required if not repair.get(field))
         if missing:
             raise IngestionError(f"Text repair {index} is missing required fields: {missing}.")
-        if repair["review_status"] not in {"human_verified", "automated_visual_reviewed"}:
-            raise IngestionError(f"Text repair {index} is not approved for corpus use.")
+        if repair["review_status"] not in REPAIR_REVIEW_STATUSES:
+            raise IngestionError(f"Text repair {index} has an unknown review status.")
     return repairs
 
 
@@ -39,6 +43,12 @@ def apply_text_repairs(
     repairs: Sequence[dict[str, Any]],
 ) -> list[PageRecord]:
     """Replace only an exact source/page/hash match and preserve repair flags."""
+
+    unapproved = [
+        repair for repair in repairs if repair.get("review_status") != "human_verified"
+    ]
+    if unapproved:
+        raise IngestionError("Only human_verified text repairs are approved for corpus use.")
 
     by_key = {
         (
@@ -63,18 +73,15 @@ def apply_text_repairs(
         text = str(repair["replacement_text"]).strip()
         if len(text) < 50:
             raise IngestionError(f"Replacement text is implausibly short for {key}.")
-        repair_flag = (
-            "human_reviewed_text_repair"
-            if repair["review_status"] == "human_verified"
-            else "automated_visual_reviewed_text_repair"
-        )
         repaired.append(
             replace(
                 record,
                 text=text,
                 char_count=len(text),
                 extraction_status="text_extracted",
-                quality_flags=tuple(dict.fromkeys((*record.quality_flags, repair_flag))),
+                quality_flags=tuple(
+                    dict.fromkeys((*record.quality_flags, "human_reviewed_text_repair"))
+                ),
             )
         )
         matched.add(key)
@@ -86,3 +93,35 @@ def apply_text_repairs(
             + ", ".join(map(str, unmatched))
         )
     return repaired
+
+
+def validate_chunk_repair_provenance(
+    chunks: Sequence[Any], repairs: Sequence[dict[str, Any]]
+) -> None:
+    """Fail closed if corpus chunks disagree with the page repair registry."""
+
+    repairs_by_target = {
+        (
+            repair["source_id"],
+            int(repair["page_number"]),
+            repair["document_sha256"],
+        ): repair
+        for repair in repairs
+    }
+    for chunk in chunks:
+        if chunk.page_number is None:
+            continue
+        target = (chunk.source_id, chunk.page_number, chunk.document_sha256)
+        repair = repairs_by_target.get(target)
+        if repair is None:
+            if chunk.review_provenance != "native_text":
+                raise IngestionError(
+                    f"Chunk {chunk.chunk_id} claims repair provenance without a registry entry."
+                )
+            continue
+        if repair["review_status"] != "human_verified":
+            raise IngestionError(
+                f"Chunk {chunk.chunk_id} comes from a repair pending human verification."
+            )
+        if chunk.review_provenance != "human_verified_repair":
+            raise IngestionError(f"Chunk {chunk.chunk_id} lost its human repair provenance.")

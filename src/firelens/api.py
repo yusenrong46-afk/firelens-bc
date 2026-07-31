@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import math
 from contextlib import asynccontextmanager
 from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
-from fastapi import FastAPI, Query, Request
+from fastapi import FastAPI, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -24,6 +25,7 @@ from firelens.contracts import (
     LiveResultKind,
     QueryRequest,
     QueryRoute,
+    ResponseMode,
     ResponseStatus,
     SearchResponse,
 )
@@ -40,7 +42,7 @@ def _error_status(error_kind: str | None) -> int:
 
 ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
     400: {"model": ErrorEnvelope},
-    413: {"model": ErrorEnvelope},
+    413: {"model": ErrorEnvelope, "description": "Content Too Large"},
     429: {"model": ErrorEnvelope},
     404: {"model": ErrorEnvelope},
     500: {"model": ErrorEnvelope},
@@ -62,6 +64,7 @@ def create_app(
         limit=active_config.anonymous_rate_limit,
         window_seconds=active_config.anonymous_rate_window_seconds,
         max_body_bytes=active_config.max_request_body_bytes,
+        trusted_proxy_platform=active_config.trusted_proxy_platform,
     )
 
     @asynccontextmanager
@@ -111,19 +114,47 @@ def create_app(
         )
         return JSONResponse(status_code=status_code, content=envelope.model_dump())
 
+    def deadline_response(route: str) -> JSONResponse:
+        trace_id = uuid4().hex
+        log_operation(
+            trace_id=trace_id,
+            route=route,
+            response_mode=ResponseMode.ABSTENTION.value,
+            latency_ms=active_config.public_request_deadline_seconds * 1_000,
+            provider_stages=(),
+            error_category="timeout",
+        )
+        return error_response(
+            503,
+            trace_id=trace_id,
+            error_kind="timeout",
+            message="FireLens could not complete the request within its public deadline.",
+            retryable=True,
+        )
+
     @app.middleware("http")
     async def bounded_anonymous_requests(request: Request, call_next):
         guarded = request.url.path in {"/api/v1/ask", "/api/v1/live/map"}
         if not guarded:
             return await call_next(request)
-        body = await request.body()
-        if len(body) > request_guard.max_body_bytes:
-            return error_response(
-                413,
-                trace_id=uuid4().hex,
-                error_kind="request_too_large",
-                message="The request exceeded the FireLens public API size limit.",
-            )
+        declared_length = request.headers.get("content-length")
+        if declared_length is not None:
+            try:
+                declared_bytes = int(declared_length)
+            except ValueError:
+                return error_response(
+                    400,
+                    trace_id=uuid4().hex,
+                    error_kind="invalid_request",
+                    message="The Content-Length header was invalid.",
+                )
+            if declared_bytes < 0 or declared_bytes > request_guard.max_body_bytes:
+                return error_response(
+                    413,
+                    trace_id=uuid4().hex,
+                    error_kind="request_too_large",
+                    message="The request exceeded the FireLens public API size limit.",
+                )
         decision = await request_guard.check(request_guard.anonymous_key(request))
         if not decision.allowed:
             response = error_response(
@@ -138,6 +169,17 @@ def create_app(
             response.headers["X-RateLimit-Remaining"] = "0"
             response.headers["X-RateLimit-Scope"] = "instance-local"
             return response
+        bounded_body = bytearray()
+        async for chunk in request.stream():
+            if len(bounded_body) + len(chunk) > request_guard.max_body_bytes:
+                return error_response(
+                    413,
+                    trace_id=uuid4().hex,
+                    error_kind="request_too_large",
+                    message="The request exceeded the FireLens public API size limit.",
+                )
+            bounded_body.extend(chunk)
+        request._body = bytes(bounded_body)
         response = await call_next(request)
         response.headers["X-RateLimit-Limit"] = str(request_guard.limit)
         response.headers["X-RateLimit-Remaining"] = str(decision.remaining)
@@ -148,7 +190,7 @@ def create_app(
     async def security_headers(request: Request, call_next):
         response = await call_next(request)
         response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+            "default-src 'self'; script-src 'self'; style-src 'self'; "
             "img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self'; "
             "font-src 'self' data:; object-src 'none'; base-uri 'self'; "
             "frame-ancestors 'none'; form-action 'self'"
@@ -196,11 +238,13 @@ def create_app(
         return LivenessResponse()
 
     @app.get("/api/v1/health/ready", response_model=HealthResponse)
-    async def readiness() -> HealthResponse:
-        return current_runtime().health()
+    async def readiness(response: Response) -> HealthResponse:
+        health = current_runtime().health()
+        if health.status != "ready":
+            response.status_code = 503
+        return health
 
-    @app.get("/api/v1/live/map", response_model=LiveMapResponse)
-    async def live_map(
+    async def map_request(
         bbox: str | None = Query(default=None, max_length=100),
         layers: str = Query(default="incidents,perimeters,evacuations", max_length=100),
     ):
@@ -247,7 +291,22 @@ def create_app(
                 )
         return await current_live_service().map_results(layers=requested, bbox=parsed_bbox)
 
-    if active_config.debug:
+    @app.get(
+        "/api/v1/live/map",
+        response_model=LiveMapResponse,
+        responses=ERROR_RESPONSES,
+    )
+    async def live_map(
+        bbox: str | None = Query(default=None, max_length=100),
+        layers: str = Query(default="incidents,perimeters,evacuations", max_length=100),
+    ):
+        try:
+            async with asyncio.timeout(active_config.public_request_deadline_seconds):
+                return await map_request(bbox, layers)
+        except TimeoutError:
+            return deadline_response("live_map")
+
+    if active_config.debug and active_config.deployment_environment != "production":
 
         @app.post("/api/v1/search", response_model=SearchResponse)
         async def search(request: QueryRequest):
@@ -262,12 +321,7 @@ def create_app(
                 )
             return await active_runtime.service.search(request)
 
-    @app.post(
-        "/api/v1/ask",
-        response_model=AskResponse,
-        responses=ERROR_RESPONSES,
-    )
-    async def ask(request: QueryRequest):
+    async def answer_request(request: QueryRequest):
         request_started = perf_counter()
         active_runtime = current_runtime()
         if active_runtime.service is None:
@@ -311,7 +365,19 @@ def create_app(
             )
         return response
 
-    if active_config.debug:
+    @app.post(
+        "/api/v1/ask",
+        response_model=AskResponse,
+        responses=ERROR_RESPONSES,
+    )
+    async def ask(request: QueryRequest):
+        try:
+            async with asyncio.timeout(active_config.public_request_deadline_seconds):
+                return await answer_request(request)
+        except TimeoutError:
+            return deadline_response("ask")
+
+    if active_config.debug and active_config.deployment_environment != "production":
 
         @app.get("/api/v1/debug/chunks/{chunk_id}")
         async def debug_chunk(chunk_id: str):

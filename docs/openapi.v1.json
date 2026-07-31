@@ -1,9 +1,28 @@
 {
   "components": {
     "schemas": {
+      "AggregateFreshness": {
+        "enum": [
+          "fresh",
+          "stale",
+          "mixed"
+        ],
+        "title": "AggregateFreshness",
+        "type": "string"
+      },
       "AskResponse": {
         "additionalProperties": false,
         "properties": {
+          "aggregate_freshness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AggregateFreshness"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "answer": {
             "anyOf": [
               {
@@ -39,6 +58,19 @@
             },
             "title": "Evidence",
             "type": "array"
+          },
+          "history_text": {
+            "anyOf": [
+              {
+                "maxLength": 6000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "History Text"
           },
           "limitations": {
             "items": {
@@ -134,7 +166,7 @@
         "additionalProperties": false,
         "properties": {
           "content": {
-            "maxLength": 2000,
+            "maxLength": 6000,
             "minLength": 1,
             "title": "Content",
             "type": "string"
@@ -321,6 +353,16 @@
       "LiveMapResponse": {
         "additionalProperties": false,
         "properties": {
+          "aggregate_freshness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AggregateFreshness"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "generated_at": {
             "format": "date-time",
             "title": "Generated At",
@@ -614,6 +656,15 @@
           },
           "publisher": {
             "title": "Publisher",
+            "type": "string"
+          },
+          "review_provenance": {
+            "default": "native_text",
+            "enum": [
+              "native_text",
+              "human_verified_repair"
+            ],
+            "title": "Review Provenance",
             "type": "string"
           },
           "temporal_class": {
@@ -1003,6 +1054,36 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1012,6 +1093,46 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           }
         },
         "summary": "Live Map"

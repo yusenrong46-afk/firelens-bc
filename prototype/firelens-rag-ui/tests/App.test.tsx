@@ -26,6 +26,7 @@ const answer = {
       canonical_url: "https://example.test/guide.pdf",
       locator: "PDF page 5",
       temporal_class: "stable_guidance",
+      review_provenance: "human_verified_repair",
       primary_text: "Grab-and-Go Bag: Food & water",
       context_text: "Grab-and-Go Bag: Food & water and emergency supplies.",
     },
@@ -91,6 +92,7 @@ describe("FireLens Source Lens", () => {
     expect(screen.getAllByText("Keep water and food in a grab-and-go bag.").length).toBeGreaterThan(1);
     expect(screen.getByText("Food & water").tagName).toBe("MARK");
     expect(screen.getByText("PreparedBC")).toBeInTheDocument();
+    expect(screen.getByText("Human-verified source transcription")).toBeInTheDocument();
   });
 
   it("renders labelled background without an evidence interaction", async () => {
@@ -209,6 +211,34 @@ describe("FireLens Source Lens", () => {
       { role: "user", content: "What should I pack?" },
       { role: "assistant", content: answer.answer },
     ]);
+  });
+
+  it("uses the server-bounded assistant history representation", async () => {
+    const longAnswer = "A".repeat(7_000);
+    const boundedHistory = `${"A".repeat(5_997)}...`;
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(
+      new Response(JSON.stringify({
+        ...answer,
+        answer: longAnswer,
+        history_text: boundedHistory,
+      }), { status: 200 }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Ask a preparedness question"), "Question one");
+    await user.click(screen.getByLabelText("Send question"));
+    await screen.findByText("2 of 6 turns in context");
+    await user.type(screen.getByLabelText("Ask a preparedness question"), "Question two");
+    await user.click(screen.getByLabelText("Send question"));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+    const secondPayload = JSON.parse(fetchMock.mock.calls[1][1].body as string);
+    expect(secondPayload.history[1]).toEqual({
+      role: "assistant",
+      content: boundedHistory,
+    });
   });
 
   it("bounds request history at six turns", async () => {
