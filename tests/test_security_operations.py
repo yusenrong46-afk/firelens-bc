@@ -44,6 +44,41 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(debug_chunk.status_code, 404)
         self.assertEqual(debug_search.status_code, 404)
 
+    async def test_html_shell_is_not_cached_across_deployments(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            frontend = Path(directory) / "frontend"
+            frontend.mkdir()
+            (frontend / "index.html").write_text(
+                "<!doctype html><div id='root'></div>",
+                encoding="utf-8",
+            )
+            (frontend / "app.js").write_text(
+                "document.querySelector('#root').textContent = 'FireLens';",
+                encoding="utf-8",
+            )
+            config = config.model_copy(update={"frontend_dist_path": frontend})
+            runtime.config = config
+            app = create_app(config, runtime=runtime)
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                homepage = await client.get("/")
+                fingerprinted_asset = await client.get("/app.js")
+            await runtime.aclose()
+
+        self.assertEqual(homepage.status_code, 200)
+        self.assertEqual(
+            homepage.headers["cache-control"],
+            "no-store, no-cache, must-revalidate, max-age=0",
+        )
+        self.assertEqual(homepage.headers["pragma"], "no-cache")
+        self.assertEqual(homepage.headers["expires"], "0")
+        self.assertNotIn(
+            "no-store",
+            fingerprinted_asset.headers.get("cache-control", ""),
+        )
+
     async def test_debug_routes_stay_disabled_in_production_when_flag_is_set(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             runtime, _, config = await make_runtime(Path(directory))

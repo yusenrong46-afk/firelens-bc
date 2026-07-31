@@ -202,8 +202,17 @@ def create_app(
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
+        content_type = response.headers.get("content-type", "").lower()
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
+        elif content_type.startswith("text/html"):
+            # A cached SPA shell can reference fingerprinted assets that no longer
+            # exist after a deployment, leaving returning users with a blank page.
+            # Keep fingerprinted assets cacheable while forcing HTML to be fetched
+            # again for every release.
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
         return response
 
     @app.exception_handler(RequestValidationError)
