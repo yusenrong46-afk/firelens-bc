@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import math
+import re
 from contextlib import asynccontextmanager
 from time import perf_counter
 from typing import Any
@@ -11,7 +12,7 @@ from uuid import uuid4
 
 from fastapi import FastAPI, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from firelens.answering.intent import plan_query
@@ -403,6 +404,40 @@ def create_app(
 
     frontend = active_config.frontend_dist_path
     if frontend is not None and frontend.joinpath("index.html").is_file():
+        assets = frontend / "assets"
+
+        def frontend_entry_response(asset_hash: str, suffix: str) -> Response:
+            if re.fullmatch(r"[A-Za-z0-9_-]+", asset_hash) is None:
+                return Response(status_code=404)
+            requested = assets / f"index-{asset_hash}.{suffix}"
+            candidate = requested if requested.is_file() else None
+            if candidate is None:
+                index_html = frontend.joinpath("index.html").read_text(encoding="utf-8")
+                match = re.search(
+                    rf'(?:src|href)=["\']/assets/'
+                    rf'(index-[A-Za-z0-9_-]+\.{re.escape(suffix)})["\']',
+                    index_html,
+                )
+                if match is not None:
+                    current = assets / match.group(1)
+                    candidate = current if current.is_file() else None
+            if candidate is None:
+                return Response(status_code=404)
+            media_type = "text/javascript" if suffix == "js" else "text/css"
+            return FileResponse(
+                candidate,
+                media_type=media_type,
+                headers={"Cache-Control": "no-store"},
+            )
+
+        @app.get("/assets/index-{asset_hash}.js", include_in_schema=False)
+        async def frontend_javascript_entry(asset_hash: str) -> Response:
+            return frontend_entry_response(asset_hash, "js")
+
+        @app.get("/assets/index-{asset_hash}.css", include_in_schema=False)
+        async def frontend_stylesheet_entry(asset_hash: str) -> Response:
+            return frontend_entry_response(asset_hash, "css")
+
         app.mount("/", StaticFiles(directory=frontend, html=True), name="frontend")
 
     return app

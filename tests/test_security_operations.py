@@ -50,7 +50,22 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
             frontend = Path(directory) / "frontend"
             frontend.mkdir()
             (frontend / "index.html").write_text(
-                "<!doctype html><div id='root'></div>",
+                (
+                    "<!doctype html><script type='module' "
+                    "src='/assets/index-CURRENT.js'></script>"
+                    "<link rel='stylesheet' href='/assets/index-CURRENT.css'>"
+                    "<div id='root'></div>"
+                ),
+                encoding="utf-8",
+            )
+            assets = frontend / "assets"
+            assets.mkdir()
+            (assets / "index-CURRENT.js").write_text(
+                "document.querySelector('#root').textContent = 'Current';",
+                encoding="utf-8",
+            )
+            (assets / "index-CURRENT.css").write_text(
+                "#root { display: block; }",
                 encoding="utf-8",
             )
             (frontend / "app.js").write_text(
@@ -65,6 +80,8 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
             ) as client:
                 homepage = await client.get("/")
                 fingerprinted_asset = await client.get("/app.js")
+                stale_entry = await client.get("/assets/index-STALE.js")
+                stale_styles = await client.get("/assets/index-STALE.css")
             await runtime.aclose()
 
         self.assertEqual(homepage.status_code, 200)
@@ -78,6 +95,12 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
             "no-store",
             fingerprinted_asset.headers.get("cache-control", ""),
         )
+        self.assertEqual(stale_entry.status_code, 200)
+        self.assertIn("textContent = 'Current'", stale_entry.text)
+        self.assertEqual(stale_entry.headers["cache-control"], "no-store")
+        self.assertEqual(stale_styles.status_code, 200)
+        self.assertIn("display: block", stale_styles.text)
+        self.assertEqual(stale_styles.headers["cache-control"], "no-store")
 
     async def test_debug_routes_stay_disabled_in_production_when_flag_is_set(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
