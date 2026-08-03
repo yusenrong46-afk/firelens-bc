@@ -9,7 +9,7 @@ description = "Evidence-bound RAG with bounded official British Columbia wildfir
 readme = "README.md"
 requires-python = ">=3.12,<3.15"
 dependencies = [
-  "fastapi==0.140.0",
+  "fastapi==0.141.1",
   "httpx==0.28.1",
   "lxml==6.1.1",
   "numpy==2.5.1",
