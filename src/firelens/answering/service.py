@@ -2,18 +2,22 @@
 
 from __future__ import annotations
 
-import re
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from collections.abc import Sequence
 from time import perf_counter
 from uuid import uuid4
-
-from pydantic import HttpUrl
 
 from firelens.answering.context import (
     EvidenceIndex,
     build_evidence_packet,
     decide_support,
+)
+from firelens.answering.execution import (
+    AskExecution as AskExecution,
+)
+from firelens.answering.execution import (
+    ExecutionObservation,
+    ExecutionObserver,
+    SearchExecution,
 )
 from firelens.answering.generate import (
     background_messages,
@@ -28,6 +32,30 @@ from firelens.answering.intent import (
     resolved_user_question,
 )
 from firelens.answering.planner import planning_messages, planning_schema
+from firelens.answering.responses import (
+    conflict_response as _conflict_response,
+)
+from firelens.answering.responses import (
+    provider_abstention as _provider_abstention,
+)
+from firelens.answering.responses import (
+    safe_abstention as _safe_abstention,
+)
+from firelens.answering.responses import (
+    unavailable_response as _unavailable_response,
+)
+from firelens.answering.scope import (
+    candidate_contains_identifier as _candidate_contains_identifier,
+)
+from firelens.answering.scope import (
+    candidate_source_reference_present as _candidate_source_reference_present,
+)
+from firelens.answering.scope import (
+    corpus_identifiers,
+)
+from firelens.answering.scope import (
+    mixed_scope_request as _mixed_scope_request,
+)
 from firelens.answering.validate import (
     validate_background_draft,
 )
@@ -35,14 +63,10 @@ from firelens.config import FireLensConfig
 from firelens.contracts import (
     AskResponse,
     BackgroundDraft,
-    ClaimSupport,
     EvidencePacket,
     EvidenceStatus,
-    PlanningDecision,
     PlanningResponse,
     PublicClaim,
-    PublicEvidence,
-    QueryPlan,
     QueryRelation,
     QueryRequest,
     QueryRoute,
@@ -52,8 +76,6 @@ from firelens.contracts import (
     RetrievalBundle,
     SearchResponse,
     SupportStatus,
-    TemporalClass,
-    ValidationReport,
 )
 from firelens.errors import ProviderError
 from firelens.ingestion.chunking import ChunkRecord
@@ -62,274 +84,6 @@ from firelens.providers.base import AIProvider
 from firelens.retrieval.bm25 import BM25Index
 from firelens.retrieval.pipeline import RetrievalPipeline
 from firelens.traces import TraceRecorder
-
-_CORPUS_IDENTIFIER = re.compile(r"\b[A-Z]{2,}(?:-[A-Z0-9]+)+\b")
-_REFERENCE_TOKEN = re.compile(r"[a-z0-9]+")
-_MIXED_SCOPE_SPLIT = re.compile(r"\b(?:then|after that|before that)\b|[;+]", re.I)
-_MIXED_SCOPE_STOPWORDS = {
-    "a",
-    "about",
-    "and",
-    "explain",
-    "for",
-    "how",
-    "i",
-    "in",
-    "is",
-    "me",
-    "of",
-    "please",
-    "the",
-    "to",
-    "what",
-}
-
-
-def _scope_token(token: str) -> str:
-    """Normalize only a simple English plural for conservative overlap checks."""
-
-    return token[:-1] if len(token) >= 4 and token.endswith("s") else token
-
-
-_GENERIC_SOURCE_WORDS = {
-    "bc",
-    "british",
-    "columbia",
-    "document",
-    "emergency",
-    "guide",
-    "guidance",
-    "household",
-    "information",
-    "kit",
-    "preparedness",
-    "service",
-    "wildfire",
-}
-
-
-def _candidate_contains_identifier(
-    question: str, candidates: Sequence[Mapping[str, str]]
-) -> bool:
-    """Keep an exact corpus identifier from being dismissed as out of scope."""
-
-    identifiers = {match.group(0).casefold() for match in _CORPUS_IDENTIFIER.finditer(question)}
-    if not identifiers:
-        return False
-    candidate_text = " ".join(
-        value for candidate in candidates for value in candidate.values()
-    ).casefold()
-    return any(identifier in candidate_text for identifier in identifiers)
-
-
-def _candidate_source_reference_present(
-    question: str, candidates: Sequence[Mapping[str, str]]
-) -> bool:
-    """Recognize explicit source names without treating snippets as answer evidence."""
-
-    question_tokens = set(_REFERENCE_TOKEN.findall(question.casefold()))
-    for candidate in candidates:
-        for candidate_field in ("title", "publisher", "source_id"):
-            tokens = [
-                token
-                for token in _REFERENCE_TOKEN.findall(
-                    candidate.get(candidate_field, "").casefold()
-                )
-                if token not in _GENERIC_SOURCE_WORDS
-            ]
-            distinctive = list(dict.fromkeys(tokens))
-            if len(distinctive) >= 2 and set(distinctive).issubset(question_tokens):
-                return True
-    return False
-
-
-def _mixed_scope_request(question: str, candidates: Sequence[Mapping[str, str]]) -> bool:
-    """Detect a sequenced corpus-supported clause plus an unrelated clause.
-
-    Candidate snippets are used only as vocabulary. This conservative boundary
-    requires a clear clause separator, one clause with at least two candidate
-    terms, and another substantive clause with no candidate terms.
-    """
-
-    clauses = [
-        clause.strip() for clause in _MIXED_SCOPE_SPLIT.split(question) if clause.strip()
-    ]
-    if len(clauses) < 2:
-        return False
-    candidate_tokens = {
-        _scope_token(token)
-        for candidate in candidates
-        for token in _REFERENCE_TOKEN.findall(" ".join(candidate.values()).casefold())
-        if len(token) >= 3 and token not in _MIXED_SCOPE_STOPWORDS
-    }
-    overlap_counts: list[int] = []
-    substantive_counts: list[int] = []
-    for clause in clauses:
-        tokens = {
-            _scope_token(token)
-            for token in _REFERENCE_TOKEN.findall(clause.casefold())
-            if len(token) >= 3 and token not in _MIXED_SCOPE_STOPWORDS
-        }
-        overlap_counts.append(len(tokens & candidate_tokens))
-        substantive_counts.append(len(tokens))
-    return any(count >= 2 for count in overlap_counts) and any(
-        overlap <= 1 and substantive >= 2
-        for overlap, substantive in zip(overlap_counts, substantive_counts, strict=True)
-    )
-
-
-@dataclass(frozen=True)
-class ExecutionObservation:
-    """Typed internal measurements for evaluation without rereading traces."""
-
-    planning: PlanningResponse | None
-    retrieval: RetrievalBundle
-
-
-@dataclass(frozen=True)
-class SearchExecution:
-    public_response: SearchResponse
-    evidence_packet: EvidencePacket | None
-    observation: ExecutionObservation
-
-
-@dataclass
-class ExecutionObserver:
-    """Per-request capture object used by benchmarks; safe for concurrent calls."""
-
-    search: SearchExecution | None = None
-    generations: list[GenerationObservation] = field(default_factory=list)
-
-
-@dataclass(frozen=True)
-class AskExecution:
-    """Complete private execution record consumed by benchmark runners."""
-
-    response: AskResponse
-    plan: QueryPlan
-    planning_decision: PlanningDecision | None
-    retrieval: RetrievalBundle
-    search: SearchExecution
-    generations: tuple[GenerationObservation, ...]
-
-
-def _provider_abstention(
-    trace_id: str,
-    *,
-    reason_code: ReasonCode,
-    error_kind: str,
-    limitations: Sequence[str],
-) -> AskResponse:
-    """Fail closed without exposing a provider formatting failure as an answer."""
-
-    return AskResponse(
-        status=ResponseStatus.ABSTENTION,
-        trace_id=trace_id,
-        response_mode=ResponseMode.ABSTENTION,
-        answer="FireLens could not produce a validated answer from the available evidence.",
-        reason_code=reason_code,
-        error_kind=error_kind,
-        limitations=list(limitations),
-    )
-
-
-def _unavailable_response(
-    trace_id: str,
-    *,
-    reason_code: ReasonCode,
-    error_kind: str,
-    limitations: Sequence[str],
-) -> AskResponse:
-    """Preserve the typed infrastructure-error contract for failed retrieval stages."""
-
-    return AskResponse(
-        status=ResponseStatus.ERROR,
-        trace_id=trace_id,
-        response_mode=ResponseMode.ABSTENTION,
-        reason_code=reason_code,
-        error_kind=error_kind,
-        limitations=list(limitations),
-    )
-
-
-def _safe_abstention(
-    trace_id: str,
-    *,
-    answer: str,
-    reason_code: ReasonCode,
-    limitations: Sequence[str],
-) -> AskResponse:
-    return AskResponse(
-        status=ResponseStatus.ABSTENTION,
-        trace_id=trace_id,
-        response_mode=ResponseMode.ABSTENTION,
-        answer=answer,
-        limitations=list(limitations),
-        reason_code=reason_code,
-    )
-
-
-def _conflict_response(trace_id: str, packet: EvidencePacket) -> AskResponse:
-    """Render deterministic source disagreement without choosing a winner."""
-
-    conflict = packet.conflicts[0]
-    candidates = {candidate.quote_id: candidate for candidate in packet.quote_candidates}
-    evidence_spans = {item.evidence_id: item for item in packet.items}
-    selected = [candidates[quote_id] for quote_id in conflict.quote_ids]
-    public_claims: list[PublicClaim] = []
-    public_evidence: list[PublicEvidence] = []
-    seen_evidence: set[str] = set()
-    for claim_index, candidate in enumerate(selected, start=1):
-        span = evidence_spans[candidate.evidence_id]
-        public_claims.append(
-            PublicClaim(
-                claim_id=f"C{claim_index}",
-                text=f"{span.title} contains one of the conflicting requirements.",
-                evidence_status=EvidenceStatus.VERIFIED_CORPUS,
-                supports=[
-                    ClaimSupport(evidence_id=candidate.evidence_id, quote=candidate.text)
-                ],
-            )
-        )
-        if candidate.evidence_id in seen_evidence:
-            continue
-        seen_evidence.add(candidate.evidence_id)
-        public_evidence.append(
-            PublicEvidence(
-                evidence_id=candidate.evidence_id,
-                title=span.title,
-                publisher=span.publisher,
-                canonical_url=HttpUrl(span.canonical_url),
-                locator=span.locator,
-                temporal_class=TemporalClass.STABLE_GUIDANCE,
-                review_provenance=span.review_provenance,
-                primary_text=span.primary_text,
-                context_text=span.context_text,
-            )
-        )
-    validation = ValidationReport(
-        accepted=True,
-        citation_ids_valid=True,
-        quotes_exact=True,
-        claim_support_valid=True,
-        policy_valid=True,
-        errors=[],
-    )
-    return AskResponse(
-        status=ResponseStatus.ANSWER,
-        trace_id=trace_id,
-        response_mode=ResponseMode.CONFLICT,
-        answer=(
-            "The selected approved sources conflict. FireLens is showing both statements and "
-            "cannot determine which version governs; check the issuing authority or the most "
-            "recent official document before acting."
-        ),
-        claims=public_claims,
-        evidence=public_evidence,
-        limitations=[*packet.limitations, conflict.explanation],
-        reason_code=ReasonCode.CONFLICTING_EVIDENCE,
-        validation=validation,
-    )
 
 
 class StaticRAGService:
@@ -379,9 +133,7 @@ class StaticRAGService:
         return candidates
 
     def _planning_identifier_present(self, question: str) -> bool:
-        identifiers = {
-            match.group(0).casefold() for match in _CORPUS_IDENTIFIER.finditer(question)
-        }
+        identifiers = corpus_identifiers(question)
         return any(
             identifier in result.text.casefold()
             for identifier in identifiers
