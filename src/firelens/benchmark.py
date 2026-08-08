@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import subprocess
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -21,6 +22,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from firelens.answering.service import AskExecution
+from firelens.config import FireLensConfig
 from firelens.contracts import (
     AskResponse,
     ConversationTurn,
@@ -313,6 +315,85 @@ def file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def benchmark_runtime_configuration(config: FireLensConfig) -> dict[str, Any]:
+    """Return the non-secret settings that can change benchmark behaviour."""
+
+    return {
+        "embedding_model": config.embedding_model,
+        "retrieval_text_strategy": config.retrieval_text_strategy.value,
+        "rerank_model": config.rerank_model,
+        "generation_model": config.generation_model,
+        "generation_temperature": config.generation_temperature,
+        "bm25_top_k": config.bm25_top_k,
+        "vector_top_k": config.vector_top_k,
+        "fused_top_k": config.fused_top_k,
+        "rrf_k": config.rrf_k,
+        "rerank_top_k": config.rerank_top_k,
+        "neighbor_window": config.neighbor_window,
+        "max_evidence_spans": config.max_evidence_spans,
+        "max_context_chars": config.max_context_chars,
+        "request_timeout_seconds": config.request_timeout_seconds,
+        "public_request_deadline_seconds": config.public_request_deadline_seconds,
+        "provider_max_attempts": config.provider_max_attempts,
+        "provider_retry_base_seconds": config.provider_retry_base_seconds,
+        "provider_max_concurrency": config.provider_max_concurrency,
+        "provider_adaptive_min_concurrency": config.provider_adaptive_min_concurrency,
+        "provider_adaptive_success_window": config.provider_adaptive_success_window,
+        "provider_circuit_failure_threshold": config.provider_circuit_failure_threshold,
+        "provider_circuit_cooldown_seconds": config.provider_circuit_cooldown_seconds,
+        "embedding_batch_size": config.embedding_batch_size,
+        "query_embedding_cache_size": config.query_embedding_cache_size,
+        "require_zdr": config.require_zdr,
+    }
+
+
+def _current_commit(config: FireLensConfig) -> str | None:
+    """Prefer the measured checkout commit, falling back to deployment metadata."""
+
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=config.project_root,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return config.build_commit
+    commit = completed.stdout.strip()
+    return commit or config.build_commit
+
+
+def benchmark_runtime_identity(runtime: Runtime) -> dict[str, Any]:
+    """Hash-bind a report to the measured code, corpus, index, and configuration."""
+
+    configuration = benchmark_runtime_configuration(runtime.config)
+    configuration_json = json.dumps(
+        configuration,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    return {
+        "commit": _current_commit(runtime.config),
+        "corpus_sha256": file_sha256(runtime.config.corpus_path),
+        "corpus_manifest_sha256": file_sha256(runtime.config.corpus_manifest_path),
+        "vector_matrix_sha256": file_sha256(runtime.config.vector_matrix_path),
+        "vector_manifest_sha256": file_sha256(runtime.config.vector_manifest_path),
+        "document_context_sha256": (
+            file_sha256(runtime.config.document_context_path)
+            if runtime.config.document_context_path.is_file()
+            else None
+        ),
+        "repairs_sha256": file_sha256(
+            runtime.config.project_root / "data/repairs/text_overrides.yaml"
+        ),
+        "configuration_sha256": hashlib.sha256(configuration_json.encode("utf-8")).hexdigest(),
+        "runtime_configuration": configuration,
+    }
+
+
 def _matches(chunk: ChunkRecord, evidence: GoldEvidence) -> bool:
     if chunk.source_id != evidence.source_id:
         return False
@@ -579,6 +660,7 @@ async def run_benchmark(
         "generated_at": datetime.now(UTC).isoformat(),
         "dataset_version": dataset.dataset_version,
         "dataset_sha256": file_sha256(dataset_path),
+        **benchmark_runtime_identity(runtime),
         "corpus_version": runtime.corpus_version,
         "models": {
             "embedding": runtime.config.embedding_model,
@@ -962,6 +1044,7 @@ async def run_conversation_benchmark(
         "execution_mode": execution_mode,
         "dataset_version": dataset.dataset_version,
         "dataset_sha256": file_sha256(dataset_path),
+        **benchmark_runtime_identity(runtime),
         "corpus_version": runtime.corpus_version,
         "models": {
             "embedding": runtime.config.embedding_model,

@@ -15,7 +15,7 @@ dependencies = [
   "numpy==2.5.1",
   "pdfplumber==0.11.10",
   "pydantic==2.13.4",
-  "pypdf==6.14.2",
+  "pypdf==6.15.0",
   "pyproj==3.7.2",
   "PyYAML==6.0.3",
   "shapely==2.1.2",
@@ -44,6 +44,9 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"firelens.review_workspace" = ["web/*.html", "web/*.css", "web/*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

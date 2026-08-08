@@ -2,6 +2,9 @@ name: Verify pull request
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -47,4 +50,3 @@ jobs:
         run: make verify
       - name: Reject generated-file drift
         run: git diff --exit-code
-

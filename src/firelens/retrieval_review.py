@@ -206,6 +206,8 @@ def validate_retrieval_owner_review(
         "generated_at": datetime.now(UTC).isoformat(),
         "dataset_sha256": actual_dataset_sha256,
         "review_sha256": file_sha256(review_path),
+        "reviewer": review.reviewer,
+        "reviewed_at": review.reviewed_at.isoformat() if review.reviewed_at else None,
         "reviewer_present": bool(review.reviewer),
         "reviewed_at_present": review.reviewed_at is not None,
         "case_count": len(results),

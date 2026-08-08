@@ -13,3 +13,5 @@ services:
         value: "false"
       - key: FIRELENS_TRACE_CONTENT
         value: "false"
+      - key: FIRELENS_RELEASE_VERSION
+        value: "1.5.0-rc.1"

@@ -116,6 +116,16 @@ class BenchmarkExecutionTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(report["case_count"], 20)
             self.assertEqual(report["metrics"]["safety_route_accuracy"], 1.0)
             self.assertEqual(report["metrics"]["safety_status_accuracy"], 1.0)
+            self.assertEqual(report["corpus_sha256"], file_sha256(runtime.config.corpus_path))
+            self.assertEqual(
+                report["vector_matrix_sha256"],
+                file_sha256(runtime.config.vector_matrix_path),
+            )
+            self.assertEqual(len(report["configuration_sha256"]), 64)
+            self.assertEqual(
+                report["runtime_configuration"]["bm25_top_k"],
+                runtime.config.bm25_top_k,
+            )
             self.assertEqual(provider.generate_calls, 0)
             self.assertTrue((temporary / "review.md").is_file())
 
@@ -170,6 +180,12 @@ class BenchmarkExecutionTests(unittest.IsolatedAsyncioTestCase):
             self.assertIn("planner_relation_accuracy", report["metrics"])
             self.assertIn("adjacent_background", report["metrics"])
             self.assertIn("paid_call_boundary_accuracy", report["metrics"])
+            self.assertEqual(report["corpus_sha256"], file_sha256(runtime.config.corpus_path))
+            self.assertEqual(
+                report["vector_manifest_sha256"],
+                file_sha256(runtime.config.vector_manifest_path),
+            )
+            self.assertEqual(len(report["configuration_sha256"]), 64)
             self.assertGreater(provider.plan_calls, 0)
             self.assertGreater(provider.generate_calls, 0)
             self.assertTrue(report_path.is_file())

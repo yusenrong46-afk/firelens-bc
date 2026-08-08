@@ -24,13 +24,15 @@ from firelens.contracts import (
     LiveMapResponse,
     LivenessResponse,
     LiveResultKind,
+    NearMeRequest,
+    NearMeResponse,
     QueryRequest,
     QueryRoute,
     ResponseMode,
     ResponseStatus,
     SearchResponse,
 )
-from firelens.live import LiveDataService
+from firelens.live import LiveDataErrorKind, LiveDataService, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
 from firelens.operational_logging import log_operation
 from firelens.request_guard import AnonymousRequestGuard
@@ -121,9 +123,13 @@ def create_app(
             trace_id=trace_id,
             route=route,
             response_mode=ResponseMode.ABSTENTION.value,
+            status=ResponseStatus.ERROR.value,
             latency_ms=active_config.public_request_deadline_seconds * 1_000,
             provider_stages=(),
             error_category="timeout",
+            release_version=active_config.release_version,
+            build_commit=active_config.build_commit,
+            deployment_environment=active_config.deployment_environment,
         )
         return error_response(
             503,
@@ -135,7 +141,11 @@ def create_app(
 
     @app.middleware("http")
     async def bounded_anonymous_requests(request: Request, call_next):
-        guarded = request.url.path in {"/api/v1/ask", "/api/v1/live/map"}
+        guarded = request.url.path in {
+            "/api/v1/ask",
+            "/api/v1/live/map",
+            "/api/v1/live/nearby",
+        }
         if not guarded:
             return await call_next(request)
         declared_length = request.headers.get("content-length")
@@ -316,6 +326,65 @@ def create_app(
         except TimeoutError:
             return deadline_response("live_map")
 
+    @app.post(
+        "/api/v1/live/nearby",
+        response_model=NearMeResponse,
+        responses=ERROR_RESPONSES,
+    )
+    async def live_nearby(payload: NearMeRequest):
+        request_started = perf_counter()
+        try:
+            async with asyncio.timeout(active_config.public_request_deadline_seconds):
+                result = await current_live_service().nearby_page(
+                    payload.location,
+                    layers=tuple(payload.layers),
+                    page=payload.page,
+                    page_size=payload.page_size,
+                )
+            log_operation(
+                trace_id=uuid4().hex,
+                route="live_nearby",
+                response_mode=ResponseMode.LIVE.value,
+                status=ResponseStatus.ANSWER.value,
+                latency_ms=(perf_counter() - request_started) * 1_000,
+                live_result_count=len(result.results),
+                release_version=active_config.release_version,
+                build_commit=active_config.build_commit,
+                deployment_environment=active_config.deployment_environment,
+            )
+            return result
+        except TimeoutError:
+            return deadline_response("live_nearby")
+        except LiveDataUnavailable as exc:
+            trace_id = uuid4().hex
+            status_code = {
+                LiveDataErrorKind.NOT_FOUND: 404,
+                LiveDataErrorKind.INVALID_RESPONSE: 502,
+            }.get(exc.kind, 503)
+            log_operation(
+                trace_id=trace_id,
+                route="live_nearby",
+                response_mode=ResponseMode.ABSTENTION.value,
+                status=ResponseStatus.ERROR.value,
+                latency_ms=(perf_counter() - request_started) * 1_000,
+                error_category=f"live_{exc.kind.value}",
+                release_version=active_config.release_version,
+                build_commit=active_config.build_commit,
+                deployment_environment=active_config.deployment_environment,
+            )
+            return error_response(
+                status_code,
+                trace_id=trace_id,
+                error_kind=f"live_{exc.kind.value}",
+                message=str(exc),
+                retryable=exc.kind
+                in {
+                    LiveDataErrorKind.TIMEOUT,
+                    LiveDataErrorKind.UPSTREAM_HTTP,
+                    LiveDataErrorKind.UNREACHABLE,
+                },
+            )
+
     if active_config.debug and active_config.deployment_environment != "production":
 
         @app.post("/api/v1/search", response_model=SearchResponse)
@@ -358,9 +427,25 @@ def create_app(
                 trace_id=live_response.trace_id,
                 route=QueryRoute.LIVE.value,
                 response_mode=live_response.response_mode.value,
+                status=live_response.status.value,
                 latency_ms=(perf_counter() - request_started) * 1_000,
                 provider_stages=(),
                 error_category=live_response.error_kind,
+                evidence_count=len(live_response.evidence),
+                claim_count=len(live_response.claims),
+                live_result_count=len(live_response.live_results),
+                validation_disposition=(
+                    "accepted"
+                    if live_response.validation is not None
+                    and live_response.validation.accepted
+                    else "rejected"
+                    if live_response.validation is not None
+                    else "not_applicable"
+                ),
+                corpus_version=active_runtime.corpus_version,
+                release_version=active_config.release_version,
+                build_commit=active_config.build_commit,
+                deployment_environment=active_config.deployment_environment,
             )
             return live_response
         response = await active_runtime.service.ask(request)

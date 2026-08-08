@@ -14,16 +14,30 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements.lock pyproject.toml README.md ./
+ARG RENDER_GIT_COMMIT
+ARG FIRELENS_BUILD_COMMIT
+ARG FIRELENS_RELEASE_VERSION=1.5.0-rc.1
+ENV FIRELENS_BUILD_COMMIT=$FIRELENS_BUILD_COMMIT \
+    FIRELENS_RELEASE_VERSION=$FIRELENS_RELEASE_VERSION
+
+COPY requirements.lock pyproject.toml README.md app.py ./
 COPY src/ ./src/
 RUN python -m pip install --no-cache-dir -r requirements.lock \
     && python -m pip install --no-cache-dir --no-deps .
 
+COPY config/runtime_artifact_allowlist.v1.json ./config/runtime_artifact_allowlist.v1.json
+COPY scripts/write_runtime_candidate.py ./scripts/write_runtime_candidate.py
 COPY data/processed/firelens_static_corpus.chunks.jsonl ./data/processed/firelens_static_corpus.chunks.jsonl
 COPY data/processed/firelens_static_corpus.manifest.json ./data/processed/firelens_static_corpus.manifest.json
 COPY data/index/firelens_vectors.npy ./data/index/firelens_vectors.npy
 COPY data/index/firelens_vectors.manifest.json ./data/index/firelens_vectors.manifest.json
+COPY data/repairs/text_overrides.yaml ./data/repairs/text_overrides.yaml
 COPY --from=frontend-build /build/prototype/firelens-rag-ui/dist/client ./prototype/firelens-rag-ui/dist/client
+
+RUN python scripts/write_runtime_candidate.py \
+    --output config/runtime_candidate.v1.json \
+    --commit "${FIRELENS_BUILD_COMMIT:-$RENDER_GIT_COMMIT}" \
+    --release-version "$FIRELENS_RELEASE_VERSION"
 
 RUN mkdir -p output/traces \
     && useradd --create-home --uid 10001 firelens \

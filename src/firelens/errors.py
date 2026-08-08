@@ -27,6 +27,7 @@ class ProviderError(RuntimeError):
     message: str
     status_code: int | None = None
     retryable: bool = False
+    retry_after_seconds: float | None = None
 
     def __str__(self) -> str:
         return self.message

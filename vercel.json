@@ -7,7 +7,7 @@
       "framework": "fastapi",
       "functions": {
         "**/*.py": {
-          "includeFiles": "data/**",
+          "includeFiles": "{data/processed/firelens_static_corpus.*,data/index/firelens_vectors.{npy,manifest.json},data/index/document_context_v2.jsonl,data/repairs/text_overrides.yaml,config/runtime_*.json,prototype/firelens-rag-ui/dist/client/**}",
           "maxDuration": 60
         }
       }

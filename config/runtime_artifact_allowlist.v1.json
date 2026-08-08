@@ -1,0 +1,140 @@
+{
+  "schema_version": "firelens.runtime_artifact_allowlist.v1",
+  "contract_id": "firelens-v1.5-2-runtime-artifact",
+  "candidate_configuration": {
+    "logical_path": "config/runtime_candidate.v1.json",
+    "schema_version": "firelens.runtime_candidate.v1",
+    "required_fields": [
+      "schema_version",
+      "candidate_id",
+      "release_version",
+      "build_commit",
+      "corpus_version",
+      "embedding_model",
+      "retrieval_text_strategy"
+    ]
+  },
+  "required_files": [
+    "app.py",
+    "pyproject.toml",
+    "requirements.lock",
+    "config/runtime_artifact_allowlist.v1.json",
+    "config/runtime_candidate.v1.json",
+    "data/processed/firelens_static_corpus.chunks.jsonl",
+    "data/processed/firelens_static_corpus.manifest.json",
+    "data/index/firelens_vectors.npy",
+    "data/index/firelens_vectors.manifest.json",
+    "data/repairs/text_overrides.yaml",
+    "prototype/firelens-rag-ui/dist/client/index.html",
+    "prototype/firelens-rag-ui/dist/client/.vite/manifest.json"
+  ],
+  "conditional_files": [
+    {
+      "logical_path": "data/index/document_context_v2.jsonl",
+      "candidate_field": "retrieval_text_strategy",
+      "vector_manifest_field": "retrieval_text_strategy",
+      "required_value": "document_context_v2"
+    }
+  ],
+  "python": {
+    "entrypoint": "app.py",
+    "source_root": "src",
+    "package": "firelens"
+  },
+  "frontend": {
+    "root": "prototype/firelens-rag-ui/dist/client",
+    "index": "prototype/firelens-rag-ui/dist/client/index.html",
+    "vite_manifest": "prototype/firelens-rag-ui/dist/client/.vite/manifest.json",
+    "allowed_suffixes": [
+      ".html",
+      ".js",
+      ".css",
+      ".json",
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".gif",
+      ".svg",
+      ".webp",
+      ".avif",
+      ".ico",
+      ".woff",
+      ".woff2"
+    ]
+  },
+  "runtime_data": {
+    "corpus": "data/processed/firelens_static_corpus.chunks.jsonl",
+    "corpus_manifest": "data/processed/firelens_static_corpus.manifest.json",
+    "vector_matrix": "data/index/firelens_vectors.npy",
+    "vector_manifest": "data/index/firelens_vectors.manifest.json",
+    "repair_registry": "data/repairs/text_overrides.yaml",
+    "document_context": "data/index/document_context_v2.jsonl"
+  },
+  "prohibited": {
+    "prefixes": [
+      ".git",
+      ".github",
+      ".venv",
+      "venv",
+      "data/evaluation",
+      "data/raw",
+      "data/sources",
+      "docs",
+      "output",
+      "outputs",
+      "tests",
+      "prototype/firelens-rag-ui/node_modules",
+      "prototype/firelens-rag-ui/playwright-report",
+      "prototype/firelens-rag-ui/test-results"
+    ],
+    "segments": [
+      ".git",
+      ".github",
+      ".venv",
+      "__pycache__",
+      "adjudication",
+      "adjudications",
+      "browser",
+      "browsers",
+      "evaluation",
+      "intermediate",
+      "intermediates",
+      "node_modules",
+      "output",
+      "outputs",
+      "playwright-report",
+      "raw",
+      "review",
+      "reviews",
+      "sources",
+      "test-results",
+      "tests",
+      "ux",
+      "venv"
+    ],
+    "basenames": [
+      ".DS_Store",
+      ".env",
+      "embedding_cache.jsonl",
+      "embedding_cache.jsonl.lock",
+      "embedding_cache.lock"
+    ],
+    "basename_tokens": [
+      "adjudicat",
+      "embedding_cache",
+      "holdout",
+      "owner_review",
+      "review_bundle",
+      "review_journal",
+      "review_summary",
+      "sealed",
+      "ux_review"
+    ],
+    "suffixes": [
+      ".lock",
+      ".map",
+      ".pyc",
+      ".pyo"
+    ]
+  }
+}

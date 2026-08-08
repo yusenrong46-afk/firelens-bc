@@ -6,6 +6,8 @@ export type ResponseMode = components["schemas"]["ResponseMode"];
 export type ErrorEnvelope = components["schemas"]["ErrorEnvelope"];
 export type LocationInput = components["schemas"]["LocationInput"];
 export type LiveResult = components["schemas"]["LiveResult"];
+export type NearMeRequest = components["schemas"]["NearMeRequest"];
+export type NearMeResponse = components["schemas"]["NearMeResponse"];
 
 export class FireLensApiError extends Error {
   readonly detail: ErrorEnvelope;
@@ -34,4 +36,21 @@ export async function askFireLens(
     throw new FireLensApiError(payload as ErrorEnvelope);
   }
   return payload as AskResponse;
+}
+
+export async function fetchNearbyOfficialRecords(
+  request: NearMeRequest,
+  signal?: AbortSignal,
+): Promise<NearMeResponse> {
+  const response = await fetch("/api/v1/live/nearby", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+    signal,
+  });
+  const payload: unknown = await response.json();
+  if (!response.ok) {
+    throw new FireLensApiError(payload as ErrorEnvelope);
+  }
+  return payload as NearMeResponse;
 }

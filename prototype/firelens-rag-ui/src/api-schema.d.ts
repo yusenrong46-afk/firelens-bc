@@ -72,6 +72,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/live/nearby": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Live Nearby */
+        post: operations["live_nearby_api_v1_live_nearby_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -116,6 +133,13 @@ export interface components {
             evidence_id: string;
             /** Quote */
             quote: string;
+        };
+        /** CoarseResolvedLocation */
+        CoarseResolvedLocation: {
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
         };
         /** ConversationTurn */
         ConversationTurn: {
@@ -180,6 +204,11 @@ export interface components {
             /** Provider Configured */
             provider_configured: boolean;
             /**
+             * Provider State
+             * @enum {string}
+             */
+            provider_state: "not_configured" | "configured_unprobed" | "available" | "degraded" | "circuit_open";
+            /**
              * Rate Limit Scope
              * @default instance_local
              * @constant
@@ -193,6 +222,29 @@ export interface components {
              */
             status: "ready" | "not_ready";
         };
+        /**
+         * LiveLayerStatus
+         * @description Source-level freshness and availability, including zero-result layers.
+         */
+        LiveLayerStatus: {
+            /** Authority */
+            authority: string;
+            /** Available */
+            available: boolean;
+            freshness?: components["schemas"]["Freshness"] | null;
+            kind: components["schemas"]["LiveResultKind"];
+            /** Matching Result Count */
+            matching_result_count: number;
+            /** Retrieved At */
+            retrieved_at?: string | null;
+            /** Source Updated At */
+            source_updated_at?: string | null;
+            /**
+             * Source Url
+             * Format: uri
+             */
+            source_url: string;
+        };
         /** LiveMapResponse */
         LiveMapResponse: {
             aggregate_freshness?: components["schemas"]["AggregateFreshness"] | null;
@@ -201,12 +253,31 @@ export interface components {
              * Format: date-time
              */
             generated_at: string;
+            /** Layer Statuses */
+            layer_statuses?: components["schemas"]["LiveLayerStatus"][];
             /** Limitations */
             limitations?: string[];
             /** Results */
             results: components["schemas"]["LiveResult"][];
             /** Unavailable Layers */
             unavailable_layers?: components["schemas"]["LiveResultKind"][];
+        };
+        /** LivePagination */
+        LivePagination: {
+            /** Has Next */
+            has_next: boolean;
+            /** Has Previous */
+            has_previous: boolean;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Returned Results */
+            returned_results: number;
+            /** Total Pages */
+            total_pages: number;
+            /** Total Results */
+            total_results: number;
         };
         /** LiveResult */
         LiveResult: {
@@ -281,6 +352,59 @@ export interface components {
              * @default 50
              */
             radius_km: number;
+        };
+        /** MapViewport */
+        MapViewport: {
+            /** East */
+            east: number;
+            /** North */
+            north: number;
+            /** South */
+            south: number;
+            /** West */
+            west: number;
+        };
+        /** NearMeRequest */
+        NearMeRequest: {
+            /** Layers */
+            layers?: components["schemas"]["LiveResultKind"][];
+            location: components["schemas"]["LocationInput"];
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
+             * Page Size
+             * @default 100
+             */
+            page_size: number;
+        };
+        /** NearMeResponse */
+        NearMeResponse: {
+            aggregate_freshness?: components["schemas"]["AggregateFreshness"] | null;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Layer Statuses */
+            layer_statuses?: components["schemas"]["LiveLayerStatus"][];
+            /** Limitations */
+            limitations?: string[];
+            /** Official Fallback Urls */
+            official_fallback_urls: string[];
+            pagination: components["schemas"]["LivePagination"];
+            /** Requested Layers */
+            requested_layers: components["schemas"]["LiveResultKind"][];
+            /** Requested Radius Km */
+            requested_radius_km: number;
+            resolved_location: components["schemas"]["CoarseResolvedLocation"];
+            /** Results */
+            results: components["schemas"]["LiveResult"][];
+            /** Unavailable Layers */
+            unavailable_layers?: components["schemas"]["LiveResultKind"][];
+            viewport: components["schemas"]["MapViewport"];
         };
         /** PublicClaim */
         PublicClaim: {
@@ -546,6 +670,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LiveMapResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    live_nearby_api_v1_live_nearby_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NearMeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NearMeResponse"];
                 };
             };
             /** @description Bad Request */

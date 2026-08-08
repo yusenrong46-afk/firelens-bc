@@ -7,23 +7,32 @@ import hashlib
 import json
 import math
 import time
+from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from decimal import ROUND_CEILING, ROUND_FLOOR, Decimal
+from enum import StrEnum
 from typing import Any
 
 import httpx
 from pydantic import HttpUrl
 from pyproj import Geod
 from shapely.geometry import Point, box, shape
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import nearest_points
 
 from firelens.contracts import (
+    CoarseResolvedLocation,
     Freshness,
     GeometryRelation,
+    LiveLayerStatus,
     LiveMapResponse,
+    LivePagination,
     LiveResult,
     LiveResultKind,
     LocationInput,
+    MapViewport,
+    NearMeResponse,
     aggregate_live_freshness,
 )
 
@@ -40,12 +49,39 @@ EVACUATIONS_URL = (
     "Evacuation_Orders_and_Alerts/FeatureServer/0"
 )
 BC_GEOCODER_URL = "https://geocoder.api.gov.bc.ca/addresses.geojson"
+OFFICIAL_FALLBACK_URLS: tuple[HttpUrl, ...] = (
+    HttpUrl("https://wildfiresituation.nrs.gov.bc.ca/map"),
+    HttpUrl("https://www.emergencyinfobc.gov.bc.ca/"),
+)
 
 WGS84_GEOD = Geod(ellps="WGS84")
 
+_BBox = tuple[float, float, float, float]
+_CacheKey = tuple[LiveResultKind, _BBox | None]
+
+
+class LiveDataErrorKind(StrEnum):
+    TIMEOUT = "timeout"
+    UPSTREAM_HTTP = "upstream_http"
+    UNREACHABLE = "unreachable"
+    INVALID_RESPONSE = "invalid_response"
+    NOT_FOUND = "not_found"
+    NOT_CONFIGURED = "not_configured"
+    BOUNDED_LIMIT = "bounded_limit"
+    UNKNOWN = "unknown"
+
 
 class LiveDataUnavailable(RuntimeError):
-    pass
+    """Sanitized, classified failure from an official live-data dependency."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        kind: LiveDataErrorKind = LiveDataErrorKind.UNKNOWN,
+    ) -> None:
+        super().__init__(message)
+        self.kind = kind
 
 
 @dataclass(frozen=True)
@@ -113,6 +149,14 @@ def _timestamp(value: Any) -> datetime | None:
     return None
 
 
+def _authority(kind: LiveResultKind) -> str:
+    return (
+        "EmergencyInfoBC and issuing local authority"
+        if kind == LiveResultKind.EVACUATION
+        else "BC Wildfire Service"
+    )
+
+
 def _geodesic_km(first: tuple[float, float], second: tuple[float, float]) -> float:
     _forward, _back, distance_m = WGS84_GEOD.inv(*first, *second)
     return float(distance_m) / 1_000
@@ -153,55 +197,183 @@ class LiveDataService:
         stale_if_error_seconds: float = 900,
         max_pages: int = 100,
         max_records: int = 20_000,
+        max_feature_geometry_bytes: int = 512_000,
+        max_response_geometry_bytes: int = 8_000_000,
+        max_cache_entries: int = 32,
+        max_cached_features: int = 60_000,
+        bbox_grid_degrees: float = 0.1,
+        max_upstream_concurrency: int = 4,
         layer_definitions: dict[LiveResultKind, LayerDefinition] | None = None,
     ) -> None:
+        if max_pages < 1 or max_records < 1:
+            raise ValueError("live pagination limits must be positive")
+        if max_feature_geometry_bytes < 1:
+            raise ValueError("live feature geometry limit must be positive")
+        if max_response_geometry_bytes < max_feature_geometry_bytes:
+            raise ValueError("live response geometry limit must cover one bounded feature")
+        if max_cache_entries < 1:
+            raise ValueError("live cache entry limit must be positive")
+        if max_cached_features < max_records:
+            raise ValueError("live cached feature limit must cover one bounded response")
+        if not math.isfinite(bbox_grid_degrees) or not 0.01 <= bbox_grid_degrees <= 1.0:
+            raise ValueError("live bbox grid must be between 0.01 and 1.0 degrees")
+        if not 1 <= max_upstream_concurrency <= 16:
+            raise ValueError("live upstream concurrency must be between 1 and 16")
         self.client = client or httpx.AsyncClient(timeout=10.0, follow_redirects=True)
         self._owns_client = client is None
         self.fresh_seconds = fresh_seconds
         self.stale_if_error_seconds = stale_if_error_seconds
         self.max_pages = max_pages
         self.max_records = max_records
-        if max_pages < 1 or max_records < 1:
-            raise ValueError("live pagination limits must be positive")
+        self.max_feature_geometry_bytes = max_feature_geometry_bytes
+        self.max_response_geometry_bytes = max_response_geometry_bytes
+        self.max_cache_entries = max_cache_entries
+        self.max_cached_features = max_cached_features
+        self.bbox_grid_degrees = bbox_grid_degrees
+        self.max_upstream_concurrency = max_upstream_concurrency
         self.layer_definitions = dict(layer_definitions or DEFAULT_LAYER_DEFINITIONS)
-        self._cache: dict[
-            tuple[LiveResultKind, tuple[float, float, float, float] | None], _CacheEntry
-        ] = {}
+        self._cache: OrderedDict[_CacheKey, _CacheEntry] = OrderedDict()
+        self._cached_feature_count = 0
         self._locks = {kind: asyncio.Lock() for kind in LiveResultKind}
+        self._upstream_semaphore = asyncio.Semaphore(max_upstream_concurrency)
 
     async def aclose(self) -> None:
         if self._owns_client:
             await self.client.aclose()
+
+    async def _get(self, url: str, *, params: dict[str, Any]) -> httpx.Response:
+        async with self._upstream_semaphore:
+            return await self.client.get(url, params=params)
 
     async def resolve_location(self, location: LocationInput) -> tuple[float, float]:
         if location.latitude is not None and location.longitude is not None:
             return location.latitude, location.longitude
         if location.label is None:
             raise LiveDataUnavailable("a coarse location is required for a nearby query")
-        response = await self.client.get(
-            BC_GEOCODER_URL,
-            params={
-                "addressString": location.label,
-                "maxResults": 1,
-                "outputSRS": 4326,
-                "echo": "false",
-            },
-        )
-        response.raise_for_status()
-        payload = response.json()
+        try:
+            response = await self._get(
+                BC_GEOCODER_URL,
+                params={
+                    "addressString": location.label,
+                    "maxResults": 1,
+                    "outputSRS": 4326,
+                    "echo": "false",
+                },
+            )
+            response.raise_for_status()
+        except httpx.TimeoutException as exc:
+            raise LiveDataUnavailable(
+                "the official place service timed out",
+                kind=LiveDataErrorKind.TIMEOUT,
+            ) from exc
+        except httpx.HTTPStatusError as exc:
+            raise LiveDataUnavailable(
+                "the official place service returned an error",
+                kind=LiveDataErrorKind.UPSTREAM_HTTP,
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise LiveDataUnavailable(
+                "the official place service could not be reached",
+                kind=LiveDataErrorKind.UNREACHABLE,
+            ) from exc
+        try:
+            payload = response.json()
+        except (UnicodeDecodeError, ValueError) as exc:
+            raise LiveDataUnavailable(
+                "the official place service returned invalid data",
+                kind=LiveDataErrorKind.INVALID_RESPONSE,
+            ) from exc
         features = payload.get("features") if isinstance(payload, dict) else None
         if not isinstance(features, list) or not features:
-            raise LiveDataUnavailable("the place label could not be resolved")
-        coordinates = features[0].get("geometry", {}).get("coordinates")
+            raise LiveDataUnavailable(
+                "the place label could not be resolved",
+                kind=LiveDataErrorKind.NOT_FOUND,
+            )
+        first = features[0]
+        geometry = first.get("geometry") if isinstance(first, dict) else None
+        coordinates = geometry.get("coordinates") if isinstance(geometry, dict) else None
         if not isinstance(coordinates, list) or len(coordinates) < 2:
-            raise LiveDataUnavailable("the geocoder returned invalid coordinates")
-        return round(float(coordinates[1]), 2), round(float(coordinates[0]), 2)
+            raise LiveDataUnavailable(
+                "the official place service returned invalid coordinates",
+                kind=LiveDataErrorKind.INVALID_RESPONSE,
+            )
+        try:
+            longitude = float(coordinates[0])
+            latitude = float(coordinates[1])
+        except (TypeError, ValueError) as exc:
+            raise LiveDataUnavailable(
+                "the official place service returned invalid coordinates",
+                kind=LiveDataErrorKind.INVALID_RESPONSE,
+            ) from exc
+        if (
+            not math.isfinite(latitude)
+            or not math.isfinite(longitude)
+            or not 48.0 <= latitude <= 61.0
+            or not -140.0 <= longitude <= -113.0
+        ):
+            raise LiveDataUnavailable(
+                "the official place service returned coordinates outside British Columbia",
+                kind=LiveDataErrorKind.INVALID_RESPONSE,
+            )
+        return round(latitude, 2), round(longitude, 2)
 
     def _layer(self, kind: LiveResultKind) -> LayerDefinition:
         try:
             return self.layer_definitions[kind]
         except KeyError as exc:
-            raise LiveDataUnavailable(f"{kind.value} layer is not configured") from exc
+            raise LiveDataUnavailable(
+                f"{kind.value} layer is not configured",
+                kind=LiveDataErrorKind.NOT_CONFIGURED,
+            ) from exc
+
+    def _normalized_bbox(self, bbox: _BBox | None) -> _BBox | None:
+        """Expand a viewport onto a stable grid so nearby pans share cache entries.
+
+        Expansion is deliberate: ArcGIS may return more records than the caller requested,
+        but :meth:`map_results` still filters against the exact requested bounds. A normalized
+        cache lookup therefore cannot hide a boundary record that an exact upstream query would
+        have returned.
+        """
+
+        if bbox is None:
+            return None
+        west, south, east, north = bbox
+        if (
+            not all(math.isfinite(value) for value in bbox)
+            or not -180 <= west < east <= 180
+            or not -90 <= south < north <= 90
+        ):
+            raise ValueError("live bbox must be finite, ordered WGS84 coordinates")
+        grid = Decimal(str(self.bbox_grid_degrees))
+
+        def lower(value: float) -> float:
+            units = (Decimal(str(value)) / grid).to_integral_value(rounding=ROUND_FLOOR)
+            return float(units * grid)
+
+        def upper(value: float) -> float:
+            units = (Decimal(str(value)) / grid).to_integral_value(rounding=ROUND_CEILING)
+            return float(units * grid)
+
+        return lower(west), lower(south), upper(east), upper(north)
+
+    def _cache_get(self, key: _CacheKey) -> _CacheEntry | None:
+        entry = self._cache.get(key)
+        if entry is not None:
+            self._cache.move_to_end(key)
+        return entry
+
+    def _cache_put(self, key: _CacheKey, entry: _CacheEntry) -> None:
+        previous = self._cache.pop(key, None)
+        if previous is not None:
+            self._cached_feature_count -= len(previous.features)
+        self._cache[key] = entry
+        self._cached_feature_count += len(entry.features)
+        while (
+            len(self._cache) > self.max_cache_entries
+            or self._cached_feature_count > self.max_cached_features
+        ):
+            _evicted_key, evicted = self._cache.popitem(last=False)
+            self._cached_feature_count -= len(evicted.features)
 
     async def _fetch_page(
         self,
@@ -229,7 +401,7 @@ class LiveDataService:
                     "spatialRel": "esriSpatialRelIntersects",
                 }
             )
-        response = await self.client.get(
+        response = await self._get(
             f"{self._layer(kind).url}/query",
             params=params,
         )
@@ -249,7 +421,7 @@ class LiveDataService:
 
     async def _source_metadata(self, kind: LiveResultKind) -> datetime:
         definition = self._layer(kind)
-        response = await self.client.get(definition.url, params={"f": "json"})
+        response = await self._get(definition.url, params={"f": "json"})
         response.raise_for_status()
         payload = response.json()
         if not isinstance(payload, dict) or payload.get("name") != definition.expected_name:
@@ -282,6 +454,7 @@ class LiveDataService:
         features: list[dict[str, Any]] = []
         seen_feature_ids: set[str] = set()
         seen_pages: set[tuple[str, ...]] = set()
+        geometry_bytes = 0
         offset = 0
         for _page_number in range(self.max_pages):
             page, exceeded = await self._fetch_page(kind, offset=offset, bbox=bbox)
@@ -298,9 +471,31 @@ class LiveDataService:
                 raise LiveDataUnavailable(f"{kind.value} source pagination made no progress")
             if len(features) + len(new_features) > self.max_records:
                 raise LiveDataUnavailable(
-                    f"{kind.value} source exceeded the bounded retrieval record limit"
+                    f"{kind.value} source exceeded the bounded retrieval record limit",
+                    kind=LiveDataErrorKind.BOUNDED_LIMIT,
+                )
+            new_geometry_sizes = [
+                len(
+                    json.dumps(
+                        feature["geometry"],
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    ).encode("utf-8")
+                )
+                for feature in new_features
+            ]
+            if any(size > self.max_feature_geometry_bytes for size in new_geometry_sizes):
+                raise LiveDataUnavailable(
+                    f"{kind.value} source exceeded the per-feature geometry limit",
+                    kind=LiveDataErrorKind.BOUNDED_LIMIT,
+                )
+            if geometry_bytes + sum(new_geometry_sizes) > self.max_response_geometry_bytes:
+                raise LiveDataUnavailable(
+                    f"{kind.value} source exceeded the response geometry limit",
+                    kind=LiveDataErrorKind.BOUNDED_LIMIT,
                 )
             features.extend(new_features)
+            geometry_bytes += sum(new_geometry_sizes)
             seen_feature_ids.update(self._feature_identity(kind, item) for item in new_features)
             if not exceeded and len(page) < 1000:
                 break
@@ -308,14 +503,16 @@ class LiveDataService:
                 break
             offset += len(page)
         else:
-            raise LiveDataUnavailable(f"{kind.value} source exceeded the pagination limit")
+            raise LiveDataUnavailable(
+                f"{kind.value} source exceeded the pagination limit",
+                kind=LiveDataErrorKind.BOUNDED_LIMIT,
+            )
         entry = _CacheEntry(
             fetched_monotonic=time.monotonic(),
             retrieved_at=datetime.now(UTC),
             source_updated_at=source_updated_at,
             features=tuple(features),
         )
-        self._cache[(kind, bbox)] = entry
         return entry
 
     @staticmethod
@@ -332,29 +529,32 @@ class LiveDataService:
         *,
         bbox: tuple[float, float, float, float] | None,
     ) -> tuple[_CacheEntry, Freshness]:
-        cache_key = (kind, bbox)
-        cached = self._cache.get(cache_key)
+        normalized_bbox = self._normalized_bbox(bbox)
+        cache_key = (kind, normalized_bbox)
+        cached = self._cache_get(cache_key)
         if (
             cached is not None
             and time.monotonic() - cached.fetched_monotonic <= self.fresh_seconds
         ):
             return cached, Freshness.FRESH
         async with self._locks[kind]:
-            cached = self._cache.get(cache_key)
+            cached = self._cache_get(cache_key)
             if (
                 cached is not None
                 and time.monotonic() - cached.fetched_monotonic <= self.fresh_seconds
             ):
                 return cached, Freshness.FRESH
             try:
-                return await self._refresh(kind, bbox=bbox), Freshness.FRESH
+                refreshed = await self._refresh(kind, bbox=normalized_bbox)
+                self._cache_put(cache_key, refreshed)
+                return refreshed, Freshness.FRESH
             except (
                 httpx.HTTPError,
                 ValueError,
                 json.JSONDecodeError,
                 LiveDataUnavailable,
             ) as exc:
-                cached = self._cache.get(cache_key)
+                cached = self._cache_get(cache_key)
                 if (
                     cached is not None
                     and time.monotonic() - cached.fetched_monotonic
@@ -395,11 +595,7 @@ class LiveDataService:
         return LiveResult(
             result_id=f"{kind.value}:{object_id}",
             kind=kind,
-            authority=(
-                "EmergencyInfoBC and issuing local authority"
-                if kind == LiveResultKind.EVACUATION
-                else "BC Wildfire Service"
-            ),
+            authority=_authority(kind),
             source_url=HttpUrl(self._layer(kind).url),
             source_updated_at=updated,
             retrieved_at=retrieved_at,
@@ -442,6 +638,94 @@ class LiveDataService:
             geometry=geometry,
         )
 
+    async def _map_layer_results(
+        self,
+        kind: LiveResultKind,
+        *,
+        bbox: _BBox | None,
+        bounds: BaseGeometry | None,
+    ) -> tuple[list[LiveResult], LiveLayerStatus, str | None]:
+        try:
+            entry, freshness = await self._features(kind, bbox=bbox)
+        except LiveDataUnavailable as exc:
+            source_definition = self.layer_definitions.get(
+                kind, DEFAULT_LAYER_DEFINITIONS[kind]
+            )
+            return (
+                [],
+                LiveLayerStatus(
+                    kind=kind,
+                    authority=_authority(kind),
+                    source_url=HttpUrl(source_definition.url),
+                    available=False,
+                    matching_result_count=0,
+                ),
+                str(exc),
+            )
+
+        results: list[LiveResult] = []
+        for feature in entry.features:
+            properties = feature["properties"]
+            status = str(
+                _property(
+                    properties,
+                    "FIRE_STATUS",
+                    "ORDER_ALERT_STATUS",
+                    "STATUS",
+                    "EVENT_STATUS",
+                )
+                or ""
+            ).casefold()
+            if status in {
+                "out",
+                "inactive",
+                "expired",
+                "cancelled",
+                "canceled",
+                "rescinded",
+            }:
+                continue
+            if kind == LiveResultKind.EVACUATION:
+                event_type = str(_property(properties, "EVENT_TYPE") or "").casefold()
+                if event_type and "fire" not in event_type:
+                    continue
+            if bounds is not None:
+                try:
+                    candidate_geometry = shape(feature["geometry"])
+                    if (
+                        not candidate_geometry.is_empty
+                        and candidate_geometry.is_valid
+                        and not candidate_geometry.intersects(bounds)
+                    ):
+                        continue
+                except (TypeError, ValueError):
+                    pass
+            try:
+                result = self._to_result(
+                    kind,
+                    feature,
+                    retrieved_at=entry.retrieved_at,
+                    freshness=freshness,
+                    source_updated_at=entry.source_updated_at,
+                )
+            except (TypeError, ValueError):
+                continue
+            results.append(result)
+        return (
+            results,
+            LiveLayerStatus(
+                kind=kind,
+                authority=_authority(kind),
+                source_url=HttpUrl(self._layer(kind).url),
+                available=True,
+                source_updated_at=entry.source_updated_at,
+                retrieved_at=entry.retrieved_at,
+                freshness=freshness,
+                matching_result_count=len(results),
+            ),
+            None,
+        )
+
     async def map_results(
         self,
         *,
@@ -450,62 +734,21 @@ class LiveDataService:
     ) -> LiveMapResponse:
         results: list[LiveResult] = []
         unavailable: list[LiveResultKind] = []
+        layer_statuses: list[LiveLayerStatus] = []
         unavailable_reasons: list[str] = []
         bounds = box(*bbox) if bbox is not None else None
-        for kind in layers:
-            try:
-                entry, freshness = await self._features(kind, bbox=bbox)
-            except LiveDataUnavailable as exc:
+        layer_outcomes = await asyncio.gather(
+            *(self._map_layer_results(kind, bbox=bbox, bounds=bounds) for kind in layers)
+        )
+        for kind, (layer_results, layer_status, unavailable_reason) in zip(
+            layers, layer_outcomes, strict=True
+        ):
+            layer_statuses.append(layer_status)
+            if unavailable_reason is not None:
                 unavailable.append(kind)
-                unavailable_reasons.append(str(exc))
+                unavailable_reasons.append(unavailable_reason)
                 continue
-            for feature in entry.features:
-                properties = feature["properties"]
-                status = str(
-                    _property(
-                        properties,
-                        "FIRE_STATUS",
-                        "ORDER_ALERT_STATUS",
-                        "STATUS",
-                        "EVENT_STATUS",
-                    )
-                    or ""
-                ).casefold()
-                if status in {
-                    "out",
-                    "inactive",
-                    "expired",
-                    "cancelled",
-                    "canceled",
-                    "rescinded",
-                }:
-                    continue
-                if kind == LiveResultKind.EVACUATION:
-                    event_type = str(_property(properties, "EVENT_TYPE") or "").casefold()
-                    if event_type and "fire" not in event_type:
-                        continue
-                if bounds is not None:
-                    try:
-                        candidate_geometry = shape(feature["geometry"])
-                        if (
-                            not candidate_geometry.is_empty
-                            and candidate_geometry.is_valid
-                            and not candidate_geometry.intersects(bounds)
-                        ):
-                            continue
-                    except (TypeError, ValueError):
-                        pass
-                try:
-                    result = self._to_result(
-                        kind,
-                        feature,
-                        retrieved_at=entry.retrieved_at,
-                        freshness=freshness,
-                        source_updated_at=entry.source_updated_at,
-                    )
-                except (TypeError, ValueError):
-                    continue
-                results.append(result)
+            results.extend(layer_results)
         limitations = [
             "Official records can change quickly; confirm emergency directions with the issuing authority.",
             "No matching record is not a safety determination.",
@@ -524,23 +767,25 @@ class LiveDataService:
             results=sorted(results, key=lambda result: (result.kind.value, result.result_id)),
             aggregate_freshness=aggregate_live_freshness(results),
             unavailable_layers=unavailable,
+            layer_statuses=layer_statuses,
             limitations=limitations,
         )
 
-    async def nearby_results(
+    async def _nearby_full(
         self,
         location: LocationInput,
         *,
-        layers: tuple[LiveResultKind, ...] = tuple(LiveResultKind),
-    ) -> LiveMapResponse:
+        layers: tuple[LiveResultKind, ...],
+    ) -> tuple[LiveMapResponse, float, float, _BBox]:
         latitude, longitude = await self.resolve_location(location)
         west = WGS84_GEOD.fwd(longitude, latitude, 270, location.radius_km * 1_000)[0]
         east = WGS84_GEOD.fwd(longitude, latitude, 90, location.radius_km * 1_000)[0]
         south = WGS84_GEOD.fwd(longitude, latitude, 180, location.radius_km * 1_000)[1]
         north = WGS84_GEOD.fwd(longitude, latitude, 0, location.radius_km * 1_000)[1]
+        bbox = (west, south, east, north)
         response = await self.map_results(
             layers=layers,
-            bbox=(west, south, east, north),
+            bbox=bbox,
         )
         related: list[LiveResult] = []
         for result in response.results:
@@ -561,10 +806,95 @@ class LiveDataService:
             limitations.append(
                 "Some official records could not be located spatially; check them directly with the issuing authority."
             )
-        return response.model_copy(
+        related_response = response.model_copy(
             update={
                 "results": related,
                 "aggregate_freshness": aggregate_live_freshness(related),
+                "layer_statuses": [
+                    status.model_copy(
+                        update={
+                            "matching_result_count": sum(
+                                result.kind == status.kind for result in related
+                            )
+                        }
+                    )
+                    for status in response.layer_statuses
+                ],
                 "limitations": limitations,
             }
+        )
+        return related_response, latitude, longitude, bbox
+
+    async def nearby_results(
+        self,
+        location: LocationInput,
+        *,
+        layers: tuple[LiveResultKind, ...] = tuple(LiveResultKind),
+    ) -> LiveMapResponse:
+        response, _latitude, _longitude, _bbox = await self._nearby_full(
+            location,
+            layers=layers,
+        )
+        return response
+
+    async def nearby_page(
+        self,
+        location: LocationInput,
+        *,
+        layers: tuple[LiveResultKind, ...] = tuple(LiveResultKind),
+        page: int = 1,
+        page_size: int = 100,
+    ) -> NearMeResponse:
+        """Return a bounded, explicit page for the map and accessible record list."""
+
+        if page < 1 or not 1 <= page_size <= 200:
+            raise ValueError("near-me pagination is outside the public bounds")
+        requested_layers = tuple(dict.fromkeys(layers))
+        if not requested_layers:
+            raise ValueError("near-me requires at least one official layer")
+        response, latitude, longitude, bbox = await self._nearby_full(
+            location,
+            layers=requested_layers,
+        )
+        total_results = len(response.results)
+        total_pages = math.ceil(total_results / page_size)
+        start = (page - 1) * page_size
+        page_results = response.results[start : start + page_size]
+        limitations = list(response.limitations)
+        if total_results > page_size or page > 1:
+            if page_results:
+                limitations.append(
+                    f"Showing official records {start + 1}-{start + len(page_results)} of "
+                    f"{total_results}; use the record-list pagination to inspect the full roster."
+                )
+            else:
+                limitations.append(
+                    "The requested page is beyond the matching official record roster; "
+                    "return to page 1."
+                )
+        west, south, east, north = bbox
+        return NearMeResponse(
+            generated_at=response.generated_at,
+            requested_radius_km=location.radius_km,
+            requested_layers=list(requested_layers),
+            resolved_location=CoarseResolvedLocation(
+                latitude=latitude,
+                longitude=longitude,
+            ),
+            viewport=MapViewport(west=west, south=south, east=east, north=north),
+            results=page_results,
+            pagination=LivePagination(
+                page=page,
+                page_size=page_size,
+                total_results=total_results,
+                total_pages=total_pages,
+                returned_results=len(page_results),
+                has_previous=page > 1,
+                has_next=page < total_pages,
+            ),
+            aggregate_freshness=response.aggregate_freshness,
+            unavailable_layers=response.unavailable_layers,
+            layer_statuses=response.layer_statuses,
+            limitations=limitations,
+            official_fallback_urls=list(OFFICIAL_FALLBACK_URLS),
         )

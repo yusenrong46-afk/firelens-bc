@@ -1,0 +1,279 @@
+schema_version: firelens.frontend_manual_review_protocol.v1
+protocol_id: firelens_v1_5_2_frontend_manual_review
+bundle_schema_version: firelens.frontend_manual_review_bundle.v1
+status: frozen
+frozen_at: "2026-08-06T00:00:00-07:00"
+description: >-
+  Required-after-only manual qualification for the exact FireLens V1.5-2
+  frontend candidate. This protocol complements, and does not replace, the
+  automated frontend surface protocol. Every atomic check must retain
+  content-addressed evidence and be reviewed by the designated independent
+  specialist before a distinct release adjudicator can qualify the candidate.
+candidate_contract:
+  candidate_id_prefix: "firelens-v1-5-2:"
+  commit_format: full_lowercase_git_sha
+  allowed_target_url_schemes: [http, https]
+  identity_endpoint_path: /api/v1/health/ready
+  identity_evidence_schema_version: firelens.frontend_candidate_identity_evidence.v1
+standards:
+  wcag_version: "2.2"
+  conformance_level: AA
+  success_criteria:
+    - {id: "1.3.1", name: Info and Relationships}
+    - {id: "1.3.2", name: Meaningful Sequence}
+    - {id: "1.4.1", name: Use of Color}
+    - {id: "1.4.3", name: Contrast Minimum}
+    - {id: "1.4.4", name: Resize Text}
+    - {id: "1.4.10", name: Reflow}
+    - {id: "1.4.11", name: Non-text Contrast}
+    - {id: "1.4.12", name: Text Spacing}
+    - {id: "2.1.1", name: Keyboard}
+    - {id: "2.1.2", name: No Keyboard Trap}
+    - {id: "2.4.3", name: Focus Order}
+    - {id: "2.4.6", name: Headings and Labels}
+    - {id: "2.4.7", name: Focus Visible}
+    - {id: "2.4.11", name: Focus Not Obscured Minimum}
+    - {id: "2.5.1", name: Pointer Gestures}
+    - {id: "2.5.8", name: Target Size Minimum}
+    - {id: "3.3.1", name: Error Identification}
+    - {id: "3.3.3", name: Error Suggestion}
+    - {id: "4.1.2", name: Name Role Value}
+    - {id: "4.1.3", name: Status Messages}
+manual_thresholds:
+  normal_text_contrast_ratio_min: 4.5
+  large_text_contrast_ratio_min: 3.0
+  non_text_and_focus_contrast_ratio_min: 3.0
+  browser_zoom_percent_required: 200
+  reflow_width_css_px: 320
+  horizontal_content_scroll_max_css_px: 0
+  target_width_css_px_min: 24
+  target_height_css_px_min: 24
+  text_spacing:
+    line_height_em_min: 1.5
+    paragraph_spacing_em_min: 2.0
+    letter_spacing_em_min: 0.12
+    word_spacing_em_min: 0.16
+state_roster:
+  - idle
+  - grounded
+  - partial
+  - abstention
+  - provider_failure
+  - live
+  - mixed
+  - stale
+  - no_result
+  - partial_layer
+test_profiles:
+  - id: desktop_chromium_keyboard
+    required_role: accessibility_specialist
+    os_name: macOS
+    browser_name: Chromium
+    assistive_technology: none
+    input_methods: [keyboard]
+    viewport: {width: 1440, height: 1000}
+    zoom_percentages: [100, 200]
+    reflow_widths_css_px: [320]
+    reduced_motion: reduce
+  - id: desktop_safari_voiceover
+    required_role: accessibility_specialist
+    os_name: macOS
+    browser_name: Safari
+    assistive_technology: VoiceOver
+    input_methods: [keyboard]
+    viewport: {width: 1440, height: 1000}
+    zoom_percentages: [100]
+    reflow_widths_css_px: []
+    reduced_motion: reduce
+  - id: mobile_safari_voiceover_touch
+    required_role: accessibility_specialist
+    os_name: iOS
+    browser_name: Safari
+    assistive_technology: VoiceOver
+    input_methods: [touch]
+    viewport: {width: 390, height: 844}
+    zoom_percentages: [100]
+    reflow_widths_css_px: []
+    reduced_motion: reduce
+  - id: product_safety_desktop_chromium
+    required_role: wildfire_product_safety_reviewer
+    os_name: macOS
+    browser_name: Chromium
+    assistive_technology: none
+    input_methods: [keyboard, pointer]
+    viewport: {width: 1440, height: 1000}
+    zoom_percentages: [100]
+    reflow_widths_css_px: []
+    reduced_motion: reduce
+  - id: product_safety_mobile_safari
+    required_role: wildfire_product_safety_reviewer
+    os_name: iOS
+    browser_name: Safari
+    assistive_technology: none
+    input_methods: [touch]
+    viewport: {width: 390, height: 844}
+    zoom_percentages: [100]
+    reflow_widths_css_px: []
+    reduced_motion: reduce
+roles:
+  - id: accessibility_specialist
+    responsibility: >-
+      Perform the keyboard, assistive-technology, map-equivalence, reflow,
+      visual-perception, target-size, and live-region checks.
+  - id: wildfire_product_safety_reviewer
+    responsibility: >-
+      Review evidence traceability, location consent, official escalation,
+      wildfire-state language, failure recovery, and false-reassurance risks.
+  - id: release_adjudicator
+    responsibility: >-
+      Independently verify the complete check and evidence roster, reconcile
+      findings, and issue the final exact-candidate decision.
+criteria:
+  - id: A11Y_KEYBOARD_AND_FOCUS
+    track: accessibility
+    required_role: accessibility_specialist
+    atomic_checks:
+      - id: A11Y-KF-01
+        instruction: All interactive controls are reachable in a logical keyboard order.
+      - id: A11Y-KF-02
+        instruction: Every focused interactive control has a persistent visible focus indicator.
+      - id: A11Y-KF-03
+        instruction: Dialogs, map sheets, and evidence disclosures have no keyboard trap and restore focus on close.
+  - id: A11Y_SCREEN_READER_SEMANTICS
+    track: accessibility
+    required_role: accessibility_specialist
+    atomic_checks:
+      - id: A11Y-SR-01
+        instruction: Landmarks, headings, controls, names, roles, values, and expanded states are correctly announced.
+      - id: A11Y-SR-02
+        instruction: Loading, answer, failure, stale, partial, no-result, and live-update state changes are announced without stealing focus.
+      - id: A11Y-SR-03
+        instruction: Evidence relationships, source authority, freshness, and official-source actions are understandable in reading order.
+  - id: A11Y_MAP_EQUIVALENCE
+    track: accessibility
+    required_role: accessibility_specialist
+    atomic_checks:
+      - id: A11Y-MAP-01
+        instruction: The accessible list exposes every mapped wildfire record with the same identity, status, freshness, and official-source action.
+      - id: A11Y-MAP-02
+        instruction: Selecting a map record and selecting its list counterpart produce equivalent detail and synchronized state.
+      - id: A11Y-MAP-03
+        instruction: Map-only gestures are not required to discover, inspect, or act on wildfire information.
+  - id: A11Y_ZOOM_REFLOW_AND_TEXT
+    track: accessibility
+    required_role: accessibility_specialist
+    atomic_checks:
+      - id: A11Y-ZR-01
+        instruction: At 200 percent browser zoom, content and controls remain available without overlap or loss.
+      - id: A11Y-ZR-02
+        instruction: At a 320 CSS-pixel reflow width, the experience has no two-dimensional content scrolling except the map itself.
+      - id: A11Y-ZR-03
+        instruction: Text spacing overrides do not clip, overlap, hide, or truncate safety-critical content.
+  - id: A11Y_PERCEPTION_TARGETS_AND_MOTION
+    track: accessibility
+    required_role: accessibility_specialist
+    atomic_checks:
+      - id: A11Y-VP-01
+        instruction: Meaning, severity, freshness, selection, and availability never depend on color alone.
+      - id: A11Y-VP-02
+        instruction: Text, focus indicators, graphical controls, and state boundaries meet the frozen contrast requirements in every reviewed state.
+      - id: A11Y-VP-03
+        instruction: Pointer targets meet the frozen target-size requirement or an explicitly permitted spacing exception.
+      - id: A11Y-VP-04
+        instruction: Reduced-motion preference suppresses nonessential animation and leaves progress understandable.
+  - id: A11Y_LIVE_STATUS_AND_ERRORS
+    track: accessibility
+    required_role: accessibility_specialist
+    atomic_checks:
+      - id: A11Y-LS-01
+        instruction: Validation and runtime errors identify the affected control or region and provide an actionable recovery path.
+      - id: A11Y-LS-02
+        instruction: Repeated live refreshes do not create announcement storms, unexpected focus movement, or loss of user context.
+  - id: SAFETY_EVIDENCE_TRACEABILITY
+    track: product_safety
+    required_role: wildfire_product_safety_reviewer
+    atomic_checks:
+      - id: SAFETY-EV-01
+        instruction: Every material preparedness or wildfire claim can be traced to the displayed evidence and authority.
+      - id: SAFETY-EV-02
+        instruction: Stable guidance and current live status are visually and semantically separated.
+      - id: SAFETY-EV-03
+        instruction: Source freshness and unavailable-layer context remain visible before a user acts on live information.
+  - id: SAFETY_NEAR_ME_CONSENT_AND_ESCALATION
+    track: product_safety
+    required_role: wildfire_product_safety_reviewer
+    atomic_checks:
+      - id: SAFETY-NM-01
+        instruction: Precise location is requested only after an explicit user action with understandable purpose and fallback.
+      - id: SAFETY-NM-02
+        instruction: Search radius, map coverage, and data limitations are explained without implying comprehensive detection.
+      - id: SAFETY-NM-03
+        instruction: Official emergency and wildfire sources are prominent and usable without sharing location.
+  - id: SAFETY_WILDFIRE_STATE_CLARITY
+    track: product_safety
+    required_role: wildfire_product_safety_reviewer
+    atomic_checks:
+      - id: SAFETY-ST-01
+        instruction: Evacuation alerts, evacuation orders, incidents, and perimeters are not conflated.
+      - id: SAFETY-ST-02
+        instruction: Stale, partial, mixed-source, no-result, and abstention states cannot be read as confirmation of safety.
+      - id: SAFETY-ST-03
+        instruction: Distance, direction, and freshness wording does not overstate location accuracy or current risk.
+  - id: SAFETY_FAILURE_RECOVERY
+    track: product_safety
+    required_role: wildfire_product_safety_reviewer
+    atomic_checks:
+      - id: SAFETY-FR-01
+        instruction: Model-provider failure and official-live-source failure are distinguishable and do not fabricate substitute status.
+      - id: SAFETY-FR-02
+        instruction: Retry, non-location search, accessible-list, and official-source recovery paths remain available in degraded states.
+      - id: SAFETY-FR-03
+        instruction: Partial-layer operation names unavailable layers and preserves usable verified records without hiding uncertainty.
+atomic_check_requirements:
+  A11Y-KF-01: {wcag_2_2_success_criteria: ["2.1.1", "2.4.3"], required_profile_ids: [desktop_chromium_keyboard]}
+  A11Y-KF-02: {wcag_2_2_success_criteria: ["2.4.7", "2.4.11"], required_profile_ids: [desktop_chromium_keyboard]}
+  A11Y-KF-03: {wcag_2_2_success_criteria: ["2.1.2", "2.4.3"], required_profile_ids: [desktop_chromium_keyboard]}
+  A11Y-SR-01: {wcag_2_2_success_criteria: ["1.3.1", "1.3.2", "2.4.6", "4.1.2"], required_profile_ids: [desktop_safari_voiceover, mobile_safari_voiceover_touch]}
+  A11Y-SR-02: {wcag_2_2_success_criteria: ["4.1.3"], required_profile_ids: [desktop_safari_voiceover, mobile_safari_voiceover_touch]}
+  A11Y-SR-03: {wcag_2_2_success_criteria: ["1.3.1", "1.3.2", "2.4.6"], required_profile_ids: [desktop_safari_voiceover, mobile_safari_voiceover_touch]}
+  A11Y-MAP-01: {wcag_2_2_success_criteria: ["1.3.1", "1.3.2", "4.1.2"], required_profile_ids: [desktop_chromium_keyboard, desktop_safari_voiceover, mobile_safari_voiceover_touch]}
+  A11Y-MAP-02: {wcag_2_2_success_criteria: ["1.3.1", "4.1.2"], required_profile_ids: [desktop_chromium_keyboard, desktop_safari_voiceover, mobile_safari_voiceover_touch]}
+  A11Y-MAP-03: {wcag_2_2_success_criteria: ["2.1.1", "2.5.1"], required_profile_ids: [desktop_chromium_keyboard, mobile_safari_voiceover_touch]}
+  A11Y-ZR-01: {wcag_2_2_success_criteria: ["1.4.4"], required_profile_ids: [desktop_chromium_keyboard]}
+  A11Y-ZR-02: {wcag_2_2_success_criteria: ["1.4.10"], required_profile_ids: [desktop_chromium_keyboard]}
+  A11Y-ZR-03: {wcag_2_2_success_criteria: ["1.4.12"], required_profile_ids: [desktop_chromium_keyboard]}
+  A11Y-VP-01: {wcag_2_2_success_criteria: ["1.4.1"], required_profile_ids: [desktop_chromium_keyboard, mobile_safari_voiceover_touch]}
+  A11Y-VP-02: {wcag_2_2_success_criteria: ["1.4.3", "1.4.11", "2.4.7"], required_profile_ids: [desktop_chromium_keyboard, mobile_safari_voiceover_touch]}
+  A11Y-VP-03: {wcag_2_2_success_criteria: ["2.5.8"], required_profile_ids: [desktop_chromium_keyboard, mobile_safari_voiceover_touch]}
+  A11Y-VP-04: {wcag_2_2_success_criteria: [], required_profile_ids: [desktop_chromium_keyboard, mobile_safari_voiceover_touch]}
+  A11Y-LS-01: {wcag_2_2_success_criteria: ["3.3.1", "3.3.3", "4.1.3"], required_profile_ids: [desktop_safari_voiceover, mobile_safari_voiceover_touch]}
+  A11Y-LS-02: {wcag_2_2_success_criteria: ["4.1.3"], required_profile_ids: [desktop_safari_voiceover, mobile_safari_voiceover_touch]}
+  SAFETY-EV-01: {wcag_2_2_success_criteria: [], required_profile_ids: [product_safety_desktop_chromium, product_safety_mobile_safari]}
+  SAFETY-EV-02: {wcag_2_2_success_criteria: [], required_profile_ids: [product_safety_desktop_chromium, product_safety_mobile_safari]}
+  SAFETY-EV-03: {wcag_2_2_success_criteria: [], required_profile_ids: [product_safety_desktop_chromium, product_safety_mobile_safari]}
+  SAFETY-NM-01: {wcag_2_2_success_criteria: [], required_profile_ids: [product_safety_desktop_chromium, product_safety_mobile_safari]}
+  SAFETY-NM-02: {wcag_2_2_success_criteria: [], required_profile_ids: [product_safety_desktop_chromium, product_safety_mobile_safari]}
+  SAFETY-NM-03: {wcag_2_2_success_criteria: [], required_profile_ids: [product_safety_desktop_chromium, product_safety_mobile_safari]}
+  SAFETY-ST-01: {wcag_2_2_success_criteria: [], required_profile_ids: [product_safety_desktop_chromium, product_safety_mobile_safari]}
+  SAFETY-ST-02: {wcag_2_2_success_criteria: [], required_profile_ids: [product_safety_desktop_chromium, product_safety_mobile_safari]}
+  SAFETY-ST-03: {wcag_2_2_success_criteria: [], required_profile_ids: [product_safety_desktop_chromium, product_safety_mobile_safari]}
+  SAFETY-FR-01: {wcag_2_2_success_criteria: [], required_profile_ids: [product_safety_desktop_chromium, product_safety_mobile_safari]}
+  SAFETY-FR-02: {wcag_2_2_success_criteria: [], required_profile_ids: [product_safety_desktop_chromium, product_safety_mobile_safari]}
+  SAFETY-FR-03: {wcag_2_2_success_criteria: [], required_profile_ids: [product_safety_desktop_chromium, product_safety_mobile_safari]}
+evidence_contract:
+  path_prefix: evidence
+  require_sha256: true
+  require_byte_count: true
+  require_every_item_referenced: true
+  allowed_media_types:
+    image/png: [.png]
+    video/mp4: [.mp4]
+    text/plain: [.txt, .log]
+    text/markdown: [.md]
+    application/json: [.json]
+qualification_contract:
+  required_atomic_status: pass
+  open_findings_must_equal: 0
+  require_distinct_people_for_all_roles: true
+  require_exact_criterion_roster: true
+  require_exact_atomic_check_roster: true

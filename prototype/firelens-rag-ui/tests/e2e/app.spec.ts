@@ -227,7 +227,7 @@ test("shows official live records and a map through keyboard submission", async 
   await expect(page.getByText(/Source updated/)).toBeVisible();
   await expect(page.getByText(/Retrieved/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toBeVisible();
-  const marker = page.locator(".leaflet-interactive");
+  const marker = page.locator(".live-map__record-geometry");
   await expect(marker).toHaveCount(1);
   await marker.click();
   await expect(page.locator(".leaflet-popup").getByText("Test Fire", { exact: true })).toBeVisible();
@@ -235,15 +235,19 @@ test("shows official live records and a map through keyboard submission", async 
   await expect(page.getByText("Sources supporting this answer")).toHaveCount(0);
 });
 
-test("keeps official text usable when basemap tiles fail", async ({ page }) => {
-  await page.route("https://*.tile.openstreetmap.org/**", (route) => route.abort());
+test("uses local boundary context without third-party basemap requests", async ({ page }) => {
+  const thirdPartyMapRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("tile.openstreetmap.org")) thirdPartyMapRequests.push(request.url());
+  });
   await page.goto("/");
   const question = page.getByLabel("Ask a preparedness question");
   await question.fill("Is there an active wildfire near me right now?");
   await question.press("Enter");
   await expect(page.getByText("Current official information: Test Fire is Out of Control.")).toBeVisible();
   await expect(page.getByText("Test Fire", { exact: true })).toBeVisible();
-  await expect(page.getByText(/Basemap tiles are unavailable/)).toBeVisible();
+  await expect(page.getByText(/No third-party basemap request is made/)).toBeVisible();
+  expect(thirdPartyMapRequests).toEqual([]);
 });
 
 test("shows stale and partial-layer state without hiding records", async ({ page }) => {

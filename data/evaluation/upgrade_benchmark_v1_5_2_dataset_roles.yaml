@@ -1,0 +1,277 @@
+schema_version: firelens_evaluation_dataset_roles.v1
+registry_id: firelens_v1_5_2
+ratification_status: provisional
+ratified_at: null
+open_decisions:
+  - >
+    Decide whether to retain V2 under a narrowly documented release-seal
+    definition or retire it to regression use and author a fresh 47-case V3.
+  - >
+    Author and commit the source- and question-family-disjoint semantic-holdout
+    manifest before ratification; its owner-held payload must remain unavailable
+    to candidate development.
+description: >
+  Provisional dataset-use policy for the FireLens V1.5-2 upgrade. Paired before/after
+  evidence uses development or permanently exposed regression sets. Sealed
+  qualification sets are required-after-only and may not be ranked for a
+  baseline or used for tuning.
+
+datasets:
+  - id: hard_probe_v1
+    role: permanent_regression
+    status: available
+    inputs:
+      - data/evaluation/hard_probe.v1.yaml
+      - data/evaluation/hard_probe.v1.manifest.json
+    splits: [all]
+    baseline_policy: paired
+    allowed_uses:
+      - zero_cost_regression
+      - qualified_before_after
+      - failure_reproduction
+    prohibited_uses:
+      - training_target
+    notes: >
+      The manifest explicitly declares that this is not a sealed release
+      holdout. Offline mode is controlled wiring evidence; qualified mode is
+      model/provider evidence.
+
+  - id: benchmark_v1_development_retrieval
+    role: development
+    status: available
+    inputs:
+      - data/evaluation/benchmark_v1.yaml
+      - data/evaluation/benchmark_v1.manifest.json
+      - data/evaluation/benchmark_v1_5_relevance_addendum.yaml
+    splits: [development]
+    baseline_policy: paired
+    allowed_uses:
+      - paired_before_after
+      - retrieval_tuning
+      - experiment_selection
+      - permanent_regression
+    prohibited_uses:
+      - final_unseen_qualification_claim
+      - nondevelopment_split_tuning
+    notes: >
+      The retrieval experiment already filters to the 50 development cases
+      that have acceptable evidence. Owner review of development relevance
+      labels is still required before treating semantic relevance as human
+      ground truth.
+
+  - id: benchmark_v1_public_holdout_regression
+    role: permanent_regression
+    status: available
+    inputs:
+      - data/evaluation/benchmark_v1.yaml
+      - data/evaluation/benchmark_v1.manifest.json
+    splits: [holdout]
+    baseline_policy: not_scored
+    allowed_uses:
+      - permanent_regression
+      - failure_reproduction
+    prohibited_uses:
+      - final_unseen_qualification_claim
+      - case_specific_tuning
+    notes: >
+      Historical reports exposed results from these splits. They remain useful
+      public regressions but cannot be represented as an untouched holdout.
+
+  - id: benchmark_v1_red_team
+    role: red_team
+    status: available
+    inputs:
+      - data/evaluation/benchmark_v1.yaml
+      - data/evaluation/benchmark_v1.manifest.json
+    splits: [red_team]
+    baseline_policy: not_scored
+    allowed_uses:
+      - red_team_regression
+      - failure_reproduction
+    prohibited_uses:
+      - final_unseen_qualification_claim
+      - training_target
+    notes: >
+      The exposed V1 red-team split remains a permanent adversarial
+      regression, not a source of final-holdout evidence.
+
+  - id: benchmark_v1_1_conversation_regression
+    role: paired_human
+    status: available
+    inputs:
+      - data/evaluation/benchmark_v1_1_conversation.yaml
+      - data/evaluation/benchmark_v1_1_conversation.manifest.json
+    splits: [development, holdout, red_team]
+    baseline_policy: paired
+    allowed_uses:
+      - paired_before_after
+      - permanent_regression
+      - human_semantic_review
+      - failure_reproduction
+      - offline_judge_research_on_development_split
+    prohibited_uses:
+      - final_unseen_qualification_claim
+      - case_specific_tuning_from_nondevelopment_splits
+      - judge_training_from_nondevelopment_splits
+    notes: >
+      All 50 case-level results have been exposed in historical local reports.
+      Development cases may guide bounded experiments; the known holdout and
+      red-team cases remain regression-only.
+
+  - id: benchmark_v1_5_sealed_retrieval_v2
+    role: sealed_release_qualification
+    status: available
+    inputs:
+      - data/evaluation/benchmark_v1_5_sealed_retrieval.yaml
+      - data/evaluation/benchmark_v1_5_sealed_retrieval.manifest.json
+    splits: [holdout]
+    baseline_policy: required_after_only
+    allowed_uses:
+      - label_only_owner_review_before_ranking
+      - one_final_three_repetition_qualification
+    prohibited_uses:
+      - before_ranking
+      - paired_before_after
+      - tuning
+      - relevance_addendum
+      - case_specific_failure_repair
+    notes: >
+      A repository test previously ranked all 47 cases with FakeProvider into
+      a temporary file before the execution guard existed. No persisted, paid,
+      or live-provider result was observed; whether a person inspected the
+      temporary rankings is unknown. The literal claim that ranking never
+      occurred is false. The report must remain absent from the before snapshot
+      and this role cannot be ratified until the owner records whether V2 is
+      retained or replaced by V3.
+
+  - id: benchmark_v1_5_2_semantic_holdout
+    role: planned_sealed_qualification
+    status: planned
+    inputs:
+      - data/evaluation/benchmark_v1_5_2_semantic_development_registry.json
+      - data/evaluation/benchmark_v1_5_2_semantic_holdout.manifest.json
+    splits: [holdout]
+    baseline_policy: required_after_only
+    allowed_uses:
+      - final_human_semantic_qualification
+    prohibited_uses:
+      - before_generation
+      - paired_before_after
+      - tuning
+      - judge_training
+    notes: >
+      Create at least 25 source- and question-family-disjoint cases, freeze them
+      before the final candidate, and reveal case-level outputs only for final
+      human qualification. The owner may retain the case payload separately,
+      but the checked-in schema-v3 manifest must commit its hash, count,
+      case-level source/family commitments, canonical rosters, reviewers, and
+      freeze time. It must bind a separately frozen development-exposure
+      registry and retain the machine-recomputed zero-overlap audit. Final
+      review evidence must include the append-only, hash-chained presentation
+      log that is linked to every reviewer and adjudicator decision.
+      Before benchmark freeze, change this entry to role
+      sealed_release_qualification and status available, apply all sealed-role
+      prohibitions, and add both registry and manifest to benchmark
+      identity_inputs. Changing status alone is not sufficient.
+
+  - id: naive_user_probe_v1
+    role: development
+    status: available
+    inputs:
+      - data/evaluation/naive_user_probe.v1.yaml
+    splits: [all]
+    baseline_policy: not_scored
+    allowed_uses:
+      - usability_diagnosis
+      - development_regression
+      - failure_reproduction
+    prohibited_uses:
+      - final_unseen_qualification_claim
+    notes: >
+      Public naive-user prompts are development and regression evidence only;
+      they overlap parts of the hard probe and are not independent evidence.
+
+  - id: rag_generalization_probe_v1
+    role: development
+    status: available
+    inputs:
+      - data/evaluation/rag_generalization_probe.v1.yaml
+    splits: [all]
+    baseline_policy: not_scored
+    allowed_uses:
+      - development_regression
+      - generalization_diagnosis
+    prohibited_uses:
+      - final_unseen_qualification_claim
+    notes: >
+      Visible synthetic and leave-one-out prompts can guide development but do
+      not substitute for the new source-disjoint semantic holdout.
+
+  - id: rag_jailbreak_probe_v1
+    role: red_team
+    status: available
+    inputs:
+      - data/evaluation/rag_jailbreak_probe.v1.yaml
+    splits: [all]
+    baseline_policy: not_scored
+    allowed_uses:
+      - red_team_regression
+      - failure_reproduction
+    prohibited_uses:
+      - final_unseen_qualification_claim
+      - training_target
+    notes: >
+      Public adversarial prompts are permanent red-team regression evidence.
+
+  - id: gold_questions_legacy_seed
+    role: development
+    status: available
+    inputs:
+      - data/evaluation/gold_questions.yaml
+    splits: [all]
+    baseline_policy: not_scored
+    allowed_uses:
+      - development_authoring_seed
+    prohibited_uses:
+      - final_unseen_qualification_claim
+      - independent_benchmark_claim
+    notes: >
+      This legacy authoring seed has duplicated questions and pending owner
+      review; it is not an independent benchmark.
+
+  - id: graphrag_relationship_v1
+    role: development
+    status: available
+    inputs:
+      - data/evaluation/graphrag_relationship.v1.yaml
+    splits: [all]
+    baseline_policy: not_scored
+    allowed_uses:
+      - experiment_diagnosis
+    prohibited_uses:
+      - final_unseen_qualification_claim
+      - release_gate
+    notes: >
+      Visible relationship prompts are experiment-only development evidence.
+
+  - id: v1_5_2_ux_tasks
+    role: paired_human
+    status: available
+    inputs:
+      - data/evaluation/upgrade_benchmark_v1_5_2.yaml
+    splits: [before, after]
+    baseline_policy: paired
+    allowed_uses:
+      - paired_before_after
+      - usability_diagnosis
+    prohibited_uses:
+      - substitute_for_accessibility_review
+      - substitute_for_semantic_review
+    notes: >
+      Use the same five tasks, moderator protocol, device policy, success
+      rubric, and independent cohorts before and after. Before ratification,
+      the harness must retain per-cohort and per-device distributions and task
+      outcomes, enforce the frozen minimum allocation, and reject rounds whose
+      cohort or device shares differ by more than 0.15. Keyboard and
+      screen-reader labels prove participant coverage only; they do not replace
+      automated and manual WCAG, visual-state/CSS, or Web Vitals gates.

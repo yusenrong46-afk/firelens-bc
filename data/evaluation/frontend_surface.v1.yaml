@@ -1,0 +1,145 @@
+{
+  "schema_version": "firelens.frontend_surface_protocol.v1",
+  "protocol_id": "firelens_frontend_surface_v1",
+  "status": "provisional",
+  "frozen_at": null,
+  "description": "Provisional freeze-ready build-preview qualification for FireLens safety-critical UI states, responsive surfaces, accessibility, functional privacy and keyboard journeys, and throttled visual performance. Owner ratification and a before capture are required before this can make a frozen qualification claim.",
+  "matrix": {
+    "expected_rows": 30,
+    "require_every_state_viewport_pair_once": true
+  },
+  "states": [
+    {"id": "idle", "question": null, "ready_text": "Ask, then inspect the source"},
+    {"id": "grounded", "question": "surface:grounded", "ready_text": "Sources supporting this answer"},
+    {"id": "partial", "question": "surface:partial", "ready_text": "Partially supported"},
+    {"id": "abstention", "question": "surface:abstention", "ready_text": "No evidence-backed answer"},
+    {"id": "provider_failure", "question": "surface:unavailable", "ready_text": "Local service unavailable"},
+    {"id": "live", "question": "surface:live-fresh", "ready_text": "Current BC wildfire information"},
+    {"id": "mixed", "question": "surface:mixed", "ready_text": "Preparedness sources"},
+    {"id": "stale", "question": "surface:live-stale", "ready_text": "BC wildfire information — includes stale records"},
+    {"id": "no_result", "question": "surface:no-result", "ready_text": "No evidence-backed answer"},
+    {"id": "partial_layer", "question": "surface:partial-layer", "ready_text": "Some official layers are unavailable: evacuation. The records below do not represent those missing layers."}
+  ],
+  "viewports": [
+    {"id": "mobile", "width": 390, "height": 844, "device_scale_factor": 1, "is_mobile": true},
+    {"id": "tablet", "width": 768, "height": 1024, "device_scale_factor": 1, "is_mobile": false},
+    {"id": "desktop", "width": 1440, "height": 1000, "device_scale_factor": 1, "is_mobile": false}
+  ],
+  "execution_environment": {
+    "locale": "en-CA",
+    "timezone_id": "America/Vancouver",
+    "color_scheme": "light",
+    "reduced_motion": "reduce",
+    "browser_name": "chromium",
+    "headless": true
+  },
+  "map_parity": {
+    "applicable_state_ids": ["live", "mixed", "stale", "no_result", "partial_layer"],
+    "pagination_mode": "none",
+    "response_complete_roster": true,
+    "allow_rendered_roster_truncation": false
+  },
+  "surface_thresholds": {
+    "axe_wcag_a_aa_findings_max": 0,
+    "document_horizontal_overflow_max_px": 0,
+    "clipped_text_elements_max": 0,
+    "inaccessible_stylesheets_max": 0,
+    "stylesheet_load_failures_max": 0,
+    "unstyled_interactive_elements_max": 0,
+    "undersized_interactive_elements_max": 0,
+    "undersized_text_elements_max": 0,
+    "minimum_interactive_target_css_px": 24,
+    "minimum_body_text_css_px": 16,
+    "minimum_secondary_text_css_px": 12,
+    "console_errors_max": 0,
+    "page_errors_max": 0,
+    "unexpected_request_origins_max": 0,
+    "direct_third_party_tile_requests_max": 0,
+    "allowed_failed_request_urls": [],
+    "allowed_request_origins": [
+      "http://127.0.0.1:4175",
+      "https://a.tile.openstreetmap.org",
+      "https://b.tile.openstreetmap.org",
+      "https://c.tile.openstreetmap.org"
+    ]
+  },
+  "functional_journeys": [
+    {
+      "id": "keyboard_evidence_navigation",
+      "required_checks": [
+        "question_submitted_with_enter",
+        "grounded_answer_visible",
+        "source_toggle_reached_with_keyboard",
+        "source_toggle_activated_with_enter",
+        "focus_indicator_present"
+      ]
+    },
+    {
+      "id": "location_privacy_boundary",
+      "required_checks": [
+        "geolocation_not_called_before_opt_in",
+        "geolocation_called_once_after_opt_in",
+        "coordinates_rounded_to_two_decimals",
+        "location_sent_only_with_live_request",
+        "location_not_persisted_in_browser_storage",
+        "no_cookie_written",
+        "canonical_request_roster_valid",
+        "no_unexpected_request_or_body_leakage",
+        "url_history_clean",
+        "both_coordinate_tokens_absent_outside_allowed_request",
+        "browser_storage_surfaces_clean"
+      ]
+    },
+    {
+      "id": "history_clear_boundary",
+      "required_checks": [
+        "bounded_history_sent",
+        "clear_returns_idle",
+        "next_request_history_empty"
+      ]
+    }
+  ],
+  "privacy_evidence": {
+    "request_url": "http://127.0.0.1:4175/api/v1/ask",
+    "expected_questions": ["surface:grounded", "surface:live-fresh"],
+    "allowed_body_keys": ["history", "location", "question"],
+    "fixture_location": {
+      "raw_latitude": 49.282729,
+      "raw_longitude": -123.120738,
+      "rounded_latitude": 49.28,
+      "rounded_longitude": -123.12,
+      "radius_km": 50
+    },
+    "persistence_probe_tokens": ["49.282729", "-123.120738", "49.28", "-123.12"]
+  },
+  "performance": {
+    "browser": "chromium",
+    "profiles": ["mobile", "desktop"],
+    "warmup_samples": 1,
+    "cold_samples": 7,
+    "cache_disabled_for_cold_samples": true,
+    "cpu_throttling_rate": 4,
+    "network": {
+      "latency_ms": 150,
+      "download_bytes_per_second": 200000,
+      "upload_bytes_per_second": 93750,
+      "connection_type": "cellular3g"
+    },
+    "aggregation": "p75_nearest_rank",
+    "metrics": ["lcp_ms", "cls", "inp_interaction_proxy_ms", "map_ready_after_interaction_ms"],
+    "thresholds": {
+      "mobile": {
+        "lcp_ms_max": 2500,
+        "cls_max": 0.1,
+        "inp_interaction_proxy_ms_max": 200,
+        "map_ready_after_interaction_ms_max": 2000
+      },
+      "desktop": {
+        "lcp_ms_max": 2500,
+        "cls_max": 0.1,
+        "inp_interaction_proxy_ms_max": 200,
+        "map_ready_after_interaction_ms_max": 2000
+      }
+    }
+  }
+}

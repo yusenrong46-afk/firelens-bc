@@ -1,0 +1,204 @@
+:root {
+  color-scheme: dark;
+  --bg: #07100d;
+  --surface: #0c1813;
+  --surface-raised: #11221b;
+  --text: #eef8f1;
+  --muted: #9eb2a5;
+  --line: #294238;
+  --accent: #79f2a7;
+  --accent-ink: #06200f;
+  --warning: #ffc56e;
+  --danger: #ff8c83;
+  --focus: #d7ff56;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 85% 0%, rgba(50, 132, 87, 0.15), transparent 28rem),
+    var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+}
+
+button, input, select, textarea { font: inherit; }
+
+button, select, textarea, input[type="file"] {
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+button {
+  min-height: 44px;
+  padding: 0.7rem 1rem;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+button:hover { filter: brightness(1.08); }
+button:disabled { cursor: not-allowed; filter: grayscale(0.8); opacity: 0.55; }
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 10;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.65rem;
+  background: var(--focus);
+  color: #102000;
+  transform: translateY(-180%);
+}
+.skip-link:focus { transform: none; }
+
+.masthead,
+main {
+  width: min(1180px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.masthead {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2.5rem 0 1.4rem;
+  border-bottom: 1px solid var(--line);
+}
+
+h1, h2, h3, h4, p { margin-top: 0; }
+h1 { margin-bottom: 0; font-size: clamp(2.2rem, 6vw, 4.5rem); line-height: 0.95; letter-spacing: -0.055em; }
+h2 { font-size: clamp(1.7rem, 4vw, 2.7rem); letter-spacing: -0.035em; }
+h3 { margin-top: 0; font-size: 1.15rem; }
+h4 { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.eyebrow, .step, .case-id {
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.boundary { max-width: 28rem; margin: 0; color: var(--warning); text-align: right; }
+
+main { padding: 3rem 0 7rem; }
+
+.access-panel { max-width: 680px; }
+.access-panel > p:not(.step) { color: var(--muted); font-size: 1.05rem; }
+.file-control { display: grid; gap: 0.5rem; margin: 2rem 0 1rem; font-weight: 700; }
+input[type="file"] { width: 100%; padding: 1rem; }
+
+.session-strip {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) 2fr;
+  gap: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.session-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
+}
+.session-meta div { padding-left: 0.9rem; border-left: 1px solid var(--line); }
+.session-meta dt { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.session-meta dd { margin: 0.3rem 0 0; font-weight: 700; overflow-wrap: anywhere; }
+
+.action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.2rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.action-bar p { margin: 0; color: var(--muted); }
+.action-buttons { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+.case-heading { padding: 3rem 0 1.25rem; }
+.case-heading h2 { margin-bottom: 0.4rem; }
+
+#case-view > section,
+#decision-form {
+  padding: 2rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.question-block p { max-width: 900px; font-size: clamp(1.25rem, 2.3vw, 1.8rem); line-height: 1.4; }
+.rubric-columns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+.rubric-columns ul { padding-left: 1.2rem; }
+.rubric-columns li + li { margin-top: 0.45rem; }
+.long-text { max-width: 80ch; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.transcript, .evidence-list { padding: 0; list-style: none; }
+.transcript li, .evidence-list > li { padding: 1rem 0; border-top: 1px solid var(--line); }
+.transcript strong, .evidence-label { color: var(--accent); }
+.source-text, .claim-text { max-width: 90ch; white-space: pre-wrap; overflow-wrap: anywhere; }
+.source-meta { color: var(--muted); font-size: 0.9rem; }
+
+.acknowledgement-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.4rem 0;
+  border-top: 1px solid var(--warning);
+  border-bottom: 1px solid var(--warning);
+}
+.acknowledgement-bar p { margin: 0; color: var(--warning); }
+
+.decision-heading { margin-bottom: 1.5rem; }
+.decision-heading p:last-child { color: var(--warning); }
+fieldset { margin: 1.5rem 0; padding: 0; border: 0; }
+legend { margin-bottom: 0.8rem; font-weight: 800; }
+.check-row { display: flex; gap: 0.7rem; align-items: start; padding: 0.65rem 0; }
+.check-row input { width: 1.25rem; height: 1.25rem; margin-top: 0.15rem; accent-color: var(--accent); }
+.claim-decision { padding: 1rem 0; border-top: 1px solid var(--line); }
+.claim-decision-grid { display: grid; grid-template-columns: 190px 1fr; gap: 1rem; }
+
+label { display: block; margin-top: 1rem; font-weight: 700; }
+select, textarea { display: block; width: min(100%, 760px); margin-top: 0.45rem; padding: 0.75rem; }
+textarea { resize: vertical; }
+#decision-form > button { margin-top: 1.5rem; }
+
+.status-message {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  max-width: min(420px, calc(100% - 2rem));
+  padding: 0.8rem 1rem;
+  background: var(--surface-raised);
+  border-left: 4px solid var(--accent);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.35);
+}
+.status-message:empty { display: none; }
+.status-message.error { border-color: var(--danger); }
+
+@media (max-width: 760px) {
+  .masthead, .action-bar, .acknowledgement-bar { align-items: start; flex-direction: column; }
+  .boundary { text-align: left; }
+  .session-strip { grid-template-columns: 1fr; }
+  .session-meta { grid-template-columns: repeat(2, 1fr); }
+  .rubric-columns { grid-template-columns: 1fr; gap: 0.8rem; }
+  .claim-decision-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+}

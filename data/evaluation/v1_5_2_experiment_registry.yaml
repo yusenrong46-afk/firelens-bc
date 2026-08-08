@@ -1,0 +1,133 @@
+schema_version: firelens_experiment_registry.v1
+release: V1.5-2
+status: provisional
+owner_budget_approved: false
+total_openrouter_budget_usd: null
+rules:
+  - Tune only on datasets whose registry role permits development use.
+  - Change one intended variable per experiment unless the design is explicitly factorial.
+  - Record the exact commit, corpus, vector, configuration, models, prompt, and dataset hashes.
+  - Compare latency only when both candidates share the frozen stable execution-environment identity.
+  - Retain raw run artifacts and record their SHA-256 values; a manually copied summary is not eligible evidence.
+  - Recompute decision metrics from retained case-level outputs; submitted aggregates must agree exactly.
+  - Stop before the approved cost ceiling and retain incomplete or failed reports.
+  - Keep paid work at not_run while owner_budget_approved is false or the experiment max_cost_usd is null.
+  - Never inspect active sealed rankings for selection or case-specific repair.
+  - Promote only a complete candidate that clears every named guardrail.
+
+experiments:
+  - id: EXP-RET-001
+    status: planned
+    hypothesis: Preserving the resolved user intent improves fixed-denominator development retrieval.
+    intended_variable: query_formulation
+    design: single_variable
+    development_dataset: benchmark_v1_development_retrieval
+    candidates: [current, original_question_retrieval, original_question_rerank, user_intent_preserved]
+    primary_metric: development_retrieval_mrr_at_5
+    guardrails: [development_retrieval_recall_at_5, development_retrieval_cost_usd]
+    max_cost_usd: null
+    output_path: output/experiments/v1_5_2/EXP-RET-001.json
+    decision: not_run
+    rollback: Retain the frozen before configuration.
+
+  - id: EXP-RET-002
+    status: planned
+    hypothesis: A bounded retrieval-depth sweep improves rank quality without losing Recall@5.
+    intended_variable: retrieval_depth
+    design: declared_factorial
+    development_dataset: benchmark_v1_development_retrieval
+    candidates: [frozen_current, bounded_top_k_grid]
+    primary_metric: development_retrieval_ndcg_at_5
+    guardrails: [development_retrieval_recall_at_5, live_cached_p95_ms, development_retrieval_cost_usd]
+    max_cost_usd: null
+    output_path: output/experiments/v1_5_2/EXP-RET-002.json
+    decision: not_run
+    rollback: Retain the frozen before configuration.
+
+  - id: EXP-RET-003
+    status: planned
+    hypothesis: A bounded rerank-depth change improves early precision without reducing source coverage.
+    intended_variable: rerank_depth
+    design: single_variable
+    development_dataset: benchmark_v1_development_retrieval
+    candidates: [frozen_current, bounded_rerank_depths]
+    primary_metric: development_retrieval_mrr_at_5
+    guardrails: [development_retrieval_recall_at_5, development_retrieval_mean_source_coverage, development_retrieval_cost_usd]
+    max_cost_usd: null
+    output_path: output/experiments/v1_5_2/EXP-RET-003.json
+    decision: not_run
+    rollback: Retain the frozen before configuration.
+
+  - id: EXP-CONTEXT-001
+    status: planned
+    hypothesis: A bounded context and neighbour-window variant improves semantic support completeness.
+    intended_variable: context_strategy
+    design: declared_factorial
+    development_dataset: benchmark_v1_1_conversation_regression
+    development_split: development
+    candidates: [frozen_current, bounded_context_variants]
+    primary_metric: semantic_review_approval_rate
+    guardrails: [semantic_review_unsupported_or_unclear, live_cached_p95_ms, qualified_hard_probe_cost_usd]
+    max_cost_usd: null
+    output_path: output/experiments/v1_5_2/EXP-CONTEXT-001.json
+    decision: not_run
+    rollback: Retain the frozen before configuration and index.
+
+  - id: EXP-PROMPT-001
+    status: planned
+    hypothesis: A stricter evidence-aspect prompt reduces missing conditions without increasing abstention errors.
+    intended_variable: generation_prompt
+    design: single_variable
+    development_dataset: benchmark_v1_1_conversation_regression
+    development_split: development
+    candidates: [frozen_current, evidence_aspect_prompt]
+    primary_metric: semantic_review_approval_rate
+    guardrails: [semantic_review_unsupported_or_unclear, offline_hard_probe_pass_rate, qualified_hard_probe_cost_usd]
+    max_cost_usd: null
+    output_path: output/experiments/v1_5_2/EXP-PROMPT-001.json
+    decision: not_run
+    rollback: Restore the frozen prompt identity.
+
+  - id: EXP-MODEL-001
+    status: planned
+    hypothesis: One alternate OpenRouter generation model improves reviewed answers within cost and latency ceilings.
+    intended_variable: generation_model
+    design: single_variable
+    development_dataset: benchmark_v1_1_conversation_regression
+    development_split: development
+    candidates: [frozen_current, owner_approved_challengers]
+    primary_metric: semantic_review_approval_rate
+    guardrails: [semantic_review_unsupported_or_unclear, live_cached_p95_ms, qualified_hard_probe_cost_usd]
+    max_cost_usd: null
+    output_path: output/experiments/v1_5_2/EXP-MODEL-001.json
+    decision: not_run
+    rollback: Restore the frozen model identifier.
+
+  - id: EXP-RERANKER-001
+    status: planned
+    hypothesis: An alternate OpenRouter reranker improves fixed-denominator rank quality.
+    intended_variable: rerank_model
+    design: single_variable
+    development_dataset: benchmark_v1_development_retrieval
+    candidates: [frozen_current, owner_approved_challengers]
+    primary_metric: development_retrieval_ndcg_at_5
+    guardrails: [development_retrieval_recall_at_5, development_retrieval_cost_usd]
+    max_cost_usd: null
+    output_path: output/experiments/v1_5_2/EXP-RERANKER-001.json
+    decision: not_run
+    rollback: Restore the frozen reranker identifier.
+
+  - id: EXP-JUDGE-001
+    status: planned
+    hypothesis: A general offline judge can prioritize review without unsafe high-risk false passes.
+    intended_variable: judge_model
+    design: single_variable
+    development_dataset: benchmark_v1_1_conversation_regression
+    development_split: development
+    candidates: [owner_approved_general_judges]
+    primary_metric: unsupported_high_risk_recall
+    guardrails: [critical_false_pass_count, cohens_kappa, calibration_error, cost_usd]
+    max_cost_usd: null
+    output_path: output/experiments/v1_5_2/EXP-JUDGE-001.json
+    decision: not_run
+    rollback: Keep judge output offline and discard it from release authority.

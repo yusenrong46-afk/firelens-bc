@@ -102,7 +102,10 @@ record, duplicate, repeat-page, and no-progress bounds. Map and nearby requests 
 envelope filters while retaining local Shapely filtering as a backstop; bbox-specific cache keys
 prevent spatial results from contaminating province-wide results. Pinned Shapely plus pyproj WGS84
 geodesics filter inactive/non-wildfire records and determine geometry relations. Responses show
-authority, source URL, source update time, retrieval time, status, freshness, and geometry.
+authority, source URL, source update time, retrieval time, status, freshness, and geometry. The
+V1.5-2 worktree additionally returns one source-level status per requested layer, including
+authoritative layer-update time and an available zero-result layer, so current-source freshness is
+not inferred from the age of an individual incident or evacuation record.
 
 The refreshed real-source qualification at commit
 `eca9119511d79e089526a6d163b8481c9c4a2205` found:

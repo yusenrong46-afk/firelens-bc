@@ -397,9 +397,15 @@ class StaticRAGService:
     ) -> AskResponse:
         operation = self._active_operations.pop(response.trace_id, None)
         if operation is not None:
-            started, provider_stages = operation
-            visible_stages = list(provider_stages)
+            started, provider_models = operation
+            visible_models = list(provider_models)
+            visible_stages: list[str] = []
+            if self.config.embedding_model in provider_models:
+                visible_stages.append("query_embedding")
+            if self.config.rerank_model in provider_models:
+                visible_stages.append("rerank")
             if details.get("model"):
+                visible_models.append(str(details["model"]))
                 visible_stages.append(
                     "background_generation"
                     if response.response_mode == ResponseMode.BACKGROUND
@@ -411,9 +417,25 @@ class StaticRAGService:
                 trace_id=response.trace_id,
                 route=route,
                 response_mode=response.response_mode.value,
+                status=response.status.value,
                 latency_ms=(perf_counter() - started) * 1_000,
                 provider_stages=visible_stages,
+                provider_models=visible_models,
                 error_category=response.error_kind,
+                evidence_count=len(response.evidence),
+                claim_count=len(response.claims),
+                live_result_count=len(response.live_results),
+                validation_disposition=(
+                    "accepted"
+                    if response.validation is not None and response.validation.accepted
+                    else "rejected"
+                    if response.validation is not None
+                    else "not_applicable"
+                ),
+                corpus_version=self.corpus_version,
+                release_version=self.config.release_version,
+                build_commit=self.config.build_commit,
+                deployment_environment=self.config.deployment_environment,
             )
         await self.trace_recorder.record(
             response.trace_id,

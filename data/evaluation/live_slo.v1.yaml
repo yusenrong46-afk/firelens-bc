@@ -1,0 +1,31 @@
+schema_version: firelens_live_slo_protocol.v1
+status: proposed_unratified
+qualification_eligible: false
+layers:
+  - incident
+  - perimeter
+  - evacuation
+regions:
+  - id: lower_mainland
+    latitude: 49.28
+    longitude: -123.12
+    radius_km: 100.0
+  - id: okanagan
+    latitude: 49.89
+    longitude: -119.50
+    radius_km: 100.0
+  - id: central_bc
+    latitude: 53.92
+    longitude: -122.75
+    radius_km: 100.0
+phases:
+  - cold
+  - cached
+default_repetitions: 3
+max_repetitions: 10
+thresholds: null
+limitations:
+  - This protocol measures a bounded local process and official upstream responses; it is not production multi-instance evidence.
+  - Thresholds remain null until the product owner ratifies availability, freshness, and latency objectives.
+  - Source-level layer timestamps are retained even when no matching records are returned; missing observations remain explicit.
+  - Negative source age is retained as clock-skew evidence rather than silently clamped to zero.

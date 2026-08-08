@@ -20,6 +20,15 @@ def _report(path: Path) -> None:
             {
                 "report_version": "firelens_conversation_benchmark_report.v1_1",
                 "execution_mode": "live_provider",
+                "commit": "abc123",
+                "dataset_version": "test-dataset.v1",
+                "dataset_sha256": "a" * 64,
+                "corpus_version": "test-corpus.v1",
+                "corpus_sha256": "b" * 64,
+                "corpus_manifest_sha256": "c" * 64,
+                "vector_matrix_sha256": "d" * 64,
+                "vector_manifest_sha256": "e" * 64,
+                "configuration_sha256": "f" * 64,
                 "case_count": 2,
                 "complete": True,
                 "cost_budget_exceeded": False,
@@ -97,6 +106,11 @@ def test_complete_owner_review_qualifies(tmp_path: Path) -> None:
 
     assert summary["approved_case_count"] == 2
     assert summary["unsupported_verified_claim_count"] == 0
+    assert summary["commit"] == "abc123"
+    assert summary["dataset_sha256"] == "a" * 64
+    assert summary["corpus_sha256"] == "b" * 64
+    assert summary["vector_matrix_sha256"] == "d" * 64
+    assert summary["configuration_sha256"] == "f" * 64
     assert summary["qualified"]
 
 

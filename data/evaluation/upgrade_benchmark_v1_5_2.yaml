@@ -1,0 +1,922 @@
+schema_version: firelens_upgrade_benchmark_spec.v2
+benchmark_id: firelens_v1_5_2
+frozen_before_upgrade: false
+description: >
+  Provisional multi-track scorecard for the FireLens V1.5-2 upgrade. Paired
+  development and permanent-regression metrics establish the before/after gap.
+  Sealed retrieval, source-disjoint semantic holdout, preview, distributed
+  rate limiting, and rollback remain required-after-only qualification gates.
+  It cannot be frozen until the recorded V2 mechanical-ranking exposure has an
+  explicit owner disposition in ADR 0010 and the semantic holdout manifest
+  exists. The v2 worktree enforces execution-environment comparability, UX
+  cohort/device comparability, raw deployment-artifact hash/content binding,
+  semantic/retrieval owner-review recomputation, and a tracked immutable seal
+  for the ignored before-snapshot artifact. After capture and comparison prove
+  the committed ancestry chain from the before candidate through the unique
+  seal-introducing commit to the after candidate. Development/sealed ranking
+  aggregates are recomputed from retained rank IDs. Semantic-holdout qualification is
+  recomputed from a schema-v3 manifest bound to a frozen development-exposure registry,
+  a raw candidate report, and a canonical blinded, identity-bound randomized,
+  append-only presentation-log/double-review/adjudication bundle. Separate
+  accessibility, visual-state/CSS, Web Vitals, and runtime-artifact inventory
+  gates are represented, including a frozen required-after-only manual
+  accessibility and wildfire product-safety review contract.
+  Semantic and retrieval review capture additionally requires the content-free
+  blind-review qualification manifest produced only after independent storage
+  review and external final-head retention.
+
+dataset_role_registry: data/evaluation/upgrade_benchmark_v1_5_2_dataset_roles.yaml
+before_snapshot_seal: data/evaluation/upgrade_benchmark_v1_5_2_before_snapshot_seal.json
+
+identity_inputs:
+  - data/evaluation/upgrade_benchmark_v1_5_2_dataset_roles.yaml
+  - data/evaluation/hard_probe.v1.yaml
+  - data/evaluation/hard_probe.v1.manifest.json
+  - data/evaluation/benchmark_v1.yaml
+  - data/evaluation/benchmark_v1.manifest.json
+  - data/evaluation/benchmark_v1_5_relevance_addendum.yaml
+  - data/evaluation/benchmark_v1_1_conversation.yaml
+  - data/evaluation/benchmark_v1_1_conversation.manifest.json
+  - data/evaluation/benchmark_v1_5_sealed_retrieval.yaml
+  - data/evaluation/benchmark_v1_5_sealed_retrieval.manifest.json
+  - data/evaluation/frontend_surface.v1.yaml
+  - data/evaluation/frontend_manual_review.v1.yaml
+  - data/evaluation/live_slo.v1.yaml
+  - config/vercel_firewall.v1.json
+  - config/runtime_artifact_allowlist.v1.json
+
+harness_inputs:
+  - Makefile
+  - Dockerfile
+  - .dockerignore
+  - vercel.json
+  - .vercelignore
+  - render.yaml
+  - scripts/upgrade_benchmark.py
+  - scripts/freeze_semantic_holdout.py
+  - data/evaluation/semantic_holdout_freeze_protocol.v1.json
+  - docs/protocols/V1_5_2_SEMANTIC_HOLDOUT_FREEZE.md
+  - scripts/run_hard_probe.py
+  - scripts/run_live_qualification.py
+  - scripts/live_slo_evidence.py
+  - docs/protocols/V1_5_2_LIVE_SLO_EVIDENCE.md
+  - scripts/run_retrieval_qualification.py
+  - scripts/qualify_preview.py
+  - scripts/owner_semantic_review.py
+  - scripts/retrieval_owner_review.py
+  - scripts/human_review_workspace.py
+  - docs/protocols/V1_5_2_HUMAN_REVIEW_RUNBOOK.md
+  - scripts/prepare_vercel_firewall.py
+  - prototype/firelens-rag-ui/scripts/qualify-frontend-surface.mjs
+  - src/firelens/benchmark.py
+  - src/firelens/retrieval_experiment.py
+  - src/firelens/owner_review.py
+  - src/firelens/retrieval_review.py
+  - src/firelens/review_workspace/analysis.py
+  - src/firelens/review_workspace/api.py
+  - src/firelens/review_workspace/exports.py
+  - src/firelens/review_workspace/inputs.py
+  - src/firelens/review_workspace/journal.py
+  - src/firelens/review_workspace/models.py
+  - src/firelens/review_workspace/preparation.py
+  - src/firelens/review_workspace/qualification.py
+  - src/firelens/review_workspace/session.py
+  - src/firelens/review_workspace/web/review.css
+  - src/firelens/review_workspace/web/review.html
+  - src/firelens/review_workspace/web/review.js
+  - src/firelens/qualification.py
+  - src/firelens/runtime_artifact.py
+  - tests/test_runtime_artifact.py
+  - tests/test_upgrade_benchmark.py
+  - prototype/firelens-rag-ui/vite.config.mjs
+  - prototype/firelens-rag-ui/package.json
+  - prototype/firelens-rag-ui/package-lock.json
+
+tracks:
+  zero_cost:
+    - full repository verification
+    - 105-case offline hard probe
+    - manifest-complete frontend JavaScript, CSS, font, image, other, total-transfer, and unclassified-output budgets
+    - exact 10-state by 3-viewport frontend surface protocol with retained screenshots, accessibility, CSS/layout, runtime, map/list parity, keyboard/privacy/history journeys, and exact 1+7 throttled performance samples
+    - paired latency only under a matching execution-environment identity (v2 comparator enforced; eligible capture pending)
+    - tracked before-snapshot seal with complete before-to-seal-to-after Git ancestry (v2 creation/verification enforced; eligible seal pending)
+  network_no_model_cost:
+    - official live-source qualification
+  paid_development:
+    - fixed 50-case development retrieval comparison (case-level rank/metric recomputation enforced)
+  paid_qualified:
+    - 105-case OpenRouter hard probe
+    - required-after-only three-repetition sealed retrieval qualification (case-level rank/metric recomputation enforced)
+  human:
+    - paired 50-case claim-level semantic review
+    - 47-case sealed-label owner review prerequisite
+    - required-after-only source-disjoint semantic holdout (frozen development-registry overlap recomputation plus manifest/report/presentation-log/bundle hash binding and case-level review recomputation enforced; real artifacts pending)
+    - paired five-task UX benchmark with cohort and device distribution comparability (v2 comparator enforced; real sessions pending)
+    - frozen after-only named manual accessibility and wildfire product-safety review with exact environment/state coverage and retained evidence
+  deployment:
+    - anonymous preview qualification
+    - distributed rate-limit proof backed by a retained raw artifact (v2 hash/content binding enforced; real proof pending)
+    - rollback rehearsal backed by a retained raw artifact containing canonical smokes (v2 hash/content binding enforced; real proof pending)
+    - capture-owned Vercel and Docker staged-artifact inventory and logical-identity gate, rerun before and after all benchmark commands
+
+comparison_metrics:
+  - key: verification_passed
+    track: zero_cost
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: offline_hard_probe_pass_rate
+    track: zero_cost
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Deterministic pass rate has no noise allowance."}
+    required_after: true
+    gate_operator: gte
+    gate_value: 1.0
+
+  - key: offline_hard_probe_critical_failures
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Critical failures are exact counts."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 0
+
+  - key: offline_hard_probe_p95_ms
+    track: zero_cost
+    value_type: number
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 5.0, relative: 0.25, rationale: "Local controlled timing varies by machine load; larger changes are material."}
+    required_after: true
+
+  - key: frontend_initial_route_js_gzip_bytes
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 2048.0, relative: 0.03, rationale: "Small compiler chunk drift is tolerated; initial-load growth remains capped."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 80000
+
+  - key: frontend_lazy_js_gzip_bytes
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 4096.0, relative: 0.10, rationale: "The map is intentionally lazy; modest feature growth is allowed within a hard budget."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 55000
+
+  - key: frontend_initial_css_gzip_bytes
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 1024.0, relative: 0.10, rationale: "Small compiler CSS drift is tolerated within the hard initial-route budget."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 8000
+
+  - key: frontend_lazy_css_gzip_bytes
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 1024.0, relative: 0.10, rationale: "Small lazy-style drift is tolerated within the hard map-route budget."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 8000
+
+  - key: frontend_server_js_gzip_bytes
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 1024.0, relative: 0.10, rationale: "The Sites server entry can drift slightly but remains part of the deployable artifact budget."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 10000
+
+  - key: frontend_font_bytes
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 8192.0, relative: 0.05, rationale: "Font encoding can drift slightly, but the emitted font payload must remain bounded."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 200000
+
+  - key: frontend_image_bytes
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 4096.0, relative: 0.05, rationale: "Image encoder variance is bounded while oversized decorative assets remain disallowed."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 100000
+
+  - key: frontend_deployment_metadata_bytes
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 512.0, relative: 0.10, rationale: "Hosting metadata is retained and compared as a first-class emitted artifact."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 4096
+
+  - key: frontend_other_bytes
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 2048.0, relative: 0.10, rationale: "HTML and manifest metadata can drift slightly but must remain a small part of the build."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 25000
+
+  - key: frontend_total_emitted_bytes
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 16384.0, relative: 0.03, rationale: "The complete emitted build is compared so asset-class movement cannot hide transfer growth."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 1000000
+
+  - key: frontend_unclassified_output_bytes
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Every emitted byte must have a deterministic asset classification."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 0
+
+  - key: frontend_surface_qualified
+    track: zero_cost
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: frontend_visual_matrix_pass_rate
+    track: zero_cost
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "All exact state and viewport rows must qualify after the upgrade."}
+    required_after: true
+    gate_operator: gte
+    gate_value: 1.0
+
+  - key: frontend_css_layout_violation_count
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Retained CSS and layout violations are exact failures."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 0
+
+  - key: frontend_axe_wcag_a_aa_finding_count
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Every retained automated WCAG A and AA finding is an exact blocker, regardless of impact label."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 0
+
+  - key: frontend_runtime_violation_count
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Unexpected console, page, request-origin, and unallowlisted failed-request events are exact runtime blockers."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 0
+
+  - key: frontend_keyboard_journey_passed
+    track: zero_cost
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: frontend_map_list_parity
+    track: zero_cost
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: frontend_map_detail_integrity
+    track: zero_cost
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: frontend_map_marker_placement_sanity
+    track: zero_cost
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: frontend_direct_third_party_tile_request_count
+    track: zero_cost
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Direct browser tile disclosure is an exact privacy and architecture failure."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 0
+
+  - key: frontend_worst_p75_lcp_ms
+    track: zero_cost
+    value_type: number
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 250.0, relative: 0.10, rationale: "Controlled throttled LCP permits bounded machine noise while retaining the protocol ceiling."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 2500.0
+
+  - key: frontend_worst_p75_cls
+    track: zero_cost
+    value_type: number
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.02, relative: 0.20, rationale: "Controlled layout-shift sampling permits small instrumentation noise within the protocol ceiling."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 0.1
+
+  - key: frontend_worst_p75_inp_proxy_ms
+    track: zero_cost
+    value_type: number
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 25.0, relative: 0.20, rationale: "The bounded interaction proxy allows small scheduling variance while retaining the protocol ceiling."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 200.0
+
+  - key: frontend_worst_p75_map_ready_ms
+    track: zero_cost
+    value_type: number
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 200.0, relative: 0.15, rationale: "Lazy-map readiness permits bounded browser variance while retaining the protocol ceiling."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 2000.0
+
+  - key: live_qualified
+    track: network_no_model_cost
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: live_cached_p95_ms
+    track: network_no_model_cost
+    value_type: number
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 250.0, relative: 0.50, rationale: "Official upstream and local concurrency add variance; the four-second SLO remains strict."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 4000.0
+
+  - key: development_retrieval_recall_at_5
+    track: paid_development
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Fixed-denominator development recall must not decline."}
+    required_after: true
+    gate_operator: gte
+    gate_value: 0.96
+
+  - key: development_retrieval_mrr_at_5
+    track: paid_development
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.01, relative: 0.0, rationale: "One percentage point covers bounded provider ranking variance."}
+    required_after: true
+
+  - key: development_retrieval_ndcg_at_5
+    track: paid_development
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.01, relative: 0.0, rationale: "One percentage point covers bounded provider ranking variance."}
+    required_after: true
+
+  - key: development_retrieval_mean_source_coverage
+    track: paid_development
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.01, relative: 0.0, rationale: "Material source-coverage loss remains disallowed."}
+    required_after: true
+
+  - key: development_retrieval_cost_usd
+    track: paid_development
+    value_type: number
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.05, relative: 0.20, rationale: "Small pricing/token variation is tolerated inside the explicit run ceiling."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 1.25
+
+  - key: qualified_hard_probe_pass_rate
+    track: paid_qualified
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Qualified safety/control pass rate is exact."}
+    required_after: true
+    gate_operator: gte
+    gate_value: 1.0
+
+  - key: qualified_hard_probe_cost_usd
+    track: paid_qualified
+    value_type: number
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.05, relative: 0.20, rationale: "Small pricing/token variation is tolerated inside the explicit run ceiling."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 1.25
+
+  - key: sealed_retrieval_qualified
+    track: paid_qualified
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: sealed_retrieval_repetitions
+    track: paid_qualified
+    value_type: integer
+    direction: higher_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: eq
+    gate_value: 3
+
+  - key: sealed_retrieval_min_recall_at_5
+    track: paid_qualified
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: gte
+    gate_value: 0.9787234042553191
+
+  - key: semantic_review_qualified
+    track: human
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: semantic_review_approval_rate
+    track: human
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Human approval rate is an exact reviewed proportion."}
+    required_after: true
+    gate_operator: gte
+    gate_value: 1.0
+
+  - key: semantic_review_unsupported_or_unclear
+    track: human
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Unsupported or unclear material claims are exact blockers."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 0
+
+  - key: semantic_holdout_qualified
+    track: human
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: semantic_holdout_unsupported_or_unclear
+    track: human
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: lte
+    gate_value: 0
+
+  - key: semantic_holdout_dangerous_omissions
+    track: human
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: lte
+    gate_value: 0
+
+  - key: frontend_manual_accessibility_qualified
+    track: human
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: frontend_manual_product_safety_qualified
+    track: human
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: frontend_manual_open_findings
+    track: human
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: lte
+    gate_value: 0
+
+  - key: retrieval_review_qualified
+    track: human
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: prerequisite
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: retrieval_review_approval_rate
+    track: human
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: prerequisite
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: gte
+    gate_value: 1.0
+
+  - key: ux_participant_count
+    track: human
+    value_type: integer
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Both rounds must meet the frozen recruitment floor."}
+    required_after: true
+    gate_operator: gte
+    gate_value: 12
+
+  - key: ux_task_completion_rate
+    track: human
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.02, relative: 0.0, rationale: "Two percentage points cover cohort sampling noise without masking a material decline."}
+    required_after: true
+    gate_operator: gte
+    gate_value: 0.9
+
+  - key: ux_min_task_completion_rate
+    track: human
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.02, relative: 0.0, rationale: "Two percentage points cover cohort sampling noise while every task retains its floor."}
+    required_after: true
+    gate_operator: gte
+    gate_value: 0.8
+
+  - key: ux_critical_error_count
+    track: human
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Critical task errors are exact blockers."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 0
+
+  - key: ux_near_me_median_seconds
+    track: human
+    value_type: number
+    direction: lower_is_better
+    comparison_mode: paired
+    comparison_requirement: must_improve
+    tolerance: {absolute: 0.0, relative: 0.25, rationale: "Near Me must be at least 25 percent faster, not merely unchanged."}
+    required_after: true
+    gate_operator: lte
+    gate_value: 45.0
+
+  - key: ux_median_seq_score
+    track: human
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.5, relative: 0.0, rationale: "Half a SEQ point is the ratified small-sample tolerance."}
+    required_after: true
+    gate_operator: gte
+    gate_value: 5.0
+
+  - key: ux_evidence_comprehension_rate
+    track: human
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Evidence-comprehension correctness must not decline."}
+    required_after: true
+    gate_operator: gte
+    gate_value: 0.9
+
+  - key: ux_freshness_comprehension_rate
+    track: human
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Every participant must notice stale or partial state in UX04."}
+    required_after: true
+    gate_operator: gte
+    gate_value: 1.0
+
+  - key: ux_official_source_open_rate
+    track: human
+    value_type: number
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Official-source escalation is a core Near Me safety outcome."}
+    required_after: true
+    gate_operator: gte
+    gate_value: 0.9
+
+  - key: ux_access_method_sampling_coverage
+    track: human
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: paired
+    comparison_requirement: no_regression
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: preview_qualified
+    track: deployment
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: distributed_rate_limit_verified
+    track: deployment
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: rollback_rehearsal_passed
+    track: deployment
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: runtime_artifact_qualified
+    track: deployment
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: runtime_artifact_missing_required_count
+    track: deployment
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: lte
+    gate_value: 0
+
+  - key: runtime_artifact_prohibited_count
+    track: deployment
+    value_type: integer
+    direction: lower_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: lte
+    gate_value: 0
+
+  - key: runtime_artifact_identity_match
+    track: deployment
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+  - key: runtime_artifact_candidate_commit_match
+    track: deployment
+    value_type: boolean
+    direction: higher_is_better
+    comparison_mode: after_only
+    comparison_requirement: gate_only
+    required_after: true
+    gate_operator: eq
+    gate_value: true
+
+ux_tasks:
+  - id: UX01
+    name: Ask a preparedness question and inspect the exact source
+    time_cap_seconds: 180
+    critical_success: >
+      The participant obtains an answer, opens its evidence, and correctly
+      identifies which wording is source-backed.
+    completion_criteria:
+      - {id: UX01-C01, description: A bounded answer or explicit abstention is rendered.}
+      - {id: UX01-C02, description: The participant opens the evidence view.}
+      - {id: UX01-C03, description: The participant correctly identifies which wording is source-backed.}
+    critical_errors:
+      - {code: UX01-E01, description: Unsupported wording is treated as source-backed.}
+      - {code: UX01-E02, description: Static evidence is treated as a current official wildfire status.}
+  - id: UX02
+    name: Find wildfires near a named BC community
+    time_cap_seconds: 120
+    critical_success: >
+      The participant reaches the map, understands the search radius, and opens
+      at least one official record without assuming that no result means safety.
+    completion_criteria:
+      - {id: UX02-C01, description: The participant reaches the Near Me map and record list.}
+      - {id: UX02-C02, description: The participant correctly explains the search radius and freshness.}
+      - {id: UX02-C03, description: The participant opens at least one official record.}
+      - {id: UX02-C04, description: The participant does not interpret no-result output as confirmation of safety.}
+    critical_errors:
+      - {code: UX02-E01, description: No-result output is interpreted as confirmation of safety.}
+      - {code: UX02-E02, description: An unofficial or stale record is treated as a current official status.}
+  - id: UX03
+    name: Distinguish an evacuation alert from an evacuation order
+    time_cap_seconds: 120
+    critical_success: >
+      The participant identifies the difference and does not confuse stable
+      definitions with a current local status.
+    completion_criteria:
+      - {id: UX03-C01, description: The participant correctly distinguishes an evacuation alert from an order.}
+      - {id: UX03-C02, description: The participant does not treat a stable definition as a current local status.}
+    critical_errors:
+      - {code: UX03-E01, description: An evacuation alert and order are confused.}
+      - {code: UX03-E02, description: A stable definition is treated as a current local status.}
+  - id: UX04
+    name: Interpret stale or partially unavailable live data
+    time_cap_seconds: 120
+    critical_success: >
+      The participant notices freshness and unavailable-layer warnings and
+      chooses an official source for confirmation.
+    completion_criteria:
+      - {id: UX04-C01, description: The participant notices the freshness or stale-state warning.}
+      - {id: UX04-C02, description: The participant notices every unavailable or partial layer.}
+      - {id: UX04-C03, description: The participant chooses an official source for confirmation.}
+    critical_errors:
+      - {code: UX04-E01, description: "Stale, partial, unavailable, or no-result output is interpreted as confirmation of safety."}
+      - {code: UX04-E02, description: An unavailable layer is ignored when making a safety interpretation.}
+  - id: UX05
+    name: Recover from a provider or live-source failure
+    time_cap_seconds: 120
+    critical_success: >
+      The participant understands that FireLens failed closed and can retry or
+      continue to an official service without receiving an invented answer.
+    completion_criteria:
+      - {id: UX05-C01, description: The participant recognizes the provider or live-source failure state.}
+      - {id: UX05-C02, description: The participant recognizes that no verified answer was produced.}
+      - {id: UX05-C03, description: The participant selects retry or an official-source recovery path.}
+    critical_errors:
+      - {code: UX05-E01, description: Failed output is treated as a verified answer.}
+      - {code: UX05-E02, description: Provider or live-source failure is interpreted as confirmation of safety.}

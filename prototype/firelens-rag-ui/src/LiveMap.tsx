@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { CircleMarker, GeoJSON, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
+import { useEffect, useMemo } from "react";
+import { CircleMarker, GeoJSON, MapContainer, Popup, useMap } from "react-leaflet";
 import type { LatLngBoundsExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { LiveResult } from "./api";
+import { bcBoundaryFeature } from "./bcBoundary";
 
 function formatTimestamp(value: string): string {
   const parsed = new Date(value);
@@ -65,7 +66,6 @@ export function LiveMap({
   aggregateFreshness?: "fresh" | "stale" | "mixed";
   unavailableLayers?: string[];
 }) {
-  const [tileUnavailable, setTileUnavailable] = useState(false);
   const freshnessState = aggregateFreshness ?? (
     results.every((result) => result.freshness === "stale")
       ? "stale"
@@ -86,9 +86,6 @@ export function LiveMap({
     ),
     [results],
   );
-  const resultSignature = results.map((result) => result.result_id).join("|");
-  useEffect(() => setTileUnavailable(false), [resultSignature]);
-
   return (
     <section className="live-map" aria-label="Official wildfire records map">
       <div className="live-map__heading">
@@ -122,11 +119,22 @@ export function LiveMap({
           Official records include stale cached data because a refresh failed. Check each record timestamp.
         </p>
       )}
-      <MapContainer bounds={BC_BOUNDS} scrollWheelZoom={false} aria-label="Interactive map of official wildfire records">
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          eventHandlers={{ tileerror: () => setTileUnavailable(true) }}
+      <MapContainer
+        bounds={BC_BOUNDS}
+        scrollWheelZoom={false}
+        attributionControl={false}
+        aria-label="Interactive map of official wildfire records"
+      >
+        <GeoJSON
+          data={bcBoundaryFeature as unknown as GeoJSON.Feature}
+          interactive={false}
+          style={{
+            className: "live-map__bc-boundary",
+            color: "#315f4a",
+            weight: 1.5,
+            fillColor: "#edf2e8",
+            fillOpacity: 0.92,
+          }}
         />
         <FitResults results={results} />
         {featureResults.map((result) => (
@@ -135,7 +143,12 @@ export function LiveMap({
             data={
               { type: "Feature", properties: {}, geometry: result.geometry } as unknown as GeoJSON.Feature
             }
-            style={{ color: resultColour(result.kind), weight: 2, fillOpacity: 0.22 }}
+            style={{
+              className: "live-map__record-geometry",
+              color: resultColour(result.kind),
+              weight: 2,
+              fillOpacity: 0.22,
+            }}
           >
             <Popup>
               <strong>{result.name}</strong><br />
@@ -151,7 +164,13 @@ export function LiveMap({
               key={result.result_id}
               center={[latitude, longitude]}
               radius={7}
-              pathOptions={{ color: "#fff", weight: 2, fillColor: resultColour(result.kind), fillOpacity: 1 }}
+              pathOptions={{
+                className: "live-map__record-geometry",
+                color: "#fff",
+                weight: 2,
+                fillColor: resultColour(result.kind),
+                fillOpacity: 1,
+              }}
             >
               <Popup>
                 <strong>{result.name}</strong><br />
@@ -162,11 +181,12 @@ export function LiveMap({
           );
         })}
       </MapContainer>
-      {tileUnavailable && (
-        <p className="live-map__warning" role="status">
-          Basemap tiles are unavailable. The official text records below remain usable.
-        </p>
-      )}
+      <p className="live-map__context-note">
+        Privacy-first map context uses a locally bundled, simplified
+        {" "}<a href="https://catalogue.data.gov.bc.ca/dataset/province-of-british-columbia-legally-defined-administrative-areas-of-bc" target="_blank" rel="noreferrer">Government of BC provincial boundary</a>
+        {" "}under the <a href="https://www2.gov.bc.ca/gov/content/data/open-data/open-government-licence-bc" target="_blank" rel="noreferrer">Open Government Licence – BC</a>.
+        No third-party basemap request is made. Use the official BCWS map for detailed geographic context.
+      </p>
       {unavailableLayers.length > 0 && (
         <p className="live-map__warning" role="status">
           Some official layers are unavailable: {unavailableLayers.join(", ")}.
@@ -174,7 +194,7 @@ export function LiveMap({
         </p>
       )}
       <ul className="live-list">
-        {results.slice(0, 8).map((result) => (
+        {results.map((result) => (
           <li key={result.result_id}>
             <span className={`live-dot live-dot--${result.kind}`} />
             <div>

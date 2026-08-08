@@ -2,7 +2,7 @@ PYTHON := .venv/bin/python
 FIRELENS := .venv/bin/firelens
 FRONTEND := prototype/firelens-rag-ui
 
-.PHONY: setup verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review retrieval-review-packet retrieval-review-template qualify-retrieval-review qualify-retrieval-v1-5 qualify-live-v1-5 prepare-firewall model-bakeoff canary live-smoke openapi secret-scan
+.PHONY: setup verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review retrieval-review-packet retrieval-review-template qualify-retrieval-review qualify-retrieval-v1-5 qualify-live-v1-5 capture-live-slo verify-live-slo prepare-firewall model-bakeoff canary live-smoke openapi secret-scan
 
 setup:
 	@test -d .venv || python3 -m venv .venv
@@ -81,6 +81,13 @@ qualify-retrieval-v1-5:
 
 qualify-live-v1-5:
 	$(PYTHON) scripts/run_live_qualification.py
+
+capture-live-slo:
+	$(PYTHON) scripts/live_slo_evidence.py capture
+
+verify-live-slo:
+	$(PYTHON) scripts/live_slo_evidence.py verify \
+		--report output/qualification/v1_5_2_live_slo.json
 
 prepare-firewall:
 	$(PYTHON) scripts/prepare_vercel_firewall.py

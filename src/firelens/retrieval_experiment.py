@@ -15,6 +15,8 @@ from firelens.benchmark import (
     _usage_cost,
     _usage_total,
     apply_relevance_addendum,
+    benchmark_runtime_configuration,
+    benchmark_runtime_identity,
     file_sha256,
     load_benchmark,
     load_relevance_addendum,
@@ -30,32 +32,20 @@ from firelens.contracts import (
 from firelens.runtime import load_runtime
 from firelens.storage import atomic_text_writer
 
-CURRENT_CONFIGURATION = {
-    "bm25_top_k": 30,
-    "vector_top_k": 30,
-    "fused_top_k": 30,
-    "rrf_k": 60,
-    "rerank_top_k": 5,
-}
-
 RETRIEVAL_CANDIDATES: dict[str, dict[str, Any]] = {
     "current": {
-        "configuration": CURRENT_CONFIGURATION,
         "preserve_original_question": False,
         "rerank_with_original_question": False,
     },
     "original_question_retrieval": {
-        "configuration": CURRENT_CONFIGURATION,
         "preserve_original_question": True,
         "rerank_with_original_question": False,
     },
     "original_question_rerank": {
-        "configuration": CURRENT_CONFIGURATION,
         "preserve_original_question": False,
         "rerank_with_original_question": True,
     },
     "user_intent_preserved": {
-        "configuration": CURRENT_CONFIGURATION,
         "preserve_original_question": True,
         "rerank_with_original_question": True,
     },
@@ -158,6 +148,7 @@ def _candidate_row(
         },
         "provider_timings_ms": bundle.timings_ms,
         "wall_latency_ms": wall_latency_ms,
+        "rankings": rankings,
         "stage_metrics": {
             stage: _ranking_metrics(chunk_ids, case, chunks_by_id)
             for stage, chunk_ids in rankings.items()
@@ -200,11 +191,13 @@ async def run_retrieval_comparison(
         str,
         tuple[QueryRequest, QueryPlan, PlanningDecision | None, RetrievalBundle],
     ] = {}
+    active_configuration = benchmark_runtime_configuration(config)
 
-    baseline_runtime = load_runtime(config.model_copy(update=CURRENT_CONFIGURATION))
+    baseline_runtime = load_runtime(config)
     try:
         if baseline_runtime.service is None:
             raise RuntimeError(f"Runtime is not ready for current: {baseline_runtime.problems}")
+        runtime_identity = benchmark_runtime_identity(baseline_runtime)
         chunks_by_id = baseline_runtime.chunks_by_id
         current_rows: list[dict[str, Any]] = []
         for case in cases:
@@ -244,7 +237,7 @@ async def run_retrieval_comparison(
         if candidate_name == "current":
             continue
         rows: list[dict[str, Any]] = []
-        runtime = load_runtime(config.model_copy(update=candidate["configuration"]))
+        runtime = load_runtime(config)
         try:
             if runtime.service is None:
                 raise RuntimeError(
@@ -294,6 +287,7 @@ async def run_retrieval_comparison(
     report = {
         "report_version": "firelens_retrieval_comparison.v2",
         "generated_at": datetime.now(UTC).isoformat(),
+        **runtime_identity,
         "dataset_sha256": file_sha256(dataset_path),
         "relevance_addendum_sha256": (
             file_sha256(relevance_addendum_path)
@@ -305,12 +299,18 @@ async def run_retrieval_comparison(
         ),
         "split": "development",
         "holdout_opened": False,
+        "development_case_roster": [case.id for case in cases],
         "case_count_per_complete_candidate": len(cases),
         "cost_budget_usd": max_cost_usd,
         "reported_cost_usd": total_cost,
         "planner_decisions_reused_across_candidates": True,
+        "active_configuration": active_configuration,
         "candidates": {
-            name: {**RETRIEVAL_CANDIDATES[name], **summary}
+            name: {
+                **RETRIEVAL_CANDIDATES[name],
+                "configuration": active_configuration,
+                **summary,
+            }
             for name, summary in summaries.items()
         },
         "selected": selected,

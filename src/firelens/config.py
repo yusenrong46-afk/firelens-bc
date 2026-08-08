@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from firelens.contracts import RetrievalTextStrategy
 
@@ -73,6 +73,10 @@ class FireLensConfig(BaseModel):
     provider_max_attempts: int = Field(default=3, ge=1, le=3)
     provider_retry_base_seconds: float = Field(default=0.25, ge=0)
     provider_max_concurrency: int = Field(default=4, ge=1, le=16)
+    provider_adaptive_min_concurrency: int = Field(default=1, ge=1, le=16)
+    provider_adaptive_success_window: int = Field(default=20, ge=1, le=100)
+    provider_circuit_failure_threshold: int = Field(default=3, ge=2, le=10)
+    provider_circuit_cooldown_seconds: float = Field(default=15.0, ge=1.0, le=120.0)
     embedding_batch_size: int = Field(default=64, gt=0)
     query_embedding_cache_size: int = Field(default=256, ge=0, le=4_096)
     trace_max_files: int = Field(default=250, ge=1)
@@ -89,6 +93,12 @@ class FireLensConfig(BaseModel):
     trace_content: bool = False
     deployment_environment: Literal["local", "preview", "production"] = "local"
     trusted_proxy_platform: Literal["none", "vercel"] = "none"
+
+    @model_validator(mode="after")
+    def validate_adaptive_provider_bounds(self) -> Self:
+        if self.provider_adaptive_min_concurrency > self.provider_max_concurrency:
+            raise ValueError("provider adaptive minimum cannot exceed maximum concurrency")
+        return self
 
     @classmethod
     def from_env(cls, project_root: Path | None = None) -> FireLensConfig:
@@ -148,9 +158,27 @@ class FireLensConfig(BaseModel):
             public_request_deadline_seconds=_float_value(
                 setting("FIRELENS_PUBLIC_REQUEST_DEADLINE_SECONDS"), 45.0
             ),
+            provider_max_concurrency=_int_value(
+                setting("FIRELENS_PROVIDER_MAX_CONCURRENCY"), 4
+            ),
+            provider_adaptive_min_concurrency=_int_value(
+                setting("FIRELENS_PROVIDER_ADAPTIVE_MIN_CONCURRENCY"), 1
+            ),
+            provider_adaptive_success_window=_int_value(
+                setting("FIRELENS_PROVIDER_ADAPTIVE_SUCCESS_WINDOW"), 20
+            ),
             release_version=setting("FIRELENS_RELEASE_VERSION") or "1.5.0-rc.1",
-            build_commit=setting("VERCEL_GIT_COMMIT_SHA") or setting("FIRELENS_BUILD_COMMIT"),
-            deployment_id=setting("VERCEL_DEPLOYMENT_ID") or setting("VERCEL_URL"),
+            build_commit=(
+                setting("VERCEL_GIT_COMMIT_SHA")
+                or setting("RENDER_GIT_COMMIT")
+                or setting("FIRELENS_BUILD_COMMIT")
+            ),
+            deployment_id=(
+                setting("VERCEL_DEPLOYMENT_ID")
+                or setting("VERCEL_URL")
+                or setting("RENDER_INSTANCE_ID")
+                or setting("RENDER_SERVICE_ID")
+            ),
             deployment_environment=configured_environment,
             trusted_proxy_platform="vercel" if setting("VERCEL") else "none",
         )

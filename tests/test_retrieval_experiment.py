@@ -145,3 +145,9 @@ def test_paid_retrieval_row_records_provenance_and_latency() -> None:
     assert row["provider_tokens"]["total_tokens"] == 10
     assert row["provider_timings_ms"] == {"reranker": 12.5}
     assert row["wall_latency_ms"] == 20.0
+    assert row["rankings"] == {
+        "bm25": [],
+        "vector": [],
+        "fused": [],
+        "reranked": [],
+    }

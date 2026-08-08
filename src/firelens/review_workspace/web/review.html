@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>FireLens blind review desk</title>
+    <link rel="stylesheet" href="/review/review.css">
+    <script src="/review/review.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#review-main">Skip to review</a>
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">FireLens · blind human review</p>
+        <h1>Evidence desk</h1>
+      </div>
+      <p class="boundary">Local only · irreversible decisions · not release-qualifying</p>
+    </header>
+
+    <main id="review-main">
+      <section id="access-panel" class="access-panel" aria-labelledby="access-title">
+        <p class="step">01 / Identify</p>
+        <h2 id="access-title">Load your private capability</h2>
+        <p>
+          Select the capability file assigned to you. The token stays in this browser tab and is
+          never displayed or saved in browser storage.
+        </p>
+        <label class="file-control" for="capability-file">
+          Capability JSON
+          <input id="capability-file" type="file" accept="application/json,.json">
+        </label>
+        <button id="load-capability" type="button">Enter review desk</button>
+      </section>
+
+      <section id="desk" hidden aria-labelledby="desk-title">
+        <div class="session-strip">
+          <div>
+            <p class="step">02 / Review</p>
+            <h2 id="desk-title">Current session</h2>
+          </div>
+          <dl class="session-meta">
+            <div><dt>Reviewer</dt><dd id="actor-name">—</dd></div>
+            <div><dt>Role</dt><dd id="actor-role">—</dd></div>
+            <div><dt>Progress</dt><dd id="progress-count">—</dd></div>
+            <div><dt>State</dt><dd id="actor-state">—</dd></div>
+          </dl>
+        </div>
+
+        <div id="action-bar" class="action-bar">
+          <p id="action-guidance">Loading your assigned state…</p>
+          <div class="action-buttons">
+            <button id="open-case" type="button" hidden>Open next case</button>
+            <button id="lock-review" type="button" hidden>Lock completed review</button>
+            <button id="finalize-review" type="button" hidden>Finalize adjudication</button>
+          </div>
+        </div>
+
+        <article id="case-view" hidden aria-labelledby="case-title">
+          <header class="case-heading">
+            <p id="case-position" class="step">Case —</p>
+            <h2 id="case-title">Question</h2>
+            <p id="case-id" class="case-id"></p>
+          </header>
+
+          <section class="question-block" aria-labelledby="question-title">
+            <h3 id="question-title">Question</h3>
+            <p id="question-text"></p>
+          </section>
+
+          <section id="history-section" aria-labelledby="history-title" hidden>
+            <h3 id="history-title">Conversation history</h3>
+            <ol id="history-list" class="transcript"></ol>
+          </section>
+
+          <section class="rubric-section" aria-labelledby="rubric-title">
+            <h3 id="rubric-title">Review rubric</h3>
+            <div class="rubric-columns">
+              <div><h4>Required concepts</h4><ul id="required-concepts"></ul></div>
+              <div><h4>Forbidden claims</h4><ul id="forbidden-claims"></ul></div>
+              <div><h4>Required limitations</h4><ul id="required-limitations"></ul></div>
+            </div>
+          </section>
+
+          <section id="answer-section" aria-labelledby="answer-title" hidden>
+            <h3 id="answer-title">Candidate answer</h3>
+            <div id="answer-text" class="long-text"></div>
+          </section>
+
+          <section id="claims-section" aria-labelledby="claims-title" hidden>
+            <h3 id="claims-title">Atomic claims</h3>
+            <ol id="claims-list" class="evidence-list"></ol>
+          </section>
+
+          <section id="sources-section" aria-labelledby="sources-title" hidden>
+            <h3 id="sources-title">Local source context</h3>
+            <ol id="sources-list" class="evidence-list"></ol>
+          </section>
+
+          <section id="prior-review-section" aria-labelledby="prior-review-title" hidden>
+            <h3 id="prior-review-title">Anonymized reviewer material</h3>
+            <div id="prior-review-list"></div>
+          </section>
+
+          <div id="acknowledgement-bar" class="acknowledgement-bar">
+            <p>Read the complete case, including all source text, before acknowledging display.</p>
+            <button id="acknowledge-display" type="button">I have reviewed the complete display</button>
+          </div>
+
+          <form id="decision-form" hidden>
+            <div class="decision-heading">
+              <p class="step">03 / Decide</p>
+              <h3>Irreversible case decision</h3>
+              <p>Your submission cannot be edited or reopened.</p>
+            </div>
+            <div id="decision-checks"></div>
+            <fieldset id="claim-decisions" hidden>
+              <legend>Claim assessments</legend>
+              <div id="claim-decision-list"></div>
+            </fieldset>
+            <label for="disposition">Overall disposition</label>
+            <select id="disposition" required>
+              <option value="">Choose a disposition</option>
+              <option value="approve">Approve</option>
+              <option value="reject">Reject</option>
+              <option value="needs_discussion">Needs discussion</option>
+            </select>
+            <label for="decision-notes">Case notes</label>
+            <textarea id="decision-notes" maxlength="8000" rows="5"></textarea>
+            <button type="submit">Submit irreversible decision</button>
+          </form>
+        </article>
+      </section>
+    </main>
+
+    <div id="status-message" class="status-message" role="status" aria-live="polite"></div>
+  </body>
+</html>

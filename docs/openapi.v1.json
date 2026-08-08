@@ -162,6 +162,29 @@
         "title": "ClaimSupport",
         "type": "object"
       },
+      "CoarseResolvedLocation": {
+        "additionalProperties": false,
+        "properties": {
+          "latitude": {
+            "maximum": 61.0,
+            "minimum": 48.0,
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "maximum": -113.0,
+            "minimum": -140.0,
+            "title": "Longitude",
+            "type": "number"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "CoarseResolvedLocation",
+        "type": "object"
+      },
       "ConversationTurn": {
         "additionalProperties": false,
         "properties": {
@@ -321,6 +344,17 @@
             "title": "Provider Configured",
             "type": "boolean"
           },
+          "provider_state": {
+            "enum": [
+              "not_configured",
+              "configured_unprobed",
+              "available",
+              "degraded",
+              "circuit_open"
+            ],
+            "title": "Provider State",
+            "type": "string"
+          },
           "rate_limit_scope": {
             "const": "instance_local",
             "default": "instance_local",
@@ -345,9 +379,84 @@
           "corpus_ready",
           "index_ready",
           "provider_configured",
+          "provider_state",
           "release_version"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "LiveLayerStatus": {
+        "additionalProperties": false,
+        "description": "Source-level freshness and availability, including zero-result layers.",
+        "properties": {
+          "authority": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Authority",
+            "type": "string"
+          },
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "freshness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Freshness"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LiveResultKind"
+          },
+          "matching_result_count": {
+            "minimum": 0.0,
+            "title": "Matching Result Count",
+            "type": "integer"
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved At"
+          },
+          "source_updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Updated At"
+          },
+          "source_url": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "title": "Source Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "authority",
+          "source_url",
+          "available",
+          "matching_result_count"
+        ],
+        "title": "LiveLayerStatus",
         "type": "object"
       },
       "LiveMapResponse": {
@@ -367,6 +476,14 @@
             "format": "date-time",
             "title": "Generated At",
             "type": "string"
+          },
+          "layer_statuses": {
+            "items": {
+              "$ref": "#/components/schemas/LiveLayerStatus"
+            },
+            "maxItems": 3,
+            "title": "Layer Statuses",
+            "type": "array"
           },
           "limitations": {
             "items": {
@@ -395,6 +512,57 @@
           "results"
         ],
         "title": "LiveMapResponse",
+        "type": "object"
+      },
+      "LivePagination": {
+        "additionalProperties": false,
+        "properties": {
+          "has_next": {
+            "title": "Has Next",
+            "type": "boolean"
+          },
+          "has_previous": {
+            "title": "Has Previous",
+            "type": "boolean"
+          },
+          "page": {
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "returned_results": {
+            "maximum": 200.0,
+            "minimum": 0.0,
+            "title": "Returned Results",
+            "type": "integer"
+          },
+          "total_pages": {
+            "minimum": 0.0,
+            "title": "Total Pages",
+            "type": "integer"
+          },
+          "total_results": {
+            "minimum": 0.0,
+            "title": "Total Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "page",
+          "page_size",
+          "total_results",
+          "total_pages",
+          "returned_results",
+          "has_previous",
+          "has_next"
+        ],
+        "title": "LivePagination",
         "type": "object"
       },
       "LiveResult": {
@@ -585,6 +753,176 @@
           }
         },
         "title": "LocationInput",
+        "type": "object"
+      },
+      "MapViewport": {
+        "additionalProperties": false,
+        "properties": {
+          "east": {
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "East",
+            "type": "number"
+          },
+          "north": {
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "North",
+            "type": "number"
+          },
+          "south": {
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "South",
+            "type": "number"
+          },
+          "west": {
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "West",
+            "type": "number"
+          }
+        },
+        "required": [
+          "west",
+          "south",
+          "east",
+          "north"
+        ],
+        "title": "MapViewport",
+        "type": "object"
+      },
+      "NearMeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "layers": {
+            "items": {
+              "$ref": "#/components/schemas/LiveResultKind"
+            },
+            "maxItems": 3,
+            "title": "Layers",
+            "type": "array"
+          },
+          "location": {
+            "$ref": "#/components/schemas/LocationInput"
+          },
+          "page": {
+            "default": 1,
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "default": 100,
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Page Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "location"
+        ],
+        "title": "NearMeRequest",
+        "type": "object"
+      },
+      "NearMeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregate_freshness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AggregateFreshness"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "layer_statuses": {
+            "items": {
+              "$ref": "#/components/schemas/LiveLayerStatus"
+            },
+            "maxItems": 3,
+            "title": "Layer Statuses",
+            "type": "array"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "official_fallback_urls": {
+            "items": {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Official Fallback Urls",
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/LivePagination"
+          },
+          "requested_layers": {
+            "items": {
+              "$ref": "#/components/schemas/LiveResultKind"
+            },
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Requested Layers",
+            "type": "array"
+          },
+          "requested_radius_km": {
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Requested Radius Km",
+            "type": "number"
+          },
+          "resolved_location": {
+            "$ref": "#/components/schemas/CoarseResolvedLocation"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/LiveResult"
+            },
+            "maxItems": 200,
+            "title": "Results",
+            "type": "array"
+          },
+          "unavailable_layers": {
+            "items": {
+              "$ref": "#/components/schemas/LiveResultKind"
+            },
+            "title": "Unavailable Layers",
+            "type": "array"
+          },
+          "viewport": {
+            "$ref": "#/components/schemas/MapViewport"
+          }
+        },
+        "required": [
+          "generated_at",
+          "requested_radius_km",
+          "requested_layers",
+          "resolved_location",
+          "viewport",
+          "results",
+          "pagination",
+          "official_fallback_urls"
+        ],
+        "title": "NearMeResponse",
         "type": "object"
       },
       "PublicClaim": {
@@ -1136,6 +1474,114 @@
           }
         },
         "summary": "Live Map"
+      }
+    },
+    "/api/v1/live/nearby": {
+      "post": {
+        "operationId": "live_nearby_api_v1_live_nearby_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NearMeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NearMeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Live Nearby"
       }
     }
   }

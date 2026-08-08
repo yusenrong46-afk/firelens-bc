@@ -6,7 +6,11 @@ import asyncio
 import json
 from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
+from time import monotonic
+from typing import Any, Literal
 
 import httpx
 from pydantic import ValidationError
@@ -32,6 +36,39 @@ _CANONICAL_RESPONSE_MODELS: dict[str, frozenset[str]] = {
     ),
     "cohere/rerank-4-pro": frozenset({"cohere/rerank-4-pro", "rerank-v4.0-pro"}),
 }
+
+_ProviderStage = Literal[
+    "embedding",
+    "reranking",
+    "planning",
+    "context_generation",
+    "grounded_generation",
+    "background_generation",
+]
+_PROVIDER_STAGES: tuple[_ProviderStage, ...] = (
+    "embedding",
+    "reranking",
+    "planning",
+    "context_generation",
+    "grounded_generation",
+    "background_generation",
+)
+
+
+@dataclass
+class _CircuitState:
+    consecutive_failures: int = 0
+    open_until_monotonic: float = 0.0
+    probe_in_flight: bool = False
+    observed_success: bool = False
+
+
+@dataclass
+class _StagePressureState:
+    limit: int
+    active: int = 0
+    consecutive_successes: int = 0
+    condition: asyncio.Condition = field(default_factory=asyncio.Condition)
 
 
 def _wire_draft_schema(output_schema: dict[str, Any]) -> dict[str, Any]:
@@ -74,6 +111,23 @@ def _model_identity_matches(requested: str, returned: object) -> bool:
     return returned in allowed
 
 
+def _retry_after_seconds(value: str | None) -> float | None:
+    """Parse the standard Retry-After forms without trusting invalid values."""
+
+    if value is None:
+        return None
+    raw = value.strip()
+    if raw.isascii() and raw.isdigit():
+        return float(int(raw))
+    try:
+        retry_at = parsedate_to_datetime(raw)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if retry_at.tzinfo is None or retry_at.utcoffset() is None:
+        return None
+    return max(0.0, (retry_at.astimezone(UTC) - datetime.now(UTC)).total_seconds())
+
+
 class OpenRouterProvider:
     def __init__(
         self,
@@ -81,10 +135,18 @@ class OpenRouterProvider:
         *,
         client: httpx.AsyncClient | None = None,
     ) -> None:
+        if config.provider_adaptive_min_concurrency > config.provider_max_concurrency:
+            raise ValueError("provider adaptive minimum cannot exceed maximum concurrency")
         self.config = config
         self._owns_client = client is None
         self._client = client or httpx.AsyncClient(timeout=self.config.request_timeout_seconds)
         self._semaphore = asyncio.Semaphore(config.provider_max_concurrency)
+        self._circuit_lock = asyncio.Lock()
+        self._circuits = {stage: _CircuitState() for stage in _PROVIDER_STAGES}
+        self._stage_pressure = {
+            stage: _StagePressureState(limit=config.provider_max_concurrency)
+            for stage in _PROVIDER_STAGES
+        }
 
     async def aclose(self) -> None:
         """Close only the client created by this provider."""
@@ -116,11 +178,176 @@ class OpenRouterProvider:
             preferences["zdr"] = True
         return preferences
 
-    async def _post(self, endpoint: str, payload: dict[str, Any]) -> tuple[dict[str, Any], int]:
-        """Post with bounded same-model retries for transient failures only."""
+    def operational_state(
+        self,
+    ) -> Literal["configured_unprobed", "available", "degraded", "circuit_open"]:
+        """Return a content-free local provider state for readiness diagnostics."""
 
-        last_error: ProviderError | None = None
-        for attempt in range(1, self.config.provider_max_attempts + 1):
+        now = monotonic()
+        states = tuple(self._circuits.values())
+        if any(state.open_until_monotonic > now for state in states):
+            return "circuit_open"
+        if any(
+            state.consecutive_failures or state.open_until_monotonic or state.probe_in_flight
+            for state in states
+        ):
+            return "degraded"
+        if any(
+            state.limit < self.config.provider_max_concurrency
+            for state in self._stage_pressure.values()
+        ):
+            return "degraded"
+        if any(state.observed_success for state in states):
+            return "available"
+        return "configured_unprobed"
+
+    async def _admit_stage(self, stage: _ProviderStage) -> None:
+        async with self._circuit_lock:
+            state = self._circuits[stage]
+            now = monotonic()
+            if state.open_until_monotonic > now:
+                raise ProviderError(
+                    ProviderErrorKind.UNAVAILABLE,
+                    "The required OpenRouter stage is temporarily unavailable.",
+                    status_code=503,
+                    retryable=True,
+                    retry_after_seconds=state.open_until_monotonic - now,
+                )
+            if state.open_until_monotonic:
+                if state.probe_in_flight:
+                    raise ProviderError(
+                        ProviderErrorKind.UNAVAILABLE,
+                        "The required OpenRouter stage is temporarily unavailable.",
+                        status_code=503,
+                        retryable=True,
+                        retry_after_seconds=self.config.provider_circuit_cooldown_seconds,
+                    )
+                state.probe_in_flight = True
+
+    async def _record_stage_success(self, stage: _ProviderStage) -> None:
+        async with self._circuit_lock:
+            state = self._circuits[stage]
+            state.consecutive_failures = 0
+            state.open_until_monotonic = 0.0
+            state.probe_in_flight = False
+            state.observed_success = True
+        pressure = self._stage_pressure[stage]
+        async with pressure.condition:
+            if pressure.limit >= self.config.provider_max_concurrency:
+                pressure.consecutive_successes = 0
+                return
+            pressure.consecutive_successes += 1
+            if (
+                pressure.consecutive_successes >= self.config.provider_adaptive_success_window
+                and pressure.limit < self.config.provider_max_concurrency
+            ):
+                pressure.limit += 1
+                pressure.consecutive_successes = 0
+                pressure.condition.notify_all()
+
+    async def _record_stage_pressure_failure(
+        self,
+        stage: _ProviderStage,
+        error: ProviderError,
+    ) -> None:
+        pressure = self._stage_pressure[stage]
+        async with pressure.condition:
+            current = pressure.limit
+            if error.kind == ProviderErrorKind.RATE_LIMIT:
+                pressure.limit = max(
+                    self.config.provider_adaptive_min_concurrency,
+                    current // 2,
+                )
+            elif error.kind in {
+                ProviderErrorKind.TIMEOUT,
+                ProviderErrorKind.UNAVAILABLE,
+            }:
+                pressure.limit = max(
+                    self.config.provider_adaptive_min_concurrency,
+                    current - 1,
+                )
+            else:
+                return
+            pressure.consecutive_successes = 0
+
+    async def _acquire_stage_capacity(self, stage: _ProviderStage) -> None:
+        pressure = self._stage_pressure[stage]
+        async with pressure.condition:
+            await pressure.condition.wait_for(lambda: pressure.active < pressure.limit)
+            pressure.active += 1
+
+    async def _release_stage_capacity(self, stage: _ProviderStage) -> None:
+        pressure = self._stage_pressure[stage]
+        async with pressure.condition:
+            pressure.active -= 1
+            if pressure.active < 0:  # defensive invariant; never hide accounting drift
+                pressure.active = 0
+                raise RuntimeError("provider stage capacity accounting underflow")
+            pressure.condition.notify_all()
+
+    def backpressure_limits(self) -> dict[str, int]:
+        """Return content-free local limits for diagnostics and verification."""
+
+        return {stage: state.limit for stage, state in self._stage_pressure.items()}
+
+    async def _record_stage_failure(
+        self,
+        stage: _ProviderStage,
+        error: ProviderError,
+    ) -> None:
+        async with self._circuit_lock:
+            state = self._circuits[stage]
+            counts_toward_circuit = (
+                error.retryable or error.kind == ProviderErrorKind.INVALID_RESPONSE
+            )
+            if not counts_toward_circuit:
+                if state.probe_in_flight:
+                    state.consecutive_failures = 0
+                    state.open_until_monotonic = 0.0
+                    state.probe_in_flight = False
+                return
+            was_half_open = state.probe_in_flight or bool(state.open_until_monotonic)
+            state.probe_in_flight = False
+            state.consecutive_failures += 1
+            if (
+                was_half_open
+                or state.consecutive_failures >= self.config.provider_circuit_failure_threshold
+            ):
+                cooldown = max(
+                    self.config.provider_circuit_cooldown_seconds,
+                    error.retry_after_seconds or 0.0,
+                )
+                state.open_until_monotonic = monotonic() + cooldown
+
+    async def _abandon_stage_probe(self, stage: _ProviderStage) -> None:
+        async with self._circuit_lock:
+            self._circuits[stage].probe_in_flight = False
+
+    async def _post(
+        self,
+        stage: _ProviderStage,
+        endpoint: str,
+        payload: dict[str, Any],
+    ) -> tuple[dict[str, Any], int]:
+        await self._admit_stage(stage)
+        try:
+            result = await self._post_with_retries(stage, endpoint, payload)
+        except asyncio.CancelledError:
+            await self._abandon_stage_probe(stage)
+            raise
+        except ProviderError as exc:
+            await self._record_stage_failure(stage, exc)
+            raise
+        return result
+
+    async def _post_attempt(
+        self,
+        stage: _ProviderStage,
+        endpoint: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        await self._acquire_stage_capacity(stage)
+        try:
             try:
                 async with self._semaphore:
                     response = await self._client.post(
@@ -128,44 +355,93 @@ class OpenRouterProvider:
                         headers=self._headers(),
                         json=payload,
                     )
+                retry_after_seconds = _retry_after_seconds(response.headers.get("Retry-After"))
                 try:
                     body = response.json()
                 except json.JSONDecodeError as exc:
+                    if response.is_error:
+                        self._raise_provider_error(
+                            response.status_code,
+                            {},
+                            retry_after_seconds=retry_after_seconds,
+                        )
                     raise ProviderError(
                         ProviderErrorKind.INVALID_RESPONSE,
                         "OpenRouter returned a non-JSON response.",
                         status_code=response.status_code,
                     ) from exc
                 if not isinstance(body, dict):
+                    if response.is_error:
+                        self._raise_provider_error(
+                            response.status_code,
+                            {},
+                            retry_after_seconds=retry_after_seconds,
+                        )
                     raise ProviderError(
                         ProviderErrorKind.INVALID_RESPONSE,
                         "OpenRouter returned an unexpected response shape.",
                         status_code=response.status_code,
                     )
                 if response.is_error or body.get("error"):
-                    self._raise_provider_error(response.status_code, body)
-                return body, attempt
+                    self._raise_provider_error(
+                        response.status_code,
+                        body,
+                        retry_after_seconds=retry_after_seconds,
+                    )
+                return body
             except httpx.TimeoutException as exc:
-                last_error = ProviderError(
+                error = ProviderError(
                     ProviderErrorKind.TIMEOUT,
                     "OpenRouter request timed out.",
                     status_code=408,
                     retryable=True,
                 )
-                last_error.__cause__ = exc
+                error.__cause__ = exc
+                await self._record_stage_pressure_failure(stage, error)
+                raise error from exc
             except httpx.HTTPError as exc:
-                last_error = ProviderError(
+                error = ProviderError(
                     ProviderErrorKind.UNAVAILABLE,
                     "OpenRouter could not be reached.",
                     retryable=True,
                 )
-                last_error.__cause__ = exc
+                error.__cause__ = exc
+                await self._record_stage_pressure_failure(stage, error)
+                raise error from exc
+            except ProviderError as error:
+                await self._record_stage_pressure_failure(stage, error)
+                raise
+        finally:
+            await self._release_stage_capacity(stage)
+
+    async def _post_with_retries(
+        self,
+        stage: _ProviderStage,
+        endpoint: str,
+        payload: dict[str, Any],
+    ) -> tuple[dict[str, Any], int]:
+        """Post with bounded same-model retries for transient failures only."""
+
+        last_error: ProviderError | None = None
+        started = monotonic()
+        for attempt in range(1, self.config.provider_max_attempts + 1):
+            try:
+                body = await self._post_attempt(stage, endpoint, payload)
+                return body, attempt
             except ProviderError as exc:
                 last_error = exc
 
             if not last_error.retryable or attempt >= self.config.provider_max_attempts:
                 raise last_error
-            delay = self.config.provider_retry_base_seconds * (2 ** (attempt - 1))
+            delay = max(
+                self.config.provider_retry_base_seconds * (2 ** (attempt - 1)),
+                last_error.retry_after_seconds or 0.0,
+            )
+            remaining = self.config.public_request_deadline_seconds - (monotonic() - started)
+            if delay >= remaining:
+                # The server-requested delay cannot fit inside the public request budget.
+                # Fail immediately and let the caller return the typed provider outcome.
+                raise last_error
             if delay:
                 # Sleeping outside the semaphore lets another local request run.
                 await asyncio.sleep(delay)
@@ -175,7 +451,12 @@ class OpenRouterProvider:
         )
 
     @staticmethod
-    def _raise_provider_error(status: int, body: dict[str, Any]) -> None:
+    def _raise_provider_error(
+        status: int,
+        body: dict[str, Any],
+        *,
+        retry_after_seconds: float | None = None,
+    ) -> None:
         error = body.get("error") or {}
         if not isinstance(error, dict):
             error = {}
@@ -216,10 +497,12 @@ class OpenRouterProvider:
                 ProviderErrorKind.TIMEOUT,
                 ProviderErrorKind.UNAVAILABLE,
             },
+            retry_after_seconds=retry_after_seconds,
         )
 
     async def embed(self, texts: Sequence[str]) -> EmbeddingResponse:
         body, attempts = await self._post(
+            "embedding",
             "embeddings",
             {
                 "model": self.config.embedding_model,
@@ -234,17 +517,21 @@ class OpenRouterProvider:
             vectors = [row["embedding"] for row in rows]
             if len(vectors) != len(texts):
                 raise ValueError("embedding count mismatch")
-            return EmbeddingResponse(
+            response = EmbeddingResponse(
                 model=body.get("model", self.config.embedding_model),
                 vectors=vectors,
                 usage=body.get("usage") or {},
                 attempts=attempts,
             )
         except (KeyError, TypeError, ValueError, ValidationError) as exc:
-            raise ProviderError(
+            error = ProviderError(
                 ProviderErrorKind.INVALID_RESPONSE,
                 "OpenRouter returned invalid embeddings.",
-            ) from exc
+            )
+            await self._record_stage_failure("embedding", error)
+            raise error from exc
+        await self._record_stage_success("embedding")
+        return response
 
     async def rerank(
         self,
@@ -254,6 +541,7 @@ class OpenRouterProvider:
         top_n: int,
     ) -> RerankResponse:
         body, attempts = await self._post(
+            "reranking",
             "rerank",
             {
                 "model": self.config.rerank_model,
@@ -277,17 +565,21 @@ class OpenRouterProvider:
                 raise ValueError("rerank index out of range")
             if len(results) != min(top_n, len(documents)):
                 raise ValueError("rerank result count mismatch")
-            return RerankResponse(
+            response = RerankResponse(
                 model=body.get("model", self.config.rerank_model),
                 results=results,
                 usage=body.get("usage") or (body.get("meta") or {}).get("billed_units") or {},
                 attempts=attempts,
             )
         except (KeyError, TypeError, ValueError, ValidationError) as exc:
-            raise ProviderError(
+            error = ProviderError(
                 ProviderErrorKind.INVALID_RESPONSE,
                 "OpenRouter returned invalid rerank results.",
-            ) from exc
+            )
+            await self._record_stage_failure("reranking", error)
+            raise error from exc
+        await self._record_stage_success("reranking")
+        return response
 
     async def _chat_json(
         self,
@@ -296,8 +588,10 @@ class OpenRouterProvider:
         output_schema: dict[str, Any],
         schema_name: str,
         max_tokens: int,
+        stage: _ProviderStage,
     ) -> tuple[dict[str, Any], str, dict[str, Any], int]:
         body, attempts = await self._post(
+            stage,
             "chat/completions",
             {
                 "model": self.config.generation_model,
@@ -330,10 +624,12 @@ class OpenRouterProvider:
                 attempts,
             )
         except (IndexError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
-            raise ProviderError(
+            error = ProviderError(
                 ProviderErrorKind.INVALID_RESPONSE,
                 "OpenRouter returned invalid structured JSON.",
-            ) from exc
+            )
+            await self._record_stage_failure(stage, error)
+            raise error from exc
 
     async def plan(
         self,
@@ -346,15 +642,22 @@ class OpenRouterProvider:
             output_schema=output_schema,
             schema_name="firelens_query_plan",
             max_tokens=500,
+            stage="planning",
         )
         try:
             decision = PlanningDecision.model_validate(payload)
         except ValidationError as exc:
-            raise ProviderError(
+            error = ProviderError(
                 ProviderErrorKind.INVALID_RESPONSE,
                 "OpenRouter returned an invalid structured plan.",
-            ) from exc
-        return PlanningResponse(model=model, decision=decision, usage=usage, attempts=attempts)
+            )
+            await self._record_stage_failure("planning", error)
+            raise error from exc
+        response = PlanningResponse(
+            model=model, decision=decision, usage=usage, attempts=attempts
+        )
+        await self._record_stage_success("planning")
+        return response
 
     async def generate_contexts(
         self,
@@ -367,15 +670,22 @@ class OpenRouterProvider:
             output_schema=output_schema,
             schema_name="firelens_document_context",
             max_tokens=1_800,
+            stage="context_generation",
         )
         try:
             draft = DocumentContextDraft.model_validate(payload)
         except ValidationError as exc:
-            raise ProviderError(
+            error = ProviderError(
                 ProviderErrorKind.INVALID_RESPONSE,
                 "OpenRouter returned invalid document contexts.",
-            ) from exc
-        return DocumentContextResponse(model=model, draft=draft, usage=usage, attempts=attempts)
+            )
+            await self._record_stage_failure("context_generation", error)
+            raise error from exc
+        response = DocumentContextResponse(
+            model=model, draft=draft, usage=usage, attempts=attempts
+        )
+        await self._record_stage_success("context_generation")
+        return response
 
     async def generate_grounded(
         self,
@@ -388,15 +698,20 @@ class OpenRouterProvider:
             output_schema=_wire_draft_schema(output_schema),
             schema_name="firelens_grounded_answer",
             max_tokens=1_200,
+            stage="grounded_generation",
         )
         try:
             draft = _locally_type_draft(payload, answer_type="grounded")
         except (ValidationError, ValueError) as exc:
-            raise ProviderError(
+            error = ProviderError(
                 ProviderErrorKind.INVALID_RESPONSE,
                 "OpenRouter returned an invalid grounded answer.",
-            ) from exc
-        return GenerationResponse(model=model, draft=draft, usage=usage, attempts=attempts)
+            )
+            await self._record_stage_failure("grounded_generation", error)
+            raise error from exc
+        response = GenerationResponse(model=model, draft=draft, usage=usage, attempts=attempts)
+        await self._record_stage_success("grounded_generation")
+        return response
 
     async def generate_background(
         self,
@@ -409,12 +724,17 @@ class OpenRouterProvider:
             output_schema=_wire_draft_schema(output_schema),
             schema_name="firelens_background_answer",
             max_tokens=500,
+            stage="background_generation",
         )
         try:
             draft = _locally_type_draft(payload, answer_type="background")
         except (ValidationError, ValueError) as exc:
-            raise ProviderError(
+            error = ProviderError(
                 ProviderErrorKind.INVALID_RESPONSE,
                 "OpenRouter returned an invalid background answer.",
-            ) from exc
-        return GenerationResponse(model=model, draft=draft, usage=usage, attempts=attempts)
+            )
+            await self._record_stage_failure("background_generation", error)
+            raise error from exc
+        response = GenerationResponse(model=model, draft=draft, usage=usage, attempts=attempts)
+        await self._record_stage_success("background_generation")
+        return response

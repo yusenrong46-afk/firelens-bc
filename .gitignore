@@ -36,3 +36,4 @@ output/*
 tmp/
 .vercel
 .env*
+config/runtime_candidate.v1.json

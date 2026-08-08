@@ -182,6 +182,8 @@ provide them.
 - `GET /api/v1/health/live`: process liveness only.
 - `GET /api/v1/health/ready`: corpus, vector index, and provider configuration.
 - `GET /api/v1/live/map`: validated official incident, perimeter, and evacuation GeoJSON.
+- `POST /api/v1/live/nearby`: coarse-location viewport, bounded record page, explicit full-roster
+  pagination, official fallbacks, and source-level status for every requested live layer.
 - `POST /api/v1/search`: development-only plan/ranking/evidence inspection.
 - `GET /api/v1/debug/chunks/{chunk_id}`: development-only canonical chunk view.
 
@@ -345,10 +347,16 @@ that every concept required by a benchmark label was stated.
 ## 9. OpenRouter boundary and reliability
 
 One shared `httpx.AsyncClient` belongs to application lifespan and closes
-gracefully. Requests are non-streaming, provider concurrency is capped at four,
-supported parameters are required, data-collecting routes are denied, and
-fallback is disabled. `FIRELENS_REQUIRE_ZDR=true` makes ZDR a fail-closed
-requirement.
+gracefully. Requests are non-streaming, provider concurrency has a configurable
+global ceiling, and every provider stage has an independent adaptive ceiling.
+A 429 halves only that stage's capacity; timeout or unavailability subtracts
+one; a configured floor prevents starvation; and a configured sequence of
+fully validated successes restores one permit at a time. Retry sleeps occur
+outside both capacity controls, cancellation releases permits, and invalid
+successful payloads affect the circuit but are not misclassified as upstream
+load. These bounds are included in benchmark runtime identity. Supported
+parameters are required, data-collecting routes are denied, and fallback is
+disabled. `FIRELENS_REQUIRE_ZDR=true` makes ZDR a fail-closed requirement.
 
 Timeouts, 429 responses, and transient 5xx failures receive at most two retries
 after the first attempt, against the exact same requested model. Authentication,

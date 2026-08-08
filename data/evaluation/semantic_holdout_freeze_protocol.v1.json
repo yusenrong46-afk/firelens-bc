@@ -1,0 +1,31 @@
+{
+  "canonical_json": {
+    "allow_non_finite_numbers": false,
+    "duplicate_object_keys": "reject",
+    "hash_encoding": "utf8_compact_sorted_keys_no_ascii_escaping",
+    "identifier_lists": "sorted_unique",
+    "unicode_normalization": "NFC"
+  },
+  "frozen_at": "2026-08-06T12:00:00+00:00",
+  "minimums": {
+    "case_count": 25,
+    "question_family_count": 5,
+    "risk_labels_per_case": 1,
+    "source_commitments_per_case": 1
+  },
+  "privacy": {
+    "private_payload_must_be_outside_repository": true,
+    "private_values_in_console_output": false,
+    "write_normalized_private_payload": false
+  },
+  "protocol_version": "firelens_semantic_holdout_freeze_protocol.v1",
+  "status": "frozen",
+  "supported_contracts": {
+    "development_registry": "firelens_semantic_development_exposure_registry.v1",
+    "development_review_request": "firelens_semantic_development_exposure_freeze_request.v1",
+    "disjointness_audit": "firelens_semantic_disjointness_audit.v1",
+    "private_holdout_payload": "firelens_semantic_holdout_private_payload.v1",
+    "private_review_input": "firelens_semantic_holdout_review_input.v1",
+    "public_holdout_manifest": "firelens_semantic_holdout_manifest.v3"
+  }
+}

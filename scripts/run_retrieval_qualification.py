@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import subprocess
 from pathlib import Path
 
 from firelens.config import FireLensConfig
@@ -14,6 +15,17 @@ from firelens.retrieval_review import validate_retrieval_owner_review
 from firelens.runtime import load_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _commit() -> str | None:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return completed.stdout.strip() if completed.returncode == 0 else None
 
 
 async def _run(args: argparse.Namespace) -> int:
@@ -49,7 +61,7 @@ async def _run(args: argparse.Namespace) -> int:
         )
         return 2
 
-    config = FireLensConfig.from_env(ROOT)
+    config = FireLensConfig.from_env(ROOT).model_copy(update={"build_commit": _commit()})
     runtime = load_runtime(config)
     try:
         report = await run_frozen_retrieval_qualification(
@@ -85,7 +97,7 @@ async def _run(args: argparse.Namespace) -> int:
             sort_keys=True,
         )
     )
-    return 0 if all(item["complete"] for item in report["repetition_reports"]) else 2
+    return 0 if report["qualified"] else 2
 
 
 def main() -> None:

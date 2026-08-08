@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from typing import Literal
 
 from firelens.answering.service import StaticRAGService
 from firelens.config import FireLensConfig
@@ -38,11 +39,31 @@ class Runtime:
         corpus_ready = bool(self.chunks and self.corpus_version)
         index_ready = self.service is not None
         ready = corpus_ready and index_ready and self.provider_configured
+        provider_state: Literal[
+            "not_configured",
+            "configured_unprobed",
+            "available",
+            "degraded",
+            "circuit_open",
+        ] = "not_configured"
+        if self.provider_configured:
+            provider_state = "configured_unprobed"
+            state_reader = getattr(self.provider, "operational_state", None)
+            if callable(state_reader):
+                observed_state = state_reader()
+                if observed_state in {
+                    "configured_unprobed",
+                    "available",
+                    "degraded",
+                    "circuit_open",
+                }:
+                    provider_state = observed_state
         return HealthResponse(
             status="ready" if ready else "not_ready",
             corpus_ready=corpus_ready,
             index_ready=index_ready,
             provider_configured=self.provider_configured,
+            provider_state=provider_state,
             corpus_version=self.corpus_version,
             chunk_count=len(self.chunks) if self.chunks else None,
             release_version=self.config.release_version,

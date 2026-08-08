@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:surface": "node --test tests/frontend-surface-runner.test.mjs",
+    "qualify:surface": "npm run build && node scripts/qualify-frontend-surface.mjs",
     "build": "npm run typecheck && vite build && node scripts/prepare-sites-build.mjs",
     "preview": "vite preview",
     "test:sites": "node --test tests/sites-worker.test.mjs"
@@ -32,7 +34,11 @@
     "@types/leaflet": "^1.9.21",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "axe-core": "^4.12.1",
+    "brace-expansion": "5.0.9",
     "jsdom": "^29.1.1",
+    "js-yaml": "4.3.1",
+    "nanoid": "3.3.17",
     "openapi-typescript": "^7.13.0",
     "sharp": "^0.35.3",
     "typescript": "5.9.3",
@@ -40,9 +46,10 @@
     "vitest-axe": "^0.1.0"
   },
   "overrides": {
-    "brace-expansion": "5.0.8",
-    "js-yaml": "4.3.0",
+    "brace-expansion": "5.0.9",
+    "js-yaml": "4.3.1",
     "minimatch": "10.2.6",
+    "nanoid": "3.3.17",
     "postcss": "8.5.25"
   }
 }

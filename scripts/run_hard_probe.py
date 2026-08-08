@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from firelens.answering.intent import plan_query
 from firelens.api import create_app
-from firelens.benchmark import _usage_cost, _usage_total
+from firelens.benchmark import _usage_cost, _usage_total, benchmark_runtime_configuration
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     ConversationTurn,
@@ -440,6 +440,15 @@ async def run(args: argparse.Namespace) -> int:
     for row in results:
         by_section[row["section"]]["passed" if row["passed"] else "failed"] += 1
     failed_count = sum(1 for row in results if not row["passed"])
+    runtime_configuration = benchmark_runtime_configuration(config)
+    configuration_sha256 = hashlib.sha256(
+        json.dumps(
+            runtime_configuration,
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
     report = {
         "schema_version": "firelens_hard_probe_report.v1",
         "generated_at": datetime.now(UTC).isoformat(),
@@ -447,6 +456,19 @@ async def run(args: argparse.Namespace) -> int:
             "commit": _git_commit(),
             "dataset_sha256": file_sha256(args.dataset),
             "corpus_sha256": sha256_file(config.corpus_path),
+            "corpus_manifest_sha256": sha256_file(config.corpus_manifest_path),
+            "vector_matrix_sha256": sha256_file(config.vector_matrix_path),
+            "vector_manifest_sha256": sha256_file(config.vector_manifest_path),
+            "document_context_sha256": (
+                sha256_file(config.document_context_path)
+                if config.document_context_path.is_file()
+                else None
+            ),
+            "repairs_sha256": sha256_file(
+                config.project_root / "data/repairs/text_overrides.yaml"
+            ),
+            "configuration_sha256": configuration_sha256,
+            "runtime_configuration": runtime_configuration,
             "mode": args.mode,
             "provider_boundary": "offline_double" if args.mode == "offline" else "openrouter",
             "retrieval_strategy": config.retrieval_text_strategy.value,

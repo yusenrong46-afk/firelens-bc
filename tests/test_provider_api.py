@@ -6,6 +6,8 @@ import tempfile
 import unittest
 from datetime import UTC, datetime
 from pathlib import Path
+from time import monotonic
+from unittest.mock import AsyncMock, patch
 
 import httpx
 from pydantic import SecretStr
@@ -52,11 +54,340 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
                 }
             )
             async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-                response = await OpenRouterProvider(config, client=client).embed(["water"])
+                provider = OpenRouterProvider(config, client=client)
+                response = await provider.embed(["water"])
         self.assertEqual(response.attempts, 2)
         self.assertEqual(len(calls), 2)
         self.assertEqual(calls[0]["model"], calls[1]["model"])
         self.assertFalse(calls[0]["provider"]["allow_fallbacks"])
+        self.assertEqual(provider.backpressure_limits()["embedding"], 2)
+
+    async def test_rate_limit_honors_retry_after_outside_the_semaphore(self) -> None:
+        calls = 0
+
+        def handler(_request: httpx.Request) -> httpx.Response:
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                return httpx.Response(
+                    429,
+                    headers={"Retry-After": "2"},
+                    json={"error": {"code": 429}},
+                )
+            return httpx.Response(
+                200,
+                json={
+                    "model": "text-embedding-3-small",
+                    "data": [{"index": 0, "embedding": [1.0, 0.0]}],
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "embedding_model": "openai/text-embedding-3-small",
+                    "provider_retry_base_seconds": 0,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                with patch(
+                    "firelens.providers.openrouter.asyncio.sleep", new_callable=AsyncMock
+                ) as sleep:
+                    response = await OpenRouterProvider(config, client=client).embed(["water"])
+
+        self.assertEqual(response.attempts, 2)
+        self.assertEqual(calls, 2)
+        sleep.assert_awaited_once_with(2.0)
+
+    async def test_stage_backpressure_reduces_concurrency_and_recovers_additively(
+        self,
+    ) -> None:
+        failing = True
+        active = 0
+        max_active = 0
+
+        async def handler(_request: httpx.Request) -> httpx.Response:
+            nonlocal active, max_active
+            if failing:
+                return httpx.Response(429, json={"error": {"code": 429}})
+            active += 1
+            max_active = max(max_active, active)
+            await asyncio.sleep(0.01)
+            active -= 1
+            return httpx.Response(
+                200,
+                json={
+                    "model": "text-embedding-3-small",
+                    "data": [{"index": 0, "embedding": [1.0, 0.0]}],
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "embedding_model": "openai/text-embedding-3-small",
+                    "provider_max_attempts": 1,
+                    "provider_max_concurrency": 2,
+                    "provider_adaptive_min_concurrency": 1,
+                    "provider_adaptive_success_window": 2,
+                    "provider_circuit_failure_threshold": 10,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                provider = OpenRouterProvider(config, client=client)
+                with self.assertRaises(ProviderError):
+                    await provider.embed(["water"])
+
+                self.assertEqual(provider.backpressure_limits()["embedding"], 1)
+                self.assertEqual(provider.backpressure_limits()["reranking"], 2)
+                self.assertEqual(provider.operational_state(), "degraded")
+
+                failing = False
+                responses = await asyncio.gather(
+                    provider.embed(["water"]),
+                    provider.embed(["water"]),
+                )
+
+        self.assertEqual(max_active, 1)
+        self.assertEqual([response.vectors for response in responses], [[[1.0, 0.0]]] * 2)
+        self.assertEqual(provider.backpressure_limits()["embedding"], 2)
+        self.assertEqual(provider.operational_state(), "available")
+
+    async def test_cancellation_releases_adaptive_stage_capacity(self) -> None:
+        started = asyncio.Event()
+        never = asyncio.Event()
+
+        async def handler(_request: httpx.Request) -> httpx.Response:
+            started.set()
+            await never.wait()
+            raise AssertionError("cancelled provider request unexpectedly resumed")
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "embedding_model": "openai/text-embedding-3-small",
+                    "provider_max_attempts": 1,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                provider = OpenRouterProvider(config, client=client)
+                task = asyncio.create_task(provider.embed(["water"]))
+                await started.wait()
+                task.cancel()
+                with self.assertRaises(asyncio.CancelledError):
+                    await task
+
+        self.assertEqual(provider._stage_pressure["embedding"].active, 0)
+        self.assertEqual(
+            provider.backpressure_limits()["embedding"],
+            config.provider_max_concurrency,
+        )
+
+    async def test_retry_after_larger_than_public_budget_fails_without_sleeping(self) -> None:
+        calls = 0
+
+        def handler(_request: httpx.Request) -> httpx.Response:
+            nonlocal calls
+            calls += 1
+            return httpx.Response(
+                429,
+                headers={"Retry-After": "60"},
+                json={"error": {"code": 429}},
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "public_request_deadline_seconds": 0.1,
+                    "provider_retry_base_seconds": 0,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                with patch(
+                    "firelens.providers.openrouter.asyncio.sleep", new_callable=AsyncMock
+                ) as sleep:
+                    with self.assertRaises(ProviderError) as raised:
+                        await OpenRouterProvider(config, client=client).embed(["water"])
+
+        self.assertEqual(calls, 1)
+        self.assertEqual(raised.exception.kind.value, "rate_limit")
+        self.assertEqual(raised.exception.retry_after_seconds, 60.0)
+        sleep.assert_not_awaited()
+
+    async def test_non_json_rate_limit_still_uses_status_and_retry_after(self) -> None:
+        def handler(_request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                429,
+                headers={"Retry-After": "60"},
+                text="private upstream response",
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "provider_retry_base_seconds": 0,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                with self.assertRaises(ProviderError) as raised:
+                    await OpenRouterProvider(config, client=client).embed(["water"])
+
+        self.assertEqual(raised.exception.kind.value, "rate_limit")
+        self.assertEqual(raised.exception.retry_after_seconds, 60.0)
+        self.assertNotIn("private", str(raised.exception))
+
+    async def test_stage_circuit_opens_after_bounded_operation_failures(self) -> None:
+        calls = 0
+
+        def handler(_request: httpx.Request) -> httpx.Response:
+            nonlocal calls
+            calls += 1
+            return httpx.Response(503, json={"error": {"code": 503}})
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "embedding_model": "openai/text-embedding-3-small",
+                    "provider_max_attempts": 1,
+                    "provider_retry_base_seconds": 0,
+                    "provider_circuit_failure_threshold": 2,
+                    "provider_circuit_cooldown_seconds": 60,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                provider = OpenRouterProvider(config, client=client)
+                self.assertEqual(provider.operational_state(), "configured_unprobed")
+                with self.assertRaises(ProviderError):
+                    await provider.embed(["water"])
+                self.assertEqual(provider.operational_state(), "degraded")
+                with self.assertRaises(ProviderError):
+                    await provider.embed(["water"])
+                self.assertEqual(provider.operational_state(), "circuit_open")
+                with self.assertRaises(ProviderError) as blocked:
+                    await provider.embed(["water"])
+
+        self.assertEqual(calls, 2)
+        self.assertEqual(blocked.exception.kind.value, "unavailable")
+        self.assertGreater(blocked.exception.retry_after_seconds or 0, 0)
+
+    async def test_circuit_isolated_by_stage_and_half_open_success_recovers(self) -> None:
+        embedding_calls = 0
+        rerank_calls = 0
+        embedding_succeeds = False
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal embedding_calls, rerank_calls
+            if request.url.path.endswith("/rerank"):
+                rerank_calls += 1
+                return httpx.Response(
+                    200,
+                    json={
+                        "model": "rerank-v4.0-pro",
+                        "results": [{"index": 0, "relevance_score": 0.9}],
+                    },
+                )
+            embedding_calls += 1
+            if embedding_succeeds:
+                return httpx.Response(
+                    200,
+                    json={
+                        "model": "text-embedding-3-small",
+                        "data": [{"index": 0, "embedding": [1.0, 0.0]}],
+                    },
+                )
+            return httpx.Response(503, json={"error": {"code": 503}})
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "embedding_model": "openai/text-embedding-3-small",
+                    "provider_max_attempts": 1,
+                    "provider_retry_base_seconds": 0,
+                    "provider_adaptive_min_concurrency": 4,
+                    "provider_circuit_failure_threshold": 2,
+                    "provider_circuit_cooldown_seconds": 60,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                provider = OpenRouterProvider(config, client=client)
+                for _ in range(2):
+                    with self.assertRaises(ProviderError):
+                        await provider.embed(["water"])
+                rerank = await provider.rerank("water", ["document"], top_n=1)
+                self.assertEqual(rerank.results[0].index, 0)
+                self.assertEqual(provider.operational_state(), "circuit_open")
+
+                embedding_succeeds = True
+                provider._circuits["embedding"].open_until_monotonic = monotonic() - 1
+                recovered = await provider.embed(["water"])
+
+        self.assertEqual(recovered.vectors, [[1.0, 0.0]])
+        self.assertEqual(provider.operational_state(), "available")
+        self.assertEqual(embedding_calls, 3)
+        self.assertEqual(rerank_calls, 1)
+
+    async def test_invalid_provider_payload_degrades_and_then_opens_stage(self) -> None:
+        calls = 0
+
+        def handler(_request: httpx.Request) -> httpx.Response:
+            nonlocal calls
+            calls += 1
+            return httpx.Response(
+                200,
+                json={
+                    "model": "substituted/model",
+                    "data": [{"index": 0, "embedding": [1.0, 0.0]}],
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "embedding_model": "openai/text-embedding-3-small",
+                    "provider_max_attempts": 1,
+                    "provider_circuit_failure_threshold": 2,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                provider = OpenRouterProvider(config, client=client)
+                with self.assertRaises(ProviderError):
+                    await provider.embed(["water"])
+                self.assertEqual(provider.operational_state(), "degraded")
+                with self.assertRaises(ProviderError):
+                    await provider.embed(["water"])
+                self.assertEqual(provider.operational_state(), "circuit_open")
+                with self.assertRaises(ProviderError):
+                    await provider.embed(["water"])
+
+        self.assertEqual(calls, 2)
+        self.assertEqual(
+            provider.backpressure_limits()["embedding"],
+            config.provider_max_concurrency,
+        )
 
     async def test_timeout_stops_after_three_same_model_attempts(self) -> None:
         calls = 0
@@ -358,6 +689,24 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ApiTests(unittest.IsolatedAsyncioTestCase):
+    async def test_readiness_exposes_provider_circuit_without_leaking_details(self) -> None:
+        class CircuitOpenProvider(FakeProvider):
+            def operational_state(self) -> str:
+                return "circuit_open"
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            runtime.provider = CircuitOpenProvider()
+            app = create_app(config, runtime=runtime)
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                health = await client.get("/api/v1/health/ready")
+
+        self.assertEqual(health.status_code, 200)
+        self.assertEqual(health.json()["provider_state"], "circuit_open")
+        self.assertNotIn("model", health.text.casefold())
+        self.assertNotIn("key", health.text.casefold())
+
     async def test_public_deadline_cancels_every_provider_stage(self) -> None:
         class StageBlockingProvider(FakeProvider):
             def __init__(self, stage: str) -> None:
@@ -418,7 +767,10 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                 provider = StageBlockingProvider(stage)
                 runtime, _, config = await make_runtime(Path(directory), provider=provider)
                 provider.armed = True
-                config = config.model_copy(update={"public_request_deadline_seconds": 0.02})
+                # Leave enough time for the repair case to emit its deliberately invalid
+                # first draft and enter the second provider call. The assertion is about
+                # cancellation propagation, not scheduler performance on a 20 ms budget.
+                config = config.model_copy(update={"public_request_deadline_seconds": 0.1})
                 runtime.config = config
                 app = create_app(config, runtime=runtime)
                 transport = httpx.ASGITransport(app=app)
@@ -501,6 +853,59 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.json()["error_kind"], "timeout")
         self.assertTrue(live_service.cancelled)
 
+    async def test_public_deadline_cancels_slow_nearby_work(self) -> None:
+        class SlowNearbyService:
+            def __init__(self) -> None:
+                self.cancelled = False
+
+            async def nearby_page(self, *args, **kwargs):
+                try:
+                    await asyncio.sleep(1)
+                except asyncio.CancelledError:
+                    self.cancelled = True
+                    raise
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            config = config.model_copy(update={"public_request_deadline_seconds": 0.01})
+            runtime.config = config
+            live_service = SlowNearbyService()
+            app = create_app(config, runtime=runtime, live_service=live_service)
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                response = await client.post(
+                    "/api/v1/live/nearby",
+                    json={"location": {"label": "Vancouver"}},
+                )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["error_kind"], "timeout")
+        self.assertTrue(live_service.cancelled)
+
+    async def test_nearby_place_failure_is_typed_and_sanitized(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            self.assertEqual(request.url.host, "geocoder.api.gov.bc.ca")
+            return httpx.Response(200, json={"features": []})
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as upstream:
+                live_service = LiveDataService(client=upstream)
+                app = create_app(config, runtime=runtime, live_service=live_service)
+                transport = httpx.ASGITransport(app=app)
+                async with httpx.AsyncClient(
+                    transport=transport, base_url="http://test"
+                ) as client:
+                    response = await client.post(
+                        "/api/v1/live/nearby",
+                        json={"location": {"label": "Unknown community"}},
+                    )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["error_kind"], "live_not_found")
+        self.assertEqual(response.json()["message"], "the place label could not be resolved")
+        self.assertFalse(response.json()["retryable"])
+
     async def test_public_deadline_cancels_slow_live_work(self) -> None:
         class SlowLiveService:
             def __init__(self) -> None:
@@ -541,14 +946,22 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             app = create_app(config, runtime=runtime)
             transport = httpx.ASGITransport(app=app)
             async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-                response = await client.post(
-                    "/api/v1/ask",
-                    content=b"{}",
-                    headers={"content-length": "2048", "content-type": "application/json"},
-                )
+                responses = [
+                    await client.post(
+                        path,
+                        content=b"{}",
+                        headers={
+                            "content-length": "2048",
+                            "content-type": "application/json",
+                        },
+                    )
+                    for path in ("/api/v1/ask", "/api/v1/live/nearby")
+                ]
 
-        self.assertEqual(response.status_code, 413)
-        self.assertEqual(response.json()["error_kind"], "request_too_large")
+        self.assertTrue(all(response.status_code == 413 for response in responses))
+        self.assertTrue(
+            all(response.json()["error_kind"] == "request_too_large" for response in responses)
+        )
 
     async def test_chunked_oversized_body_stops_consuming_after_limit(self) -> None:
         yielded = 0
@@ -723,6 +1136,26 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                     invalid_bbox = await client.get(
                         "/api/v1/live/map", params={"bbox": "-181,49,-120,60"}
                     )
+                    nearby = await client.post(
+                        "/api/v1/live/nearby",
+                        json={
+                            "location": {
+                                "latitude": 49.5,
+                                "longitude": -123.5,
+                                "radius_km": 25,
+                            },
+                            "layers": ["incident"],
+                            "page": 1,
+                            "page_size": 1,
+                        },
+                    )
+                    duplicate_layers = await client.post(
+                        "/api/v1/live/nearby",
+                        json={
+                            "location": {"label": "Vancouver"},
+                            "layers": ["incident", "incident"],
+                        },
+                    )
 
         self.assertEqual(chat.status_code, 200)
         self.assertEqual(chat.json()["response_mode"], "live")
@@ -741,8 +1174,30 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(row["source_url"])
             self.assertTrue(row["source_updated_at"])
             self.assertTrue(row["retrieved_at"])
+        map_layer_status = map_response.json()["layer_statuses"][0]
+        self.assertEqual(map_layer_status["kind"], "incident")
+        self.assertTrue(map_layer_status["available"])
+        self.assertEqual(map_layer_status["matching_result_count"], 1)
+        self.assertTrue(map_layer_status["source_updated_at"])
         self.assertEqual(unknown.status_code, 400)
         self.assertEqual(invalid_bbox.status_code, 400)
+        self.assertEqual(nearby.status_code, 200)
+        nearby_payload = nearby.json()
+        self.assertEqual(nearby_payload["requested_radius_km"], 25)
+        self.assertEqual(nearby_payload["requested_layers"], ["incident"])
+        self.assertEqual(
+            nearby_payload["resolved_location"], {"latitude": 49.5, "longitude": -123.5}
+        )
+        self.assertEqual(nearby_payload["pagination"]["total_results"], 1)
+        self.assertEqual(nearby_payload["pagination"]["returned_results"], 1)
+        self.assertEqual(nearby_payload["results"][0]["result_id"], "incident:17")
+        self.assertEqual(
+            nearby_payload["layer_statuses"][0]["matching_result_count"],
+            nearby_payload["pagination"]["total_results"],
+        )
+        self.assertTrue(nearby_payload["layer_statuses"][0]["available"])
+        self.assertTrue(nearby_payload["official_fallback_urls"])
+        self.assertEqual(duplicate_layers.status_code, 400)
 
     async def test_public_request_bounds_and_build_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -765,6 +1220,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(health.json()["release_version"], "1.5.0-test")
                 self.assertEqual(health.json()["build_commit"], "abc123")
                 self.assertEqual(health.json()["rate_limit_scope"], "instance_local")
+                self.assertEqual(health.json()["provider_state"], "configured_unprobed")
 
                 first = await client.post(
                     "/api/v1/ask", json={"question": "Hello"}, headers=headers
@@ -773,7 +1229,9 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                     "/api/v1/ask", json={"question": "Hello"}, headers=headers
                 )
                 denied = await client.post(
-                    "/api/v1/ask", json={"question": "Hello"}, headers=headers
+                    "/api/v1/live/nearby",
+                    json={"location": {"label": "Vancouver"}},
+                    headers=headers,
                 )
                 self.assertEqual(first.headers["x-ratelimit-scope"], "instance-local")
                 self.assertEqual(second.headers["x-ratelimit-remaining"], "0")

@@ -1,0 +1,221 @@
+schema_version: firelens_release_gate_ledger.v1
+release: V1.5-2
+updated_at: "2026-08-08T13:44:37-07:00"
+status_values: [not_run, pass, fail, waived]
+waiver_policy: >
+  A waiver must name the owner, rationale, expiry, and compensating control. No
+  safety, semantic-holdout, sealed-retrieval, identity, critical accessibility,
+  runtime-artifact-boundary, or promotion gate may be waived for V1.5-2.
+
+gates:
+  - id: G0-benchmark-ratification
+    status: fail
+    owner: product-owner
+    artifact: docs/adr/0010-evaluation-dataset-roles-and-sealed-gates.md
+    expiry: null
+    observation: >
+      V2 disposition remains open and the source-disjoint semantic holdout is
+      still planned rather than an available identity-bound sealed role. The v2
+      worktree now enforces execution-environment matching, UX cohort/device
+      comparability, and raw deployment hash/content binding, but no eligible
+      capture proves them. The tracked before-snapshot seal, exact
+      before-to-seal-to-after Git ancestry, and semantic/retrieval owner-review
+      recomputation are implemented, but no eligible seal exists. Development/
+      sealed retrieval and semantic-holdout case-level recomputation are
+      implemented but have no eligible real artifacts.
+      The automated 30-row surface, CSS/layout, map-parity/privacy, emitted-asset,
+      and lab-performance evidence path is implemented and has a diagnostic run;
+      the automated protocol is still provisional. The frozen after-only manual
+      frontend contract and validator now require three distinct named roles, 30
+      exact atomic checks, five environment profiles across ten states, hash-bound
+      retained evidence, candidate URL/commit identity, timestamp ordering, and
+      zero open findings. No real named manual review has been performed. One
+      uninterrupted repository verification passed on 2026-08-08 with 589 Python tests, 15
+      frontend tests, 4 Sites tests, the production build, and all 18 Playwright
+      flows. After the qualification verifier was hardened, the canonical static,
+      type, 591-Python-test, frontend, build, and Sites stages passed again; the 18
+      Playwright flows then passed separately after the sandbox-only localhost bind
+      restriction was removed.
+
+  - id: G0-before-baseline
+    status: not_run
+    owner: product-owner
+    artifact: output/benchmark/v1_5_2/before/snapshot.json
+    expiry: null
+    observation: >
+      Not run. The existing ignored snapshot uses legacy schema v1 and has no
+      tracked digest attestation. Paid budget, named reviewers, real participant
+      sessions, a ratified active sealed set, and a clean committed worktree are
+      missing.
+
+  - id: G1-foundation
+    status: not_run
+    owner: engineering
+    artifact: null
+    expiry: null
+    observation: >
+      Durable sink selection and distributed-control publication remain. A
+      content-free operational-event v2 schema now separates provider stages
+      from provider model IDs and records status, validation disposition,
+      evidence/claim/live counts, corpus, release, commit, and environment for a
+      platform log drain; no durable drain/retention proof exists yet. Vercel
+      function inclusion is now narrowed from data/** to the corpus, vector,
+      conditional document context, repair registry, runtime configuration, and
+      built client paths. Its build hook writes a commit/corpus/vector-bound
+      runtime candidate. Docker now includes app.py, the shared runtime contract,
+      repair registry, generator, and commit-bound runtime candidate; Render's
+      documented RENDER_GIT_COMMIT build argument and runtime identity are wired.
+      Document context remains conditional and is not required by the current
+      metadata_context_v1 index. The shared runtime allowlist,
+      standalone verifier, and required-after-only capture-owned inventory gate
+      now exist and are hash-frozen by the benchmark. The gate scans isolated
+      Vercel and Docker staged roots before and after all capture commands and
+      recomputes required/prohibited paths, logical identity, and candidate-
+      commit identity. It now rejects invalid vector bytes, loose corpus/vector
+      schemas, fake entrypoints, hard links, artifact mutation, unreachable Vite
+      entries, and side-effect/worker import omissions. Its assurance remains
+      staged_logical_bundle: platform export provenance and observed runtime
+      candidate identity are explicitly false, so release_qualified remains
+      false. Static tests and candidate generation pass, but Docker is not
+      installed locally, no real platform-export pair has passed the inventory,
+      and no real raw platform rate-limit or rollback artifact has been captured.
+      OpenRouter retries now parse numeric or HTTP-date Retry-After values, sleep
+      outside the local semaphore, and fail immediately when the required delay
+      cannot fit within the public deadline. The official place adapter now
+      classifies sanitized timeout, HTTP, connection, invalid-data, not-found,
+      and out-of-BC outcomes while allowing cancellation to propagate. Live map
+      fetches use a bounded upstream semaphore and independent layers run
+      concurrently without changing per-layer fail-closed behavior. Provider
+      stages now have isolated local circuit state: final retryable or invalid-
+      response operation failures open a bounded cooldown, one half-open probe
+      is admitted, and a fully validated success resets only that stage. Public
+      readiness exposes only a content-free configured/unprobed, available,
+      degraded, or circuit-open state. Stage-local adaptive backpressure now
+      halves capacity on 429, subtracts one on timeout/unavailability, respects
+      a configured floor, and restores one permit after a configured run of
+      validated successes. Retry sleeps and cancellation release capacity;
+      malformed successful payloads do not reduce load capacity. A real
+      provider canary and production pressure telemetry proof still remain.
+      A manual-only, pinned candidate workflow now runs the full zero-cost
+      verifier and packages CycloneDX 1.6 SBOM, in-toto/SLSA v1 provenance,
+      dependency/license reports, benchmark/ledger copies, and a closed hash
+      manifest. Its verifier rejects checkout drift, symlinks, changed or extra
+      files, identity mismatches, vulnerable dependencies, and prohibited
+      licenses. Live local scans initially found three Python vulnerabilities
+      and four high npm vulnerabilities. Exact lock upgrades produced no known
+      Python vulnerabilities and zero npm vulnerabilities; an ignored local
+      candidate bundle then verified. This is local dirty-worktree evidence,
+      not a CI artifact, signed attestation, container/infrastructure scan, or
+      frozen release candidate.
+      The new typed nearby endpoint binds coarse resolved location, radius,
+      requested layers, viewport, freshness, unavailable layers, official
+      fallbacks, and explicit bounded pagination. It returns at most 200 records
+      per page without hiding the total matching roster. Per-feature and
+      per-response geometry byte ceilings fail closed before caching. Live-
+      qualification schema v2 now binds a canonical coarse-location Near Me
+      request and retains pagination, viewport, returned-record, unavailable-
+      layer, and official-fallback evidence for independent recomputation;
+      production live SLO evidence remains. A separate hash-bound diagnostic
+      harness now measures cold/cached p50/p95, availability, freshness
+      coverage, stale-layer observations, and authoritative layer-update age by layer and three fixed BC
+      regions. Its thresholds are deliberately null and it cannot qualify until
+      owner ratification and scheduled production capture.
+
+  - id: G2-evidence-corpus
+    status: not_run
+    owner: evidence-owner
+    artifact: null
+    expiry: null
+    observation: Evidence compiler, repair decisions, source lifecycle, and novel-document gates remain.
+
+  - id: G2a-human-review-workspace
+    status: not_run
+    owner: evaluation-owner
+    artifact: docs/protocols/V1_5_2_HUMAN_REVIEW_RUNBOOK.md
+    expiry: null
+    observation: >
+      A nonqualifying backend scaffold now provides strict blind input imports,
+      deterministic actor orders, isolated two-reviewer/adjudicator state,
+      display acknowledgement, irreversible decisions, private hash-chained
+      journals, per-event receipts, and input identity rechecks. Replay is
+      read-only and storage rejects symlinks, hard links, root/path replacement,
+      truncation, and receipt/journal count disagreement. A loopback-only API,
+      per-actor private capability files, same-origin browser client, bounded
+      request handling, same-actor open-case recovery, immutable nonqualifying
+      final evidence export, verifier, preparation/resume CLI, and five-track
+      human-review runbook now exist. Finalized evidence can now produce an
+      immutable content-free agreement/adjudication analysis that recomputes
+      percent agreement, Cohen's kappa where defined, disagreement/finding
+      rosters, adjudicator alignment, and unsupported/unclear claim counts from
+      the three actors' decision-event hashes. The verifier recomputes every
+      metric and the output excludes questions, answers, source text, and notes;
+      it remains explicitly nonqualifying. Preparation now rejects placeholder,
+      duplicated, or model identities in human roles. A 47-case retrieval dry-run workspace was
+      prepared and its reviewer-A context was reproduced over loopback without
+      exposing rankings or capability contents. This remains wiring evidence,
+      not human evidence. A coordinator-only session-status command now rechecks frozen inputs and
+      all journal/receipt state before reporting content-free per-role progress;
+      it never prints capability tokens or decision content. A fail-closed
+      conversation/retrieval adapter now requires an independently authored
+      storage attestation from a fourth named human, external final-head
+      retention, zero adjudicated findings, and an atomic content-free package
+      binding every actor/journal head plus source, export, analysis,
+      attestation, sidecar, and summary hashes. Benchmark capture rejects the
+      legacy single-reviewer sidecars without this manifest. No independent
+      storage review, external anchor, qualifying package, confirmed V3
+      retrieval set, or real named human session exists, so the gate remains
+      not_run.
+
+  - id: G3-experiment-selection
+    status: not_run
+    owner: product-owner
+    artifact: data/evaluation/v1_5_2_experiment_registry.yaml
+    expiry: null
+    observation: No paid experiment budget is approved and no candidate is selected.
+
+  - id: G4-product-ux
+    status: not_run
+    owner: product-owner
+    artifact: null
+    expiry: null
+    observation: >
+      Frontend and Near Me implementation plus real paired participant and named
+      manual WCAG/product-safety evidence remain. The manual protocol/validator is
+      implemented, and a private no-overwrite generator now emits the exact blank
+      30-check/50-cell packet for three distinct named people without inventing
+      outcomes. The UX v3 packet generator emits the frozen 12-person/60-attempt
+      matrix; its validator derives completion from criterion/error codes, permits
+      multiple access methods, applies the 120-second failed Near Me cap, and
+      reports Wilson, worst-slice, and seeded bootstrap evidence. No real
+      specialist, adjudicator, or participant bundle exists. The diagnostic
+      initial automated surface run completed 30/30 rows and qualified 0/30. An
+      accessibility-foundation diagnostic then qualified 18/30. The final local-
+      vector map diagnostic passes all 30/30 automated rows, every functional
+      journey, and both lab-performance profiles with zero direct third-party
+      tile calls, axe A/AA findings, undersized text/targets, styled-control
+      failures, or map/list parity failures. All ten fixture records remain
+      available in the accessible list. The earlier 12 map-bearing failures came
+      from direct OSM requests; that implementation defect is now removed by a
+      locally bundled simplified Government of BC boundary with
+      visible source/licence disclosure. The protocol remains provisional, the
+      boundary is orientation context only, and UX access labels plus automated
+      scans are not human accessibility or product-safety proof.
+
+  - id: G5-frozen-candidate
+    status: not_run
+    owner: release-owner
+    artifact: output/benchmark/v1_5_2/comparison.json
+    expiry: null
+    observation: >
+      Requires every paired and after-only gate on one unchanged candidate,
+      exact case-level aggregate recomputation, matching execution environments,
+      comparable UX cohorts/devices, and hash/content-bound raw rate-limit and
+      rollback artifacts. Both built deployment inventories must match the shared
+      allowlist and exclude evaluation/owner-review/sealed payloads.
+
+  - id: G6-promotion
+    status: not_run
+    owner: product-owner
+    artifact: null
+    expiry: null
+    observation: Requires explicit approval, artifact-preserving promotion, production identity, and observation.

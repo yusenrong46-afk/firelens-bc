@@ -164,15 +164,30 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             set(event),
             {
+                "schema_version",
                 "event",
                 "trace_id",
                 "route",
                 "response_mode",
+                "status",
                 "latency_ms",
                 "provider_stages",
+                "provider_models",
                 "error_category",
+                "evidence_count",
+                "claim_count",
+                "live_result_count",
+                "validation_disposition",
+                "corpus_version",
+                "release_version",
+                "build_commit",
+                "deployment_environment",
             },
         )
+        self.assertEqual(event["schema_version"], "firelens.operational_event.v2")
+        self.assertEqual(event["corpus_version"], "test-corpus.v1")
+        self.assertEqual(event["deployment_environment"], "local")
+        self.assertGreaterEqual(event["evidence_count"], 0)
 
 
 class ProductionImportBoundaryTests(unittest.TestCase):

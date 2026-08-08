@@ -16,6 +16,7 @@ from firelens.benchmark import (
     _ranking_metrics,
     _usage_cost,
     _usage_total,
+    benchmark_runtime_identity,
     file_sha256,
     load_benchmark,
 )
@@ -69,11 +70,29 @@ async def run_frozen_retrieval_qualification(
     declared_answerable_count = dataset_manifest.get("answerable_holdout_case_count")
     if declared_answerable_count is not None and declared_answerable_count != len(cases):
         raise ValueError("V1 qualification manifest answerable holdout count does not match")
-    if (
-        str(raw_dataset.get("dataset_version", "")).startswith("firelens_v1_5_sealed_retrieval")
-        and dataset_manifest.get("configuration_frozen_before_dataset") is not True
-    ):
-        raise ValueError("V1.5 sealed retrieval manifest must freeze configuration first")
+    is_sealed = dataset_manifest.get("evaluation_role") == "sealed_release_qualification"
+    if is_sealed:
+        if dataset_manifest.get("configuration_frozen_before_dataset") is not True:
+            raise ValueError("sealed retrieval manifest must freeze configuration first")
+        if dataset_manifest.get("baseline_policy") != "required_after_only":
+            raise ValueError("sealed retrieval manifest must be required-after-only")
+        if dataset_manifest.get("owner_review_required_before_ranking") is not True:
+            raise ValueError("sealed retrieval manifest must require owner review")
+        if dataset_manifest.get("required_repetitions") != 3:
+            raise ValueError("sealed retrieval manifest must require exactly 3 repetitions")
+    owner_review = (
+        validate_retrieval_owner_review(dataset_path, owner_review_path)
+        if owner_review_path is not None and owner_review_path.exists()
+        else None
+    )
+    owner_approved = bool(owner_review and owner_review["qualified"])
+    if is_sealed:
+        if repetitions != 3:
+            raise ValueError("sealed retrieval qualification requires exactly 3 repetitions")
+        if not owner_approved:
+            raise PermissionError(
+                "sealed retrieval ranking requires a complete hash-bound owner review"
+            )
     chunks_by_id = runtime.chunks_by_id
     reported_cost_usd = 0.0
     budget_exceeded = False
@@ -92,6 +111,8 @@ async def run_frozen_retrieval_qualification(
             metrics = _ranking_metrics(ranking, case, chunks_by_id)
             cost = _usage_cost(bundle.provider_usage)
             reported_cost_usd += cost
+            if max_cost_usd is not None and reported_cost_usd > max_cost_usd:
+                budget_exceeded = True
             rows.append(
                 {
                     "id": case.id,
@@ -135,19 +156,15 @@ async def run_frozen_retrieval_qualification(
         == [row["reranked_chunk_ids"] for row in repetition_reports[0]["rows"]]
         for report in repetition_reports[1:]
     )
-    owner_review = (
-        validate_retrieval_owner_review(dataset_path, owner_review_path)
-        if owner_review_path is not None and owner_review_path.exists()
-        else None
-    )
-    owner_approved = bool(owner_review and owner_review["qualified"])
     requested_gate_compatible = len(cases) == 47
     report = {
         "report_version": "firelens_frozen_retrieval_qualification.v1",
         "generated_at": datetime.now(UTC).isoformat(),
-        "commit": runtime.config.build_commit,
+        **benchmark_runtime_identity(runtime),
         "dataset_sha256": file_sha256(dataset_path),
         "dataset_manifest_sha256": file_sha256(dataset_manifest_path),
+        "evaluation_role": dataset_manifest.get("evaluation_role"),
+        "baseline_policy": dataset_manifest.get("baseline_policy"),
         "holdout_sha256": holdout_sha256,
         "split": "holdout",
         "tuning_allowed": False,
