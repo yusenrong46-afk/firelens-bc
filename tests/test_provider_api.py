@@ -28,6 +28,72 @@ from firelens.runtime import Runtime
 
 
 class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
+    async def test_zdr_preflight_requires_every_configured_model(self) -> None:
+        observed_authorization = ""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal observed_authorization
+            observed_authorization = request.headers["authorization"]
+            return httpx.Response(
+                200,
+                json={
+                    "data": [
+                        {"model_id": "openai/text-embedding-3-small"},
+                        {"model_id": "cohere/rerank-4-pro"},
+                        {"model_id": "google/gemini-3.5-flash-lite"},
+                    ]
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "embedding_model": "openai/text-embedding-3-small",
+                    "require_zdr": True,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                models = await OpenRouterProvider(config, client=client).preflight_zdr_models()
+
+        self.assertEqual(
+            models,
+            (
+                "openai/text-embedding-3-small",
+                "cohere/rerank-4-pro",
+                "google/gemini-3.5-flash-lite",
+            ),
+        )
+        self.assertEqual(observed_authorization, "Bearer test-key")
+
+    async def test_zdr_preflight_fails_closed_when_a_model_is_ineligible(self) -> None:
+        def handler(_request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "data": [
+                        {"model_id": "openai/text-embedding-3-small"},
+                        {"model_id": "cohere/rerank-4-pro"},
+                    ]
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "embedding_model": "openai/text-embedding-3-small",
+                    "require_zdr": True,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                with self.assertRaisesRegex(ProviderError, "no eligible"):
+                    await OpenRouterProvider(config, client=client).preflight_zdr_models()
+
     async def test_transient_rate_limit_retries_same_request(self) -> None:
         calls: list[dict[str, object]] = []
 

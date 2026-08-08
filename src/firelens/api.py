@@ -35,10 +35,12 @@ from firelens.contracts import (
     ResponseStatus,
     SearchResponse,
 )
+from firelens.errors import ProviderError
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.live import LiveDataErrorKind, LiveDataService, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
 from firelens.operational_logging import log_feedback, log_operation
+from firelens.providers.openrouter import OpenRouterProvider
 from firelens.request_guard import AnonymousRequestGuard
 from firelens.runtime import Runtime, load_runtime
 
@@ -79,6 +81,22 @@ def create_app(
         app.state.runtime = runtime or load_runtime(active_config)
         app.state.live_service = active_live_service
         try:
+            active_runtime = cast(Runtime, app.state.runtime)
+            if active_config.deployment_environment == "production":
+                provider = active_runtime.provider
+                if not isinstance(provider, OpenRouterProvider):
+                    active_runtime.zdr_policy_state = "failed"
+                    raise RuntimeError(
+                        "Production requires an OpenRouter provider with ZDR preflight."
+                    )
+                try:
+                    await provider.preflight_zdr_models()
+                except ProviderError as exc:
+                    active_runtime.zdr_policy_state = "failed"
+                    raise RuntimeError(
+                        "Production OpenRouter ZDR endpoint preflight failed."
+                    ) from exc
+                active_runtime.zdr_policy_state = "eligible"
             yield
         finally:
             if runtime is None:

@@ -415,6 +415,16 @@
             "title": "Status",
             "type": "string"
           },
+          "zdr_policy_state": {
+            "enum": [
+              "disabled",
+              "required_unprobed",
+              "eligible",
+              "failed"
+            ],
+            "title": "Zdr Policy State",
+            "type": "string"
+          },
           "zdr_required": {
             "title": "Zdr Required",
             "type": "boolean"
@@ -426,6 +436,7 @@
           "index_ready",
           "provider_configured",
           "zdr_required",
+          "zdr_policy_state",
           "provider_state",
           "release_version"
         ],

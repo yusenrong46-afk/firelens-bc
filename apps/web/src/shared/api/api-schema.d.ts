@@ -257,6 +257,11 @@ export interface components {
              * @enum {string}
              */
             status: "ready" | "not_ready";
+            /**
+             * Zdr Policy State
+             * @enum {string}
+             */
+            zdr_policy_state: "disabled" | "required_unprobed" | "eligible" | "failed";
             /** Zdr Required */
             zdr_required: boolean;
         };

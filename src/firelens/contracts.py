@@ -793,6 +793,7 @@ class HealthResponse(FrozenStrictModel):
     index_ready: bool
     provider_configured: bool
     zdr_required: bool
+    zdr_policy_state: Literal["disabled", "required_unprobed", "eligible", "failed"]
     provider_state: Literal[
         "not_configured",
         "configured_unprobed",

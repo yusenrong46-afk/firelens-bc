@@ -11,15 +11,49 @@ from pathlib import Path
 
 import httpx
 import pytest
-from pydantic import ValidationError
+from pydantic import SecretStr, ValidationError
 from rag_helpers import make_runtime
 
 from firelens.api import ERROR_RESPONSES, create_app
 from firelens.config import FireLensConfig
 from firelens.operational_logging import LOGGER_NAME
+from firelens.providers.openrouter import OpenRouterProvider
+from firelens.runtime import Runtime
 
 
 class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
+    async def test_production_lifespan_requires_successful_zdr_preflight(self) -> None:
+        def handler(_request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "data": [
+                        {"model_id": "openai/text-embedding-3-small"},
+                        {"model_id": "cohere/rerank-4-pro"},
+                        {"model_id": "google/gemini-3.5-flash-lite"},
+                    ]
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = FireLensConfig.from_env(Path(directory)).model_copy(
+                update={
+                    "deployment_environment": "production",
+                    "require_zdr": True,
+                    "openrouter_api_key": SecretStr("test-key"),
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                provider = OpenRouterProvider(config, client=client)
+                runtime = Runtime(
+                    config=config,
+                    provider_configured=True,
+                    provider=provider,
+                )
+                app = create_app(config, runtime=runtime)
+                async with app.router.lifespan_context(app):
+                    self.assertEqual(runtime.zdr_policy_state, "eligible")
+
     async def test_feedback_is_categorical_content_free_and_rate_limited(self) -> None:
         stream = io.StringIO()
         handler = logging.StreamHandler(stream)
@@ -270,6 +304,20 @@ class ProductionImportBoundaryTests(unittest.TestCase):
 
     def test_openapi_413_description_is_explicit_and_stable(self) -> None:
         self.assertEqual(ERROR_RESPONSES[413]["description"], "Content Too Large")
+
+    def test_required_zdr_is_not_ready_before_endpoint_preflight(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config = FireLensConfig.from_env(Path(directory)).model_copy(
+                update={
+                    "deployment_environment": "production",
+                    "require_zdr": True,
+                }
+            )
+            runtime = Runtime(config=config, provider_configured=True)
+
+        health = runtime.health()
+        self.assertEqual(health.status, "not_ready")
+        self.assertEqual(health.zdr_policy_state, "required_unprobed")
 
     def test_production_entrypoint_does_not_import_experiments(self) -> None:
         experiment_modules = {

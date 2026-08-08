@@ -178,6 +178,79 @@ class OpenRouterProvider:
             preferences["zdr"] = True
         return preferences
 
+    async def preflight_zdr_models(self) -> tuple[str, ...]:
+        """Fail closed unless every configured model has a current ZDR endpoint.
+
+        OpenRouter documents ``GET /endpoints/zdr`` as the programmatic endpoint
+        roster affected by the caller's account, key, and guardrails. The check
+        complements request-level ``provider.zdr=true``; it does not replace it.
+        """
+
+        if not self.config.require_zdr:
+            raise ProviderError(
+                ProviderErrorKind.INVALID_REQUEST,
+                "OpenRouter ZDR preflight requires the ZDR policy to be enabled.",
+            )
+        try:
+            response = await self._client.get(
+                f"{self.config.openrouter_base_url}/endpoints/zdr",
+                headers=self._headers(),
+            )
+        except httpx.TimeoutException as exc:
+            raise ProviderError(
+                ProviderErrorKind.TIMEOUT,
+                "OpenRouter ZDR endpoint preflight timed out.",
+                retryable=True,
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise ProviderError(
+                ProviderErrorKind.UNAVAILABLE,
+                "OpenRouter ZDR endpoint preflight was unavailable.",
+                retryable=True,
+            ) from exc
+        if response.status_code == 401:
+            raise ProviderError(
+                ProviderErrorKind.AUTHENTICATION,
+                "OpenRouter rejected the ZDR endpoint preflight credentials.",
+                status_code=401,
+            )
+        if response.status_code >= 400:
+            raise ProviderError(
+                ProviderErrorKind.UNAVAILABLE,
+                "OpenRouter could not verify the ZDR endpoint roster.",
+                status_code=response.status_code,
+                retryable=response.status_code >= 500,
+            )
+        try:
+            payload = response.json()
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise ProviderError(
+                ProviderErrorKind.INVALID_RESPONSE,
+                "OpenRouter returned an invalid ZDR endpoint roster.",
+            ) from exc
+        if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
+            raise ProviderError(
+                ProviderErrorKind.INVALID_RESPONSE,
+                "OpenRouter returned an invalid ZDR endpoint roster.",
+            )
+        eligible_models = {
+            endpoint.get("model_id")
+            for endpoint in payload["data"]
+            if isinstance(endpoint, dict) and isinstance(endpoint.get("model_id"), str)
+        }
+        required_models = (
+            self.config.embedding_model,
+            self.config.rerank_model,
+            self.config.generation_model,
+        )
+        missing = [model for model in required_models if model not in eligible_models]
+        if missing:
+            raise ProviderError(
+                ProviderErrorKind.MODEL_UNAVAILABLE,
+                "One or more configured models have no eligible OpenRouter ZDR endpoint.",
+            )
+        return required_models
+
     def operational_state(
         self,
     ) -> Literal["configured_unprobed", "available", "degraded", "circuit_open"]:

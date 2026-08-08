@@ -30,6 +30,13 @@ class Runtime:
     problems: list[str] = field(default_factory=list)
     provider_configured: bool = False
     provider: AIProvider | None = None
+    zdr_policy_state: Literal["disabled", "required_unprobed", "eligible", "failed"] = (
+        "disabled"
+    )
+
+    def __post_init__(self) -> None:
+        if self.config.require_zdr and self.zdr_policy_state == "disabled":
+            self.zdr_policy_state = "required_unprobed"
 
     @property
     def chunks_by_id(self) -> dict[str, ChunkRecord]:
@@ -38,7 +45,13 @@ class Runtime:
     def health(self) -> HealthResponse:
         corpus_ready = bool(self.chunks and self.corpus_version)
         index_ready = self.service is not None
-        ready = corpus_ready and index_ready and self.provider_configured
+        production_zdr_ready = (
+            self.config.deployment_environment != "production"
+            or self.zdr_policy_state == "eligible"
+        )
+        ready = (
+            corpus_ready and index_ready and self.provider_configured and production_zdr_ready
+        )
         provider_state: Literal[
             "not_configured",
             "configured_unprobed",
@@ -64,6 +77,7 @@ class Runtime:
             index_ready=index_ready,
             provider_configured=self.provider_configured,
             zdr_required=self.config.require_zdr,
+            zdr_policy_state=self.zdr_policy_state,
             provider_state=provider_state,
             corpus_version=self.corpus_version,
             chunk_count=len(self.chunks) if self.chunks else None,
@@ -137,6 +151,7 @@ def load_runtime(
     runtime = Runtime(
         config=config,
         provider_configured=provider is not None or config.openrouter_api_key is not None,
+        zdr_policy_state="required_unprobed" if config.require_zdr else "disabled",
     )
     try:
         chunks, corpus_version = load_corpus_resources(config)
