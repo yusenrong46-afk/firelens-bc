@@ -73,6 +73,9 @@ harness_inputs:
   - scripts/prepare_vercel_firewall.py
   - apps/web/scripts/qualify-frontend-surface.mjs
   - src/firelens/benchmark.py
+  - src/firelens/benchmark_contracts.py
+  - src/firelens/benchmark_retrieval.py
+  - src/firelens/benchmark_support.py
   - src/firelens/retrieval_experiment.py
   - src/firelens/owner_review.py
   - src/firelens/retrieval_review.py
