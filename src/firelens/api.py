@@ -5,9 +5,10 @@ from __future__ import annotations
 import asyncio
 import math
 import re
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from time import perf_counter
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 from fastapi import FastAPI, Query, Request, Response
@@ -34,6 +35,7 @@ from firelens.contracts import (
     ResponseStatus,
     SearchResponse,
 )
+from firelens.ingestion.chunking import ChunkRecord
 from firelens.live import LiveDataErrorKind, LiveDataService, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
 from firelens.operational_logging import log_feedback, log_operation
@@ -73,7 +75,7 @@ def create_app(
     )
 
     @asynccontextmanager
-    async def lifespan(app: FastAPI):
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.runtime = runtime or load_runtime(active_config)
         app.state.live_service = active_live_service
         try:
@@ -98,10 +100,10 @@ def create_app(
     app.state.live_service = active_live_service
 
     def current_runtime() -> Runtime:
-        return app.state.runtime
+        return cast(Runtime, app.state.runtime)
 
     def current_live_service() -> LiveDataService:
-        return app.state.live_service
+        return cast(LiveDataService, app.state.live_service)
 
     def error_response(
         status_code: int,
@@ -142,7 +144,10 @@ def create_app(
         )
 
     @app.middleware("http")
-    async def bounded_anonymous_requests(request: Request, call_next):
+    async def bounded_anonymous_requests(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         guarded = request.url.path in {
             "/api/v1/ask",
             "/api/v1/live/map",
@@ -171,18 +176,18 @@ def create_app(
                 )
         decision = await request_guard.check(request_guard.anonymous_key(request))
         if not decision.allowed:
-            response = error_response(
+            limited_response = error_response(
                 429,
                 trace_id=uuid4().hex,
                 error_kind="rate_limit",
                 message="The anonymous FireLens request limit was reached. Try again shortly.",
                 retryable=True,
             )
-            response.headers["Retry-After"] = str(decision.retry_after_seconds)
-            response.headers["X-RateLimit-Limit"] = str(request_guard.limit)
-            response.headers["X-RateLimit-Remaining"] = "0"
-            response.headers["X-RateLimit-Scope"] = "instance-local"
-            return response
+            limited_response.headers["Retry-After"] = str(decision.retry_after_seconds)
+            limited_response.headers["X-RateLimit-Limit"] = str(request_guard.limit)
+            limited_response.headers["X-RateLimit-Remaining"] = "0"
+            limited_response.headers["X-RateLimit-Scope"] = "instance-local"
+            return limited_response
         bounded_body = bytearray()
         async for chunk in request.stream():
             if len(bounded_body) + len(chunk) > request_guard.max_body_bytes:
@@ -194,14 +199,17 @@ def create_app(
                 )
             bounded_body.extend(chunk)
         request._body = bytes(bounded_body)
-        response = await call_next(request)
-        response.headers["X-RateLimit-Limit"] = str(request_guard.limit)
-        response.headers["X-RateLimit-Remaining"] = str(decision.remaining)
-        response.headers["X-RateLimit-Scope"] = "instance-local"
-        return response
+        guarded_response = await call_next(request)
+        guarded_response.headers["X-RateLimit-Limit"] = str(request_guard.limit)
+        guarded_response.headers["X-RateLimit-Remaining"] = str(decision.remaining)
+        guarded_response.headers["X-RateLimit-Scope"] = "instance-local"
+        return guarded_response
 
     @app.middleware("http")
-    async def security_headers(request: Request, call_next):
+    async def security_headers(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         response = await call_next(request)
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; script-src 'self'; style-src 'self'; "
@@ -230,7 +238,9 @@ def create_app(
         return response
 
     @app.exception_handler(RequestValidationError)
-    async def request_validation_handler(request: Request, exc: RequestValidationError):
+    async def request_validation_handler(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
         details = [
             {key: value for key, value in error.items() if key != "ctx"}
             for error in exc.errors()
@@ -248,7 +258,7 @@ def create_app(
         )
 
     @app.exception_handler(Exception)
-    async def unexpected_error_handler(_request, _exc: Exception):
+    async def unexpected_error_handler(_request: Request, _exc: Exception) -> JSONResponse:
         return error_response(
             500,
             trace_id=uuid4().hex,
@@ -286,7 +296,7 @@ def create_app(
     async def map_request(
         bbox: str | None = Query(default=None, max_length=100),
         layers: str = Query(default="incidents,perimeters,evacuations", max_length=100),
-    ):
+    ) -> LiveMapResponse | JSONResponse:
         layer_aliases = {
             "incidents": LiveResultKind.INCIDENT,
             "perimeters": LiveResultKind.PERIMETER,
@@ -338,7 +348,7 @@ def create_app(
     async def live_map(
         bbox: str | None = Query(default=None, max_length=100),
         layers: str = Query(default="incidents,perimeters,evacuations", max_length=100),
-    ):
+    ) -> LiveMapResponse | JSONResponse:
         try:
             async with asyncio.timeout(active_config.public_request_deadline_seconds):
                 return await map_request(bbox, layers)
@@ -350,7 +360,7 @@ def create_app(
         response_model=NearMeResponse,
         responses=ERROR_RESPONSES,
     )
-    async def live_nearby(payload: NearMeRequest):
+    async def live_nearby(payload: NearMeRequest) -> NearMeResponse | JSONResponse:
         request_started = perf_counter()
         try:
             async with asyncio.timeout(active_config.public_request_deadline_seconds):
@@ -407,7 +417,7 @@ def create_app(
     if active_config.debug and active_config.deployment_environment != "production":
 
         @app.post("/api/v1/search", response_model=SearchResponse)
-        async def search(request: QueryRequest):
+        async def search(request: QueryRequest) -> SearchResponse | JSONResponse:
             active_runtime = current_runtime()
             if active_runtime.service is None:
                 return error_response(
@@ -419,7 +429,7 @@ def create_app(
                 )
             return await active_runtime.service.search(request)
 
-    async def answer_request(request: QueryRequest):
+    async def answer_request(request: QueryRequest) -> AskResponse | JSONResponse:
         request_started = perf_counter()
         active_runtime = current_runtime()
         if active_runtime.service is None:
@@ -484,7 +494,7 @@ def create_app(
         response_model=AskResponse,
         responses=ERROR_RESPONSES,
     )
-    async def ask(request: QueryRequest):
+    async def ask(request: QueryRequest) -> AskResponse | JSONResponse:
         try:
             async with asyncio.timeout(active_config.public_request_deadline_seconds):
                 return await answer_request(request)
@@ -493,8 +503,12 @@ def create_app(
 
     if active_config.debug and active_config.deployment_environment != "production":
 
-        @app.get("/api/v1/debug/chunks/{chunk_id}")
-        async def debug_chunk(chunk_id: str):
+        @app.get(
+            "/api/v1/debug/chunks/{chunk_id}",
+            include_in_schema=False,
+            response_model=None,
+        )
+        async def debug_chunk(chunk_id: str) -> ChunkRecord | JSONResponse:
             active_runtime = current_runtime()
             chunk = active_runtime.chunks_by_id.get(chunk_id)
             if chunk is None:

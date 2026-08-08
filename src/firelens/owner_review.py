@@ -67,6 +67,8 @@ class OwnerSemanticReview(ReviewModel):
 
 def _load_report(path: Path) -> dict[str, Any]:
     report = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(report, dict):
+        raise ValueError("owner review requires a JSON object report")
     if report.get("report_version") != "firelens_conversation_benchmark_report.v1_1":
         raise ValueError("owner review requires a V1.1 conversation benchmark report")
     cases = report.get("cases")
@@ -74,7 +76,7 @@ def _load_report(path: Path) -> dict[str, Any]:
         raise ValueError("conversation report has no cases")
     if report.get("case_count") != len(cases):
         raise ValueError("conversation report case count does not match its rows")
-    return report
+    return dict(report)
 
 
 def build_review_template(report_path: Path) -> OwnerSemanticReview:

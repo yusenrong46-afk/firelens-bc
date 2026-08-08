@@ -9,7 +9,7 @@ from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pdfplumber
 import yaml
@@ -67,7 +67,14 @@ def load_source_record(
     """
 
     registry = yaml.safe_load(registry_path.read_text(encoding="utf-8"))
-    sources = registry.get("sources", [])
+    if not isinstance(registry, dict):
+        raise IngestionError("Source registry must be a mapping.")
+    raw_sources = registry.get("sources", [])
+    if not isinstance(raw_sources, list):
+        raise IngestionError("Source registry sources must be a list.")
+    sources = [
+        cast(dict[str, Any], source) for source in raw_sources if isinstance(source, dict)
+    ]
     matches = [source for source in sources if source.get("source_id") == source_id]
 
     if len(matches) != 1:
@@ -93,7 +100,7 @@ def load_source_record(
     if missing:
         raise IngestionError(f"Source {source_id!r} is missing required fields: {missing}.")
 
-    return source
+    return dict(source)
 
 
 def normalize_page_text(text: str | None) -> str:

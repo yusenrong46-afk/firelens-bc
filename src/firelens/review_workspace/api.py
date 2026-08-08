@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import ipaddress
 import secrets
-from collections.abc import Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
@@ -193,7 +193,10 @@ def create_review_workspace_app(
     )
 
     @app.middleware("http")
-    async def enforce_local_capability_boundary(request: Request, call_next):
+    async def enforce_local_capability_boundary(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         peer = request.client.host if request.client is not None else ""
         try:
             peer_is_loopback = ipaddress.ip_address(peer).is_loopback
@@ -248,15 +251,19 @@ def create_review_workspace_app(
         return _security_headers(response)
 
     @app.exception_handler(RequestValidationError)
-    async def invalid_request_handler(_request: Request, _exc: RequestValidationError):
+    async def invalid_request_handler(
+        _request: Request, _exc: RequestValidationError
+    ) -> JSONResponse:
         return _error(400, "invalid_request", "The review request did not match its contract.")
 
     @app.exception_handler(ReviewSessionError)
-    async def invalid_transition_handler(_request: Request, _exc: ReviewSessionError):
+    async def invalid_transition_handler(
+        _request: Request, _exc: ReviewSessionError
+    ) -> JSONResponse:
         return _error(409, "invalid_transition", "The review transition is not permitted.")
 
     @app.exception_handler(Exception)
-    async def unexpected_error_handler(_request: Request, _exc: Exception):
+    async def unexpected_error_handler(_request: Request, _exc: Exception) -> JSONResponse:
         return _error(500, "internal_error", "The local review service could not continue.")
 
     def current_actor(request: Request) -> ReviewActor:
@@ -278,7 +285,9 @@ def create_review_workspace_app(
         )
 
     @app.exception_handler(_ReviewAuthenticationError)
-    async def authentication_handler(_request: Request, _exc: _ReviewAuthenticationError):
+    async def authentication_handler(
+        _request: Request, _exc: _ReviewAuthenticationError
+    ) -> JSONResponse:
         response = _error(401, "unauthorized", "A valid actor capability is required.")
         response.headers["WWW-Authenticate"] = "Bearer"
         return response

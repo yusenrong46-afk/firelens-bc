@@ -43,7 +43,7 @@ def acquire_source(source: dict[str, Any], project_root: Path) -> Path:
     if source.get("corpus_action") == "exclude_live":
         raise IngestionError("Live sources cannot be snapshotted into the static corpus.")
     local_file = source.get("local_file")
-    if not local_file:
+    if not isinstance(local_file, str) or not local_file:
         raise IngestionError(f"{source['source_id']} has no declared local_file.")
 
     request = urllib.request.Request(
@@ -59,7 +59,7 @@ def acquire_source(source: dict[str, Any], project_root: Path) -> Path:
         ) from exc
     _validate_payload(source, payload)
 
-    destination = project_root / local_file
+    destination: Path = project_root / local_file
     with atomic_binary_writer(destination) as stream:
         stream.write(payload)
     return destination

@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import json
 from pathlib import Path
+from typing import Any
 
 import uvicorn
 
@@ -32,7 +33,7 @@ def _config(project_root: Path) -> FireLensConfig:
     return FireLensConfig.from_env(project_root.resolve())
 
 
-def _print(payload) -> None:
+def _print(payload: Any) -> None:
     if hasattr(payload, "model_dump"):
         payload = payload.model_dump(mode="json")
     print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))

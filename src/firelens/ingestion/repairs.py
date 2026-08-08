@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -20,7 +20,14 @@ def load_text_repairs(path: Path) -> list[dict[str, Any]]:
     """Load reviewed repairs and validate the fields that make them auditable."""
 
     payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    repairs = payload.get("repairs", [])
+    if not isinstance(payload, dict):
+        raise IngestionError("Text repair registry must be a mapping.")
+    raw_repairs = payload.get("repairs", [])
+    if not isinstance(raw_repairs, list):
+        raise IngestionError("Text repair registry repairs must be a list.")
+    if any(not isinstance(repair, dict) for repair in raw_repairs):
+        raise IngestionError("Each text repair must be a mapping.")
+    repairs = [cast(dict[str, Any], repair) for repair in raw_repairs]
     required = {
         "source_id",
         "page_number",
@@ -35,7 +42,7 @@ def load_text_repairs(path: Path) -> list[dict[str, Any]]:
             raise IngestionError(f"Text repair {index} is missing required fields: {missing}.")
         if repair["review_status"] not in REPAIR_REVIEW_STATUSES:
             raise IngestionError(f"Text repair {index} has an unknown review status.")
-    return repairs
+    return list(repairs)
 
 
 def apply_text_repairs(

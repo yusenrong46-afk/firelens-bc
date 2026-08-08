@@ -6,6 +6,7 @@ import hashlib
 from collections import OrderedDict
 from collections.abc import Sequence
 from time import perf_counter
+from typing import Any
 
 from firelens.config import FireLensConfig
 from firelens.contracts import (
@@ -137,7 +138,7 @@ class RetrievalPipeline:
             return RetrievalBundle(complete=False, errors=["no_retrieval_request"])
         queries = [request.query for request in plan.retrieval_requests]
         timings: dict[str, float] = {}
-        provider_usage: dict[str, dict] = {}
+        provider_usage: dict[str, dict[str, Any]] = {}
         provider_attempts: dict[str, int] = {}
         provider_models: dict[str, str] = {}
         stage_rankings: dict[str, list[str]] = {}

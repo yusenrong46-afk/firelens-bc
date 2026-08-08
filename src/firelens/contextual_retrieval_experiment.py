@@ -11,7 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
@@ -74,7 +74,14 @@ class _RecordingProvider:
         self.events: list[dict[str, Any]] = []
 
     async def _record(
-        self, operation: str, call: Callable[[], Any]
+        self,
+        operation: str,
+        call: Callable[
+            [],
+            Awaitable[
+                EmbeddingResponse | RerankResponse | PlanningResponse | GenerationResponse
+            ],
+        ],
     ) -> EmbeddingResponse | RerankResponse | PlanningResponse | GenerationResponse:
         started = perf_counter()
         try:

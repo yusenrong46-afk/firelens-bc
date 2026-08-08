@@ -38,6 +38,7 @@ from firelens.retrieval_review import (
 from firelens.review_workspace.analysis import verify_review_analysis
 from firelens.review_workspace.exports import verify_finalized_evidence_export
 from firelens.review_workspace.preparation import resume_prepared_review
+from firelens.review_workspace.session import FinalizedReviewEvidence
 
 _PLACEHOLDER_NAMES = frozenset(
     {
@@ -242,7 +243,9 @@ def write_storage_attestation_template(workspace: Path, output: Path) -> None:
     )
 
 
-def _semantic_sidecar(evidence, report_path: Path) -> OwnerSemanticReview:
+def _semantic_sidecar(
+    evidence: FinalizedReviewEvidence, report_path: Path
+) -> OwnerSemanticReview:
     adjudicator = next(actor for actor in evidence.actors if actor.actor.role == "adjudicator")
     return OwnerSemanticReview(
         review_version="firelens_owner_semantic_review.v1",
@@ -271,7 +274,9 @@ def _semantic_sidecar(evidence, report_path: Path) -> OwnerSemanticReview:
     )
 
 
-def _retrieval_sidecar(evidence, dataset_path: Path) -> RetrievalOwnerReview:
+def _retrieval_sidecar(
+    evidence: FinalizedReviewEvidence, dataset_path: Path
+) -> RetrievalOwnerReview:
     adjudicator = next(actor for actor in evidence.actors if actor.actor.role == "adjudicator")
     return RetrievalOwnerReview(
         review_version="firelens_retrieval_owner_review.v1",
