@@ -69,7 +69,9 @@ def test_foundation_packages_do_not_import_high_level_product_layers() -> None:
         if prefixes is None:
             continue
         for imported in sorted(_local_imports(path)):
-            if imported.startswith(prefixes):
+            if any(
+                imported == prefix or imported.startswith(f"{prefix}.") for prefix in prefixes
+            ):
                 violations.append(f"{relative}: {imported}")
     assert not violations, "forbidden dependency direction:\n" + "\n".join(violations)
 
@@ -101,6 +103,20 @@ def test_live_adapter_modules_stay_below_800_lines() -> None:
         if len(path.read_text(encoding="utf-8").splitlines()) > 800
     }
     assert not violations, f"live adapter modules exceed 800 lines: {violations}"
+
+
+def test_contract_modules_stay_below_800_lines() -> None:
+    paths = (
+        PACKAGE_ROOT / "contracts.py",
+        PACKAGE_ROOT / "contract_base.py",
+        PACKAGE_ROOT / "live_contracts.py",
+    )
+    violations = {
+        str(path.relative_to(ROOT)): len(path.read_text(encoding="utf-8").splitlines())
+        for path in paths
+        if len(path.read_text(encoding="utf-8").splitlines()) > 800
+    }
+    assert not violations, f"contract modules exceed 800 lines: {violations}"
 
 
 def test_frontend_features_do_not_depend_on_app_or_prototype_paths() -> None:
