@@ -8,227 +8,69 @@ security boundary that must include only runtime inputs.
 from __future__ import annotations
 
 import argparse
-import ast
-import hashlib
 import json
-import os
-import re
-import stat
 import sys
-from dataclasses import dataclass
-from html.parser import HTMLParser
 from pathlib import Path, PurePosixPath
 from typing import Any
-from urllib.parse import urlsplit
 
 import numpy as np
 import yaml
 
-CONTRACT_SCHEMA = "firelens.runtime_artifact_allowlist.v1"
-CANDIDATE_SCHEMA = "firelens.runtime_candidate.v1"
-INVENTORY_SCHEMA = "firelens.runtime_artifact_inventory.v1"
-COMPARISON_SCHEMA = "firelens.runtime_artifact_comparison.v1"
-SUPPORTED_PLATFORMS = frozenset({"docker", "vercel"})
-SUPPORTED_RETRIEVAL_STRATEGIES = frozenset(
-    {"original_v1", "metadata_context_v1", "document_context_v2"}
+from firelens.runtime_artifact_closure import allowed_files as _allowed_files
+from firelens.runtime_artifact_common import (
+    CANDIDATE_SCHEMA,
+    CHUNK_KEYS,
+    CONTRACT_SCHEMA,
+    INVENTORY_SCHEMA,
+    SHA256_PATTERN,
+    SUPPORTED_PLATFORMS,
+    SUPPORTED_RETRIEVAL_STRATEGIES,
 )
-SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
-GIT_COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
-CSS_REFERENCE_PATTERN = re.compile(
-    r"url\(\s*(['\"]?)(.*?)\1\s*\)|@import\s+(?:url\()?\s*(['\"])(.*?)\3",
-    re.IGNORECASE,
+from firelens.runtime_artifact_common import (
+    ArtifactIdentity as ArtifactIdentity,
 )
-JS_REFERENCE_PATTERNS = (
-    re.compile(r"(?:\bimport\s*\(|\bfrom\s*)\s*(['\"])([^'\"]+)\1"),
-    re.compile(r"\bimport\s*(['\"])([^'\"]+)\1"),
-    re.compile(r"\bnew\s+URL\s*\(\s*(['\"])([^'\"]+)\1\s*,\s*import\.meta\.url"),
+from firelens.runtime_artifact_common import (
+    RuntimeArtifactError as RuntimeArtifactError,
 )
-CHUNK_KEYS = {
-    "schema_version",
-    "chunk_id",
-    "parent_record_id",
-    "source_id",
-    "title",
-    "publisher",
-    "canonical_url",
-    "temporal_class",
-    "authority_class",
-    "document_sha256",
-    "page_number",
-    "chunk_index",
-    "section_title",
-    "text",
-    "char_count",
-    "retrieved_at",
-    "source_type",
-    "section_id",
-    "locator",
-    "review_provenance",
-}
-
-
-class RuntimeArtifactError(ValueError):
-    """Raised when an artifact or inventory violates the frozen contract."""
-
-
-@dataclass(frozen=True)
-class ArtifactIdentity:
-    """Externally supplied identity expected inside one built artifact."""
-
-    platform: str
-    platform_root: str
-    artifact_id: str
-    candidate_id: str
-    release_version: str
-    build_commit: str
-
-
-class _HTMLReferences(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__(convert_charrefs=True)
-        self.references: list[str] = []
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        del tag
-        for name, value in attrs:
-            if value is None:
-                continue
-            if name.lower() in {"src", "href", "poster"}:
-                self.references.append(value)
-            elif name.lower() == "srcset":
-                self.references.extend(
-                    candidate.strip().split()[0]
-                    for candidate in value.split(",")
-                    if candidate.strip()
-                )
-
-
-def _exact_keys(payload: dict[str, Any], expected: set[str], *, context: str) -> None:
-    observed = set(payload)
-    if observed != expected:
-        missing = sorted(expected - observed)
-        extra = sorted(observed - expected)
-        raise RuntimeArtifactError(
-            f"{context} keys differ from the contract (missing={missing}, extra={extra})"
-        )
-
-
-def _canonical_json(payload: Any) -> bytes:
-    return json.dumps(
-        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")
-
-
-def _sha256_bytes(payload: bytes) -> str:
-    return hashlib.sha256(payload).hexdigest()
-
-
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    flags = os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW
-    try:
-        descriptor = os.open(path, flags)
-    except OSError as exc:
-        raise RuntimeArtifactError(f"cannot securely read artifact input: {path}") from exc
-    try:
-        before = os.fstat(descriptor)
-        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
-            raise RuntimeArtifactError(f"artifact input is not a single-link file: {path}")
-        while block := os.read(descriptor, 1024 * 1024):
-            digest.update(block)
-        after = os.fstat(descriptor)
-        if (
-            before.st_dev,
-            before.st_ino,
-            before.st_size,
-            before.st_mtime_ns,
-        ) != (
-            after.st_dev,
-            after.st_ino,
-            after.st_size,
-            after.st_mtime_ns,
-        ):
-            raise RuntimeArtifactError(f"artifact input changed while hashing: {path}")
-    finally:
-        os.close(descriptor)
-    return digest.hexdigest()
-
-
-def _file_metadata(files: dict[str, Path]) -> dict[str, tuple[int, int, int, int]]:
-    result: dict[str, tuple[int, int, int, int]] = {}
-    for logical, path in files.items():
-        metadata = path.stat(follow_symlinks=False)
-        result[logical] = (
-            metadata.st_dev,
-            metadata.st_ino,
-            metadata.st_size,
-            metadata.st_mtime_ns,
-        )
-    return result
-
-
-def _read_json(path: Path, *, context: str) -> dict[str, Any]:
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise RuntimeArtifactError(f"{context} is not readable JSON: {path}") from exc
-    if not isinstance(payload, dict):
-        raise RuntimeArtifactError(f"{context} must be a JSON object")
-    return payload
-
-
-def _logical_path(value: Any, *, context: str) -> str:
-    if not isinstance(value, str) or not value or "\\" in value or "\x00" in value:
-        raise RuntimeArtifactError(f"{context} must be a canonical POSIX relative path")
-    path = PurePosixPath(value)
-    if path.is_absolute() or value != path.as_posix() or value in {".", ".."}:
-        raise RuntimeArtifactError(f"{context} must be a canonical POSIX relative path")
-    if any(part in {"", ".", ".."} for part in path.parts):
-        raise RuntimeArtifactError(f"{context} contains path traversal")
-    return value
-
-
-def _platform_root(value: Any) -> str:
-    if not isinstance(value, str) or not value or "\\" in value or "\x00" in value:
-        raise RuntimeArtifactError("platform_root must be a canonical absolute POSIX path")
-    path = PurePosixPath(value)
-    if not path.is_absolute() or value != path.as_posix() or ".." in path.parts:
-        raise RuntimeArtifactError("platform_root must be a canonical absolute POSIX path")
-    if value == "/":
-        raise RuntimeArtifactError("platform_root cannot be the filesystem root")
-    return value
-
-
-def _nonempty_identity(value: str, *, field: str) -> str:
-    if (
-        not isinstance(value, str)
-        or not value.strip()
-        or value != value.strip()
-        or any(ord(character) < 32 for character in value)
-    ):
-        raise RuntimeArtifactError(f"{field} must be a non-empty printable string")
-    return value
-
-
-def _validate_identity(identity: ArtifactIdentity) -> None:
-    if not isinstance(identity.platform, str) or identity.platform not in SUPPORTED_PLATFORMS:
-        raise RuntimeArtifactError("platform must be docker or vercel")
-    _platform_root(identity.platform_root)
-    _nonempty_identity(identity.artifact_id, field="artifact_id")
-    _nonempty_identity(identity.candidate_id, field="candidate_id")
-    _nonempty_identity(identity.release_version, field="release_version")
-    if not isinstance(identity.build_commit, str) or not GIT_COMMIT_PATTERN.fullmatch(
-        identity.build_commit
-    ):
-        raise RuntimeArtifactError("build_commit must be a lowercase 40- or 64-hex commit")
-
-
-def _assert_not_symlink(path: Path, *, context: str) -> None:
-    try:
-        if path.is_symlink():
-            raise RuntimeArtifactError(f"{context} cannot be a symlink: {path}")
-    except OSError as exc:
-        raise RuntimeArtifactError(f"cannot inspect {context}: {path}") from exc
+from firelens.runtime_artifact_common import (
+    assert_not_symlink as _assert_not_symlink,
+)
+from firelens.runtime_artifact_common import (
+    canonical_json as _canonical_json,
+)
+from firelens.runtime_artifact_common import (
+    exact_keys as _exact_keys,
+)
+from firelens.runtime_artifact_common import (
+    file_metadata as _file_metadata,
+)
+from firelens.runtime_artifact_common import (
+    logical_path as _logical_path,
+)
+from firelens.runtime_artifact_common import (
+    nonempty_identity as _nonempty_identity,
+)
+from firelens.runtime_artifact_common import (
+    read_json as _read_json,
+)
+from firelens.runtime_artifact_common import (
+    sha256_bytes as _sha256_bytes,
+)
+from firelens.runtime_artifact_common import (
+    sha256_file as _sha256_file,
+)
+from firelens.runtime_artifact_common import (
+    validate_identity as _validate_identity,
+)
+from firelens.runtime_artifact_comparison import (
+    compare_runtime_inventories as compare_runtime_inventories,
+)
+from firelens.runtime_artifact_files import (
+    collect_files as _collect_files,
+)
+from firelens.runtime_artifact_files import (
+    prohibited_reason as _prohibited_reason,
+)
 
 
 def _load_contract(path: Path) -> tuple[dict[str, Any], str]:
@@ -452,66 +294,6 @@ def _load_contract(path: Path) -> tuple[dict[str, Any], str]:
             raise RuntimeArtifactError(f"prohibited.{field} omits mandatory artifact classes")
 
     return contract, _sha256_file(path)
-
-
-def _collect_files(root: Path) -> dict[str, Path]:
-    _assert_not_symlink(root, context="artifact root")
-    if not root.is_dir():
-        raise RuntimeArtifactError(f"artifact root is not a directory: {root}")
-    resolved_root = root.resolve(strict=True)
-    files: dict[str, Path] = {}
-    try:
-        descendants = sorted(root.rglob("*"), key=lambda item: item.as_posix())
-    except OSError as exc:
-        raise RuntimeArtifactError("artifact root cannot be traversed") from exc
-    for path in descendants:
-        _assert_not_symlink(path, context="artifact input")
-        if path.is_dir():
-            continue
-        if not path.is_file():
-            raise RuntimeArtifactError(f"artifact contains a non-regular input: {path}")
-        metadata = path.stat(follow_symlinks=False)
-        if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
-            raise RuntimeArtifactError(
-                f"artifact input must be a single-link regular file: {path}"
-            )
-        try:
-            resolved = path.resolve(strict=True)
-            relative = resolved.relative_to(resolved_root).as_posix()
-        except (OSError, ValueError) as exc:
-            raise RuntimeArtifactError(f"artifact input escapes its root: {path}") from exc
-        logical = _logical_path(relative, context="artifact logical path")
-        if logical in files:
-            raise RuntimeArtifactError(f"artifact contains duplicate logical path: {logical}")
-        files[logical] = path
-    if not files:
-        raise RuntimeArtifactError("artifact root contains no files")
-    return files
-
-
-def _prohibited_reason(path: str, contract: dict[str, Any]) -> str | None:
-    rules = contract["prohibited"]
-    lowered = path.lower()
-    parts = PurePosixPath(lowered).parts
-    basename = parts[-1]
-    for prefix in rules["prefixes"]:
-        prefix_lower = prefix.lower()
-        if lowered == prefix_lower or lowered.startswith(prefix_lower + "/"):
-            return f"prohibited prefix {prefix}"
-    for segment in rules["segments"]:
-        if segment.lower() in parts:
-            return f"prohibited path segment {segment}"
-    if basename in {value.lower() for value in rules["basenames"]}:
-        return f"prohibited basename {basename}"
-    if basename.startswith(".env.") or basename.startswith(".git"):
-        return f"prohibited environment/Git file {basename}"
-    for token in rules["basename_tokens"]:
-        if token.lower() in basename:
-            return f"prohibited basename token {token}"
-    for suffix in rules["suffixes"]:
-        if basename.endswith(suffix.lower()) and lowered != "requirements.lock":
-            return f"prohibited suffix {suffix}"
-    return None
 
 
 def _load_candidate(
@@ -825,278 +607,6 @@ def _validate_vector_and_context(
             raise RuntimeArtifactError("document context has empty context text")
 
 
-def _module_paths(module: str, files: dict[str, Path], source_root: str) -> set[str]:
-    module_parts = module.split(".")
-    base = PurePosixPath(source_root, *module_parts)
-    candidates = {f"{base.as_posix()}.py", (base / "__init__.py").as_posix()}
-    resolved = candidates & set(files)
-    if not resolved:
-        raise RuntimeArtifactError(
-            f"runtime Python import is missing from the artifact: {module}"
-        )
-    result = set(resolved)
-    for depth in range(1, len(module_parts) + 1):
-        initializer = PurePosixPath(
-            source_root, *module_parts[:depth], "__init__.py"
-        ).as_posix()
-        if initializer in files:
-            result.add(initializer)
-    return result
-
-
-def _python_closure(files: dict[str, Path], contract: dict[str, Any]) -> set[str]:
-    python_contract = contract["python"]
-    entrypoint = python_contract["entrypoint"]
-    source_root = python_contract["source_root"]
-    package = python_contract["package"]
-    closure = {entrypoint}
-    queue = [entrypoint]
-    entry_tree: ast.AST | None = None
-    while queue:
-        logical = queue.pop()
-        try:
-            tree = ast.parse(files[logical].read_text(encoding="utf-8"), filename=logical)
-        except (OSError, UnicodeDecodeError, SyntaxError) as exc:
-            raise RuntimeArtifactError(
-                f"runtime Python file cannot be parsed: {logical}"
-            ) from exc
-        if logical == entrypoint:
-            entry_tree = tree
-        modules: set[str] = set()
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                modules.update(
-                    alias.name for alias in node.names if alias.name.startswith(package)
-                )
-            elif isinstance(node, ast.ImportFrom):
-                if node.level:
-                    raise RuntimeArtifactError(
-                        f"relative runtime import is not supported by the verifier: {logical}"
-                    )
-                if node.module and node.module.startswith(package):
-                    modules.add(node.module)
-                    for alias in node.names:
-                        possible = f"{node.module}.{alias.name}"
-                        possible_path = PurePosixPath(source_root, *possible.split("."))
-                        if (
-                            f"{possible_path.as_posix()}.py" in files
-                            or (possible_path / "__init__.py").as_posix() in files
-                        ):
-                            modules.add(possible)
-        for module in modules:
-            for dependency in _module_paths(module, files, source_root):
-                if dependency not in closure:
-                    closure.add(dependency)
-                    queue.append(dependency)
-    if entry_tree is None:
-        raise RuntimeArtifactError("runtime Python entrypoint was not inspected")
-    app_values: list[ast.expr | None] = []
-    for node in ast.walk(entry_tree):
-        if isinstance(node, ast.Assign) and any(
-            isinstance(target, ast.Name) and target.id == "app" for target in node.targets
-        ):
-            app_values.append(node.value)
-        elif (
-            isinstance(node, ast.AnnAssign)
-            and isinstance(node.target, ast.Name)
-            and node.target.id == "app"
-        ):
-            app_values.append(node.value)
-    if not app_values:
-        raise RuntimeArtifactError("runtime Python entrypoint does not export app")
-    if not any(
-        isinstance(value, ast.Call)
-        and isinstance(value.func, ast.Name)
-        and value.func.id == "create_app"
-        for value in app_values
-    ):
-        raise RuntimeArtifactError(
-            "runtime Python entrypoint app is not constructed by create_app"
-        )
-    if not any(path.startswith(f"{source_root}/{package}/") for path in closure):
-        raise RuntimeArtifactError("runtime Python entrypoint is not connected to the package")
-    return closure
-
-
-def _resource_path(reference: str, *, source: str, frontend_root: str) -> str | None:
-    value = reference.strip()
-    if not value or value.startswith("#") or value.lower().startswith("data:"):
-        return None
-    parsed = urlsplit(value)
-    if parsed.scheme or parsed.netloc or value.startswith("//"):
-        raise RuntimeArtifactError(f"frontend reference must be local: {reference}")
-    path_value = parsed.path
-    if not path_value:
-        return None
-    if "\\" in path_value or "\x00" in path_value:
-        raise RuntimeArtifactError(f"frontend reference is not a POSIX path: {reference}")
-    if path_value.startswith("/"):
-        candidate = PurePosixPath(frontend_root, path_value.lstrip("/"))
-    else:
-        candidate = PurePosixPath(source).parent / path_value
-    if ".." in candidate.parts:
-        raise RuntimeArtifactError(f"frontend reference contains path traversal: {reference}")
-    normalized = candidate.as_posix()
-    _logical_path(normalized, context="frontend reference")
-    if normalized != frontend_root and not normalized.startswith(frontend_root + "/"):
-        raise RuntimeArtifactError(f"frontend reference escapes its root: {reference}")
-    return normalized
-
-
-def _frontend_closure(files: dict[str, Path], contract: dict[str, Any]) -> set[str]:
-    frontend = contract["frontend"]
-    root = frontend["root"]
-    index_path = frontend["index"]
-    manifest_path = frontend["vite_manifest"]
-    frontend_files = {
-        logical for logical in files if logical == root or logical.startswith(root + "/")
-    }
-    allowed_suffixes = tuple(frontend["allowed_suffixes"])
-    for logical in frontend_files:
-        if not logical.lower().endswith(allowed_suffixes):
-            raise RuntimeArtifactError(
-                f"frontend artifact has a prohibited file type: {logical}"
-            )
-
-    closure = {index_path, manifest_path}
-    parser = _HTMLReferences()
-    try:
-        parser.feed(files[index_path].read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError) as exc:
-        raise RuntimeArtifactError("frontend index is not readable UTF-8 HTML") from exc
-    for reference in parser.references:
-        resolved = _resource_path(reference, source=index_path, frontend_root=root)
-        if resolved is not None:
-            closure.add(resolved)
-
-    manifest = _read_json(files[manifest_path], context="Vite manifest")
-    if not manifest or "index.html" not in manifest:
-        raise RuntimeArtifactError("Vite manifest lacks its index.html entry")
-    allowed_entry_fields = {
-        "file",
-        "name",
-        "names",
-        "src",
-        "isEntry",
-        "isDynamicEntry",
-        "imports",
-        "dynamicImports",
-        "css",
-        "assets",
-    }
-    manifest_relations: dict[str, list[str]] = {}
-    manifest_outputs: dict[str, list[str]] = {}
-    for key, entry in manifest.items():
-        if not isinstance(key, str) or not key or not isinstance(entry, dict):
-            raise RuntimeArtifactError("Vite manifest entries must be named objects")
-        extra = set(entry) - allowed_entry_fields
-        if extra:
-            raise RuntimeArtifactError(
-                f"Vite manifest entry {key} has unsupported fields: {extra}"
-            )
-        file_value = entry.get("file")
-        if not isinstance(file_value, str) or not file_value:
-            raise RuntimeArtifactError(f"Vite manifest entry {key} has no output file")
-        output_groups: list[list[str]] = []
-        for field in ("css", "assets"):
-            values = entry.get(field, [])
-            if not isinstance(values, list) or any(
-                not isinstance(reference, str) for reference in values
-            ):
-                raise RuntimeArtifactError(
-                    f"Vite manifest entry {key} has invalid {field} outputs"
-                )
-            output_groups.append(values)
-        manifest_outputs[key] = [file_value, *output_groups[0], *output_groups[1]]
-        relations: list[str] = []
-        for relation in ("imports", "dynamicImports"):
-            related = entry.get(relation, [])
-            if not isinstance(related, list) or any(
-                not isinstance(reference, str) for reference in related
-            ):
-                raise RuntimeArtifactError(
-                    f"Vite manifest entry {key} has invalid {relation} references"
-                )
-            missing_keys = sorted(set(related) - set(manifest))
-            if missing_keys:
-                raise RuntimeArtifactError(
-                    f"Vite manifest entry {key} references missing entries: {missing_keys}"
-                )
-            relations.extend(related)
-        manifest_relations[key] = relations
-    if manifest["index.html"].get("isEntry") is not True:
-        raise RuntimeArtifactError("Vite index.html entry is not marked as an entrypoint")
-
-    reachable_entries: set[str] = set()
-    manifest_queue = ["index.html"]
-    while manifest_queue:
-        key = manifest_queue.pop()
-        if key in reachable_entries:
-            continue
-        reachable_entries.add(key)
-        manifest_queue.extend(manifest_relations[key])
-        for reference in manifest_outputs[key]:
-            resolved = _resource_path(
-                "/" + reference.lstrip("/"), source=index_path, frontend_root=root
-            )
-            if resolved is not None:
-                closure.add(resolved)
-    unreachable_entries = sorted(set(manifest) - reachable_entries)
-    if unreachable_entries:
-        raise RuntimeArtifactError(
-            f"Vite manifest contains unreachable entries: {unreachable_entries}"
-        )
-
-    queue = list(closure)
-    inspected: set[str] = set()
-    while queue:
-        logical = queue.pop()
-        if logical in inspected or logical not in files:
-            continue
-        inspected.add(logical)
-        suffix = PurePosixPath(logical).suffix.lower()
-        references: list[str] = []
-        if suffix == ".css":
-            try:
-                text = files[logical].read_text(encoding="utf-8")
-            except (OSError, UnicodeDecodeError) as exc:
-                raise RuntimeArtifactError(f"frontend CSS is not readable: {logical}") from exc
-            for match in CSS_REFERENCE_PATTERN.finditer(text):
-                references.append(match.group(2) or match.group(4))
-        elif suffix == ".js":
-            try:
-                text = files[logical].read_text(encoding="utf-8")
-            except (OSError, UnicodeDecodeError) as exc:
-                raise RuntimeArtifactError(f"frontend JS is not readable: {logical}") from exc
-            for pattern in JS_REFERENCE_PATTERNS:
-                references.extend(match.group(2) for match in pattern.finditer(text))
-        for reference in references:
-            resolved = _resource_path(reference, source=logical, frontend_root=root)
-            if resolved is not None and resolved not in closure:
-                closure.add(resolved)
-                queue.append(resolved)
-
-    missing = sorted(closure - set(files))
-    if missing:
-        raise RuntimeArtifactError(f"frontend reference closure is missing files: {missing}")
-    orphaned = sorted(frontend_files - closure)
-    if orphaned:
-        raise RuntimeArtifactError(f"frontend bundle contains unreferenced files: {orphaned}")
-    return closure
-
-
-def _allowed_files(files: dict[str, Path], contract: dict[str, Any]) -> set[str]:
-    required = set(contract["required_files"])
-    missing = sorted(required - set(files))
-    if missing:
-        raise RuntimeArtifactError(f"artifact is missing required files: {missing}")
-    conditional_path = contract["conditional_files"][0]["logical_path"]
-    allowed = required | _python_closure(files, contract) | _frontend_closure(files, contract)
-    if conditional_path in files:
-        allowed.add(conditional_path)
-    return allowed
-
-
 def build_runtime_inventory(
     *,
     artifact_root: Path,
@@ -1177,220 +687,6 @@ def build_runtime_inventory(
     }
     inventory["inventory_sha256"] = _sha256_bytes(_canonical_json(inventory))
     return inventory
-
-
-def _validate_inventory_document(inventory: dict[str, Any], *, context: str) -> None:
-    _exact_keys(
-        inventory,
-        {
-            "schema_version",
-            "assurance",
-            "contract",
-            "identity",
-            "runtime_configuration",
-            "file_count",
-            "total_size_bytes",
-            "files",
-            "inventory_sha256",
-        },
-        context=context,
-    )
-    if inventory["schema_version"] != INVENTORY_SCHEMA:
-        raise RuntimeArtifactError(f"{context} has an unsupported schema")
-    if inventory["assurance"] != {
-        "scope": "staged_logical_bundle",
-        "platform_export_provenance_verified": False,
-        "runtime_candidate_identity_observed": False,
-    }:
-        raise RuntimeArtifactError(
-            f"{context} cannot claim platform provenance from a staged directory"
-        )
-    supplied_hash = inventory["inventory_sha256"]
-    if not isinstance(supplied_hash, str) or not SHA256_PATTERN.fullmatch(supplied_hash):
-        raise RuntimeArtifactError(f"{context} has an invalid inventory_sha256")
-    unhashed = dict(inventory)
-    del unhashed["inventory_sha256"]
-    if supplied_hash != _sha256_bytes(_canonical_json(unhashed)):
-        raise RuntimeArtifactError(f"{context} inventory_sha256 does not match its content")
-
-    contract = inventory["contract"]
-    if not isinstance(contract, dict):
-        raise RuntimeArtifactError(f"{context} contract identity must be an object")
-    _exact_keys(
-        contract,
-        {"schema_version", "contract_id", "logical_path", "sha256"},
-        context=f"{context} contract identity",
-    )
-    if (
-        contract["schema_version"] != CONTRACT_SCHEMA
-        or not isinstance(contract["sha256"], str)
-        or not SHA256_PATTERN.fullmatch(contract["sha256"])
-    ):
-        raise RuntimeArtifactError(f"{context} contract identity is invalid")
-
-    identity = inventory["identity"]
-    if not isinstance(identity, dict):
-        raise RuntimeArtifactError(f"{context} artifact identity must be an object")
-    _exact_keys(
-        identity,
-        {
-            "platform",
-            "platform_root",
-            "artifact_id",
-            "candidate_id",
-            "release_version",
-            "build_commit",
-        },
-        context=f"{context} artifact identity",
-    )
-    _validate_identity(ArtifactIdentity(**identity))
-
-    runtime_configuration = inventory["runtime_configuration"]
-    if not isinstance(runtime_configuration, dict):
-        raise RuntimeArtifactError(f"{context} runtime configuration must be an object")
-    _exact_keys(
-        runtime_configuration,
-        {
-            "logical_path",
-            "sha256",
-            "corpus_version",
-            "embedding_model",
-            "retrieval_text_strategy",
-        },
-        context=f"{context} runtime configuration",
-    )
-    _logical_path(runtime_configuration["logical_path"], context="runtime configuration path")
-    if not isinstance(runtime_configuration["sha256"], str) or not SHA256_PATTERN.fullmatch(
-        runtime_configuration["sha256"]
-    ):
-        raise RuntimeArtifactError(f"{context} runtime configuration hash is invalid")
-    for field in ("corpus_version", "embedding_model"):
-        value = runtime_configuration[field]
-        if not isinstance(value, str):
-            raise RuntimeArtifactError(f"{context} runtime configuration {field} is invalid")
-        _nonempty_identity(value, field=f"{context} runtime configuration {field}")
-    if runtime_configuration["retrieval_text_strategy"] not in SUPPORTED_RETRIEVAL_STRATEGIES:
-        raise RuntimeArtifactError(
-            f"{context} runtime configuration retrieval_text_strategy is invalid"
-        )
-
-    entries = inventory["files"]
-    if not isinstance(entries, list) or not entries:
-        raise RuntimeArtifactError(f"{context} files must be a non-empty list")
-    expected_platform_root = PurePosixPath(identity["platform_root"])
-    logical_paths: list[str] = []
-    total_size = 0
-    for index, entry in enumerate(entries, start=1):
-        if not isinstance(entry, dict):
-            raise RuntimeArtifactError(f"{context} file {index} must be an object")
-        _exact_keys(
-            entry,
-            {"logical_path", "platform_path", "size_bytes", "sha256"},
-            context=f"{context} file {index}",
-        )
-        logical = _logical_path(entry["logical_path"], context=f"{context} file path")
-        expected_platform = (expected_platform_root / logical).as_posix()
-        if entry["platform_path"] != expected_platform:
-            raise RuntimeArtifactError(
-                f"{context} file {logical} has a non-canonical platform path"
-            )
-        size = entry["size_bytes"]
-        if isinstance(size, bool) or not isinstance(size, int) or size < 0:
-            raise RuntimeArtifactError(f"{context} file {logical} has an invalid size")
-        if not isinstance(entry["sha256"], str) or not SHA256_PATTERN.fullmatch(
-            entry["sha256"]
-        ):
-            raise RuntimeArtifactError(f"{context} file {logical} has an invalid SHA-256")
-        logical_paths.append(logical)
-        total_size += size
-    if logical_paths != sorted(logical_paths) or len(logical_paths) != len(set(logical_paths)):
-        raise RuntimeArtifactError(f"{context} file paths must be unique and sorted")
-    if inventory["file_count"] != len(entries) or inventory["total_size_bytes"] != total_size:
-        raise RuntimeArtifactError(f"{context} file totals do not match its entries")
-
-
-def compare_runtime_inventories(
-    vercel_inventory: dict[str, Any], docker_inventory: dict[str, Any]
-) -> dict[str, Any]:
-    """Compare logical identities while retaining platform-specific paths and IDs."""
-
-    _validate_inventory_document(vercel_inventory, context="Vercel inventory")
-    _validate_inventory_document(docker_inventory, context="Docker inventory")
-    if vercel_inventory["identity"]["platform"] != "vercel":
-        raise RuntimeArtifactError("first comparison inventory must be Vercel")
-    if docker_inventory["identity"]["platform"] != "docker":
-        raise RuntimeArtifactError("second comparison inventory must be Docker")
-
-    mismatches: list[dict[str, Any]] = []
-    for field in ("contract", "runtime_configuration"):
-        if vercel_inventory[field] != docker_inventory[field]:
-            mismatches.append({"kind": f"{field}_mismatch"})
-    for field in ("candidate_id", "release_version", "build_commit"):
-        left = vercel_inventory["identity"][field]
-        right = docker_inventory["identity"][field]
-        if left != right:
-            mismatches.append(
-                {
-                    "kind": "candidate_identity_mismatch",
-                    "field": field,
-                    "vercel": left,
-                    "docker": right,
-                }
-            )
-
-    def logical_rows(inventory: dict[str, Any]) -> dict[str, tuple[int, str]]:
-        return {
-            entry["logical_path"]: (entry["size_bytes"], entry["sha256"])
-            for entry in inventory["files"]
-        }
-
-    vercel_rows = logical_rows(vercel_inventory)
-    docker_rows = logical_rows(docker_inventory)
-    for path in sorted(set(vercel_rows) | set(docker_rows)):
-        if path not in vercel_rows:
-            mismatches.append({"kind": "missing_on_vercel", "logical_path": path})
-        elif path not in docker_rows:
-            mismatches.append({"kind": "missing_on_docker", "logical_path": path})
-        elif vercel_rows[path] != docker_rows[path]:
-            mismatches.append(
-                {
-                    "kind": "logical_identity_mismatch",
-                    "logical_path": path,
-                    "vercel": {
-                        "size_bytes": vercel_rows[path][0],
-                        "sha256": vercel_rows[path][1],
-                    },
-                    "docker": {
-                        "size_bytes": docker_rows[path][0],
-                        "sha256": docker_rows[path][1],
-                    },
-                }
-            )
-
-    staged_logical_parity = not mismatches
-    qualification_blockers = [
-        "platform_export_provenance_unverified",
-        "runtime_candidate_identity_not_observed",
-    ]
-    comparison: dict[str, Any] = {
-        "schema_version": COMPARISON_SCHEMA,
-        "qualified": staged_logical_parity,
-        "release_qualified": False,
-        "staged_logical_parity": staged_logical_parity,
-        "qualification_blockers": qualification_blockers,
-        "candidate_id": vercel_inventory["identity"]["candidate_id"],
-        "release_version": vercel_inventory["identity"]["release_version"],
-        "build_commit": vercel_inventory["identity"]["build_commit"],
-        "contract_sha256": vercel_inventory["contract"]["sha256"],
-        "vercel_artifact_id": vercel_inventory["identity"]["artifact_id"],
-        "docker_artifact_id": docker_inventory["identity"]["artifact_id"],
-        "vercel_inventory_sha256": vercel_inventory["inventory_sha256"],
-        "docker_inventory_sha256": docker_inventory["inventory_sha256"],
-        "logical_file_count": len(set(vercel_rows) | set(docker_rows)),
-        "mismatches": mismatches,
-    }
-    comparison["comparison_sha256"] = _sha256_bytes(_canonical_json(comparison))
-    return comparison
 
 
 def _write_json(path: Path | None, payload: dict[str, Any]) -> None:

@@ -88,6 +88,10 @@ harness_inputs:
   - src/firelens/review_workspace/web/review.js
   - src/firelens/qualification.py
   - src/firelens/runtime_artifact.py
+  - src/firelens/runtime_artifact_closure.py
+  - src/firelens/runtime_artifact_common.py
+  - src/firelens/runtime_artifact_comparison.py
+  - src/firelens/runtime_artifact_files.py
   - tests/test_runtime_artifact.py
   - tests/test_upgrade_benchmark.py
   - apps/web/vite.config.mjs

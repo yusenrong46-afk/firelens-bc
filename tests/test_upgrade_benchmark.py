@@ -2561,6 +2561,12 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
     assert "config/runtime_artifact_allowlist.v1.json" in spec.identity_inputs
     assert "scripts/upgrade_benchmark.py" in spec.harness_inputs
     assert "src/firelens/runtime_artifact.py" in spec.harness_inputs
+    assert {
+        "src/firelens/runtime_artifact_closure.py",
+        "src/firelens/runtime_artifact_common.py",
+        "src/firelens/runtime_artifact_comparison.py",
+        "src/firelens/runtime_artifact_files.py",
+    }.issubset(spec.harness_inputs)
     assert "tests/test_runtime_artifact.py" in spec.harness_inputs
     assert "tests/test_upgrade_benchmark.py" in spec.harness_inputs
     assert "apps/web/scripts/qualify-frontend-surface.mjs" in spec.harness_inputs
