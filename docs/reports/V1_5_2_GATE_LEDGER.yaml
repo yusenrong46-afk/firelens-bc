@@ -1,6 +1,6 @@
 schema_version: firelens_release_gate_ledger.v1
 release: V1.5-2
-updated_at: "2026-08-08T16:12:00-07:00"
+updated_at: "2026-08-08T16:41:00-07:00"
 status_values: [not_run, pass, fail, waived]
 waiver_policy: >
   A waiver must name the owner, rationale, expiry, and compensating control. No
@@ -34,10 +34,13 @@ gates:
       frontend contract and validator now require three distinct named roles, 30
       exact atomic checks, five environment profiles across ten states, hash-bound
       retained evidence, candidate URL/commit identity, timestamp ordering, and
-      zero open findings. No real named manual review has been performed. One
-      Full verification through commit 1fd941c passed Ruff, strict mypy across
-      66 source files, 603 Python tests (3 skipped, 109 subtests), 16 frontend
-      tests, the production build, 4 Sites tests, and all 18 Playwright flows.
+      zero open findings. No real named manual review has been performed.
+      Verification components through commit 37766cf passed Ruff, strict mypy
+      across 87 source files, 609 Python tests (3 skipped, 109 subtests), 16
+      frontend tests, the production build, 4 Sites tests, and all 18 Playwright
+      flows. The single make verify invocation reached the Playwright stage but
+      its sandbox could not bind localhost:4174 (EPERM); the exact Playwright
+      command was then executed with local-port permission and passed 18/18.
 
   - id: G0-before-baseline
     status: not_run
@@ -110,6 +113,9 @@ gates:
       validated successes. Retry sleeps and cancellation release capacity;
       malformed successful payloads do not reduce load capacity. A real
       provider canary and production pressure telemetry proof still remain.
+      OpenRouter wire-schema, model-identity, Retry-After, circuit-state, and
+      adaptive-concurrency helpers are now isolated from the HTTP adapter; the
+      public adapter remains 724 lines and its provider behavior tests pass.
       A manual-only, pinned candidate workflow now runs the full zero-cost
       verifier and packages CycloneDX 1.6 SBOM, in-toto/SLSA v1 provenance,
       dependency/license reports, benchmark/ledger copies, and a closed hash
@@ -121,6 +127,11 @@ gates:
       candidate bundle then verified. This is local dirty-worktree evidence,
       not a CI artifact, signed attestation, container/infrastructure scan, or
       frozen release candidate.
+      Runtime artifact verification is now separated into common security
+      primitives, staged filesystem policy, dependency-closure, inventory
+      comparison, and compatibility/CLI modules. Every module is at most 753
+      lines, the public imports are unchanged, 35 focused verifier tests pass,
+      and every new module is included in the benchmark harness hash roster.
       The new typed nearby endpoint binds coarse resolved location, radius,
       requested layers, viewport, freshness, unavailable layers, official
       fallbacks, and explicit bounded pagination. It returns at most 200 records
@@ -141,16 +152,22 @@ gates:
     artifact: tests/test_architecture.py
     expiry: null
     observation: >
-      Strict mypy is enforced and passes 66 source files. TypeScript strictness,
+      Strict mypy is enforced and passes 87 source files. TypeScript strictness,
       unchecked-index, exact-optional-property, and unused-symbol checks pass.
       OpenAPI generation and frontend contract drift checks pass. Architecture
       tests reject circular imports, forbidden foundation-layer dependencies,
-      React feature components over 300 lines, and feature imports from app or
-      prototype paths; all four pass. The React entrypoint is 36 lines and all
-      feature components are at most 224 lines. Gate remains fail because the
-      10,661-line upgrade benchmark script is not yet a thin CLI, multiple Python
-      production modules/scripts exceed the 800/300-line budgets, and Ruff C901
-      still reports 70 functions above complexity 12 across src and scripts.
+      React feature components over 300 lines, oversized API/live/contract/
+      answering/provider/runtime-artifact modules, and feature imports from app
+      or prototype paths. The React entrypoint is 36 lines and all feature
+      components are at most 224 lines. FastAPI is split into focused modules no
+      larger than 167 lines; answering, provider, and runtime-artifact modules
+      are all below 800 lines. The benchmark's strict protocol models and
+      manifest-complete frontend bundle accounting now live under
+      src/firelens/evaluation and are included in the harness identity. Gate
+      remains fail because scripts/upgrade_benchmark.py is still 10,267 lines,
+      three production modules exceed 800 lines, nine executable scripts exceed
+      300 lines, and the executed Ruff audit reports 69 functions above
+      cyclomatic complexity 12 across src and scripts.
 
   - id: G2-evidence-corpus
     status: not_run
@@ -216,7 +233,7 @@ gates:
       The production frontend now lives in apps/web, requests location only after
       a Near Me action, uses the local-vector map, exposes structured feedback, and
       lazy-loads map code. The verified production build is 796 KB in dist/client;
-      initial JavaScript is 75.77 KiB gzip and lazy map JavaScript is 53.01 KiB
+      initial JavaScript is 76.16 KiB gzip and lazy map JavaScript is 53.01 KiB
       gzip, within the frozen budgets. Sixteen frontend tests, the production
       build, and all 18 Playwright flows passed. The App entrypoint is now 36
       lines; Ask conversation, request/session orchestration, evidence inspection,
