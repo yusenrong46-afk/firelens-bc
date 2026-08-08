@@ -5,10 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import Sequence
-from copy import deepcopy
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
-from email.utils import parsedate_to_datetime
 from time import monotonic
 from typing import Any, Literal
 
@@ -17,115 +13,28 @@ from pydantic import ValidationError
 
 from firelens.config import FireLensConfig
 from firelens.contracts import (
-    BackgroundDraft,
     DocumentContextDraft,
     DocumentContextResponse,
     EmbeddingResponse,
     GenerationResponse,
-    GroundedDraft,
     PlanningDecision,
     PlanningResponse,
     RerankResponse,
     RerankResult,
 )
 from firelens.errors import ProviderError, ProviderErrorKind
-
-_CANONICAL_RESPONSE_MODELS: dict[str, frozenset[str]] = {
-    "openai/text-embedding-3-small": frozenset(
-        {"openai/text-embedding-3-small", "text-embedding-3-small"}
-    ),
-    "cohere/rerank-4-pro": frozenset({"cohere/rerank-4-pro", "rerank-v4.0-pro"}),
-}
-
-_ProviderStage = Literal[
-    "embedding",
-    "reranking",
-    "planning",
-    "context_generation",
-    "grounded_generation",
-    "background_generation",
-]
-_PROVIDER_STAGES: tuple[_ProviderStage, ...] = (
-    "embedding",
-    "reranking",
-    "planning",
-    "context_generation",
-    "grounded_generation",
-    "background_generation",
+from firelens.providers.openrouter_support import (
+    PROVIDER_STAGES,
+    CircuitState,
+    ProviderStage,
+    StagePressureState,
+    locally_type_draft,
+    model_identity_matches,
+    wire_draft_schema,
 )
-
-
-@dataclass
-class _CircuitState:
-    consecutive_failures: int = 0
-    open_until_monotonic: float = 0.0
-    probe_in_flight: bool = False
-    observed_success: bool = False
-
-
-@dataclass
-class _StagePressureState:
-    limit: int
-    active: int = 0
-    consecutive_successes: int = 0
-    condition: asyncio.Condition = field(default_factory=asyncio.Condition)
-
-
-def _wire_draft_schema(output_schema: dict[str, Any]) -> dict[str, Any]:
-    """Remove the redundant local draft-family discriminator from the wire schema.
-
-    ``generate_grounded`` and ``generate_background`` already select distinct
-    provider operations, prompts, and schemas.  The model therefore has no
-    authority to choose the family.  Omitting that redundant field avoids
-    repairing provider output while keeping every model-supplied field under a
-    strict JSON Schema.
-    """
-
-    schema = deepcopy(output_schema)
-    properties = schema.get("properties")
-    if isinstance(properties, dict):
-        properties.pop("answer_type", None)
-    required = schema.get("required")
-    if isinstance(required, list):
-        schema["required"] = [field for field in required if field != "answer_type"]
-    return schema
-
-
-def _locally_type_draft(
-    payload: dict[str, Any], *, answer_type: str
-) -> GroundedDraft | BackgroundDraft:
-    """Add the operation-owned family only after rejecting wire discriminators."""
-
-    if "answer_type" in payload:
-        raise ValueError("provider returned a model-owned draft discriminator")
-    typed_payload = {"answer_type": answer_type, **payload}
-    if answer_type == "grounded":
-        return GroundedDraft.model_validate(typed_payload)
-    return BackgroundDraft.model_validate(typed_payload)
-
-
-def _model_identity_matches(requested: str, returned: object) -> bool:
-    if not isinstance(returned, str):
-        return False
-    allowed = _CANONICAL_RESPONSE_MODELS.get(requested, frozenset({requested}))
-    return returned in allowed
-
-
-def _retry_after_seconds(value: str | None) -> float | None:
-    """Parse the standard Retry-After forms without trusting invalid values."""
-
-    if value is None:
-        return None
-    raw = value.strip()
-    if raw.isascii() and raw.isdigit():
-        return float(int(raw))
-    try:
-        retry_at = parsedate_to_datetime(raw)
-    except (TypeError, ValueError, OverflowError):
-        return None
-    if retry_at.tzinfo is None or retry_at.utcoffset() is None:
-        return None
-    return max(0.0, (retry_at.astimezone(UTC) - datetime.now(UTC)).total_seconds())
+from firelens.providers.openrouter_support import (
+    retry_after_seconds as parse_retry_after_seconds,
+)
 
 
 class OpenRouterProvider:
@@ -142,10 +51,10 @@ class OpenRouterProvider:
         self._client = client or httpx.AsyncClient(timeout=self.config.request_timeout_seconds)
         self._semaphore = asyncio.Semaphore(config.provider_max_concurrency)
         self._circuit_lock = asyncio.Lock()
-        self._circuits = {stage: _CircuitState() for stage in _PROVIDER_STAGES}
+        self._circuits = {stage: CircuitState() for stage in PROVIDER_STAGES}
         self._stage_pressure = {
-            stage: _StagePressureState(limit=config.provider_max_concurrency)
-            for stage in _PROVIDER_STAGES
+            stage: StagePressureState(limit=config.provider_max_concurrency)
+            for stage in PROVIDER_STAGES
         }
 
     async def aclose(self) -> None:
@@ -274,7 +183,7 @@ class OpenRouterProvider:
             return "available"
         return "configured_unprobed"
 
-    async def _admit_stage(self, stage: _ProviderStage) -> None:
+    async def _admit_stage(self, stage: ProviderStage) -> None:
         async with self._circuit_lock:
             state = self._circuits[stage]
             now = monotonic()
@@ -297,7 +206,7 @@ class OpenRouterProvider:
                     )
                 state.probe_in_flight = True
 
-    async def _record_stage_success(self, stage: _ProviderStage) -> None:
+    async def _record_stage_success(self, stage: ProviderStage) -> None:
         async with self._circuit_lock:
             state = self._circuits[stage]
             state.consecutive_failures = 0
@@ -320,7 +229,7 @@ class OpenRouterProvider:
 
     async def _record_stage_pressure_failure(
         self,
-        stage: _ProviderStage,
+        stage: ProviderStage,
         error: ProviderError,
     ) -> None:
         pressure = self._stage_pressure[stage]
@@ -343,13 +252,13 @@ class OpenRouterProvider:
                 return
             pressure.consecutive_successes = 0
 
-    async def _acquire_stage_capacity(self, stage: _ProviderStage) -> None:
+    async def _acquire_stage_capacity(self, stage: ProviderStage) -> None:
         pressure = self._stage_pressure[stage]
         async with pressure.condition:
             await pressure.condition.wait_for(lambda: pressure.active < pressure.limit)
             pressure.active += 1
 
-    async def _release_stage_capacity(self, stage: _ProviderStage) -> None:
+    async def _release_stage_capacity(self, stage: ProviderStage) -> None:
         pressure = self._stage_pressure[stage]
         async with pressure.condition:
             pressure.active -= 1
@@ -365,7 +274,7 @@ class OpenRouterProvider:
 
     async def _record_stage_failure(
         self,
-        stage: _ProviderStage,
+        stage: ProviderStage,
         error: ProviderError,
     ) -> None:
         async with self._circuit_lock:
@@ -392,13 +301,13 @@ class OpenRouterProvider:
                 )
                 state.open_until_monotonic = monotonic() + cooldown
 
-    async def _abandon_stage_probe(self, stage: _ProviderStage) -> None:
+    async def _abandon_stage_probe(self, stage: ProviderStage) -> None:
         async with self._circuit_lock:
             self._circuits[stage].probe_in_flight = False
 
     async def _post(
         self,
-        stage: _ProviderStage,
+        stage: ProviderStage,
         endpoint: str,
         payload: dict[str, Any],
     ) -> tuple[dict[str, Any], int]:
@@ -415,7 +324,7 @@ class OpenRouterProvider:
 
     async def _post_attempt(
         self,
-        stage: _ProviderStage,
+        stage: ProviderStage,
         endpoint: str,
         payload: dict[str, Any],
     ) -> dict[str, Any]:
@@ -428,7 +337,9 @@ class OpenRouterProvider:
                         headers=self._headers(),
                         json=payload,
                     )
-                retry_after_seconds = _retry_after_seconds(response.headers.get("Retry-After"))
+                retry_after_seconds = parse_retry_after_seconds(
+                    response.headers.get("Retry-After")
+                )
                 try:
                     body = response.json()
                 except json.JSONDecodeError as exc:
@@ -489,7 +400,7 @@ class OpenRouterProvider:
 
     async def _post_with_retries(
         self,
-        stage: _ProviderStage,
+        stage: ProviderStage,
         endpoint: str,
         payload: dict[str, Any],
     ) -> tuple[dict[str, Any], int]:
@@ -584,7 +495,7 @@ class OpenRouterProvider:
             },
         )
         try:
-            if not _model_identity_matches(self.config.embedding_model, body.get("model")):
+            if not model_identity_matches(self.config.embedding_model, body.get("model")):
                 raise ValueError("embedding model mismatch")
             rows = sorted(body["data"], key=lambda row: row["index"])
             vectors = [row["embedding"] for row in rows]
@@ -625,7 +536,7 @@ class OpenRouterProvider:
             },
         )
         try:
-            if not _model_identity_matches(self.config.rerank_model, body.get("model")):
+            if not model_identity_matches(self.config.rerank_model, body.get("model")):
                 raise ValueError("rerank model mismatch")
             results = [
                 RerankResult(index=row["index"], relevance_score=row["relevance_score"])
@@ -661,7 +572,7 @@ class OpenRouterProvider:
         output_schema: dict[str, Any],
         schema_name: str,
         max_tokens: int,
-        stage: _ProviderStage,
+        stage: ProviderStage,
     ) -> tuple[dict[str, Any], str, dict[str, Any], int]:
         body, attempts = await self._post(
             stage,
@@ -684,7 +595,7 @@ class OpenRouterProvider:
             },
         )
         try:
-            if not _model_identity_matches(self.config.generation_model, body.get("model")):
+            if not model_identity_matches(self.config.generation_model, body.get("model")):
                 raise ValueError("generation model mismatch")
             content = body["choices"][0]["message"]["content"]
             payload = json.loads(content) if isinstance(content, str) else content
@@ -768,13 +679,13 @@ class OpenRouterProvider:
     ) -> GenerationResponse:
         payload, model, usage, attempts = await self._chat_json(
             messages,
-            output_schema=_wire_draft_schema(output_schema),
+            output_schema=wire_draft_schema(output_schema),
             schema_name="firelens_grounded_answer",
             max_tokens=1_200,
             stage="grounded_generation",
         )
         try:
-            draft = _locally_type_draft(payload, answer_type="grounded")
+            draft = locally_type_draft(payload, answer_type="grounded")
         except (ValidationError, ValueError) as exc:
             error = ProviderError(
                 ProviderErrorKind.INVALID_RESPONSE,
@@ -794,13 +705,13 @@ class OpenRouterProvider:
     ) -> GenerationResponse:
         payload, model, usage, attempts = await self._chat_json(
             messages,
-            output_schema=_wire_draft_schema(output_schema),
+            output_schema=wire_draft_schema(output_schema),
             schema_name="firelens_background_answer",
             max_tokens=500,
             stage="background_generation",
         )
         try:
-            draft = _locally_type_draft(payload, answer_type="background")
+            draft = locally_type_draft(payload, answer_type="background")
         except (ValidationError, ValueError) as exc:
             error = ProviderError(
                 ProviderErrorKind.INVALID_RESPONSE,
