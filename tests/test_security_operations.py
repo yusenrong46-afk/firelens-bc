@@ -102,6 +102,7 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("default-src 'self'", content_policy)
         self.assertIn("style-src 'self'", content_policy)
         self.assertNotIn("'unsafe-inline'", content_policy)
+        self.assertNotIn("tile.openstreetmap.org", content_policy)
         self.assertEqual(health.headers["x-content-type-options"], "nosniff")
         self.assertEqual(health.headers["x-frame-options"], "DENY")
         self.assertEqual(health.headers["referrer-policy"], "no-referrer")
