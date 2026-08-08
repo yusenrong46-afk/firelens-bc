@@ -63,6 +63,7 @@ class Runtime:
             corpus_ready=corpus_ready,
             index_ready=index_ready,
             provider_configured=self.provider_configured,
+            zdr_required=self.config.require_zdr,
             provider_state=provider_state,
             corpus_version=self.corpus_version,
             chunk_count=len(self.chunks) if self.chunks else None,

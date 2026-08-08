@@ -45,7 +45,7 @@ def check_python_lock() -> list[str]:
 
 
 def check_node_lock() -> list[str]:
-    frontend = ROOT / "prototype/firelens-rag-ui"
+    frontend = ROOT / "apps/web"
     package = json.loads((frontend / "package.json").read_text(encoding="utf-8"))
     lock = json.loads((frontend / "package-lock.json").read_text(encoding="utf-8"))
     findings: list[str] = []

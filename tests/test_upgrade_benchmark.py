@@ -2538,9 +2538,7 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
     assert "src/firelens/runtime_artifact.py" in spec.harness_inputs
     assert "tests/test_runtime_artifact.py" in spec.harness_inputs
     assert "tests/test_upgrade_benchmark.py" in spec.harness_inputs
-    assert (
-        "prototype/firelens-rag-ui/scripts/qualify-frontend-surface.mjs" in spec.harness_inputs
-    )
+    assert "apps/web/scripts/qualify-frontend-surface.mjs" in spec.harness_inputs
     assert len(spec.comparison_metrics) == len(
         {metric.key for metric in spec.comparison_metrics}
     )

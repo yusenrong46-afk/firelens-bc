@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "generate:api": "openapi-typescript ../../docs/openapi.v1.json -o src/api-schema.d.ts",
+    "generate:api": "openapi-typescript ../../docs/openapi.v1.json -o src/shared/api/api-schema.d.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",

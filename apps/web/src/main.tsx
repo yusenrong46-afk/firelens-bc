@@ -1,7 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { App } from "./App";
-import "./styles.css";
+import { App } from "./app/App";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("FireLens root element is missing");

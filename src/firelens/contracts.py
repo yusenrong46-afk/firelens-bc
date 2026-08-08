@@ -792,6 +792,7 @@ class HealthResponse(FrozenStrictModel):
     corpus_ready: bool
     index_ready: bool
     provider_configured: bool
+    zdr_required: bool
     provider_state: Literal[
         "not_configured",
         "configured_unprobed",
@@ -817,6 +818,26 @@ class ErrorEnvelope(FrozenStrictModel):
     error_kind: str
     message: str
     retryable: bool = False
+
+
+FeedbackCategory = Literal[
+    "helpful",
+    "incorrect_or_unsupported",
+    "missing_information",
+    "stale_or_wrong_live_data",
+    "confusing",
+    "safety_concern",
+    "accessibility_issue",
+]
+
+
+class FeedbackRequest(FrozenStrictModel):
+    trace_id: str = Field(pattern=r"^[0-9a-f]{32}$")
+    category: FeedbackCategory
+
+
+class FeedbackResponse(FrozenStrictModel):
+    accepted: Literal[True] = True
 
 
 class EmbeddingResponse(FrozenStrictModel):

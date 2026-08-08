@@ -1,8 +1,8 @@
 PYTHON := .venv/bin/python
 FIRELENS := .venv/bin/firelens
-FRONTEND := prototype/firelens-rag-ui
+FRONTEND := apps/web
 
-.PHONY: setup verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review retrieval-review-packet retrieval-review-template qualify-retrieval-review qualify-retrieval-v1-5 qualify-live-v1-5 capture-live-slo verify-live-slo prepare-firewall model-bakeoff canary live-smoke openapi secret-scan
+.PHONY: setup check verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review retrieval-review-packet retrieval-review-template qualify-retrieval-review qualify-retrieval-v1-5 qualify-live-v1-5 capture-live-slo verify-live-slo prepare-firewall model-bakeoff canary live-smoke openapi secret-scan
 
 setup:
 	@test -d .venv || python3 -m venv .venv
@@ -17,13 +17,16 @@ openapi:
 secret-scan:
 	$(PYTHON) scripts/secret_scan.py
 
-verify: secret-scan openapi
+check: secret-scan openapi
 	$(PYTHON) -m ruff check src tests scripts
 	$(PYTHON) -m ruff format --check src tests scripts
 	$(PYTHON) -m mypy
-	$(PYTHON) -m pytest -q
+	$(PYTHON) -m pytest -q -m "not browser and not qualification"
 	npm --prefix $(FRONTEND) test
 	npm --prefix $(FRONTEND) run build
+
+verify: check
+	$(PYTHON) -m pytest -q
 	npm --prefix $(FRONTEND) run test:sites
 	npm --prefix $(FRONTEND) run test:e2e
 

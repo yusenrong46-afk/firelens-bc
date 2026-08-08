@@ -67,7 +67,7 @@ harness_inputs:
   - scripts/human_review_workspace.py
   - docs/protocols/V1_5_2_HUMAN_REVIEW_RUNBOOK.md
   - scripts/prepare_vercel_firewall.py
-  - prototype/firelens-rag-ui/scripts/qualify-frontend-surface.mjs
+  - apps/web/scripts/qualify-frontend-surface.mjs
   - src/firelens/benchmark.py
   - src/firelens/retrieval_experiment.py
   - src/firelens/owner_review.py
@@ -88,9 +88,9 @@ harness_inputs:
   - src/firelens/runtime_artifact.py
   - tests/test_runtime_artifact.py
   - tests/test_upgrade_benchmark.py
-  - prototype/firelens-rag-ui/vite.config.mjs
-  - prototype/firelens-rag-ui/package.json
-  - prototype/firelens-rag-ui/package-lock.json
+  - apps/web/vite.config.mjs
+  - apps/web/package.json
+  - apps/web/package-lock.json
 
 tracks:
   zero_cost:

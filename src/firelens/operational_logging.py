@@ -9,6 +9,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from firelens.contracts import FeedbackCategory
+
 LOGGER_NAME = "firelens.operations"
 
 
@@ -32,6 +34,20 @@ class OperationalEvent(BaseModel):
     live_result_count: int = Field(default=0, ge=0)
     validation_disposition: Literal["accepted", "rejected", "not_applicable"]
     corpus_version: str | None = Field(default=None, max_length=200)
+    release_version: str = Field(min_length=1, max_length=100)
+    build_commit: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
+    deployment_environment: Literal["local", "preview", "production"]
+
+
+class FeedbackEvent(BaseModel):
+    """Strict content-free feedback event for the restricted operations view."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_version: Literal["firelens.feedback_event.v1"]
+    event: Literal["firelens_feedback"]
+    trace_id: str = Field(pattern=r"^[0-9a-f]{32}$")
+    category: FeedbackCategory
     release_version: str = Field(min_length=1, max_length=100)
     build_commit: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
     deployment_environment: Literal["local", "preview", "production"]
@@ -76,6 +92,35 @@ def log_operation(
         live_result_count=live_result_count,
         validation_disposition=validation_disposition,
         corpus_version=corpus_version,
+        release_version=release_version,
+        build_commit=build_commit,
+        deployment_environment=deployment_environment,
+    )
+    logging.getLogger(LOGGER_NAME).info(
+        json.dumps(
+            event.model_dump(mode="json"),
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+    )
+
+
+def log_feedback(
+    *,
+    trace_id: str,
+    category: FeedbackCategory,
+    release_version: str,
+    build_commit: str | None = None,
+    deployment_environment: Literal["local", "preview", "production"] = "local",
+) -> None:
+    """Emit only the two user-supplied allowlisted feedback fields."""
+
+    event = FeedbackEvent(
+        schema_version="firelens.feedback_event.v1",
+        event="firelens_feedback",
+        trace_id=trace_id,
+        category=category,
         release_version=release_version,
         build_commit=build_commit,
         deployment_environment=deployment_environment,

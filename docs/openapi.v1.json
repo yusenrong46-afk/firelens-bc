@@ -247,6 +247,48 @@
         "title": "EvidenceStatus",
         "type": "string"
       },
+      "FeedbackRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "enum": [
+              "helpful",
+              "incorrect_or_unsupported",
+              "missing_information",
+              "stale_or_wrong_live_data",
+              "confusing",
+              "safety_concern",
+              "accessibility_issue"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "trace_id": {
+            "pattern": "^[0-9a-f]{32}$",
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trace_id",
+          "category"
+        ],
+        "title": "FeedbackRequest",
+        "type": "object"
+      },
+      "FeedbackResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted": {
+            "const": true,
+            "default": true,
+            "title": "Accepted",
+            "type": "boolean"
+          }
+        },
+        "title": "FeedbackResponse",
+        "type": "object"
+      },
       "Freshness": {
         "enum": [
           "fresh",
@@ -372,6 +414,10 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "zdr_required": {
+            "title": "Zdr Required",
+            "type": "boolean"
           }
         },
         "required": [
@@ -379,6 +425,7 @@
           "corpus_ready",
           "index_ready",
           "provider_configured",
+          "zdr_required",
           "provider_state",
           "release_version"
         ],
@@ -1310,6 +1357,114 @@
           }
         },
         "summary": "Ask"
+      }
+    },
+    "/api/v1/feedback": {
+      "post": {
+        "operationId": "feedback_api_v1_feedback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Feedback"
       }
     },
     "/api/v1/health/live": {

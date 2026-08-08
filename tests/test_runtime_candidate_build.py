@@ -98,6 +98,7 @@ def test_render_identity_is_exposed_by_runtime_config(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("RENDER", "true")
+    monkeypatch.setenv("FIRELENS_REQUIRE_ZDR", "true")
     monkeypatch.setenv("RENDER_GIT_COMMIT", COMMIT)
     monkeypatch.setenv("RENDER_INSTANCE_ID", "instance-123")
     config = FireLensConfig.from_env(tmp_path)

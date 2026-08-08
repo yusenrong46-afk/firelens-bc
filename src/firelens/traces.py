@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 import os
 import tempfile
@@ -19,11 +18,13 @@ class TraceRecorder:
         directory: Path,
         *,
         include_content: bool = False,
+        include_question_fingerprint: bool = True,
         max_files: int = 250,
         max_bytes: int = 50 * 1024 * 1024,
     ) -> None:
         self.directory = directory
         self.include_content = include_content
+        self.include_question_fingerprint = include_question_fingerprint
         self.max_files = max_files
         self.max_bytes = max_bytes
         self._lock = threading.Lock()
@@ -71,9 +72,12 @@ class TraceRecorder:
             "trace_id": trace_id,
             "created_at": now,
             "updated_at": now,
-            "question_sha256": hashlib.sha256(question.encode("utf-8")).hexdigest(),
             "events": [],
         }
+        if self.include_question_fingerprint:
+            import hashlib
+
+            trace["question_sha256"] = hashlib.sha256(question.encode("utf-8")).hexdigest()
         if path.is_file():
             try:
                 existing = json.loads(path.read_text(encoding="utf-8"))

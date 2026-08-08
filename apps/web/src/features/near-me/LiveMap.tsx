@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { CircleMarker, GeoJSON, MapContainer, Popup, useMap } from "react-leaflet";
 import type { LatLngBoundsExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { LiveResult } from "./api";
+import type { LiveResult } from "../../shared/api/api";
 import { bcBoundaryFeature } from "./bcBoundary";
 
 function formatTimestamp(value: string): string {
@@ -63,8 +63,8 @@ export function LiveMap({
   unavailableLayers = [],
 }: {
   results: LiveResult[];
-  aggregateFreshness?: "fresh" | "stale" | "mixed";
-  unavailableLayers?: string[];
+  aggregateFreshness?: "fresh" | "stale" | "mixed" | undefined;
+  unavailableLayers?: string[] | undefined;
 }) {
   const freshnessState = aggregateFreshness ?? (
     results.every((result) => result.freshness === "stale")
@@ -73,7 +73,6 @@ export function LiveMap({
         ? "mixed"
         : "fresh"
   );
-  const includesStale = freshnessState !== "fresh";
   const featureResults = useMemo(
     () => results.filter(
       (result) => isRenderableGeometry(result) && (result.geometry as { type?: string }).type !== "Point",
@@ -158,7 +157,10 @@ export function LiveMap({
           </GeoJSON>
         ))}
         {pointResults.map((result) => {
-          const [longitude, latitude] = (result.geometry as { coordinates: number[] }).coordinates;
+          const coordinates = (result.geometry as { coordinates: number[] }).coordinates;
+          const longitude = coordinates[0];
+          const latitude = coordinates[1];
+          if (longitude === undefined || latitude === undefined) return null;
           return (
             <CircleMarker
               key={result.result_id}

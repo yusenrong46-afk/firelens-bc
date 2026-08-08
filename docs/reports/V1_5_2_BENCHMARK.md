@@ -176,7 +176,7 @@ mismatched environment fields make the latency row non-comparable; the tolerance
 to a pass.
 
 The client entry/lazy dependency graph is read from
-`prototype/firelens-rag-ui/dist/client/.vite/manifest.json`. Initial-route size is the gzip total of
+`apps/web/dist/client/.vite/manifest.json`. Initial-route size is the gzip total of
 the entry's static JavaScript/CSS closure. Lazy size is the gzip total of dynamic-import closures not
 already counted as initial. The inventory then scans the complete `dist/` tree and classifies every
 client file, font, image, server file, hosting/deployment metadata file, and other artifact exactly

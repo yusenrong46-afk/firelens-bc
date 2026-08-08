@@ -355,6 +355,7 @@ class StaticRAGService:
         self.trace_recorder = trace_recorder or TraceRecorder(
             config.trace_dir,
             include_content=config.trace_content,
+            include_question_fingerprint=config.deployment_environment != "production",
             max_files=config.trace_max_files,
             max_bytes=config.trace_max_bytes,
         )

@@ -53,7 +53,7 @@ def main() -> None:
     args = parser.parse_args()
     report = {
         "python": python_licenses(),
-        "node": node_licenses(ROOT / "prototype/firelens-rag-ui/package-lock.json"),
+        "node": node_licenses(ROOT / "apps/web/package-lock.json"),
     }
     prohibited = [
         f"{ecosystem}:{row['name']}:{row['license']}"

@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
-import { App } from "../src/App";
+import { App } from "../src/app/App";
 
 const answer = {
   status: "answer",
@@ -204,8 +204,8 @@ describe("FireLens Source Lens", () => {
     await user.click(screen.getByLabelText("Send question"));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
 
-    const firstPayload = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
-    const secondPayload = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
+    const firstPayload = JSON.parse(String(fetchMock.mock.calls[0]![1]?.body));
+    const secondPayload = JSON.parse(String(fetchMock.mock.calls[1]![1]?.body));
     expect(firstPayload.history).toEqual([]);
     expect(secondPayload.history).toEqual([
       { role: "user", content: "What should I pack?" },
@@ -234,7 +234,7 @@ describe("FireLens Source Lens", () => {
     await user.click(screen.getByLabelText("Send question"));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
 
-    const secondPayload = JSON.parse(fetchMock.mock.calls[1][1].body as string);
+    const secondPayload = JSON.parse(fetchMock.mock.calls[1]![1]!.body as string);
     expect(secondPayload.history[1]).toEqual({
       role: "assistant",
       content: boundedHistory,
@@ -256,7 +256,7 @@ describe("FireLens Source Lens", () => {
       await waitFor(() => expect(screen.getByLabelText("Ask a preparedness question")).not.toBeDisabled());
     }
 
-    const fourthPayload = JSON.parse(String(fetchMock.mock.calls[3][1]?.body));
+    const fourthPayload = JSON.parse(String(fetchMock.mock.calls[3]![1]?.body));
     expect(fourthPayload.history).toHaveLength(6);
     expect(fourthPayload.history[0]).toEqual({ role: "user", content: "Question one" });
     expect(fourthPayload.history[5]).toEqual({ role: "assistant", content: answer.answer });
@@ -279,7 +279,7 @@ describe("FireLens Source Lens", () => {
     await user.type(screen.getByLabelText("Ask a preparedness question"), "Fresh question");
     await user.click(screen.getByLabelText("Send question"));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    const payload = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
+    const payload = JSON.parse(String(fetchMock.mock.calls[1]![1]?.body));
     expect(payload.history).toEqual([]);
   });
 

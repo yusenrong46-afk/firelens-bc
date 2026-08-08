@@ -1256,7 +1256,7 @@ def _cpu_model() -> str:
 def _execution_environment() -> dict[str, str | int]:
     """Return stable fields that bind timing and bundle measurements."""
 
-    frontend = ROOT / "prototype/firelens-rag-ui"
+    frontend = ROOT / "apps/web"
     try:
         lock = json.loads((frontend / "package-lock.json").read_text(encoding="utf-8"))
         playwright_version = str(lock["packages"]["node_modules/@playwright/test"]["version"])
@@ -1267,7 +1267,7 @@ def _execution_environment() -> dict[str, str | int]:
             "node",
             "-e",
             (
-                "const {chromium}=require('./prototype/firelens-rag-ui/node_modules/"
+                "const {chromium}=require('./apps/web/node_modules/"
                 "playwright');process.stdout.write(chromium.executablePath())"
             ),
         ]
@@ -1323,7 +1323,7 @@ def _bind_raw_deployment_evidence(
 
 
 def _frontend_bundle(dist_root: Path | None = None) -> dict[str, Any]:
-    dist = dist_root or ROOT / "prototype/firelens-rag-ui/dist"
+    dist = dist_root or ROOT / "apps/web/dist"
     client = dist / "client"
     manifest_path = client / ".vite/manifest.json"
     if not manifest_path.is_file():
@@ -2201,9 +2201,7 @@ def _frontend_axe(axe: Any, *, context: str) -> tuple[int, dict[str, Any]]:
         context=f"{context} installed axe package version",
     )
     try:
-        lock = json.loads(
-            (ROOT / "prototype/firelens-rag-ui/package-lock.json").read_text(encoding="utf-8")
-        )
+        lock = json.loads((ROOT / "apps/web/package-lock.json").read_text(encoding="utf-8"))
         locked_version = str(lock["packages"]["node_modules/axe-core"]["version"])
     except (KeyError, OSError, TypeError, ValueError) as error:
         raise ValueError("frontend axe-core lock identity is unavailable") from error
@@ -3850,7 +3848,7 @@ def _frontend_surface(
         top_level_browser=browser,
     )
 
-    client = client_root or ROOT / "prototype/firelens-rag-ui/dist/client"
+    client = client_root or ROOT / "apps/web/dist/client"
     build = report.get("build")
     if not isinstance(build, dict):
         raise ValueError("frontend surface report build identity must be an object")
@@ -3984,7 +3982,7 @@ def _capture_frontend_surface(
         [
             "npm",
             "--prefix",
-            "prototype/firelens-rag-ui",
+            "apps/web",
             "run",
             "qualify:surface",
             "--",

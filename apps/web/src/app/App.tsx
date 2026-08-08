@@ -13,11 +13,11 @@ import {
   UserCircle,
   WarningCircle,
 } from "@phosphor-icons/react";
-import "@fontsource/inter/400.css";
-import "@fontsource/inter/500.css";
-import "@fontsource/inter/600.css";
-import "@fontsource/newsreader/500.css";
-import "@fontsource/newsreader/600.css";
+import "@fontsource/inter/latin-400.css";
+import "@fontsource/inter/latin-500.css";
+import "@fontsource/inter/latin-600.css";
+import "@fontsource/newsreader/latin-500.css";
+import "@fontsource/newsreader/latin-600.css";
 import {
   askFireLens,
   AskResponse,
@@ -25,7 +25,8 @@ import {
   FireLensApiError,
   LocationInput,
   ResponseMode,
-} from "./api";
+} from "../shared/api/api";
+import { FeedbackControls } from "../features/feedback/FeedbackControls";
 import "./styles.css";
 
 type AnswerView = { kind: "answer"; question: string; response: AskResponse };
@@ -42,7 +43,7 @@ type Claim = NonNullable<AskResponse["claims"]>[number];
 type Evidence = NonNullable<AskResponse["evidence"]>[number];
 type AggregateFreshness = NonNullable<AskResponse["aggregate_freshness"]>;
 type Support = NonNullable<Claim["supports"]>[number];
-const LiveMap = lazy(() => import("./LiveMap").then((module) => ({ default: module.LiveMap })));
+const LiveMap = lazy(() => import("../features/near-me/LiveMap").then((module) => ({ default: module.LiveMap })));
 
 const INITIAL_SUGGESTIONS = [
   "What belongs in a grab-and-go bag?",
@@ -75,7 +76,7 @@ function ResponseModeBadge({
   aggregateFreshness,
 }: {
   mode: ResponseMode;
-  aggregateFreshness?: AggregateFreshness;
+  aggregateFreshness?: AggregateFreshness | undefined;
 }) {
   const labels: Record<ResponseMode, string> = {
     grounded: "Reviewed sources",
@@ -425,6 +426,7 @@ export function App() {
                   />
                 )}
                 <p>{assistantText}</p>
+                {response?.trace_id && <FeedbackControls traceId={response.trace_id} />}
                 {(view.kind === "unavailable" || (view.kind === "error" && view.retryable)) && (
                   <button className="retry-button" type="button" onClick={() => void submitQuestion(lastQuestion)}>
                     Retry this question

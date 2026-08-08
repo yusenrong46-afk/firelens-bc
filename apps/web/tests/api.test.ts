@@ -1,9 +1,25 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { fetchNearbyOfficialRecords } from "../src/api";
+import { fetchNearbyOfficialRecords, submitFeedback } from "../src/shared/api/api";
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe("submitFeedback", () => {
+  it("sends only the trace and allowlisted category", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ accepted: true }), { status: 202 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await submitFeedback("a".repeat(32), "safety_concern");
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/feedback", expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ trace_id: "a".repeat(32), category: "safety_concern" }),
+    }));
+  });
 });
 
 describe("fetchNearbyOfficialRecords", () => {

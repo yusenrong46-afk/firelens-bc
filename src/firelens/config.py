@@ -98,6 +98,10 @@ class FireLensConfig(BaseModel):
     def validate_adaptive_provider_bounds(self) -> Self:
         if self.provider_adaptive_min_concurrency > self.provider_max_concurrency:
             raise ValueError("provider adaptive minimum cannot exceed maximum concurrency")
+        if self.deployment_environment == "production" and not self.require_zdr:
+            raise ValueError("production requires OpenRouter zero-data-retention routing")
+        if self.deployment_environment == "production" and self.trace_content:
+            raise ValueError("production cannot persist request or response content in traces")
         return self
 
     @classmethod
@@ -109,7 +113,7 @@ class FireLensConfig(BaseModel):
             return os.environ.get(name, file_values.get(name))
 
         key = setting("OPENROUTER_API_KEY")
-        frontend_dist = root / "prototype/firelens-rag-ui/dist/client"
+        frontend_dist = root / "apps/web/dist/client"
         configured_trace_dir = setting("FIRELENS_TRACE_DIR")
         configured_document_context = setting("FIRELENS_DOCUMENT_CONTEXT_PATH")
         environment_setting = setting("FIRELENS_ENVIRONMENT") or setting("VERCEL_ENV")

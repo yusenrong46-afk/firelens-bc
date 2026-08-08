@@ -25,8 +25,8 @@
     "data/index/firelens_vectors.npy",
     "data/index/firelens_vectors.manifest.json",
     "data/repairs/text_overrides.yaml",
-    "prototype/firelens-rag-ui/dist/client/index.html",
-    "prototype/firelens-rag-ui/dist/client/.vite/manifest.json"
+    "apps/web/dist/client/index.html",
+    "apps/web/dist/client/.vite/manifest.json"
   ],
   "conditional_files": [
     {
@@ -42,9 +42,9 @@
     "package": "firelens"
   },
   "frontend": {
-    "root": "prototype/firelens-rag-ui/dist/client",
-    "index": "prototype/firelens-rag-ui/dist/client/index.html",
-    "vite_manifest": "prototype/firelens-rag-ui/dist/client/.vite/manifest.json",
+    "root": "apps/web/dist/client",
+    "index": "apps/web/dist/client/index.html",
+    "vite_manifest": "apps/web/dist/client/.vite/manifest.json",
     "allowed_suffixes": [
       ".html",
       ".js",
@@ -83,9 +83,9 @@
       "output",
       "outputs",
       "tests",
-      "prototype/firelens-rag-ui/node_modules",
-      "prototype/firelens-rag-ui/playwright-report",
-      "prototype/firelens-rag-ui/test-results"
+      "apps/web/node_modules",
+      "apps/web/playwright-report",
+      "apps/web/test-results"
     ],
     "segments": [
       ".git",

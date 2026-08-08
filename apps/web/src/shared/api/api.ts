@@ -8,6 +8,7 @@ export type LocationInput = components["schemas"]["LocationInput"];
 export type LiveResult = components["schemas"]["LiveResult"];
 export type NearMeRequest = components["schemas"]["NearMeRequest"];
 export type NearMeResponse = components["schemas"]["NearMeResponse"];
+export type FeedbackCategory = components["schemas"]["FeedbackRequest"]["category"];
 
 export class FireLensApiError extends Error {
   readonly detail: ErrorEnvelope;
@@ -29,7 +30,7 @@ export async function askFireLens(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ question, history: history.slice(-6), location }),
-    signal,
+    signal: signal ?? null,
   });
   const payload: unknown = await response.json();
   if (!response.ok) {
@@ -46,11 +47,28 @@ export async function fetchNearbyOfficialRecords(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
-    signal,
+    signal: signal ?? null,
   });
   const payload: unknown = await response.json();
   if (!response.ok) {
     throw new FireLensApiError(payload as ErrorEnvelope);
   }
   return payload as NearMeResponse;
+}
+
+export async function submitFeedback(
+  traceId: string,
+  category: FeedbackCategory,
+  signal?: AbortSignal,
+): Promise<void> {
+  const response = await fetch("/api/v1/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trace_id: traceId, category }),
+    signal: signal ?? null,
+  });
+  if (!response.ok) {
+    const payload: unknown = await response.json();
+    throw new FireLensApiError(payload as ErrorEnvelope);
+  }
 }

@@ -195,7 +195,7 @@ test("sends bounded conversation context and can clear it", async ({ page }) => 
   await page.getByLabel("Ask a preparedness question").fill("Why does that matter?");
   await page.getByLabel("Send question").click();
   await expect.poll(() => seenRequests.length).toBe(2);
-  expect(seenRequests[1].history).toEqual([
+  expect(seenRequests[1]!.history).toEqual([
     { role: "user", content: "What should I pack?" },
     { role: "assistant", content: answer.answer },
   ]);
@@ -205,7 +205,7 @@ test("sends bounded conversation context and can clear it", async ({ page }) => 
   await page.getByLabel("Ask a preparedness question").fill("Fresh question");
   await page.getByLabel("Send question").click();
   await expect.poll(() => seenRequests.length).toBe(3);
-  expect(seenRequests[2].history).toEqual([]);
+  expect(seenRequests[2]!.history).toEqual([]);
 });
 
 test("redirects a completely tangent request", async ({ page }) => {

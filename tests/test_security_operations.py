@@ -10,13 +10,77 @@ import unittest
 from pathlib import Path
 
 import httpx
+import pytest
+from pydantic import ValidationError
 from rag_helpers import make_runtime
 
 from firelens.api import ERROR_RESPONSES, create_app
+from firelens.config import FireLensConfig
 from firelens.operational_logging import LOGGER_NAME
 
 
 class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
+    async def test_feedback_is_categorical_content_free_and_rate_limited(self) -> None:
+        stream = io.StringIO()
+        handler = logging.StreamHandler(stream)
+        logger = logging.getLogger(LOGGER_NAME)
+        previous_level = logger.level
+        previous_propagate = logger.propagate
+        logger.setLevel(logging.INFO)
+        logger.propagate = False
+        logger.addHandler(handler)
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                runtime, _, config = await make_runtime(Path(directory))
+                app = create_app(config, runtime=runtime)
+                async with httpx.AsyncClient(
+                    transport=httpx.ASGITransport(app=app), base_url="http://test"
+                ) as client:
+                    response = await client.post(
+                        "/api/v1/feedback",
+                        json={
+                            "trace_id": "a" * 32,
+                            "category": "incorrect_or_unsupported",
+                        },
+                    )
+                    invalid = await client.post(
+                        "/api/v1/feedback",
+                        json={"trace_id": "not-a-trace", "category": "helpful"},
+                    )
+                    extra = await client.post(
+                        "/api/v1/feedback",
+                        json={
+                            "trace_id": "b" * 32,
+                            "category": "helpful",
+                            "comment": "PRIVATE-FEEDBACK-CONTENT",
+                        },
+                    )
+                await runtime.aclose()
+        finally:
+            logger.removeHandler(handler)
+            logger.setLevel(previous_level)
+            logger.propagate = previous_propagate
+
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.json(), {"accepted": True})
+        self.assertEqual(invalid.status_code, 422)
+        self.assertEqual(extra.status_code, 422)
+        serialized = stream.getvalue()
+        self.assertNotIn("PRIVATE-FEEDBACK-CONTENT", serialized)
+        event = json.loads(serialized.strip())
+        self.assertEqual(
+            set(event),
+            {
+                "schema_version",
+                "event",
+                "trace_id",
+                "category",
+                "release_version",
+                "build_commit",
+                "deployment_environment",
+            },
+        )
+
     async def test_security_headers_and_production_debug_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             runtime, _, config = await make_runtime(Path(directory))
@@ -191,6 +255,18 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ProductionImportBoundaryTests(unittest.TestCase):
+    def test_production_config_requires_zdr_and_content_free_traces(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            local = FireLensConfig.from_env(Path(directory))
+            payload = local.model_dump()
+            payload["deployment_environment"] = "production"
+            with pytest.raises(ValidationError, match="zero-data-retention"):
+                FireLensConfig.model_validate(payload)
+            payload["require_zdr"] = True
+            payload["trace_content"] = True
+            with pytest.raises(ValidationError, match="cannot persist"):
+                FireLensConfig.model_validate(payload)
+
     def test_openapi_413_description_is_explicit_and_stable(self) -> None:
         self.assertEqual(ERROR_RESPONSES[413]["description"], "Content Too Large")
 

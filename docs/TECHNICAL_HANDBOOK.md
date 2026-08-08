@@ -103,7 +103,7 @@ framework callback graph hides control flow.
 | Provider boundary | `providers/` | OpenRouter wire formats, retry/error normalization | product policy |
 | Interfaces | `api.py`, `cli.py` | HTTP/CLI status mapping and lifecycle | retrieval logic |
 | Evaluation | benchmark/experiment modules | stage metrics, costs, review packets | owner semantic approval |
-| Frontend | `prototype/firelens-rag-ui/` | explicit user states and source inspection | evidence construction |
+| Frontend | `apps/web/` | explicit user states and source inspection | evidence construction |
 
 ## 3. Corpus and provenance
 
@@ -195,7 +195,7 @@ unavailability 503; unexpected failures 500. Error envelopes contain a trace
 ID, safe error kind, retryability, and user-safe message.
 
 `docs/openapi.v1.json` is the tracked contract snapshot. `make openapi` exports
-it and regenerates `prototype/firelens-rag-ui/src/api-schema.d.ts`; verification
+it and regenerates `apps/web/src/shared/api/api-schema.d.ts`; verification
 therefore catches backend/frontend drift.
 
 ## 5. Routing and bounded planning
@@ -606,7 +606,7 @@ Read in this order to understand the system without framework indirection:
     `retrieval_experiment.py` — isolated measured tuning.
 15. `src/firelens/api.py`, `runtime.py`, and `cli.py` — process surfaces and
     lifecycle.
-16. `prototype/firelens-rag-ui/src/App.tsx` and `api.ts` — UI state and typed
+16. `apps/web/src/app/App.tsx` and `shared/api/api.ts` — UI state and typed
     network boundary.
 
 ## 16. Current status and next release gate

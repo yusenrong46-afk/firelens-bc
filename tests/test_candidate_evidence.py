@@ -35,7 +35,7 @@ def _fixture_root(tmp_path: Path) -> Path:
         _write(root / relative, f"fixture:{relative}\n")
     _write(root / "requirements.lock", "fastapi==1.2.3\nPyYAML==6.0.3\n")
     _json(
-        root / "prototype/firelens-rag-ui/package-lock.json",
+        root / "apps/web/package-lock.json",
         {
             "lockfileVersion": 3,
             "packages": {

@@ -308,7 +308,7 @@ constructs one provider/client, and reports readiness. The CLI exposes corpus
 bootstrap, index build, doctor, ask, search, benchmark, experiment, canary, and
 serve commands using the same core service.
 
-### 4.13 Frontend — `prototype/firelens-rag-ui/`
+### 4.13 Frontend — `apps/web/`
 
 The React Source Lens view has explicit idle, loading, answer, abstention,
 unavailable, and error states. It maintains at most six completed local turns

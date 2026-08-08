@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Feedback */
+        post: operations["feedback_api_v1_feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health/live": {
         parameters: {
             query?: never;
@@ -170,6 +187,25 @@ export interface components {
          * @enum {string}
          */
         EvidenceStatus: "verified_corpus" | "general_background";
+        /** FeedbackRequest */
+        FeedbackRequest: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "helpful" | "incorrect_or_unsupported" | "missing_information" | "stale_or_wrong_live_data" | "confusing" | "safety_concern" | "accessibility_issue";
+            /** Trace Id */
+            trace_id: string;
+        };
+        /** FeedbackResponse */
+        FeedbackResponse: {
+            /**
+             * Accepted
+             * @default true
+             * @constant
+             */
+            accepted: true;
+        };
         /**
          * Freshness
          * @enum {string}
@@ -221,6 +257,8 @@ export interface components {
              * @enum {string}
              */
             status: "ready" | "not_ready";
+            /** Zdr Required */
+            zdr_required: boolean;
         };
         /**
          * LiveLayerStatus
@@ -535,6 +573,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AskResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    feedback_api_v1_feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackResponse"];
                 };
             };
             /** @description Bad Request */

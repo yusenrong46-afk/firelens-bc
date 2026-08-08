@@ -23,7 +23,7 @@ except ModuleNotFoundError as error:  # Direct execution puts scripts/ on sys.pa
 
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
-    frontend = root / "prototype/firelens-rag-ui"
+    frontend = root / "apps/web"
     output = frontend / "dist/client"
     public = root / "public"
 

@@ -1,9 +1,9 @@
 FROM node:22-alpine AS frontend-build
 
-WORKDIR /build/prototype/firelens-rag-ui
-COPY prototype/firelens-rag-ui/package.json prototype/firelens-rag-ui/package-lock.json ./
+WORKDIR /build/apps/web
+COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci
-COPY prototype/firelens-rag-ui/ ./
+COPY apps/web/ ./
 RUN npm run build
 
 FROM python:3.12-slim AS runtime
@@ -32,7 +32,7 @@ COPY data/processed/firelens_static_corpus.manifest.json ./data/processed/firele
 COPY data/index/firelens_vectors.npy ./data/index/firelens_vectors.npy
 COPY data/index/firelens_vectors.manifest.json ./data/index/firelens_vectors.manifest.json
 COPY data/repairs/text_overrides.yaml ./data/repairs/text_overrides.yaml
-COPY --from=frontend-build /build/prototype/firelens-rag-ui/dist/client ./prototype/firelens-rag-ui/dist/client
+COPY --from=frontend-build /build/apps/web/dist/client ./apps/web/dist/client
 
 RUN python scripts/write_runtime_candidate.py \
     --output config/runtime_candidate.v1.json \

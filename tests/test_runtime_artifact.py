@@ -151,7 +151,7 @@ def _artifact(root: Path, *, strategy: str = "metadata_context_v1") -> Path:
         ),
     )
 
-    frontend = root / "prototype/firelens-rag-ui/dist/client"
+    frontend = root / "apps/web/dist/client"
     _write(
         frontend / "index.html",
         (
@@ -276,8 +276,8 @@ def test_rejects_symlink_root_and_descendant(tmp_path: Path) -> None:
 
     target = tmp_path / "external.js"
     target.write_text("external", encoding="utf-8")
-    (root / "prototype/firelens-rag-ui/dist/client/assets/app.js").unlink()
-    (root / "prototype/firelens-rag-ui/dist/client/assets/app.js").symlink_to(target)
+    (root / "apps/web/dist/client/assets/app.js").unlink()
+    (root / "apps/web/dist/client/assets/app.js").symlink_to(target)
     with pytest.raises(RuntimeArtifactError, match="symlink"):
         _inventory(root)
 
@@ -303,7 +303,7 @@ def test_rejects_external_and_traversing_frontend_inputs(
 ) -> None:
     root = _artifact(tmp_path / "artifact")
     _write(
-        root / "prototype/firelens-rag-ui/dist/client/index.html",
+        root / "apps/web/dist/client/index.html",
         f'<script type="module" src="{reference}"></script>',
     )
     with pytest.raises(RuntimeArtifactError, match=match):
@@ -314,13 +314,13 @@ def test_requires_complete_vite_reference_closure_and_rejects_orphans(
     tmp_path: Path,
 ) -> None:
     missing_root = _artifact(tmp_path / "missing")
-    (missing_root / "prototype/firelens-rag-ui/dist/client/assets/chunk.js").unlink()
+    (missing_root / "apps/web/dist/client/assets/chunk.js").unlink()
     with pytest.raises(RuntimeArtifactError, match="missing files"):
         _inventory(missing_root)
 
     orphan_root = _artifact(tmp_path / "orphan")
     _write(
-        orphan_root / "prototype/firelens-rag-ui/dist/client/assets/orphan.js",
+        orphan_root / "apps/web/dist/client/assets/orphan.js",
         "export const orphan = true;",
     )
     with pytest.raises(RuntimeArtifactError, match="unreferenced"):
@@ -328,10 +328,10 @@ def test_requires_complete_vite_reference_closure_and_rejects_orphans(
 
     laundered_root = _artifact(tmp_path / "laundered")
     _write(
-        laundered_root / "prototype/firelens-rag-ui/dist/client/assets/orphan.js",
+        laundered_root / "apps/web/dist/client/assets/orphan.js",
         "export const orphan = true;",
     )
-    manifest_path = laundered_root / "prototype/firelens-rag-ui/dist/client/.vite/manifest.json"
+    manifest_path = laundered_root / "apps/web/dist/client/.vite/manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest["src/orphan.ts"] = {"file": "assets/orphan.js"}
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
@@ -344,7 +344,7 @@ def test_side_effect_and_worker_references_are_in_the_frontend_closure(
 ) -> None:
     root = _artifact(tmp_path / "artifact")
     _write(
-        root / "prototype/firelens-rag-ui/dist/client/assets/app.js",
+        root / "apps/web/dist/client/assets/app.js",
         'import "./missing-side-effect.js";\n'
         'new Worker(new URL("./missing-worker.js", import.meta.url));\n',
     )
@@ -463,7 +463,7 @@ def test_compare_requires_same_logical_identity_across_vercel_and_docker(
     assert comparison["vercel_artifact_id"] != comparison["docker_artifact_id"]
 
     _write(
-        docker_root / "prototype/firelens-rag-ui/dist/client/assets/logo.png",
+        docker_root / "apps/web/dist/client/assets/logo.png",
         b"different-synthetic-png",
     )
     changed = _inventory(docker_root, "docker")
@@ -472,7 +472,7 @@ def test_compare_requires_same_logical_identity_across_vercel_and_docker(
     assert comparison["mismatches"] == [
         {
             "kind": "logical_identity_mismatch",
-            "logical_path": "prototype/firelens-rag-ui/dist/client/assets/logo.png",
+            "logical_path": "apps/web/dist/client/assets/logo.png",
             "vercel": comparison["mismatches"][0]["vercel"],
             "docker": comparison["mismatches"][0]["docker"],
         }

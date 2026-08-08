@@ -25,8 +25,8 @@ EXACT_REQUIREMENT = re.compile(r"^([A-Za-z0-9_.-]+)==([^\s;]+)$")
 MATERIAL_PATHS = (
     "requirements.lock",
     "pyproject.toml",
-    "prototype/firelens-rag-ui/package.json",
-    "prototype/firelens-rag-ui/package-lock.json",
+    "apps/web/package.json",
+    "apps/web/package-lock.json",
     "Dockerfile",
     "vercel.json",
     "render.yaml",
@@ -41,7 +41,7 @@ REPORT_PATHS = (
     "docs/reports/V1_5_2_GATE_LEDGER.yaml",
 )
 SUBJECT_FILE = "config/runtime_candidate.v1.json"
-SUBJECT_TREE = "prototype/firelens-rag-ui/dist/client"
+SUBJECT_TREE = "apps/web/dist/client"
 RAW_EVIDENCE_NAMES = (
     "python-audit.json",
     "npm-audit.json",
@@ -153,7 +153,7 @@ def _python_components(root: Path) -> list[dict[str, object]]:
 
 def _node_components(root: Path) -> list[dict[str, object]]:
     lock = _load_json(
-        _strict_file(root, "prototype/firelens-rag-ui/package-lock.json"),
+        _strict_file(root, "apps/web/package-lock.json"),
         "npm lockfile",
     )
     if not isinstance(lock, dict) or lock.get("lockfileVersion") != 3:
@@ -310,7 +310,7 @@ def _documents(
     lock_identity = ":".join(
         str(item["sha256"])
         for item in materials
-        if item["name"] in {"requirements.lock", "prototype/firelens-rag-ui/package-lock.json"}
+        if item["name"] in {"requirements.lock", "apps/web/package-lock.json"}
     )
     serial = uuid.uuid5(uuid.NAMESPACE_URL, f"firelens:{commit}:{lock_identity}")
     sbom: dict[str, object] = {

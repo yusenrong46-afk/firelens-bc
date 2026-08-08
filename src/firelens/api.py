@@ -20,6 +20,8 @@ from firelens.config import FireLensConfig
 from firelens.contracts import (
     AskResponse,
     ErrorEnvelope,
+    FeedbackRequest,
+    FeedbackResponse,
     HealthResponse,
     LiveMapResponse,
     LivenessResponse,
@@ -34,7 +36,7 @@ from firelens.contracts import (
 )
 from firelens.live import LiveDataErrorKind, LiveDataService, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
-from firelens.operational_logging import log_operation
+from firelens.operational_logging import log_feedback, log_operation
 from firelens.request_guard import AnonymousRequestGuard
 from firelens.runtime import Runtime, load_runtime
 
@@ -145,6 +147,7 @@ def create_app(
             "/api/v1/ask",
             "/api/v1/live/map",
             "/api/v1/live/nearby",
+            "/api/v1/feedback",
         }
         if not guarded:
             return await call_next(request)
@@ -227,13 +230,13 @@ def create_app(
         return response
 
     @app.exception_handler(RequestValidationError)
-    async def request_validation_handler(_request, exc: RequestValidationError):
+    async def request_validation_handler(request: Request, exc: RequestValidationError):
         details = [
             {key: value for key, value in error.items() if key != "ctx"}
             for error in exc.errors()
         ]
         return JSONResponse(
-            status_code=400,
+            status_code=422 if request.url.path == "/api/v1/feedback" else 400,
             content={
                 **ErrorEnvelope(
                     trace_id=uuid4().hex,
@@ -263,6 +266,22 @@ def create_app(
         if health.status != "ready":
             response.status_code = 503
         return health
+
+    @app.post(
+        "/api/v1/feedback",
+        response_model=FeedbackResponse,
+        status_code=202,
+        responses=ERROR_RESPONSES,
+    )
+    async def feedback(payload: FeedbackRequest) -> FeedbackResponse:
+        log_feedback(
+            trace_id=payload.trace_id,
+            category=payload.category,
+            release_version=active_config.release_version,
+            build_commit=active_config.build_commit,
+            deployment_environment=active_config.deployment_environment,
+        )
+        return FeedbackResponse()
 
     async def map_request(
         bbox: str | None = Query(default=None, max_length=100),

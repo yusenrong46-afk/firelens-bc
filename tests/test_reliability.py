@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from datetime import UTC, datetime
@@ -269,6 +270,19 @@ class PersistenceTests(unittest.IsolatedAsyncioTestCase):
             self.assertFalse(written)
             self.assertFalse((Path(directory) / "trace-failure.json").exists())
             self.assertFalse(list(Path(directory).glob("*.tmp")))
+
+    async def test_production_trace_can_omit_question_fingerprint(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            recorder = TraceRecorder(Path(directory), include_question_fingerprint=False)
+            written = await recorder.record(
+                "a" * 32,
+                question="PRIVATE QUESTION",
+                payload={"operation": "test"},
+            )
+            payload = json.loads((Path(directory) / f"{'a' * 32}.json").read_text())
+        self.assertTrue(written)
+        self.assertNotIn("question", payload)
+        self.assertNotIn("question_sha256", payload)
 
     async def test_corrupted_embedding_cache_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
