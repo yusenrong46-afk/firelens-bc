@@ -104,7 +104,7 @@ as a diagnostic for this reason.
 
 ## 8. Service, API, CLI, and traces
 
-`answering/service.py` is the single orchestration path used by both `api.py`
+`answering/service.py` is the single orchestration path used by both `api/`
 and `cli.py`. `/search` can expose completed earlier stages when a later provider
 fails, while `/ask` never falls back to BM25-only generation.
 

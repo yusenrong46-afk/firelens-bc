@@ -101,7 +101,7 @@ framework callback graph hides control flow.
 | Validation | `answering/validate.py` | exact IDs/quotes, structure, limitations, policy bounds | full semantic entailment |
 | Orchestration | `answering/service.py` | execute the one visible state machine | silent fallback |
 | Provider boundary | `providers/` | OpenRouter wire formats, retry/error normalization | product policy |
-| Interfaces | `api.py`, `cli.py` | HTTP/CLI status mapping and lifecycle | retrieval logic |
+| Interfaces | `api/`, `cli.py` | HTTP/CLI status mapping and lifecycle | retrieval logic |
 | Evaluation | benchmark/experiment modules | stage metrics, costs, review packets | owner semantic approval |
 | Frontend | `apps/web/` | explicit user states and source inspection | evidence construction |
 
@@ -604,7 +604,7 @@ Read in this order to understand the system without framework indirection:
 13. `src/firelens/benchmark.py` — V1 and V1.1 execution/metrics/review packets.
 14. `src/firelens/contextual_retrieval_experiment.py` and
     `retrieval_experiment.py` — isolated measured tuning.
-15. `src/firelens/api.py`, `runtime.py`, and `cli.py` — process surfaces and
+15. `src/firelens/api/`, `runtime.py`, and `cli.py` — process surfaces and
     lifecycle.
 16. `apps/web/src/app/App.tsx` and `shared/api/api.ts` — UI state and typed
     network boundary.

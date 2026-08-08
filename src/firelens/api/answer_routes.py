@@ -1,0 +1,154 @@
+"""Evidence-bound Ask plus development-only search and chunk routes."""
+
+from __future__ import annotations
+
+import asyncio
+from collections.abc import Callable
+from time import perf_counter
+from typing import Literal
+from uuid import uuid4
+
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+
+from firelens.answering.intent import plan_query
+from firelens.api.responses import (
+    ERROR_RESPONSES,
+    deadline_response,
+    error_response,
+    provider_error_status,
+)
+from firelens.config import FireLensConfig
+from firelens.contracts import (
+    AskResponse,
+    QueryRequest,
+    QueryRoute,
+    ResponseStatus,
+    SearchResponse,
+)
+from firelens.ingestion.chunking import ChunkRecord
+from firelens.live_answering import LiveAnswerCoordinator
+from firelens.operational_logging import log_operation
+from firelens.runtime import Runtime
+
+
+def _validation_disposition(
+    response: AskResponse,
+) -> Literal["accepted", "rejected", "not_applicable"]:
+    if response.validation is None:
+        return "not_applicable"
+    return "accepted" if response.validation.accepted else "rejected"
+
+
+async def _answer_request(
+    request: QueryRequest,
+    *,
+    config: FireLensConfig,
+    runtime: Runtime,
+    live_coordinator: LiveAnswerCoordinator,
+) -> AskResponse | JSONResponse:
+    request_started = perf_counter()
+    if runtime.service is None:
+        return error_response(
+            503,
+            trace_id=uuid4().hex,
+            error_kind="not_ready",
+            message="FireLens is not ready.",
+            retryable=True,
+        )
+    initial_plan = plan_query(request)
+    if initial_plan.route != QueryRoute.LIVE:
+        response = await runtime.service.ask(request)
+        if response.status != ResponseStatus.ERROR:
+            return response
+        return error_response(
+            provider_error_status(response.error_kind),
+            trace_id=response.trace_id,
+            error_kind=response.error_kind or "provider_error",
+            message="The required OpenRouter service is unavailable.",
+            retryable=response.error_kind
+            in {"rate_limit", "timeout", "unavailable", "model_unavailable"},
+        )
+
+    static_request = live_coordinator.static_request(request)
+    static_response = (
+        await runtime.service.ask(static_request, allow_live=False)
+        if static_request is not None
+        else None
+    )
+    live_response = await live_coordinator.answer(request, static_response)
+    log_operation(
+        trace_id=live_response.trace_id,
+        route=QueryRoute.LIVE.value,
+        response_mode=live_response.response_mode.value,
+        status=live_response.status.value,
+        latency_ms=(perf_counter() - request_started) * 1_000,
+        provider_stages=(),
+        error_category=live_response.error_kind,
+        evidence_count=len(live_response.evidence),
+        claim_count=len(live_response.claims),
+        live_result_count=len(live_response.live_results),
+        validation_disposition=_validation_disposition(live_response),
+        corpus_version=runtime.corpus_version,
+        release_version=config.release_version,
+        build_commit=config.build_commit,
+        deployment_environment=config.deployment_environment,
+    )
+    return live_response
+
+
+def install_answer_routes(
+    app: FastAPI,
+    config: FireLensConfig,
+    current_runtime: Callable[[], Runtime],
+    live_coordinator: LiveAnswerCoordinator,
+) -> None:
+    if config.debug and config.deployment_environment != "production":
+
+        @app.post("/api/v1/search", response_model=SearchResponse)
+        async def search(request: QueryRequest) -> SearchResponse | JSONResponse:
+            runtime = current_runtime()
+            if runtime.service is None:
+                return error_response(
+                    503,
+                    trace_id=uuid4().hex,
+                    error_kind="not_ready",
+                    message="FireLens retrieval is not ready.",
+                    retryable=True,
+                )
+            return await runtime.service.search(request)
+
+    @app.post(
+        "/api/v1/ask",
+        response_model=AskResponse,
+        responses=ERROR_RESPONSES,
+    )
+    async def ask(request: QueryRequest) -> AskResponse | JSONResponse:
+        try:
+            async with asyncio.timeout(config.public_request_deadline_seconds):
+                return await _answer_request(
+                    request,
+                    config=config,
+                    runtime=current_runtime(),
+                    live_coordinator=live_coordinator,
+                )
+        except TimeoutError:
+            return deadline_response(config, "ask")
+
+    if config.debug and config.deployment_environment != "production":
+
+        @app.get(
+            "/api/v1/debug/chunks/{chunk_id}",
+            include_in_schema=False,
+            response_model=None,
+        )
+        async def debug_chunk(chunk_id: str) -> ChunkRecord | JSONResponse:
+            chunk = current_runtime().chunks_by_id.get(chunk_id)
+            if chunk is None:
+                return error_response(
+                    404,
+                    trace_id=uuid4().hex,
+                    error_kind="not_found",
+                    message="Chunk not found.",
+                )
+            return chunk

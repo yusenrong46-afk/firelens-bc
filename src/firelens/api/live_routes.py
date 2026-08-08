@@ -1,0 +1,167 @@
+"""Bounded official live-map and Near Me routes."""
+
+from __future__ import annotations
+
+import asyncio
+import math
+from collections.abc import Callable
+from time import perf_counter
+from uuid import uuid4
+
+from fastapi import FastAPI, Query
+from fastapi.responses import JSONResponse
+
+from firelens.api.responses import ERROR_RESPONSES, deadline_response, error_response
+from firelens.config import FireLensConfig
+from firelens.contracts import (
+    LiveMapResponse,
+    LiveResultKind,
+    NearMeRequest,
+    NearMeResponse,
+    ResponseMode,
+    ResponseStatus,
+)
+from firelens.live import LiveDataErrorKind, LiveDataService, LiveDataUnavailable
+from firelens.operational_logging import log_operation
+
+_LAYER_ALIASES = {
+    "incidents": LiveResultKind.INCIDENT,
+    "perimeters": LiveResultKind.PERIMETER,
+    "evacuations": LiveResultKind.EVACUATION,
+}
+
+
+def _requested_layers(layers: str) -> tuple[tuple[LiveResultKind, ...], list[str]]:
+    names = [part.strip() for part in layers.split(",") if part.strip()]
+    unknown = sorted(set(names) - _LAYER_ALIASES.keys())
+    requested = tuple(
+        dict.fromkeys(_LAYER_ALIASES[name] for name in names if name in _LAYER_ALIASES)
+    )
+    return requested, unknown
+
+
+def _parsed_bbox(bbox: str | None) -> tuple[float, float, float, float] | None:
+    if bbox is None:
+        return None
+    values = tuple(float(value) for value in bbox.split(","))
+    if (
+        len(values) != 4
+        or not all(math.isfinite(value) for value in values)
+        or not (-180 <= values[0] < values[2] <= 180)
+        or not (-90 <= values[1] < values[3] <= 90)
+    ):
+        raise ValueError
+    return values
+
+
+def _live_failure_response(
+    exc: LiveDataUnavailable,
+    *,
+    config: FireLensConfig,
+    request_started: float,
+) -> JSONResponse:
+    trace_id = uuid4().hex
+    status_code = {
+        LiveDataErrorKind.NOT_FOUND: 404,
+        LiveDataErrorKind.INVALID_RESPONSE: 502,
+    }.get(exc.kind, 503)
+    log_operation(
+        trace_id=trace_id,
+        route="live_nearby",
+        response_mode=ResponseMode.ABSTENTION.value,
+        status=ResponseStatus.ERROR.value,
+        latency_ms=(perf_counter() - request_started) * 1_000,
+        error_category=f"live_{exc.kind.value}",
+        release_version=config.release_version,
+        build_commit=config.build_commit,
+        deployment_environment=config.deployment_environment,
+    )
+    return error_response(
+        status_code,
+        trace_id=trace_id,
+        error_kind=f"live_{exc.kind.value}",
+        message=str(exc),
+        retryable=exc.kind
+        in {
+            LiveDataErrorKind.TIMEOUT,
+            LiveDataErrorKind.UPSTREAM_HTTP,
+            LiveDataErrorKind.UNREACHABLE,
+        },
+    )
+
+
+def install_live_routes(
+    app: FastAPI,
+    config: FireLensConfig,
+    current_live_service: Callable[[], LiveDataService],
+) -> None:
+    async def map_request(
+        bbox: str | None,
+        layers: str,
+    ) -> LiveMapResponse | JSONResponse:
+        requested, unknown = _requested_layers(layers)
+        if not requested or unknown:
+            detail = " Unsupported layers: " + ", ".join(unknown) + "." if unknown else ""
+            return error_response(
+                400,
+                trace_id=uuid4().hex,
+                error_kind="invalid_request",
+                message="Select only supported live map layers." + detail,
+            )
+        try:
+            parsed_bbox = _parsed_bbox(bbox)
+        except ValueError:
+            return error_response(
+                400,
+                trace_id=uuid4().hex,
+                error_kind="invalid_request",
+                message="bbox must be minLongitude,minLatitude,maxLongitude,maxLatitude.",
+            )
+        return await current_live_service().map_results(layers=requested, bbox=parsed_bbox)
+
+    @app.get(
+        "/api/v1/live/map",
+        response_model=LiveMapResponse,
+        responses=ERROR_RESPONSES,
+    )
+    async def live_map(
+        bbox: str | None = Query(default=None, max_length=100),
+        layers: str = Query(default="incidents,perimeters,evacuations", max_length=100),
+    ) -> LiveMapResponse | JSONResponse:
+        try:
+            async with asyncio.timeout(config.public_request_deadline_seconds):
+                return await map_request(bbox, layers)
+        except TimeoutError:
+            return deadline_response(config, "live_map")
+
+    @app.post(
+        "/api/v1/live/nearby",
+        response_model=NearMeResponse,
+        responses=ERROR_RESPONSES,
+    )
+    async def live_nearby(payload: NearMeRequest) -> NearMeResponse | JSONResponse:
+        request_started = perf_counter()
+        try:
+            async with asyncio.timeout(config.public_request_deadline_seconds):
+                result = await current_live_service().nearby_page(
+                    payload.location,
+                    layers=tuple(payload.layers),
+                    page=payload.page,
+                    page_size=payload.page_size,
+                )
+            log_operation(
+                trace_id=uuid4().hex,
+                route="live_nearby",
+                response_mode=ResponseMode.LIVE.value,
+                status=ResponseStatus.ANSWER.value,
+                latency_ms=(perf_counter() - request_started) * 1_000,
+                live_result_count=len(result.results),
+                release_version=config.release_version,
+                build_commit=config.build_commit,
+                deployment_environment=config.deployment_environment,
+            )
+            return result
+        except TimeoutError:
+            return deadline_response(config, "live_nearby")
+        except LiveDataUnavailable as exc:
+            return _live_failure_response(exc, config=config, request_started=request_started)
