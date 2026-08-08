@@ -42,7 +42,7 @@ class FrozenQualificationTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(report["qualified"])
         self.assertEqual(len(report["repetition_reports"]), 2)
 
-    async def test_v1_5_manifest_has_47_frozen_cases_without_running_retrieval(self) -> None:
+    async def test_v2_manifest_is_permanent_regression_without_running_retrieval(self) -> None:
         project_root = Path(__file__).resolve().parents[1]
         dataset_path = project_root / "data/evaluation/benchmark_v1_5_sealed_retrieval.yaml"
         manifest_path = (
@@ -60,8 +60,9 @@ class FrozenQualificationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(answerable), 47)
         self.assertEqual(manifest["answerable_holdout_case_count"], 47)
         self.assertTrue(manifest["configuration_frozen_before_dataset"])
-        self.assertEqual(manifest["evaluation_role"], "sealed_release_qualification")
-        self.assertEqual(manifest["baseline_policy"], "required_after_only")
+        self.assertEqual(manifest["evaluation_role"], "permanent_regression")
+        self.assertEqual(manifest["baseline_policy"], "paired")
+        self.assertIn("fake provider", manifest["retirement_reason"])
         self.assertTrue(manifest["owner_review_required_before_ranking"])
         self.assertEqual(manifest["required_repetitions"], 3)
 
@@ -72,16 +73,25 @@ class FrozenQualificationTests(unittest.IsolatedAsyncioTestCase):
         runtime = load_runtime(config, provider=provider)
         with tempfile.TemporaryDirectory() as directory:
             dataset_path = project_root / "data/evaluation/benchmark_v1_5_sealed_retrieval.yaml"
+            manifest_path = Path(directory) / "v3.manifest.json"
+            manifest = json.loads(
+                (
+                    project_root
+                    / "data/evaluation/benchmark_v1_5_sealed_retrieval.manifest.json"
+                ).read_text()
+            )
+            manifest.update(
+                evaluation_role="sealed_release_qualification",
+                baseline_policy="required_after_only",
+            )
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             review_path = Path(directory) / "review.yaml"
             write_retrieval_review_template(dataset_path, review_path)
             with self.assertRaisesRegex(PermissionError, "complete hash-bound owner review"):
                 await run_frozen_retrieval_qualification(
                     runtime,
                     dataset_path=dataset_path,
-                    dataset_manifest_path=(
-                        project_root
-                        / "data/evaluation/benchmark_v1_5_sealed_retrieval.manifest.json"
-                    ),
+                    dataset_manifest_path=manifest_path,
                     output_path=Path(directory) / "qualification.json",
                     owner_review_path=review_path,
                     repetitions=3,
@@ -110,6 +120,8 @@ class FrozenQualificationTests(unittest.IsolatedAsyncioTestCase):
             manifest = json.loads(source_manifest.read_text(encoding="utf-8"))
             manifest["dataset_version"] = dataset["dataset_version"]
             manifest["dataset_sha256"] = file_sha256(dataset_path)
+            manifest["evaluation_role"] = "sealed_release_qualification"
+            manifest["baseline_policy"] = "required_after_only"
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
             with self.assertRaisesRegex(ValueError, "exactly 3 repetitions"):
@@ -126,13 +138,13 @@ class FrozenQualificationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(provider.embed_calls, 0)
         self.assertEqual(provider.rerank_calls, 0)
 
-    async def test_v1_5_runner_requires_exactly_three_repetitions(self) -> None:
+    async def test_v2_regression_runner_no_longer_claims_sealed_gate(self) -> None:
         project_root = Path(__file__).resolve().parents[1]
         config = FireLensConfig.from_env(project_root)
         provider = FakeProvider(dimensions=1536)
         runtime = load_runtime(config, provider=provider)
-        with self.assertRaisesRegex(ValueError, "exactly 3 repetitions"):
-            await run_frozen_retrieval_qualification(
+        with tempfile.TemporaryDirectory() as directory:
+            report = await run_frozen_retrieval_qualification(
                 runtime,
                 dataset_path=(
                     project_root / "data/evaluation/benchmark_v1_5_sealed_retrieval.yaml"
@@ -141,11 +153,10 @@ class FrozenQualificationTests(unittest.IsolatedAsyncioTestCase):
                     project_root
                     / "data/evaluation/benchmark_v1_5_sealed_retrieval.manifest.json"
                 ),
-                output_path=Path(tempfile.gettempdir()) / "unused-qualification.json",
+                output_path=Path(directory) / "v2-regression.json",
                 repetitions=1,
             )
         await runtime.aclose()
 
-        self.assertEqual(provider.plan_calls, 0)
-        self.assertEqual(provider.embed_calls, 0)
-        self.assertEqual(provider.rerank_calls, 0)
+        self.assertFalse(report["sealed_qualification_eligible"])
+        self.assertFalse(report["requested_46_of_47_gate_compatible"])

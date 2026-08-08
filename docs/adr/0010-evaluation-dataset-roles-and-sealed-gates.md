@@ -1,6 +1,6 @@
 # ADR 0010: Evaluation dataset roles and sealed qualification gates
 
-- Status: Proposed — V2 sealed-set disposition is unresolved
+- Status: Accepted — V2 retired to permanent regression; V3 required
 - Date: 2026-08-06
 
 ## Context
@@ -36,18 +36,13 @@ the improvement gap. Sealed sets establish only whether the final candidate clea
 
 ### V2 sealed retrieval disposition
 
-Gate 0 remains provisional until the owner records one of these dispositions:
+The owner accepted the recommended disposition on 2026-08-08. V2 is permanently retired from
+sealed use and remains unchanged as regression/failure-reproduction data. It cannot support an
+untouched, unseen, or final-generalization claim.
 
-1. **Recommended: retire V2 to permanent regression and create a fresh V3 47-case sealed set.** V3
-   receives label-only owner review before any ranking and is run exactly once as a three-repetition
-   final-candidate qualification.
-2. **Retain V2 with a weaker claim.** The decision must explicitly acknowledge the fake-provider
-   exposure, state that human inspection is unknown, and avoid describing V2 as untouched or
-   unseen. It may still be protected from any further baseline ranking or case-specific tuning, but
-   its release evidence is weaker than a fresh holdout.
-
-Until one option is accepted, V2 must not be ranked again and the V1.5-2 benchmark must be described
-as provisional. Absence of a persisted or paid result does not erase the temporary ranking event.
+A fresh 47-case V3 is the only retrieval set eligible for final sealed qualification. V3 receives
+two independent label reviews and adjudication before any ranking, is never ranked for the before
+baseline, and is run exactly once as a three-repetition final-candidate qualification.
 
 ### Paired, prerequisite, and after-only snapshots
 

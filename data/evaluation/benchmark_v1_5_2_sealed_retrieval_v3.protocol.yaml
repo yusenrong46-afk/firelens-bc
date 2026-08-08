@@ -1,0 +1,39 @@
+schema_version: firelens_sealed_retrieval_authoring_protocol.v1
+dataset_id: benchmark_v1_5_2_sealed_retrieval_v3
+status: authoring_not_started
+case_count: 47
+configuration_must_be_frozen_before_authoring: true
+model_rankings_or_answers_visible_to_authors: false
+composition:
+  single_source: 24
+  multi_source_or_aspect: 8
+  negation_or_false_premise: 5
+  authority_temporal_or_freshness: 5
+  paraphrase_quantity_or_condition: 5
+minimum_safety_sensitive_cases: 16
+required_source_families:
+  - bccdc_wildfire_smoke
+  - bcws_stages_of_control
+  - bcws_wildfire_rank
+  - firesmart_begins_at_home
+  - firesmart_sprinkler_water_use
+  - preparedbc_wildfire_guide
+independence:
+  reject_exact_duplicates_of: [development, v2]
+  reject_near_duplicates_of: [development, v2]
+  require_question_family_roster: true
+review:
+  independent_reviewers: 2
+  adjudicator_required: true
+  review_must_finish_before_ranking: true
+  external_hash_anchor_required: true
+qualification:
+  baseline_policy: required_after_only
+  repetitions: 3
+  recall_at_5_minimum_each_repetition: 0.9787234042553191
+prohibited_uses:
+  - baseline_ranking
+  - tuning
+  - relevance_addendum
+  - case_specific_repair
+  - judge_training

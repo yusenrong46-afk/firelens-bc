@@ -156,7 +156,7 @@ async def run_frozen_retrieval_qualification(
         == [row["reranked_chunk_ids"] for row in repetition_reports[0]["rows"]]
         for report in repetition_reports[1:]
     )
-    requested_gate_compatible = len(cases) == 47
+    requested_gate_compatible = is_sealed and len(cases) == 47
     report = {
         "report_version": "firelens_frozen_retrieval_qualification.v1",
         "generated_at": datetime.now(UTC).isoformat(),
@@ -165,6 +165,7 @@ async def run_frozen_retrieval_qualification(
         "dataset_manifest_sha256": file_sha256(dataset_manifest_path),
         "evaluation_role": dataset_manifest.get("evaluation_role"),
         "baseline_policy": dataset_manifest.get("baseline_policy"),
+        "sealed_qualification_eligible": is_sealed,
         "holdout_sha256": holdout_sha256,
         "split": "holdout",
         "tuning_allowed": False,
@@ -188,13 +189,19 @@ async def run_frozen_retrieval_qualification(
         "repeated_rankings_match": repeated_rankings_match,
         "requested_46_of_47_gate_compatible": requested_gate_compatible,
         "qualified": bool(
-            owner_approved
+            is_sealed
+            and owner_approved
             and requested_gate_compatible
             and not budget_exceeded
             and all(item["complete"] for item in repetition_reports)
             and all(item["recall_at_5"] >= 46 / 47 for item in repetition_reports)
         ),
         "qualification_limitations": [
+            *(
+                []
+                if is_sealed
+                else ["This dataset is permanent regression data and cannot qualify a release."]
+            ),
             *(
                 []
                 if owner_approved

@@ -33,9 +33,10 @@ no live or paid V2 ranking run were observed in the current checkout. Human insp
 temporary rankings is unknown. This is still an exposure event: V2 cannot be described as proven
 untouched or unseen.
 
-The owner must either retire V2 to permanent regression and create a fresh V3 sealed set
-(recommended), or explicitly retain V2 with a weaker qualification claim. Until that decision is
-recorded in the ADR, registry, and specification:
+The owner accepted the recommended disposition on 2026-08-08. V2 is now permanently retired to
+regression and may never support an unseen or sealed-generalization claim. The fresh V3 authoring
+protocol is checked in, but the 47 cases, independent labels, adjudication, manifest, and external
+hash anchor do not yet exist. Until V3 is authored and sealed:
 
 - do not rank V2 again;
 - do not call the provisional snapshot a frozen before baseline;
@@ -225,8 +226,8 @@ baseline. Playwright counts and screenshots do not substitute for participant ev
 
 ## Ratify and capture the before baseline
 
-First resolve the ADR's V2/V3 decision, commit the active sealed and semantic-holdout manifests,
-promote every active holdout to `sealed_release_qualification`, include each manifest in the frozen
+First author and seal V3, commit the active sealed and semantic-holdout manifests, promote every
+active holdout to `sealed_release_qualification`, include each manifest in the frozen
 identity inputs, update the registry/specification, finish the eligibility checks, and set
 `frozen_before_upgrade: true`. Capture requires a clean tracked worktree and rejects relevant
 untracked runtime/benchmark inputs both before and after its commands. The ignored output snapshot

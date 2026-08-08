@@ -1,6 +1,6 @@
 schema_version: firelens_release_gate_ledger.v1
 release: V1.5-2
-updated_at: "2026-08-08T13:44:37-07:00"
+updated_at: "2026-08-08T15:30:00-07:00"
 status_values: [not_run, pass, fail, waived]
 waiver_policy: >
   A waiver must name the owner, rationale, expiry, and compensating control. No
@@ -14,8 +14,13 @@ gates:
     artifact: docs/adr/0010-evaluation-dataset-roles-and-sealed-gates.md
     expiry: null
     observation: >
-      V2 disposition remains open and the source-disjoint semantic holdout is
-      still planned rather than an available identity-bound sealed role. The v2
+      V2 is permanently retired to regression in ADR 0010, the dataset registry,
+      and its manifest. The fresh V3 authoring protocol freezes the exact 47-case
+      composition, source-family coverage, safety minimum, independence rules,
+      two-reviewer/adjudicator workflow, and three-run Recall@5 threshold. The V3
+      cases, labels, adjudication, manifest, external anchor, and source-disjoint
+      semantic holdout are still planned rather than available identity-bound
+      sealed roles. The v2
       worktree now enforces execution-environment matching, UX cohort/device
       comparability, and raw deployment hash/content binding, but no eligible
       capture proves them. The tracked before-snapshot seal, exact
@@ -30,12 +35,10 @@ gates:
       exact atomic checks, five environment profiles across ten states, hash-bound
       retained evidence, candidate URL/commit identity, timestamp ordering, and
       zero open findings. No real named manual review has been performed. One
-      uninterrupted repository verification passed on 2026-08-08 with 589 Python tests, 15
-      frontend tests, 4 Sites tests, the production build, and all 18 Playwright
-      flows. After the qualification verifier was hardened, the canonical static,
-      type, 591-Python-test, frontend, build, and Sites stages passed again; the 18
-      Playwright flows then passed separately after the sandbox-only localhost bind
-      restriction was removed.
+      implementation commit 26d731f passed Ruff, normal mypy, 594 Python tests
+      (3 skipped, 109 subtests), 16 frontend tests, the production build, 4 Sites
+      tests, and all 18 Playwright flows. Playwright required an approved rerun
+      outside the filesystem sandbox solely to bind localhost:4174.
 
   - id: G0-before-baseline
     status: not_run
@@ -43,10 +46,12 @@ gates:
     artifact: output/benchmark/v1_5_2/before/snapshot.json
     expiry: null
     observation: >
-      Not run. The existing ignored snapshot uses legacy schema v1 and has no
-      tracked digest attestation. Paid budget, named reviewers, real participant
-      sessions, a ratified active sealed set, and a clean committed worktree are
-      missing.
+      Not run. A clean secondary worktree exists at main commit b00544c on branch
+      codex/v1-5-2-foundation and is intentionally unchanged. The existing ignored
+      snapshot uses legacy schema v1 and has no tracked digest attestation. Named
+      reviewers, the 12-person UX-before round, a ratified active sealed set, and
+      a tracked seal commit are missing; product changes therefore did not descend
+      from an eligible before seal.
 
   - id: G1-foundation
     status: not_run
@@ -54,6 +59,13 @@ gates:
     artifact: null
     expiry: null
     observation: >
+      Production config now fails startup unless OpenRouter ZDR is required and
+      trace-content capture is disabled. Readiness reports the ZDR policy, provider
+      requests retain deny-data-collection and no-fallback controls, production
+      traces omit raw questions and deterministic question hashes, and the new
+      feedback endpoint accepts only a strict trace ID plus allowlisted category.
+      These behaviors have contract and integration tests. A production provider
+      preflight/canary, deployed environment proof, privacy probes, firewall proof,
       Durable sink selection and distributed-control publication remain. A
       content-free operational-event v2 schema now separates provider stages
       from provider model IDs and records status, validation disposition,
@@ -171,7 +183,10 @@ gates:
     owner: product-owner
     artifact: data/evaluation/v1_5_2_experiment_registry.yaml
     expiry: null
-    observation: No paid experiment budget is approved and no candidate is selected.
+    observation: >
+      The owner-approved OpenRouter hard cap is US$13.75 with baseline,
+      experiment-family, and final-qualification sub-budgets. No paid experiment
+      has been run in this implementation branch and no candidate is selected.
 
   - id: G4-product-ux
     status: not_run
@@ -179,8 +194,15 @@ gates:
     artifact: null
     expiry: null
     observation: >
-      Frontend and Near Me implementation plus real paired participant and named
-      manual WCAG/product-safety evidence remain. The manual protocol/validator is
+      The production frontend now lives in apps/web, requests location only after
+      a Near Me action, uses the local-vector map, exposes structured feedback, and
+      lazy-loads map code. The verified production build is 796 KB in dist/client;
+      initial JavaScript is 75.77 KiB gzip and lazy map JavaScript is 53.01 KiB
+      gzip, within the frozen budgets. Sixteen frontend tests, the production
+      build, and all 18 Playwright flows passed. The 595-line App component still
+      exceeds the 300-line feature-component target and is being decomposed.
+      Real paired participant and named manual WCAG/product-safety evidence remain.
+      The manual protocol/validator is
       implemented, and a private no-overwrite generator now emits the exact blank
       30-check/50-cell packet for three distinct named people without inventing
       outcomes. The UX v3 packet generator emits the frozen 12-person/60-attempt

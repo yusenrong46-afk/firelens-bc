@@ -107,22 +107,22 @@ def main() -> None:
     parser.add_argument(
         "--dataset",
         type=Path,
-        default=Path("data/evaluation/benchmark_v1_5_sealed_retrieval.yaml"),
+        default=Path("data/evaluation/benchmark_v1_5_2_sealed_retrieval_v3.yaml"),
     )
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=Path("data/evaluation/benchmark_v1_5_sealed_retrieval.manifest.json"),
+        default=Path("data/evaluation/benchmark_v1_5_2_sealed_retrieval_v3.manifest.json"),
     )
     parser.add_argument(
         "--owner-review",
         type=Path,
-        default=Path("output/benchmark/v1_5_retrieval_owner_review.yaml"),
+        default=Path("output/benchmark/v1_5_2_v3_retrieval_owner_review.yaml"),
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("output/benchmark/v1_5_frozen_holdout_retrieval.json"),
+        default=Path("output/benchmark/v1_5_2_v3_frozen_retrieval.json"),
     )
     raise SystemExit(asyncio.run(_run(parser.parse_args())))
 

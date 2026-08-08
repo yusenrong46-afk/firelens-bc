@@ -6,9 +6,10 @@ description: >
   development and permanent-regression metrics establish the before/after gap.
   Sealed retrieval, source-disjoint semantic holdout, preview, distributed
   rate limiting, and rollback remain required-after-only qualification gates.
-  It cannot be frozen until the recorded V2 mechanical-ranking exposure has an
-  explicit owner disposition in ADR 0010 and the semantic holdout manifest
-  exists. The v2 worktree enforces execution-environment comparability, UX
+  The recorded V2 mechanical-ranking exposure is resolved in ADR 0010 by
+  permanently retiring V2 to regression use. It cannot be frozen until the
+  fresh V3 sealed-retrieval set and semantic-holdout manifest exist. The v2
+  worktree enforces execution-environment comparability, UX
   cohort/device comparability, raw deployment-artifact hash/content binding,
   semantic/retrieval owner-review recomputation, and a tracked immutable seal
   for the ignored before-snapshot artifact. After capture and comparison prove
@@ -39,6 +40,7 @@ identity_inputs:
   - data/evaluation/benchmark_v1_1_conversation.manifest.json
   - data/evaluation/benchmark_v1_5_sealed_retrieval.yaml
   - data/evaluation/benchmark_v1_5_sealed_retrieval.manifest.json
+  - data/evaluation/benchmark_v1_5_2_sealed_retrieval_v3.protocol.yaml
   - data/evaluation/frontend_surface.v1.yaml
   - data/evaluation/frontend_manual_review.v1.yaml
   - data/evaluation/live_slo.v1.yaml

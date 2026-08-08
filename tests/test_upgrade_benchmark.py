@@ -42,6 +42,31 @@ from scripts.upgrade_benchmark import (
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC_PATH = ROOT / "data/evaluation/upgrade_benchmark_v1_5_2.yaml"
+V3_PROTOCOL_PATH = ROOT / "data/evaluation/benchmark_v1_5_2_sealed_retrieval_v3.protocol.yaml"
+
+
+def test_v3_authoring_protocol_freezes_required_case_mix() -> None:
+    protocol = yaml.safe_load(V3_PROTOCOL_PATH.read_text(encoding="utf-8"))
+
+    assert protocol["status"] == "authoring_not_started"
+    assert protocol["case_count"] == 47
+    assert protocol["composition"] == {
+        "single_source": 24,
+        "multi_source_or_aspect": 8,
+        "negation_or_false_premise": 5,
+        "authority_temporal_or_freshness": 5,
+        "paraphrase_quantity_or_condition": 5,
+    }
+    assert sum(protocol["composition"].values()) == protocol["case_count"]
+    assert protocol["minimum_safety_sensitive_cases"] == 16
+    assert len(protocol["required_source_families"]) == 6
+    assert protocol["review"] == {
+        "independent_reviewers": 2,
+        "adjudicator_required": True,
+        "review_must_finish_before_ranking": True,
+        "external_hash_anchor_required": True,
+    }
+    assert protocol["qualification"]["repetitions"] == 3
 
 
 def _snapshot_sections(
@@ -2579,11 +2604,13 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         for dataset in registry.datasets
         if dataset.role == "sealed_release_qualification"
     ]
-    assert len(sealed) == 1
-    assert sealed[0].baseline_policy == "required_after_only"
-    assert {"before_ranking", "paired_before_after", "tuning"}.issubset(
-        sealed[0].prohibited_uses
-    )
+    assert sealed == []
+    v2 = next(dataset for dataset in registry.datasets if dataset.id.endswith("v2"))
+    assert v2.role == "permanent_regression"
+    assert v2.baseline_policy == "paired"
+    v3 = next(dataset for dataset in registry.datasets if dataset.id.endswith("v3"))
+    assert v3.role == "planned_sealed_qualification"
+    assert v3.status == "planned"
     assert all(
         (ROOT / relative).is_file()
         for dataset in registry.datasets
@@ -2702,8 +2729,14 @@ def test_registry_rejects_unsafe_sealed_policy(tmp_path: Path) -> None:
     sealed = next(
         dataset
         for dataset in source["datasets"]
-        if dataset["role"] == "sealed_release_qualification"
+        if dataset["id"] == "benchmark_v1_5_2_sealed_retrieval_v3"
     )
+    sealed["role"] = "sealed_release_qualification"
+    sealed["status"] = "available"
+    sealed["inputs"] = [
+        "data/evaluation/benchmark_v1_5_sealed_retrieval.yaml",
+        "data/evaluation/benchmark_v1_5_sealed_retrieval.manifest.json",
+    ]
     sealed["prohibited_uses"].remove("tuning")
     path = tmp_path / "roles.yaml"
     path.write_text(yaml.safe_dump(source), encoding="utf-8")
@@ -2740,8 +2773,9 @@ def test_registry_rejects_after_only_data_disguised_as_development(tmp_path: Pat
     sealed = next(
         dataset
         for dataset in source["datasets"]
-        if dataset["role"] == "sealed_release_qualification"
+        if dataset["id"] == "benchmark_v1_5_2_sealed_retrieval_v3"
     )
+    sealed["status"] = "available"
     sealed["role"] = "development"
     path = tmp_path / "roles.yaml"
     path.write_text(yaml.safe_dump(source), encoding="utf-8")

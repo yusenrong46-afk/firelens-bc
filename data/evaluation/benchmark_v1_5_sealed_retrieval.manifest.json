@@ -5,13 +5,15 @@
   "holdout_case_count": 47,
   "answerable_holdout_case_count": 47,
   "holdout_sha256": "4f2d8dfc8cae3644c4b9a3defed98b0c76322dd2457b6115ac45af9319490684",
-  "evaluation_role": "sealed_release_qualification",
-  "baseline_policy": "required_after_only",
+  "evaluation_role": "permanent_regression",
+  "baseline_policy": "paired",
   "owner_review_required_before_ranking": true,
   "required_repetitions": 3,
   "frozen_at": "2026-07-30T23:16:22Z",
   "configuration_frozen_before_dataset": true,
-  "tuning_policy": "One qualification run after owner approval; no case-level tuning or relevance addendum.",
+  "tuning_policy": "Regression and failure reproduction only; no case-level tuning, relevance addendum, or sealed qualification claim.",
+  "retired_from_sealed_use_at": "2026-08-08T22:00:00Z",
+  "retirement_reason": "A prior repository test ranked all 47 cases with a fake provider, so the set cannot support an unseen final qualification claim.",
   "metadata_migration": "V2 replaces two semantically ambiguous labels and three cases whose evidence was quarantined as non-human repair text. Replacements were authored only from governed raw chunks before any V2 retrieval ranking was inspected.",
   "metadata_migrated_at": "2026-07-30T23:16:22Z"
 }

@@ -4,8 +4,8 @@ ratification_status: provisional
 ratified_at: null
 open_decisions:
   - >
-    Decide whether to retain V2 under a narrowly documented release-seal
-    definition or retire it to regression use and author a fresh 47-case V3.
+    Author, independently review, adjudicate, and seal the fresh 47-case V3
+    retrieval set before the final candidate is frozen.
   - >
     Author and commit the source- and question-family-disjoint semantic-holdout
     manifest before ratification; its owner-held payload must remain unavailable
@@ -119,11 +119,34 @@ datasets:
       red-team cases remain regression-only.
 
   - id: benchmark_v1_5_sealed_retrieval_v2
-    role: sealed_release_qualification
+    role: permanent_regression
     status: available
     inputs:
       - data/evaluation/benchmark_v1_5_sealed_retrieval.yaml
       - data/evaluation/benchmark_v1_5_sealed_retrieval.manifest.json
+    splits: [holdout]
+    baseline_policy: paired
+    allowed_uses:
+      - permanent_regression
+      - paired_before_after
+      - failure_reproduction
+    prohibited_uses:
+      - final_unseen_qualification_claim
+      - tuning
+      - relevance_addendum
+      - case_specific_failure_repair
+    notes: >
+      Owner decision on 2026-08-08 retired V2 from sealed use because a
+      repository test previously ranked all 47 cases with FakeProvider. V2 is
+      preserved unchanged for regression and failure reproduction only. It may
+      never support an unseen or sealed-generalization claim.
+
+  - id: benchmark_v1_5_2_sealed_retrieval_v3
+    role: planned_sealed_qualification
+    status: planned
+    inputs:
+      - data/evaluation/benchmark_v1_5_2_sealed_retrieval_v3.yaml
+      - data/evaluation/benchmark_v1_5_2_sealed_retrieval_v3.manifest.json
     splits: [holdout]
     baseline_policy: required_after_only
     allowed_uses:
@@ -135,14 +158,13 @@ datasets:
       - tuning
       - relevance_addendum
       - case_specific_failure_repair
+      - judge_training
     notes: >
-      A repository test previously ranked all 47 cases with FakeProvider into
-      a temporary file before the execution guard existed. No persisted, paid,
-      or live-provider result was observed; whether a person inspected the
-      temporary rankings is unknown. The literal claim that ranking never
-      occurred is false. The report must remain absent from the before snapshot
-      and this role cannot be ratified until the owner records whether V2 is
-      retained or replaced by V3.
+      Author exactly 47 cases under the V3 protocol after retrieval
+      configuration freeze. Two humans label independently and an adjudicator
+      resolves every disagreement before any ranking. Promote this entry to an
+      available sealed_release_qualification role only after payload, manifest,
+      reviewer, external-anchor, and zero-overlap checks pass.
 
   - id: benchmark_v1_5_2_semantic_holdout
     role: planned_sealed_qualification
