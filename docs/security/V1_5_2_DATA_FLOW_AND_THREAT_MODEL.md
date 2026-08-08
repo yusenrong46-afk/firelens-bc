@@ -46,3 +46,14 @@ content-free telemetry must expire after 30 days in the deployed sink. A privacy
 silent partial live response, wrong artifact, or safety-boundary breach is a rollback condition.
 Rollback evidence must include both the immutable artifact and environment snapshot because code
 rollback alone does not restore environment values.
+
+## Primary references
+
+- OpenRouter Zero Data Retention and programmatic ZDR endpoint roster:
+  <https://openrouter.ai/docs/guides/features/zdr>
+- OpenRouter provider routing controls:
+  <https://openrouter.ai/docs/guides/routing/provider-selection>
+- OWASP Top 10 for Large Language Model Applications:
+  <https://owasp.org/www-project-top-10-for-large-language-model-applications/>
+- Office of the Privacy Commissioner of Canada mobile privacy guidance:
+  <https://www.priv.gc.ca/en/privacy-topics/technology/mobile-and-digital-devices/mobile-apps/gd_app_201210/>

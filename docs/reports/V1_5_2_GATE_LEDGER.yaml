@@ -1,6 +1,6 @@
 schema_version: firelens_release_gate_ledger.v1
 release: V1.5-2
-updated_at: "2026-08-08T15:30:00-07:00"
+updated_at: "2026-08-08T16:12:00-07:00"
 status_values: [not_run, pass, fail, waived]
 waiver_policy: >
   A waiver must name the owner, rationale, expiry, and compensating control. No
@@ -35,10 +35,9 @@ gates:
       exact atomic checks, five environment profiles across ten states, hash-bound
       retained evidence, candidate URL/commit identity, timestamp ordering, and
       zero open findings. No real named manual review has been performed. One
-      implementation commit 26d731f passed Ruff, normal mypy, 594 Python tests
-      (3 skipped, 109 subtests), 16 frontend tests, the production build, 4 Sites
-      tests, and all 18 Playwright flows. Playwright required an approved rerun
-      outside the filesystem sandbox solely to bind localhost:4174.
+      Full verification through commit 1fd941c passed Ruff, strict mypy across
+      66 source files, 603 Python tests (3 skipped, 109 subtests), 16 frontend
+      tests, the production build, 4 Sites tests, and all 18 Playwright flows.
 
   - id: G0-before-baseline
     status: not_run
@@ -60,8 +59,11 @@ gates:
     expiry: null
     observation: >
       Production config now fails startup unless OpenRouter ZDR is required and
-      trace-content capture is disabled. Readiness reports the ZDR policy, provider
-      requests retain deny-data-collection and no-fallback controls, production
+      trace-content capture is disabled. Production startup also queries the
+      authenticated OpenRouter ZDR endpoint roster and fails closed unless the
+      configured embedding, reranking, and generation models are eligible;
+      readiness remains not_ready until that preflight succeeds. Provider
+      requests retain deny-data-collection, request-level ZDR, and no-fallback controls. Production
       traces omit raw questions and deterministic question hashes, and the new
       feedback endpoint accepts only a strict trace ID plus allowlisted category.
       These behaviors have contract and integration tests. A production provider
@@ -133,6 +135,23 @@ gates:
       regions. Its thresholds are deliberately null and it cannot qualify until
       owner ratification and scheduled production capture.
 
+  - id: G1a-engineering-integrity
+    status: fail
+    owner: engineering
+    artifact: tests/test_architecture.py
+    expiry: null
+    observation: >
+      Strict mypy is enforced and passes 66 source files. TypeScript strictness,
+      unchecked-index, exact-optional-property, and unused-symbol checks pass.
+      OpenAPI generation and frontend contract drift checks pass. Architecture
+      tests reject circular imports, forbidden foundation-layer dependencies,
+      React feature components over 300 lines, and feature imports from app or
+      prototype paths; all four pass. The React entrypoint is 36 lines and all
+      feature components are at most 224 lines. Gate remains fail because the
+      10,661-line upgrade benchmark script is not yet a thin CLI, multiple Python
+      production modules/scripts exceed the 800/300-line budgets, and Ruff C901
+      still reports 70 functions above complexity 12 across src and scripts.
+
   - id: G2-evidence-corpus
     status: not_run
     owner: evidence-owner
@@ -199,8 +218,9 @@ gates:
       lazy-loads map code. The verified production build is 796 KB in dist/client;
       initial JavaScript is 75.77 KiB gzip and lazy map JavaScript is 53.01 KiB
       gzip, within the frozen budgets. Sixteen frontend tests, the production
-      build, and all 18 Playwright flows passed. The 595-line App component still
-      exceeds the 300-line feature-component target and is being decomposed.
+      build, and all 18 Playwright flows passed. The App entrypoint is now 36
+      lines; Ask conversation, request/session orchestration, evidence inspection,
+      feedback, and Near Me map modules are each under the 300-line component cap.
       Real paired participant and named manual WCAG/product-safety evidence remain.
       The manual protocol/validator is
       implemented, and a private no-overwrite generator now emits the exact blank
