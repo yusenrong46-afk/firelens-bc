@@ -425,6 +425,29 @@ def decide_support(
     packet: EvidencePacket | None,
     retrieval: RetrievalBundle | None = None,
 ) -> SupportDecision:
+    immediate = _immediate_support_decision(plan, packet, retrieval)
+    if immediate is not None:
+        return immediate
+    assert packet is not None
+    authority = _authority_support_decision(plan, packet)
+    if authority is not None:
+        return authority
+    aspect = _aspect_support_decision(plan, packet)
+    if aspect is not None:
+        return aspect
+    return SupportDecision(
+        status=SupportStatus.ANSWERABLE,
+        reason_code=ReasonCode.APPROVED_STATIC_EVIDENCE,
+        explanation="Approved stable guidance is available.",
+        supported_aspects=list(plan.required_aspects),
+    )
+
+
+def _immediate_support_decision(
+    plan: QueryPlan,
+    packet: EvidencePacket | None,
+    retrieval: RetrievalBundle | None,
+) -> SupportDecision | None:
     if plan.route == QueryRoute.PROHIBITED:
         return SupportDecision(
             status=SupportStatus.PROHIBITED,
@@ -489,6 +512,12 @@ def decide_support(
                 "shown rather than resolved silently."
             ),
         )
+    return None
+
+
+def _authority_support_decision(
+    plan: QueryPlan, packet: EvidencePacket
+) -> SupportDecision | None:
     required = set().union(
         *(request.required_authorities for request in plan.retrieval_requests)
     )
@@ -534,6 +563,10 @@ def decide_support(
                 "the requested administrative process or policy."
             ),
         )
+    return None
+
+
+def _aspect_support_decision(plan: QueryPlan, packet: EvidencePacket) -> SupportDecision | None:
     if plan.required_aspects:
         supported_aspects = [
             aspect for aspect in plan.required_aspects if _aspect_supported(aspect, packet)
@@ -579,9 +612,4 @@ def decide_support(
                 supported_aspects=supported_aspects,
                 missing_aspects=missing_aspects,
             )
-    return SupportDecision(
-        status=SupportStatus.ANSWERABLE,
-        reason_code=ReasonCode.APPROVED_STATIC_EVIDENCE,
-        explanation="Approved stable guidance is available.",
-        supported_aspects=list(plan.required_aspects),
-    )
+    return None

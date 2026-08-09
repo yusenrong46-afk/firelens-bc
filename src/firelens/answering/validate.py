@@ -8,7 +8,10 @@ from firelens.answering.semantic_invariants import preservation_errors
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
     BackgroundDraft,
+    DraftProposalClaim,
     EvidencePacket,
+    EvidenceQuoteCandidate,
+    EvidenceSpan,
     GroundedDraft,
     ValidationReport,
 )
@@ -161,58 +164,12 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
         if len(rendered_answer) > 2_500:
             errors.append("rendered guidance answer is too long")
     for claim_number, claim in enumerate(draft.claims, start=1):
-        if len(claim.evidence_quote_ids) != len(set(claim.evidence_quote_ids)):
-            quotes_exact = False
-            errors.append(f"claim {claim_number} repeats an evidence quote ID")
-        selected_candidates = []
-        selected_source_contexts: list[str] = []
-        for quote_id in claim.evidence_quote_ids:
-            candidate = candidates.get(quote_id)
-            if candidate is None:
-                citation_ids_valid = False
-                quotes_exact = False
-                errors.append(f"claim {claim_number} cites unknown quote ID {quote_id}")
-                continue
-            item = evidence.get(candidate.evidence_id)
-            if item is None or candidate.text not in item.primary_text:
-                citation_ids_valid = False
-                quotes_exact = False
-                errors.append(f"claim {claim_number} quote {quote_id} is not exact")
-                continue
-            selected_candidates.append(candidate)
-            selected_source_contexts.append(
-                " ".join(
-                    str(value)
-                    for value in (
-                        item.title,
-                        item.publisher,
-                        item.canonical_url,
-                        item.locator,
-                        item.section_title,
-                    )
-                    if value
-                )
-            )
-            cited_evidence_ids.add(candidate.evidence_id)
-        if not selected_candidates:
-            citation_ids_valid = False
-            errors.append(f"claim {claim_number} has no valid evidence quote ID")
-        elif not _claim_has_direct_lexical_support(
-            claim.text, [candidate.text for candidate in selected_candidates]
-        ):
-            claim_support_valid = False
-            errors.append(
-                f"claim {claim_number} lacks direct lexical support in its selected quotes"
-            )
-        else:
-            invariant_errors = preservation_errors(
-                claim.text,
-                [candidate.text for candidate in selected_candidates],
-                selected_source_contexts,
-            )
-            if invariant_errors:
-                claim_support_valid = False
-                errors.extend(f"claim {claim_number} {message}" for message in invariant_errors)
+        claim_result = _validate_claim(claim, claim_number, candidates, evidence)
+        citation_ids_valid &= claim_result[0]
+        quotes_exact &= claim_result[1]
+        claim_support_valid &= claim_result[2]
+        cited_evidence_ids.update(claim_result[3])
+        errors.extend(claim_result[4])
 
     enumerated_sections = _enumerated_evidence_sections(packet)
     missing_sections = [
@@ -252,6 +209,74 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
         policy_valid=policy_valid,
         errors=errors,
     )
+
+
+def _validate_claim(
+    claim: DraftProposalClaim,
+    claim_number: int,
+    candidates: dict[str, EvidenceQuoteCandidate],
+    evidence: dict[str, EvidenceSpan],
+) -> tuple[bool, bool, bool, set[str], list[str]]:
+    citation_valid = True
+    quotes_exact = len(claim.evidence_quote_ids) == len(set(claim.evidence_quote_ids))
+    errors = [] if quotes_exact else [f"claim {claim_number} repeats an evidence quote ID"]
+    selected = []
+    contexts: list[str] = []
+    cited_ids: set[str] = set()
+    for quote_id in claim.evidence_quote_ids:
+        candidate = candidates.get(quote_id)
+        item = evidence.get(candidate.evidence_id) if candidate else None
+        if candidate is None or item is None or candidate.text not in item.primary_text:
+            citation_valid = False
+            quotes_exact = False
+            label = (
+                f"unknown quote ID {quote_id}"
+                if candidate is None
+                else f"quote {quote_id} is not exact"
+            )
+            errors.append(
+                f"claim {claim_number} cites {label}"
+                if candidate is None
+                else f"claim {claim_number} {label}"
+            )
+            continue
+        selected.append(candidate)
+        contexts.append(
+            " ".join(
+                str(value)
+                for value in (
+                    item.title,
+                    item.publisher,
+                    item.canonical_url,
+                    item.locator,
+                    item.section_title,
+                )
+                if value
+            )
+        )
+        cited_ids.add(candidate.evidence_id)
+    support_valid, support_errors = _claim_support_errors(
+        claim, claim_number, selected, contexts
+    )
+    errors.extend(support_errors)
+    return citation_valid and bool(selected), quotes_exact, support_valid, cited_ids, errors
+
+
+def _claim_support_errors(
+    claim: DraftProposalClaim,
+    claim_number: int,
+    selected: list[EvidenceQuoteCandidate],
+    contexts: list[str],
+) -> tuple[bool, list[str]]:
+    quotes = [candidate.text for candidate in selected]
+    if not quotes:
+        return True, [f"claim {claim_number} has no valid evidence quote ID"]
+    if not _claim_has_direct_lexical_support(claim.text, quotes):
+        return False, [
+            f"claim {claim_number} lacks direct lexical support in its selected quotes"
+        ]
+    errors = preservation_errors(claim.text, quotes, contexts)
+    return not errors, [f"claim {claim_number} {message}" for message in errors]
 
 
 def salvage_valid_grounded_claims(

@@ -461,97 +461,109 @@ class AskResponse(StrictModel):
 
     @model_validator(mode="after")
     def validate_public_state(self) -> AskResponse:
+        self._validate_history()
+        evidence_ids = self._validate_unique_public_ids()
+        validators = {
+            ResponseMode.GROUNDED: self._validate_grounded,
+            ResponseMode.PARTIAL: self._validate_grounded,
+            ResponseMode.CONFLICT: self._validate_grounded,
+            ResponseMode.BACKGROUND: self._validate_background,
+            ResponseMode.LIVE: self._validate_live,
+            ResponseMode.MIXED: self._validate_mixed,
+            ResponseMode.CAPABILITY: self._validate_conversational,
+            ResponseMode.SCOPE_REDIRECT: self._validate_conversational,
+        }
+        validators.get(self.response_mode, self._validate_abstention)(evidence_ids)
+        if not self.live_results and self.aggregate_freshness is not None:
+            raise ValueError("aggregate freshness requires live results")
+        return self
+
+    def _validate_history(self) -> None:
         if self.answer is None:
             if self.history_text is not None:
                 raise ValueError("history text requires a public answer")
-        else:
-            expected_history = bounded_assistant_history(self.answer)
-            if self.history_text is None:
-                self.history_text = expected_history
-            elif self.history_text != expected_history:
-                raise ValueError("history text must be derived from the public answer")
+            return
+        expected_history = bounded_assistant_history(self.answer)
+        if self.history_text is None:
+            self.history_text = expected_history
+        elif self.history_text != expected_history:
+            raise ValueError("history text must be derived from the public answer")
 
+    def _validate_unique_public_ids(self) -> list[str]:
         claim_ids = [claim.claim_id for claim in self.claims]
         if len(claim_ids) != len(set(claim_ids)):
             raise ValueError("public claim IDs must be unique")
         evidence_ids = [item.evidence_id for item in self.evidence]
         if len(evidence_ids) != len(set(evidence_ids)):
             raise ValueError("public evidence IDs must be unique")
+        return evidence_ids
 
-        if self.response_mode in {
-            ResponseMode.GROUNDED,
-            ResponseMode.PARTIAL,
-            ResponseMode.CONFLICT,
-        }:
-            if self.status != ResponseStatus.ANSWER or not self.claims or not self.evidence:
-                raise ValueError("grounded responses require accepted claims")
-            if any(
-                claim.evidence_status != EvidenceStatus.VERIFIED_CORPUS for claim in self.claims
-            ):
-                raise ValueError("grounded responses contain only verified claims")
-            supported_ids = {
-                support.evidence_id for claim in self.claims for support in claim.supports
-            }
-            if supported_ids != set(evidence_ids):
-                raise ValueError(
-                    "grounded claim supports and public evidence must reference the same IDs"
-                )
-            if self.response_mode == ResponseMode.CONFLICT and (
-                self.validation is None or not self.validation.accepted
-            ):
-                raise ValueError("conflict responses require deterministic validation")
-        elif self.response_mode == ResponseMode.BACKGROUND:
-            if self.status != ResponseStatus.ANSWER or not self.claims:
-                raise ValueError("background responses require claims")
-            if any(
-                claim.evidence_status != EvidenceStatus.GENERAL_BACKGROUND
-                for claim in self.claims
-            ):
-                raise ValueError("background responses contain only background claims")
-            if self.evidence:
-                raise ValueError("background responses cannot expose evidence")
-            if BACKGROUND_LIMITATION not in self.limitations:
-                raise ValueError("background response requires its visible limitation")
-        elif self.response_mode == ResponseMode.LIVE:
-            if self.status != ResponseStatus.ANSWER or not self.live_results or not self.answer:
-                raise ValueError("live responses require current official results")
-            if self.claims or self.evidence:
-                raise ValueError("live responses cannot present static evidence claims")
-            if self.aggregate_freshness != aggregate_live_freshness(self.live_results):
-                raise ValueError("live response requires matching aggregate freshness")
-        elif self.response_mode == ResponseMode.MIXED:
-            if self.status != ResponseStatus.ANSWER or not self.live_results or not self.answer:
-                raise ValueError("mixed responses require live results and an answer")
-            if not self.claims or not self.evidence:
-                raise ValueError("mixed responses require supported static claims")
-            if any(
-                claim.evidence_status != EvidenceStatus.VERIFIED_CORPUS for claim in self.claims
-            ):
-                raise ValueError("mixed responses contain only verified static claims")
-            supported_ids = {
-                support.evidence_id for claim in self.claims for support in claim.supports
-            }
-            if supported_ids != set(evidence_ids):
-                raise ValueError(
-                    "mixed claim supports and public evidence must reference the same IDs"
-                )
-            if self.validation is None or not self.validation.accepted:
-                raise ValueError("mixed responses require accepted static validation")
-            if self.aggregate_freshness != aggregate_live_freshness(self.live_results):
-                raise ValueError("mixed response requires matching aggregate freshness")
-        elif self.response_mode in {ResponseMode.CAPABILITY, ResponseMode.SCOPE_REDIRECT}:
-            if self.status != ResponseStatus.ANSWER or self.claims or self.evidence:
-                raise ValueError("local conversational responses cannot contain claims")
-        else:
-            if self.status not in {ResponseStatus.ABSTENTION, ResponseStatus.ERROR}:
-                raise ValueError("answer status requires a non-abstention response mode")
-            if self.claims or self.evidence or self.live_results:
-                raise ValueError(
-                    "abstention and error responses cannot contain evidence claims"
-                )
-        if not self.live_results and self.aggregate_freshness is not None:
-            raise ValueError("aggregate freshness requires live results")
-        return self
+    def _validate_grounded(self, evidence_ids: list[str]) -> None:
+        if self.status != ResponseStatus.ANSWER or not self.claims or not self.evidence:
+            raise ValueError("grounded responses require accepted claims")
+        if any(
+            claim.evidence_status != EvidenceStatus.VERIFIED_CORPUS for claim in self.claims
+        ):
+            raise ValueError("grounded responses contain only verified claims")
+        self._validate_support_ids(evidence_ids, label="grounded")
+        if self.response_mode == ResponseMode.CONFLICT and (
+            self.validation is None or not self.validation.accepted
+        ):
+            raise ValueError("conflict responses require deterministic validation")
+
+    def _validate_background(self, _evidence_ids: list[str]) -> None:
+        if self.status != ResponseStatus.ANSWER or not self.claims:
+            raise ValueError("background responses require claims")
+        if any(
+            claim.evidence_status != EvidenceStatus.GENERAL_BACKGROUND for claim in self.claims
+        ):
+            raise ValueError("background responses contain only background claims")
+        if self.evidence:
+            raise ValueError("background responses cannot expose evidence")
+        if BACKGROUND_LIMITATION not in self.limitations:
+            raise ValueError("background response requires its visible limitation")
+
+    def _validate_live(self, _evidence_ids: list[str]) -> None:
+        if self.status != ResponseStatus.ANSWER or not self.live_results or not self.answer:
+            raise ValueError("live responses require current official results")
+        if self.claims or self.evidence:
+            raise ValueError("live responses cannot present static evidence claims")
+        if self.aggregate_freshness != aggregate_live_freshness(self.live_results):
+            raise ValueError("live response requires matching aggregate freshness")
+
+    def _validate_mixed(self, evidence_ids: list[str]) -> None:
+        if self.status != ResponseStatus.ANSWER or not self.live_results or not self.answer:
+            raise ValueError("mixed responses require live results and an answer")
+        if not self.claims or not self.evidence:
+            raise ValueError("mixed responses require supported static claims")
+        if any(
+            claim.evidence_status != EvidenceStatus.VERIFIED_CORPUS for claim in self.claims
+        ):
+            raise ValueError("mixed responses contain only verified static claims")
+        self._validate_support_ids(evidence_ids, label="mixed")
+        if self.validation is None or not self.validation.accepted:
+            raise ValueError("mixed responses require accepted static validation")
+        if self.aggregate_freshness != aggregate_live_freshness(self.live_results):
+            raise ValueError("mixed response requires matching aggregate freshness")
+
+    def _validate_support_ids(self, evidence_ids: list[str], *, label: str) -> None:
+        supported_ids = {
+            support.evidence_id for claim in self.claims for support in claim.supports
+        }
+        if supported_ids != set(evidence_ids):
+            raise ValueError(
+                f"{label} claim supports and public evidence must reference the same IDs"
+            )
+
+    def _validate_conversational(self, _evidence_ids: list[str]) -> None:
+        if self.status != ResponseStatus.ANSWER or self.claims or self.evidence:
+            raise ValueError("local conversational responses cannot contain claims")
+
+    def _validate_abstention(self, _evidence_ids: list[str]) -> None:
+        if self.status not in {ResponseStatus.ABSTENTION, ResponseStatus.ERROR}:
+            raise ValueError("answer status requires a non-abstention response mode")
+        if self.claims or self.evidence or self.live_results:
+            raise ValueError("abstention and error responses cannot contain evidence claims")
 
 
 class HealthResponse(FrozenStrictModel):
