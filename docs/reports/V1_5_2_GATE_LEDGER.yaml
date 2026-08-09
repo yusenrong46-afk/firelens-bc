@@ -152,21 +152,24 @@ gates:
     artifact: tests/test_architecture.py
     expiry: null
     observation: >
-      Strict mypy is enforced and passes 87 source files. TypeScript strictness,
+      Strict mypy is enforced and passes 112 source files. TypeScript strictness,
       unchecked-index, exact-optional-property, and unused-symbol checks pass.
       OpenAPI generation and frontend contract drift checks pass. Architecture
       tests reject circular imports, forbidden foundation-layer dependencies,
       React feature components over 300 lines, oversized API/live/contract/
-      answering/provider/runtime-artifact modules, and feature imports from app
-      or prototype paths. The React entrypoint is 36 lines and all feature
+      answering/provider/runtime-artifact modules, all production Python files
+      over 800 lines, and feature imports from app or prototype paths. The React entrypoint is 36 lines and all feature
       components are at most 224 lines. FastAPI is split into focused modules no
       larger than 167 lines; answering, provider, and runtime-artifact modules
       are all below 800 lines. The benchmark's strict protocol models and
-      manifest-complete frontend bundle accounting now live under
-      src/firelens/evaluation and are included in the harness identity. Gate
-      remains fail because scripts/upgrade_benchmark.py is still 10,267 lines,
-      three production modules exceed 800 lines, nine executable scripts exceed
-      300 lines, and the executed Ruff audit reports 69 functions above
+      manifest-complete frontend bundle accounting, frontend surface validation,
+      runtime artifact checks, qualification reports, retrieval, UX, preview and
+      deployment evidence, semantic holdout evidence, snapshot metrics, and
+      comparison verdicts now live under src/firelens/evaluation and are included
+      in the harness identity. scripts/upgrade_benchmark.py has been reduced from
+      10,267 to 2,692 lines, and no production Python module exceeds 800 lines.
+      Gate remains fail because nine executable scripts exceed 300 lines and the
+      executed Ruff audit reports 70 functions above
       cyclomatic complexity 12 across src and scripts.
 
   - id: G2-evidence-corpus
