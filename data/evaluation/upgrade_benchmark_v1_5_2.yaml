@@ -84,6 +84,8 @@ harness_inputs:
   - src/firelens/evaluation/ux.py
   - src/firelens/evaluation/upgrade_cli.py
   - scripts/freeze_semantic_holdout.py
+  - src/firelens/evaluation/semantic_holdout_freeze_cli.py
+  - src/firelens/evaluation/semantic_holdout_freeze_support.py
   - data/evaluation/semantic_holdout_freeze_protocol.v1.json
   - docs/protocols/V1_5_2_SEMANTIC_HOLDOUT_FREEZE.md
   - scripts/run_hard_probe.py

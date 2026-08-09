@@ -516,5 +516,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def main() -> int:
+    return asyncio.run(run(parse_args()))
+
+
 if __name__ == "__main__":
-    raise SystemExit(asyncio.run(run(parse_args())))
+    raise SystemExit(main())

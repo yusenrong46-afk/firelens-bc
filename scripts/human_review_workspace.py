@@ -8,6 +8,6 @@ import sys
 from firelens.review_workspace import cli
 
 if __name__ == "__main__":
-    cli.main()
+    raise SystemExit(cli.main())
 else:
     sys.modules[__name__] = cli

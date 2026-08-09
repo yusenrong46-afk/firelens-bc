@@ -8,6 +8,6 @@ import sys
 from firelens.evaluation import candidate_evidence_cli
 
 if __name__ == "__main__":
-    candidate_evidence_cli.main()
+    raise SystemExit(candidate_evidence_cli.main())
 else:
     sys.modules[__name__] = candidate_evidence_cli

@@ -2584,6 +2584,8 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         "src/firelens/evaluation/retrieval.py",
         "src/firelens/evaluation/runtime_artifact.py",
         "src/firelens/evaluation/semantic_holdout.py",
+        "src/firelens/evaluation/semantic_holdout_freeze_cli.py",
+        "src/firelens/evaluation/semantic_holdout_freeze_support.py",
         "src/firelens/evaluation/semantic_inputs.py",
         "src/firelens/evaluation/semantic_review.py",
         "src/firelens/evaluation/seal.py",
