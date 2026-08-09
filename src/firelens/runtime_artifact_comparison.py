@@ -23,6 +23,14 @@ from firelens.runtime_artifact_common import (
 
 
 def _validate_inventory_document(inventory: dict[str, Any], *, context: str) -> None:
+    _validate_inventory_header(inventory, context=context)
+    _validate_contract_identity(inventory["contract"], context=context)
+    identity = _validate_artifact_identity(inventory["identity"], context=context)
+    _validate_runtime_configuration(inventory["runtime_configuration"], context=context)
+    _validate_inventory_files(inventory, identity, context=context)
+
+
+def _validate_inventory_header(inventory: dict[str, Any], *, context: str) -> None:
     exact_keys(
         inventory,
         {
@@ -56,7 +64,8 @@ def _validate_inventory_document(inventory: dict[str, Any], *, context: str) -> 
     if supplied_hash != sha256_bytes(canonical_json(unhashed)):
         raise RuntimeArtifactError(f"{context} inventory_sha256 does not match its content")
 
-    contract = inventory["contract"]
+
+def _validate_contract_identity(contract: Any, *, context: str) -> None:
     if not isinstance(contract, dict):
         raise RuntimeArtifactError(f"{context} contract identity must be an object")
     exact_keys(
@@ -71,7 +80,8 @@ def _validate_inventory_document(inventory: dict[str, Any], *, context: str) -> 
     ):
         raise RuntimeArtifactError(f"{context} contract identity is invalid")
 
-    identity = inventory["identity"]
+
+def _validate_artifact_identity(identity: Any, *, context: str) -> dict[str, Any]:
     if not isinstance(identity, dict):
         raise RuntimeArtifactError(f"{context} artifact identity must be an object")
     exact_keys(
@@ -87,8 +97,10 @@ def _validate_inventory_document(inventory: dict[str, Any], *, context: str) -> 
         context=f"{context} artifact identity",
     )
     validate_identity(ArtifactIdentity(**identity))
+    return identity
 
-    runtime_configuration = inventory["runtime_configuration"]
+
+def _validate_runtime_configuration(runtime_configuration: Any, *, context: str) -> None:
     if not isinstance(runtime_configuration, dict):
         raise RuntimeArtifactError(f"{context} runtime configuration must be an object")
     exact_keys(
@@ -117,6 +129,10 @@ def _validate_inventory_document(inventory: dict[str, Any], *, context: str) -> 
             f"{context} runtime configuration retrieval_text_strategy is invalid"
         )
 
+
+def _validate_inventory_files(
+    inventory: dict[str, Any], identity: dict[str, Any], *, context: str
+) -> None:
     entries = inventory["files"]
     if not isinstance(entries, list) or not entries:
         raise RuntimeArtifactError(f"{context} files must be a non-empty list")
