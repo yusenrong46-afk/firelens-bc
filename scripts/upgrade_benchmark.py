@@ -9,15 +9,12 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import math
-import os
 import platform
 import random
 import re
 import shutil
 import statistics
 import subprocess
-import time
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
@@ -48,6 +45,16 @@ from firelens.evaluation.comparison import (
     _verdict,
     compare_snapshots,
 )
+from firelens.evaluation.environment import (
+    command_version as _command_version_impl,
+)
+from firelens.evaluation.environment import cpu_model as _cpu_model_impl
+from firelens.evaluation.environment import (
+    execution_environment as _execution_environment_impl,
+)
+from firelens.evaluation.environment import p95 as _p95
+from firelens.evaluation.environment import read_report as _read_report
+from firelens.evaluation.environment import run_logged as _run_logged_impl
 from firelens.evaluation.frontend_browser import (
     _frontend_axe,
     _frontend_classify_console_errors,
@@ -168,6 +175,12 @@ from firelens.evaluation.spec_models import (
 from firelens.evaluation.spec_models import (
     UXTask as UXTask,
 )
+from firelens.evaluation.specification import (
+    load_benchmark_spec as _load_benchmark_spec_impl,
+)
+from firelens.evaluation.specification import (
+    load_dataset_role_registry as _load_dataset_role_registry_impl,
+)
 from firelens.evaluation.ux import (
     EXECUTION_ENVIRONMENT_FIELDS,
     UX_ALLOWED_ACCESS_METHODS,
@@ -248,54 +261,15 @@ def _capture_frontend_surface(
 
 
 def load_dataset_role_registry(path: Path) -> DatasetRoleRegistry:
-    registry = DatasetRoleRegistry.model_validate(
-        yaml.safe_load(path.read_text(encoding="utf-8"))
-    )
-    for dataset in registry.datasets:
-        if dataset.status != "available":
-            continue
-        for relative in dataset.inputs:
-            if not (ROOT / relative).is_file():
-                raise ValueError(f"available dataset-role input does not exist: {relative}")
-    return registry
+    return _load_dataset_role_registry_impl(path, repository_root=ROOT)
 
 
 def load_spec(path: Path) -> BenchmarkSpec:
-    spec = BenchmarkSpec.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
-    registry_path = ROOT / spec.dataset_role_registry
-    registry = load_dataset_role_registry(registry_path)
-    if registry.registry_id != spec.benchmark_id:
-        raise ValueError("dataset-role registry does not match benchmark_id")
-    if spec.frozen_before_upgrade and registry.ratification_status != "ratified":
-        raise ValueError("a frozen benchmark requires a ratified dataset-role registry")
-    if spec.frozen_before_upgrade:
-        planned = [dataset.id for dataset in registry.datasets if dataset.status == "planned"]
-        if planned:
-            raise ValueError(
-                "a frozen benchmark cannot retain planned evaluation datasets; "
-                f"unresolved={planned}"
-            )
-        sealed_datasets = [
-            dataset
-            for dataset in registry.datasets
-            if dataset.role == "sealed_release_qualification"
-        ]
-        if not sealed_datasets:
-            raise ValueError("a frozen benchmark requires a sealed release dataset")
-        sealed_inputs = {relative for dataset in sealed_datasets for relative in dataset.inputs}
-        missing_sealed_inputs = sorted(sealed_inputs - set(spec.identity_inputs))
-        if missing_sealed_inputs:
-            raise ValueError(
-                "sealed qualification inputs must be frozen benchmark identities; "
-                f"missing={missing_sealed_inputs}"
-            )
-    if spec.dataset_role_registry not in spec.identity_inputs:
-        raise ValueError("dataset-role registry must be a frozen identity input")
-    _spec_seal_path(spec)
-    for relative in [*spec.identity_inputs, *spec.harness_inputs]:
-        if not (ROOT / relative).is_file():
-            raise ValueError(f"benchmark input does not exist: {relative}")
-    return spec
+    return _load_benchmark_spec_impl(
+        path,
+        repository_root=ROOT,
+        seal_path_resolver=_spec_seal_path,
+    )
 
 
 def _git(*args: str) -> str:
@@ -612,169 +586,29 @@ def _resolve_before_snapshot_ancestry(
     }
 
 
-def _read_report(path: Path | None) -> dict[str, Any] | None:
-    if path is None or not path.is_file():
-        return None
-    raw = path.read_text(encoding="utf-8")
-    payload = yaml.safe_load(raw) if path.suffix in {".yaml", ".yml"} else json.loads(raw)
-    if not isinstance(payload, dict):
-        raise ValueError(f"expected a JSON object: {path}")
-    return payload
-
-
-def _p95(values: list[float]) -> float | None:
-    if not values:
-        return None
-    ordered = sorted(values)
-    return ordered[max(0, min(len(ordered) - 1, math.ceil(len(ordered) * 0.95) - 1))]
-
-
-def _strict_bool(payload: dict[str, Any], key: str, context: str) -> bool:
-    value = payload.get(key)
-    if type(value) is not bool:
-        raise ValueError(f"{context} {key} must be a strict boolean")
-    return value
-
-
-def _strict_int(
-    payload: dict[str, Any],
-    key: str,
-    context: str,
-    *,
-    minimum: int | None = None,
-    maximum: int | None = None,
-) -> int:
-    value = payload.get(key)
-    if isinstance(value, bool) or not isinstance(value, int):
-        raise ValueError(f"{context} {key} must be an integer")
-    if minimum is not None and value < minimum:
-        raise ValueError(f"{context} {key} must be at least {minimum}")
-    if maximum is not None and value > maximum:
-        raise ValueError(f"{context} {key} must be at most {maximum}")
-    return value
-
-
-def _strict_number(
-    payload: dict[str, Any],
-    key: str,
-    context: str,
-    *,
-    minimum: float | None = None,
-    maximum: float | None = None,
-) -> float:
-    value = payload.get(key)
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ValueError(f"{context} {key} must be numeric")
-    number = float(value)
-    if not math.isfinite(number):
-        raise ValueError(f"{context} {key} must be finite")
-    if minimum is not None and number < minimum:
-        raise ValueError(f"{context} {key} must be at least {minimum}")
-    if maximum is not None and number > maximum:
-        raise ValueError(f"{context} {key} must be at most {maximum}")
-    return number
-
-
 def _run_logged(command: list[str], log_path: Path) -> dict[str, Any]:
-    started = time.perf_counter()
-    completed = subprocess.run(
-        command,
-        cwd=ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.write_text(completed.stdout + completed.stderr, encoding="utf-8")
-    return {
-        "command": command,
-        "exit_code": completed.returncode,
-        "passed": completed.returncode == 0,
-        "elapsed_seconds": round(time.perf_counter() - started, 3),
-        "log_path": str(log_path.relative_to(ROOT)),
-        "log_sha256": file_sha256(log_path),
-    }
+    return _run_logged_impl(command, log_path, repository_root=ROOT)
 
 
 def _command_version(command: list[str]) -> str:
-    try:
-        completed = subprocess.run(
-            command,
-            cwd=ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except (OSError, subprocess.CalledProcessError):
-        return "unavailable"
-    return completed.stdout.strip() or completed.stderr.strip() or "unavailable"
+    return _command_version_impl(command, repository_root=ROOT)
 
 
 def _cpu_model() -> str:
-    # The browser runner records Node's os.cpus()[0].model. Prefer the same
-    # source so Python's coarse Darwin value (for example, "arm") cannot make
-    # an otherwise identical frontend report fail its environment binding.
-    observed = _command_version(
-        [
-            "node",
-            "-e",
-            "process.stdout.write(require('os').cpus()[0]?.model ?? '')",
-        ]
+    return _cpu_model_impl(
+        _command_version,
+        processor_reader=platform.processor,
+        uname_processor_reader=lambda: platform.uname().processor,
+        system_reader=platform.system,
     )
-    if observed != "unavailable":
-        return observed
-    observed = platform.processor().strip() or platform.uname().processor.strip()
-    if observed:
-        return observed
-    if platform.system() == "Darwin":
-        observed = _command_version(["sysctl", "-n", "machdep.cpu.brand_string"])
-        if observed != "unavailable":
-            return observed
-    cpuinfo = Path("/proc/cpuinfo")
-    if cpuinfo.is_file():
-        for line in cpuinfo.read_text(encoding="utf-8", errors="replace").splitlines():
-            if line.lower().startswith("model name") and ":" in line:
-                return line.split(":", 1)[1].strip()
-    return "unknown"
 
 
 def _execution_environment() -> dict[str, str | int]:
-    """Return stable fields that bind timing and bundle measurements."""
-
-    frontend = ROOT / "apps/web"
-    try:
-        lock = json.loads((frontend / "package-lock.json").read_text(encoding="utf-8"))
-        playwright_version = str(lock["packages"]["node_modules/@playwright/test"]["version"])
-    except (KeyError, OSError, TypeError, ValueError):
-        playwright_version = "unavailable"
-    chromium_executable = _command_version(
-        [
-            "node",
-            "-e",
-            (
-                "const {chromium}=require('./apps/web/node_modules/"
-                "playwright');process.stdout.write(chromium.executablePath())"
-            ),
-        ]
+    return _execution_environment_impl(
+        repository_root=ROOT,
+        command_version_reader=_command_version,
+        cpu_model_reader=_cpu_model,
     )
-    chromium_version = (
-        _command_version([chromium_executable, "--version"])
-        if chromium_executable != "unavailable"
-        else "unavailable"
-    )
-    return {
-        "os": platform.system(),
-        "os_release": platform.release(),
-        "architecture": platform.machine(),
-        "cpu_model": _cpu_model(),
-        "logical_cpu_count": os.cpu_count() or 0,
-        "python_implementation": platform.python_implementation(),
-        "python_version": platform.python_version(),
-        "node_version": _command_version(["node", "--version"]),
-        "npm_version": _command_version(["npm", "--version"]),
-        "playwright_version": playwright_version,
-        "chromium_version": chromium_version,
-    }
 
 
 def _require_exact_keys(payload: dict[str, Any], expected: set[str], *, context: str) -> None:

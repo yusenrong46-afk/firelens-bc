@@ -58,7 +58,9 @@ harness_inputs:
   - src/firelens/evaluation/capture.py
   - src/firelens/evaluation/common.py
   - src/firelens/evaluation/comparison.py
+  - src/firelens/evaluation/environment.py
   - src/firelens/evaluation/spec_models.py
+  - src/firelens/evaluation/specification.py
   - src/firelens/evaluation/frontend_bundle.py
   - src/firelens/evaluation/frontend_browser.py
   - src/firelens/evaluation/frontend_map.py
