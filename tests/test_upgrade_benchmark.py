@@ -2569,6 +2569,7 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         "src/firelens/evaluation/frontend_qualification.py",
         "src/firelens/evaluation/frontend_surface.py",
         "src/firelens/evaluation/qualification_reports.py",
+        "src/firelens/evaluation/retrieval.py",
         "src/firelens/evaluation/runtime_artifact.py",
     }.issubset(spec.harness_inputs)
     assert {
