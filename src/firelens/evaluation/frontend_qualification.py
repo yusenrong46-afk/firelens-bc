@@ -183,52 +183,8 @@ def _frontend_surface(
     report = _read_report(report_path)
     if report is None:
         raise ValueError("frontend surface report is missing")
-    _require_exact_keys(
-        report,
-        {
-            "schema_version",
-            "generated_at",
-            "protocol_id",
-            "protocol_sha256",
-            "protocol_status",
-            "protocol_frozen_at",
-            "base_url",
-            "execution_environment",
-            "browser",
-            "build",
-            "surface_rows",
-            "functional_journeys",
-            "performance",
-            "summary",
-        },
-        context="frontend surface report",
-    )
-    if report.get("schema_version") != "firelens.frontend_surface_report.v1":
-        raise ValueError("frontend surface report uses an unsupported schema")
-    _require_timestamp(
-        report.get("generated_at"), context="frontend surface report generated_at"
-    )
     protocol = _frontend_surface_protocol(protocol_path)
-    if report.get("protocol_id") != protocol["protocol_id"]:
-        raise ValueError("frontend surface report uses the wrong protocol_id")
-    if report.get("protocol_sha256") != file_sha256(protocol_path):
-        raise ValueError("frontend surface report uses the wrong protocol digest")
-    if (
-        report.get("protocol_status") != protocol["status"]
-        or report.get("protocol_frozen_at") != protocol["frozen_at"]
-    ):
-        raise ValueError("frontend surface report protocol status is inconsistent")
-    base_url = report.get("base_url")
-    if base_url != protocol["surface_thresholds"]["allowed_request_origins"][0]:
-        raise ValueError("frontend surface report uses the wrong local preview origin")
-    browser = report.get("browser")
-    if not isinstance(browser, dict):
-        raise ValueError("frontend surface report browser identity must be an object")
-    _require_exact_keys(
-        browser,
-        {"name", "version"},
-        context="frontend surface report browser identity",
-    )
+    base_url, browser = _validated_surface_report_identity(report, protocol, protocol_path)
     environment = _frontend_surface_environment(
         report.get("execution_environment"),
         protocol=protocol,
@@ -237,23 +193,7 @@ def _frontend_surface(
     )
 
     client = client_root or ROOT / "apps/web/dist/client"
-    build = report.get("build")
-    if not isinstance(build, dict):
-        raise ValueError("frontend surface report build identity must be an object")
-    _require_exact_keys(
-        build,
-        {"commit", "index_sha256", "manifest_sha256"},
-        context="frontend surface report build identity",
-    )
-    if build.get("commit") != expected_commit:
-        raise ValueError("frontend surface report commit differs from the capture commit")
-    index_path = client / "index.html"
-    if not index_path.is_file():
-        raise ValueError("frontend surface build index is missing")
-    if build.get("index_sha256") != file_sha256(index_path):
-        raise ValueError("frontend surface report uses a different built index")
-    if build.get("manifest_sha256") != frontend_bundle.get("manifest_sha256"):
-        raise ValueError("frontend surface report uses a different build manifest")
+    _validate_surface_build(report.get("build"), client, expected_commit, frontend_bundle)
 
     rows = _require_object_list(report.get("surface_rows"), context="frontend surface rows")
     expected_pairs = [
@@ -347,6 +287,73 @@ def _frontend_surface(
         ),
         "worst_profile_p75": performance["worst_profile_p75"],
     }
+
+
+def _validated_surface_report_identity(
+    report: dict[str, Any], protocol: dict[str, Any], protocol_path: Path
+) -> tuple[str, dict[str, Any]]:
+    keys = {
+        "schema_version",
+        "generated_at",
+        "protocol_id",
+        "protocol_sha256",
+        "protocol_status",
+        "protocol_frozen_at",
+        "base_url",
+        "execution_environment",
+        "browser",
+        "build",
+        "surface_rows",
+        "functional_journeys",
+        "performance",
+        "summary",
+    }
+    _require_exact_keys(report, keys, context="frontend surface report")
+    if report.get("schema_version") != "firelens.frontend_surface_report.v1":
+        raise ValueError("frontend surface report uses an unsupported schema")
+    _require_timestamp(
+        report.get("generated_at"), context="frontend surface report generated_at"
+    )
+    if report.get("protocol_id") != protocol["protocol_id"]:
+        raise ValueError("frontend surface report uses the wrong protocol_id")
+    if report.get("protocol_sha256") != file_sha256(protocol_path):
+        raise ValueError("frontend surface report uses the wrong protocol digest")
+    if (
+        report.get("protocol_status") != protocol["status"]
+        or report.get("protocol_frozen_at") != protocol["frozen_at"]
+    ):
+        raise ValueError("frontend surface report protocol status is inconsistent")
+    base_url = report.get("base_url")
+    if base_url != protocol["surface_thresholds"]["allowed_request_origins"][0]:
+        raise ValueError("frontend surface report uses the wrong local preview origin")
+    browser = report.get("browser")
+    if not isinstance(browser, dict):
+        raise ValueError("frontend surface report browser identity must be an object")
+    _require_exact_keys(
+        browser, {"name", "version"}, context="frontend surface report browser identity"
+    )
+    return base_url, browser
+
+
+def _validate_surface_build(
+    value: Any, client: Path, expected_commit: str, frontend_bundle: dict[str, Any]
+) -> None:
+    if not isinstance(value, dict):
+        raise ValueError("frontend surface report build identity must be an object")
+    _require_exact_keys(
+        value,
+        {"commit", "index_sha256", "manifest_sha256"},
+        context="frontend surface report build identity",
+    )
+    if value.get("commit") != expected_commit:
+        raise ValueError("frontend surface report commit differs from the capture commit")
+    index_path = client / "index.html"
+    if not index_path.is_file():
+        raise ValueError("frontend surface build index is missing")
+    if value.get("index_sha256") != file_sha256(index_path):
+        raise ValueError("frontend surface report uses a different built index")
+    if value.get("manifest_sha256") != frontend_bundle.get("manifest_sha256"):
+        raise ValueError("frontend surface report uses a different build manifest")
 
 
 def _capture_frontend_surface(
