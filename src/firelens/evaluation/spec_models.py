@@ -51,37 +51,49 @@ class MetricSpec(StrictModel):
         if (self.gate_operator is None) != (self.gate_value is None):
             raise ValueError("gate_operator and gate_value must be supplied together")
         if self.value_type == "boolean":
-            if self.tolerance is not None:
-                raise ValueError("boolean metrics cannot define a numeric tolerance")
-            if self.gate_value is not None and type(self.gate_value) is not bool:
-                raise ValueError("boolean metric gates require a strict boolean value")
-            if self.gate_operator not in {None, "eq"}:
-                raise ValueError("boolean metric gates must use eq")
+            _validate_boolean_metric(self)
         else:
-            if self.comparison_mode == "paired" and self.tolerance is None:
-                raise ValueError("paired numeric metrics require a ratified tolerance")
-            if self.gate_value is not None and (
-                isinstance(self.gate_value, bool)
-                or not isinstance(self.gate_value, (int, float))
-                or not math.isfinite(float(self.gate_value))
-            ):
-                raise ValueError("numeric metric gates require a finite numeric value")
-            if (
-                self.value_type == "integer"
-                and self.gate_value is not None
-                and not isinstance(self.gate_value, int)
-            ):
-                raise ValueError("integer metric gates require an integer value")
-        if self.comparison_mode in {"after_only", "prerequisite"}:
-            if self.comparison_requirement != "gate_only":
-                raise ValueError("after-only and prerequisite metrics must use gate_only")
-            if not self.required_after or self.gate_operator is None:
-                raise ValueError(
-                    "after-only and prerequisite metrics require an explicit after gate"
-                )
-        if self.comparison_requirement == "must_improve" and self.comparison_mode != "paired":
-            raise ValueError("must_improve requires paired comparison")
+            _validate_numeric_metric(self)
+        _validate_metric_comparison(self)
         return self
+
+
+def _validate_boolean_metric(metric: MetricSpec) -> None:
+    if metric.tolerance is not None:
+        raise ValueError("boolean metrics cannot define a numeric tolerance")
+    if metric.gate_value is not None and type(metric.gate_value) is not bool:
+        raise ValueError("boolean metric gates require a strict boolean value")
+    if metric.gate_operator not in {None, "eq"}:
+        raise ValueError("boolean metric gates must use eq")
+
+
+def _validate_numeric_metric(metric: MetricSpec) -> None:
+    if metric.comparison_mode == "paired" and metric.tolerance is None:
+        raise ValueError("paired numeric metrics require a ratified tolerance")
+    if metric.gate_value is not None and (
+        isinstance(metric.gate_value, bool)
+        or not isinstance(metric.gate_value, (int, float))
+        or not math.isfinite(float(metric.gate_value))
+    ):
+        raise ValueError("numeric metric gates require a finite numeric value")
+    if (
+        metric.value_type == "integer"
+        and metric.gate_value is not None
+        and not isinstance(metric.gate_value, int)
+    ):
+        raise ValueError("integer metric gates require an integer value")
+
+
+def _validate_metric_comparison(metric: MetricSpec) -> None:
+    if metric.comparison_mode in {"after_only", "prerequisite"}:
+        if metric.comparison_requirement != "gate_only":
+            raise ValueError("after-only and prerequisite metrics must use gate_only")
+        if not metric.required_after or metric.gate_operator is None:
+            raise ValueError(
+                "after-only and prerequisite metrics require an explicit after gate"
+            )
+    if metric.comparison_requirement == "must_improve" and metric.comparison_mode != "paired":
+        raise ValueError("must_improve requires paired comparison")
 
 
 class DatasetRoleEntry(StrictModel):
@@ -125,32 +137,31 @@ class DatasetRoleRegistry(StrictModel):
         if len(ids) != len(set(ids)):
             raise ValueError("dataset role IDs must be unique")
         for item in self.datasets:
-            if set(item.allowed_uses) & set(item.prohibited_uses):
-                raise ValueError(f"dataset role {item.id} has conflicting allowed uses")
-            if item.role in {
-                "sealed_release_qualification",
-                "planned_sealed_qualification",
-            }:
-                if item.baseline_policy != "required_after_only":
-                    raise ValueError("sealed qualification must be required-after-only")
-                required_prohibitions = {"paired_before_after", "tuning"}
-                if not required_prohibitions.issubset(set(item.prohibited_uses)):
-                    raise ValueError("sealed qualification is missing required prohibitions")
-            if item.role == "sealed_release_qualification" and item.status != "available":
-                raise ValueError("sealed release qualification must be available")
-            if item.role == "planned_sealed_qualification" and item.status != "planned":
-                raise ValueError(
-                    "planned sealed qualification cannot become available without role conversion"
-                )
-            if (
-                item.status == "available"
-                and item.baseline_policy == "required_after_only"
-                and item.role != "sealed_release_qualification"
-            ):
-                raise ValueError(
-                    "available required-after-only data must use the sealed release role"
-                )
+            _validate_dataset_role(item)
         return self
+
+
+def _validate_dataset_role(item: DatasetRoleEntry) -> None:
+    if set(item.allowed_uses) & set(item.prohibited_uses):
+        raise ValueError(f"dataset role {item.id} has conflicting allowed uses")
+    if item.role in {"sealed_release_qualification", "planned_sealed_qualification"}:
+        if item.baseline_policy != "required_after_only":
+            raise ValueError("sealed qualification must be required-after-only")
+        required_prohibitions = {"paired_before_after", "tuning"}
+        if not required_prohibitions.issubset(set(item.prohibited_uses)):
+            raise ValueError("sealed qualification is missing required prohibitions")
+    if item.role == "sealed_release_qualification" and item.status != "available":
+        raise ValueError("sealed release qualification must be available")
+    if item.role == "planned_sealed_qualification" and item.status != "planned":
+        raise ValueError(
+            "planned sealed qualification cannot become available without role conversion"
+        )
+    if (
+        item.status == "available"
+        and item.baseline_policy == "required_after_only"
+        and item.role != "sealed_release_qualification"
+    ):
+        raise ValueError("available required-after-only data must use the sealed release role")
 
 
 class UXCriterion(StrictModel):

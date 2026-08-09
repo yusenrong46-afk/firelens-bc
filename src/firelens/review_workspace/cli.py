@@ -6,6 +6,7 @@ import argparse
 import json
 import re
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
@@ -707,42 +708,38 @@ def _verify_analysis(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
-        if args.command in {
-            "prepare-conversation",
-            "prepare-retrieval",
-            "prepare-semantic-holdout",
-        }:
-            return _prepare(args)
-        if args.command == "prepare-frontend-manual":
-            return _prepare_frontend_manual(args)
-        if args.command == "prepare-ux-template":
-            return _prepare_ux_template(args)
-        if args.command == "verify-frontend-manual":
-            return _verify_frontend_manual(args)
-        if args.command == "verify-ux-report":
-            return _verify_ux_report(args)
-        if args.command == "serve":
-            return _serve(args)
-        if args.command == "session-status":
-            return _session_status(args)
-        if args.command == "prepare-storage-attestation":
-            return _prepare_storage_attestation(args)
-        if args.command == "qualify-finalized":
-            return _qualify_finalized(args)
-        if args.command == "verify-qualification":
-            return _verify_qualification(args)
-        if args.command == "export-finalized":
-            return _export(args)
-        if args.command == "verify-export":
-            return _verify(args)
-        if args.command == "analyze-finalized":
-            return _analyze(args)
-        if args.command == "verify-analysis":
-            return _verify_analysis(args)
+        return _command_handler(args.command)(args)
     except (FileNotFoundError, FileExistsError, OSError, ValueError) as exc:
         print(f"human review workspace refused: {exc}", file=sys.stderr)
         return 2
-    raise AssertionError("unreachable command")
+
+
+def _command_handler(command: str) -> Callable[[argparse.Namespace], int]:
+    if command in {
+        "prepare-conversation",
+        "prepare-retrieval",
+        "prepare-semantic-holdout",
+    }:
+        return _prepare
+    handlers: dict[str, Callable[[argparse.Namespace], int]] = {
+        "prepare-frontend-manual": _prepare_frontend_manual,
+        "prepare-ux-template": _prepare_ux_template,
+        "verify-frontend-manual": _verify_frontend_manual,
+        "verify-ux-report": _verify_ux_report,
+        "serve": _serve,
+        "session-status": _session_status,
+        "prepare-storage-attestation": _prepare_storage_attestation,
+        "qualify-finalized": _qualify_finalized,
+        "verify-qualification": _verify_qualification,
+        "export-finalized": _export,
+        "verify-export": _verify,
+        "analyze-finalized": _analyze,
+        "verify-analysis": _verify_analysis,
+    }
+    try:
+        return handlers[command]
+    except KeyError as error:
+        raise AssertionError("unreachable command") from error
 
 
 if __name__ == "__main__":

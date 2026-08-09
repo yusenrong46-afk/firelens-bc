@@ -27,44 +27,52 @@ def load_plan(path: Path) -> dict[str, Any]:
     names: set[str] = set()
     routes: set[tuple[str, str]] = set()
     for rule in rules:
-        if not isinstance(rule, dict):
-            raise ValueError("each firewall rule must be an object")
-        required = {
-            "name",
-            "path",
-            "method",
-            "window_seconds",
-            "requests",
-            "keys",
-            "rate_limit_action",
-        }
-        if set(rule) != required:
-            raise ValueError("firewall rules must use the exact v1 fields")
-        name = rule["name"]
-        path_value = rule["path"]
-        method = rule["method"]
-        if not isinstance(name, str) or not name.strip() or name in names:
-            raise ValueError("firewall rule names must be unique and non-empty")
-        if path_value not in {"/api/v1/ask", "/api/v1/live/map"}:
-            raise ValueError("firewall rules may target only public FireLens data routes")
-        if method not in {"GET", "POST"}:
-            raise ValueError("firewall rule methods must be GET or POST")
-        if (path_value, method) in routes:
-            raise ValueError("firewall path and method pairs must be unique")
-        if (
-            not isinstance(rule["window_seconds"], int)
-            or not 10 <= rule["window_seconds"] <= 300
-        ):
-            raise ValueError("rate-limit windows must be between 10 and 300 seconds")
-        if not isinstance(rule["requests"], int) or not 30 <= rule["requests"] <= 10_000:
-            raise ValueError("rate-limit request thresholds must be between 30 and 10000")
-        if rule["keys"] != ["ip"]:
-            raise ValueError("V1.5 anonymous rate limits must use only the IP key")
-        if rule["rate_limit_action"] != "deny":
-            raise ValueError("public V1.5 firewall rules must use an enforced deny action")
+        name, path_value, method = _validate_rule(rule, names=names, routes=routes)
         names.add(name)
         routes.add((path_value, method))
     return payload
+
+
+def _validate_rule(
+    rule: object,
+    *,
+    names: set[str],
+    routes: set[tuple[str, str]],
+) -> tuple[str, str, str]:
+    if not isinstance(rule, dict):
+        raise ValueError("each firewall rule must be an object")
+    required = {
+        "name",
+        "path",
+        "method",
+        "window_seconds",
+        "requests",
+        "keys",
+        "rate_limit_action",
+    }
+    if set(rule) != required:
+        raise ValueError("firewall rules must use the exact v1 fields")
+    name, path_value, method = rule["name"], rule["path"], rule["method"]
+    if not isinstance(name, str) or not name.strip() or name in names:
+        raise ValueError("firewall rule names must be unique and non-empty")
+    if not isinstance(path_value, str) or path_value not in {
+        "/api/v1/ask",
+        "/api/v1/live/map",
+    }:
+        raise ValueError("firewall rules may target only public FireLens data routes")
+    if not isinstance(method, str) or method not in {"GET", "POST"}:
+        raise ValueError("firewall rule methods must be GET or POST")
+    if (path_value, method) in routes:
+        raise ValueError("firewall path and method pairs must be unique")
+    if not isinstance(rule["window_seconds"], int) or not 10 <= rule["window_seconds"] <= 300:
+        raise ValueError("rate-limit windows must be between 10 and 300 seconds")
+    if not isinstance(rule["requests"], int) or not 30 <= rule["requests"] <= 10_000:
+        raise ValueError("rate-limit request thresholds must be between 30 and 10000")
+    if rule["keys"] != ["ip"]:
+        raise ValueError("V1.5 anonymous rate limits must use only the IP key")
+    if rule["rate_limit_action"] != "deny":
+        raise ValueError("public V1.5 firewall rules must use an enforced deny action")
+    return name, path_value, method
 
 
 def render_command(rule: dict[str, Any]) -> list[str]:

@@ -481,11 +481,7 @@ def build_candidate_evidence(
     return bool(documents["candidate-security-summary.json"]["gate_passed"])
 
 
-def verify_candidate_evidence(root: Path, bundle: Path, *, expected_commit: str) -> None:
-    """Recompute every generated document and reject an incomplete or changed bundle."""
-
-    root = root.resolve()
-    bundle = bundle.resolve()
+def _load_candidate_manifest(bundle: Path, expected_commit: str) -> dict[str, Any]:
     if bundle.is_symlink() or not bundle.is_dir():
         raise ValueError("candidate evidence bundle must be a regular directory")
     manifest = _load_json(
@@ -496,6 +492,10 @@ def verify_candidate_evidence(root: Path, bundle: Path, *, expected_commit: str)
         raise ValueError("candidate evidence manifest schema is invalid")
     if manifest.get("candidate_commit") != expected_commit:
         raise ValueError("candidate evidence commit does not match the expected commit")
+    return manifest
+
+
+def _verify_artifact_roster(bundle: Path, manifest: dict[str, Any]) -> set[str]:
     expected_names = {
         "candidate-evidence-manifest.json",
         *RAW_EVIDENCE_NAMES,
@@ -519,6 +519,16 @@ def verify_candidate_evidence(root: Path, bundle: Path, *, expected_commit: str)
     ]
     if sorted(recorded_artifacts, key=lambda item: str(item.get("name"))) != actual_records:
         raise ValueError("candidate evidence artifact identity does not match the manifest")
+    return expected_names
+
+
+def verify_candidate_evidence(root: Path, bundle: Path, *, expected_commit: str) -> None:
+    """Recompute every generated document and reject an incomplete or changed bundle."""
+
+    root = root.resolve()
+    bundle = bundle.resolve()
+    manifest = _load_candidate_manifest(bundle, expected_commit)
+    _verify_artifact_roster(bundle, manifest)
 
     raw_values = {
         name: _load_json(_strict_file(bundle, name), name) for name in RAW_EVIDENCE_NAMES

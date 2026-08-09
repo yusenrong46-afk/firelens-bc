@@ -129,7 +129,12 @@ def load_protocol(path: Path) -> dict[str, Any]:
         raise ValueError("live SLO protocol layer roster is not canonical")
     if protocol["phases"] != ["cold", "cached"]:
         raise ValueError("live SLO protocol phase roster is not canonical")
-    regions = protocol["regions"]
+    _validate_regions(protocol["regions"])
+    _validate_protocol_bounds(protocol)
+    return protocol
+
+
+def _validate_regions(regions: object) -> None:
     if not isinstance(regions, list) or len(regions) != 3:
         raise ValueError("live SLO protocol requires exactly three BC regions")
     region_ids: list[str] = []
@@ -150,6 +155,9 @@ def load_protocol(path: Path) -> dict[str, Any]:
             raise ValueError("live SLO region is outside the bounded BC scope")
     if len(region_ids) != len(set(region_ids)):
         raise ValueError("live SLO region IDs must be unique")
+
+
+def _validate_protocol_bounds(protocol: dict[str, Any]) -> None:
     default_repetitions = _integer(
         protocol["default_repetitions"], context="default repetitions", minimum=1
     )
@@ -163,7 +171,6 @@ def load_protocol(path: Path) -> dict[str, Any]:
         or any(not isinstance(item, str) or not item.strip() for item in limitations)
     ):
         raise ValueError("live SLO protocol limitations are incomplete")
-    return protocol
 
 
 def _nearest_rank(values: list[float], percentile: float) -> float:
