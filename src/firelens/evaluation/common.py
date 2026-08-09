@@ -9,7 +9,7 @@ import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, overload
 
 import yaml
 
@@ -29,6 +29,19 @@ def sha256_json(payload: Any) -> str:
             sort_keys=True,
         ).encode("utf-8")
     ).hexdigest()
+
+
+def assert_recomputed_summary_matches(
+    submitted: dict[str, Any], recomputed: dict[str, Any], *, context: str
+) -> None:
+    submitted_evidence = {
+        key: value for key, value in submitted.items() if key != "generated_at"
+    }
+    recomputed_evidence = {
+        key: value for key, value in recomputed.items() if key != "generated_at"
+    }
+    if submitted_evidence != recomputed_evidence:
+        raise ValueError(f"{context} summary differs from raw validated evidence")
 
 
 def read_report(path: Path | None) -> dict[str, Any] | None:
@@ -125,6 +138,14 @@ def require_exact_keys(payload: dict[str, Any], expected: set[str], *, context: 
         f"{context} does not match the canonical schema; "
         f"missing={missing}, unexpected={unexpected}"
     )
+
+
+@overload
+def require_digest(value: Any, *, context: str, optional: Literal[False] = False) -> str: ...
+
+
+@overload
+def require_digest(value: Any, *, context: str, optional: Literal[True]) -> str | None: ...
 
 
 def require_digest(value: Any, *, context: str, optional: bool = False) -> str | None:

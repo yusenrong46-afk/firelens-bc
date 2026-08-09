@@ -68,6 +68,7 @@ harness_inputs:
   - src/firelens/evaluation/release_surfaces.py
   - src/firelens/evaluation/retrieval.py
   - src/firelens/evaluation/runtime_artifact.py
+  - src/firelens/evaluation/semantic_holdout.py
   - src/firelens/evaluation/semantic_inputs.py
   - src/firelens/evaluation/semantic_review.py
   - src/firelens/evaluation/ux.py
