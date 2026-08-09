@@ -2577,6 +2577,7 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         "src/firelens/evaluation/git_evidence.py",
         "src/firelens/evaluation/hard_probe_cli.py",
         "src/firelens/evaluation/live_qualification_cli.py",
+        "src/firelens/evaluation/live_slo_evidence_cli.py",
         "src/firelens/evaluation/preview_qualification_cli.py",
         "src/firelens/evaluation/qualification_reports.py",
         "src/firelens/evaluation/release_surfaces.py",
@@ -2599,6 +2600,7 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
     }.issubset(spec.harness_inputs)
     assert "src/firelens/review_workspace/input_common.py" in spec.harness_inputs
     assert {
+        "src/firelens/review_workspace/cli.py",
         "src/firelens/review_workspace/session.py",
         "src/firelens/review_workspace/session_common.py",
         "src/firelens/review_workspace/session_evidence.py",

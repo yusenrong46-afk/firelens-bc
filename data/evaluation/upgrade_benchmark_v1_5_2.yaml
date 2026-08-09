@@ -91,6 +91,7 @@ harness_inputs:
   - scripts/run_live_qualification.py
   - src/firelens/evaluation/live_qualification_cli.py
   - scripts/live_slo_evidence.py
+  - src/firelens/evaluation/live_slo_evidence_cli.py
   - docs/protocols/V1_5_2_LIVE_SLO_EVIDENCE.md
   - scripts/run_retrieval_qualification.py
   - scripts/qualify_preview.py
@@ -98,6 +99,7 @@ harness_inputs:
   - scripts/owner_semantic_review.py
   - scripts/retrieval_owner_review.py
   - scripts/human_review_workspace.py
+  - src/firelens/review_workspace/cli.py
   - docs/protocols/V1_5_2_HUMAN_REVIEW_RUNBOOK.md
   - scripts/prepare_vercel_firewall.py
   - apps/web/scripts/qualify-frontend-surface.mjs
