@@ -2574,6 +2574,7 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         "src/firelens/evaluation/frontend_protocol.py",
         "src/firelens/evaluation/frontend_qualification.py",
         "src/firelens/evaluation/frontend_surface.py",
+        "src/firelens/evaluation/git_evidence.py",
         "src/firelens/evaluation/qualification_reports.py",
         "src/firelens/evaluation/release_surfaces.py",
         "src/firelens/evaluation/retrieval.py",
@@ -2581,9 +2582,11 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         "src/firelens/evaluation/semantic_holdout.py",
         "src/firelens/evaluation/semantic_inputs.py",
         "src/firelens/evaluation/semantic_review.py",
+        "src/firelens/evaluation/seal.py",
         "src/firelens/evaluation/snapshot.py",
         "src/firelens/evaluation/specification.py",
         "src/firelens/evaluation/ux.py",
+        "src/firelens/evaluation/upgrade_cli.py",
     }.issubset(spec.harness_inputs)
     assert {
         "src/firelens/benchmark.py",
