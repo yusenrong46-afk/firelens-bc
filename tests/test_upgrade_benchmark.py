@@ -2566,6 +2566,8 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         "src/firelens/evaluation/frontend_browser.py",
         "src/firelens/evaluation/frontend_map.py",
         "src/firelens/evaluation/frontend_manual_protocol.py",
+        "src/firelens/evaluation/frontend_manual_review.py",
+        "src/firelens/evaluation/frontend_manual_setup.py",
         "src/firelens/evaluation/frontend_privacy.py",
         "src/firelens/evaluation/frontend_protocol.py",
         "src/firelens/evaluation/frontend_qualification.py",
