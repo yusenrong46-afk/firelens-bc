@@ -96,99 +96,86 @@ def audit_corpus_admission(chunks: Sequence[ChunkRecord]) -> list[AdmissionFindi
     for chunk in chunks:
         chunks_by_source[chunk.source_id].append(chunk)
         source_by_document_hash[chunk.document_sha256].add(chunk.source_id)
-        if chunk.chunk_id in seen_chunk_ids:
-            findings.append(
-                AdmissionFinding(
-                    source_id=chunk.source_id,
-                    chunk_id=chunk.chunk_id,
-                    code="duplicate_chunk_id",
-                    detail="A chunk ID occurs more than once in the corpus.",
-                )
-            )
+        findings.extend(
+            _chunk_admission_findings(chunk, duplicate=chunk.chunk_id in seen_chunk_ids)
+        )
         seen_chunk_ids.add(chunk.chunk_id)
-
-        if chunk.source_type not in {"pdf", "html"}:
-            findings.append(
-                AdmissionFinding(
-                    source_id=chunk.source_id,
-                    chunk_id=chunk.chunk_id,
-                    code="unsupported_source_type",
-                    detail=f"Unsupported source type: {chunk.source_type}",
-                )
-            )
-        if not chunk.text.strip() or chunk.char_count != len(chunk.text):
-            findings.append(
-                AdmissionFinding(
-                    source_id=chunk.source_id,
-                    chunk_id=chunk.chunk_id,
-                    code="malformed_extraction",
-                    detail="Chunk text is blank or its declared character count is invalid.",
-                )
-            )
-        if len(chunk.text) > MAX_ADMITTED_CHUNK_CHARS:
-            findings.append(
-                AdmissionFinding(
-                    source_id=chunk.source_id,
-                    chunk_id=chunk.chunk_id,
-                    code="pathological_chunk_size",
-                    detail=(
-                        f"Chunk exceeds the {MAX_ADMITTED_CHUNK_CHARS}-character "
-                        "admission ceiling."
-                    ),
-                )
-            )
-        if not re.fullmatch(r"[a-f0-9]{64}", chunk.document_sha256):
-            findings.append(
-                AdmissionFinding(
-                    source_id=chunk.source_id,
-                    chunk_id=chunk.chunk_id,
-                    code="invalid_document_hash",
-                    detail="Document SHA-256 is missing or malformed.",
-                )
-            )
-        if not chunk.authority_class:
-            findings.append(
-                AdmissionFinding(
-                    source_id=chunk.source_id,
-                    chunk_id=chunk.chunk_id,
-                    code="missing_authority",
-                    detail="Chunk has no governed authority class.",
-                )
-            )
-        for code, pattern in _INSTRUCTION_PATTERNS:
-            if pattern.search(chunk.text):
-                findings.append(
-                    AdmissionFinding(
-                        source_id=chunk.source_id,
-                        chunk_id=chunk.chunk_id,
-                        code=code,
-                        detail=(
-                            "Untrusted source text contains a model-facing instruction or "
-                            "citation manipulation pattern."
-                        ),
-                    )
-                )
-
-    for document_hash, source_ids in source_by_document_hash.items():
-        if len(source_ids) < 2:
-            continue
-        for source_id in sorted(source_ids):
-            findings.append(
-                AdmissionFinding(
-                    source_id=source_id,
-                    chunk_id=None,
-                    code="duplicate_document",
-                    detail=(
-                        "The same reviewed document hash is registered under multiple sources: "
-                        f"{document_hash}."
-                    ),
-                )
-            )
-
+    findings.extend(_duplicate_document_findings(source_by_document_hash))
     source_shingles = {
         source_id: _source_shingles(source_chunks)
         for source_id, source_chunks in chunks_by_source.items()
     }
+    findings.extend(_near_duplicate_findings(source_shingles))
+    return findings
+
+
+def _finding(chunk: ChunkRecord, code: str, detail: str) -> AdmissionFinding:
+    return AdmissionFinding(
+        source_id=chunk.source_id, chunk_id=chunk.chunk_id, code=code, detail=detail
+    )
+
+
+def _chunk_admission_findings(chunk: ChunkRecord, *, duplicate: bool) -> list[AdmissionFinding]:
+    findings: list[AdmissionFinding] = []
+    checks = (
+        (duplicate, "duplicate_chunk_id", "A chunk ID occurs more than once in the corpus."),
+        (
+            chunk.source_type not in {"pdf", "html"},
+            "unsupported_source_type",
+            f"Unsupported source type: {chunk.source_type}",
+        ),
+        (
+            not chunk.text.strip() or chunk.char_count != len(chunk.text),
+            "malformed_extraction",
+            "Chunk text is blank or its declared character count is invalid.",
+        ),
+        (
+            len(chunk.text) > MAX_ADMITTED_CHUNK_CHARS,
+            "pathological_chunk_size",
+            f"Chunk exceeds the {MAX_ADMITTED_CHUNK_CHARS}-character admission ceiling.",
+        ),
+        (
+            not re.fullmatch(r"[a-f0-9]{64}", chunk.document_sha256),
+            "invalid_document_hash",
+            "Document SHA-256 is missing or malformed.",
+        ),
+        (
+            not chunk.authority_class,
+            "missing_authority",
+            "Chunk has no governed authority class.",
+        ),
+    )
+    findings.extend(_finding(chunk, code, detail) for failed, code, detail in checks if failed)
+    findings.extend(
+        _finding(
+            chunk,
+            code,
+            "Untrusted source text contains a model-facing instruction or citation manipulation pattern.",
+        )
+        for code, pattern in _INSTRUCTION_PATTERNS
+        if pattern.search(chunk.text)
+    )
+    return findings
+
+
+def _duplicate_document_findings(
+    sources_by_hash: dict[str, set[str]],
+) -> list[AdmissionFinding]:
+    return [
+        AdmissionFinding(
+            source_id=source_id,
+            chunk_id=None,
+            code="duplicate_document",
+            detail=f"The same reviewed document hash is registered under multiple sources: {document_hash}.",
+        )
+        for document_hash, source_ids in sources_by_hash.items()
+        if len(source_ids) >= 2
+        for source_id in sorted(source_ids)
+    ]
+
+
+def _near_duplicate_findings(source_shingles: dict[str, set[str]]) -> list[AdmissionFinding]:
+    findings: list[AdmissionFinding] = []
     ordered_source_ids = sorted(source_shingles)
     for index, left_id in enumerate(ordered_source_ids):
         left = source_shingles[left_id]

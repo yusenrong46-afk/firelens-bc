@@ -31,36 +31,46 @@ def _target_passed(metric: MetricSpec, value: Any) -> bool | None:
 
 
 def _verdict(metric: MetricSpec, before: Any, after: Any) -> tuple[str, float | None]:
-    if metric.comparison_mode == "after_only":
-        if before is not None:
-            raise ValueError(f"after-only metric {metric.key} must not have a before value")
-        if after is not None:
-            _validated_metric_value(metric, after, label="after")
-        return "after_only", None
-    if metric.comparison_mode == "prerequisite":
-        if before is not None:
-            _validated_metric_value(metric, before, label="before")
-        if after is not None:
-            _validated_metric_value(metric, after, label="after")
-        return "prerequisite", None
+    unpaired = _unpaired_verdict(metric, before, after)
+    if unpaired is not None:
+        return unpaired
     if before is None or after is None:
         return "not_measured", None
     before = _validated_metric_value(metric, before, label="before")
     after = _validated_metric_value(metric, after, label="after")
     if isinstance(before, bool) and isinstance(after, bool):
-        if before == after:
-            return "within_tolerance", 0.0
-        directed = (
-            float(after) - float(before)
-            if metric.direction == "higher_is_better"
-            else float(before) - float(after)
-        )
-        return ("improved" if directed > 0 else "regressed"), float(after) - float(before)
+        return _boolean_verdict(metric, before, after)
+    return _numeric_verdict(metric, float(before), float(after))
+
+
+def _unpaired_verdict(
+    metric: MetricSpec, before: Any, after: Any
+) -> tuple[str, float | None] | None:
+    if metric.comparison_mode not in {"after_only", "prerequisite"}:
+        return None
+    if metric.comparison_mode == "after_only" and before is not None:
+        raise ValueError(f"after-only metric {metric.key} must not have a before value")
+    if before is not None:
+        _validated_metric_value(metric, before, label="before")
+    if after is not None:
+        _validated_metric_value(metric, after, label="after")
+    return metric.comparison_mode, None
+
+
+def _boolean_verdict(metric: MetricSpec, before: bool, after: bool) -> tuple[str, float]:
+    if before == after:
+        return "within_tolerance", 0.0
     delta = float(after) - float(before)
+    directed = delta if metric.direction == "higher_is_better" else -delta
+    return ("improved" if directed > 0 else "regressed"), delta
+
+
+def _numeric_verdict(metric: MetricSpec, before: float, after: float) -> tuple[str, float]:
+    delta = after - before
     tolerance = metric.tolerance
     if tolerance is None:
         raise ValueError(f"paired numeric metric {metric.key} has no tolerance")
-    limit = max(tolerance.absolute, abs(float(before)) * tolerance.relative)
+    limit = max(tolerance.absolute, abs(before) * tolerance.relative)
     directed = delta if metric.direction == "higher_is_better" else -delta
     if metric.comparison_requirement == "must_improve":
         if directed > 0 and directed >= limit:
