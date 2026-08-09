@@ -54,32 +54,44 @@ def _python_closure(files: dict[str, Path], contract: dict[str, Any]) -> set[str
             ) from exc
         if logical == entrypoint:
             entry_tree = tree
-        modules: set[str] = set()
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                modules.update(
-                    alias.name for alias in node.names if alias.name.startswith(package)
-                )
-            elif isinstance(node, ast.ImportFrom):
-                if node.level:
-                    raise RuntimeArtifactError(
-                        f"relative runtime import is not supported by the verifier: {logical}"
-                    )
-                if node.module and node.module.startswith(package):
-                    modules.add(node.module)
-                    for alias in node.names:
-                        possible = f"{node.module}.{alias.name}"
-                        possible_path = PurePosixPath(source_root, *possible.split("."))
-                        if (
-                            f"{possible_path.as_posix()}.py" in files
-                            or (possible_path / "__init__.py").as_posix() in files
-                        ):
-                            modules.add(possible)
+        modules = _python_import_modules(tree, logical, files, source_root, package)
         for module in modules:
             for dependency in _module_paths(module, files, source_root):
                 if dependency not in closure:
                     closure.add(dependency)
                     queue.append(dependency)
+    _validate_entry_tree(entry_tree, closure, source_root, package)
+    return closure
+
+
+def _python_import_modules(
+    tree: ast.AST, logical: str, files: dict[str, Path], source_root: str, package: str
+) -> set[str]:
+    modules: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            modules.update(alias.name for alias in node.names if alias.name.startswith(package))
+        elif isinstance(node, ast.ImportFrom):
+            if node.level:
+                raise RuntimeArtifactError(
+                    f"relative runtime import is not supported by the verifier: {logical}"
+                )
+            if node.module and node.module.startswith(package):
+                modules.add(node.module)
+                for alias in node.names:
+                    possible = f"{node.module}.{alias.name}"
+                    path = PurePosixPath(source_root, *possible.split("."))
+                    if (
+                        f"{path.as_posix()}.py" in files
+                        or (path / "__init__.py").as_posix() in files
+                    ):
+                        modules.add(possible)
+    return modules
+
+
+def _validate_entry_tree(
+    entry_tree: ast.AST | None, closure: set[str], source_root: str, package: str
+) -> None:
     if entry_tree is None:
         raise RuntimeArtifactError("runtime Python entrypoint was not inspected")
     app_values: list[ast.expr | None] = []
@@ -107,7 +119,6 @@ def _python_closure(files: dict[str, Path], contract: dict[str, Any]) -> set[str
         )
     if not any(path.startswith(f"{source_root}/{package}/") for path in closure):
         raise RuntimeArtifactError("runtime Python entrypoint is not connected to the package")
-    return closure
 
 
 def _resource_path(reference: str, *, source: str, frontend_root: str) -> str | None:
@@ -164,6 +175,25 @@ def _frontend_closure(files: dict[str, Path], contract: dict[str, Any]) -> set[s
     manifest = read_json(files[manifest_path], context="Vite manifest")
     if not manifest or "index.html" not in manifest:
         raise RuntimeArtifactError("Vite manifest lacks its index.html entry")
+    manifest_relations, manifest_outputs = _validated_manifest_graph(manifest)
+    closure.update(
+        _reachable_manifest_outputs(
+            manifest, manifest_relations, manifest_outputs, index_path, root
+        )
+    )
+    _expand_frontend_references(closure, files, root)
+    missing = sorted(closure - set(files))
+    if missing:
+        raise RuntimeArtifactError(f"frontend reference closure is missing files: {missing}")
+    orphaned = sorted(frontend_files - closure)
+    if orphaned:
+        raise RuntimeArtifactError(f"frontend bundle contains unreferenced files: {orphaned}")
+    return closure
+
+
+def _validated_manifest_graph(
+    manifest: dict[str, Any],
+) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
     allowed_entry_fields = {
         "file",
         "name",
@@ -218,7 +248,17 @@ def _frontend_closure(files: dict[str, Path], contract: dict[str, Any]) -> set[s
         manifest_relations[key] = relations
     if manifest["index.html"].get("isEntry") is not True:
         raise RuntimeArtifactError("Vite index.html entry is not marked as an entrypoint")
+    return manifest_relations, manifest_outputs
 
+
+def _reachable_manifest_outputs(
+    manifest: dict[str, Any],
+    relations: dict[str, list[str]],
+    outputs: dict[str, list[str]],
+    index_path: str,
+    root: str,
+) -> set[str]:
+    closure: set[str] = set()
     reachable_entries: set[str] = set()
     manifest_queue = ["index.html"]
     while manifest_queue:
@@ -226,8 +266,8 @@ def _frontend_closure(files: dict[str, Path], contract: dict[str, Any]) -> set[s
         if key in reachable_entries:
             continue
         reachable_entries.add(key)
-        manifest_queue.extend(manifest_relations[key])
-        for reference in manifest_outputs[key]:
+        manifest_queue.extend(relations[key])
+        for reference in outputs[key]:
             resolved = _resource_path(
                 "/" + reference.lstrip("/"), source=index_path, frontend_root=root
             )
@@ -238,7 +278,10 @@ def _frontend_closure(files: dict[str, Path], contract: dict[str, Any]) -> set[s
         raise RuntimeArtifactError(
             f"Vite manifest contains unreachable entries: {unreachable_entries}"
         )
+    return closure
 
+
+def _expand_frontend_references(closure: set[str], files: dict[str, Path], root: str) -> None:
     queue = list(closure)
     inspected: set[str] = set()
     while queue:
@@ -267,14 +310,6 @@ def _frontend_closure(files: dict[str, Path], contract: dict[str, Any]) -> set[s
             if resolved is not None and resolved not in closure:
                 closure.add(resolved)
                 queue.append(resolved)
-
-    missing = sorted(closure - set(files))
-    if missing:
-        raise RuntimeArtifactError(f"frontend reference closure is missing files: {missing}")
-    orphaned = sorted(frontend_files - closure)
-    if orphaned:
-        raise RuntimeArtifactError(f"frontend bundle contains unreferenced files: {orphaned}")
-    return closure
 
 
 def allowed_files(files: dict[str, Path], contract: dict[str, Any]) -> set[str]:
