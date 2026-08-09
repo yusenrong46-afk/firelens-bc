@@ -157,50 +157,51 @@ def _frontend_axe(axe: Any, *, context: str) -> tuple[int, dict[str, Any]]:
             minimum=0,
         )
     recomputed_impact_counts = {impact: 0 for impact in expected_impact_keys}
-    wcag_tags = {"wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"}
     for finding_index, finding in enumerate(findings):
-        finding_context = f"{context} axe finding {finding_index}"
-        _require_exact_keys(
-            finding,
-            {"id", "impact", "tags", "help", "help_url", "nodes"},
-            context=finding_context,
+        impact = _validated_axe_finding(
+            finding, context=f"{context} axe finding {finding_index}"
         )
-        for key in ("id", "help", "help_url"):
-            _require_nonempty_string(finding.get(key), context=f"{finding_context} {key}")
-        impact = finding.get("impact")
-        if impact not in {"critical", "serious", "moderate", "minor", None}:
-            raise ValueError(f"{finding_context} impact is invalid")
-        recomputed_impact_counts[impact if isinstance(impact, str) else "unknown"] += 1
-        tags = _require_string_list(
-            finding.get("tags"), context=f"{finding_context} tags", unique=True
-        )
-        if tags != sorted(tags) or not wcag_tags.intersection(tags):
-            raise ValueError(f"{finding_context} tags are not canonical WCAG A/AA evidence")
-        nodes = _require_object_list(finding.get("nodes"), context=f"{finding_context} nodes")
-        if not nodes:
-            raise ValueError(f"{finding_context} has no affected nodes")
-        for node_index, node in enumerate(nodes):
-            _require_exact_keys(
-                node,
-                {"target", "failure_summary"},
-                context=f"{finding_context} node {node_index}",
-            )
-            targets = node.get("target")
-            if (
-                not isinstance(targets, list)
-                or not targets
-                or not all(isinstance(target, str) and target for target in targets)
-            ):
-                raise ValueError(f"{finding_context} node {node_index} has no targets")
-            if node.get("failure_summary") is not None and not isinstance(
-                node.get("failure_summary"), str
-            ):
-                raise ValueError(
-                    f"{finding_context} node {node_index} failure_summary is invalid"
-                )
+        recomputed_impact_counts[impact] += 1
     if impact_counts != recomputed_impact_counts:
         raise ValueError(f"{context} axe impact aggregate differs from raw findings")
     return count, axe
+
+
+def _validated_axe_finding(finding: dict[str, Any], *, context: str) -> str:
+    _require_exact_keys(
+        finding, {"id", "impact", "tags", "help", "help_url", "nodes"}, context=context
+    )
+    for key in ("id", "help", "help_url"):
+        _require_nonempty_string(finding.get(key), context=f"{context} {key}")
+    impact = finding.get("impact")
+    if impact not in {"critical", "serious", "moderate", "minor", None}:
+        raise ValueError(f"{context} impact is invalid")
+    tags = _require_string_list(finding.get("tags"), context=f"{context} tags", unique=True)
+    if tags != sorted(tags) or not {"wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"}.intersection(
+        tags
+    ):
+        raise ValueError(f"{context} tags are not canonical WCAG A/AA evidence")
+    nodes = _require_object_list(finding.get("nodes"), context=f"{context} nodes")
+    if not nodes:
+        raise ValueError(f"{context} has no affected nodes")
+    for index, node in enumerate(nodes):
+        _validate_axe_node(node, context=f"{context} node {index}")
+    return impact if isinstance(impact, str) else "unknown"
+
+
+def _validate_axe_node(node: dict[str, Any], *, context: str) -> None:
+    _require_exact_keys(node, {"target", "failure_summary"}, context=context)
+    targets = node.get("target")
+    if (
+        not isinstance(targets, list)
+        or not targets
+        or not all(isinstance(target, str) and target for target in targets)
+    ):
+        raise ValueError(f"{context} has no targets")
+    if node.get("failure_summary") is not None and not isinstance(
+        node.get("failure_summary"), str
+    ):
+        raise ValueError(f"{context} failure_summary is invalid")
 
 
 def _frontend_layout(
@@ -358,54 +359,7 @@ def _frontend_runtime(
         runtime.get("request_events"), context=f"{context} request events"
     )
     for index, event in enumerate(request_events):
-        event_context = f"{context} request event {index}"
-        _require_exact_keys(
-            event,
-            {
-                "sequence_index",
-                "method",
-                "url",
-                "origin",
-                "resource_type",
-                "response_status",
-                "failure",
-            },
-            context=event_context,
-        )
-        if _strict_int(event, "sequence_index", event_context, minimum=0) != index:
-            raise ValueError(f"{context} request event sequence is not contiguous")
-        method = _require_nonempty_string(
-            event.get("method"), context=f"{event_context} method"
-        )
-        if method != method.upper():
-            raise ValueError(f"{event_context} method is not canonical")
-        url = _require_nonempty_string(event.get("url"), context=f"{event_context} URL")
-        parsed = urlsplit(url)
-        if not parsed.scheme or not parsed.netloc or parsed.fragment:
-            raise ValueError(f"{event_context} URL is not canonical")
-        query_items = parse_qsl(parsed.query, keep_blank_values=True)
-        if query_items != sorted(query_items):
-            raise ValueError(f"{event_context} query parameters are not canonical")
-        expected_origin = (
-            f"{parsed.scheme}://{parsed.netloc}" if parsed.scheme in {"http", "https"} else None
-        )
-        if event.get("origin") != expected_origin:
-            raise ValueError(f"{event_context} origin differs from its URL")
-        _require_nonempty_string(
-            event.get("resource_type"), context=f"{event_context} resource type"
-        )
-        response_status = event.get("response_status")
-        if response_status is not None and (
-            isinstance(response_status, bool)
-            or not isinstance(response_status, int)
-            or not 100 <= response_status <= 599
-        ):
-            raise ValueError(f"{event_context} response status is invalid")
-        failure_message = event.get("failure")
-        if failure_message is not None:
-            _require_nonempty_string(failure_message, context=f"{event_context} failure")
-        if int(response_status is not None) + int(failure_message is not None) != 1:
-            raise ValueError(f"{event_context} must retain exactly one request outcome")
+        _validate_request_event(event, index=index, context=f"{context} request event {index}")
 
     request_origins = sorted(
         {event["origin"] for event in request_events if isinstance(event["origin"], str)}
@@ -453,3 +407,44 @@ def _frontend_runtime(
         + len(unallowlisted_failed_requests)
     )
     return css_runtime_violations, runtime_violations, runtime
+
+
+def _validate_request_event(event: dict[str, Any], *, index: int, context: str) -> None:
+    keys = {
+        "sequence_index",
+        "method",
+        "url",
+        "origin",
+        "resource_type",
+        "response_status",
+        "failure",
+    }
+    _require_exact_keys(event, keys, context=context)
+    if _strict_int(event, "sequence_index", context, minimum=0) != index:
+        raise ValueError(f"{context.rsplit(' ', 1)[0]} sequence is not contiguous")
+    method = _require_nonempty_string(event.get("method"), context=f"{context} method")
+    if method != method.upper():
+        raise ValueError(f"{context} method is not canonical")
+    url = _require_nonempty_string(event.get("url"), context=f"{context} URL")
+    parsed = urlsplit(url)
+    if not parsed.scheme or not parsed.netloc or parsed.fragment:
+        raise ValueError(f"{context} URL is not canonical")
+    if parse_qsl(parsed.query, keep_blank_values=True) != sorted(
+        parse_qsl(parsed.query, keep_blank_values=True)
+    ):
+        raise ValueError(f"{context} query parameters are not canonical")
+    expected_origin = (
+        f"{parsed.scheme}://{parsed.netloc}" if parsed.scheme in {"http", "https"} else None
+    )
+    if event.get("origin") != expected_origin:
+        raise ValueError(f"{context} origin differs from its URL")
+    _require_nonempty_string(event.get("resource_type"), context=f"{context} resource type")
+    status, failure = event.get("response_status"), event.get("failure")
+    if status is not None and (
+        isinstance(status, bool) or not isinstance(status, int) or not 100 <= status <= 599
+    ):
+        raise ValueError(f"{context} response status is invalid")
+    if failure is not None:
+        _require_nonempty_string(failure, context=f"{context} failure")
+    if int(status is not None) + int(failure is not None) != 1:
+        raise ValueError(f"{context} must retain exactly one request outcome")
