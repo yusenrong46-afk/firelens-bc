@@ -484,18 +484,7 @@ def verify_review_qualification_package(
         raise ValueError("review qualification summary is invalid JSON") from exc
     if not isinstance(submitted_summary, dict):
         raise ValueError("review qualification summary must be a JSON object")
-    if manifest.suite_kind == "conversation":
-        recomputed_summary = validate_owner_review(
-            source_path,
-            sidecar_path,
-            expected_case_count=manifest.case_count,
-        )
-    else:
-        recomputed_summary = validate_retrieval_owner_review(
-            source_path,
-            sidecar_path,
-            expected_case_count=manifest.case_count,
-        )
+    recomputed_summary = _recomputed_review_summary(manifest, source_path, sidecar_path)
     submitted_evidence = {
         key: value for key, value in submitted_summary.items() if key != "generated_at"
     }
@@ -507,21 +496,39 @@ def verify_review_qualification_package(
     if recomputed_summary.get("qualified") is not True:
         raise ValueError("review qualification evidence does not satisfy the release contract")
     if attestation_path is not None:
-        attestation, attestation_sha256 = _load_private_attestation(attestation_path)
-        attestation_expectations: dict[str, object] = {
-            "storage_attestation_sha256": attestation_sha256,
-            "session_id": attestation.session_id,
-            "suite_sha256": attestation.suite_sha256,
-            "finalized_evidence_sha256": attestation.finalized_evidence_sha256,
-            "review_analysis_sha256": attestation.review_analysis_sha256,
-            "finalization_event_hash": attestation.finalization_event_hash,
-            "independent_storage_reviewer_id": attestation.reviewer_id,
-            "independent_storage_reviewer_name": attestation.reviewer_name,
-            "external_anchor_reference": attestation.external_anchor_reference,
-            "qualified_at": attestation.reviewed_at,
-            "storage_checks": attestation.checks,
-        }
-        for key, expected_value in attestation_expectations.items():
-            if getattr(manifest, key) != expected_value:
-                raise ValueError(f"review qualification manifest disagrees with {key}")
+        _validate_manifest_attestation(manifest, attestation_path)
     return manifest
+
+
+def _recomputed_review_summary(
+    manifest: ReviewQualificationManifest, source_path: Path, sidecar_path: Path
+) -> dict[str, object]:
+    if manifest.suite_kind == "conversation":
+        return validate_owner_review(
+            source_path, sidecar_path, expected_case_count=manifest.case_count
+        )
+    return validate_retrieval_owner_review(
+        source_path, sidecar_path, expected_case_count=manifest.case_count
+    )
+
+
+def _validate_manifest_attestation(
+    manifest: ReviewQualificationManifest, attestation_path: Path
+) -> None:
+    attestation, digest = _load_private_attestation(attestation_path)
+    expectations: dict[str, object] = {
+        "storage_attestation_sha256": digest,
+        "session_id": attestation.session_id,
+        "suite_sha256": attestation.suite_sha256,
+        "finalized_evidence_sha256": attestation.finalized_evidence_sha256,
+        "review_analysis_sha256": attestation.review_analysis_sha256,
+        "finalization_event_hash": attestation.finalization_event_hash,
+        "independent_storage_reviewer_id": attestation.reviewer_id,
+        "independent_storage_reviewer_name": attestation.reviewer_name,
+        "external_anchor_reference": attestation.external_anchor_reference,
+        "qualified_at": attestation.reviewed_at,
+        "storage_checks": attestation.checks,
+    }
+    for key, expected in expectations.items():
+        if getattr(manifest, key) != expected:
+            raise ValueError(f"review qualification manifest disagrees with {key}")

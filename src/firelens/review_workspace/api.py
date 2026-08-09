@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import ipaddress
 import secrets
-from collections.abc import Awaitable, Callable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence, Set
 from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
@@ -141,6 +141,67 @@ def _validate_capabilities(
     return tuple(capabilities)
 
 
+def _request_boundary_error(
+    request: Request,
+    *,
+    hosts: Set[str],
+    origins: Set[str],
+    max_body_bytes: int,
+) -> JSONResponse | None:
+    peer = request.client.host if request.client is not None else ""
+    try:
+        peer_is_loopback = ipaddress.ip_address(peer).is_loopback
+    except ValueError:
+        peer_is_loopback = False
+    if not peer_is_loopback:
+        return _error(403, "local_only", "The review service accepts loopback clients only.")
+    if _host_name(request.headers.get("host", "")) not in hosts:
+        return _error(403, "invalid_host", "The review request used an unapproved host.")
+    if request.method not in {"GET", "HEAD", "OPTIONS"}:
+        write_error = _write_boundary_error(request, origins)
+        if write_error is not None:
+            return write_error
+    return _content_length_error(request, max_body_bytes)
+
+
+def _write_boundary_error(request: Request, origins: Set[str]) -> JSONResponse | None:
+    if request.headers.get("origin", "").rstrip("/") not in origins:
+        return _error(
+            403, "invalid_origin", "Review changes require the exact local review origin."
+        )
+    if request.headers.get("sec-fetch-site") not in {None, "same-origin"}:
+        return _error(403, "cross_site_request", "Cross-site review changes are refused.")
+    content_type = request.headers.get("content-type", "").split(";", 1)[0].strip()
+    if content_type != "application/json":
+        return _error(415, "invalid_media_type", "Review changes require JSON.")
+    return None
+
+
+def _content_length_error(request: Request, max_body_bytes: int) -> JSONResponse | None:
+    declared_length = request.headers.get("content-length")
+    if declared_length is None:
+        return None
+    try:
+        declared_bytes = int(declared_length)
+    except ValueError:
+        return _error(400, "invalid_request", "Content-Length is invalid.")
+    if declared_bytes < 0 or declared_bytes > max_body_bytes:
+        return _error(413, "request_too_large", "The review request is too large.")
+    return None
+
+
+async def _retain_bounded_body(request: Request, max_body_bytes: int) -> JSONResponse | None:
+    if request.method in {"GET", "HEAD"}:
+        return None
+    body = bytearray()
+    async for chunk in request.stream():
+        if len(body) + len(chunk) > max_body_bytes:
+            return _error(413, "request_too_large", "The review request is too large.")
+        body.extend(chunk)
+    request._body = bytes(body)
+    return None
+
+
 def create_review_workspace_app(
     session: BlindReviewSession,
     *,
@@ -197,55 +258,17 @@ def create_review_workspace_app(
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
-        peer = request.client.host if request.client is not None else ""
-        try:
-            peer_is_loopback = ipaddress.ip_address(peer).is_loopback
-        except ValueError:
-            peer_is_loopback = False
-        if not peer_is_loopback:
-            return _error(
-                403, "local_only", "The review service accepts loopback clients only."
-            )
-
-        host = _host_name(request.headers.get("host", ""))
-        if host not in normalized_hosts:
-            return _error(403, "invalid_host", "The review request used an unapproved host.")
-
-        if request.method not in {"GET", "HEAD", "OPTIONS"}:
-            origin = request.headers.get("origin", "").rstrip("/")
-            if origin not in normalized_origins:
-                return _error(
-                    403,
-                    "invalid_origin",
-                    "Review changes require the exact local review origin.",
-                )
-            fetch_site = request.headers.get("sec-fetch-site")
-            if fetch_site not in {None, "same-origin"}:
-                return _error(
-                    403,
-                    "cross_site_request",
-                    "Cross-site review changes are refused.",
-                )
-            content_type = request.headers.get("content-type", "").split(";", 1)[0].strip()
-            if content_type != "application/json":
-                return _error(415, "invalid_media_type", "Review changes require JSON.")
-
-        declared_length = request.headers.get("content-length")
-        if declared_length is not None:
-            try:
-                declared_bytes = int(declared_length)
-            except ValueError:
-                return _error(400, "invalid_request", "Content-Length is invalid.")
-            if declared_bytes < 0 or declared_bytes > max_body_bytes:
-                return _error(413, "request_too_large", "The review request is too large.")
-
-        if request.method not in {"GET", "HEAD"}:
-            body = bytearray()
-            async for chunk in request.stream():
-                if len(body) + len(chunk) > max_body_bytes:
-                    return _error(413, "request_too_large", "The review request is too large.")
-                body.extend(chunk)
-            request._body = bytes(body)
+        boundary_error = _request_boundary_error(
+            request,
+            hosts=normalized_hosts,
+            origins=normalized_origins,
+            max_body_bytes=max_body_bytes,
+        )
+        if boundary_error is not None:
+            return boundary_error
+        body_error = await _retain_bounded_body(request, max_body_bytes)
+        if body_error is not None:
+            return body_error
 
         response = await call_next(request)
         return _security_headers(response)

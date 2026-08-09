@@ -452,7 +452,7 @@ def _ux(report: dict[str, Any] | None, spec: BenchmarkSpec) -> dict[str, Any]:
 def _ux_distribution_comparability(
     before: dict[str, Any], after: dict[str, Any]
 ) -> dict[str, Any]:
-    dimensions = {
+    dimensions: dict[str, tuple[Any, ...]] = {
         "cohort": (
             "cohort_counts",
             "cohort_shares",
@@ -479,62 +479,7 @@ def _ux_distribution_comparability(
     profiles: dict[str, dict[str, dict[str, float]]] = {"before": {}, "after": {}}
 
     for label, ux in (("before", before), ("after", after)):
-        if ux.get("status") != "complete":
-            issues.append(f"{label} UX sampling evidence is not complete")
-            continue
-        participant_count = ux.get("participant_count")
-        if (
-            isinstance(participant_count, bool)
-            or not isinstance(participant_count, int)
-            or participant_count < 12
-        ):
-            issues.append(f"{label} UX participant count is invalid")
-            continue
-        for dimension, (
-            counts_key,
-            shares_key,
-            required,
-            minimum_count,
-            _compare_shares,
-        ) in dimensions.items():
-            raw_counts = ux.get(counts_key)
-            raw_shares = ux.get(shares_key)
-            if not isinstance(raw_counts, dict) or not isinstance(raw_shares, dict):
-                issues.append(f"{label} UX {dimension} distribution is missing")
-                continue
-            valid_counts = all(
-                isinstance(key, str)
-                and bool(key)
-                and isinstance(value, int)
-                and not isinstance(value, bool)
-                and value > 0
-                for key, value in raw_counts.items()
-            )
-            is_partition = dimension != "access_method"
-            counts_match_population = (
-                sum(raw_counts.values()) == participant_count
-                if is_partition
-                else all(int(value) <= participant_count for value in raw_counts.values())
-            )
-            if not valid_counts or not counts_match_population:
-                issues.append(f"{label} UX {dimension} counts are invalid")
-                continue
-            if any(raw_counts.get(category, 0) < minimum_count for category in required):
-                issues.append(f"{label} UX {dimension} coverage is incomplete")
-            computed_shares = {
-                str(key): int(value) / participant_count for key, value in raw_counts.items()
-            }
-            valid_shares = set(raw_shares) == set(computed_shares) and all(
-                isinstance(raw_shares.get(key), (int, float))
-                and not isinstance(raw_shares.get(key), bool)
-                and math.isfinite(float(raw_shares[key]))
-                and math.isclose(float(raw_shares[key]), share, rel_tol=0, abs_tol=1e-12)
-                for key, share in computed_shares.items()
-            )
-            if not valid_shares:
-                issues.append(f"{label} UX {dimension} shares do not match its counts")
-                continue
-            profiles[label][dimension] = computed_shares
+        profiles[label] = _validated_ux_distribution_profile(label, ux, dimensions, issues)
 
     dimension_deltas: dict[str, dict[str, float]] = {}
     maximum_delta = 0.0
@@ -571,6 +516,91 @@ def _ux_distribution_comparability(
         "effect_intervals": effect_intervals,
         "issues": issues,
     }
+
+
+def _validated_ux_distribution_profile(
+    label: str,
+    ux: dict[str, Any],
+    dimensions: dict[str, tuple[Any, ...]],
+    issues: list[str],
+) -> dict[str, dict[str, float]]:
+    if ux.get("status") != "complete":
+        issues.append(f"{label} UX sampling evidence is not complete")
+        return {}
+    participant_count = ux.get("participant_count")
+    if (
+        isinstance(participant_count, bool)
+        or not isinstance(participant_count, int)
+        or participant_count < 12
+    ):
+        issues.append(f"{label} UX participant count is invalid")
+        return {}
+    profile: dict[str, dict[str, float]] = {}
+    for dimension, (
+        counts_key,
+        shares_key,
+        required,
+        minimum_count,
+        _compare,
+    ) in dimensions.items():
+        distribution = _validated_ux_distribution(
+            label,
+            dimension,
+            ux.get(counts_key),
+            ux.get(shares_key),
+            participant_count,
+            required,
+            minimum_count,
+            issues,
+        )
+        if distribution is not None:
+            profile[dimension] = distribution
+    return profile
+
+
+def _validated_ux_distribution(
+    label: str,
+    dimension: str,
+    raw_counts: Any,
+    raw_shares: Any,
+    participant_count: int,
+    required: Any,
+    minimum_count: int,
+    issues: list[str],
+) -> dict[str, float] | None:
+    if not isinstance(raw_counts, dict) or not isinstance(raw_shares, dict):
+        issues.append(f"{label} UX {dimension} distribution is missing")
+        return None
+    valid_counts = all(
+        isinstance(key, str)
+        and bool(key)
+        and isinstance(value, int)
+        and not isinstance(value, bool)
+        and value > 0
+        for key, value in raw_counts.items()
+    )
+    counts_match = (
+        sum(raw_counts.values()) == participant_count
+        if dimension != "access_method"
+        else all(int(value) <= participant_count for value in raw_counts.values())
+    )
+    if not valid_counts or not counts_match:
+        issues.append(f"{label} UX {dimension} counts are invalid")
+        return None
+    if any(raw_counts.get(category, 0) < minimum_count for category in required):
+        issues.append(f"{label} UX {dimension} coverage is incomplete")
+    computed = {str(key): int(value) / participant_count for key, value in raw_counts.items()}
+    valid_shares = set(raw_shares) == set(computed) and all(
+        isinstance(raw_shares.get(key), (int, float))
+        and not isinstance(raw_shares.get(key), bool)
+        and math.isfinite(float(raw_shares[key]))
+        and math.isclose(float(raw_shares[key]), share, rel_tol=0, abs_tol=1e-12)
+        for key, share in computed.items()
+    )
+    if not valid_shares:
+        issues.append(f"{label} UX {dimension} shares do not match its counts")
+        return None
+    return computed
 
 
 def _ux_effect_intervals(
