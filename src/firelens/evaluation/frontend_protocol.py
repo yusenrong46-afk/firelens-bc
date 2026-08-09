@@ -510,60 +510,10 @@ def _frontend_surface_environment(
         expected_keys = set(expected_matrix_profile_keys)
         expected_keys.add(profile_id_key)
         _require_exact_keys(profile, expected_keys, context=context)
-        if profile.get(profile_id_key) != viewport["id"]:
-            raise ValueError(f"{context} uses the wrong profile ID")
-        if profile.get("viewport_id") != viewport["id"]:
-            raise ValueError(f"{context} uses the wrong viewport ID")
-        if profile.get("viewport") != {
-            "width": viewport["width"],
-            "height": viewport["height"],
-        }:
-            raise ValueError(f"{context} uses the wrong viewport")
-        if profile.get("device_scale_factor") != viewport["device_scale_factor"]:
-            raise ValueError(f"{context} uses the wrong device scale")
-        if (
-            type(profile.get("is_mobile")) is not bool
-            or profile["is_mobile"] != viewport["is_mobile"]
-        ):
-            raise ValueError(f"{context} uses the wrong mobile profile")
-        for key in ("color_scheme", "reduced_motion", "locale", "timezone_id"):
-            _require_nonempty_string(profile.get(key), context=f"{context} {key}")
-        if (
-            profile["locale"] != observed_browser["locale"]
-            or profile["timezone_id"] != observed_browser["timezone_id"]
-            or profile["color_scheme"] != protocol["execution_environment"]["color_scheme"]
-            or profile["reduced_motion"] != protocol["execution_environment"]["reduced_motion"]
-        ):
-            raise ValueError(f"{context} visual/locale/timezone profile is inconsistent")
-        cpu = profile.get("cpu_throttling")
-        network = profile.get("network")
-        if not isinstance(cpu, dict) or not isinstance(network, dict):
-            raise ValueError(f"{context} throttling profiles must be objects")
-        if performance_profile:
-            if cpu != {
-                "mode": "cdp_emulation",
-                "rate": protocol["performance"]["cpu_throttling_rate"],
-            }:
-                raise ValueError(f"{context} CPU profile differs from the protocol")
-            expected_network = {
-                "mode": "cdp_emulation",
-                **protocol["performance"]["network"],
-                "cache_disabled": protocol["performance"]["cache_disabled_for_cold_samples"],
-            }
-            if network != expected_network:
-                raise ValueError(f"{context} network profile differs from the protocol")
-        else:
-            _require_exact_keys(cpu, {"mode", "rate"}, context=f"{context} CPU profile")
-            _require_exact_keys(
-                network,
-                {"mode", "cache_policy"},
-                context=f"{context} network profile",
-            )
-            if cpu != {"mode": "none", "rate": 1} or network != {
-                "mode": "local_preview_with_deterministic_routes",
-                "cache_policy": "fresh_browser_context_default",
-            }:
-                raise ValueError(f"{context} must declare an unthrottled functional profile")
+        _validate_profile_identity(
+            profile, viewport, observed_browser, protocol, context, profile_id_key
+        )
+        _validate_profile_throttling(profile, protocol, context, performance_profile)
 
     for profile, viewport in zip(surface_profiles, protocol["viewports"], strict=True):
         validate_profile(
@@ -613,3 +563,74 @@ def _frontend_surface_environment(
             performance_profile=True,
         )
     return environment
+
+
+def _validate_profile_identity(
+    profile: dict[str, Any],
+    viewport: dict[str, Any],
+    observed_browser: dict[str, Any],
+    protocol: dict[str, Any],
+    context: str,
+    profile_id_key: str,
+) -> None:
+    if profile.get(profile_id_key) != viewport["id"]:
+        raise ValueError(f"{context} uses the wrong profile ID")
+    if profile.get("viewport_id") != viewport["id"]:
+        raise ValueError(f"{context} uses the wrong viewport ID")
+    if profile.get("viewport") != {"width": viewport["width"], "height": viewport["height"]}:
+        raise ValueError(f"{context} uses the wrong viewport")
+    if profile.get("device_scale_factor") != viewport["device_scale_factor"]:
+        raise ValueError(f"{context} uses the wrong device scale")
+    if (
+        type(profile.get("is_mobile")) is not bool
+        or profile["is_mobile"] != viewport["is_mobile"]
+    ):
+        raise ValueError(f"{context} uses the wrong mobile profile")
+    for key in ("color_scheme", "reduced_motion", "locale", "timezone_id"):
+        _require_nonempty_string(profile.get(key), context=f"{context} {key}")
+    expected = protocol["execution_environment"]
+    if (
+        profile["locale"],
+        profile["timezone_id"],
+        profile["color_scheme"],
+        profile["reduced_motion"],
+    ) != (
+        observed_browser["locale"],
+        observed_browser["timezone_id"],
+        expected["color_scheme"],
+        expected["reduced_motion"],
+    ):
+        raise ValueError(f"{context} visual/locale/timezone profile is inconsistent")
+
+
+def _validate_profile_throttling(
+    profile: dict[str, Any],
+    protocol: dict[str, Any],
+    context: str,
+    performance: bool,
+) -> None:
+    cpu, network = profile.get("cpu_throttling"), profile.get("network")
+    if not isinstance(cpu, dict) or not isinstance(network, dict):
+        raise ValueError(f"{context} throttling profiles must be objects")
+    if performance:
+        expected_cpu = {
+            "mode": "cdp_emulation",
+            "rate": protocol["performance"]["cpu_throttling_rate"],
+        }
+        expected_network = {
+            "mode": "cdp_emulation",
+            **protocol["performance"]["network"],
+            "cache_disabled": protocol["performance"]["cache_disabled_for_cold_samples"],
+        }
+        if cpu != expected_cpu:
+            raise ValueError(f"{context} CPU profile differs from the protocol")
+        if network != expected_network:
+            raise ValueError(f"{context} network profile differs from the protocol")
+        return
+    _require_exact_keys(cpu, {"mode", "rate"}, context=f"{context} CPU profile")
+    _require_exact_keys(network, {"mode", "cache_policy"}, context=f"{context} network profile")
+    if cpu != {"mode": "none", "rate": 1} or network != {
+        "mode": "local_preview_with_deterministic_routes",
+        "cache_policy": "fresh_browser_context_default",
+    }:
+        raise ValueError(f"{context} must declare an unthrottled functional profile")

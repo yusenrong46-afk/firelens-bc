@@ -67,21 +67,7 @@ def _hard_probe(
     failed = _strict_int(summary, "failed", "hard-probe summary", minimum=0)
     if executed != 105 or len(rows) != 105 or passed + failed != executed:
         raise ValueError("hard-probe report must contain exactly 105 completed cases")
-    case_ids: set[str] = set()
-    passed_rows = 0
-    latencies: list[float] = []
-    for row in rows:
-        if not isinstance(row, dict):
-            raise ValueError("hard-probe result must be an object")
-        case_id = str(row.get("id") or "")
-        if not case_id or case_id in case_ids:
-            raise ValueError("hard-probe result IDs must be present and unique")
-        case_ids.add(case_id)
-        if _strict_bool(row, "passed", f"hard-probe result {case_id}"):
-            passed_rows += 1
-        latencies.append(
-            _strict_number(row, "latency_ms", f"hard-probe result {case_id}", minimum=0)
-        )
+    case_ids, passed_rows, latencies = _validated_hard_probe_rows(rows)
     if passed_rows != passed:
         raise ValueError("hard-probe summary does not match case-level pass results")
     dataset_payload = yaml.safe_load(
@@ -123,6 +109,26 @@ def _hard_probe(
         "p95_latency_ms": _p95(latencies),
         "cost_usd": cost_usd,
     }
+
+
+def _validated_hard_probe_rows(
+    rows: list[Any],
+) -> tuple[set[str], int, list[float]]:
+    case_ids: set[str] = set()
+    passed_rows = 0
+    latencies: list[float] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("hard-probe result must be an object")
+        case_id = str(row.get("id") or "")
+        if not case_id or case_id in case_ids:
+            raise ValueError("hard-probe result IDs must be present and unique")
+        case_ids.add(case_id)
+        passed_rows += int(_strict_bool(row, "passed", f"hard-probe result {case_id}"))
+        latencies.append(
+            _strict_number(row, "latency_ms", f"hard-probe result {case_id}", minimum=0)
+        )
+    return case_ids, passed_rows, latencies
 
 
 def _validated_public_live_rows(

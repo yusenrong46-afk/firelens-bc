@@ -203,102 +203,102 @@ def _assert_safe_retained_preview_report(report: dict[str, Any]) -> None:
         "response",
     }
     for index, row in enumerate(requests):
-        retained = _assert_exact_retained_keys(
-            row, request_keys, context=f"preview request {index}"
-        )
-        case_id = expected_cases[index]
-        if retained.get("case_id") != case_id:
-            raise ValueError("preview retained case order differs from the canonical protocol")
-        request = retained.get("request")
-        if not isinstance(request, dict) or not set(request).issubset({"question", "layers"}):
-            raise ValueError(f"preview {case_id} request retains unsupported input fields")
-        response = retained.get("response")
-        if case_id == "homepage":
-            _assert_exact_retained_keys(response, set(), context="preview homepage response")
-        elif case_id == "liveness":
-            _assert_exact_retained_keys(
-                response, {"status"}, context="preview liveness response"
-            )
-        elif case_id == "readiness":
-            _assert_exact_retained_keys(
-                response,
-                {
-                    "status",
-                    "release_version",
-                    "build_commit",
-                    "deployment_id",
-                    "rate_limit_scope",
-                },
-                context="preview readiness response",
-            )
-        elif case_id == "map":
-            map_response = _assert_exact_retained_keys(
-                response, {"record_count", "records"}, context="preview map response"
-            )
-            for record_index, record in enumerate(map_response["records"]):
-                _assert_exact_retained_keys(
-                    record,
-                    set(LIVE_METADATA_FIELDS),
-                    context=f"preview map record {record_index}",
-                )
-        else:
-            expected_response_keys = {
-                "status",
-                "response_mode",
-                "claim_count",
-                "evidence_count",
-                "live_result_count",
-            }
-            if case_id in {"static", "mixed"}:
-                expected_response_keys.add("exact_support")
-            if case_id in {"live", "mixed"}:
-                expected_response_keys.add("live_records")
-            ask_response = _assert_exact_retained_keys(
-                response,
-                expected_response_keys,
-                context=f"preview {case_id} response",
-            )
-            for record_index, record in enumerate(ask_response.get("live_records", [])):
-                _assert_exact_retained_keys(
-                    record,
-                    set(LIVE_METADATA_FIELDS),
-                    context=f"preview {case_id} live record {record_index}",
-                )
-            support = ask_response.get("exact_support")
-            if support is not None:
-                proof = _assert_exact_retained_keys(
-                    support,
-                    {"claims", "evidence"},
-                    context=f"preview {case_id} exact-support proof",
-                )
-                for claim_index, claim in enumerate(proof["claims"]):
-                    retained_claim = _assert_exact_retained_keys(
-                        claim,
-                        {"claim_id", "supports"},
-                        context=f"preview {case_id} claim {claim_index}",
-                    )
-                    for support_index, support_row in enumerate(retained_claim["supports"]):
-                        _assert_exact_retained_keys(
-                            support_row,
-                            {
-                                "evidence_id",
-                                "quote_sha256",
-                                "quote_length",
-                                "match_start",
-                                "match_end",
-                                "matched_slice_sha256",
-                            },
-                            context=(
-                                f"preview {case_id} claim {claim_index} support {support_index}"
-                            ),
-                        )
-                for evidence_index, evidence_row in enumerate(proof["evidence"]):
-                    _assert_exact_retained_keys(
-                        evidence_row,
-                        {"evidence_id", "primary_text_sha256", "primary_text_length"},
-                        context=f"preview {case_id} evidence {evidence_index}",
-                    )
+        _validate_retained_preview_request(row, index, expected_cases[index], request_keys)
     _assert_no_sensitive_retained_fields(report)
+
+
+def _validate_retained_preview_request(
+    row: Any, index: int, case_id: str, request_keys: set[str]
+) -> None:
+    retained = _assert_exact_retained_keys(
+        row, request_keys, context=f"preview request {index}"
+    )
+    if retained.get("case_id") != case_id:
+        raise ValueError("preview retained case order differs from the canonical protocol")
+    request = retained.get("request")
+    if not isinstance(request, dict) or not set(request).issubset({"question", "layers"}):
+        raise ValueError(f"preview {case_id} request retains unsupported input fields")
+    response = retained.get("response")
+    simple_keys = {
+        "homepage": set(),
+        "liveness": {"status"},
+        "readiness": {
+            "status",
+            "release_version",
+            "build_commit",
+            "deployment_id",
+            "rate_limit_scope",
+        },
+    }
+    if case_id in simple_keys:
+        _assert_exact_retained_keys(
+            response, simple_keys[case_id], context=f"preview {case_id} response"
+        )
+    elif case_id == "map":
+        _validate_retained_live_records(response, context="preview map", map_response=True)
+    else:
+        _validate_retained_ask_response(response, case_id)
+
+
+def _validate_retained_live_records(
+    value: Any, *, context: str, map_response: bool = False
+) -> None:
+    payload = (
+        _assert_exact_retained_keys(
+            value, {"record_count", "records"}, context=f"{context} response"
+        )
+        if map_response
+        else value
+    )
+    records = payload["records"] if map_response else payload
+    for index, record in enumerate(records):
+        _assert_exact_retained_keys(
+            record, set(LIVE_METADATA_FIELDS), context=f"{context} record {index}"
+        )
+
+
+def _validate_retained_ask_response(response: Any, case_id: str) -> None:
+    keys = {"status", "response_mode", "claim_count", "evidence_count", "live_result_count"}
+    if case_id in {"static", "mixed"}:
+        keys.add("exact_support")
+    if case_id in {"live", "mixed"}:
+        keys.add("live_records")
+    payload = _assert_exact_retained_keys(response, keys, context=f"preview {case_id} response")
+    _validate_retained_live_records(
+        payload.get("live_records", []), context=f"preview {case_id} live"
+    )
+    if payload.get("exact_support") is not None:
+        _validate_retained_exact_support(payload["exact_support"], case_id)
+
+
+def _validate_retained_exact_support(support: Any, case_id: str) -> None:
+    proof = _assert_exact_retained_keys(
+        support, {"claims", "evidence"}, context=f"preview {case_id} exact-support proof"
+    )
+    for claim_index, claim in enumerate(proof["claims"]):
+        retained = _assert_exact_retained_keys(
+            claim, {"claim_id", "supports"}, context=f"preview {case_id} claim {claim_index}"
+        )
+        for support_index, row in enumerate(retained["supports"]):
+            keys = {
+                "evidence_id",
+                "quote_sha256",
+                "quote_length",
+                "match_start",
+                "match_end",
+                "matched_slice_sha256",
+            }
+            _assert_exact_retained_keys(
+                row,
+                keys,
+                context=f"preview {case_id} claim {claim_index} support {support_index}",
+            )
+    for index, row in enumerate(proof["evidence"]):
+        _assert_exact_retained_keys(
+            row,
+            {"evidence_id", "primary_text_sha256", "primary_text_length"},
+            context=f"preview {case_id} evidence {index}",
+        )
 
 
 def _exact_support_evidence(payload: dict[str, Any]) -> dict[str, Any]:
