@@ -74,6 +74,44 @@ def _slug(value: str) -> str:
     return slug[:80] or "section"
 
 
+def _flush_section(
+    heading_stack: list[tuple[int, str]],
+    active_lines: list[str],
+    sections: list[tuple[tuple[str, ...], str]],
+) -> None:
+    deduplicated = list(dict.fromkeys(line for line in active_lines if line))
+    body = "\n".join(deduplicated).strip()
+    if len(body) >= 50:
+        path = tuple(title for _, title in heading_stack)
+        if len(path) > 2 and deduplicated:
+            body = "\n".join([" > ".join(path[1:]), *deduplicated[1:]]).strip()
+        sections.append((path, body))
+    active_lines.clear()
+
+
+def _handle_heading(
+    element: Any,
+    source: dict[str, Any],
+    heading_stack: list[tuple[int, str]],
+    active_lines: list[str],
+    sections: list[tuple[tuple[str, ...], str]],
+) -> bool:
+    heading = _normalized_text(element)
+    if not heading or not heading.replace("\u200b", "").strip():
+        return False
+    _flush_section(heading_stack, active_lines, sections)
+    if (
+        source["source_id"] == "bccdc_wildfire_smoke"
+        and heading.casefold() == "translated content"
+    ):
+        return True
+    level = int(element.tag[1])
+    heading_stack[:] = [item for item in heading_stack if item[0] < level]
+    heading_stack.append((level, heading))
+    active_lines.append(heading)
+    return False
+
+
 def _extract_sections(root: Any, source: dict[str, Any]) -> list[tuple[tuple[str, ...], str]]:
     """Walk headings and readable blocks in document order."""
 
@@ -86,39 +124,9 @@ def _extract_sections(root: Any, source: dict[str, Any]) -> list[tuple[tuple[str
     sections: list[tuple[tuple[str, ...], str]] = []
     active_lines: list[str] = []
 
-    def flush() -> None:
-        nonlocal active_lines
-        deduplicated = list(dict.fromkeys(line for line in active_lines if line))
-        body = "\n".join(deduplicated).strip()
-        if len(body) >= 50:
-            path = tuple(title for _, title in heading_stack)
-            if len(path) > 2 and deduplicated:
-                contextual_heading = " > ".join(path[1:])
-                body = "\n".join([contextual_heading, *deduplicated[1:]]).strip()
-            sections.append((path, body))
-        active_lines = []
-
-    def handle_heading(element: Any) -> bool:
-        nonlocal heading_stack
-        heading = _normalized_text(element)
-        if not heading or not heading.replace("\u200b", "").strip():
-            return False
-        if (
-            source["source_id"] == "bccdc_wildfire_smoke"
-            and heading.casefold() == "translated content"
-        ):
-            flush()
-            return True
-        flush()
-        level = int(element.tag[1])
-        heading_stack = [item for item in heading_stack if item[0] < level]
-        heading_stack.append((level, heading))
-        active_lines.append(heading)
-        return False
-
     for element in root.xpath(".//h1|.//h2|.//h3|.//h4|.//p|.//li"):
         if element.tag in {"h1", "h2", "h3", "h4"}:
-            if handle_heading(element):
+            if _handle_heading(element, source, heading_stack, active_lines, sections):
                 break
             continue
 
@@ -128,7 +136,7 @@ def _extract_sections(root: Any, source: dict[str, Any]) -> list[tuple[tuple[str
             continue
         text = _normalized_text(element)
         if re.match(r"^Rank\s+[1-6]\s*[–-]", text):
-            flush()
+            _flush_section(heading_stack, active_lines, sections)
             heading_stack = [item for item in heading_stack if item[0] < 2]
             heading_stack.append((2, text))
             active_lines.append(text)
@@ -136,7 +144,7 @@ def _extract_sections(root: Any, source: dict[str, Any]) -> list[tuple[tuple[str
         if text:
             active_lines.append(text)
 
-    flush()
+    _flush_section(heading_stack, active_lines, sections)
     return sections
 
 

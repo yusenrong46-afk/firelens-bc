@@ -320,6 +320,57 @@ def _same_request(existing: ReviewJournalEvent, draft: ReviewEventDraft) -> bool
     return _canonical_json_bytes(existing_request) == _canonical_json_bytes(draft_request)
 
 
+def _parse_journal_event(line: bytes, index: int, limits: JournalLimits) -> ReviewJournalEvent:
+    if not line:
+        raise ValueError("review journal contains an empty record")
+    if len(line) + 1 > limits.max_record_bytes:
+        raise ValueError("review journal record limit exceeded")
+    try:
+        document = json.loads(line.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid review journal record at sequence {index}") from exc
+    if _canonical_json_bytes(document) != line:
+        raise ValueError(f"non-canonical review journal record at sequence {index}")
+    event = ReviewJournalEvent.model_validate(document)
+    if _canonical_model_bytes(event) != line:
+        raise ValueError(f"non-canonical review journal model at sequence {index}")
+    return event
+
+
+def _validate_event_link(
+    event: ReviewJournalEvent,
+    index: int,
+    *,
+    session_id: str,
+    previous_hash: str,
+    previous_timestamp: Any,
+    seen_idempotency: set[str],
+) -> None:
+    checks = (
+        (event.sequence != index, f"review journal sequence mismatch at record {index}"),
+        (event.session_id != session_id, f"review journal session mismatch at record {index}"),
+        (
+            event.previous_event_hash != previous_hash,
+            f"review journal chain mismatch at record {index}",
+        ),
+        (
+            event.event_hash != _event_hash(event),
+            f"review journal event hash mismatch at record {index}",
+        ),
+        (
+            event.idempotency_key in seen_idempotency,
+            f"duplicate idempotency key at record {index}",
+        ),
+        (
+            previous_timestamp is not None and event.timestamp <= previous_timestamp,
+            f"non-monotonic timestamp at record {index}",
+        ),
+    )
+    for failed, message in checks:
+        if failed:
+            raise ValueError(message)
+
+
 class AppendOnlyReviewJournal:
     """A per-session durable event chain stored as canonical UTF-8 JSONL."""
 
@@ -476,31 +527,15 @@ class AppendOnlyReviewJournal:
         previous_hash: str = GENESIS_EVENT_HASH
         previous_timestamp = None
         for index, line in enumerate(lines, start=1):
-            if not line:
-                raise ValueError("review journal contains an empty record")
-            if len(line) + 1 > self.limits.max_record_bytes:
-                raise ValueError("review journal record limit exceeded")
-            try:
-                document = json.loads(line.decode("utf-8"))
-            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-                raise ValueError(f"invalid review journal record at sequence {index}") from exc
-            if _canonical_json_bytes(document) != line:
-                raise ValueError(f"non-canonical review journal record at sequence {index}")
-            event = ReviewJournalEvent.model_validate(document)
-            if _canonical_model_bytes(event) != line:
-                raise ValueError(f"non-canonical review journal model at sequence {index}")
-            if event.sequence != index:
-                raise ValueError(f"review journal sequence mismatch at record {index}")
-            if event.session_id != self.session_id:
-                raise ValueError(f"review journal session mismatch at record {index}")
-            if event.previous_event_hash != previous_hash:
-                raise ValueError(f"review journal chain mismatch at record {index}")
-            if event.event_hash != _event_hash(event):
-                raise ValueError(f"review journal event hash mismatch at record {index}")
-            if event.idempotency_key in seen_idempotency:
-                raise ValueError(f"duplicate idempotency key at record {index}")
-            if previous_timestamp is not None and event.timestamp <= previous_timestamp:
-                raise ValueError(f"non-monotonic timestamp at record {index}")
+            event = _parse_journal_event(line, index, self.limits)
+            _validate_event_link(
+                event,
+                index,
+                session_id=self.session_id,
+                previous_hash=previous_hash,
+                previous_timestamp=previous_timestamp,
+                seen_idempotency=seen_idempotency,
+            )
             seen_idempotency.add(event.idempotency_key)
             previous_hash = event.event_hash
             previous_timestamp = event.timestamp
