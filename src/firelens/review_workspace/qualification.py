@@ -18,7 +18,7 @@ import stat
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Protocol
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -53,6 +53,17 @@ _PLACEHOLDER_NAMES = frozenset(
         "unknown",
     }
 )
+
+
+class _ReviewRecipe(Protocol):
+    @property
+    def suite_kind(self) -> str: ...
+
+    @property
+    def conversation_report(self) -> object: ...
+
+    @property
+    def retrieval_dataset(self) -> object: ...
 
 
 class _FrozenModel(BaseModel):
@@ -348,50 +359,16 @@ def build_review_qualification(
     summary_path = staging / "review-summary.json"
     manifest_path = staging / "review-qualification.json"
     try:
-        if launch.input_recipe.suite_kind == "conversation":
-            source_path = Path(str(launch.input_recipe.conversation_report))
-            semantic_sidecar = _semantic_sidecar(evidence, source_path)
-            _write_private(
-                sidecar_path,
-                yaml.safe_dump(semantic_sidecar.model_dump(mode="json"), sort_keys=False),
-            )
-            summary = validate_owner_review(
-                source_path,
-                sidecar_path,
-                expected_case_count=len(evidence.session.case_ids),
-            )
-        else:
-            source_path = Path(str(launch.input_recipe.retrieval_dataset))
-            retrieval_sidecar = _retrieval_sidecar(evidence, source_path)
-            _write_private(
-                sidecar_path,
-                yaml.safe_dump(retrieval_sidecar.model_dump(mode="json"), sort_keys=False),
-            )
-            summary = validate_retrieval_owner_review(
-                source_path,
-                sidecar_path,
-                expected_case_count=len(evidence.session.case_ids),
-            )
+        source_path, summary = _build_qualification_sidecar(
+            launch.input_recipe, evidence, sidecar_path
+        )
         if summary.get("qualified") is not True:
             raise ValueError("adjudicated sidecar does not satisfy the release review contract")
         _write_private(
             summary_path,
             json.dumps(summary, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
         )
-        actors_list = []
-        for actor in evidence.actors:
-            if actor.actor.role not in {"reviewer", "adjudicator"}:
-                raise ValueError("qualification evidence contains a non-review actor")
-            actors_list.append(
-                QualifiedActor(
-                    actor_id=actor.actor.actor_id,
-                    display_name=actor.actor.display_name,
-                    role=actor.actor.role,
-                    journal_head_hash=actor.journal_head_hash,
-                    journal_count=actor.journal_count,
-                )
-            )
-        actors = tuple(actors_list)
+        actors = _qualified_actors(evidence)
         manifest = ReviewQualificationManifest(
             qualification_version="firelens_blind_review_qualification.v1",
             qualified=True,
@@ -446,6 +423,47 @@ def build_review_qualification(
         if staging.exists():
             shutil.rmtree(staging)
         raise
+
+
+def _build_qualification_sidecar(
+    recipe: _ReviewRecipe, evidence: FinalizedReviewEvidence, sidecar_path: Path
+) -> tuple[Path, dict[str, object]]:
+    count = len(evidence.session.case_ids)
+    if recipe.suite_kind == "conversation":
+        source_path = Path(str(recipe.conversation_report))
+        sidecar = _semantic_sidecar(evidence, source_path)
+        _write_private(
+            sidecar_path, yaml.safe_dump(sidecar.model_dump(mode="json"), sort_keys=False)
+        )
+        return source_path, validate_owner_review(
+            source_path, sidecar_path, expected_case_count=count
+        )
+    source_path = Path(str(recipe.retrieval_dataset))
+    retrieval_sidecar = _retrieval_sidecar(evidence, source_path)
+    _write_private(
+        sidecar_path,
+        yaml.safe_dump(retrieval_sidecar.model_dump(mode="json"), sort_keys=False),
+    )
+    return source_path, validate_retrieval_owner_review(
+        source_path, sidecar_path, expected_case_count=count
+    )
+
+
+def _qualified_actors(evidence: FinalizedReviewEvidence) -> tuple[QualifiedActor, ...]:
+    actors: list[QualifiedActor] = []
+    for actor in evidence.actors:
+        if actor.actor.role not in {"reviewer", "adjudicator"}:
+            raise ValueError("qualification evidence contains a non-review actor")
+        actors.append(
+            QualifiedActor(
+                actor_id=actor.actor.actor_id,
+                display_name=actor.actor.display_name,
+                role=actor.actor.role,
+                journal_head_hash=actor.journal_head_hash,
+                journal_count=actor.journal_count,
+            )
+        )
+    return tuple(actors)
 
 
 def verify_review_qualification_package(
