@@ -2575,6 +2575,8 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         "src/firelens/evaluation/frontend_qualification.py",
         "src/firelens/evaluation/frontend_surface.py",
         "src/firelens/evaluation/git_evidence.py",
+        "src/firelens/evaluation/hard_probe_cli.py",
+        "src/firelens/evaluation/live_qualification_cli.py",
         "src/firelens/evaluation/qualification_reports.py",
         "src/firelens/evaluation/release_surfaces.py",
         "src/firelens/evaluation/retrieval.py",
