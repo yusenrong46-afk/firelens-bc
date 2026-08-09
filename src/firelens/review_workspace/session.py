@@ -7,25 +7,22 @@ receipts disagree.  Event time comes only from the coordinator's clock; no
 public transition accepts a caller-authored timestamp.
 """
 
+# Compatibility imports preserve the public facade during the module split.
+# ruff: noqa: I001
+
 from __future__ import annotations
 
 import fcntl
 import hashlib
-import json
 import os
-import re
 import stat
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 from firelens.review_workspace.inputs import (
-    BlindCasePayload,
     ImportedReviewCase,
     ImportedReviewSuite,
     canonical_sha256,
@@ -35,324 +32,56 @@ from firelens.review_workspace.journal import AppendOnlyReviewJournal, create_im
 from firelens.review_workspace.models import (
     GENESIS_EVENT_HASH,
     ReviewActor,
-    ReviewEventDraft,
     ReviewJournalEvent,
     ReviewSession,
 )
-
-_IMPLEMENTATION_STATUS: Literal["nonqualifying_backend_scaffold"] = (
-    "nonqualifying_backend_scaffold"
+from firelens.review_workspace.session_common import (
+    _IMPLEMENTATION_STATUS,
+    _RECEIPT_NAME,
+    ActorProgress as _ActorProgress,
+    AdjudicationMaterial as _AdjudicationMaterial,
+    ClaimAssessment as _ClaimAssessment,
+    EventHeadReceipt as _EventHeadReceipt,
+    FinalizedActorEvidence as _FinalizedActorEvidence,
+    FinalizedCaseDecision as _FinalizedCaseDecision,
+    FinalizedReviewEvidence as _FinalizedReviewEvidence,
+    ReviewDecision as _ReviewDecision,
+    ReviewerLockReceipt as _ReviewerLockReceipt,
+    ReviewPresentation as _ReviewPresentation,
+    ReviewSessionError as _ReviewSessionError,
+    SessionFinalizationReceipt as _SessionFinalizationReceipt,
+    SessionGenesisReceipt as _SessionGenesisReceipt,
+    _DerivedActorState,
+    _canonical_private_json,
+    _genesis,
+    _utc,
+    _validate_session,
+    deterministic_actor_case_order as _deterministic_actor_case_order,
 )
-_RECEIPT_NAME = re.compile(r"^(?P<sequence>[0-9]{6})\.json$")
+from firelens.review_workspace.session_evidence import (
+    build_finalized_evidence,
+    event_head_receipt,
+    receipt_path,
+    verify_event_receipts,
+    verify_finalization,
+    verify_reviewer_lock,
+)
+from firelens.review_workspace.session_journal import append_review_event
 
-
-class ReviewSessionError(ValueError):
-    """The requested transition violates the frozen review protocol."""
-
-
-class _FrozenModel(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-
-class ClaimAssessment(_FrozenModel):
-    claim_id: str = Field(min_length=1, max_length=128)
-    decision: Literal["supported", "unsupported", "unclear"]
-    notes: str = Field(default="", max_length=4_000)
-
-
-class ReviewDecision(_FrozenModel):
-    """One irreversible human case decision for either supported suite family."""
-
-    disposition: Literal["approve", "reject", "needs_discussion"]
-    required_concepts_present: bool | None = None
-    forbidden_claims_absent: bool | None = None
-    required_limitations_present: bool | None = None
-    question_is_independent: bool | None = None
-    answerability_correct: bool | None = None
-    acceptable_evidence_correct: bool | None = None
-    claims: tuple[ClaimAssessment, ...] = Field(max_length=1_000)
-    notes: str = Field(default="", max_length=8_000)
-
-    @model_validator(mode="after")
-    def claim_ids_are_unique(self) -> ReviewDecision:
-        claim_ids = [claim.claim_id for claim in self.claims]
-        if len(claim_ids) != len(set(claim_ids)):
-            raise ValueError("review decision repeats claim IDs")
-        return self
-
-
-class AdjudicationMaterial(_FrozenModel):
-    reviewer_slot: Literal["reviewer-a", "reviewer-b"]
-    decision: ReviewDecision
-
-
-class ReviewPresentation(_FrozenModel):
-    presentation_version: Literal["firelens_blind_review_presentation.v1"]
-    session_id: str
-    actor_id: str
-    case_id: str
-    case_position: int = Field(ge=1, strict=True)
-    presentation_id: str
-    payload: BlindCasePayload
-    payload_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    review_material: tuple[AdjudicationMaterial, ...] = Field(max_length=2)
-    displayed_payload_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-
-
-class ActorCaseOrder(_FrozenModel):
-    actor_id: str
-    actor_role: Literal["reviewer", "adjudicator"]
-    case_ids: tuple[str, ...]
-    case_order_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-
-
-class SessionGenesisReceipt(_FrozenModel):
-    receipt_version: Literal["firelens_review_session_genesis.v1"]
-    implementation_status: Literal["nonqualifying_backend_scaffold"]
-    qualification_eligible: Literal[False]
-    session: ReviewSession
-    suite_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    dataset_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    input_file_roster_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    case_payload_roster_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    actor_orders: tuple[ActorCaseOrder, ...] = Field(min_length=3, max_length=3)
-    initial_journal_count: Literal[0]
-    initial_journal_head: Literal[
-        "0000000000000000000000000000000000000000000000000000000000000000"
-    ]
-
-
-class EventHeadReceipt(_FrozenModel):
-    receipt_version: Literal["firelens_review_event_head_receipt.v1"]
-    implementation_status: Literal["nonqualifying_backend_scaffold"]
-    qualification_eligible: Literal[False]
-    session_id: str
-    actor_id: str
-    journal_relative_path: str
-    sequence: int = Field(ge=1, strict=True)
-    journal_count: int = Field(ge=1, strict=True)
-    journal_head_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
-    event_type: str
-    event_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
-    previous_event_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
-    case_id: str | None
-    presentation_id: str | None
-    recorded_at: datetime
-    suite_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    input_file_roster_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-
-
-class ReviewerLockReceipt(_FrozenModel):
-    receipt_version: Literal["firelens_reviewer_lock_receipt.v1"]
-    implementation_status: Literal["nonqualifying_backend_scaffold"]
-    qualification_eligible: Literal[False]
-    session_id: str
-    actor_id: str
-    case_count: int = Field(ge=1, strict=True)
-    journal_count: int = Field(ge=1, strict=True)
-    journal_head_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
-    suite_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    input_file_roster_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    locked_at: datetime
-
-
-class SessionFinalizationReceipt(_FrozenModel):
-    receipt_version: Literal["firelens_review_session_finalization.v1"]
-    implementation_status: Literal["nonqualifying_backend_scaffold"]
-    qualification_eligible: Literal[False]
-    limitation: Literal[
-        "Session evidence is not release-qualifying until journal storage and qualification integration are independently hardened."
-    ]
-    session_id: str
-    suite_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    input_file_roster_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    finalized_by: str
-    finalized_at: datetime
-    actor_journal_heads: dict[str, str] = Field(min_length=3, max_length=3)
-    actor_journal_counts: dict[str, int] = Field(min_length=3, max_length=3)
-
-
-class FinalizedCaseDecision(_FrozenModel):
-    case_id: str
-    presentation_id: str
-    recorded_at: datetime
-    event_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
-    decision: ReviewDecision
-
-
-class FinalizedActorEvidence(_FrozenModel):
-    actor: ReviewActor
-    journal_count: int = Field(ge=1, strict=True)
-    journal_head_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
-    decisions: tuple[FinalizedCaseDecision, ...] = Field(min_length=1)
-
-
-class FinalizedReviewEvidence(_FrozenModel):
-    evidence_version: Literal["firelens_finalized_review_evidence.v1"]
-    implementation_status: Literal["nonqualifying_backend_scaffold"]
-    qualification_eligible: Literal[False]
-    limitation: Literal[
-        "This export preserves finalized blind-review evidence but is not a release-gate sidecar. Independent storage review and explicit qualification integration remain required."
-    ]
-    session: ReviewSession
-    suite_kind: Literal["conversation", "retrieval", "semantic_holdout"]
-    suite_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    dataset_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    input_file_roster_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    finalization: SessionFinalizationReceipt
-    actors: tuple[FinalizedActorEvidence, ...] = Field(min_length=3, max_length=3)
-
-
-class ActorProgress(_FrozenModel):
-    session_state: Literal["independent_review", "adjudicating", "finalized"]
-    actor_state: Literal[
-        "blocked_on_reviewer_locks",
-        "awaiting_presentation",
-        "awaiting_display_acknowledgement",
-        "awaiting_decision",
-        "complete_pending_lock",
-        "locked",
-        "finalized",
-    ]
-    actor_id: str
-    completed_case_count: int = Field(ge=0, strict=True)
-    case_count: int = Field(ge=1, strict=True)
-    next_case_position: int | None = Field(default=None, ge=1, strict=True)
-
-
-@dataclass(frozen=True)
-class _DerivedActorState:
-    actor: ReviewActor
-    order: tuple[str, ...]
-    events: tuple[ReviewJournalEvent, ...]
-    decisions: dict[str, ReviewDecision]
-    current_index: int
-    open_event: ReviewJournalEvent | None
-    acknowledged: bool
-    locked_or_finalized: bool
-
-
-def deterministic_actor_case_order(
-    session: ReviewSession,
-    suite: ImportedReviewSuite,
-    actor: ReviewActor,
-) -> tuple[str, ...]:
-    """Return an identity-bound order without reading model or ranking outputs."""
-
-    def key(case_id: str) -> tuple[str, str]:
-        material = (
-            f"{session.session_id}\0{suite.suite_sha256}\0{actor.role}\0"
-            f"{actor.actor_id}\0{case_id}"
-        ).encode()
-        return hashlib.sha256(material).hexdigest(), case_id
-
-    return tuple(sorted(session.case_ids, key=key))
-
-
-def _case_payload_roster_sha256(suite: ImportedReviewSuite) -> str:
-    return canonical_sha256(
-        [
-            {"case_id": case.case_id, "payload_sha256": case.payload_sha256}
-            for case in suite.cases
-        ]
-    )
-
-
-def _actor_orders(
-    session: ReviewSession, suite: ImportedReviewSuite
-) -> tuple[ActorCaseOrder, ...]:
-    return tuple(
-        ActorCaseOrder(
-            actor_id=actor.actor_id,
-            actor_role=actor.role,
-            case_ids=(order := deterministic_actor_case_order(session, suite, actor)),
-            case_order_sha256=canonical_sha256(list(order)),
-        )
-        for actor in session.actors
-        if actor.role in {"reviewer", "adjudicator"}
-    )
-
-
-def _genesis(session: ReviewSession, suite: ImportedReviewSuite) -> SessionGenesisReceipt:
-    return SessionGenesisReceipt(
-        receipt_version="firelens_review_session_genesis.v1",
-        implementation_status=_IMPLEMENTATION_STATUS,
-        qualification_eligible=False,
-        session=session,
-        suite_sha256=suite.suite_sha256,
-        dataset_sha256=suite.dataset_sha256,
-        input_file_roster_sha256=input_file_roster_sha256(suite),
-        case_payload_roster_sha256=_case_payload_roster_sha256(suite),
-        actor_orders=_actor_orders(session, suite),
-        initial_journal_count=0,
-        initial_journal_head=GENESIS_EVENT_HASH,
-    )
-
-
-def _validate_session(session: ReviewSession, suite: ImportedReviewSuite) -> None:
-    if session.artifact_sha256 != suite.suite_sha256:
-        raise ReviewSessionError("session artifact hash does not match imported review inputs")
-    if session.case_ids != tuple(case.case_id for case in suite.cases):
-        raise ReviewSessionError("session case roster differs from imported review inputs")
-    reviewers = [actor for actor in session.actors if actor.role == "reviewer"]
-    adjudicators = [actor for actor in session.actors if actor.role == "adjudicator"]
-    if len(session.actors) != 3 or len(reviewers) != 2 or len(adjudicators) != 1:
-        raise ReviewSessionError(
-            "blind review requires exactly two reviewers and one adjudicator"
-        )
-    normalized_names = [actor.display_name.casefold() for actor in session.actors]
-    if len(normalized_names) != len(set(normalized_names)):
-        raise ReviewSessionError("reviewers and adjudicator must be distinct named people")
-    if suite.suite_kind == "retrieval" and session.review_kind != "retrieval":
-        raise ReviewSessionError("retrieval inputs require a retrieval review session")
-    if suite.suite_kind != "retrieval" and session.review_kind != "semantic":
-        raise ReviewSessionError("semantic inputs require a semantic review session")
-
-
-def _utc(value: datetime) -> datetime:
-    if value.tzinfo is None or value.utcoffset() is None:
-        raise ReviewSessionError("coordinator clock returned a naive timestamp")
-    return value.astimezone(UTC)
-
-
-def _canonical_private_json(path: Path, model: type[_FrozenModel]) -> _FrozenModel:
-    flags = os.O_RDONLY | os.O_CLOEXEC
-    if hasattr(os, "O_NOFOLLOW"):
-        flags |= os.O_NOFOLLOW
-    try:
-        descriptor = os.open(path, flags)
-    except OSError as exc:
-        raise ReviewSessionError(f"missing immutable session artifact: {path.name}") from exc
-    try:
-        metadata = os.fstat(descriptor)
-        if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
-            raise ReviewSessionError("immutable session artifact is not a private regular file")
-        if stat.S_IMODE(metadata.st_mode) != 0o600:
-            raise ReviewSessionError("immutable session artifact must have mode 0600")
-        raw = os.read(descriptor, metadata.st_size + 1)
-        if len(raw) != metadata.st_size:
-            raise ReviewSessionError("immutable session artifact changed while reading")
-    finally:
-        os.close(descriptor)
-    if not raw.endswith(b"\n"):
-        raise ReviewSessionError("immutable session artifact is not canonical JSON")
-    try:
-        value = json.loads(raw)
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ReviewSessionError("immutable session artifact is invalid JSON") from exc
-    rendered = (
-        json.dumps(
-            value,
-            ensure_ascii=False,
-            allow_nan=False,
-            separators=(",", ":"),
-            sort_keys=True,
-        ).encode("utf-8")
-        + b"\n"
-    )
-    if rendered != raw:
-        raise ReviewSessionError("immutable session artifact is not canonical JSON")
-    return model.model_validate(value)
+ActorProgress = _ActorProgress
+AdjudicationMaterial = _AdjudicationMaterial
+ClaimAssessment = _ClaimAssessment
+EventHeadReceipt = _EventHeadReceipt
+FinalizedActorEvidence = _FinalizedActorEvidence
+FinalizedCaseDecision = _FinalizedCaseDecision
+FinalizedReviewEvidence = _FinalizedReviewEvidence
+ReviewDecision = _ReviewDecision
+ReviewerLockReceipt = _ReviewerLockReceipt
+ReviewPresentation = _ReviewPresentation
+ReviewSessionError = _ReviewSessionError
+SessionFinalizationReceipt = _SessionFinalizationReceipt
+SessionGenesisReceipt = _SessionGenesisReceipt
+deterministic_actor_case_order = _deterministic_actor_case_order
 
 
 class BlindReviewSession:
@@ -707,46 +436,11 @@ class BlindReviewSession:
             if not isinstance(finalization, SessionFinalizationReceipt):
                 raise ReviewSessionError("finalization receipt uses the wrong contract")
             self._verify_finalization(finalization)
-            actors: list[FinalizedActorEvidence] = []
-            for actor in self.session.actors:
-                state = states[actor.actor_id]
-                decision_events = tuple(
-                    FinalizedCaseDecision(
-                        case_id=str(event.case_id),
-                        presentation_id=str(event.presentation_id),
-                        recorded_at=event.timestamp,
-                        event_hash=event.event_hash,
-                        decision=ReviewDecision.model_validate(event.payload["decision"]),
-                    )
-                    for event in state.events
-                    if event.event_type == "case.decision.recorded"
-                )
-                if len(decision_events) != len(state.order):
-                    raise ReviewSessionError("finalized actor decision roster is incomplete")
-                actors.append(
-                    FinalizedActorEvidence(
-                        actor=actor,
-                        journal_count=len(state.events),
-                        journal_head_hash=state.events[-1].event_hash,
-                        decisions=decision_events,
-                    )
-                )
-            return FinalizedReviewEvidence(
-                evidence_version="firelens_finalized_review_evidence.v1",
-                implementation_status=_IMPLEMENTATION_STATUS,
-                qualification_eligible=False,
-                limitation=(
-                    "This export preserves finalized blind-review evidence but is not a "
-                    "release-gate sidecar. Independent storage review and explicit "
-                    "qualification integration remain required."
-                ),
+            return build_finalized_evidence(
                 session=self.session,
-                suite_kind=self.suite.suite_kind,
-                suite_sha256=self.suite.suite_sha256,
-                dataset_sha256=self.suite.dataset_sha256,
-                input_file_roster_sha256=input_file_roster_sha256(self.suite),
+                suite=self.suite,
+                states=states,
                 finalization=finalization,
-                actors=tuple(actors),
             )
 
     def _actor(self, actor_id: str) -> ReviewActor:
@@ -1063,119 +757,41 @@ class BlindReviewSession:
         presentation_id: str | None,
         payload: dict[str, Any],
     ) -> ReviewJournalEvent:
-        journal = self._journal(actor)
-        existing = journal.replay()
-        now = self._now()
-        if existing and now <= existing[-1].timestamp:
-            raise ReviewSessionError(
-                "trusted coordinator timestamps must be strictly increasing"
-            )
-        idempotency_material = canonical_sha256(
-            {
-                "session_id": self.session.session_id,
-                "actor_id": actor.actor_id,
-                "event_type": event_type,
-                "case_id": case_id,
-                "presentation_id": presentation_id,
-            }
+        return append_review_event(
+            self._journal(actor),
+            self.session,
+            actor,
+            event_type,
+            case_id,
+            presentation_id,
+            payload,
+            self._now(),
         )
-        return journal.append(
-            ReviewEventDraft(
-                event_type=event_type,
-                session_id=self.session.session_id,
-                actor_id=actor.actor_id,
-                case_id=case_id,
-                idempotency_key="evt-" + idempotency_material[:40],
-                presentation_id=presentation_id,
-                payload=payload,
-                timestamp=now,
-            )
-        )
-
-    def _event_receipt(self, actor: ReviewActor, event: ReviewJournalEvent) -> EventHeadReceipt:
-        return EventHeadReceipt(
-            receipt_version="firelens_review_event_head_receipt.v1",
-            implementation_status=_IMPLEMENTATION_STATUS,
-            qualification_eligible=False,
-            session_id=self.session.session_id,
-            actor_id=actor.actor_id,
-            journal_relative_path=self._journal_path(actor),
-            sequence=event.sequence,
-            journal_count=event.sequence,
-            journal_head_hash=event.event_hash,
-            event_type=event.event_type,
-            event_hash=event.event_hash,
-            previous_event_hash=event.previous_event_hash,
-            case_id=event.case_id,
-            presentation_id=event.presentation_id,
-            recorded_at=event.timestamp,
-            suite_sha256=self.suite.suite_sha256,
-            input_file_roster_sha256=input_file_roster_sha256(self.suite),
-        )
-
-    def _receipt_path(self, actor: ReviewActor, sequence: int) -> str:
-        return f"receipts/{actor.actor_id}/{sequence:06d}.json"
 
     def _write_event_receipt(self, actor: ReviewActor, event: ReviewJournalEvent) -> None:
         create_immutable_json(
             self.directory,
-            self._receipt_path(actor, event.sequence),
-            self._event_receipt(actor, event),
+            receipt_path(actor, event.sequence),
+            event_head_receipt(
+                self.session, self.suite, self._journal_path(actor), actor, event
+            ),
         )
 
     def _verify_event_receipts(
         self, actor: ReviewActor, events: tuple[ReviewJournalEvent, ...]
     ) -> None:
-        receipt_directory = self.directory / "receipts" / actor.actor_id
-        observed_sequences: list[int] = []
-        if receipt_directory.exists():
-            metadata = receipt_directory.lstat()
-            if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISDIR(metadata.st_mode):
-                raise ReviewSessionError("event receipt directory is unsafe")
-            if stat.S_IMODE(metadata.st_mode) != 0o700:
-                raise ReviewSessionError("event receipt directory must have mode 0700")
-            for path in receipt_directory.iterdir():
-                match = _RECEIPT_NAME.fullmatch(path.name)
-                if match is None or path.is_symlink():
-                    raise ReviewSessionError(
-                        "event receipt directory contains an unknown entry"
-                    )
-                observed_sequences.append(int(match.group("sequence")))
-        expected_sequences = list(range(1, len(events) + 1))
-        if sorted(observed_sequences) != expected_sequences:
-            raise ReviewSessionError(
-                "journal head/count disagrees with immutable receipt roster"
-            )
-        for event in events:
-            actual = _canonical_private_json(
-                self.directory / self._receipt_path(actor, event.sequence), EventHeadReceipt
-            )
-            if actual != self._event_receipt(actor, event):
-                raise ReviewSessionError("immutable event receipt differs from journal head")
+        verify_event_receipts(
+            self.directory,
+            _RECEIPT_NAME,
+            self.session,
+            self.suite,
+            self._journal_path(actor),
+            actor,
+            events,
+        )
 
     def _verify_reviewer_lock(self, actor: ReviewActor, event: ReviewJournalEvent) -> None:
-        actual = _canonical_private_json(
-            self.directory / f"locks/{actor.actor_id}.json", ReviewerLockReceipt
-        )
-        expected = ReviewerLockReceipt(
-            receipt_version="firelens_reviewer_lock_receipt.v1",
-            implementation_status=_IMPLEMENTATION_STATUS,
-            qualification_eligible=False,
-            session_id=self.session.session_id,
-            actor_id=actor.actor_id,
-            case_count=len(self.session.case_ids),
-            journal_count=event.sequence,
-            journal_head_hash=event.event_hash,
-            suite_sha256=self.suite.suite_sha256,
-            input_file_roster_sha256=input_file_roster_sha256(self.suite),
-            locked_at=event.timestamp,
-        )
-        if actual != expected:
-            raise ReviewSessionError("reviewer lock receipt differs from locked journal")
+        verify_reviewer_lock(self.directory, self.session, self.suite, actor, event)
 
     def _verify_finalization(self, expected: SessionFinalizationReceipt) -> None:
-        actual = _canonical_private_json(
-            self.directory / "session/finalization.json", SessionFinalizationReceipt
-        )
-        if actual != expected:
-            raise ReviewSessionError("session finalization receipt is inconsistent")
+        verify_finalization(self.directory, expected)

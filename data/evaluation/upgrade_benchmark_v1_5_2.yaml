@@ -89,6 +89,9 @@ harness_inputs:
   - src/firelens/review_workspace/preparation.py
   - src/firelens/review_workspace/qualification.py
   - src/firelens/review_workspace/session.py
+  - src/firelens/review_workspace/session_common.py
+  - src/firelens/review_workspace/session_evidence.py
+  - src/firelens/review_workspace/session_journal.py
   - src/firelens/review_workspace/web/review.css
   - src/firelens/review_workspace/web/review.html
   - src/firelens/review_workspace/web/review.js

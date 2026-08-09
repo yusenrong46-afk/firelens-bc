@@ -2567,6 +2567,12 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         "src/firelens/benchmark_support.py",
     }.issubset(spec.harness_inputs)
     assert "src/firelens/review_workspace/input_common.py" in spec.harness_inputs
+    assert {
+        "src/firelens/review_workspace/session.py",
+        "src/firelens/review_workspace/session_common.py",
+        "src/firelens/review_workspace/session_evidence.py",
+        "src/firelens/review_workspace/session_journal.py",
+    }.issubset(spec.harness_inputs)
     assert "src/firelens/runtime_artifact.py" in spec.harness_inputs
     assert {
         "src/firelens/runtime_artifact_closure.py",

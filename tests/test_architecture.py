@@ -95,6 +95,15 @@ def test_api_modules_stay_below_300_lines() -> None:
     assert not violations, f"API modules exceed 300 lines: {violations}"
 
 
+def test_all_production_python_modules_stay_below_800_lines() -> None:
+    violations = {
+        str(path.relative_to(ROOT)): len(path.read_text(encoding="utf-8").splitlines())
+        for path in PACKAGE_ROOT.rglob("*.py")
+        if len(path.read_text(encoding="utf-8").splitlines()) > 800
+    }
+    assert not violations, f"production Python modules exceed 800 lines: {violations}"
+
+
 def test_live_adapter_modules_stay_below_800_lines() -> None:
     paths = (PACKAGE_ROOT / "live.py", PACKAGE_ROOT / "live_support.py")
     violations = {
