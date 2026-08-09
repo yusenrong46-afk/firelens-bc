@@ -98,22 +98,28 @@ def _extract_sections(root: Any, source: dict[str, Any]) -> list[tuple[tuple[str
             sections.append((path, body))
         active_lines = []
 
+    def handle_heading(element: Any) -> bool:
+        nonlocal heading_stack
+        heading = _normalized_text(element)
+        if not heading or not heading.replace("\u200b", "").strip():
+            return False
+        if (
+            source["source_id"] == "bccdc_wildfire_smoke"
+            and heading.casefold() == "translated content"
+        ):
+            flush()
+            return True
+        flush()
+        level = int(element.tag[1])
+        heading_stack = [item for item in heading_stack if item[0] < level]
+        heading_stack.append((level, heading))
+        active_lines.append(heading)
+        return False
+
     for element in root.xpath(".//h1|.//h2|.//h3|.//h4|.//p|.//li"):
         if element.tag in {"h1", "h2", "h3", "h4"}:
-            heading = _normalized_text(element)
-            if not heading or not heading.replace("\u200b", "").strip():
-                continue
-            if (
-                source["source_id"] == "bccdc_wildfire_smoke"
-                and heading.casefold() == "translated content"
-            ):
-                flush()
+            if handle_heading(element):
                 break
-            flush()
-            level = int(element.tag[1])
-            heading_stack = [item for item in heading_stack if item[0] < level]
-            heading_stack.append((level, heading))
-            active_lines.append(heading)
             continue
 
         if element.tag == "p" and element.xpath("ancestor::li"):

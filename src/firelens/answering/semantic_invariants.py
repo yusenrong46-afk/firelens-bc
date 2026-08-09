@@ -183,8 +183,16 @@ def preservation_errors(
 
     combined_quotes = "\n".join(quotes)
     allowed_context = "\n".join([combined_quotes, *(source_contexts or [])])
-    errors: list[str] = []
+    errors = _introduced_reference_errors(claim, combined_quotes, allowed_context)
+    errors.extend(_status_and_condition_errors(claim, combined_quotes))
+    errors.extend(_action_errors(claim, combined_quotes))
+    return errors
 
+
+def _introduced_reference_errors(
+    claim: str, combined_quotes: str, allowed_context: str
+) -> list[str]:
+    errors: list[str] = []
     claim_quantities = _normalized_quantities(claim)
     quote_quantities = _normalized_quantities(combined_quotes)
     introduced_quantities = sorted(claim_quantities - quote_quantities)
@@ -214,6 +222,11 @@ def preservation_errors(
             + ", ".join(introduced_locations)
         )
 
+    return errors
+
+
+def _status_and_condition_errors(claim: str, combined_quotes: str) -> list[str]:
+    errors: list[str] = []
     lowered_claim = claim.casefold()
     lowered_quotes = combined_quotes.casefold()
     for status_group in _STATUS_GROUPS:
@@ -229,7 +242,11 @@ def preservation_errors(
         claim
     ):
         errors.append("removes a material condition from its quotes")
+    return errors
 
+
+def _action_errors(claim: str, combined_quotes: str) -> list[str]:
+    errors: list[str] = []
     claim_polarities = _action_polarities(claim)
     quote_polarities = _action_polarities(combined_quotes)
     if any(
@@ -247,5 +264,4 @@ def preservation_errors(
 
     if _STRONG_DIRECTIVE.search(claim) and not _STRONG_DIRECTIVE.search(combined_quotes):
         errors.append("strengthens optional guidance into a requirement")
-
     return errors

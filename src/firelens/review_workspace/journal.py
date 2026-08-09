@@ -143,42 +143,48 @@ def _open_secure_parent(
         raise ValueError("review workspace directory changed while it was opened")
     current_fd = root_fd
     try:
-        for component in parts[:-1]:
-            created = False
-            try:
-                next_fd = os.open(component, _DIRECTORY_FLAGS, dir_fd=current_fd)
-            except FileNotFoundError:
-                if not create:
-                    raise
-                try:
-                    os.mkdir(component, mode=0o700, dir_fd=current_fd)
-                except FileExistsError:
-                    # Another locked journal instance can establish this path first.
-                    pass
-                else:
-                    os.fsync(current_fd)
-                    created = True
-                next_fd = os.open(component, _DIRECTORY_FLAGS, dir_fd=current_fd)
-            if created:
-                os.fchmod(next_fd, 0o700)
-            metadata = os.fstat(next_fd)
-            if not stat.S_ISDIR(metadata.st_mode):
-                os.close(next_fd)
-                raise ValueError(f"review workspace component is not a directory: {component}")
-            if stat.S_IMODE(metadata.st_mode) != 0o700:
-                os.close(next_fd)
-                raise PermissionError(
-                    f"review workspace subdirectory must have mode 0700: {component}"
-                )
-            if current_fd != root_fd:
-                os.close(current_fd)
-            current_fd = next_fd
+        current_fd = _open_secure_components(root_fd, parts[:-1], create=create)
         return _SecureParent(root_fd=root_fd, parent_fd=current_fd, filename=parts[-1])
     except Exception:
         if current_fd != root_fd:
             os.close(current_fd)
         os.close(root_fd)
         raise
+
+
+def _open_secure_components(root_fd: int, parts: tuple[str, ...], *, create: bool) -> int:
+    current_fd = root_fd
+    for component in parts:
+        next_fd, created = _open_secure_component(current_fd, component, create=create)
+        if created:
+            os.fchmod(next_fd, 0o700)
+        metadata = os.fstat(next_fd)
+        if not stat.S_ISDIR(metadata.st_mode) or stat.S_IMODE(metadata.st_mode) != 0o700:
+            os.close(next_fd)
+            if not stat.S_ISDIR(metadata.st_mode):
+                raise ValueError(f"review workspace component is not a directory: {component}")
+            raise PermissionError(
+                f"review workspace subdirectory must have mode 0700: {component}"
+            )
+        if current_fd != root_fd:
+            os.close(current_fd)
+        current_fd = next_fd
+    return current_fd
+
+
+def _open_secure_component(parent_fd: int, component: str, *, create: bool) -> tuple[int, bool]:
+    try:
+        return os.open(component, _DIRECTORY_FLAGS, dir_fd=parent_fd), False
+    except FileNotFoundError:
+        if not create:
+            raise
+        try:
+            os.mkdir(component, mode=0o700, dir_fd=parent_fd)
+        except FileExistsError:
+            pass
+        else:
+            os.fsync(parent_fd)
+        return os.open(component, _DIRECTORY_FLAGS, dir_fd=parent_fd), True
 
 
 def _validate_regular_private_file(descriptor: int, *, label: str) -> os.stat_result:

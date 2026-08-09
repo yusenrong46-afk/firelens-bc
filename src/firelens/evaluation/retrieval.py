@@ -13,6 +13,7 @@ from firelens.benchmark import (
     load_benchmark,
     load_relevance_addendum,
 )
+from firelens.benchmark_contracts import BenchmarkCase
 from firelens.config import FireLensConfig
 from firelens.evaluation.common import (
     ROOT,
@@ -26,6 +27,7 @@ from firelens.evaluation.common import (
 from firelens.evaluation.common import (
     strict_number as _strict_number,
 )
+from firelens.ingestion.chunking import ChunkRecord
 from firelens.retrieval.bm25 import load_chunk_records
 from firelens.retrieval_experiment import _candidate_summary
 
@@ -85,40 +87,55 @@ def _recomputed_development_candidate(report: dict[str, Any]) -> dict[str, Any]:
     normalized_rows: list[dict[str, Any]] = []
     expected_stages = {"bm25", "vector", "fused", "reranked"}
     for row in rows:
-        case_id = str(row["id"])
-        rankings = row.get("rankings")
-        if not isinstance(rankings, dict) or set(rankings) != expected_stages:
-            raise ValueError(f"development retrieval {case_id} has incomplete ranking IDs")
-        recomputed_metrics: dict[str, Any] = {}
-        for stage in sorted(expected_stages):
-            chunk_ids = rankings[stage]
-            if not isinstance(chunk_ids, list) or not all(
-                isinstance(chunk_id, str) and chunk_id for chunk_id in chunk_ids
-            ):
-                raise ValueError(
-                    f"development retrieval {case_id} has invalid {stage} ranking IDs"
-                )
-            if len(chunk_ids) != len(set(chunk_ids)):
-                raise ValueError(f"development retrieval {case_id} repeats {stage} ranking IDs")
-            if set(chunk_ids).difference(chunks):
-                raise ValueError(
-                    f"development retrieval {case_id} has unknown {stage} ranking IDs"
-                )
-            if stage == "reranked" and len(chunk_ids) > 5:
-                raise ValueError("development reranked evidence exceeds frozen top five")
-            recomputed_metrics[stage] = _ranking_metrics(chunk_ids, cases[case_id], chunks)
-        if row.get("stage_metrics") != recomputed_metrics:
-            raise ValueError(f"development retrieval {case_id} metrics differ from ranking IDs")
-        _strict_bool(row, "retrieval_eligible", f"development retrieval {case_id}")
-        _strict_bool(row, "complete", f"development retrieval {case_id}")
-        _strict_number(
-            row,
-            "reported_cost_usd",
-            f"development retrieval {case_id}",
-            minimum=0,
+        normalized_rows.append(
+            _validated_development_ranking(row, expected_stages, cases, chunks)
         )
-        normalized_rows.append({**row, "stage_metrics": recomputed_metrics})
     return _candidate_summary(normalized_rows)
+
+
+def _validated_development_ranking(
+    row: dict[str, Any],
+    expected_stages: set[str],
+    cases: dict[str, BenchmarkCase],
+    chunks: dict[str, ChunkRecord],
+) -> dict[str, Any]:
+    case_id = str(row["id"])
+    rankings = row.get("rankings")
+    if not isinstance(rankings, dict) or set(rankings) != expected_stages:
+        raise ValueError(f"development retrieval {case_id} has incomplete ranking IDs")
+    recomputed_metrics = {
+        stage: _validated_stage_metrics(
+            rankings[stage], stage=stage, case_id=case_id, case=cases[case_id], chunks=chunks
+        )
+        for stage in sorted(expected_stages)
+    }
+    if row.get("stage_metrics") != recomputed_metrics:
+        raise ValueError(f"development retrieval {case_id} metrics differ from ranking IDs")
+    _strict_bool(row, "retrieval_eligible", f"development retrieval {case_id}")
+    _strict_bool(row, "complete", f"development retrieval {case_id}")
+    _strict_number(row, "reported_cost_usd", f"development retrieval {case_id}", minimum=0)
+    return {**row, "stage_metrics": recomputed_metrics}
+
+
+def _validated_stage_metrics(
+    chunk_ids: Any,
+    *,
+    stage: str,
+    case_id: str,
+    case: BenchmarkCase,
+    chunks: dict[str, ChunkRecord],
+) -> dict[str, Any]:
+    if not isinstance(chunk_ids, list) or not all(
+        isinstance(chunk_id, str) and chunk_id for chunk_id in chunk_ids
+    ):
+        raise ValueError(f"development retrieval {case_id} has invalid {stage} ranking IDs")
+    if len(chunk_ids) != len(set(chunk_ids)):
+        raise ValueError(f"development retrieval {case_id} repeats {stage} ranking IDs")
+    if set(chunk_ids).difference(chunks):
+        raise ValueError(f"development retrieval {case_id} has unknown {stage} ranking IDs")
+    if stage == "reranked" and len(chunk_ids) > 5:
+        raise ValueError("development reranked evidence exceeds frozen top five")
+    return _ranking_metrics(chunk_ids, case, chunks)
 
 
 def _development_retrieval(report: dict[str, Any] | None) -> dict[str, Any]:

@@ -221,17 +221,25 @@ def _validate_json_value(value: Any) -> None:
             raise ReviewInputError("review input contains a noncanonical number")
         return
     if isinstance(value, list):
-        for item in value:
-            _validate_json_value(item)
+        _validate_json_list(value)
         return
     if isinstance(value, dict):
-        for key, item in value.items():
-            if not isinstance(key, str) or not key:
-                raise ReviewInputError("review input contains an invalid object key")
-            _validate_json_value(key)
-            _validate_json_value(item)
+        _validate_json_object(value)
         return
     raise ReviewInputError("review input contains an unsupported JSON value")
+
+
+def _validate_json_list(value: list[Any]) -> None:
+    for item in value:
+        _validate_json_value(item)
+
+
+def _validate_json_object(value: dict[Any, Any]) -> None:
+    for key, item in value.items():
+        if not isinstance(key, str) or not key:
+            raise ReviewInputError("review input contains an invalid object key")
+        _validate_json_value(key)
+        _validate_json_value(item)
 
 
 def _duplicate_rejecting_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:

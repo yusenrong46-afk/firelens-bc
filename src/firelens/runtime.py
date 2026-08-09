@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import Literal
+from pathlib import Path
+from typing import Any, Literal
 
 from firelens.answering.service import StaticRAGService
 from firelens.config import FireLensConfig
@@ -98,11 +99,25 @@ def load_corpus_resources(
 ) -> tuple[tuple[ChunkRecord, ...], str]:
     if not config.corpus_path.is_file() or not config.corpus_manifest_path.is_file():
         raise CorpusValidationError("Static corpus or manifest is missing.")
+    manifest = _load_corpus_manifest(config.corpus_manifest_path)
+    chunks = tuple(load_chunk_records(config.corpus_path))
+    corpus_version = _validate_corpus_manifest(manifest, chunks)
+    _validate_corpus_repairs(config, chunks)
+    _validate_corpus_admission(chunks)
+    return chunks, corpus_version
+
+
+def _load_corpus_manifest(path: Path) -> dict[str, Any]:
     try:
-        manifest = json.loads(config.corpus_manifest_path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise CorpusValidationError("Static corpus manifest is invalid JSON.") from exc
-    chunks = tuple(load_chunk_records(config.corpus_path))
+    if not isinstance(payload, dict):
+        raise CorpusValidationError("Static corpus manifest must be an object.")
+    return payload
+
+
+def _validate_corpus_manifest(manifest: dict[str, Any], chunks: tuple[ChunkRecord, ...]) -> str:
     corpus_version = manifest.get("corpus_version")
     if not isinstance(corpus_version, str) or not corpus_version:
         raise CorpusValidationError("Static corpus manifest has no version.")
@@ -128,11 +143,18 @@ def load_corpus_resources(
         raise CorpusValidationError("Static corpus contains an unapproved source.")
     if manifest.get("repair_provenance_policy") != "human_verified_only.v1":
         raise CorpusValidationError("Static corpus repair provenance policy is missing.")
+    return corpus_version
+
+
+def _validate_corpus_repairs(config: FireLensConfig, chunks: tuple[ChunkRecord, ...]) -> None:
     try:
         repairs = load_text_repairs(config.project_root / "data/repairs/text_overrides.yaml")
         validate_chunk_repair_provenance(chunks, repairs)
     except (IngestionError, OSError, ValueError) as exc:
         raise CorpusValidationError(str(exc)) from exc
+
+
+def _validate_corpus_admission(chunks: tuple[ChunkRecord, ...]) -> None:
     admission_findings = blocking_findings(audit_corpus_admission(chunks))
     if admission_findings:
         first = admission_findings[0]
@@ -140,7 +162,6 @@ def load_corpus_resources(
             "Static corpus failed deterministic admission: "
             f"{first.source_id}/{first.chunk_id or 'source'} ({first.code})."
         )
-    return chunks, corpus_version
 
 
 def load_runtime(

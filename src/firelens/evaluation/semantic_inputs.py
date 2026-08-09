@@ -91,6 +91,39 @@ def _semantic_development_registry_payload(
     datasets = registry.get("datasets")
     if not isinstance(datasets, list) or not datasets:
         raise ValueError("semantic development registry requires dataset exposures")
+    dataset_ids, aggregate_sources, aggregate_families = _development_dataset_rosters(datasets)
+    if dataset_ids != sorted(dataset_ids) or len(dataset_ids) != len(set(dataset_ids)):
+        raise ValueError("semantic development dataset roster must be sorted and unique")
+    if registry["dataset_roster_sha256"] != _sha256_json(datasets):
+        raise ValueError("semantic development dataset-roster digest is inconsistent")
+    source_roster = _sorted_unique_strings(
+        registry.get("source_id_sha256s"),
+        context="semantic development source roster",
+        minimum=1,
+    )
+    for source in source_roster:
+        _require_digest(source, context="semantic development source ID commitment")
+    if source_roster != sorted(aggregate_sources):
+        raise ValueError("semantic development source roster differs from dataset exposures")
+    if registry["source_roster_sha256"] != _sha256_json(source_roster):
+        raise ValueError("semantic development source-roster digest is inconsistent")
+    family_roster = _sorted_unique_strings(
+        registry.get("question_family_ids"),
+        context="semantic development question-family roster",
+        minimum=5,
+    )
+    if family_roster != sorted(aggregate_families):
+        raise ValueError(
+            "semantic development question-family roster differs from dataset exposures"
+        )
+    if registry["question_family_roster_sha256"] != _sha256_json(family_roster):
+        raise ValueError("semantic development question-family-roster digest is inconsistent")
+    return registry
+
+
+def _development_dataset_rosters(
+    datasets: list[Any],
+) -> tuple[list[str], set[str], set[str]]:
     dataset_ids: list[str] = []
     aggregate_sources: set[str] = set()
     aggregate_families: set[str] = set()
@@ -129,33 +162,7 @@ def _semantic_development_registry_payload(
         )
         aggregate_sources.update(sources)
         aggregate_families.update(families)
-    if dataset_ids != sorted(dataset_ids) or len(dataset_ids) != len(set(dataset_ids)):
-        raise ValueError("semantic development dataset roster must be sorted and unique")
-    if registry["dataset_roster_sha256"] != _sha256_json(datasets):
-        raise ValueError("semantic development dataset-roster digest is inconsistent")
-    source_roster = _sorted_unique_strings(
-        registry.get("source_id_sha256s"),
-        context="semantic development source roster",
-        minimum=1,
-    )
-    for source in source_roster:
-        _require_digest(source, context="semantic development source ID commitment")
-    if source_roster != sorted(aggregate_sources):
-        raise ValueError("semantic development source roster differs from dataset exposures")
-    if registry["source_roster_sha256"] != _sha256_json(source_roster):
-        raise ValueError("semantic development source-roster digest is inconsistent")
-    family_roster = _sorted_unique_strings(
-        registry.get("question_family_ids"),
-        context="semantic development question-family roster",
-        minimum=5,
-    )
-    if family_roster != sorted(aggregate_families):
-        raise ValueError(
-            "semantic development question-family roster differs from dataset exposures"
-        )
-    if registry["question_family_roster_sha256"] != _sha256_json(family_roster):
-        raise ValueError("semantic development question-family-roster digest is inconsistent")
-    return registry
+    return dataset_ids, aggregate_sources, aggregate_families
 
 
 def _semantic_development_registry(path: Path) -> dict[str, Any]:
