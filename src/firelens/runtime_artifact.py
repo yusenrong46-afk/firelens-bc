@@ -65,6 +65,9 @@ from firelens.runtime_artifact_common import (
 from firelens.runtime_artifact_comparison import (
     compare_runtime_inventories as compare_runtime_inventories,
 )
+from firelens.runtime_artifact_contract import (
+    validate_prohibited_contract as _validate_prohibited_contract,
+)
 from firelens.runtime_artifact_files import (
     collect_files as _collect_files,
 )
@@ -96,8 +99,21 @@ def _load_contract(path: Path) -> tuple[dict[str, Any], str]:
     if contract["schema_version"] != CONTRACT_SCHEMA:
         raise RuntimeArtifactError("runtime artifact contract has an unsupported schema")
     _nonempty_identity(contract["contract_id"], field="contract_id")
+    candidate = _validate_candidate_contract(contract["candidate_configuration"])
+    required = _validate_required_files(contract["required_files"])
+    conditional = _validate_conditional_contract(contract["conditional_files"])
+    python = _validate_python_contract(contract["python"])
+    frontend = _validate_frontend_contract(contract["frontend"])
+    runtime_data = _validate_runtime_data(contract["runtime_data"])
+    _validate_contract_relationships(
+        candidate, required, conditional, python, frontend, runtime_data
+    )
+    _validate_prohibited_contract(contract["prohibited"])
+    return contract, _sha256_file(path)
 
-    candidate = contract["candidate_configuration"]
+
+def _validate_candidate_contract(value: Any) -> dict[str, Any]:
+    candidate = value
     if not isinstance(candidate, dict):
         raise RuntimeArtifactError("candidate_configuration must be an object")
     _exact_keys(
@@ -129,8 +145,11 @@ def _load_contract(path: Path) -> tuple[dict[str, Any], str]:
         raise RuntimeArtifactError(
             "candidate required_fields must bind the complete runtime and release identity"
         )
+    return candidate
 
-    required_files = contract["required_files"]
+
+def _validate_required_files(value: Any) -> list[str]:
+    required_files = value
     if not isinstance(required_files, list) or not required_files:
         raise RuntimeArtifactError("required_files must be a non-empty list")
     normalized_required = [
@@ -138,8 +157,11 @@ def _load_contract(path: Path) -> tuple[dict[str, Any], str]:
     ]
     if len(normalized_required) != len(set(normalized_required)):
         raise RuntimeArtifactError("required_files contains duplicates")
+    return normalized_required
 
-    conditional_files = contract["conditional_files"]
+
+def _validate_conditional_contract(value: Any) -> dict[str, Any]:
+    conditional_files = value
     if not isinstance(conditional_files, list) or len(conditional_files) != 1:
         raise RuntimeArtifactError("exactly one document-context conditional is required")
     conditional = conditional_files[0]
@@ -158,8 +180,11 @@ def _load_contract(path: Path) -> tuple[dict[str, Any], str]:
     _logical_path(conditional["logical_path"], context="conditional file path")
     if conditional["required_value"] != "document_context_v2":
         raise RuntimeArtifactError("document-context conditional value is unsupported")
+    return conditional
 
-    python = contract["python"]
+
+def _validate_python_contract(value: Any) -> dict[str, Any]:
+    python = value
     if not isinstance(python, dict):
         raise RuntimeArtifactError("python contract must be an object")
     _exact_keys(python, {"entrypoint", "source_root", "package"}, context="python contract")
@@ -167,8 +192,11 @@ def _load_contract(path: Path) -> tuple[dict[str, Any], str]:
     _logical_path(python["source_root"], context="Python source root")
     if python["package"] != "firelens":
         raise RuntimeArtifactError("Python package must remain firelens")
+    return python
 
-    frontend = contract["frontend"]
+
+def _validate_frontend_contract(value: Any) -> dict[str, Any]:
+    frontend = value
     if not isinstance(frontend, dict):
         raise RuntimeArtifactError("frontend contract must be an object")
     _exact_keys(
@@ -186,8 +214,11 @@ def _load_contract(path: Path) -> tuple[dict[str, Any], str]:
         or len(suffixes) != len(set(suffixes))
     ):
         raise RuntimeArtifactError("frontend allowed_suffixes must be unique suffixes")
+    return frontend
 
-    runtime_data = contract["runtime_data"]
+
+def _validate_runtime_data(value: Any) -> dict[str, Any]:
+    runtime_data = value
     if not isinstance(runtime_data, dict):
         raise RuntimeArtifactError("runtime_data must be an object")
     _exact_keys(
@@ -204,6 +235,17 @@ def _load_contract(path: Path) -> tuple[dict[str, Any], str]:
     )
     for field, value in runtime_data.items():
         _logical_path(value, context=f"runtime_data.{field}")
+    return runtime_data
+
+
+def _validate_contract_relationships(
+    candidate: dict[str, Any],
+    required: list[str],
+    conditional: dict[str, Any],
+    python: dict[str, Any],
+    frontend: dict[str, Any],
+    runtime_data: dict[str, Any],
+) -> None:
     if conditional["logical_path"] != runtime_data["document_context"]:
         raise RuntimeArtifactError(
             "document-context conditional must target runtime_data.document_context"
@@ -234,66 +276,12 @@ def _load_contract(path: Path) -> tuple[dict[str, Any], str]:
         runtime_data["vector_manifest"],
         runtime_data["repair_registry"],
     }
-    if not mandatory_required.issubset(set(normalized_required)):
+    if not mandatory_required.issubset(set(required)):
         raise RuntimeArtifactError("required_files omits a mandatory runtime identity or input")
-    if runtime_data["document_context"] in normalized_required:
+    if runtime_data["document_context"] in required:
         raise RuntimeArtifactError(
             "document_context must remain conditional, not unconditionally required"
         )
-
-    prohibited = contract["prohibited"]
-    if not isinstance(prohibited, dict):
-        raise RuntimeArtifactError("prohibited rules must be an object")
-    _exact_keys(
-        prohibited,
-        {"prefixes", "segments", "basenames", "basename_tokens", "suffixes"},
-        context="prohibited rules",
-    )
-    for field, values in prohibited.items():
-        if (
-            not isinstance(values, list)
-            or any(not isinstance(value, str) or not value for value in values)
-            or len(values) != len(set(values))
-        ):
-            raise RuntimeArtifactError(f"prohibited.{field} must contain unique strings")
-    for prefix in prohibited["prefixes"]:
-        _logical_path(prefix, context="prohibited prefix")
-    mandatory_prohibited = {
-        "prefixes": {
-            ".git",
-            ".venv",
-            "data/evaluation",
-            "data/raw",
-            "data/sources",
-            "docs",
-            "output",
-            "tests",
-        },
-        "segments": {
-            "adjudication",
-            "browser",
-            "evaluation",
-            "intermediates",
-            "node_modules",
-            "review",
-            "ux",
-        },
-        "basenames": {".env", "embedding_cache.jsonl"},
-        "basename_tokens": {
-            "adjudicat",
-            "embedding_cache",
-            "holdout",
-            "owner_review",
-            "sealed",
-            "ux_review",
-        },
-        "suffixes": {".lock", ".map", ".pyc"},
-    }
-    for field, mandatory in mandatory_prohibited.items():
-        if not mandatory.issubset(set(prohibited[field])):
-            raise RuntimeArtifactError(f"prohibited.{field} omits mandatory artifact classes")
-
-    return contract, _sha256_file(path)
 
 
 def _load_candidate(
@@ -328,56 +316,13 @@ def _load_corpus(
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     runtime_data = contract["runtime_data"]
     corpus_path = files[runtime_data["corpus"]]
-    chunks: list[dict[str, Any]] = []
     try:
         with corpus_path.open(encoding="utf-8") as stream:
-            for line_number, line in enumerate(stream, start=1):
-                if not line.strip():
-                    continue
-                try:
-                    chunk = json.loads(line)
-                except json.JSONDecodeError as exc:
-                    raise RuntimeArtifactError(
-                        f"corpus line {line_number} is invalid JSON"
-                    ) from exc
-                if not isinstance(chunk, dict):
-                    raise RuntimeArtifactError(f"corpus line {line_number} is not an object")
-                _exact_keys(chunk, CHUNK_KEYS, context=f"corpus line {line_number}")
-                if chunk.get("schema_version") != "chunk_record.v2":
-                    raise RuntimeArtifactError(
-                        f"corpus line {line_number} has an unsupported schema"
-                    )
-                for field in ("chunk_id", "source_id", "document_sha256", "review_provenance"):
-                    if not isinstance(chunk.get(field), str) or not chunk[field]:
-                        raise RuntimeArtifactError(
-                            f"corpus line {line_number} is missing {field}"
-                        )
-                if not SHA256_PATTERN.fullmatch(chunk["document_sha256"]):
-                    raise RuntimeArtifactError(
-                        f"corpus line {line_number} has an invalid document_sha256"
-                    )
-                page = chunk.get("page_number")
-                if page is not None and (
-                    isinstance(page, bool) or not isinstance(page, int) or page < 1
-                ):
-                    raise RuntimeArtifactError(
-                        f"corpus line {line_number} has an invalid page_number"
-                    )
-                if (
-                    isinstance(chunk.get("chunk_index"), bool)
-                    or not isinstance(chunk.get("chunk_index"), int)
-                    or chunk["chunk_index"] < 1
-                ):
-                    raise RuntimeArtifactError(
-                        f"corpus line {line_number} has an invalid chunk_index"
-                    )
-                if not isinstance(chunk.get("text"), str) or not chunk["text"].strip():
-                    raise RuntimeArtifactError(f"corpus line {line_number} has empty text")
-                if chunk.get("char_count") != len(chunk["text"]):
-                    raise RuntimeArtifactError(
-                        f"corpus line {line_number} has an inconsistent char_count"
-                    )
-                chunks.append(chunk)
+            chunks = [
+                _validated_corpus_chunk(line, number)
+                for number, line in enumerate(stream, start=1)
+                if line.strip()
+            ]
     except (OSError, UnicodeDecodeError) as exc:
         raise RuntimeArtifactError("corpus is not readable UTF-8 JSONL") from exc
     if not chunks:
@@ -396,6 +341,35 @@ def _load_corpus(
     if not isinstance(manifest.get("corpus_version"), str) or not manifest["corpus_version"]:
         raise RuntimeArtifactError("corpus manifest has no corpus_version")
     return chunks, manifest
+
+
+def _validated_corpus_chunk(line: str, line_number: int) -> dict[str, Any]:
+    try:
+        chunk = json.loads(line)
+    except json.JSONDecodeError as exc:
+        raise RuntimeArtifactError(f"corpus line {line_number} is invalid JSON") from exc
+    if not isinstance(chunk, dict):
+        raise RuntimeArtifactError(f"corpus line {line_number} is not an object")
+    context = f"corpus line {line_number}"
+    _exact_keys(chunk, CHUNK_KEYS, context=context)
+    if chunk.get("schema_version") != "chunk_record.v2":
+        raise RuntimeArtifactError(f"{context} has an unsupported schema")
+    for field in ("chunk_id", "source_id", "document_sha256", "review_provenance"):
+        if not isinstance(chunk.get(field), str) or not chunk[field]:
+            raise RuntimeArtifactError(f"{context} is missing {field}")
+    if not SHA256_PATTERN.fullmatch(chunk["document_sha256"]):
+        raise RuntimeArtifactError(f"{context} has an invalid document_sha256")
+    page = chunk.get("page_number")
+    if page is not None and (isinstance(page, bool) or not isinstance(page, int) or page < 1):
+        raise RuntimeArtifactError(f"{context} has an invalid page_number")
+    index = chunk.get("chunk_index")
+    if isinstance(index, bool) or not isinstance(index, int) or index < 1:
+        raise RuntimeArtifactError(f"{context} has an invalid chunk_index")
+    if not isinstance(chunk.get("text"), str) or not chunk["text"].strip():
+        raise RuntimeArtifactError(f"{context} has empty text")
+    if chunk.get("char_count") != len(chunk["text"]):
+        raise RuntimeArtifactError(f"{context} has an inconsistent char_count")
+    return chunk
 
 
 def _validate_repairs(
@@ -430,32 +404,7 @@ def _validate_repairs(
     }
     registry_targets: set[tuple[str, int, str]] = set()
     for index, repair in enumerate(repairs, start=1):
-        if not isinstance(repair, dict):
-            raise RuntimeArtifactError(f"runtime repair {index} must be an object")
-        _exact_keys(repair, expected_keys, context=f"runtime repair {index}")
-        if repair.get("review_status") != "human_verified":
-            raise RuntimeArtifactError(
-                f"runtime repair {index} is not approved human_verified provenance"
-            )
-        source_id = repair.get("source_id")
-        page_number = repair.get("page_number")
-        document_sha256 = repair.get("document_sha256")
-        if not isinstance(source_id, str) or not source_id:
-            raise RuntimeArtifactError(f"runtime repair {index} has an invalid source_id")
-        if isinstance(page_number, bool) or not isinstance(page_number, int) or page_number < 1:
-            raise RuntimeArtifactError(f"runtime repair {index} has an invalid page_number")
-        if not isinstance(document_sha256, str) or not SHA256_PATTERN.fullmatch(
-            document_sha256
-        ):
-            raise RuntimeArtifactError(f"runtime repair {index} has an invalid document_sha256")
-        if not isinstance(repair.get("reason"), str) or not repair["reason"].strip():
-            raise RuntimeArtifactError(f"runtime repair {index} has no review reason")
-        if (
-            not isinstance(repair.get("replacement_text"), str)
-            or not repair["replacement_text"].strip()
-        ):
-            raise RuntimeArtifactError(f"runtime repair {index} has no replacement text")
-        target = (source_id, page_number, document_sha256)
+        target = _validated_repair_target(repair, index, expected_keys)
         if target in registry_targets:
             raise RuntimeArtifactError("runtime repair registry has duplicate targets")
         registry_targets.add(target)
@@ -476,6 +425,34 @@ def _validate_repairs(
         raise RuntimeArtifactError("corpus contains unapproved review provenance")
 
 
+def _validated_repair_target(
+    repair: Any, index: int, expected_keys: set[str]
+) -> tuple[str, int, str]:
+    context = f"runtime repair {index}"
+    if not isinstance(repair, dict):
+        raise RuntimeArtifactError(f"{context} must be an object")
+    _exact_keys(repair, expected_keys, context=context)
+    if repair.get("review_status") != "human_verified":
+        raise RuntimeArtifactError(f"{context} is not approved human_verified provenance")
+    source_id, page, digest = (
+        repair.get("source_id"),
+        repair.get("page_number"),
+        repair.get("document_sha256"),
+    )
+    if not isinstance(source_id, str) or not source_id:
+        raise RuntimeArtifactError(f"{context} has an invalid source_id")
+    if isinstance(page, bool) or not isinstance(page, int) or page < 1:
+        raise RuntimeArtifactError(f"{context} has an invalid page_number")
+    if not isinstance(digest, str) or not SHA256_PATTERN.fullmatch(digest):
+        raise RuntimeArtifactError(f"{context} has an invalid document_sha256")
+    if not isinstance(repair.get("reason"), str) or not repair["reason"].strip():
+        raise RuntimeArtifactError(f"{context} has no review reason")
+    replacement = repair.get("replacement_text")
+    if not isinstance(replacement, str) or not replacement.strip():
+        raise RuntimeArtifactError(f"{context} has no replacement text")
+    return source_id, page, digest
+
+
 def _validate_vector_and_context(
     files: dict[str, Path],
     contract: dict[str, Any],
@@ -484,11 +461,31 @@ def _validate_vector_and_context(
     corpus_manifest: dict[str, Any],
 ) -> None:
     runtime_data = contract["runtime_data"]
-    vector_manifest = _read_json(
-        files[runtime_data["vector_manifest"]], context="vector manifest"
+    vector_manifest = _validated_vector_manifest(
+        files, runtime_data, candidate, chunks, corpus_manifest
     )
+    _validate_vector_matrix(files, runtime_data, vector_manifest, len(chunks))
+    conditional = contract["conditional_files"][0]
+    context_path = conditional["logical_path"]
+    context_required = _context_requirement(
+        conditional, candidate, vector_manifest, context_path in files
+    )
+    if not context_required:
+        return
+    records = _load_context_records(files[context_path])
+    _validate_context_records(records, chunks)
+
+
+def _validated_vector_manifest(
+    files: dict[str, Path],
+    runtime_data: dict[str, Any],
+    candidate: dict[str, Any],
+    chunks: list[dict[str, Any]],
+    corpus_manifest: dict[str, Any],
+) -> dict[str, Any]:
+    manifest = _read_json(files[runtime_data["vector_manifest"]], context="vector manifest")
     _exact_keys(
-        vector_manifest,
+        manifest,
         {
             "schema_version",
             "corpus_version",
@@ -502,14 +499,14 @@ def _validate_vector_and_context(
         },
         context="vector manifest",
     )
-    if vector_manifest["schema_version"] != "firelens_vector_index.v1":
+    if manifest["schema_version"] != "firelens_vector_index.v1":
         raise RuntimeArtifactError("vector manifest has an unsupported schema")
     for candidate_field, vector_field in (
         ("corpus_version", "corpus_version"),
         ("embedding_model", "embedding_model"),
         ("retrieval_text_strategy", "retrieval_text_strategy"),
     ):
-        if candidate[candidate_field] != vector_manifest.get(vector_field):
+        if candidate[candidate_field] != manifest.get(vector_field):
             raise RuntimeArtifactError(
                 f"runtime candidate {candidate_field} differs from the vector manifest"
             )
@@ -517,16 +514,23 @@ def _validate_vector_and_context(
         raise RuntimeArtifactError(
             "runtime candidate corpus_version differs from corpus manifest"
         )
-    if vector_manifest.get("corpus_sha256") != _sha256_file(files[runtime_data["corpus"]]):
+    if manifest.get("corpus_sha256") != _sha256_file(files[runtime_data["corpus"]]):
         raise RuntimeArtifactError("vector manifest corpus_sha256 does not match the corpus")
-    if vector_manifest.get("matrix_sha256") != _sha256_file(
-        files[runtime_data["vector_matrix"]]
-    ):
+    if manifest.get("matrix_sha256") != _sha256_file(files[runtime_data["vector_matrix"]]):
         raise RuntimeArtifactError("vector manifest matrix_sha256 does not match the matrix")
     expected_ids = [chunk["chunk_id"] for chunk in chunks]
-    if vector_manifest.get("chunk_ids") != expected_ids:
+    if manifest.get("chunk_ids") != expected_ids:
         raise RuntimeArtifactError("vector manifest chunk IDs differ from the corpus")
-    dimensions = vector_manifest["dimensions"]
+    return manifest
+
+
+def _validate_vector_matrix(
+    files: dict[str, Path],
+    runtime_data: dict[str, Any],
+    manifest: dict[str, Any],
+    chunk_count: int,
+) -> None:
+    dimensions = manifest["dimensions"]
     if isinstance(dimensions, bool) or not isinstance(dimensions, int) or dimensions < 1:
         raise RuntimeArtifactError("vector manifest dimensions must be a positive integer")
     try:
@@ -535,28 +539,33 @@ def _validate_vector_and_context(
         raise RuntimeArtifactError(
             "vector matrix is not a valid non-pickled NPY array"
         ) from exc
-    if matrix.ndim != 2 or matrix.shape != (len(chunks), dimensions):
+    if matrix.ndim != 2 or matrix.shape != (chunk_count, dimensions):
         raise RuntimeArtifactError("vector matrix shape differs from its manifest")
     if not np.issubdtype(matrix.dtype, np.number) or not np.isfinite(matrix).all():
         raise RuntimeArtifactError("vector matrix must contain only finite numeric values")
 
-    conditional = contract["conditional_files"][0]
-    context_path = conditional["logical_path"]
+
+def _context_requirement(
+    conditional: dict[str, Any],
+    candidate: dict[str, Any],
+    manifest: dict[str, Any],
+    present: bool,
+) -> bool:
     candidate_value = candidate.get(conditional["candidate_field"])
-    vector_value = vector_manifest.get(conditional["vector_manifest_field"])
+    vector_value = manifest.get(conditional["vector_manifest_field"])
     if candidate_value != vector_value:
         raise RuntimeArtifactError("document-context strategy inputs disagree")
     context_required = candidate_value == conditional["required_value"]
-    context_present = context_path in files
-    if context_required != context_present:
+    if context_required != present:
         disposition = "required" if context_required else "prohibited for this candidate"
         raise RuntimeArtifactError(f"document_context_v2 is {disposition}")
-    if not context_required:
-        return
+    return bool(context_required)
 
+
+def _load_context_records(path: Path) -> dict[str, dict[str, Any]]:
     context_records: dict[str, dict[str, Any]] = {}
     try:
-        with files[context_path].open(encoding="utf-8") as stream:
+        with path.open(encoding="utf-8") as stream:
             for line_number, line in enumerate(stream, start=1):
                 if not line.strip():
                     continue
@@ -589,6 +598,12 @@ def _validate_vector_and_context(
                 context_records[chunk_id] = record
     except (OSError, UnicodeDecodeError) as exc:
         raise RuntimeArtifactError("document context is not readable UTF-8 JSONL") from exc
+    return context_records
+
+
+def _validate_context_records(
+    context_records: dict[str, dict[str, Any]], chunks: list[dict[str, Any]]
+) -> None:
     chunks_by_id = {chunk["chunk_id"]: chunk for chunk in chunks}
     if set(context_records) != set(chunks_by_id):
         raise RuntimeArtifactError("document context does not cover the corpus exactly")
