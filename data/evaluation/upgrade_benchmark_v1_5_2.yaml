@@ -68,6 +68,7 @@ harness_inputs:
   - src/firelens/evaluation/release_surfaces.py
   - src/firelens/evaluation/retrieval.py
   - src/firelens/evaluation/runtime_artifact.py
+  - src/firelens/evaluation/semantic_inputs.py
   - src/firelens/evaluation/ux.py
   - scripts/freeze_semantic_holdout.py
   - data/evaluation/semantic_holdout_freeze_protocol.v1.json
