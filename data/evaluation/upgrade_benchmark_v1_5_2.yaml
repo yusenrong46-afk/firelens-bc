@@ -94,6 +94,7 @@ harness_inputs:
   - docs/protocols/V1_5_2_LIVE_SLO_EVIDENCE.md
   - scripts/run_retrieval_qualification.py
   - scripts/qualify_preview.py
+  - src/firelens/evaluation/preview_qualification_cli.py
   - scripts/owner_semantic_review.py
   - scripts/retrieval_owner_review.py
   - scripts/human_review_workspace.py
