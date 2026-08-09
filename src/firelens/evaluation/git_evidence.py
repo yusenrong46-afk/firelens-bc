@@ -192,7 +192,38 @@ def resolve_before_snapshot_ancestry(
         )
     if seal_path.is_symlink():
         raise ValueError("before snapshot seal must be a regular file, not a symbolic link")
+    _validate_seal_worktree(relative_seal, command)
+    before_commit = _sealed_before_commit(seal_path, before, report_reader, command)
+    resolved_after_commit = exact_git_commit(
+        after_commit, context="after candidate", command=command
+    )
+    seal_commit = _seal_introduction_commit(relative_seal, resolved_after_commit, command)
+    _validate_seal_blobs(relative_seal, seal_commit, resolved_after_commit, command)
+    _require_ancestor(
+        before_commit,
+        seal_commit,
+        command=command,
+        message="before snapshot candidate is not an ancestor of the seal-introducing commit; the seal is on an unrelated or invalid history",
+    )
+    _require_ancestor(
+        seal_commit,
+        resolved_after_commit,
+        command=command,
+        message="seal-introducing commit is not an ancestor of the after candidate; the after candidate is on an unrelated side branch or predates the seal",
+    )
+    return {
+        "status": "verified",
+        "seal_path": relative_seal,
+        "seal_sha256": file_sha256(seal_path),
+        "before_candidate_commit": before_commit,
+        "seal_introducing_commit": seal_commit,
+        "after_candidate_commit": resolved_after_commit,
+        "before_is_ancestor_of_seal": True,
+        "seal_is_ancestor_of_after": True,
+    }
 
+
+def _validate_seal_worktree(relative_seal: str, command: GitCommand) -> None:
     shallow = command(
         ["rev-parse", "--is-shallow-repository"],
         context="cannot determine whether before-seal Git history is complete",
@@ -231,7 +262,14 @@ def resolve_before_snapshot_ancestry(
                 "restore the committed seal before qualification"
             )
 
-    seal = report_reader(seal_path)
+
+def _sealed_before_commit(
+    seal_path: Path,
+    before: dict[str, Any],
+    reader: Callable[[Path | None], dict[str, Any] | None],
+    command: GitCommand,
+) -> str:
+    seal = reader(seal_path)
     if seal is None:
         raise ValueError("tracked before snapshot seal is unreadable")
     seal_candidate = seal.get("candidate_identity")
@@ -244,19 +282,18 @@ def resolve_before_snapshot_ancestry(
         raise ValueError(
             "before snapshot candidate commit differs from the commit recorded by its seal"
         )
-    before_commit = exact_git_commit(
+    return exact_git_commit(
         cast(str, seal_before_commit),
         context="before snapshot candidate",
         command=command,
     )
-    resolved_after_commit = exact_git_commit(
-        after_commit,
-        context="after candidate",
-        command=command,
-    )
 
+
+def _seal_introduction_commit(
+    relative_seal: str, after_commit: str, command: GitCommand
+) -> str:
     history = command(
-        ["log", "--format=%H", "--all", "HEAD", resolved_after_commit, "--", relative_seal],
+        ["log", "--format=%H", "--all", "HEAD", after_commit, "--", relative_seal],
         context=f"cannot resolve immutable history for {relative_seal}",
     ).stdout.splitlines()
     history_commits = [commit.strip() for commit in history if commit.strip()]
@@ -277,7 +314,7 @@ def resolve_before_snapshot_ancestry(
             "--diff-filter=A",
             "--all",
             "HEAD",
-            resolved_after_commit,
+            after_commit,
             "--",
             relative_seal,
         ],
@@ -305,6 +342,12 @@ def resolve_before_snapshot_ancestry(
             "one immutable introduction commit"
         )
 
+    return seal_commit
+
+
+def _validate_seal_blobs(
+    relative_seal: str, seal_commit: str, after_commit: str, command: GitCommand
+) -> None:
     introduced_blob = command(
         ["rev-parse", f"{seal_commit}:{relative_seal}"],
         context="cannot read the before snapshot seal from its introducing commit",
@@ -319,7 +362,7 @@ def resolve_before_snapshot_ancestry(
             f"resolved commit {seal_commit}; the seal must remain immutable"
         )
     after_blob = command(
-        ["rev-parse", f"{resolved_after_commit}:{relative_seal}"],
+        ["rev-parse", f"{after_commit}:{relative_seal}"],
         context="after candidate does not contain the committed before snapshot seal",
     ).stdout.strip()
     if after_blob != introduced_blob:
@@ -328,38 +371,14 @@ def resolve_before_snapshot_ancestry(
             "the committed seal must remain immutable"
         )
 
-    def require_ancestor(ancestor: str, descendant: str, *, message: str) -> None:
-        result = command(
-            ["merge-base", "--is-ancestor", ancestor, descendant],
-            context="cannot verify before-seal Git ancestry",
-            allowed_returncodes=(0, 1),
-        )
-        if result.returncode != 0:
-            raise ValueError(message)
 
-    require_ancestor(
-        before_commit,
-        seal_commit,
-        message=(
-            "before snapshot candidate is not an ancestor of the seal-introducing "
-            "commit; the seal is on an unrelated or invalid history"
-        ),
+def _require_ancestor(
+    ancestor: str, descendant: str, *, command: GitCommand, message: str
+) -> None:
+    result = command(
+        ["merge-base", "--is-ancestor", ancestor, descendant],
+        context="cannot verify before-seal Git ancestry",
+        allowed_returncodes=(0, 1),
     )
-    require_ancestor(
-        seal_commit,
-        resolved_after_commit,
-        message=(
-            "seal-introducing commit is not an ancestor of the after candidate; "
-            "the after candidate is on an unrelated side branch or predates the seal"
-        ),
-    )
-    return {
-        "status": "verified",
-        "seal_path": relative_seal,
-        "seal_sha256": file_sha256(seal_path),
-        "before_candidate_commit": before_commit,
-        "seal_introducing_commit": seal_commit,
-        "after_candidate_commit": resolved_after_commit,
-        "before_is_ancestor_of_seal": True,
-        "seal_is_ancestor_of_after": True,
-    }
+    if result.returncode != 0:
+        raise ValueError(message)
