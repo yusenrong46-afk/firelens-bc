@@ -136,6 +136,13 @@ def require_nonempty_string(value: Any, *, context: str) -> str:
     return value
 
 
+def require_full_git_sha(value: Any, *, context: str) -> str:
+    commit = require_nonempty_string(value, context=context)
+    if len(commit) != 40 or any(character not in "0123456789abcdef" for character in commit):
+        raise ValueError(f"{context} must be a full lowercase Git SHA")
+    return commit
+
+
 def require_timestamp(value: Any, *, context: str) -> datetime:
     raw = require_nonempty_string(value, context=context)
     try:
