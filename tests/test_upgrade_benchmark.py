@@ -2578,6 +2578,9 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         "src/firelens/evaluation/hard_probe_cli.py",
         "src/firelens/evaluation/live_qualification_cli.py",
         "src/firelens/evaluation/live_slo_evidence_cli.py",
+        "src/firelens/evaluation/limitation_cases.py",
+        "src/firelens/evaluation/limitation_cli.py",
+        "src/firelens/evaluation/limitation_runtime.py",
         "src/firelens/evaluation/preview_qualification_cli.py",
         "src/firelens/evaluation/qualification_reports.py",
         "src/firelens/evaluation/release_surfaces.py",
@@ -2616,6 +2619,7 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         "src/firelens/runtime_artifact_files.py",
     }.issubset(spec.harness_inputs)
     assert "tests/test_runtime_artifact.py" in spec.harness_inputs
+    assert "tests/test_limitation_probe.py" in spec.harness_inputs
     assert "tests/test_upgrade_benchmark.py" in spec.harness_inputs
     assert "apps/web/scripts/qualify-frontend-surface.mjs" in spec.harness_inputs
     assert len(spec.comparison_metrics) == len(

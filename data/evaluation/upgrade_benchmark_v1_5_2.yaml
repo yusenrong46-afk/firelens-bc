@@ -92,6 +92,10 @@ harness_inputs:
   - src/firelens/evaluation/hard_probe_cli.py
   - scripts/run_live_qualification.py
   - src/firelens/evaluation/live_qualification_cli.py
+  - scripts/run_limitation_probe.py
+  - src/firelens/evaluation/limitation_cases.py
+  - src/firelens/evaluation/limitation_cli.py
+  - src/firelens/evaluation/limitation_runtime.py
   - scripts/live_slo_evidence.py
   - src/firelens/evaluation/live_slo_evidence_cli.py
   - docs/protocols/V1_5_2_LIVE_SLO_EVIDENCE.md
@@ -135,6 +139,7 @@ harness_inputs:
   - src/firelens/runtime_artifact_comparison.py
   - src/firelens/runtime_artifact_files.py
   - tests/test_runtime_artifact.py
+  - tests/test_limitation_probe.py
   - tests/test_upgrade_benchmark.py
   - apps/web/vite.config.mjs
   - apps/web/package.json

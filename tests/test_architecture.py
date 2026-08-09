@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_ROOT = ROOT / "src/firelens"
 WEB_ROOT = ROOT / "apps/web/src"
+SCRIPTS_ROOT = ROOT / "scripts"
 
 
 def _local_imports(path: Path) -> set[str]:
@@ -102,6 +103,15 @@ def test_all_production_python_modules_stay_below_800_lines() -> None:
         if len(path.read_text(encoding="utf-8").splitlines()) > 800
     }
     assert not violations, f"production Python modules exceed 800 lines: {violations}"
+
+
+def test_executable_scripts_stay_below_300_lines() -> None:
+    violations = {
+        str(path.relative_to(ROOT)): len(path.read_text(encoding="utf-8").splitlines())
+        for path in SCRIPTS_ROOT.rglob("*.py")
+        if len(path.read_text(encoding="utf-8").splitlines()) > 300
+    }
+    assert not violations, f"executable scripts exceed 300 lines: {violations}"
 
 
 def test_live_adapter_modules_stay_below_800_lines() -> None:
