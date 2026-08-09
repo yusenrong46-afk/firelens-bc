@@ -502,20 +502,20 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
-    args = build_parser().parse_args()
-    config = _config(args.project_root)
+def _project_path(config: FireLensConfig, path: Path) -> Path:
+    return path if path.is_absolute() else config.project_root / path
+
+
+def _run_core_command(args: argparse.Namespace, config: FireLensConfig) -> int | None:
     if args.command == "doctor":
-        raise SystemExit(asyncio.run(_doctor(config)))
+        return asyncio.run(_doctor(config))
     if args.command == "bootstrap-corpus":
-        raise SystemExit(_bootstrap_corpus(config))
+        return _bootstrap_corpus(config)
     if args.command == "corpus-audit":
         output = (
             config.document_context_path
             if args.output is None
-            else args.output
-            if args.output.is_absolute()
-            else config.project_root / args.output
+            else _project_path(config, args.output)
         )
         report = audit_corpus(config.project_root, output)
         _print(
@@ -527,134 +527,110 @@ def main() -> None:
                 "extraction_flag_count": len(report["extraction_quality_flags"]),
             }
         )
-        raise SystemExit(0)
+        return 0
     if args.command == "build-index":
-        raise SystemExit(asyncio.run(_build_index(config)))
+        return asyncio.run(_build_index(config))
     if args.command == "generate-document-contexts":
         output = (
             config.document_context_path
             if args.output is None
-            else args.output
-            if args.output.is_absolute()
-            else config.project_root / args.output
+            else _project_path(config, args.output)
         )
-        raise SystemExit(asyncio.run(_generate_document_contexts(config, output)))
+        return asyncio.run(_generate_document_contexts(config, output))
     if args.command in {"search", "ask"}:
-        raise SystemExit(asyncio.run(_search_or_ask(config, args.question, args.command)))
+        return asyncio.run(_search_or_ask(config, args.question, args.command))
     if args.command == "evaluate":
-        gold = args.gold if args.gold.is_absolute() else config.project_root / args.gold
-        output = args.output if args.output.is_absolute() else config.project_root / args.output
-        raise SystemExit(asyncio.run(_evaluate(config, gold, output, args.limit)))
+        return asyncio.run(
+            _evaluate(
+                config,
+                _project_path(config, args.gold),
+                _project_path(config, args.output),
+                args.limit,
+            )
+        )
+    return None
+
+
+def _run_benchmark_command(args: argparse.Namespace, config: FireLensConfig) -> int | None:
     if args.command == "benchmark":
-        dataset = (
-            args.dataset if args.dataset.is_absolute() else config.project_root / args.dataset
-        )
-        output = args.output if args.output.is_absolute() else config.project_root / args.output
-        review_packet = (
-            args.review_packet
-            if args.review_packet.is_absolute()
-            else config.project_root / args.review_packet
-        )
-        raise SystemExit(
-            asyncio.run(
-                _benchmark(
-                    config,
-                    dataset,
-                    output,
-                    review_packet,
-                    args.split,
-                    args.max_cost_usd,
-                )
+        return asyncio.run(
+            _benchmark(
+                config,
+                _project_path(config, args.dataset),
+                _project_path(config, args.output),
+                _project_path(config, args.review_packet),
+                args.split,
+                args.max_cost_usd,
             )
         )
     if args.command == "benchmark-conversation":
-        dataset = (
-            args.dataset if args.dataset.is_absolute() else config.project_root / args.dataset
-        )
-        output = args.output if args.output.is_absolute() else config.project_root / args.output
-        review_packet = (
-            args.review_packet
-            if args.review_packet.is_absolute()
-            else config.project_root / args.review_packet
-        )
-        raise SystemExit(
-            asyncio.run(
-                _conversation_benchmark(
-                    config,
-                    dataset,
-                    output,
-                    review_packet,
-                    args.split,
-                    args.max_cost_usd,
-                    offline=args.offline,
-                )
+        return asyncio.run(
+            _conversation_benchmark(
+                config,
+                _project_path(config, args.dataset),
+                _project_path(config, args.output),
+                _project_path(config, args.review_packet),
+                args.split,
+                args.max_cost_usd,
+                offline=args.offline,
             )
         )
     if args.command == "tune-retrieval":
-        dataset = (
-            args.dataset if args.dataset.is_absolute() else config.project_root / args.dataset
-        )
-        output = args.output if args.output.is_absolute() else config.project_root / args.output
-        relevance_addendum = (
+        addendum = (
             None
             if args.relevance_addendum is None
-            else args.relevance_addendum
-            if args.relevance_addendum.is_absolute()
-            else config.project_root / args.relevance_addendum
+            else _project_path(config, args.relevance_addendum)
         )
-        raise SystemExit(
-            asyncio.run(
-                _tune_retrieval(config, dataset, output, relevance_addendum, args.max_cost_usd)
+        return asyncio.run(
+            _tune_retrieval(
+                config,
+                _project_path(config, args.dataset),
+                _project_path(config, args.output),
+                addendum,
+                args.max_cost_usd,
             )
         )
     if args.command == "compare-contextual-retrieval":
-        dataset = (
-            args.dataset if args.dataset.is_absolute() else config.project_root / args.dataset
-        )
-        output = args.output if args.output.is_absolute() else config.project_root / args.output
-        experiment_dir = (
-            args.experiment_dir
-            if args.experiment_dir.is_absolute()
-            else config.project_root / args.experiment_dir
-        )
-        raise SystemExit(
-            asyncio.run(_compare_contextual_retrieval(config, dataset, output, experiment_dir))
+        return asyncio.run(
+            _compare_contextual_retrieval(
+                config,
+                _project_path(config, args.dataset),
+                _project_path(config, args.output),
+                _project_path(config, args.experiment_dir),
+            )
         )
     if args.command == "canary":
-        output = args.output if args.output.is_absolute() else config.project_root / args.output
-        raise SystemExit(
-            asyncio.run(
-                _canary(
-                    config,
-                    args.question,
-                    args.calls,
-                    output,
-                    args.max_cost_usd,
-                )
+        return asyncio.run(
+            _canary(
+                config,
+                args.question,
+                args.calls,
+                _project_path(config, args.output),
+                args.max_cost_usd,
             )
         )
     if args.command == "bakeoff-models":
-        dataset = (
-            args.dataset if args.dataset.is_absolute() else config.project_root / args.dataset
-        )
-        output = args.output if args.output.is_absolute() else config.project_root / args.output
-        review_packet = (
-            args.review_packet
-            if args.review_packet.is_absolute()
-            else config.project_root / args.review_packet
-        )
-        raise SystemExit(
-            asyncio.run(
-                _model_bakeoff(
-                    config,
-                    dataset,
-                    output,
-                    review_packet,
-                    args.case_limit,
-                    args.max_cost_usd,
-                )
+        return asyncio.run(
+            _model_bakeoff(
+                config,
+                _project_path(config, args.dataset),
+                _project_path(config, args.output),
+                _project_path(config, args.review_packet),
+                args.case_limit,
+                args.max_cost_usd,
             )
         )
+    return None
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    config = _config(args.project_root)
+    result = _run_core_command(args, config)
+    if result is None:
+        result = _run_benchmark_command(args, config)
+    if result is not None:
+        raise SystemExit(result)
     if args.command == "serve":
         uvicorn.run(create_app(config), host=args.host, port=args.port)
 
