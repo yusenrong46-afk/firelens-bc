@@ -159,6 +159,16 @@ def test_benchmark_modules_stay_below_800_lines() -> None:
     assert not violations, f"benchmark modules exceed 800 lines: {violations}"
 
 
+def test_review_input_modules_stay_below_800_lines() -> None:
+    paths = (PACKAGE_ROOT / "review_workspace").glob("input*.py")
+    violations = {
+        str(path.relative_to(ROOT)): len(path.read_text(encoding="utf-8").splitlines())
+        for path in paths
+        if len(path.read_text(encoding="utf-8").splitlines()) > 800
+    }
+    assert not violations, f"review input modules exceed 800 lines: {violations}"
+
+
 def test_frontend_features_do_not_depend_on_app_or_prototype_paths() -> None:
     violations: list[str] = []
     for path in WEB_ROOT.rglob("*.ts*"):

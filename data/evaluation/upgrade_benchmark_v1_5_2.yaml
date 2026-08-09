@@ -83,6 +83,7 @@ harness_inputs:
   - src/firelens/review_workspace/api.py
   - src/firelens/review_workspace/exports.py
   - src/firelens/review_workspace/inputs.py
+  - src/firelens/review_workspace/input_common.py
   - src/firelens/review_workspace/journal.py
   - src/firelens/review_workspace/models.py
   - src/firelens/review_workspace/preparation.py
