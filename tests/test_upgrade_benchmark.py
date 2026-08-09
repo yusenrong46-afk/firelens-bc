@@ -2561,6 +2561,7 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
     assert "config/runtime_artifact_allowlist.v1.json" in spec.identity_inputs
     assert "scripts/upgrade_benchmark.py" in spec.harness_inputs
     assert {
+        "src/firelens/evaluation/capture.py",
         "src/firelens/evaluation/common.py",
         "src/firelens/evaluation/comparison.py",
         "src/firelens/evaluation/frontend_browser.py",

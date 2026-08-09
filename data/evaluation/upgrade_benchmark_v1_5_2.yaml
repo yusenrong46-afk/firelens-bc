@@ -55,6 +55,7 @@ harness_inputs:
   - .vercelignore
   - render.yaml
   - scripts/upgrade_benchmark.py
+  - src/firelens/evaluation/capture.py
   - src/firelens/evaluation/common.py
   - src/firelens/evaluation/comparison.py
   - src/firelens/evaluation/spec_models.py
