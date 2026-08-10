@@ -24,7 +24,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "hypothesis==6.161.5",
+  "hypothesis==6.165.2",
   "lxml-stubs==0.5.1",
   "mypy==2.3.0",
   "pytest==9.1.1",
