@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { CircleMarker, GeoJSON, MapContainer, Popup, useMap } from "react-leaflet";
-import type { LatLngBoundsExpression } from "leaflet";
+import { useMemo, useState } from "react";
+import { CircleMarker, GeoJSON, MapContainer, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import type { LiveResult } from "../../shared/api/api";
 import { bcBoundaryFeature } from "./bcBoundary";
+import { BC_BOUNDS, FitResults, type MapFocus } from "./MapViewport";
 
 function formatTimestamp(value: string): string {
   const parsed = new Date(value);
@@ -18,34 +18,7 @@ function formatTimestamp(value: string): string {
   }).format(parsed);
 }
 
-const BC_BOUNDS: LatLngBoundsExpression = [
-  [48.2, -139.2],
-  [60.1, -114.0],
-];
-
 const INITIAL_LIST_LIMIT = 12;
-
-function FitResults({ results }: { results: LiveResult[] }) {
-  const map = useMap();
-  const signature = results.map((result) => result.result_id).join("|");
-  useEffect(() => {
-    if (results.length === 0) {
-      map.fitBounds(BC_BOUNDS, { padding: [12, 12] });
-      return;
-    }
-    const coordinates = results.flatMap((result) => {
-      const geometry = result.geometry as { type?: string; coordinates?: unknown };
-      if (geometry.type !== "Point" || !Array.isArray(geometry.coordinates)) return [];
-      const [longitude, latitude] = geometry.coordinates as number[];
-      return Number.isFinite(latitude) && Number.isFinite(longitude)
-        ? ([[latitude, longitude]] as [number, number][])
-        : [];
-    });
-    if (coordinates.length > 0) map.fitBounds(coordinates, { padding: [40, 40], maxZoom: 9 });
-    else map.fitBounds(BC_BOUNDS, { padding: [12, 12] });
-  }, [map, signature, results]);
-  return null;
-}
 
 function resultColour(kind: LiveResult["kind"]): string {
   if (kind === "evacuation") return "#9b3f26";
@@ -63,6 +36,8 @@ export function LiveMap({
   results,
   aggregateFreshness,
   unavailableLayers = [],
+  focus,
+  focusResults = [],
   selectedResultId,
   onSelectResult,
   onAskAboutResult,
@@ -70,6 +45,8 @@ export function LiveMap({
   results: LiveResult[];
   aggregateFreshness?: "fresh" | "stale" | "mixed" | undefined;
   unavailableLayers?: string[] | undefined;
+  focus?: MapFocus | undefined;
+  focusResults?: LiveResult[] | undefined;
   selectedResultId?: string | undefined;
   onSelectResult?: ((resultId: string) => void) | undefined;
   onAskAboutResult?: ((resultId: string, question: string) => void) | undefined;
@@ -165,7 +142,7 @@ export function LiveMap({
             fillOpacity: 0.92,
           }}
         />
-        <FitResults results={results} />
+        <FitResults results={results} focus={focus} focusResults={focusResults} />
         {featureResults.map((result) => (
           <GeoJSON
             key={result.result_id}
@@ -229,6 +206,11 @@ export function LiveMap({
           );
         })}
       </MapContainer>
+      {focus && (
+        <p className="map-surface-status" role="status">
+          Map focused on the requested area near {focus.latitude.toFixed(2)}, {focus.longitude.toFixed(2)}.
+        </p>
+      )}
       <p className="live-map__context-note">
         Privacy-first map context uses a locally bundled, simplified
         {" "}<a href="https://catalogue.data.gov.bc.ca/dataset/province-of-british-columbia-legally-defined-administrative-areas-of-bc" target="_blank" rel="noreferrer">Government of BC provincial boundary</a>

@@ -9,6 +9,10 @@ from __future__ import annotations
 
 import re
 
+from firelens.answering.location_intent import (
+    asks_for_personal_location,
+    coarse_location_from_question,
+)
 from firelens.contracts import (
     AuthorityClass,
     LiveResultKind,
@@ -60,6 +64,7 @@ _PROHIBITED_PATTERNS = (
     r"\b(?:decide|tell me)\s+(?:if|whether)\s+(?:i|we)\s+(?:stay|leave|evacuate|return)\b",
     r"\bwhether\s+(?:i|we)\s+should\s+(?:stay|leave|evacuate|return)\b",
     r"\bshould\s+(?:i|we)\s+go\s+(?:now|today|tonight|this morning|this afternoon|this evening)\b",
+    r"\b(?:is it|tell me (?:if|whether))\s+.{0,30}\bsafe\s+to\s+(?:drive|travel|go)\b",
     r"\b(?:my|our)\s+(?:address|street|property|home)\b.{0,50}\b\d{1,6}\b.{0,40}\b(?:under|in)\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\b",
     r"\b(?:decide|choose|recommend)\b.{0,80}\b(?:evacuat(?:e|ion)|shelter(?:-in-place)?|stay|leave)\b.{0,30}\b(?:versus|vs\.?|or)\b",
     r"\b(?:rank|prioriti[sz]e|compare)\b.{0,80}\b(?:roads?|routes?|highways?)\b.{0,80}\b(?:family|evacuat(?:e|ion)|escape|safest)\b",
@@ -143,7 +148,20 @@ _LIVE_PATTERNS = (
 
 _UNSUPPORTED_LIVE_TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("air quality", ("air quality", "aqhi", "smoke conditions", "smoky")),
-    ("road conditions", ("road", "roads", "highway", "highways", "route closure")),
+    (
+        "road conditions",
+        ("road", "roads", "highway", "highways", "route closure", "drive", "driving", "travel"),
+    ),
+    ("weather or smoke forecast", ("wind", "weather", "smoke forecast")),
+    ("firefighting aircraft", ("aircraft", "airtanker", "air tanker", "helicopter")),
+)
+
+_PRIMARY_UNSUPPORTED_LIVE_PATTERN = re.compile(
+    r"\b(?:air quality|aqhi|smoke forecast|weather forecast|"
+    r"wind (?:do|speed|direction)|firefighting aircraft|airtankers?|air tankers?)\b|"
+    r"\b(?:roads?|highways?)\b.{0,40}\b(?:open|closed|closure|blocked)\b|"
+    r"\bsafe\s+to\s+(?:drive|travel)\b",
+    re.IGNORECASE,
 )
 
 _STATIC_GUIDANCE_TERMS = (
@@ -159,6 +177,18 @@ _STATIC_GUIDANCE_TERMS = (
     "protect from smoke",
     "alert mean",
     "order mean",
+)
+
+_REVIEWED_GUIDANCE_PATTERNS = (
+    r"\b(?:home ignition zone|firesmart|combustible material|ember risk)\b",
+    r"\b(?:grab-and-go|go bag|emergency kit|emergency plan|household plan)\b",
+    r"\b(?:family|household|pets?)\b.{0,50}\b(?:prepare|evacuation|emergency)\b",
+    r"\b(?:prepare|preparing)\b.{0,50}\b(?:family|household|pets?|evacuation)\b",
+    r"\b(?:evacuation alert|evacuation order)\b",
+    r"\b(?:wildfire smoke|smoke indoors?|smoke exposure)\b",
+    r"\b(?:wildfire rank|stage of control|stages of control)\b",
+    r"\b(?:out(?:ta| of) control|being held|under control)\b.{0,30}\b(?:fire|wildfire|mean)\b",
+    r"\b(?:structure[- ]protection sprinklers?|home ignition)\b",
 )
 
 _CAPABILITY_PATTERNS = (
@@ -252,11 +282,14 @@ def required_authorities(question: str) -> frozenset[AuthorityClass]:
 
     lowered = question.lower()
     required: set[AuthorityClass] = set()
-    if any(term in lowered for term in ("smoke", "air quality", "health", "asthma")):
+
+    def contains(terms: tuple[str, ...]) -> bool:
+        return any(re.search(rf"(?<!\w){re.escape(term)}(?!\w)", lowered) for term in terms)
+
+    if contains(("smoke", "air quality", "health", "asthma")):
         required.add(AuthorityClass.PROVINCIAL_PUBLIC_HEALTH)
-    if any(
-        term in lowered
-        for term in (
+    if contains(
+        (
             "evacuation alert",
             "evacuation order",
             "grab-and-go",
@@ -268,19 +301,38 @@ def required_authorities(question: str) -> frozenset[AuthorityClass]:
         )
     ):
         required.add(AuthorityClass.PROVINCIAL_GOVERNMENT)
-    if any(
-        term in lowered
-        for term in ("firesmart", "sprinkler", "home ignition", "combustible", "ember")
-    ):
+    if contains(("firesmart", "sprinkler", "home ignition", "combustible", "ember")):
         required.add(AuthorityClass.WILDFIRE_PREPAREDNESS)
     return frozenset(required)
+
+
+def _requires_personal_live_location(question: str) -> bool:
+    lowered = question.casefold()
+    if not asks_for_personal_location(question):
+        return False
+    if re.search(
+        r"\b(?:reduce|lower|prepare|protect|firesmart)\b.{0,50}\b(?:risk|home|house|property)\b|"
+        r"\b(?:wildfire|fire)\s+risk\b",
+        lowered,
+    ):
+        return False
+    return bool(
+        re.search(
+            r"\b(?:fires?|wildfires?|burning|map|perimeter|evacuation|alert|order|"
+            r"closest|nearest)\b",
+            lowered,
+        )
+    )
 
 
 def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
     """Return only official layers that can answer the user's live intent."""
 
     lowered = question.casefold()
+    if _PRIMARY_UNSUPPORTED_LIVE_PATTERN.search(question):
+        return ()
     layers: list[LiveResultKind] = []
+    personal_location = _requires_personal_live_location(question)
     fire_status_requested = any(
         re.search(pattern, lowered)
         for pattern in (
@@ -292,6 +344,39 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
         )
     )
     if fire_status_requested:
+        layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
+    elif coarse_location_from_question(question) is not None and re.search(
+        r"\b(?:fires?|wildfires?)\b(?!\s+smoke)|"
+        r"\b(?:fire|wildfire)\s+(?:map|status|situation|update|perimeter)\b|"
+        r"\b(?:map|burning|happening)\b",
+        lowered,
+    ):
+        layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
+    elif coarse_location_from_question(question) is not None and re.search(
+        r"\bofficial\s+(?:live\s+)?records?\b",
+        lowered,
+    ):
+        layers.extend(
+            (
+                LiveResultKind.INCIDENT,
+                LiveResultKind.PERIMETER,
+                LiveResultKind.EVACUATION,
+            )
+        )
+    elif personal_location and re.search(
+        r"\b(?:fires?|wildfires?|burning|perimeter|closest|nearest)\b",
+        lowered,
+    ):
+        layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
+    elif personal_location and re.search(r"\bmap\b", lowered):
+        layers.extend(
+            (
+                LiveResultKind.INCIDENT,
+                LiveResultKind.PERIMETER,
+                LiveResultKind.EVACUATION,
+            )
+        )
+    elif re.search(r"\bincident\b", lowered) and re.search(r"\bperimeter\b", lowered):
         layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
     if any(term in lowered for term in ("evacuation", "alert", "order", "emergencyinfobc")):
         layers.append(LiveResultKind.EVACUATION)
@@ -308,32 +393,9 @@ def unsupported_live_topics(question: str) -> tuple[str, ...]:
 
 
 def live_query_requires_location(question: str) -> bool:
-    """Require explicit coarse input for localized questions; never infer a place."""
+    """Require opt-in only when the user refers to an unstated personal location."""
 
-    lowered = question.casefold()
-    if any(term in lowered for term in ("near me", "my home", "my house", "my address")):
-        return True
-    if re.search(r"\b(?:alert|order)\s+(?:for|near|around|in)\s+[a-z]", lowered) or re.search(
-        r"\b[a-z][a-z .'-]{1,50}\s+is\s+under\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\b",
-        lowered,
-    ):
-        return True
-    named_status = re.search(
-        r"\b(?:is there|are there|any)\s+(?:an?\s+)?([a-z][a-z'-]+)\s+(?:evacuation\s+)?(?:alert|order)\b",
-        lowered,
-    )
-    if named_status is not None and named_status.group(1) not in {"evacuation", "active"}:
-        return True
-    match = re.search(r"\b(?:near|around|within|in|for)\s+([a-z][a-z .'-]{1,80})", lowered)
-    if match is None:
-        return False
-    place = match.group(1).strip(" .?'")
-    return not (
-        place.startswith("effect")
-        or place.startswith("bc")
-        or place.startswith("british columbia")
-        or place.startswith("the province")
-    )
+    return _requires_personal_live_location(question)
 
 
 def static_guidance_fragment(question: str) -> str | None:
@@ -355,6 +417,13 @@ def static_guidance_fragment(question: str) -> str | None:
     return " and ".join(selected)[:2_000]
 
 
+def reviewed_guidance_intent(question: str) -> bool:
+    """Recognize only topics represented by the reviewed static collection."""
+
+    lowered = question.casefold()
+    return any(re.search(pattern, lowered) for pattern in _REVIEWED_GUIDANCE_PATTERNS)
+
+
 def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     """Apply the zero-provider-call boundary and mark ordinary questions related."""
 
@@ -373,6 +442,20 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
         re.search(pattern, text) for text in safety_texts for pattern in _PROHIBITED_PATTERNS
     )
     live = any(re.search(pattern, text) for text in routing_texts for pattern in _LIVE_PATTERNS)
+    named_location = coarse_location_from_question(processing_question)
+    named_live_command = named_location is not None and bool(
+        re.search(
+            r"\b(?:where|show|map|current|latest|right now|rn|today|situation|status|"
+            r"active|burning|happening|alert|order|official|records?|fires?|wildfires?)\b",
+            lowered,
+        )
+    )
+    personal_live_command = _requires_personal_live_location(processing_question)
+    province_record_command = bool(
+        re.search(r"\b(?:incident|perimeter)\b", lowered)
+        and re.search(r"\b(?:current|latest|show|map|record|records)\b", lowered)
+    )
+    live = live or named_live_command or personal_live_command or province_record_command
     manipulation = any(
         re.search(pattern, text)
         for text in safety_texts

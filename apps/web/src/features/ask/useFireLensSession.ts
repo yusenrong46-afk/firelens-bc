@@ -42,6 +42,8 @@ export type FireLensSession = {
   mapMessage: string | undefined;
   mapAggregateFreshness: "fresh" | "stale" | "mixed" | undefined;
   mapUnavailableLayers: string[];
+  mapFocus: { latitude: number; longitude: number } | undefined;
+  mapFocusResults: LiveResult[];
   selectedLiveResultId: string | undefined;
   setSelectedLiveResultId: (resultId: string) => void;
   askAboutResult: (resultId: string, question: string) => void;
@@ -82,10 +84,14 @@ export function useFireLensSession(): FireLensSession {
 
   const mapResults = useMemo(() => {
     const resultById = new Map<string, LiveResult>();
-    for (const result of provinceMap.data?.results ?? []) resultById.set(result.result_id, result);
     for (const result of response?.live_results ?? []) resultById.set(result.result_id, result);
+    for (const result of provinceMap.data?.results ?? []) {
+      if (!resultById.has(result.result_id)) resultById.set(result.result_id, result);
+    }
     return [...resultById.values()];
   }, [provinceMap.data?.results, response?.live_results]);
+  const mapFocus = response?.resolved_location ?? undefined;
+  const mapFocusResults = response?.live_results ?? [];
   const mapAggregateFreshness =
     response?.aggregate_freshness ?? provinceMap.data?.aggregate_freshness ?? undefined;
   const mapUnavailableLayers = [
@@ -255,6 +261,8 @@ export function useFireLensSession(): FireLensSession {
     mapMessage: provinceMap.message,
     mapAggregateFreshness,
     mapUnavailableLayers,
+    mapFocus,
+    mapFocusResults,
     selectedLiveResultId,
     setSelectedLiveResultId,
     askAboutResult,

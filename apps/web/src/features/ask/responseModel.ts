@@ -37,6 +37,6 @@ export function responseText(response: AskResponse): string {
   if (response.answer) return response.answer;
   const mode = getResponseMode(response);
   if (mode === "capability") return "I can help you explore the reviewed FireLens guidance.";
-  if (mode === "scope_redirect") return "That request is outside the FireLens guidance collection.";
+  if (mode === "scope_redirect") return "Use the related official service for current information.";
   return "FireLens could not produce an answer for this request.";
 }

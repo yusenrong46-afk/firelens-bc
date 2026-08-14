@@ -87,6 +87,7 @@ _SAFE_CONDITIONAL_STATUS = (
     r"\b(?:a|any)\s+(?:wildfire|fire)\s+(?:is|remains)\s+(?:active|burning|out of control|being held)\s+(?:if|when)\b",
     r"\b(?:an?\s+)?evacuation order\s+(?:this\s+)?(?:means|requires|directs|tells (?:people|residents|you) to)\b.{0,80}\b(?:leave|evacuate) immediately\b",
     r"\bwhen\s+(?:an?\s+)?evacuation order is issued\b.{0,80}\b(?:leave|evacuate) immediately\b",
+    r"\bevacuation order\s*(?:means|[=:—-])\s*(?:you\s+)?(?:must\s+)?(?:leave|evacuate)(?:\s+(?:now|immediately))?\b",
 )
 
 

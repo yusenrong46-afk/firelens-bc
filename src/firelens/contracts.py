@@ -461,6 +461,14 @@ class PublicEvidence(FrozenStrictModel):
     context_text: str
 
 
+class RelatedLink(FrozenStrictModel):
+    """An official destination for information FireLens does not ingest live."""
+
+    title: str = Field(min_length=1, max_length=120)
+    url: HttpUrl
+    description: str = Field(min_length=1, max_length=240)
+
+
 class SearchResponse(StrictModel):
     trace_id: str
     plan: QueryPlan
@@ -483,6 +491,7 @@ class AskResponse(StrictModel):
     evidence: list[PublicEvidence] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
     suggested_questions: list[str] = Field(default_factory=list, max_length=6)
+    related_links: list[RelatedLink] = Field(default_factory=list, max_length=4)
     reason_code: ReasonCode | None = None
     validation: ValidationReport | None = None
     error_kind: str | None = None
@@ -491,6 +500,7 @@ class AskResponse(StrictModel):
     unavailable_layers: list[LiveResultKind] = Field(default_factory=list)
     required_input: RequiredInput | None = None
     selected_live_result_id: str | None = Field(default=None, min_length=1, max_length=200)
+    resolved_location: CoarseResolvedLocation | None = None
 
     @model_validator(mode="after")
     def validate_public_state(self) -> AskResponse:
@@ -563,10 +573,12 @@ class AskResponse(StrictModel):
             raise ValueError("background response requires its visible limitation")
 
     def _validate_live(self, _evidence_ids: list[str]) -> None:
-        if self.status != ResponseStatus.ANSWER or not self.live_results or not self.answer:
-            raise ValueError("live responses require current official results")
+        if self.status != ResponseStatus.ANSWER or not self.answer:
+            raise ValueError("live responses require a public answer")
         if self.claims or self.evidence:
             raise ValueError("live responses cannot present static evidence claims")
+        if not self.live_results and self.resolved_location is None:
+            raise ValueError("empty live responses require a coarse map focus")
         if self.aggregate_freshness != aggregate_live_freshness(self.live_results):
             raise ValueError("live response requires matching aggregate freshness")
 

@@ -105,6 +105,8 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
     citedMode,
     claims,
     mapAggregateFreshness,
+    mapFocus,
+    mapFocusResults,
     mapLoading,
     mapMessage,
     mapResults,
@@ -132,6 +134,8 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
             results={mapResults}
             aggregateFreshness={mapAggregateFreshness}
             unavailableLayers={mapUnavailableLayers}
+            focus={mapFocus}
+            focusResults={mapFocusResults}
             selectedResultId={selectedLiveResultId}
             onSelectResult={setSelectedLiveResultId}
             onAskAboutResult={askAboutResult}

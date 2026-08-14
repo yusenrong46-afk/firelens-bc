@@ -133,7 +133,10 @@ export interface components {
             /** Live Results */
             live_results?: components["schemas"]["LiveResult"][];
             reason_code?: components["schemas"]["ReasonCode"] | null;
+            /** Related Links */
+            related_links?: components["schemas"]["RelatedLink"][];
             required_input?: components["schemas"]["RequiredInput"] | null;
+            resolved_location?: components["schemas"]["CoarseResolvedLocation"] | null;
             /** @default abstention */
             response_mode: components["schemas"]["ResponseMode"];
             /** Selected Live Result Id */
@@ -522,6 +525,21 @@ export interface components {
          * @enum {string}
          */
         ReasonCode: "capability_overview" | "scope_redirect" | "personalized_safety_decision" | "personalized_medical_advice" | "policy_manipulation" | "live_data_required" | "planning_unavailable" | "retrieval_unavailable" | "retrieval_incomplete" | "no_approved_evidence" | "wrong_temporal_class" | "required_authority_missing" | "approved_static_evidence" | "generation_unavailable" | "draft_validation_failed" | "model_abstained" | "conflicting_evidence";
+        /**
+         * RelatedLink
+         * @description An official destination for information FireLens does not ingest live.
+         */
+        RelatedLink: {
+            /** Description */
+            description: string;
+            /** Title */
+            title: string;
+            /**
+             * Url
+             * Format: uri
+             */
+            url: string;
+        };
         /**
          * RequiredInput
          * @description One bounded input needed to resume the current agent task.

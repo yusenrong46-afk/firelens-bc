@@ -169,6 +169,8 @@ class BackgroundValidationInvariantTests(unittest.TestCase):
             "For your family, leaving would be the safest choice.",
             "According to the BC Wildfire Service, embers can travel far.",
             "According to Health Canada, wildfire smoke can be harmful.",
+            "Leave immediately.",
+            "You should leave immediately.",
         )
         for text in unsafe_claims:
             draft = BackgroundDraft(
@@ -183,6 +185,8 @@ class BackgroundValidationInvariantTests(unittest.TestCase):
         for text in (
             "A rank label does not tell you whether you should evacuate.",
             "If you are under an evacuation alert, gather your prepared supplies.",
+            "Evacuation order: leave immediately.",
+            "Evacuation order = leave now.",
         ):
             with self.subTest(text=text):
                 draft = BackgroundDraft(

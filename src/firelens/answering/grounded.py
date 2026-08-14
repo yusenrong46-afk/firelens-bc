@@ -25,6 +25,7 @@ from firelens.contracts import (
     PublicClaim,
     PublicEvidence,
     ReasonCode,
+    RelatedLink,
     ResponseMode,
     ResponseStatus,
     TemporalClass,
@@ -98,6 +99,69 @@ class GroundedAnswerEngine:
     def __init__(self, provider: AIProvider) -> None:
         self.provider = provider
 
+    @staticmethod
+    def _source_handoff(
+        trace_id: str,
+        evidence_packet: EvidencePacket,
+        *,
+        answer: str,
+        reason_code: ReasonCode,
+        extra_limitation: str,
+        validation: ValidationReport | None = None,
+        error_kind: str | None = None,
+    ) -> AskResponse:
+        links: list[RelatedLink] = []
+        seen_urls: set[str] = set()
+        for item in evidence_packet.items:
+            if item.canonical_url in seen_urls:
+                continue
+            seen_urls.add(item.canonical_url)
+            links.append(
+                RelatedLink(
+                    title=item.title,
+                    url=HttpUrl(item.canonical_url),
+                    description=(f"Reviewed {item.publisher} source related to this question."),
+                )
+            )
+            if len(links) == 3:
+                break
+        return AskResponse(
+            status=ResponseStatus.ANSWER,
+            trace_id=trace_id,
+            response_mode=ResponseMode.SCOPE_REDIRECT,
+            answer=answer,
+            reason_code=reason_code,
+            error_kind=error_kind,
+            validation=validation,
+            limitations=[
+                *evidence_packet.limitations,
+                extra_limitation,
+            ],
+            related_links=links,
+        )
+
+    @classmethod
+    def _validation_handoff(
+        cls,
+        trace_id: str,
+        evidence_packet: EvidencePacket,
+        validation: ValidationReport,
+    ) -> AskResponse:
+        return cls._source_handoff(
+            trace_id,
+            evidence_packet,
+            answer=(
+                "FireLens found reviewed sources related to this question, but the generated "
+                "summary did not pass claim-support validation. Open the official sources "
+                "below instead of relying on an unsupported answer."
+            ),
+            reason_code=ReasonCode.DRAFT_VALIDATION_FAILED,
+            validation=validation,
+            extra_limitation=(
+                "No generated material claim was published from the rejected draft."
+            ),
+        )
+
     async def answer(
         self,
         question: str,
@@ -132,14 +196,20 @@ class GroundedAnswerEngine:
                     error_kind=exc.kind.value,
                 )
             )
-            response = AskResponse(
-                status=ResponseStatus.ABSTENTION,
-                trace_id=trace_id,
-                response_mode=ResponseMode.ABSTENTION,
-                answer="FireLens could not produce a validated answer from the available evidence.",
+            response = self._source_handoff(
+                trace_id,
+                evidence_packet,
+                answer=(
+                    "FireLens found reviewed sources related to this question, but the "
+                    "language service is temporarily unavailable. Open the official sources "
+                    "below for the reviewed information."
+                ),
                 reason_code=ReasonCode.GENERATION_UNAVAILABLE,
                 error_kind=exc.kind.value,
-                limitations=list(evidence_packet.limitations),
+                extra_limitation=(
+                    "No generated material claim was published while the language service "
+                    "was unavailable."
+                ),
             )
             return self._outcome(
                 response,
@@ -176,12 +246,7 @@ class GroundedAnswerEngine:
         )
 
         if active_draft is None:
-            response = self._abstention(
-                trace_id,
-                "The generated answer did not match the grounded-answer format.",
-                evidence_packet,
-                validation,
-            )
+            response = self._validation_handoff(trace_id, evidence_packet, validation)
             return self._outcome(
                 response,
                 observations,
@@ -270,12 +335,7 @@ class GroundedAnswerEngine:
                     salvaged_claim_count = len(salvage_source.claims) - len(active_draft.claims)
                 else:
                     validation = repair_validation or original_validation
-                    response = self._abstention(
-                        trace_id,
-                        "The generated answer did not pass FireLens validation.",
-                        evidence_packet,
-                        validation,
-                    )
+                    response = self._validation_handoff(trace_id, evidence_packet, validation)
                     return self._outcome(
                         response,
                         observations,

@@ -1,0 +1,2248 @@
+{
+  "dataset_version": "product_question_probe.v1",
+  "dataset_role": "exploratory_development_not_sealed_qualification",
+  "case_count": 162,
+  "sha256": "f980cbfae55f1394a6f1b7cd0cd6b15e4d401468a367c785c069a24c1005c758",
+  "cases": [
+    {
+      "id": "PQ-NAMED-01-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Kelowna?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-01-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Kelowna.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-01-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Kelowna right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-01-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Kelowna and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-02-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in West Kelowna?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-02-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around West Kelowna.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-02-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near West Kelowna right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-02-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on West Kelowna and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-03-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Kamloops?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-03-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Kamloops.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-03-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Kamloops right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-03-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Kamloops and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-04-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Vernon?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-04-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Vernon.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-04-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Vernon right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-04-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Vernon and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-05-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Penticton?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-05-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Penticton.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-05-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Penticton right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-05-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Penticton and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-06-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Salmon Arm?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-06-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Salmon Arm.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-06-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Salmon Arm right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-06-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Salmon Arm and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-07-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Williams Lake?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-07-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Williams Lake.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-07-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Williams Lake right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-07-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Williams Lake and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-08-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Prince George?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-08-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Prince George.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-08-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Prince George right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-08-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Prince George and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-09-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Quesnel?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-09-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Quesnel.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-09-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Quesnel right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-09-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Quesnel and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-10-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Cranbrook?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-10-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Cranbrook.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-10-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Cranbrook right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-10-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Cranbrook and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-11-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Nelson?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-11-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Nelson.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-11-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Nelson right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-11-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Nelson and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-12-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Revelstoke?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-12-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Revelstoke.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-12-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Revelstoke right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-12-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Revelstoke and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-13-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Whistler?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-13-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Whistler.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-13-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Whistler right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-13-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Whistler and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-14-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Terrace?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-14-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Terrace.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-14-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Terrace right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-14-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Terrace and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-15-1",
+      "bucket": "named_place_live",
+      "question": "Where are the current wildfires in Fort St. John?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-15-2",
+      "bucket": "named_place_live",
+      "question": "Show me the wildfire situation around Fort St. John.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-15-3",
+      "bucket": "named_place_live",
+      "question": "Is there a fire near Fort St. John right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-NAMED-15-4",
+      "bucket": "named_place_live",
+      "question": "Put the map on Fort St. John and tell me what is happening.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "A named BC community should become coarse request-scoped map context."
+    },
+    {
+      "id": "PQ-EVAC-01-A",
+      "bucket": "named_place_evacuation",
+      "question": "Is Kelowna under an evacuation order right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-01-B",
+      "bucket": "named_place_evacuation",
+      "question": "Show evacuation alerts and orders around Kelowna.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-02-A",
+      "bucket": "named_place_evacuation",
+      "question": "Is West Kelowna under an evacuation order right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-02-B",
+      "bucket": "named_place_evacuation",
+      "question": "Show evacuation alerts and orders around West Kelowna.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-03-A",
+      "bucket": "named_place_evacuation",
+      "question": "Is Kamloops under an evacuation order right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-03-B",
+      "bucket": "named_place_evacuation",
+      "question": "Show evacuation alerts and orders around Kamloops.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-04-A",
+      "bucket": "named_place_evacuation",
+      "question": "Is Vernon under an evacuation order right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-04-B",
+      "bucket": "named_place_evacuation",
+      "question": "Show evacuation alerts and orders around Vernon.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-05-A",
+      "bucket": "named_place_evacuation",
+      "question": "Is Penticton under an evacuation order right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-05-B",
+      "bucket": "named_place_evacuation",
+      "question": "Show evacuation alerts and orders around Penticton.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-06-A",
+      "bucket": "named_place_evacuation",
+      "question": "Is Salmon Arm under an evacuation order right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-06-B",
+      "bucket": "named_place_evacuation",
+      "question": "Show evacuation alerts and orders around Salmon Arm.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-07-A",
+      "bucket": "named_place_evacuation",
+      "question": "Is Williams Lake under an evacuation order right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-07-B",
+      "bucket": "named_place_evacuation",
+      "question": "Show evacuation alerts and orders around Williams Lake.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-08-A",
+      "bucket": "named_place_evacuation",
+      "question": "Is Prince George under an evacuation order right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-08-B",
+      "bucket": "named_place_evacuation",
+      "question": "Show evacuation alerts and orders around Prince George.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-09-A",
+      "bucket": "named_place_evacuation",
+      "question": "Is Quesnel under an evacuation order right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-09-B",
+      "bucket": "named_place_evacuation",
+      "question": "Show evacuation alerts and orders around Quesnel.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-10-A",
+      "bucket": "named_place_evacuation",
+      "question": "Is Cranbrook under an evacuation order right now?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVAC-10-B",
+      "bucket": "named_place_evacuation",
+      "question": "Show evacuation alerts and orders around Cranbrook.",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-NEARME-01",
+      "bucket": "implicit_personal_location",
+      "question": "Are there wildfires near me?",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-NEARME-02",
+      "bucket": "implicit_personal_location",
+      "question": "Show fires close to my current location.",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-NEARME-03",
+      "bucket": "implicit_personal_location",
+      "question": "Is anything burning around my home?",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-NEARME-04",
+      "bucket": "implicit_personal_location",
+      "question": "Put the map where I am.",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-NEARME-05",
+      "bucket": "implicit_personal_location",
+      "question": "How close is the nearest fire to me?",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-NEARME-06",
+      "bucket": "implicit_personal_location",
+      "question": "Are there evacuation orders near my house?",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-NEARME-07",
+      "bucket": "implicit_personal_location",
+      "question": "What wildfire is closest to my location?",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-NEARME-08",
+      "bucket": "implicit_personal_location",
+      "question": "Check my area for active fires.",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-NEARME-09",
+      "bucket": "implicit_personal_location",
+      "question": "Do I have an evacuation alert where I live?",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-NEARME-10",
+      "bucket": "implicit_personal_location",
+      "question": "How far am I from the closest perimeter?",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-PROVINCE-01",
+      "bucket": "province_live",
+      "question": "Where are the active wildfires in BC?",
+      "expected_modes": [
+        "live"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-PROVINCE-02",
+      "bucket": "province_live",
+      "question": "Show the current BC wildfire map.",
+      "expected_modes": [
+        "live"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-PROVINCE-03",
+      "bucket": "province_live",
+      "question": "How many active fire records are available across British Columbia?",
+      "expected_modes": [
+        "live"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-PROVINCE-04",
+      "bucket": "province_live",
+      "question": "What evacuation alerts and orders are active in BC?",
+      "expected_modes": [
+        "live"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-PROVINCE-05",
+      "bucket": "province_live",
+      "question": "Give me the latest BC wildfire situation.",
+      "expected_modes": [
+        "live"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-PROVINCE-06",
+      "bucket": "province_live",
+      "question": "Which fires are currently listed by BC Wildfire Service?",
+      "expected_modes": [
+        "live"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-PROVINCE-07",
+      "bucket": "province_live",
+      "question": "Show current incident and perimeter records for the province.",
+      "expected_modes": [
+        "live"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-PROVINCE-08",
+      "bucket": "province_live",
+      "question": "What official wildfire information is available in BC right now?",
+      "expected_modes": [
+        "live"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-SELECTED-01",
+      "bucket": "selected_map_followup",
+      "question": "What is the current status of this fire?",
+      "expected_modes": [
+        "live"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "first_incident",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-SELECTED-02",
+      "bucket": "selected_map_followup",
+      "question": "What is happening with the selected wildfire?",
+      "expected_modes": [
+        "live"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "first_incident",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-SELECTED-03",
+      "bucket": "selected_map_followup",
+      "question": "Give me the official details for this incident.",
+      "expected_modes": [
+        "live"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "first_incident",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-SELECTED-04",
+      "bucket": "selected_map_followup",
+      "question": "When was this fire record updated?",
+      "expected_modes": [
+        "live"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "first_incident",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-SELECTED-05",
+      "bucket": "selected_map_followup",
+      "question": "How large is this fire?",
+      "expected_modes": [
+        "live"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "first_incident",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-SELECTED-06",
+      "bucket": "selected_map_followup",
+      "question": "How far is this fire from me?",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "first_incident",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-SELECTED-07",
+      "bucket": "selected_map_followup",
+      "question": "What is the distance from my current location to this fire?",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "first_incident",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-SELECTED-08",
+      "bucket": "selected_map_followup",
+      "question": "How many kilometres away is the selected wildfire?",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "first_incident",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-GUIDANCE-01",
+      "bucket": "reviewed_guidance",
+      "question": "What belongs in a wildfire grab-and-go bag?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-GUIDANCE-02",
+      "bucket": "reviewed_guidance",
+      "question": "What is the difference between an evacuation alert and an evacuation order?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-GUIDANCE-03",
+      "bucket": "reviewed_guidance",
+      "question": "How can I reduce wildfire risk around my home?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-GUIDANCE-04",
+      "bucket": "reviewed_guidance",
+      "question": "What should I know about wildfire smoke indoors?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-GUIDANCE-05",
+      "bucket": "reviewed_guidance",
+      "question": "What do wildfire stages of control mean?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-GUIDANCE-06",
+      "bucket": "reviewed_guidance",
+      "question": "How do structure-protection sprinklers work?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-GUIDANCE-07",
+      "bucket": "reviewed_guidance",
+      "question": "What is the home ignition zone?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-GUIDANCE-08",
+      "bucket": "reviewed_guidance",
+      "question": "How should my family prepare for a possible evacuation?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-GUIDANCE-09",
+      "bucket": "reviewed_guidance",
+      "question": "What documents should I copy for an emergency kit?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-GUIDANCE-10",
+      "bucket": "reviewed_guidance",
+      "question": "How should I prepare pets for evacuation?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-GUIDANCE-11",
+      "bucket": "reviewed_guidance",
+      "question": "What should I do before leaving during an evacuation order?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-GUIDANCE-12",
+      "bucket": "reviewed_guidance",
+      "question": "How often should I refresh emergency food, water, and batteries?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVERYDAY-01",
+      "bucket": "everyday_chat",
+      "question": "Help me make a simple weekend packing list.",
+      "expected_modes": [
+        "background",
+        "capability",
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVERYDAY-02",
+      "bucket": "everyday_chat",
+      "question": "Explain the difference between weather and climate.",
+      "expected_modes": [
+        "background",
+        "capability",
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVERYDAY-03",
+      "bucket": "everyday_chat",
+      "question": "Give me three ideas for a healthy lunch.",
+      "expected_modes": [
+        "background",
+        "capability",
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVERYDAY-04",
+      "bucket": "everyday_chat",
+      "question": "How do I organize a household checklist?",
+      "expected_modes": [
+        "background",
+        "capability",
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVERYDAY-05",
+      "bucket": "everyday_chat",
+      "question": "What is a good way to remember important documents?",
+      "expected_modes": [
+        "background",
+        "capability",
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVERYDAY-06",
+      "bucket": "everyday_chat",
+      "question": "Explain air pressure in simple language.",
+      "expected_modes": [
+        "background",
+        "capability",
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVERYDAY-07",
+      "bucket": "everyday_chat",
+      "question": "Can you help me plan a calm morning routine?",
+      "expected_modes": [
+        "background",
+        "capability",
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVERYDAY-08",
+      "bucket": "everyday_chat",
+      "question": "What does probability mean in a weather forecast?",
+      "expected_modes": [
+        "background",
+        "capability",
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVERYDAY-09",
+      "bucket": "everyday_chat",
+      "question": "How can I explain emergency planning to a child?",
+      "expected_modes": [
+        "background",
+        "capability",
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVERYDAY-10",
+      "bucket": "everyday_chat",
+      "question": "What is the difference between smoke and fog?",
+      "expected_modes": [
+        "background",
+        "capability",
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVERYDAY-11",
+      "bucket": "everyday_chat",
+      "question": "Help me write a short message to check on a neighbour.",
+      "expected_modes": [
+        "background",
+        "capability",
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-EVERYDAY-12",
+      "bucket": "everyday_chat",
+      "question": "What are some ways to keep a phone charged during an outage?",
+      "expected_modes": [
+        "background",
+        "capability",
+        "grounded",
+        "partial",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-FOLLOWUP-01",
+      "bucket": "conversation_followup",
+      "question": "What about pets?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "background",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [
+        {
+          "role": "user",
+          "content": "What belongs in a wildfire emergency kit?"
+        },
+        {
+          "role": "assistant",
+          "content": "Include food, water, medicine, and documents."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "PQ-FOLLOWUP-02",
+      "bucket": "conversation_followup",
+      "question": "Can you make that simpler?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "background",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [
+        {
+          "role": "user",
+          "content": "Explain evacuation alerts and orders."
+        },
+        {
+          "role": "assistant",
+          "content": "An alert means prepare; an order means leave."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "PQ-FOLLOWUP-03",
+      "bucket": "conversation_followup",
+      "question": "Which part should I do first?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "background",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [
+        {
+          "role": "user",
+          "content": "How can I FireSmart my home?"
+        },
+        {
+          "role": "assistant",
+          "content": "Start by reducing combustible material near the home."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "PQ-FOLLOWUP-04",
+      "bucket": "conversation_followup",
+      "question": "What if I live in an apartment?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "background",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [
+        {
+          "role": "user",
+          "content": "How should I prepare for a wildfire evacuation?"
+        },
+        {
+          "role": "assistant",
+          "content": "Make a plan and prepare a grab-and-go bag."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "PQ-FOLLOWUP-05",
+      "bucket": "conversation_followup",
+      "question": "Can you turn that into a checklist?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "background",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [
+        {
+          "role": "user",
+          "content": "How do I prepare for wildfire smoke?"
+        },
+        {
+          "role": "assistant",
+          "content": "Reduce indoor smoke and follow public-health advice."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "PQ-FOLLOWUP-06",
+      "bucket": "conversation_followup",
+      "question": "Why does that matter?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "background",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [
+        {
+          "role": "user",
+          "content": "Keep the area closest to the house clear of combustibles."
+        },
+        {
+          "role": "assistant",
+          "content": "That can reduce pathways for ignition."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "PQ-FOLLOWUP-07",
+      "bucket": "conversation_followup",
+      "question": "What did you mean by that label?",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "background",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [
+        {
+          "role": "user",
+          "content": "What does being held mean?"
+        },
+        {
+          "role": "assistant",
+          "content": "Being held is a BC wildfire stage of control."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "PQ-FOLLOWUP-08",
+      "bucket": "conversation_followup",
+      "question": "Give me a shorter version I can text someone.",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "background",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [
+        {
+          "role": "user",
+          "content": "What is an evacuation order?"
+        },
+        {
+          "role": "assistant",
+          "content": "It is an instruction from the issuing authority to leave."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "PQ-COLLOQUIAL-01",
+      "bucket": "colloquial_and_typos",
+      "question": "wheres the fire by kelowna rn",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-COLLOQUIAL-02",
+      "bucket": "colloquial_and_typos",
+      "question": "any fires round kamloops today?",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-COLLOQUIAL-03",
+      "bucket": "colloquial_and_typos",
+      "question": "show me vernon fire stuff on map",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-COLLOQUIAL-04",
+      "bucket": "colloquial_and_typos",
+      "question": "is west k on evac alert",
+      "expected_modes": [
+        "live",
+        "capability"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-COLLOQUIAL-05",
+      "bucket": "colloquial_and_typos",
+      "question": "whats a go bag actually need",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "background"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-COLLOQUIAL-06",
+      "bucket": "colloquial_and_typos",
+      "question": "fire smart my place where do i start",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "background"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-COLLOQUIAL-07",
+      "bucket": "colloquial_and_typos",
+      "question": "what does outta control fire mean",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "background"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-COLLOQUIAL-08",
+      "bucket": "colloquial_and_typos",
+      "question": "smoke in my house what can i do",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "background"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-COLLOQUIAL-09",
+      "bucket": "colloquial_and_typos",
+      "question": "evac alert vs order im confused",
+      "expected_modes": [
+        "grounded",
+        "partial",
+        "background"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-COLLOQUIAL-10",
+      "bucket": "colloquial_and_typos",
+      "question": "how far is that fire from me tho",
+      "expected_modes": [
+        "requires_input"
+      ],
+      "location_expectation": "required",
+      "context_fixture": "first_incident",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-MIXED-01",
+      "bucket": "mixed_live_and_guidance",
+      "question": "Are there fires near Kelowna today, and what belongs in an emergency kit?",
+      "expected_modes": [
+        "mixed",
+        "partial",
+        "live"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-MIXED-02",
+      "bucket": "mixed_live_and_guidance",
+      "question": "Show fires around Kamloops and explain what being held means.",
+      "expected_modes": [
+        "mixed",
+        "partial",
+        "live"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-MIXED-03",
+      "bucket": "mixed_live_and_guidance",
+      "question": "Is Vernon under an evacuation alert, and how should I prepare my pets?",
+      "expected_modes": [
+        "mixed",
+        "partial",
+        "live"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-MIXED-04",
+      "bucket": "mixed_live_and_guidance",
+      "question": "What is happening near Penticton, and what should I pack?",
+      "expected_modes": [
+        "mixed",
+        "partial",
+        "live"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-MIXED-05",
+      "bucket": "mixed_live_and_guidance",
+      "question": "Show evacuation information for Williams Lake and explain alert versus order.",
+      "expected_modes": [
+        "mixed",
+        "partial",
+        "live"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-MIXED-06",
+      "bucket": "mixed_live_and_guidance",
+      "question": "Are there current fires around Nelson, and how can I reduce ember risk at home?",
+      "expected_modes": [
+        "mixed",
+        "partial",
+        "live"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-MIXED-07",
+      "bucket": "mixed_live_and_guidance",
+      "question": "Put the map on Prince George and give me a smoke-preparation checklist.",
+      "expected_modes": [
+        "mixed",
+        "partial",
+        "live"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-MIXED-08",
+      "bucket": "mixed_live_and_guidance",
+      "question": "What official records are near Cranbrook, and what should be in my family plan?",
+      "expected_modes": [
+        "mixed",
+        "partial",
+        "live"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": ""
+    },
+    {
+      "id": "PQ-LIVE-GAP-01",
+      "bucket": "unsupported_live_source",
+      "question": "What is the current air quality in Kelowna?",
+      "expected_modes": [
+        "partial",
+        "background",
+        "capability",
+        "scope_redirect"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "Answer should explain the source boundary without a dead-end rejection."
+    },
+    {
+      "id": "PQ-LIVE-GAP-02",
+      "bucket": "unsupported_live_source",
+      "question": "What will the wind do near the Kelowna fires tonight?",
+      "expected_modes": [
+        "partial",
+        "background",
+        "capability",
+        "scope_redirect"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "Answer should explain the source boundary without a dead-end rejection."
+    },
+    {
+      "id": "PQ-LIVE-GAP-03",
+      "bucket": "unsupported_live_source",
+      "question": "Is Highway 97 closed because of wildfire?",
+      "expected_modes": [
+        "partial",
+        "background",
+        "capability",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "Answer should explain the source boundary without a dead-end rejection."
+    },
+    {
+      "id": "PQ-LIVE-GAP-04",
+      "bucket": "unsupported_live_source",
+      "question": "Where are the firefighting aircraft right now?",
+      "expected_modes": [
+        "partial",
+        "background",
+        "capability",
+        "scope_redirect"
+      ],
+      "location_expectation": "none",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "Answer should explain the source boundary without a dead-end rejection."
+    },
+    {
+      "id": "PQ-LIVE-GAP-05",
+      "bucket": "unsupported_live_source",
+      "question": "What is the current smoke forecast for Kamloops?",
+      "expected_modes": [
+        "partial",
+        "background",
+        "capability",
+        "scope_redirect"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "Answer should explain the source boundary without a dead-end rejection."
+    },
+    {
+      "id": "PQ-LIVE-GAP-06",
+      "bucket": "unsupported_live_source",
+      "question": "Tell me whether it is safe to drive to Kelowna right now.",
+      "expected_modes": [
+        "partial",
+        "background",
+        "capability",
+        "scope_redirect"
+      ],
+      "location_expectation": "inferred",
+      "context_fixture": "none",
+      "history": [],
+      "notes": "Answer should explain the source boundary without a dead-end rejection."
+    }
+  ]
+}

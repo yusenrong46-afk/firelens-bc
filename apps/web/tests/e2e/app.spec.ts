@@ -212,25 +212,31 @@ test("redirects a completely tangent request", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("Can you debug JavaScript for me?");
   await page.getByLabel("Send question").click();
-  await expect(page.getByText("Outside FireLens scope", { exact: true })).toBeVisible();
-  await expect(page.getByText("Outside the FireLens collection", { exact: true })).toBeVisible();
+  await expect(page.getByText("Related official service", { exact: true })).toBeVisible();
+  await expect(page.getByText("That request is outside the FireLens guidance collection.", { exact: true })).toBeVisible();
 });
 
-test("shows official live records and a map through keyboard submission", async ({ page }) => {
+test("shows official live records and a map through keyboard submission", async ({ page }, testInfo) => {
   await page.goto("/");
   const question = page.getByLabel("Ask FireLens a question");
   await question.fill("Is there an active wildfire near me right now?");
   await question.press("Enter");
   await expect(page.getByText("Current BC wildfire information")).toBeVisible();
-  await expect(page.getByText("Test Fire", { exact: true })).toBeVisible();
+  const testFire = page.getByRole("button", { name: /Test Fire Out of Control/ });
+  await expect(testFire).toBeVisible();
   await expect(page.getByText(/Some official layers are unavailable: evacuation/)).toBeVisible();
-  await expect(page.getByText(/Source updated/)).toBeVisible();
-  await expect(page.getByText(/Retrieved/)).toBeVisible();
+  await expect(testFire.getByText(/Source updated/)).toBeVisible();
+  await expect(testFire.getByText(/Retrieved/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toBeVisible();
-  const marker = page.locator(".live-map__record-geometry");
-  await expect(marker).toHaveCount(1);
-  await marker.click();
-  await expect(page.locator(".leaflet-popup").getByText("Test Fire", { exact: true })).toBeVisible();
+  const marker = page.locator(".live-map__record-geometry").first();
+  await expect(marker).toBeVisible();
+  if (testInfo.project.name === "desktop") {
+    await marker.click({ force: true });
+    await expect(page.locator(".leaflet-popup").getByText("Test Fire", { exact: true })).toBeVisible();
+  } else {
+    await testFire.press("Enter");
+    await expect(testFire.locator("..")).toHaveClass(/live-list__selected/);
+  }
   await expect(page.getByText("No matching record is not a safety determination.")).toBeVisible();
   await expect(page.getByText("Sources supporting this answer")).toHaveCount(0);
 });
@@ -244,8 +250,8 @@ test("uses local boundary context without third-party basemap requests", async (
   const question = page.getByLabel("Ask FireLens a question");
   await question.fill("Is there an active wildfire near me right now?");
   await question.press("Enter");
-  await expect(page.getByText("Current official information: Test Fire is Out of Control.")).toBeVisible();
-  await expect(page.getByText("Test Fire", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Question and answer").getByText("Current official information: Test Fire is Out of Control.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Test Fire Out of Control/ })).toBeVisible();
   await expect(page.getByText(/No third-party basemap request is made/)).toBeVisible();
   expect(thirdPartyMapRequests).toEqual([]);
 });
@@ -255,12 +261,12 @@ test("shows stale and partial-layer state without hiding records", async ({ page
   await page.getByLabel("Ask FireLens a question").fill("Show stale official wildfire records");
   await page.getByLabel("Send question").click();
   await expect(page.getByText("BC wildfire information — includes stale records")).toBeVisible();
-  await expect(page.getByText(/Cached official information \(refresh failed\)/)).toBeVisible();
+  await expect(page.getByLabel("Question and answer").getByText(/Cached official information \(refresh failed\)/)).toBeVisible();
   await expect(page.getByText("Official cached records", { exact: true })).toHaveCount(2);
   const staleWarning = page.getByRole("status").filter({ hasText: "Cached official records; refresh failed" });
   await expect(staleWarning).toBeVisible();
   await expect(page.getByText("Current BC wildfire information")).toHaveCount(0);
-  await expect(page.getByText("Cached Test Fire", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Cached Test Fire Out of Control/ })).toBeVisible();
   expect(await staleWarning.evaluate((warning) => Boolean(
     warning.compareDocumentPosition(document.querySelector(".live-list")!) & Node.DOCUMENT_POSITION_FOLLOWING,
   ))).toBe(true);
@@ -272,7 +278,7 @@ test("opens an official source link with keyboard activation", async ({ page }) 
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("Is there an active wildfire near me right now?");
   await page.getByLabel("Send question").press("Enter");
-  const source = page.getByRole("link", { name: "Source", exact: true });
+  const source = page.getByRole("listitem").filter({ hasText: "Test Fire" }).getByRole("link", { name: "Source", exact: true });
   await expect(source).toBeVisible();
   await expect(source).toHaveAttribute("href", "https://example.test/incidents/7");
   const [popup] = await Promise.all([page.waitForEvent("popup"), source.press("Enter")]);

@@ -1,0 +1,368 @@
+"""Versioned exploratory questions representing ordinary FireLens product use."""
+
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+from typing import Literal
+
+LocationExpectation = Literal["inferred", "required", "none"]
+ContextFixture = Literal["none", "first_incident"]
+
+
+@dataclass(frozen=True)
+class ProductQuestionCase:
+    id: str
+    bucket: str
+    question: str
+    expected_modes: tuple[str, ...]
+    location_expectation: LocationExpectation = "none"
+    context_fixture: ContextFixture = "none"
+    history: tuple[dict[str, str], ...] = ()
+    notes: str = ""
+
+    def as_dict(self) -> dict[str, object]:
+        payload = asdict(self)
+        payload["expected_modes"] = list(self.expected_modes)
+        payload["history"] = list(self.history)
+        return payload
+
+
+_COMMUNITIES = (
+    "Kelowna",
+    "West Kelowna",
+    "Kamloops",
+    "Vernon",
+    "Penticton",
+    "Salmon Arm",
+    "Williams Lake",
+    "Prince George",
+    "Quesnel",
+    "Cranbrook",
+    "Nelson",
+    "Revelstoke",
+    "Whistler",
+    "Terrace",
+    "Fort St. John",
+)
+
+_NAMED_PLACE_TEMPLATES = (
+    "Where are the current wildfires in {place}?",
+    "Show me the wildfire situation around {place}.",
+    "Is there a fire near {place} right now?",
+    "Put the map on {place} and tell me what is happening.",
+)
+
+_NEAR_ME_QUESTIONS = (
+    "Are there wildfires near me?",
+    "Show fires close to my current location.",
+    "Is anything burning around my home?",
+    "Put the map where I am.",
+    "How close is the nearest fire to me?",
+    "Are there evacuation orders near my house?",
+    "What wildfire is closest to my location?",
+    "Check my area for active fires.",
+    "Do I have an evacuation alert where I live?",
+    "How far am I from the closest perimeter?",
+)
+
+_PROVINCE_LIVE_QUESTIONS = (
+    "Where are the active wildfires in BC?",
+    "Show the current BC wildfire map.",
+    "How many active fire records are available across British Columbia?",
+    "What evacuation alerts and orders are active in BC?",
+    "Give me the latest BC wildfire situation.",
+    "Which fires are currently listed by BC Wildfire Service?",
+    "Show current incident and perimeter records for the province.",
+    "What official wildfire information is available in BC right now?",
+)
+
+_SELECTED_RESULT_QUESTIONS = (
+    "What is the current status of this fire?",
+    "What is happening with the selected wildfire?",
+    "Give me the official details for this incident.",
+    "When was this fire record updated?",
+    "How large is this fire?",
+    "How far is this fire from me?",
+    "What is the distance from my current location to this fire?",
+    "How many kilometres away is the selected wildfire?",
+)
+
+_PREPAREDNESS_QUESTIONS = (
+    "What belongs in a wildfire grab-and-go bag?",
+    "What is the difference between an evacuation alert and an evacuation order?",
+    "How can I reduce wildfire risk around my home?",
+    "What should I know about wildfire smoke indoors?",
+    "What do wildfire stages of control mean?",
+    "How do structure-protection sprinklers work?",
+    "What is the home ignition zone?",
+    "How should my family prepare for a possible evacuation?",
+    "What documents should I copy for an emergency kit?",
+    "How should I prepare pets for evacuation?",
+    "What should I do before leaving during an evacuation order?",
+    "How often should I refresh emergency food, water, and batteries?",
+)
+
+_EVERYDAY_QUESTIONS = (
+    "Help me make a simple weekend packing list.",
+    "Explain the difference between weather and climate.",
+    "Give me three ideas for a healthy lunch.",
+    "How do I organize a household checklist?",
+    "What is a good way to remember important documents?",
+    "Explain air pressure in simple language.",
+    "Can you help me plan a calm morning routine?",
+    "What does probability mean in a weather forecast?",
+    "How can I explain emergency planning to a child?",
+    "What is the difference between smoke and fog?",
+    "Help me write a short message to check on a neighbour.",
+    "What are some ways to keep a phone charged during an outage?",
+)
+
+_FOLLOW_UPS = (
+    (
+        "What about pets?",
+        (
+            {"role": "user", "content": "What belongs in a wildfire emergency kit?"},
+            {"role": "assistant", "content": "Include food, water, medicine, and documents."},
+        ),
+    ),
+    (
+        "Can you make that simpler?",
+        (
+            {"role": "user", "content": "Explain evacuation alerts and orders."},
+            {"role": "assistant", "content": "An alert means prepare; an order means leave."},
+        ),
+    ),
+    (
+        "Which part should I do first?",
+        (
+            {"role": "user", "content": "How can I FireSmart my home?"},
+            {
+                "role": "assistant",
+                "content": "Start by reducing combustible material near the home.",
+            },
+        ),
+    ),
+    (
+        "What if I live in an apartment?",
+        (
+            {"role": "user", "content": "How should I prepare for a wildfire evacuation?"},
+            {"role": "assistant", "content": "Make a plan and prepare a grab-and-go bag."},
+        ),
+    ),
+    (
+        "Can you turn that into a checklist?",
+        (
+            {"role": "user", "content": "How do I prepare for wildfire smoke?"},
+            {
+                "role": "assistant",
+                "content": "Reduce indoor smoke and follow public-health advice.",
+            },
+        ),
+    ),
+    (
+        "Why does that matter?",
+        (
+            {
+                "role": "user",
+                "content": "Keep the area closest to the house clear of combustibles.",
+            },
+            {"role": "assistant", "content": "That can reduce pathways for ignition."},
+        ),
+    ),
+    (
+        "What did you mean by that label?",
+        (
+            {"role": "user", "content": "What does being held mean?"},
+            {"role": "assistant", "content": "Being held is a BC wildfire stage of control."},
+        ),
+    ),
+    (
+        "Give me a shorter version I can text someone.",
+        (
+            {"role": "user", "content": "What is an evacuation order?"},
+            {
+                "role": "assistant",
+                "content": "It is an instruction from the issuing authority to leave.",
+            },
+        ),
+    ),
+)
+
+_COLLOQUIAL_QUESTIONS = (
+    "wheres the fire by kelowna rn",
+    "any fires round kamloops today?",
+    "show me vernon fire stuff on map",
+    "is west k on evac alert",
+    "whats a go bag actually need",
+    "fire smart my place where do i start",
+    "what does outta control fire mean",
+    "smoke in my house what can i do",
+    "evac alert vs order im confused",
+    "how far is that fire from me tho",
+)
+
+_MIXED_QUESTIONS = (
+    "Are there fires near Kelowna today, and what belongs in an emergency kit?",
+    "Show fires around Kamloops and explain what being held means.",
+    "Is Vernon under an evacuation alert, and how should I prepare my pets?",
+    "What is happening near Penticton, and what should I pack?",
+    "Show evacuation information for Williams Lake and explain alert versus order.",
+    "Are there current fires around Nelson, and how can I reduce ember risk at home?",
+    "Put the map on Prince George and give me a smoke-preparation checklist.",
+    "What official records are near Cranbrook, and what should be in my family plan?",
+)
+
+_UNSUPPORTED_LIVE_QUESTIONS = (
+    "What is the current air quality in Kelowna?",
+    "What will the wind do near the Kelowna fires tonight?",
+    "Is Highway 97 closed because of wildfire?",
+    "Where are the firefighting aircraft right now?",
+    "What is the current smoke forecast for Kamloops?",
+    "Tell me whether it is safe to drive to Kelowna right now.",
+)
+
+
+def build_product_question_cases() -> list[ProductQuestionCase]:
+    """Return the frozen exploratory catalog; this is not a sealed benchmark."""
+
+    cases: list[ProductQuestionCase] = []
+    for place_index, place in enumerate(_COMMUNITIES, start=1):
+        for template_index, template in enumerate(_NAMED_PLACE_TEMPLATES, start=1):
+            cases.append(
+                ProductQuestionCase(
+                    id=f"PQ-NAMED-{place_index:02d}-{template_index}",
+                    bucket="named_place_live",
+                    question=template.format(place=place),
+                    expected_modes=("live", "capability"),
+                    location_expectation="inferred",
+                    notes="A named BC community should become coarse request-scoped map context.",
+                )
+            )
+    for index, place in enumerate(_COMMUNITIES[:10], start=1):
+        for suffix, question in (
+            ("A", f"Is {place} under an evacuation order right now?"),
+            ("B", f"Show evacuation alerts and orders around {place}."),
+        ):
+            cases.append(
+                ProductQuestionCase(
+                    id=f"PQ-EVAC-{index:02d}-{suffix}",
+                    bucket="named_place_evacuation",
+                    question=question,
+                    expected_modes=("live", "capability"),
+                    location_expectation="inferred",
+                )
+            )
+    for index, question in enumerate(_NEAR_ME_QUESTIONS, start=1):
+        cases.append(
+            ProductQuestionCase(
+                id=f"PQ-NEARME-{index:02d}",
+                bucket="implicit_personal_location",
+                question=question,
+                expected_modes=("requires_input",),
+                location_expectation="required",
+            )
+        )
+    for index, question in enumerate(_PROVINCE_LIVE_QUESTIONS, start=1):
+        cases.append(
+            ProductQuestionCase(
+                id=f"PQ-PROVINCE-{index:02d}",
+                bucket="province_live",
+                question=question,
+                expected_modes=("live",),
+            )
+        )
+    for index, question in enumerate(_SELECTED_RESULT_QUESTIONS, start=1):
+        requires_location = index >= 6
+        cases.append(
+            ProductQuestionCase(
+                id=f"PQ-SELECTED-{index:02d}",
+                bucket="selected_map_followup",
+                question=question,
+                expected_modes=("requires_input",) if requires_location else ("live",),
+                location_expectation="required" if requires_location else "none",
+                context_fixture="first_incident",
+            )
+        )
+    for index, question in enumerate(_PREPAREDNESS_QUESTIONS, start=1):
+        cases.append(
+            ProductQuestionCase(
+                id=f"PQ-GUIDANCE-{index:02d}",
+                bucket="reviewed_guidance",
+                question=question,
+                expected_modes=("grounded", "partial", "scope_redirect"),
+            )
+        )
+    for index, question in enumerate(_EVERYDAY_QUESTIONS, start=1):
+        cases.append(
+            ProductQuestionCase(
+                id=f"PQ-EVERYDAY-{index:02d}",
+                bucket="everyday_chat",
+                question=question,
+                expected_modes=(
+                    "background",
+                    "capability",
+                    "grounded",
+                    "partial",
+                    "scope_redirect",
+                ),
+            )
+        )
+    for index, (question, history) in enumerate(_FOLLOW_UPS, start=1):
+        cases.append(
+            ProductQuestionCase(
+                id=f"PQ-FOLLOWUP-{index:02d}",
+                bucket="conversation_followup",
+                question=question,
+                expected_modes=("grounded", "partial", "background", "scope_redirect"),
+                history=history,
+            )
+        )
+    for index, question in enumerate(_COLLOQUIAL_QUESTIONS, start=1):
+        named_location = index <= 4
+        selected_distance = index == 10
+        cases.append(
+            ProductQuestionCase(
+                id=f"PQ-COLLOQUIAL-{index:02d}",
+                bucket="colloquial_and_typos",
+                question=question,
+                expected_modes=(
+                    ("requires_input",)
+                    if selected_distance
+                    else ("live", "capability")
+                    if named_location
+                    else ("grounded", "partial", "background")
+                ),
+                location_expectation=(
+                    "required"
+                    if selected_distance
+                    else "inferred"
+                    if named_location
+                    else "none"
+                ),
+                context_fixture="first_incident" if selected_distance else "none",
+            )
+        )
+    for index, question in enumerate(_MIXED_QUESTIONS, start=1):
+        cases.append(
+            ProductQuestionCase(
+                id=f"PQ-MIXED-{index:02d}",
+                bucket="mixed_live_and_guidance",
+                question=question,
+                expected_modes=("mixed", "partial", "live"),
+                location_expectation="inferred",
+            )
+        )
+    for index, question in enumerate(_UNSUPPORTED_LIVE_QUESTIONS, start=1):
+        cases.append(
+            ProductQuestionCase(
+                id=f"PQ-LIVE-GAP-{index:02d}",
+                bucket="unsupported_live_source",
+                question=question,
+                expected_modes=("partial", "background", "capability", "scope_redirect"),
+                location_expectation="inferred"
+                if "Kelowna" in question or "Kamloops" in question
+                else "none",
+                notes="Answer should explain the source boundary without a dead-end rejection.",
+            )
+        )
+    return cases

@@ -30,6 +30,7 @@ from firelens.answering.intent import (
     apply_planning_decision,
     plan_query,
     resolved_user_question,
+    reviewed_guidance_intent,
 )
 from firelens.answering.planner import planning_messages, planning_schema
 from firelens.answering.responses import (
@@ -65,8 +66,10 @@ from firelens.contracts import (
     BackgroundDraft,
     EvidencePacket,
     EvidenceStatus,
+    PlanningDecision,
     PlanningResponse,
     PublicClaim,
+    QueryPlan,
     QueryRelation,
     QueryRequest,
     QueryRoute,
@@ -139,6 +142,38 @@ class StaticRAGService:
             for identifier in identifiers
             for result in self.planning_index.search(question, top_k=5)
         )
+
+    async def _retrieve_for_plan(
+        self,
+        plan: QueryPlan,
+        request: QueryRequest,
+        *,
+        planning: PlanningResponse | None,
+        planning_ms: float,
+    ) -> tuple[RetrievalBundle, EvidencePacket]:
+        bundle = await self.retrieval.search(plan)
+        if planning is not None:
+            bundle.provider_usage["planning"] = planning.usage
+            bundle.provider_attempts["planning"] = planning.attempts
+            bundle.provider_models["planning"] = planning.model
+        bundle.timings_ms["planning"] = planning_ms
+        packet = build_evidence_packet(
+            plan.normalized_question,
+            bundle.reranked_hits,
+            self.chunks,
+            corpus_version=self.corpus_version,
+            config=self.config,
+            evidence_index=self.evidence_index,
+            selection_aspects=tuple(
+                dict.fromkeys(
+                    [
+                        *plan.required_aspects,
+                        *(request.query for request in plan.retrieval_requests),
+                    ]
+                )
+            ),
+        )
+        return bundle, packet
 
     async def _record_ask(
         self,
@@ -254,6 +289,7 @@ class StaticRAGService:
                     or _candidate_source_reference_present(
                         request.question, planning_candidates
                     )
+                    or reviewed_guidance_intent(request.question)
                 ):
                     planning = planning.model_copy(
                         update={
@@ -263,8 +299,8 @@ class StaticRAGService:
                                     "retrieval_queries": [request.question],
                                     "required_aspects": [request.question],
                                     "explanation": (
-                                        "An explicit source reference appears in the current "
-                                        "corpus preflight."
+                                        "A reviewed guidance topic or explicit source reference "
+                                        "appears in the current corpus preflight."
                                     ),
                                 }
                             )
@@ -283,33 +319,39 @@ class StaticRAGService:
                     else apply_planning_decision(plan, planning.decision)
                 )
             except ProviderError as exc:
-                bundle = RetrievalBundle(
-                    complete=False,
-                    errors=[exc.kind.value],
-                    timings_ms={"planning": (perf_counter() - planning_started) * 1_000},
-                )
+                planning_ms = (perf_counter() - planning_started) * 1_000
+                if reviewed_guidance_intent(request.question):
+                    plan = apply_planning_decision(
+                        plan,
+                        PlanningDecision(
+                            relation=QueryRelation.GROUNDED_CANDIDATE,
+                            retrieval_queries=[plan.normalized_question],
+                            required_aspects=[plan.normalized_question],
+                            explanation=(
+                                "The model planner was unavailable, so a deterministic "
+                                "reviewed-guidance intent used bounded corpus retrieval."
+                            ),
+                        ),
+                    )
+                    bundle, packet = await self._retrieve_for_plan(
+                        plan,
+                        request,
+                        planning=None,
+                        planning_ms=planning_ms,
+                    )
+                else:
+                    bundle = RetrievalBundle(
+                        complete=False,
+                        errors=[exc.kind.value],
+                        timings_ms={"planning": planning_ms},
+                    )
             else:
                 if plan.retrieval_requests:
-                    bundle = await self.retrieval.search(plan)
-                    bundle.provider_usage["planning"] = planning.usage
-                    bundle.provider_attempts["planning"] = planning.attempts
-                    bundle.provider_models["planning"] = planning.model
-                    bundle.timings_ms["planning"] = (perf_counter() - planning_started) * 1_000
-                    packet = build_evidence_packet(
-                        plan.normalized_question,
-                        bundle.reranked_hits,
-                        self.chunks,
-                        corpus_version=self.corpus_version,
-                        config=self.config,
-                        evidence_index=self.evidence_index,
-                        selection_aspects=tuple(
-                            dict.fromkeys(
-                                [
-                                    *plan.required_aspects,
-                                    *(request.query for request in plan.retrieval_requests),
-                                ]
-                            )
-                        ),
+                    bundle, packet = await self._retrieve_for_plan(
+                        plan,
+                        request,
+                        planning=planning,
+                        planning_ms=(perf_counter() - planning_started) * 1_000,
                     )
                 else:
                     bundle = RetrievalBundle()

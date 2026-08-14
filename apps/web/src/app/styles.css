@@ -61,6 +61,11 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .response-badge--partial { color: #6c4a15; background: #f5ead3; }
 .response-badge--live, .response-badge--mixed { color: #6f2f20; background: #f8e5de; }
 .assistant-message p { margin: 10px 0 0; color: #213651; font-size: 16px; line-height: 1.6; }
+.related-service-links { display: grid; gap: 8px; margin-top: 14px; }
+.related-service-links a { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 13px; color: #163a62; text-decoration: none; background: #f5f8fb; border: 1px solid #c3ced8; border-radius: 5px; }
+.related-service-links a:hover { border-color: #8fa2b4; background: #eef4fb; }
+.related-service-links span { display: grid; gap: 2px; }
+.related-service-links small { margin: 0; }
 .assistant-message--loading { opacity: .78; }
 .assistant-message--abstention, .assistant-message--unavailable, .assistant-message--error { background: #fffaf5; }
 .retry-button { min-height: 44px; margin-top: 13px; padding: 10px 16px; color: #fff; background: var(--navy); border: 0; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: 600; }

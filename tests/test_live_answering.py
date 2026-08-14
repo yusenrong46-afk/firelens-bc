@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import unittest
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from typing import Any, cast
 
 from firelens.contracts import (
+    CoarseResolvedLocation,
     Freshness,
     LiveMapResponse,
     LiveResult,
@@ -42,13 +44,129 @@ class FixedLiveService:
     async def nearby_results(self, *args, **kwargs):
         return self.response
 
+    async def nearby_page(self, *args, **kwargs):
+        return self.response
+
     async def resolve_location(self, location):
         if location.latitude is None or location.longitude is None:
             return 49.0, -123.0
         return location.latitude, location.longitude
 
 
+class CapturingNearbyService(FixedLiveService):
+    def __init__(self, response: object) -> None:
+        super().__init__(cast(Any, response))
+        self.requested_location: LocationInput | None = None
+
+    async def nearby_page(self, location, *args, **kwargs):
+        self.requested_location = location
+        return self.response
+
+
 class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
+    async def test_selected_record_detail_phrasings_preserve_map_context(self) -> None:
+        timestamp = datetime(2026, 8, 13, tzinfo=UTC)
+        result = LiveResult(
+            result_id="incident:7",
+            kind=LiveResultKind.INCIDENT,
+            source_url="https://example.test/live/7",
+            source_updated_at=timestamp,
+            retrieved_at=timestamp,
+            freshness=Freshness.FRESH,
+            status="Being Held",
+            name="Mountain Fire",
+            size_hectares=123.4,
+            geometry={"type": "Point", "coordinates": [-123.0, 50.0]},
+        )
+        coordinator = LiveAnswerCoordinator(
+            cast(
+                Any,
+                FixedLiveService(LiveMapResponse(generated_at=timestamp, results=[result])),
+            )
+        )
+
+        for question in (
+            "What is the current status of this fire?",
+            "What is happening with the selected wildfire?",
+            "Give me the official details for this incident.",
+            "When was this fire record updated?",
+            "How large is this fire?",
+        ):
+            with self.subTest(question=question):
+                request = QueryRequest(
+                    question=question,
+                    context=MapContext(selected_live_result_id="incident:7"),
+                )
+                self.assertTrue(coordinator.handles(request))
+                response = await coordinator.answer(request, None)
+                self.assertEqual(response.status, ResponseStatus.ANSWER)
+                self.assertEqual(response.response_mode, ResponseMode.LIVE)
+                self.assertEqual(response.selected_live_result_id, "incident:7")
+                self.assertEqual(
+                    [item.result_id for item in response.live_results],
+                    ["incident:7"],
+                )
+
+    async def test_named_community_is_geocoded_without_a_redundant_prompt(self) -> None:
+        timestamp = datetime(2026, 8, 13, tzinfo=UTC)
+        result = LiveResult(
+            result_id="incident:kelowna",
+            kind=LiveResultKind.INCIDENT,
+            source_url="https://example.test/live/kelowna",
+            source_updated_at=timestamp,
+            retrieved_at=timestamp,
+            freshness=Freshness.FRESH,
+            status="Out of Control",
+            name="Kelowna Area Fire",
+            geometry={"type": "Point", "coordinates": [-119.45, 49.9]},
+        )
+        live = SimpleNamespace(
+            results=[result],
+            limitations=[],
+            unavailable_layers=[],
+            resolved_location=CoarseResolvedLocation(
+                latitude=49.89,
+                longitude=-119.5,
+            ),
+        )
+        service = CapturingNearbyService(live)
+        coordinator = LiveAnswerCoordinator(cast(Any, service))
+
+        response = await coordinator.answer(
+            QueryRequest(question="Where are the current wildfires in Kelowna?"),
+            None,
+        )
+
+        self.assertEqual(response.response_mode, ResponseMode.LIVE)
+        self.assertIsNone(response.required_input)
+        self.assertEqual(response.resolved_location, live.resolved_location)
+        self.assertIsNotNone(service.requested_location)
+        assert service.requested_location is not None
+        self.assertEqual(service.requested_location.label, "Kelowna")
+
+    async def test_named_community_no_result_still_returns_a_focused_map_state(self) -> None:
+        live = SimpleNamespace(
+            results=[],
+            limitations=[],
+            unavailable_layers=[],
+            resolved_location=CoarseResolvedLocation(
+                latitude=49.89,
+                longitude=-119.5,
+            ),
+        )
+        coordinator = LiveAnswerCoordinator(cast(Any, CapturingNearbyService(live)))
+
+        response = await coordinator.answer(
+            QueryRequest(question="Show the wildfire situation around Kelowna."),
+            None,
+        )
+
+        self.assertEqual(response.status, ResponseStatus.ANSWER)
+        self.assertEqual(response.response_mode, ResponseMode.LIVE)
+        self.assertEqual(response.live_results, [])
+        self.assertEqual(response.resolved_location, live.resolved_location)
+        self.assertIn("No matching official record", response.answer)
+
     async def test_stale_records_are_never_described_as_current(self) -> None:
         timestamp = datetime(2026, 7, 28, tzinfo=UTC)
         live = LiveMapResponse(
@@ -257,17 +375,44 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("Other Fire", response.answer)
 
     async def test_unsupported_live_topic_is_not_substituted(self) -> None:
-        live_service = UnexpectedLiveService()
+        timestamp = datetime(2026, 8, 13, tzinfo=UTC)
+        live_service = FixedLiveService(LiveMapResponse(generated_at=timestamp, results=[]))
         coordinator = LiveAnswerCoordinator(cast(Any, live_service))
 
         response = await coordinator.answer(
-            QueryRequest(question="What is the live smoke forecast right now?"), None
+            QueryRequest(question="What is the current air quality in Kelowna?"), None
         )
 
-        self.assertEqual(response.status, ResponseStatus.ABSTENTION)
-        self.assertEqual(response.response_mode, ResponseMode.ABSTENTION)
-        self.assertEqual(live_service.calls, 0)
-        self.assertIn("will not substitute", response.answer)
+        self.assertEqual(response.status, ResponseStatus.ANSWER)
+        self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
+        self.assertEqual(response.live_results, [])
+        self.assertIsNotNone(response.resolved_location)
+        self.assertIn("not connected", response.answer)
+        self.assertTrue(response.related_links)
+        self.assertEqual(response.related_links[0].title, "Current B.C. AQHI")
+
+    async def test_safe_drive_question_redirects_to_drivebc_and_focuses_named_place(
+        self,
+    ) -> None:
+        timestamp = datetime(2026, 8, 13, tzinfo=UTC)
+        coordinator = LiveAnswerCoordinator(
+            cast(
+                Any,
+                FixedLiveService(LiveMapResponse(generated_at=timestamp, results=[])),
+            )
+        )
+        request = QueryRequest(
+            question="Tell me whether it is safe to drive to Kelowna right now."
+        )
+
+        self.assertTrue(coordinator.handles(request))
+        response = await coordinator.answer(request, None)
+
+        self.assertEqual(response.status, ResponseStatus.ANSWER)
+        self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
+        self.assertIsNotNone(response.resolved_location)
+        self.assertEqual(response.related_links[0].title, "DriveBC road conditions")
+        self.assertIn("cannot verify", response.answer)
 
     def test_static_fragment_is_extracted_for_mixed_coordination(self) -> None:
         request = QueryRequest(

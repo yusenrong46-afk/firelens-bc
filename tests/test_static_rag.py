@@ -886,7 +886,7 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
                 initial,
             )
 
-    async def test_planner_failure_is_typed_without_raw_query_fallback(self) -> None:
+    async def test_planner_failure_is_typed_without_unbounded_query_fallback(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             provider = FailingPlanner()
             runtime, _, _ = await make_runtime(Path(directory), provider=provider)
@@ -896,7 +896,7 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
                 provider.generate_calls,
             )
             response = await runtime.service.ask(
-                QueryRequest(question="What belongs in an emergency kit?")
+                QueryRequest(question="Explain why dry windy weather matters.")
             )
             self.assertEqual(response.status, ResponseStatus.ERROR)
             self.assertEqual(response.reason_code, "planning_unavailable")
@@ -909,6 +909,27 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
                 ),
                 initial,
             )
+
+    async def test_planner_failure_uses_bounded_reviewed_guidance_fallback(self) -> None:
+        chunk = make_chunk(
+            "stage-out-of-control",
+            "Out of control means a wildfire is continuing to spread and is not responding to suppression efforts.",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            provider = FailingPlanner()
+            runtime, _, _ = await make_runtime(
+                Path(directory), provider=provider, chunks=[chunk]
+            )
+            response = await runtime.service.ask(
+                QueryRequest(question="what does outta control fire mean")
+            )
+            await runtime.aclose()
+
+        self.assertEqual(response.status, ResponseStatus.ANSWER)
+        self.assertNotEqual(response.response_mode, ResponseMode.ABSTENTION)
+        self.assertEqual(provider.plan_calls, 1)
+        self.assertGreater(provider.embed_calls, 0)
+        self.assertGreater(provider.rerank_calls, 0)
 
     async def test_ask_builds_the_evidence_packet_once(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1069,6 +1090,25 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
                 ["search", "ask"],
             )
 
+    async def test_grounded_provider_failure_returns_reviewed_source_handoff(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, _ = await make_runtime(
+                Path(directory), provider=FailingGroundedProvider()
+            )
+            response = await runtime.service.ask(
+                QueryRequest(question="What belongs in an emergency kit?")
+            )
+            await runtime.aclose()
+
+        self.assertEqual(response.status, ResponseStatus.ANSWER)
+        self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
+        self.assertEqual(response.reason_code, "generation_unavailable")
+        self.assertEqual(response.error_kind, "unavailable")
+        self.assertTrue(response.related_links)
+        self.assertFalse(response.claims)
+        self.assertFalse(response.evidence)
+        self.assertIsNone(response.validation)
+
     async def test_live_and_prohibited_questions_make_no_provider_calls(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             runtime, provider, _ = await make_runtime(Path(directory))
@@ -1096,9 +1136,12 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             response = await runtime.service.ask(
                 QueryRequest(question="What belongs in an emergency kit?")
             )
-            self.assertEqual(response.status, ResponseStatus.ABSTENTION)
+            self.assertEqual(response.status, ResponseStatus.ANSWER)
+            self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
             self.assertEqual(response.reason_code, "draft_validation_failed")
             self.assertFalse(response.validation.accepted)
+            self.assertTrue(response.related_links)
+            self.assertNotIn("E999", response.answer)
             self.assertEqual(provider.generate_calls, 2, "only one repair is permitted")
 
     async def test_exact_but_unrelated_citation_fails_claim_support_floor(self) -> None:
@@ -1129,7 +1172,8 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             response = await runtime.service.ask(
                 QueryRequest(question="What belongs in an emergency kit?")
             )
-        self.assertEqual(response.status, ResponseStatus.ABSTENTION)
+        self.assertEqual(response.status, ResponseStatus.ANSWER)
+        self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
         self.assertFalse(response.validation.claim_support_valid)
         self.assertTrue(
             any("direct lexical support" in error for error in response.validation.errors)
@@ -1154,7 +1198,7 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             "Do not treat the remaining items as a complete list.",
         )
 
-    async def test_wrong_generation_draft_type_is_replaced_by_safe_abstention(self) -> None:
+    async def test_wrong_generation_draft_type_is_replaced_by_safe_source_handoff(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             runtime, _, _ = await make_runtime(
                 Path(directory), provider=WrongDraftTypeProvider()
@@ -1162,8 +1206,10 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             response = await runtime.service.ask(
                 QueryRequest(question="What belongs in an emergency kit?")
             )
-            self.assertEqual(response.status, ResponseStatus.ABSTENTION)
+            self.assertEqual(response.status, ResponseStatus.ANSWER)
+            self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
             self.assertEqual(response.reason_code, "draft_validation_failed")
+            self.assertTrue(response.related_links)
             self.assertNotIn("Highway 1", response.answer)
 
     async def test_index_model_mismatch_prevents_startup(self) -> None:

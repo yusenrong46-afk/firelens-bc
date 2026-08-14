@@ -96,10 +96,28 @@
               }
             ]
           },
+          "related_links": {
+            "items": {
+              "$ref": "#/components/schemas/RelatedLink"
+            },
+            "maxItems": 4,
+            "title": "Related Links",
+            "type": "array"
+          },
           "required_input": {
             "anyOf": [
               {
                 "$ref": "#/components/schemas/RequiredInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resolved_location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CoarseResolvedLocation"
               },
               {
                 "type": "null"
@@ -1236,6 +1254,38 @@
         ],
         "title": "ReasonCode",
         "type": "string"
+      },
+      "RelatedLink": {
+        "additionalProperties": false,
+        "description": "An official destination for information FireLens does not ingest live.",
+        "properties": {
+          "description": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "url",
+          "description"
+        ],
+        "title": "RelatedLink",
+        "type": "object"
       },
       "RequiredInput": {
         "additionalProperties": false,

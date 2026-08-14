@@ -131,6 +131,38 @@ describe("FireLens Source Lens", () => {
     expect(screen.queryByText("Retrieved passage")).not.toBeInTheDocument();
   });
 
+  it("keeps unsupported live requests useful with an official next link", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "scope_redirect",
+        trace_id: "trace-related-service",
+        answer: "FireLens is not connected to current air quality, so it cannot verify that value here.",
+        claims: [],
+        evidence: [],
+        limitations: [],
+        related_links: [{
+          title: "Current B.C. AQHI",
+          url: "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html",
+          description: "Environment Canada current AQHI observations and forecasts.",
+        }],
+        resolved_location: { latitude: 49.89, longitude: -119.5 },
+      }), { status: 200 }),
+    ));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "What is the current air quality in Kelowna?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText("Related official service")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Current B.C. AQHI/ })).toHaveAttribute(
+      "href",
+      "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html",
+    );
+    expect(screen.getByText(/Map focused on the requested area near 49.89, -119.50/)).toBeInTheDocument();
+    expect(screen.queryByText("FireLens did not generate guidance")).not.toBeInTheDocument();
+  });
+
   it("renders a typed abstention without evidence", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
       new Response(JSON.stringify({
@@ -193,6 +225,66 @@ describe("FireLens Source Lens", () => {
     expect(screen.getByText(/Some official layers are unavailable: evacuation/)).toBeInTheDocument();
     expect(screen.getByText(/Source updated/)).toBeInTheDocument();
     expect(screen.getByText(/Retrieved/)).toBeInTheDocument();
+  });
+
+  it("focuses the map from a named community without asking for location again", async () => {
+    const mapResult = {
+      result_id: "incident:far",
+      kind: "incident",
+      authority: "BC Wildfire Service",
+      source_url: "https://example.test/incidents/far",
+      source_updated_at: "2026-08-13T18:55:00Z",
+      retrieved_at: "2026-08-13T19:00:00Z",
+      freshness: "fresh",
+      status: "Being Held",
+      name: "Far Fire",
+      geometry_relation: "unknown",
+      geometry: { type: "Point", coordinates: [-125.0, 55.0] },
+    };
+    const nearbyResult = {
+      ...mapResult,
+      result_id: "incident:kelowna",
+      name: "Kelowna Area Fire",
+      status: "Out of Control",
+      geometry: { type: "Point", coordinates: [-119.45, 49.9] },
+    };
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.startsWith("/api/v1/live/map")) {
+        return Promise.resolve(new Response(JSON.stringify({
+          generated_at: "2026-08-13T19:00:00Z",
+          results: [mapResult],
+          aggregate_freshness: "fresh",
+          unavailable_layers: [],
+          layer_statuses: [],
+          limitations: [],
+        }), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "live",
+        trace_id: "trace-kelowna-map",
+        answer: "Current official information: Kelowna Area Fire is Out of Control.",
+        claims: [],
+        evidence: [],
+        limitations: [],
+        live_results: [nearbyResult],
+        aggregate_freshness: "fresh",
+        unavailable_layers: [],
+        resolved_location: { latitude: 49.89, longitude: -119.5 },
+      }), { status: 200 }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Where are the fires in Kelowna?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText(/Map focused on the requested area near 49.89, -119.50/)).toBeInTheDocument();
+    expect(screen.queryByText("One detail needed")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Kelowna Area Fire").length).toBeGreaterThan(0);
+    const payload = JSON.parse(String(askCallOptions(fetchMock)[0]?.body));
+    expect(payload.location).toBeUndefined();
   });
 
   it("asks for location only when a selected-fire distance task needs it", async () => {

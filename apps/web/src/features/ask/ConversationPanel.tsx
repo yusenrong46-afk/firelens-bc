@@ -1,4 +1,5 @@
 import {
+  ArrowSquareOut,
   Check,
   ChatsCircle,
   Crosshair,
@@ -25,7 +26,7 @@ function ResponseModeBadge({
     partial: "Partially supported",
     background: "General background",
     capability: "FireLens topics",
-    scope_redirect: "Outside FireLens scope",
+    scope_redirect: "Related official service",
     abstention: "Official current information required",
     live: "Official live records",
     mixed: "Live records + reviewed guidance",
@@ -140,6 +141,16 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
             <span className="assistant-name">FireLens BC</span>
             {mode && <ResponseModeBadge mode={mode} aggregateFreshness={response?.aggregate_freshness ?? undefined} />}
             <p>{assistantText}</p>
+            {(response?.related_links ?? []).length > 0 && (
+              <div className="related-service-links" aria-label="Related official services">
+                {(response?.related_links ?? []).map((item) => (
+                  <a key={item.url} href={item.url} target="_blank" rel="noreferrer">
+                    <span><strong>{item.title}</strong><small>{item.description}</small></span>
+                    <ArrowSquareOut size={18} aria-hidden="true" />
+                  </a>
+                ))}
+              </div>
+            )}
             {response?.trace_id && <FeedbackControls traceId={response.trace_id} />}
             {(view.kind === "unavailable" || (view.kind === "error" && view.retryable)) && (
               <button className="retry-button" type="button" onClick={() => void submitQuestion(visibleQuestion ?? "")}>

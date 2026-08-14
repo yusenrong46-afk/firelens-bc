@@ -6,19 +6,26 @@ import re
 from datetime import UTC, datetime
 from uuid import uuid4
 
+from pydantic import HttpUrl
+
 from firelens.answering.intent import (
     live_layers_for_question,
     live_query_requires_location,
     static_guidance_fragment,
     unsupported_live_topics,
 )
+from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import (
     AggregateFreshness,
     AskResponse,
+    CoarseResolvedLocation,
     LiveMapResponse,
     LiveResultKind,
+    LocationInput,
+    NearMeResponse,
     QueryRequest,
     ReasonCode,
+    RelatedLink,
     RequiredInput,
     RequiredInputKind,
     ResponseMode,
@@ -33,9 +40,32 @@ _DISTANCE_PATTERN = re.compile(
 )
 _SELECTED_LIVE_PATTERN = re.compile(
     r"\b(?:this|that|selected)\s+(?:fire|wildfire|incident|perimeter)\b|"
-    r"\b(?:status|happening|update|details?)\b",
+    r"\b(?:status|happening|updates?|updated|details?|official|size|large)\b",
     re.IGNORECASE,
 )
+
+_RELATED_LIVE_LINKS = {
+    "air quality": RelatedLink(
+        title="Current B.C. AQHI",
+        url=HttpUrl("https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html"),
+        description="Environment and Climate Change Canada current AQHI observations and forecasts.",
+    ),
+    "road conditions": RelatedLink(
+        title="DriveBC road conditions",
+        url=HttpUrl("https://www.drivebc.ca/"),
+        description="Official B.C. road events, closures, delays, cameras, and conditions.",
+    ),
+    "weather or smoke forecast": RelatedLink(
+        title="Environment Canada weather",
+        url=HttpUrl("https://weather.gc.ca/"),
+        description="Official current conditions, wind, alerts, and forecasts by place.",
+    ),
+    "firefighting aircraft": RelatedLink(
+        title="BC Wildfire Service",
+        url=HttpUrl("https://wildfiresituation.nrs.gov.bc.ca/"),
+        description="Official wildfire situation, incidents, notices, and response information.",
+    ),
+}
 
 
 class LiveAnswerCoordinator:
@@ -66,10 +96,15 @@ class LiveAnswerCoordinator:
         from firelens.answering.intent import plan_query
         from firelens.contracts import QueryRoute
 
+        plan = plan_query(request)
         return (
             self.is_distance_request(request)
             or self.is_selected_live_request(request)
-            or plan_query(request).route == QueryRoute.LIVE
+            or plan.route == QueryRoute.LIVE
+            or (
+                bool(unsupported_live_topics(request.question))
+                and plan.route == QueryRoute.PROHIBITED
+            )
         )
 
     @staticmethod
@@ -86,6 +121,27 @@ class LiveAnswerCoordinator:
     @staticmethod
     def _unique_limitations(*groups: list[str]) -> list[str]:
         return list(dict.fromkeys(item for group in groups for item in group if item))
+
+    @staticmethod
+    def _related_links(topics: tuple[str, ...]) -> list[RelatedLink]:
+        return list(
+            dict.fromkeys(
+                _RELATED_LIVE_LINKS[topic] for topic in topics if topic in _RELATED_LIVE_LINKS
+            )
+        )
+
+    async def _nearby_records(
+        self,
+        location: LocationInput,
+        *,
+        layers: tuple[LiveResultKind, ...],
+    ) -> NearMeResponse:
+        return await self.live_service.nearby_page(
+            location,
+            layers=layers,
+            page=1,
+            page_size=100,
+        )
 
     @staticmethod
     def static_request(request: QueryRequest) -> QueryRequest | None:
@@ -121,10 +177,11 @@ class LiveAnswerCoordinator:
         )
 
     async def _distance_answer(self, request: QueryRequest) -> AskResponse:
-        if request.location is None:
+        effective_location = request.location or coarse_location_from_question(request.question)
+        if effective_location is None:
             return self._location_request(request)
         try:
-            latitude, longitude = await self.live_service.resolve_location(request.location)
+            latitude, longitude = await self.live_service.resolve_location(effective_location)
             live = await self.live_service.map_results(
                 layers=(LiveResultKind.INCIDENT, LiveResultKind.PERIMETER)
             )
@@ -223,6 +280,10 @@ class LiveAnswerCoordinator:
             live_results=[chosen],
             aggregate_freshness=freshness,
             selected_live_result_id=chosen.result_id,
+            resolved_location=CoarseResolvedLocation(
+                latitude=latitude,
+                longitude=longitude,
+            ),
             limitations=self._unique_limitations(
                 live.limitations,
                 [
@@ -240,6 +301,8 @@ class LiveAnswerCoordinator:
         *,
         limitations: list[str],
         unavailable_layers: list[LiveResultKind] | None = None,
+        related_links: list[RelatedLink] | None = None,
+        resolved_location: CoarseResolvedLocation | None = None,
     ) -> AskResponse | None:
         if not (
             static_result is not None
@@ -269,6 +332,8 @@ class LiveAnswerCoordinator:
             reason_code=ReasonCode.LIVE_DATA_REQUIRED,
             validation=static_result.validation,
             unavailable_layers=unavailable_layers or [],
+            related_links=related_links or [],
+            resolved_location=resolved_location,
         )
 
     async def answer(
@@ -278,6 +343,7 @@ class LiveAnswerCoordinator:
             return await self._distance_answer(request)
 
         layers = live_layers_for_question(request.question)
+        effective_location = request.location or coarse_location_from_question(request.question)
         selected_request = self.is_selected_live_request(request)
         selected_id = request.context.selected_live_result_id
         if not layers and selected_request and selected_id is not None:
@@ -291,7 +357,24 @@ class LiveAnswerCoordinator:
 
         if not layers:
             topics = ", ".join(unsupported_topics) or "that live information"
-            current_gap = f"FireLens V1.5 does not have an official live source for {topics}."
+            related_links = self._related_links(unsupported_topics)
+            resolved_location: CoarseResolvedLocation | None = None
+            if effective_location is not None:
+                try:
+                    latitude, longitude = await self.live_service.resolve_location(
+                        effective_location
+                    )
+                except LiveDataUnavailable:
+                    pass
+                else:
+                    resolved_location = CoarseResolvedLocation(
+                        latitude=latitude,
+                        longitude=longitude,
+                    )
+            current_gap = (
+                f"FireLens is not connected to an official live source for {topics}. "
+                "Use the related official service for the current value."
+            )
             partial = self._supported_static_partial(
                 static_result,
                 current_gap,
@@ -299,28 +382,33 @@ class LiveAnswerCoordinator:
                     "No matching record is not a safety determination.",
                     f"Unsupported live topics: {topics}",
                 ],
+                related_links=related_links,
+                resolved_location=resolved_location,
             )
             if partial is not None:
                 return partial
             return AskResponse(
-                status=ResponseStatus.ABSTENTION,
+                status=ResponseStatus.ANSWER,
                 trace_id=uuid4().hex,
-                response_mode=ResponseMode.ABSTENTION,
+                response_mode=ResponseMode.SCOPE_REDIRECT,
                 answer=(
-                    f"FireLens V1.5 does not have an official live source for {topics}. "
-                    "It will not substitute wildfire incident records for the requested data."
+                    f"FireLens is not connected to an official live source for {topics}, "
+                    "so it cannot verify that current value here. Open the related official "
+                    "service below; FireLens will not substitute wildfire records for it."
                 ),
-                reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+                reason_code=ReasonCode.SCOPE_REDIRECT,
                 limitations=["No matching record is not a safety determination."],
+                related_links=related_links,
+                resolved_location=resolved_location,
             )
 
-        if request.location is None and live_query_requires_location(request.question):
+        if effective_location is None and live_query_requires_location(request.question):
             return self._location_request(request)
 
         try:
             live = (
-                await self.live_service.nearby_results(request.location, layers=layers)
-                if request.location is not None
+                await self._nearby_records(effective_location, layers=layers)
+                if effective_location is not None
                 else await self.live_service.map_results(layers=layers)
             )
         except LiveDataUnavailable:
@@ -331,6 +419,7 @@ class LiveAnswerCoordinator:
                 limitations=["Official live sources are currently unavailable."],
             )
 
+        resolved_location = getattr(live, "resolved_location", None)
         if not live.results:
             answer = (
                 "No matching official record was found for this query. This does not mean "
@@ -351,9 +440,24 @@ class LiveAnswerCoordinator:
                     ),
                 ],
                 unavailable_layers=live.unavailable_layers,
+                resolved_location=resolved_location,
             )
             if partial is not None:
                 return partial
+            if resolved_location is not None:
+                return AskResponse(
+                    status=ResponseStatus.ANSWER,
+                    trace_id=uuid4().hex,
+                    response_mode=ResponseMode.LIVE,
+                    answer=answer,
+                    resolved_location=resolved_location,
+                    reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+                    limitations=[
+                        *live.limitations,
+                        "No matching record is not a safety determination.",
+                    ],
+                    unavailable_layers=live.unavailable_layers,
+                )
             return AskResponse(
                 status=ResponseStatus.ABSTENTION,
                 trace_id=uuid4().hex,
@@ -431,6 +535,7 @@ class LiveAnswerCoordinator:
                 validation=static_result.validation,
                 unavailable_layers=live.unavailable_layers,
                 selected_live_result_id=selected_id if selected_request else None,
+                resolved_location=resolved_location,
             )
         return AskResponse(
             status=ResponseStatus.ANSWER,
@@ -451,4 +556,5 @@ class LiveAnswerCoordinator:
             ),
             unavailable_layers=live.unavailable_layers,
             selected_live_result_id=selected_id if selected_request else None,
+            resolved_location=resolved_location,
         )

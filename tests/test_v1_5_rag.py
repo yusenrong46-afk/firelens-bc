@@ -10,11 +10,14 @@ from rag_helpers import make_chunk, make_runtime
 from firelens.answering.context import build_evidence_packet, decide_support
 from firelens.answering.intent import (
     apply_planning_decision,
+    coarse_location_from_question,
     focused_question,
     live_layers_for_question,
     live_query_requires_location,
     plan_query,
+    required_authorities,
     resolved_user_question,
+    reviewed_guidance_intent,
     static_guidance_fragment,
     unsupported_live_topics,
 )
@@ -141,13 +144,130 @@ class V15RoutingTests(unittest.TestCase):
             (),
         )
         self.assertEqual(
+            live_layers_for_question("What will the wind do near the Kelowna fires tonight?"),
+            (),
+        )
+        self.assertEqual(
             unsupported_live_topics("Are roads open and what is the AQHI?"),
             ("air quality", "road conditions"),
         )
 
-    def test_localized_live_question_requires_explicit_location_input(self) -> None:
-        self.assertTrue(live_query_requires_location("Are there fires near Kelowna today?"))
+    def test_named_community_is_request_scoped_location_not_a_second_prompt(self) -> None:
+        expected = {
+            "Where are the current wildfires in Kelowna?": "Kelowna",
+            "Show me the wildfire situation around West Kelowna.": "West Kelowna",
+            "Is Kamloops under an evacuation order right now?": "Kamloops",
+            "wheres the fire by vernon rn": "vernon",
+            "Put the map on Prince George and tell me what is happening.": "Prince George",
+            "any fires round kamloops today?": "kamloops",
+            "show me vernon fire stuff on map": "vernon",
+            "is west k on evac alert": "West Kelowna",
+            "What will the wind do near the Kelowna fires tonight?": "Kelowna",
+            "Tell me whether it is safe to drive to Kelowna right now.": "Kelowna",
+        }
+        for question, label in expected.items():
+            with self.subTest(question=question):
+                location = coarse_location_from_question(question)
+                self.assertIsNotNone(location)
+                assert location is not None
+                self.assertEqual(location.label, label)
+                self.assertFalse(live_query_requires_location(question))
+
+    def test_personal_location_still_requires_explicit_opt_in(self) -> None:
+        for question in (
+            "Are there wildfires near me?",
+            "Show fires close to my current location.",
+            "Is anything burning around my home?",
+            "Put the map where I am.",
+            "How close is the nearest fire to me?",
+            "Are there evacuation orders near my house?",
+            "What wildfire is closest to my location?",
+            "Check my area for active fires.",
+            "Do I have an evacuation alert where I live?",
+            "How far am I from the closest perimeter?",
+        ):
+            with self.subTest(question=question):
+                self.assertIsNone(coarse_location_from_question(question))
+                self.assertTrue(live_query_requires_location(question))
+                self.assertEqual(
+                    plan_query(QueryRequest(question=question)).route,
+                    QueryRoute.LIVE,
+                )
+                self.assertTrue(live_layers_for_question(question))
         self.assertFalse(live_query_requires_location("How many active fires are in BC today?"))
+        self.assertFalse(
+            live_query_requires_location("How can I reduce wildfire risk around my home?")
+        )
+
+    def test_named_map_commands_route_to_supported_live_layers(self) -> None:
+        for question in (
+            "Show me the wildfire situation around Kelowna.",
+            "Put the map on Kelowna and tell me what is happening.",
+            "wheres the fire by kelowna rn",
+            "any fires round kamloops today?",
+            "show me vernon fire stuff on map",
+        ):
+            with self.subTest(question=question):
+                self.assertEqual(
+                    plan_query(QueryRequest(question=question)).route,
+                    QueryRoute.LIVE,
+                )
+
+        self.assertEqual(
+            live_layers_for_question("is west k on evac alert"),
+            (LiveResultKind.EVACUATION,),
+        )
+
+    def test_named_official_record_request_opens_all_relevant_map_layers(self) -> None:
+        question = (
+            "What official records are near Cranbrook, and what should be in my family plan?"
+        )
+        self.assertEqual(plan_query(QueryRequest(question=question)).route, QueryRoute.LIVE)
+        self.assertEqual(
+            live_layers_for_question(question),
+            (
+                LiveResultKind.INCIDENT,
+                LiveResultKind.PERIMETER,
+                LiveResultKind.EVACUATION,
+            ),
+        )
+
+    def test_province_record_commands_do_not_fall_through_to_rag(self) -> None:
+        for question in (
+            "Which fires are currently listed by BC Wildfire Service?",
+            "Show current incident and perimeter records for the province.",
+        ):
+            with self.subTest(question=question):
+                self.assertEqual(
+                    plan_query(QueryRequest(question=question)).route,
+                    QueryRoute.LIVE,
+                )
+                self.assertEqual(
+                    live_layers_for_question(question),
+                    (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER),
+                )
+
+    def test_reviewed_guidance_topics_are_not_left_to_planner_scope_guessing(self) -> None:
+        for question in (
+            "What is the home ignition zone?",
+            "How should my family prepare for a possible evacuation?",
+            "What belongs in a grab-and-go bag?",
+            "How can I prepare for wildfire smoke?",
+            "what does outta control fire mean",
+        ):
+            with self.subTest(question=question):
+                self.assertTrue(reviewed_guidance_intent(question))
+        self.assertFalse(reviewed_guidance_intent("Who won the hockey game?"))
+
+    def test_authority_terms_match_words_not_substrings(self) -> None:
+        self.assertNotIn(
+            AuthorityClass.WILDFIRE_PREPAREDNESS,
+            required_authorities("Additional supplies for household members and pets"),
+        )
+        self.assertIn(
+            AuthorityClass.WILDFIRE_PREPAREDNESS,
+            required_authorities("How do I reduce ember risk around my home?"),
+        )
 
     def test_mixed_static_fragment_preserves_the_users_words(self) -> None:
         question = "Are there fires near Kelowna today, and what should I pack in my go bag?"

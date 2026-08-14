@@ -1391,18 +1391,19 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                     },
                 )
                 self.assertEqual(unsupported_live.status_code, 200)
-                self.assertEqual(unsupported_live.json()["status"], "abstention")
+                self.assertEqual(unsupported_live.json()["status"], "answer")
+                self.assertEqual(unsupported_live.json()["response_mode"], "scope_redirect")
                 self.assertIn("air quality", unsupported_live.json()["answer"])
+                self.assertTrue(unsupported_live.json()["related_links"])
                 localized_without_input = await client.post(
                     "/api/v1/ask",
                     json={"question": "Are there active wildfires near Kelowna today?"},
                 )
                 self.assertEqual(localized_without_input.status_code, 200)
                 self.assertEqual(localized_without_input.json()["status"], "answer")
-                self.assertEqual(
-                    localized_without_input.json()["response_mode"], "requires_input"
-                )
-                self.assertIn("approximate location", localized_without_input.json()["answer"])
+                self.assertEqual(localized_without_input.json()["response_mode"], "live")
+                self.assertIsNotNone(localized_without_input.json()["resolved_location"])
+                self.assertIsNone(localized_without_input.json()["required_input"])
                 mixed_without_location = await client.post(
                     "/api/v1/ask",
                     json={
@@ -1413,14 +1414,9 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                     },
                 )
                 self.assertEqual(mixed_without_location.status_code, 200)
-                self.assertEqual(
-                    mixed_without_location.json()["response_mode"], "requires_input"
-                )
-                self.assertIn("approximate location", mixed_without_location.json()["answer"])
-                self.assertEqual(
-                    mixed_without_location.json()["required_input"]["continuation_question"],
-                    "Are there fires near Kelowna today, and what belongs in an emergency kit?",
-                )
+                self.assertEqual(mixed_without_location.json()["response_mode"], "mixed")
+                self.assertIsNotNone(mixed_without_location.json()["resolved_location"])
+                self.assertIsNone(mixed_without_location.json()["required_input"])
                 unsupported_mixed = await client.post(
                     "/api/v1/ask",
                     json={
