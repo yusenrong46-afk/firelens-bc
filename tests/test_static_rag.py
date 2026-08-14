@@ -918,7 +918,7 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((provider.embed_calls, provider.rerank_calls), initial[:2])
             self.assertGreater(provider.generate_calls, initial[2])
 
-    async def test_planner_failure_uses_bounded_reviewed_guidance_fallback(self) -> None:
+    async def test_reviewed_guidance_uses_bounded_retrieval_without_planner(self) -> None:
         chunk = make_chunk(
             "stage-out-of-control",
             "Out of control means a wildfire is continuing to spread and is not responding to suppression efforts.",
@@ -935,7 +935,7 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(response.status, ResponseStatus.ANSWER)
         self.assertNotEqual(response.response_mode, ResponseMode.ABSTENTION)
-        self.assertEqual(provider.plan_calls, 1)
+        self.assertEqual(provider.plan_calls, 0)
         self.assertGreater(provider.embed_calls, 0)
         self.assertGreater(provider.rerank_calls, 0)
 

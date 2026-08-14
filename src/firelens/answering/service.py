@@ -175,6 +175,20 @@ class StaticRAGService:
         )
         return bundle, packet
 
+    @staticmethod
+    def _reviewed_guidance_plan(plan: QueryPlan) -> QueryPlan:
+        return apply_planning_decision(
+            plan,
+            PlanningDecision(
+                relation=QueryRelation.GROUNDED_CANDIDATE,
+                retrieval_queries=[plan.normalized_question],
+                required_aspects=[plan.normalized_question],
+                explanation=(
+                    "A deterministic reviewed-guidance intent used bounded corpus retrieval."
+                ),
+            ),
+        )
+
     async def _record_ask(
         self,
         request: QueryRequest,
@@ -253,7 +267,15 @@ class StaticRAGService:
         planning: PlanningResponse | None = None
         packet: EvidencePacket | None = None
 
-        if plan.route == QueryRoute.RELATED:
+        if plan.route == QueryRoute.RELATED and reviewed_guidance_intent(request.question):
+            plan = self._reviewed_guidance_plan(plan)
+            bundle, packet = await self._retrieve_for_plan(
+                plan,
+                request,
+                planning=None,
+                planning_ms=0.0,
+            )
+        elif plan.route == QueryRoute.RELATED:
             planning_started = perf_counter()
             planning_candidates = self._planning_candidates(plan.normalized_question)
             planning_request = request.model_copy(update={"question": plan.normalized_question})
@@ -289,7 +311,6 @@ class StaticRAGService:
                     or _candidate_source_reference_present(
                         request.question, planning_candidates
                     )
-                    or reviewed_guidance_intent(request.question)
                 ):
                     planning = planning.model_copy(
                         update={
@@ -320,31 +341,11 @@ class StaticRAGService:
                 )
             except ProviderError as exc:
                 planning_ms = (perf_counter() - planning_started) * 1_000
-                if reviewed_guidance_intent(request.question):
-                    plan = apply_planning_decision(
-                        plan,
-                        PlanningDecision(
-                            relation=QueryRelation.GROUNDED_CANDIDATE,
-                            retrieval_queries=[plan.normalized_question],
-                            required_aspects=[plan.normalized_question],
-                            explanation=(
-                                "The model planner was unavailable, so a deterministic "
-                                "reviewed-guidance intent used bounded corpus retrieval."
-                            ),
-                        ),
-                    )
-                    bundle, packet = await self._retrieve_for_plan(
-                        plan,
-                        request,
-                        planning=None,
-                        planning_ms=planning_ms,
-                    )
-                else:
-                    bundle = RetrievalBundle(
-                        complete=False,
-                        errors=[exc.kind.value],
-                        timings_ms={"planning": planning_ms},
-                    )
+                bundle = RetrievalBundle(
+                    complete=False,
+                    errors=[exc.kind.value],
+                    timings_ms={"planning": planning_ms},
+                )
             else:
                 if plan.retrieval_requests:
                     bundle, packet = await self._retrieve_for_plan(

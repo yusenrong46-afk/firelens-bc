@@ -256,6 +256,7 @@ class V15RoutingTests(unittest.TestCase):
             "what does outta control fire mean",
             "smoke in my house what can i do",
             "evac alert vs order im confused",
+            "How can I explain emergency planning to a child?",
         ):
             with self.subTest(question=question):
                 self.assertTrue(reviewed_guidance_intent(question))

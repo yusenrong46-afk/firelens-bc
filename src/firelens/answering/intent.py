@@ -181,7 +181,7 @@ _STATIC_GUIDANCE_TERMS = (
 
 _REVIEWED_GUIDANCE_PATTERNS = (
     r"\b(?:home ignition zone|firesmart|combustible material|ember risk)\b",
-    r"\b(?:grab-and-go|go bag|emergency kit|emergency plan|household plan)\b",
+    r"\b(?:grab-and-go|go bag|emergency kit|emergency plan(?:ning)?|household plan)\b",
     r"\b(?:family|household|pets?)\b.{0,50}\b(?:prepare|evacuation|emergency)\b",
     r"\b(?:prepare|preparing)\b.{0,50}\b(?:family|household|pets?|evacuation)\b",
     r"\b(?:evacuation|evac)\s+(?:alert|order)\b",

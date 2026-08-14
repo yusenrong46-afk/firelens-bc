@@ -894,7 +894,12 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                 ) as client:
                     response = await client.post(
                         "/api/v1/ask",
-                        json={"question": "What belongs in an emergency kit?"},
+                        json={
+                            "question": (
+                                "What does the Preparedness Guide say about replacing "
+                                "expired supplies?"
+                            )
+                        },
                     )
                 await runtime.aclose()
 
@@ -931,7 +936,12 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                 request = asyncio.create_task(
                     client.post(
                         "/api/v1/ask",
-                        json={"question": "What belongs in an emergency kit?"},
+                        json={
+                            "question": (
+                                "What does the Preparedness Guide say about replacing "
+                                "expired supplies?"
+                            )
+                        },
                     )
                 )
                 await asyncio.wait_for(provider.entered.wait(), timeout=1)
