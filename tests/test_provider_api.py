@@ -40,7 +40,7 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
                     "data": [
                         {"model_id": "openai/text-embedding-3-small"},
                         {"model_id": "cohere/rerank-4-pro"},
-                        {"model_id": "google/gemini-3.5-flash-lite"},
+                        {"model_id": "openai/gpt-5.6-luna"},
                     ]
                 },
             )
@@ -63,7 +63,7 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
             (
                 "openai/text-embedding-3-small",
                 "cohere/rerank-4-pro",
-                "google/gemini-3.5-flash-lite",
+                "openai/gpt-5.6-luna",
             ),
         )
         self.assertEqual(observed_authorization, "Bearer test-key")
@@ -1333,7 +1333,8 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                     json={"question": "Is a wildfire active near me right now?"},
                 )
                 self.assertEqual(live.status_code, 200)
-                self.assertEqual(live.json()["status"], "abstention")
+                self.assertEqual(live.json()["status"], "answer")
+                self.assertEqual(live.json()["response_mode"], "requires_input")
                 unsupported_live = await client.post(
                     "/api/v1/ask",
                     json={
@@ -1348,7 +1349,10 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                     json={"question": "Are there active wildfires near Kelowna today?"},
                 )
                 self.assertEqual(localized_without_input.status_code, 200)
-                self.assertEqual(localized_without_input.json()["status"], "abstention")
+                self.assertEqual(localized_without_input.json()["status"], "answer")
+                self.assertEqual(
+                    localized_without_input.json()["response_mode"], "requires_input"
+                )
                 self.assertIn("approximate location", localized_without_input.json()["answer"])
                 mixed_without_location = await client.post(
                     "/api/v1/ask",
@@ -1360,12 +1364,14 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                     },
                 )
                 self.assertEqual(mixed_without_location.status_code, 200)
-                self.assertEqual(mixed_without_location.json()["response_mode"], "partial")
-                self.assertIn(
-                    "Current official information", mixed_without_location.json()["answer"]
+                self.assertEqual(
+                    mixed_without_location.json()["response_mode"], "requires_input"
                 )
-                self.assertIn("Preparedness guidance", mixed_without_location.json()["answer"])
-                self.assertTrue(mixed_without_location.json()["claims"])
+                self.assertIn("approximate location", mixed_without_location.json()["answer"])
+                self.assertEqual(
+                    mixed_without_location.json()["required_input"]["continuation_question"],
+                    "Are there fires near Kelowna today, and what belongs in an emergency kit?",
+                )
                 unsupported_mixed = await client.post(
                     "/api/v1/ask",
                     json={

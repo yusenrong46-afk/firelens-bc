@@ -1,12 +1,15 @@
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   askFireLens,
   type AskResponse,
   type ConversationTurn,
   FireLensApiError,
   type LocationInput,
+  type LiveResult,
+  type MapContext,
   type ResponseMode,
 } from "../../shared/api/api";
+import { useProvinceMap } from "../near-me/useProvinceMap";
 import {
   getResponseMode,
   INITIAL_SUGGESTIONS,
@@ -26,6 +29,7 @@ export type FireLensSession = {
   locationLabel: string;
   setLocationLabel: (label: string) => void;
   locationMessage: string;
+  requiresLocation: boolean;
   response: AskResponse | undefined;
   mode: ResponseMode | undefined;
   claims: Claim[];
@@ -33,21 +37,31 @@ export type FireLensSession = {
   suggestions: string[];
   visibleQuestion: string | undefined;
   assistantText: string;
+  mapResults: LiveResult[];
+  mapLoading: boolean;
+  mapMessage: string | undefined;
+  mapAggregateFreshness: "fresh" | "stale" | "mixed" | undefined;
+  mapUnavailableLayers: string[];
+  selectedLiveResultId: string | undefined;
+  setSelectedLiveResultId: (resultId: string) => void;
+  askAboutResult: (resultId: string, question: string) => void;
   submitQuestion: (question: string) => Promise<void>;
   clearHistory: () => void;
   useApproximateLocation: () => void;
+  submitLocation: (event: FormEvent<HTMLFormElement>) => void;
   submit: (event: FormEvent<HTMLFormElement>) => void;
   clearManualLocation: () => void;
 };
 
 export function useFireLensSession(): FireLensSession {
+  const provinceMap = useProvinceMap();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
   const [view, setView] = useState<ViewState>({ kind: "idle" });
   const [history, setHistory] = useState<ConversationTurn[]>([]);
   const [locationLabel, setLocationLabel] = useState("");
-  const [coarseLocation, setCoarseLocation] = useState<LocationInput | undefined>();
   const [locationMessage, setLocationMessage] = useState("");
+  const [selectedLiveResultId, setSelectedLiveResultId] = useState<string>();
   const activeRequest = useRef<AbortController | null>(null);
 
   const response = view.kind === "answer" || view.kind === "abstention" ? view.response : undefined;
@@ -66,7 +80,32 @@ export function useFireLensSession(): FireLensSession {
       ? INITIAL_SUGGESTIONS
       : [];
 
-  async function submitQuestion(question: string) {
+  const mapResults = useMemo(() => {
+    const resultById = new Map<string, LiveResult>();
+    for (const result of provinceMap.data?.results ?? []) resultById.set(result.result_id, result);
+    for (const result of response?.live_results ?? []) resultById.set(result.result_id, result);
+    return [...resultById.values()];
+  }, [provinceMap.data?.results, response?.live_results]);
+  const mapAggregateFreshness =
+    response?.aggregate_freshness ?? provinceMap.data?.aggregate_freshness ?? undefined;
+  const mapUnavailableLayers = [
+    ...new Set([
+      ...(provinceMap.data?.unavailable_layers ?? []),
+      ...(response?.unavailable_layers ?? []),
+    ]),
+  ];
+  const requiresLocation = response?.required_input?.kind === "location";
+
+  useEffect(() => {
+    const selectedFromResponse = response?.selected_live_result_id;
+    if (selectedFromResponse) setSelectedLiveResultId(selectedFromResponse);
+  }, [response?.selected_live_result_id]);
+
+  async function submitQuestionWithContext(
+    question: string,
+    locationOverride?: LocationInput,
+    selectedResultOverride?: string,
+  ) {
     const normalized = question.trim();
     if (!normalized) return;
     const requestHistory = history.slice(-6);
@@ -76,14 +115,17 @@ export function useFireLensSession(): FireLensSession {
     setSelected(0);
     setView({ kind: "loading", question: normalized });
     try {
-      const requestLocation = locationLabel.trim()
-        ? { label: locationLabel.trim(), radius_km: 50 }
-        : coarseLocation;
+      const context: MapContext = {
+        visible_live_result_ids: mapResults.slice(0, 100).map((result) => result.result_id),
+      };
+      const contextSelected = selectedResultOverride ?? selectedLiveResultId;
+      if (contextSelected) context.selected_live_result_id = contextSelected;
       const nextResponse = await askFireLens(
         normalized,
         requestHistory,
-        requestLocation,
+        locationOverride,
         controller.signal,
+        context,
       );
       const nextHistory: ConversationTurn[] = [
         ...requestHistory,
@@ -117,14 +159,18 @@ export function useFireLensSession(): FireLensSession {
     }
   }
 
+  async function submitQuestion(question: string) {
+    await submitQuestionWithContext(question);
+  }
+
   function clearHistory() {
     activeRequest.current?.abort();
     activeRequest.current = null;
     setHistory([]);
     setSelected(0);
     setLocationLabel("");
-    setCoarseLocation(undefined);
     setLocationMessage("");
+    setSelectedLiveResultId(undefined);
     setView({ kind: "idle" });
   }
 
@@ -136,17 +182,34 @@ export function useFireLensSession(): FireLensSession {
     setLocationMessage("Requesting permission…");
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        setLocationLabel("");
-        setCoarseLocation({
+        const location: LocationInput = {
           latitude: Math.round(coords.latitude * 100) / 100,
           longitude: Math.round(coords.longitude * 100) / 100,
           radius_km: 50,
-        });
-        setLocationMessage("Approximate location ready for this session.");
+        };
+        setLocationLabel("");
+        setLocationMessage("Approximate location ready for this request.");
+        const continuation = response?.required_input?.continuation_question;
+        if (continuation) void submitQuestionWithContext(continuation, location);
       },
       () => setLocationMessage("Location was not shared."),
       { enableHighAccuracy: false, maximumAge: 300_000, timeout: 8_000 },
     );
+  }
+
+  function submitLocation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const continuation = response?.required_input?.continuation_question;
+    const label = locationLabel.trim();
+    if (!continuation || !label) return;
+    const location: LocationInput = { label, radius_km: 50 };
+    setLocationLabel("");
+    void submitQuestionWithContext(continuation, location);
+  }
+
+  function askAboutResult(resultId: string, question: string) {
+    setSelectedLiveResultId(resultId);
+    void submitQuestionWithContext(question, undefined, resultId);
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -164,7 +227,9 @@ export function useFireLensSession(): FireLensSession {
         ? "Searching the reviewed guidance and validating its evidence…"
         : view.kind === "unavailable" || view.kind === "error"
           ? (view.message ?? "FireLens is unavailable.")
-          : "Ask about stable BC wildfire preparedness guidance. FireLens will either return locally cited evidence or explain why it cannot answer.";
+          : provinceMap.loading
+            ? "Loading official wildfire layers. You can ask anything while the map gets ready."
+            : "Ask about a mapped fire, wildfire preparedness, or an everyday question. FireLens labels official sources, reviewed evidence, and general knowledge differently.";
 
   return {
     query,
@@ -177,6 +242,7 @@ export function useFireLensSession(): FireLensSession {
     locationLabel,
     setLocationLabel,
     locationMessage,
+    requiresLocation,
     response,
     mode,
     claims,
@@ -184,12 +250,20 @@ export function useFireLensSession(): FireLensSession {
     suggestions,
     visibleQuestion,
     assistantText,
+    mapResults,
+    mapLoading: provinceMap.loading,
+    mapMessage: provinceMap.message,
+    mapAggregateFreshness,
+    mapUnavailableLayers,
+    selectedLiveResultId,
+    setSelectedLiveResultId,
+    askAboutResult,
     submitQuestion,
     clearHistory,
     useApproximateLocation,
+    submitLocation,
     submit,
     clearManualLocation: () => {
-      setCoarseLocation(undefined);
       setLocationMessage("");
     },
   };

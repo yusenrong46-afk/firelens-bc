@@ -133,8 +133,11 @@ export interface components {
             /** Live Results */
             live_results?: components["schemas"]["LiveResult"][];
             reason_code?: components["schemas"]["ReasonCode"] | null;
+            required_input?: components["schemas"]["RequiredInput"] | null;
             /** @default abstention */
             response_mode: components["schemas"]["ResponseMode"];
+            /** Selected Live Result Id */
+            selected_live_result_id?: string | null;
             status: components["schemas"]["ResponseStatus"];
             /** Suggested Questions */
             suggested_questions?: string[];
@@ -329,6 +332,10 @@ export interface components {
              * @default BC Wildfire Service
              */
             authority: string;
+            /** Distance Basis */
+            distance_basis?: ("incident_point" | "perimeter_boundary") | null;
+            /** Distance Km */
+            distance_km?: number | null;
             freshness: components["schemas"]["Freshness"];
             /** Geometry */
             geometry: {
@@ -395,6 +402,17 @@ export interface components {
              * @default 50
              */
             radius_km: number;
+        };
+        /**
+         * MapContext
+         * @description Bounded, user-visible map state supplied with an agent request.
+         */
+        MapContext: {
+            /** Selected Live Result Id */
+            selected_live_result_id?: string | null;
+            viewport?: components["schemas"]["MapViewport"] | null;
+            /** Visible Live Result Ids */
+            visible_live_result_ids?: string[];
         };
         /** MapViewport */
         MapViewport: {
@@ -492,6 +510,7 @@ export interface components {
         };
         /** QueryRequest */
         QueryRequest: {
+            context?: components["schemas"]["MapContext"];
             /** History */
             history?: components["schemas"]["ConversationTurn"][];
             location?: components["schemas"]["LocationInput"] | null;
@@ -504,10 +523,26 @@ export interface components {
          */
         ReasonCode: "capability_overview" | "scope_redirect" | "personalized_safety_decision" | "personalized_medical_advice" | "policy_manipulation" | "live_data_required" | "planning_unavailable" | "retrieval_unavailable" | "retrieval_incomplete" | "no_approved_evidence" | "wrong_temporal_class" | "required_authority_missing" | "approved_static_evidence" | "generation_unavailable" | "draft_validation_failed" | "model_abstained" | "conflicting_evidence";
         /**
+         * RequiredInput
+         * @description One bounded input needed to resume the current agent task.
+         */
+        RequiredInput: {
+            /** Continuation Question */
+            continuation_question: string;
+            kind: components["schemas"]["RequiredInputKind"];
+            /** Prompt */
+            prompt: string;
+        };
+        /**
+         * RequiredInputKind
+         * @enum {string}
+         */
+        RequiredInputKind: "location";
+        /**
          * ResponseMode
          * @enum {string}
          */
-        ResponseMode: "grounded" | "background" | "capability" | "scope_redirect" | "abstention" | "partial" | "live" | "mixed" | "conflict";
+        ResponseMode: "grounded" | "background" | "capability" | "scope_redirect" | "abstention" | "partial" | "live" | "mixed" | "conflict" | "requires_input";
         /**
          * ResponseStatus
          * @enum {string}

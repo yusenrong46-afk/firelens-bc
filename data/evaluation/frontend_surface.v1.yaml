@@ -5,13 +5,15 @@
   "frozen_at": null,
   "description": "Provisional freeze-ready build-preview qualification for FireLens safety-critical UI states, responsive surfaces, accessibility, functional privacy and keyboard journeys, and throttled visual performance. Owner ratification and a before capture are required before this can make a frozen qualification claim.",
   "matrix": {
-    "expected_rows": 30,
+    "expected_rows": 36,
     "require_every_state_viewport_pair_once": true
   },
   "states": [
-    {"id": "idle", "question": null, "ready_text": "Ask, then inspect the source"},
+    {"id": "idle", "question": null, "ready_text": "Select a fire or ask anything"},
     {"id": "grounded", "question": "surface:grounded", "ready_text": "Sources supporting this answer"},
     {"id": "partial", "question": "surface:partial", "ready_text": "Partially supported"},
+    {"id": "background", "question": "surface:background", "ready_text": "General background — no corpus evidence attached"},
+    {"id": "requires_input", "question": "surface:requires-location", "ready_text": "One detail needed"},
     {"id": "abstention", "question": "surface:abstention", "ready_text": "No evidence-backed answer"},
     {"id": "provider_failure", "question": "surface:unavailable", "ready_text": "Local service unavailable"},
     {"id": "live", "question": "surface:live-fresh", "ready_text": "Current BC wildfire information"},
@@ -101,8 +103,8 @@
   ],
   "privacy_evidence": {
     "request_url": "http://127.0.0.1:4175/api/v1/ask",
-    "expected_questions": ["surface:grounded", "surface:live-fresh"],
-    "allowed_body_keys": ["history", "location", "question"],
+    "expected_questions": ["surface:requires-location", "surface:live-fresh"],
+    "allowed_body_keys": ["context", "history", "location", "question"],
     "fixture_location": {
       "raw_latitude": 49.282729,
       "raw_longitude": -123.120738,

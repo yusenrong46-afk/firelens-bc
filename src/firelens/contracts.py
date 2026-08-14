@@ -106,6 +106,7 @@ class ResponseMode(StrEnum):
     LIVE = "live"
     MIXED = "mixed"
     CONFLICT = "conflict"
+    REQUIRES_INPUT = "requires_input"
 
 
 class AuthorityClass(StrEnum):
@@ -160,6 +161,35 @@ class ResponseStatus(StrEnum):
     ERROR = "error"
 
 
+class RequiredInputKind(StrEnum):
+    LOCATION = "location"
+
+
+class MapContext(FrozenStrictModel):
+    """Bounded, user-visible map state supplied with an agent request."""
+
+    selected_live_result_id: str | None = Field(default=None, min_length=1, max_length=200)
+    visible_live_result_ids: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
+        default_factory=list, max_length=100
+    )
+    viewport: MapViewport | None = None
+
+    @field_validator("visible_live_result_ids")
+    @classmethod
+    def require_unique_result_ids(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("visible map result IDs must be unique")
+        return value
+
+
+class RequiredInput(FrozenStrictModel):
+    """One bounded input needed to resume the current agent task."""
+
+    kind: RequiredInputKind
+    prompt: str = Field(min_length=1, max_length=300)
+    continuation_question: str = Field(min_length=1, max_length=2_000)
+
+
 class ConversationTurn(FrozenStrictModel):
     role: Literal["user", "assistant"]
     content: str = Field(min_length=1, max_length=6_000)
@@ -177,6 +207,7 @@ class QueryRequest(StrictModel):
     question: str = Field(min_length=1, max_length=2_000)
     history: list[ConversationTurn] = Field(default_factory=list, max_length=6)
     location: LocationInput | None = None
+    context: MapContext = Field(default_factory=MapContext)
 
     @field_validator("question")
     @classmethod
@@ -458,6 +489,8 @@ class AskResponse(StrictModel):
     live_results: list[LiveResult] = Field(default_factory=list)
     aggregate_freshness: AggregateFreshness | None = None
     unavailable_layers: list[LiveResultKind] = Field(default_factory=list)
+    required_input: RequiredInput | None = None
+    selected_live_result_id: str | None = Field(default=None, min_length=1, max_length=200)
 
     @model_validator(mode="after")
     def validate_public_state(self) -> AskResponse:
@@ -472,8 +505,14 @@ class AskResponse(StrictModel):
             ResponseMode.MIXED: self._validate_mixed,
             ResponseMode.CAPABILITY: self._validate_conversational,
             ResponseMode.SCOPE_REDIRECT: self._validate_conversational,
+            ResponseMode.REQUIRES_INPUT: self._validate_requires_input,
         }
         validators.get(self.response_mode, self._validate_abstention)(evidence_ids)
+        if (
+            self.response_mode != ResponseMode.REQUIRES_INPUT
+            and self.required_input is not None
+        ):
+            raise ValueError("required input is only valid for resumable input responses")
         if not self.live_results and self.aggregate_freshness is not None:
             raise ValueError("aggregate freshness requires live results")
         return self
@@ -558,6 +597,16 @@ class AskResponse(StrictModel):
     def _validate_conversational(self, _evidence_ids: list[str]) -> None:
         if self.status != ResponseStatus.ANSWER or self.claims or self.evidence:
             raise ValueError("local conversational responses cannot contain claims")
+
+    def _validate_requires_input(self, _evidence_ids: list[str]) -> None:
+        if (
+            self.status != ResponseStatus.ANSWER
+            or not self.answer
+            or self.required_input is None
+        ):
+            raise ValueError("resumable input responses require a prompt and continuation")
+        if self.claims or self.evidence or self.live_results:
+            raise ValueError("resumable input responses cannot contain evidence results")
 
     def _validate_abstention(self, _evidence_ids: list[str]) -> None:
         if self.status not in {ResponseStatus.ABSTENTION, ResponseStatus.ERROR}:

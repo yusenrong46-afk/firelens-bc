@@ -30,6 +30,7 @@ function ResponseModeBadge({
     live: "Official live records",
     mixed: "Live records + reviewed guidance",
     conflict: "Conflicting reviewed sources",
+    requires_input: "One detail needed",
   };
   if (mode === "live" && aggregateFreshness === "stale") labels.live = "Official cached records";
   else if (mode === "live" && aggregateFreshness === "mixed") labels.live = "Official records — mixed freshness";
@@ -87,11 +88,13 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
     mode,
     query,
     response,
+    requiresLocation,
     selected,
     setLocationLabel,
     setQuery,
     setSelected,
     submit,
+    submitLocation,
     submitQuestion,
     suggestions,
     useApproximateLocation,
@@ -146,6 +149,34 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
           </div>
         </div>
 
+        {requiresLocation && (
+          <form className="location-request" onSubmit={submitLocation}>
+            <span className="panel-label">Continue this task</span>
+            <strong>{response?.required_input?.prompt}</strong>
+            <p>FireLens sends only a community label or coordinates rounded to two decimals for this request.</p>
+            <div className="location-request__actions">
+              <input
+                aria-label="BC community for this question"
+                value={locationLabel}
+                onChange={(event) => {
+                  setLocationLabel(event.target.value);
+                  clearManualLocation();
+                }}
+                placeholder="Enter a BC community"
+                maxLength={120}
+                disabled={view.kind === "loading"}
+              />
+              <button type="submit" disabled={!locationLabel.trim() || view.kind === "loading"}>
+                Continue
+              </button>
+              <button type="button" onClick={useApproximateLocation} disabled={view.kind === "loading"}>
+                <Crosshair size={16} /> Use approximate location
+              </button>
+            </div>
+            {locationMessage && <p className="location-message" role="status">{locationMessage}</p>}
+          </form>
+        )}
+
         {view.kind === "answer" && claims.length > 0 && (
           <div className="claim-group">
             <span className="panel-label">
@@ -189,10 +220,10 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
       <form className="composer" onSubmit={submit}>
         <div className="composer-input">
           <input
-            aria-label="Ask a preparedness question"
+            aria-label="Ask FireLens a question"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ask a preparedness question…"
+            placeholder="Ask about a mapped fire or anything else…"
             maxLength={2000}
             disabled={view.kind === "loading"}
           />
@@ -200,24 +231,7 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
             <PaperPlaneTilt size={20} weight="fill" />
           </button>
         </div>
-        <div className="location-row">
-          <input
-            aria-label="City or community for live questions"
-            value={locationLabel}
-            onChange={(event) => {
-              setLocationLabel(event.target.value);
-              clearManualLocation();
-            }}
-            placeholder="City or community for live questions (optional)"
-            maxLength={120}
-            disabled={view.kind === "loading"}
-          />
-          <button type="button" onClick={useApproximateLocation} disabled={view.kind === "loading"}>
-            <Crosshair size={16} /> Use approximate location
-          </button>
-        </div>
-        {locationMessage && <p className="location-message" role="status">{locationMessage}</p>}
-        <p><Info size={16} /> For property-specific risk assessments or current fire conditions, consult the appropriate official service.</p>
+        <p><Info size={16} /> Official current facts stay tied to their source. General knowledge is labelled separately.</p>
       </form>
     </section>
   );

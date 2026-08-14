@@ -17,7 +17,7 @@ export function App() {
       <header className="topbar">
         <a className="brand" href="#top">
           <img src="/assets/firelens-mark.png" alt="" />
-          <span><strong>FireLens</strong> BC <small>V1.5 RC</small></span>
+          <span><strong>FireLens</strong> BC <small>V1.5 V3</small></span>
         </a>
         <a className="official-link" href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
           <ArrowSquareOut size={18} /> Official BCWS map
@@ -25,7 +25,7 @@ export function App() {
       </header>
       <div className="boundary">
         <Shield size={17} />
-        <span>Reviewed preparedness guidance and official live records — not emergency direction.</span>
+        <span>One wildfire helper for official live records, reviewed guidance, and clearly labelled general knowledge.</span>
       </div>
       <main className="workspace">
         <ConversationPanel session={session} />

@@ -90,18 +90,20 @@ def _frontend_surface_protocol(path: Path) -> dict[str, Any]:
     )
     if _strict_int(
         matrix, "expected_rows", "frontend surface matrix", minimum=0
-    ) != 30 or not _strict_bool(
+    ) != 36 or not _strict_bool(
         matrix,
         "require_every_state_viewport_pair_once",
         "frontend surface matrix",
     ):
-        raise ValueError("frontend surface matrix must freeze the exact 10x3 roster")
+        raise ValueError("frontend surface matrix must freeze the exact 12x3 roster")
 
     states = protocol.get("states")
     expected_state_ids = [
         "idle",
         "grounded",
         "partial",
+        "background",
+        "requires_input",
         "abstention",
         "provider_failure",
         "live",
@@ -110,8 +112,8 @@ def _frontend_surface_protocol(path: Path) -> dict[str, Any]:
         "no_result",
         "partial_layer",
     ]
-    if not isinstance(states, list) or len(states) != 10:
-        raise ValueError("frontend surface protocol requires exactly ten states")
+    if not isinstance(states, list) or len(states) != 12:
+        raise ValueError("frontend surface protocol requires exactly twelve states")
     for index, state in enumerate(states):
         if not isinstance(state, dict):
             raise ValueError(f"frontend surface state {index} must be an object")
@@ -247,8 +249,8 @@ def _frontend_surface_protocol(path: Path) -> dict[str, Any]:
     privacy_evidence = protocol.get("privacy_evidence")
     if privacy_evidence != {
         "request_url": "http://127.0.0.1:4175/api/v1/ask",
-        "expected_questions": ["surface:grounded", "surface:live-fresh"],
-        "allowed_body_keys": ["history", "location", "question"],
+        "expected_questions": ["surface:requires-location", "surface:live-fresh"],
+        "allowed_body_keys": ["context", "history", "location", "question"],
         "fixture_location": {
             "raw_latitude": 49.282729,
             "raw_longitude": -123.120738,

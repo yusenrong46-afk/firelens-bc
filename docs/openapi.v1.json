@@ -96,9 +96,32 @@
               }
             ]
           },
+          "required_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RequiredInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "response_mode": {
             "$ref": "#/components/schemas/ResponseMode",
             "default": "abstention"
+          },
+          "selected_live_result_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Live Result Id"
           },
           "status": {
             "$ref": "#/components/schemas/ResponseStatus"
@@ -631,6 +654,33 @@
             "title": "Authority",
             "type": "string"
           },
+          "distance_basis": {
+            "anyOf": [
+              {
+                "enum": [
+                  "incident_point",
+                  "perimeter_boundary"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Basis"
+          },
+          "distance_km": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Km"
+          },
           "freshness": {
             "$ref": "#/components/schemas/Freshness"
           },
@@ -811,6 +861,47 @@
           }
         },
         "title": "LocationInput",
+        "type": "object"
+      },
+      "MapContext": {
+        "additionalProperties": false,
+        "description": "Bounded, user-visible map state supplied with an agent request.",
+        "properties": {
+          "selected_live_result_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Live Result Id"
+          },
+          "viewport": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MapViewport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "visible_live_result_ids": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Visible Live Result Ids",
+            "type": "array"
+          }
+        },
+        "title": "MapContext",
         "type": "object"
       },
       "MapViewport": {
@@ -1089,6 +1180,9 @@
       "QueryRequest": {
         "additionalProperties": false,
         "properties": {
+          "context": {
+            "$ref": "#/components/schemas/MapContext"
+          },
           "history": {
             "items": {
               "$ref": "#/components/schemas/ConversationTurn"
@@ -1143,6 +1237,41 @@
         "title": "ReasonCode",
         "type": "string"
       },
+      "RequiredInput": {
+        "additionalProperties": false,
+        "description": "One bounded input needed to resume the current agent task.",
+        "properties": {
+          "continuation_question": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Continuation Question",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RequiredInputKind"
+          },
+          "prompt": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Prompt",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "prompt",
+          "continuation_question"
+        ],
+        "title": "RequiredInput",
+        "type": "object"
+      },
+      "RequiredInputKind": {
+        "enum": [
+          "location"
+        ],
+        "title": "RequiredInputKind",
+        "type": "string"
+      },
       "ResponseMode": {
         "enum": [
           "grounded",
@@ -1153,7 +1282,8 @@
           "partial",
           "live",
           "mixed",
-          "conflict"
+          "conflict",
+          "requires_input"
         ],
         "title": "ResponseMode",
         "type": "string"
@@ -1258,7 +1388,7 @@
   "info": {
     "description": "Evidence-bound wildfire guidance plus bounded official incident, perimeter, and evacuation records. Not emergency direction.",
     "title": "FireLens BC",
-    "version": "1.5.0-rc.1"
+    "version": "1.5.3-rc.1"
   },
   "openapi": "3.1.0",
   "paths": {

@@ -28,15 +28,15 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: prototype/firelens-rag-ui/package-lock.json
+          cache-dependency-path: apps/web/package-lock.json
       - name: Install locked application and audit tools
         run: |
           python -m venv .venv
           .venv/bin/python -m pip install --disable-pip-version-check -r requirements.lock
           .venv/bin/python -m pip install --no-deps -e .
           .venv/bin/python -m pip install --disable-pip-version-check pip-audit==2.9.0
-          npm --prefix prototype/firelens-rag-ui ci
-          npx --prefix prototype/firelens-rag-ui playwright install --with-deps chromium
+          npm --prefix apps/web ci
+          npx --prefix apps/web playwright install --with-deps chromium
       - name: Verify locks, action pins, and candidate tests
         run: |
           .venv/bin/python scripts/check_lockfiles.py
@@ -52,7 +52,7 @@ jobs:
           mkdir -p candidate-inputs
           .venv/bin/pip-audit -r requirements.lock --format json \
             --output candidate-inputs/python-audit.json || true
-          npm --prefix prototype/firelens-rag-ui audit --json \
+          npm --prefix apps/web audit --json \
             > candidate-inputs/npm-audit.json || true
           .venv/bin/python scripts/report_dependency_licenses.py \
             --output candidate-inputs/dependency-licenses.json || true

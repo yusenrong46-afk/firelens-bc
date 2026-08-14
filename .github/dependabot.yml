@@ -7,7 +7,7 @@ updates:
       day: monday
     open-pull-requests-limit: 5
   - package-ecosystem: npm
-    directory: "/prototype/firelens-rag-ui"
+    directory: "/apps/web"
     schedule:
       interval: weekly
       day: monday
@@ -18,4 +18,3 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
-

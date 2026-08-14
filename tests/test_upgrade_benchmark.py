@@ -908,11 +908,19 @@ def _write_frontend_surface_fixture(
             )
 
     privacy_bodies = [
-        {"history": [], "question": "surface:grounded"},
         {
+            "context": {"visible_live_result_ids": []},
+            "history": [],
+            "question": "surface:requires-location",
+        },
+        {
+            "context": {
+                "selected_live_result_id": "incident:surface-7",
+                "visible_live_result_ids": [],
+            },
             "history": [
-                {"content": "surface:grounded", "role": "user"},
-                {"content": "Grounded answer", "role": "assistant"},
+                {"content": "surface:requires-location", "role": "user"},
+                {"content": "Share an approximate location.", "role": "assistant"},
             ],
             "location": {"latitude": 49.28, "longitude": -123.12, "radius_km": 50},
             "question": "surface:live-fresh",
@@ -1060,14 +1068,14 @@ def _write_frontend_surface_fixture(
     protocol_ratified = protocol["status"] == "ratified" and bool(protocol["frozen_at"])
     summary = {
         "protocol_ratified": protocol_ratified,
-        "expected_surface_rows": 30,
-        "executed_surface_rows": 30,
+        "expected_surface_rows": protocol["matrix"]["expected_rows"],
+        "executed_surface_rows": len(surface_rows),
         "matrix_complete": True,
         "qualified_surface_rows": qualified_rows,
         "functional_journeys_qualified": True,
         "performance_qualified": True,
         "structure_issues": [],
-        "qualified": protocol_ratified and qualified_rows == 30,
+        "qualified": protocol_ratified and qualified_rows == len(surface_rows),
     }
     report = {
         "schema_version": "firelens.frontend_surface_report.v1",
@@ -3252,7 +3260,7 @@ def test_frontend_surface_accepts_real_failing_map_roster(tmp_path: Path) -> Non
     )
 
     assert result["map_list_parity"] is False
-    assert result["visual_matrix_pass_rate"] == 27 / 30
+    assert result["visual_matrix_pass_rate"] == 33 / 36
     assert result["qualified"] is False
 
 
@@ -3289,7 +3297,7 @@ def test_frontend_surface_gates_moderate_wcag_a_aa_finding(tmp_path: Path) -> No
     }
     row["checks"]["axe_wcag_a_aa_findings_within_limit"] = False
     row["qualified"] = False
-    report["summary"]["qualified_surface_rows"] = 29
+    report["summary"]["qualified_surface_rows"] = 35
     report["summary"]["qualified"] = False
     report_path.write_text(json.dumps(report), encoding="utf-8")
 
@@ -3303,7 +3311,7 @@ def test_frontend_surface_gates_moderate_wcag_a_aa_finding(tmp_path: Path) -> No
     )
 
     assert result["axe_wcag_a_aa_finding_count"] == 1
-    assert result["visual_matrix_pass_rate"] == 29 / 30
+    assert result["visual_matrix_pass_rate"] == 35 / 36
 
 
 def test_frontend_surface_accepts_but_fails_unallowlisted_request(
@@ -3335,7 +3343,7 @@ def test_frontend_surface_accepts_but_fails_unallowlisted_request(
     row["checks"]["request_origins_allowed"] = False
     row["checks"]["no_unallowlisted_failed_requests"] = False
     row["qualified"] = False
-    report["summary"]["qualified_surface_rows"] = 29
+    report["summary"]["qualified_surface_rows"] = 35
     report["summary"]["qualified"] = False
     report_path.write_text(json.dumps(report), encoding="utf-8")
 
@@ -3349,7 +3357,7 @@ def test_frontend_surface_accepts_but_fails_unallowlisted_request(
     )
 
     assert result["runtime_violation_count"] == 2
-    assert result["visual_matrix_pass_rate"] == 29 / 30
+    assert result["visual_matrix_pass_rate"] == 35 / 36
 
 
 @pytest.mark.parametrize(

@@ -25,6 +25,8 @@ from firelens.contracts import (
     PublicClaim,
     PublicEvidence,
     QueryRequest,
+    RequiredInput,
+    RequiredInputKind,
     ResponseMode,
     ResponseStatus,
     ValidationReport,
@@ -125,6 +127,17 @@ class ContractPropertyTests(unittest.TestCase):
                 trace_id="scope",
                 response_mode=ResponseMode.SCOPE_REDIRECT,
                 answer=long_answer,
+            ),
+            ResponseMode.REQUIRES_INPUT: AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id="requires-input",
+                response_mode=ResponseMode.REQUIRES_INPUT,
+                answer=long_answer,
+                required_input=RequiredInput(
+                    kind=RequiredInputKind.LOCATION,
+                    prompt="Share an approximate location.",
+                    continuation_question="How far is this fire from me?",
+                ),
             ),
             ResponseMode.ABSTENTION: AskResponse(
                 status=ResponseStatus.ABSTENTION,

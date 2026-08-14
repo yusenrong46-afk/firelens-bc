@@ -42,6 +42,12 @@ const answer = {
   },
 };
 
+function askCallOptions(fetchMock: ReturnType<typeof vi.fn>): RequestInit[] {
+  return fetchMock.mock.calls
+    .filter(([url]) => url === "/api/v1/ask")
+    .map((call) => call[1] as RequestInit);
+}
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -69,7 +75,7 @@ describe("FireLens Source Lens", () => {
     ));
     const user = userEvent.setup();
     render(<App />);
-    await user.type(screen.getByLabelText("Ask a preparedness question"), "What can you help me with?");
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "What can you help me with?");
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByText("FireLens topics")).toBeInTheDocument();
@@ -84,7 +90,7 @@ describe("FireLens Source Lens", () => {
     ));
     const user = userEvent.setup();
     render(<App />);
-    await user.type(screen.getByLabelText("Ask a preparedness question"), "What goes in a grab-and-go bag?");
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "What goes in a grab-and-go bag?");
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByText("Sources supporting this answer")).toBeInTheDocument();
@@ -116,7 +122,7 @@ describe("FireLens Source Lens", () => {
     ));
     const user = userEvent.setup();
     render(<App />);
-    await user.type(screen.getByLabelText("Ask a preparedness question"), "Why can embers be dangerous?");
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Why can embers be dangerous?");
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByText("General background")).toBeInTheDocument();
@@ -141,7 +147,7 @@ describe("FireLens Source Lens", () => {
     ));
     const user = userEvent.setup();
     render(<App />);
-    await user.type(screen.getByLabelText("Ask a preparedness question"), "Is a fire active near me right now?");
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Is a fire active near me right now?");
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByText("FireLens did not generate guidance")).toBeInTheDocument();
@@ -178,15 +184,98 @@ describe("FireLens Source Lens", () => {
     ));
     const user = userEvent.setup();
     render(<App />);
-    await user.type(screen.getByLabelText("Ask a preparedness question"), "Is there an active wildfire now?");
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Is there an active wildfire now?");
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByText("Current BC wildfire information")).toBeInTheDocument();
     expect(screen.getAllByText("Official live records").length).toBeGreaterThan(0);
-    expect(screen.getByText("Test Fire")).toBeInTheDocument();
+    expect(screen.getAllByText("Test Fire").length).toBeGreaterThan(0);
     expect(screen.getByText(/Some official layers are unavailable: evacuation/)).toBeInTheDocument();
     expect(screen.getByText(/Source updated/)).toBeInTheDocument();
     expect(screen.getByText(/Retrieved/)).toBeInTheDocument();
+  });
+
+  it("asks for location only when a selected-fire distance task needs it", async () => {
+    let askCount = 0;
+    const mapResult = {
+      result_id: "incident:7",
+      kind: "incident",
+      authority: "BC Wildfire Service",
+      source_url: "https://example.test/incidents/7",
+      source_updated_at: "2026-08-13T18:55:00Z",
+      retrieved_at: "2026-08-13T19:00:00Z",
+      freshness: "fresh",
+      status: "Out of Control",
+      name: "Mountain Fire",
+      geometry_relation: "unknown",
+      geometry: { type: "Point", coordinates: [-123.5, 49.5] },
+    };
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.startsWith("/api/v1/live/map")) {
+        return Promise.resolve(new Response(JSON.stringify({
+          generated_at: "2026-08-13T19:00:00Z",
+          results: [mapResult],
+          aggregate_freshness: "fresh",
+          unavailable_layers: [],
+          layer_statuses: [],
+          limitations: [],
+        }), { status: 200 }));
+      }
+      askCount += 1;
+      if (askCount === 1) {
+        return Promise.resolve(new Response(JSON.stringify({
+          status: "answer",
+          response_mode: "requires_input",
+          trace_id: "trace-location",
+          answer: "Share an approximate location or enter a BC community to continue.",
+          claims: [],
+          evidence: [],
+          limitations: [],
+          required_input: {
+            kind: "location",
+            prompt: "Use approximate location or enter a BC community.",
+            continuation_question: "How far is this fire from me?",
+          },
+          selected_live_result_id: "incident:7",
+        }), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "live",
+        trace_id: "trace-distance",
+        answer: "Mountain Fire is approximately 42.3 km away in a straight-line geodesic measurement.",
+        claims: [],
+        evidence: [],
+        limitations: ["This is not driving distance or a safety assessment."],
+        live_results: [{ ...mapResult, distance_km: 42.3, distance_basis: "incident_point" }],
+        aggregate_freshness: "fresh",
+        unavailable_layers: [],
+        selected_live_result_id: "incident:7",
+      }), { status: 200 }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(screen.queryByLabelText("BC community for this question")).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: /Mountain Fire.*Out of Control/ }));
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "How far is this fire from me?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText("One detail needed")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("BC community for this question"), "Vancouver");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect((await screen.findAllByText(/approximately 42.3 km/)).length).toBeGreaterThan(0);
+
+    const calls = askCallOptions(fetchMock);
+    expect(JSON.parse(String(calls[0]?.body)).context.selected_live_result_id).toBe("incident:7");
+    expect(JSON.parse(String(calls[1]?.body)).location).toEqual({ label: "Vancouver", radius_km: 50 });
+
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "What is a firebreak?");
+    await user.click(screen.getByLabelText("Send question"));
+    await waitFor(() => expect(askCallOptions(fetchMock)).toHaveLength(3));
+    const laterPayload = JSON.parse(String(askCallOptions(fetchMock)[2]?.body));
+    expect(laterPayload.location).toBeUndefined();
   });
 
   it("sends completed turns with a follow-up question", async () => {
@@ -197,15 +286,16 @@ describe("FireLens Source Lens", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.type(screen.getByLabelText("Ask a preparedness question"), "What should I pack?");
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "What should I pack?");
     await user.click(screen.getByLabelText("Send question"));
     await screen.findByText("2 of 6 turns in context");
-    await user.type(screen.getByLabelText("Ask a preparedness question"), "Why does that matter?");
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Why does that matter?");
     await user.click(screen.getByLabelText("Send question"));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(askCallOptions(fetchMock)).toHaveLength(2));
 
-    const firstPayload = JSON.parse(String(fetchMock.mock.calls[0]![1]?.body));
-    const secondPayload = JSON.parse(String(fetchMock.mock.calls[1]![1]?.body));
+    const calls = askCallOptions(fetchMock);
+    const firstPayload = JSON.parse(String(calls[0]?.body));
+    const secondPayload = JSON.parse(String(calls[1]?.body));
     expect(firstPayload.history).toEqual([]);
     expect(secondPayload.history).toEqual([
       { role: "user", content: "What should I pack?" },
@@ -227,14 +317,14 @@ describe("FireLens Source Lens", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.type(screen.getByLabelText("Ask a preparedness question"), "Question one");
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Question one");
     await user.click(screen.getByLabelText("Send question"));
     await screen.findByText("2 of 6 turns in context");
-    await user.type(screen.getByLabelText("Ask a preparedness question"), "Question two");
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Question two");
     await user.click(screen.getByLabelText("Send question"));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(askCallOptions(fetchMock)).toHaveLength(2));
 
-    const secondPayload = JSON.parse(fetchMock.mock.calls[1]![1]!.body as string);
+    const secondPayload = JSON.parse(askCallOptions(fetchMock)[1]!.body as string);
     expect(secondPayload.history[1]).toEqual({
       role: "assistant",
       content: boundedHistory,
@@ -250,13 +340,13 @@ describe("FireLens Source Lens", () => {
     render(<App />);
 
     for (const question of ["Question one", "Question two", "Question three", "Question four"]) {
-      await user.type(screen.getByLabelText("Ask a preparedness question"), question);
+      await user.type(screen.getByLabelText("Ask FireLens a question"), question);
       await user.click(screen.getByLabelText("Send question"));
       await screen.findByText(question);
-      await waitFor(() => expect(screen.getByLabelText("Ask a preparedness question")).not.toBeDisabled());
+      await waitFor(() => expect(screen.getByLabelText("Ask FireLens a question")).not.toBeDisabled());
     }
 
-    const fourthPayload = JSON.parse(String(fetchMock.mock.calls[3]![1]?.body));
+    const fourthPayload = JSON.parse(String(askCallOptions(fetchMock)[3]?.body));
     expect(fourthPayload.history).toHaveLength(6);
     expect(fourthPayload.history[0]).toEqual({ role: "user", content: "Question one" });
     expect(fourthPayload.history[5]).toEqual({ role: "assistant", content: answer.answer });
@@ -270,16 +360,16 @@ describe("FireLens Source Lens", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.type(screen.getByLabelText("Ask a preparedness question"), "First question");
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "First question");
     await user.click(screen.getByLabelText("Send question"));
     await screen.findByText("2 of 6 turns in context");
     await user.click(screen.getByLabelText("Clear conversation history"));
     expect(screen.getByText("0 of 6 turns in context")).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText("Ask a preparedness question"), "Fresh question");
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Fresh question");
     await user.click(screen.getByLabelText("Send question"));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    const payload = JSON.parse(String(fetchMock.mock.calls[1]![1]?.body));
+    await waitFor(() => expect(askCallOptions(fetchMock)).toHaveLength(2));
+    const payload = JSON.parse(String(askCallOptions(fetchMock)[1]?.body));
     expect(payload.history).toEqual([]);
   });
 
@@ -294,7 +384,7 @@ describe("FireLens Source Lens", () => {
     ));
     const user = userEvent.setup();
     render(<App />);
-    await user.type(screen.getByLabelText("Ask a preparedness question"), "How should I prepare for wildfire?");
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "How should I prepare for wildfire?");
     await user.click(screen.getByLabelText("Send question"));
     expect(await screen.findByRole("button", { name: "Retry this question" })).toBeInTheDocument();
   });
@@ -311,7 +401,7 @@ describe("FireLens Source Lens", () => {
     ));
     const user = userEvent.setup();
     const { container } = render(<App />);
-    await user.type(screen.getByLabelText("Ask a preparedness question"), "What should I pack?");
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "What should I pack?");
     await user.click(screen.getByLabelText("Send question"));
     await screen.findByText("Sources supporting this answer");
     const result = await axe(container);

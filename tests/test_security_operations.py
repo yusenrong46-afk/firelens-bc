@@ -30,7 +30,7 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
                     "data": [
                         {"model_id": "openai/text-embedding-3-small"},
                         {"model_id": "cohere/rerank-4-pro"},
-                        {"model_id": "google/gemini-3.5-flash-lite"},
+                        {"model_id": "openai/gpt-5.6-luna"},
                     ]
                 },
             )

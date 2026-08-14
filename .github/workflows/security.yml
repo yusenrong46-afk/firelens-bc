@@ -26,12 +26,12 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: prototype/firelens-rag-ui/package-lock.json
+          cache-dependency-path: apps/web/package-lock.json
       - name: Install application and pinned audit tools
         run: |
           python -m pip install --disable-pip-version-check -r requirements.lock
           python -m pip install --disable-pip-version-check pip-audit==2.9.0
-          npm --prefix prototype/firelens-rag-ui ci
+          npm --prefix apps/web ci
       - name: Verify locks and action pins
         run: |
           python scripts/check_lockfiles.py
@@ -39,7 +39,7 @@ jobs:
       - name: Audit Python vulnerabilities
         run: pip-audit -r requirements.lock --format json --output python-audit.json
       - name: Audit npm vulnerabilities
-        run: npm --prefix prototype/firelens-rag-ui audit --audit-level=high --json > npm-audit.json
+        run: npm --prefix apps/web audit --audit-level=high --json > npm-audit.json
       - name: Check and record dependency licenses
         run: python scripts/report_dependency_licenses.py --output dependency-licenses.json
       - name: Upload audit evidence

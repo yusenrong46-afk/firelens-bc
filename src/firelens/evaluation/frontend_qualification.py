@@ -200,7 +200,7 @@ def _frontend_surface(
         (state, viewport) for state in protocol["states"] for viewport in protocol["viewports"]
     ]
     if len(rows) != len(expected_pairs):
-        raise ValueError("frontend surface report does not contain the exact 10x3 matrix")
+        raise ValueError("frontend surface report does not contain the exact 12x3 matrix")
     row_results = [
         _frontend_surface_row(
             row,

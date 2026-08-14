@@ -11,7 +11,7 @@ from uuid import uuid4
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-from firelens.answering.intent import plan_query
+from firelens.agent import FireLensAgent
 from firelens.api.responses import (
     ERROR_RESPONSES,
     deadline_response,
@@ -56,9 +56,9 @@ async def _answer_request(
             message="FireLens is not ready.",
             retryable=True,
         )
-    initial_plan = plan_query(request)
-    if initial_plan.route != QueryRoute.LIVE:
-        response = await runtime.service.ask(request)
+    execution = await FireLensAgent(runtime.service, live_coordinator).answer(request)
+    response = execution.response
+    if execution.route != QueryRoute.LIVE:
         if response.status != ResponseStatus.ERROR:
             return response
         return error_response(
@@ -70,13 +70,7 @@ async def _answer_request(
             in {"rate_limit", "timeout", "unavailable", "model_unavailable"},
         )
 
-    static_request = live_coordinator.static_request(request)
-    static_response = (
-        await runtime.service.ask(static_request, allow_live=False)
-        if static_request is not None
-        else None
-    )
-    live_response = await live_coordinator.answer(request, static_response)
+    live_response = response
     log_operation(
         trace_id=live_response.trace_id,
         route=QueryRoute.LIVE.value,

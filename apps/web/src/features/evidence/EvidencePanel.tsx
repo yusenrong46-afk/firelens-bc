@@ -100,7 +100,21 @@ function EvidencePlaceholder({ icon, title, children }: { icon: ReactNode; title
 }
 
 export function EvidencePanel({ session }: { session: FireLensSession }) {
-  const { citedMode, claims, mode, selected, view } = session;
+  const {
+    askAboutResult,
+    citedMode,
+    claims,
+    mapAggregateFreshness,
+    mapLoading,
+    mapMessage,
+    mapResults,
+    mapUnavailableLayers,
+    mode,
+    selected,
+    selectedLiveResultId,
+    setSelectedLiveResultId,
+    view,
+  } = session;
   const selectedClaim = citedMode ? claims[selected] : undefined;
   const evidenceById = useMemo(
     () => new Map((view.kind === "answer" ? (view.response.evidence ?? []) : []).map((item) => [item.evidence_id, item])),
@@ -112,24 +126,22 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
 
   return (
     <section className="evidence-panel" aria-label="Selected claim evidence">
-      <div className="evidence-inner">
-        {view.kind === "answer" && (mode === "live" || mode === "mixed") && (view.response.live_results ?? []).length > 0 ? (
-          <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading the official map">Preparing map layers…</EvidencePlaceholder>}>
-            <LiveMap
-              results={view.response.live_results ?? []}
-              aggregateFreshness={view.response.aggregate_freshness ?? undefined}
-              unavailableLayers={view.response.unavailable_layers ?? []}
-            />
-            {mode === "mixed" && (view.response.evidence ?? []).length > 0 && (
-              <div className="mixed-sources">
-                <strong>Preparedness sources</strong>
-                {(view.response.evidence ?? []).map((item) => (
-                  <a key={item.evidence_id} href={item.canonical_url} target="_blank" rel="noreferrer">{item.title}</a>
-                ))}
-              </div>
-            )}
-          </Suspense>
-        ) : view.kind === "answer" && citedMode && selectedClaim ? (
+      <div className="evidence-inner evidence-inner--map-first">
+        <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading the official map">Preparing map layers…</EvidencePlaceholder>}>
+          <LiveMap
+            results={mapResults}
+            aggregateFreshness={mapAggregateFreshness}
+            unavailableLayers={mapUnavailableLayers}
+            selectedResultId={selectedLiveResultId}
+            onSelectResult={setSelectedLiveResultId}
+            onAskAboutResult={askAboutResult}
+          />
+        </Suspense>
+        {mapLoading && <p className="map-surface-status" role="status">Loading official wildfire layers…</p>}
+        {mapMessage && <p className="live-map__warning" role="status">{mapMessage} The map remains available for conversation and recovery.</p>}
+
+        <div className="context-lens" aria-label="Answer context">
+        {view.kind === "answer" && citedMode && selectedClaim ? (
           <>
             <span className="selected-kicker">Selected claim {selected + 1}</span>
             <h1>{selectedClaim.text}</h1>
@@ -147,21 +159,35 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
             ))}
             <div className="access-date"><Shield size={17} weight="fill" /> Sources come from the reviewed local corpus.</div>
           </>
+        ) : view.kind === "answer" && (mode === "live" || mode === "mixed") ? (
+          <div className="map-answer-summary">
+            <span className="selected-kicker">Official map answer</span>
+            <h1>{view.response.answer}</h1>
+            {(view.response.live_results ?? []).map((item) => (
+              <a key={item.result_id} href={item.source_url} target="_blank" rel="noreferrer">
+                {item.name || item.incident_number || "Official wildfire record"} <ArrowSquareOut size={15} />
+              </a>
+            ))}
+            {mode === "mixed" && (view.response.evidence ?? []).length > 0 && (
+              <div className="mixed-sources">
+                <strong>Preparedness sources</strong>
+                {(view.response.evidence ?? []).map((item) => (
+                  <a key={item.evidence_id} href={item.canonical_url} target="_blank" rel="noreferrer">{item.title}</a>
+                ))}
+              </div>
+            )}
+          </div>
         ) : view.kind === "answer" && mode === "background" ? (
           <EvidencePlaceholder icon={<Info size={34} />} title="General background — no corpus evidence attached">
-            This explanation is related to wildfire preparedness, but its claims were not verified against the reviewed FireLens collection. Background claims cannot open an evidence panel.
+            This explanation uses general model knowledge and was not verified against the reviewed FireLens collection. It is not styled as an official source.
           </EvidencePlaceholder>
         ) : view.kind === "answer" && mode === "capability" ? (
           <EvidencePlaceholder icon={<ChatsCircle size={36} />} title="Explore the FireLens collection">
             Choose a suggested question or ask in your own words. FireLens can discuss reviewed preparedness guidance and clearly labels when an answer uses general background.
           </EvidencePlaceholder>
-        ) : view.kind === "answer" && mode === "scope_redirect" ? (
-          <EvidencePlaceholder icon={<Info size={34} />} title="Outside the FireLens collection">
-            FireLens keeps the conversation open for wildfire and preparedness topics. Completely unrelated requests receive a short redirect and suggested ways back into the collection.
-          </EvidencePlaceholder>
         ) : view.kind === "loading" ? (
-          <EvidencePlaceholder icon={<span className="spinner" />} title="Building an evidence packet">
-            FireLens is retrieving, reranking, and validating local passages. No answer appears until every structural check passes.
+          <EvidencePlaceholder icon={<span className="spinner" />} title="FireLens is working">
+            The agent is selecting between official live tools, reviewed retrieval, and labelled general knowledge.
           </EvidencePlaceholder>
         ) : view.kind === "abstention" ? (
           <EvidencePlaceholder icon={<WarningCircle size={34} />} title="No evidence-backed answer">
@@ -172,10 +198,11 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
             The failure was returned explicitly. FireLens did not substitute another model or answer from memory.
           </EvidencePlaceholder>
         ) : (
-          <EvidencePlaceholder icon={<Shield size={36} />} title="Ask, then inspect the source">
-            FireLens answers from reviewed guidance, or shows current official wildfire records when a live question requires them.
+          <EvidencePlaceholder icon={<Shield size={36} />} title="Select a fire or ask anything">
+            The official province-wide wildfire map stays visible. Select a record to ask about its status or distance, or use the conversation for reviewed guidance and everyday questions.
           </EvidencePlaceholder>
         )}
+        </div>
       </div>
     </section>
   );

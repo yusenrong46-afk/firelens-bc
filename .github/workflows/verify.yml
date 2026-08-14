@@ -32,16 +32,16 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: prototype/firelens-rag-ui/package-lock.json
+          cache-dependency-path: apps/web/package-lock.json
       - name: Install locked Python dependencies
         run: |
           python -m venv .venv
           .venv/bin/python -m pip install --disable-pip-version-check -r requirements.lock
           .venv/bin/python -m pip install --no-deps -e .
       - name: Install locked Node dependencies
-        run: npm --prefix prototype/firelens-rag-ui ci
+        run: npm --prefix apps/web ci
       - name: Install Playwright Chromium
-        run: npx --prefix prototype/firelens-rag-ui playwright install --with-deps chromium
+        run: npx --prefix apps/web playwright install --with-deps chromium
       - name: Verify lockfiles and pinned actions
         run: |
           .venv/bin/python scripts/check_lockfiles.py

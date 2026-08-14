@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { fetchNearbyOfficialRecords, submitFeedback } from "../src/shared/api/api";
+import {
+  askFireLens,
+  fetchNearbyOfficialRecords,
+  fetchOfficialMap,
+  submitFeedback,
+} from "../src/shared/api/api";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -19,6 +24,56 @@ describe("submitFeedback", () => {
       method: "POST",
       body: JSON.stringify({ trace_id: "a".repeat(32), category: "safety_concern" }),
     }));
+  });
+});
+
+describe("V3 agent context", () => {
+  it("sends bounded selected-map context with an Ask request", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "background",
+        trace_id: "trace-context",
+        answer: "General knowledge answer.",
+        claims: [],
+        evidence: [],
+        limitations: [],
+      }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await askFireLens("What is happening with this fire?", [], undefined, undefined, {
+      selected_live_result_id: "incident:7",
+      visible_live_result_ids: ["incident:7", "perimeter:7"],
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/ask", expect.objectContaining({
+      body: JSON.stringify({
+        question: "What is happening with this fire?",
+        history: [],
+        location: undefined,
+        context: {
+          selected_live_result_id: "incident:7",
+          visible_live_result_ids: ["incident:7", "perimeter:7"],
+        },
+      }),
+    }));
+  });
+
+  it("loads all official map layers without a location", async () => {
+    const payload = {
+      generated_at: "2026-08-13T19:00:00Z",
+      results: [],
+      aggregate_freshness: null,
+      unavailable_layers: [],
+      layer_statuses: [],
+      limitations: [],
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(payload), { status: 200 }),
+    ));
+
+    await expect(fetchOfficialMap()).resolves.toEqual(payload);
   });
 });
 

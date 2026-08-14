@@ -58,7 +58,7 @@ class FireLensConfig(BaseModel):
     embedding_model: str = "openai/text-embedding-3-small"
     retrieval_text_strategy: RetrievalTextStrategy = RetrievalTextStrategy.METADATA_CONTEXT_V1
     rerank_model: str = "cohere/rerank-4-pro"
-    generation_model: str = "google/gemini-3.5-flash-lite"
+    generation_model: str = "openai/gpt-5.6-luna"
     generation_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
     bm25_top_k: int = Field(default=30, gt=0)
     vector_top_k: int = Field(default=30, gt=0)
@@ -84,7 +84,7 @@ class FireLensConfig(BaseModel):
     anonymous_rate_limit: int = Field(default=30, ge=1, le=1_000)
     anonymous_rate_window_seconds: int = Field(default=60, ge=1, le=3_600)
     max_request_body_bytes: int = Field(default=65_536, ge=1_024, le=1_048_576)
-    release_version: str = "1.5.0-rc.1"
+    release_version: str = "1.5.3-rc.1"
     build_commit: str | None = None
     deployment_id: str | None = None
     frontend_dist_path: Path | None = None
@@ -145,6 +145,11 @@ class FireLensConfig(BaseModel):
             ),
             frontend_dist_path=frontend_dist,
             openrouter_api_key=SecretStr(key) if key else None,
+            embedding_model=(
+                setting("FIRELENS_EMBEDDING_MODEL") or "openai/text-embedding-3-small"
+            ),
+            rerank_model=(setting("FIRELENS_RERANK_MODEL") or "cohere/rerank-4-pro"),
+            generation_model=(setting("FIRELENS_GENERATION_MODEL") or "openai/gpt-5.6-luna"),
             retrieval_text_strategy=RetrievalTextStrategy(
                 setting("FIRELENS_RETRIEVAL_TEXT_STRATEGY")
                 or RetrievalTextStrategy.METADATA_CONTEXT_V1
@@ -171,7 +176,7 @@ class FireLensConfig(BaseModel):
             provider_adaptive_success_window=_int_value(
                 setting("FIRELENS_PROVIDER_ADAPTIVE_SUCCESS_WINDOW"), 20
             ),
-            release_version=setting("FIRELENS_RELEASE_VERSION") or "1.5.0-rc.1",
+            release_version=setting("FIRELENS_RELEASE_VERSION") or "1.5.3-rc.1",
             build_commit=(
                 setting("VERCEL_GIT_COMMIT_SHA")
                 or setting("RENDER_GIT_COMMIT")

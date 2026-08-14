@@ -9,7 +9,10 @@ from firelens.contracts import (
     LiveMapResponse,
     LiveResult,
     LiveResultKind,
+    LocationInput,
+    MapContext,
     QueryRequest,
+    RequiredInputKind,
     ResponseMode,
     ResponseStatus,
 )
@@ -38,6 +41,11 @@ class FixedLiveService:
 
     async def nearby_results(self, *args, **kwargs):
         return self.response
+
+    async def resolve_location(self, location):
+        if location.latitude is None or location.longitude is None:
+            return 49.0, -123.0
+        return location.latitude, location.longitude
 
 
 class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
@@ -104,7 +112,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("latest", response.answer.casefold())
         self.assertTrue(any("stale cached" in item.casefold() for item in response.limitations))
 
-    async def test_missing_location_fails_before_live_fetch(self) -> None:
+    async def test_missing_location_requests_input_before_live_fetch(self) -> None:
         live_service = UnexpectedLiveService()
         coordinator = LiveAnswerCoordinator(cast(Any, live_service))
 
@@ -112,10 +120,141 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
             QueryRequest(question="Are there active wildfires near me right now?"), None
         )
 
-        self.assertEqual(response.status, ResponseStatus.ABSTENTION)
-        self.assertEqual(response.response_mode, ResponseMode.ABSTENTION)
+        self.assertEqual(response.status, ResponseStatus.ANSWER)
+        self.assertEqual(response.response_mode, ResponseMode.REQUIRES_INPUT)
+        self.assertIsNotNone(response.required_input)
+        assert response.required_input is not None
+        self.assertEqual(response.required_input.kind, RequiredInputKind.LOCATION)
         self.assertEqual(live_service.calls, 0)
-        self.assertIn("does not infer location", response.answer)
+        self.assertIn("approximate location", response.answer)
+
+    async def test_distance_followup_uses_selected_map_result(self) -> None:
+        timestamp = datetime(2026, 7, 28, tzinfo=UTC)
+        live = LiveMapResponse(
+            generated_at=timestamp,
+            results=[
+                LiveResult(
+                    result_id="incident:7",
+                    kind=LiveResultKind.INCIDENT,
+                    source_url="https://example.test/live/7",
+                    source_updated_at=timestamp,
+                    retrieved_at=timestamp,
+                    freshness=Freshness.FRESH,
+                    status="Out of Control",
+                    name="Mountain Fire",
+                    geometry={"type": "Point", "coordinates": [-123.0, 50.0]},
+                ),
+                LiveResult(
+                    result_id="incident:8",
+                    kind=LiveResultKind.INCIDENT,
+                    source_url="https://example.test/live/8",
+                    source_updated_at=timestamp,
+                    retrieved_at=timestamp,
+                    freshness=Freshness.FRESH,
+                    status="Being Held",
+                    name="Other Fire",
+                    geometry={"type": "Point", "coordinates": [-124.0, 50.0]},
+                ),
+            ],
+        )
+        coordinator = LiveAnswerCoordinator(cast(Any, FixedLiveService(live)))
+
+        response = await coordinator.answer(
+            QueryRequest(
+                question="How far is it from me?",
+                location=LocationInput(latitude=49.0, longitude=-123.0),
+                context=MapContext(selected_live_result_id="incident:7"),
+            ),
+            None,
+        )
+
+        self.assertTrue(
+            coordinator.handles(
+                QueryRequest(
+                    question="How far is it from me?",
+                    context=MapContext(selected_live_result_id="incident:7"),
+                )
+            )
+        )
+        self.assertEqual(response.response_mode, ResponseMode.LIVE)
+        self.assertEqual(response.selected_live_result_id, "incident:7")
+        self.assertEqual([item.result_id for item in response.live_results], ["incident:7"])
+        self.assertGreater(response.live_results[0].distance_km or 0, 111.0)
+        self.assertIn("straight-line", response.answer)
+
+    async def test_distance_followup_never_substitutes_for_an_unmatched_selection(self) -> None:
+        timestamp = datetime(2026, 8, 13, tzinfo=UTC)
+        live = LiveMapResponse(
+            generated_at=timestamp,
+            results=[
+                LiveResult(
+                    result_id="incident:7",
+                    kind=LiveResultKind.INCIDENT,
+                    source_url="https://example.test/live/7",
+                    source_updated_at=timestamp,
+                    retrieved_at=timestamp,
+                    freshness=Freshness.FRESH,
+                    status="Out of Control",
+                    name="Other Fire",
+                    geometry={"type": "Point", "coordinates": [-123.0, 49.0]},
+                )
+            ],
+        )
+        coordinator = LiveAnswerCoordinator(cast(Any, FixedLiveService(live)))
+
+        response = await coordinator.answer(
+            QueryRequest(
+                question="How far is this fire from me?",
+                location=LocationInput(label="Vancouver"),
+                context=MapContext(selected_live_result_id="evacuation:99"),
+            ),
+            None,
+        )
+
+        self.assertEqual(response.status, ResponseStatus.ABSTENTION)
+        self.assertEqual(response.selected_live_result_id, "evacuation:99")
+        self.assertEqual(response.live_results, [])
+        self.assertTrue(
+            any(
+                "did not substitute a different nearby fire" in item
+                for item in response.limitations
+            )
+        )
+
+    async def test_status_followup_returns_only_the_selected_map_result(self) -> None:
+        timestamp = datetime(2026, 7, 28, tzinfo=UTC)
+        live = LiveMapResponse(
+            generated_at=timestamp,
+            results=[
+                LiveResult(
+                    result_id=f"incident:{index}",
+                    kind=LiveResultKind.INCIDENT,
+                    source_url=f"https://example.test/live/{index}",
+                    source_updated_at=timestamp,
+                    retrieved_at=timestamp,
+                    freshness=Freshness.FRESH,
+                    status=status,
+                    name=name,
+                    geometry={"type": "Point", "coordinates": [-123.0 - index, 50.0]},
+                )
+                for index, status, name in (
+                    (7, "Out of Control", "Mountain Fire"),
+                    (8, "Being Held", "Other Fire"),
+                )
+            ],
+        )
+        coordinator = LiveAnswerCoordinator(cast(Any, FixedLiveService(live)))
+        request = QueryRequest(
+            question="What is happening with this fire?",
+            context=MapContext(selected_live_result_id="incident:7"),
+        )
+
+        response = await coordinator.answer(request, None)
+
+        self.assertTrue(coordinator.handles(request))
+        self.assertEqual([item.result_id for item in response.live_results], ["incident:7"])
+        self.assertIn("Mountain Fire", response.answer)
+        self.assertNotIn("Other Fire", response.answer)
 
     async def test_unsupported_live_topic_is_not_substituted(self) -> None:
         live_service = UnexpectedLiveService()

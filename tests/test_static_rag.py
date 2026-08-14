@@ -961,17 +961,17 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
                 )
             )
 
-    async def test_mixed_unrelated_and_supported_clauses_are_redirected(self) -> None:
+    async def test_mixed_unrelated_and_supported_clauses_receive_general_answer(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             provider = AdjacentProvider()
             runtime, _, _ = await make_runtime(Path(directory), provider=provider)
             response = await runtime.service.ask(
                 QueryRequest(question="Explain ocean tides, then explain emergency kits.")
             )
-            self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
-            self.assertEqual(provider.generate_calls, 0)
+            self.assertEqual(response.response_mode, ResponseMode.BACKGROUND)
+            self.assertEqual(provider.generate_calls, 1)
 
-    async def test_mixed_scope_redirect_is_not_overridden_by_a_corpus_topic(self) -> None:
+    async def test_mixed_scope_question_is_visibly_general_knowledge(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             chunks = [
                 make_chunk(
@@ -983,8 +983,8 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             response = await runtime.service.ask(
                 QueryRequest(question="Explain ocean tides, then explain wildfire ranks.")
             )
-            self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
-            self.assertEqual(provider.generate_calls, 0)
+            self.assertEqual(response.response_mode, ResponseMode.BACKGROUND)
+            self.assertEqual(provider.generate_calls, 1)
 
     async def test_explicit_source_reference_overrides_adjacent_planner_result(self) -> None:
         chunk = replace(

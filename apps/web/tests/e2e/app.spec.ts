@@ -167,7 +167,7 @@ test.beforeEach(async ({ page }) => {
 
 test("submits a question and inspects exact evidence", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("Ask a preparedness question").fill("What belongs in a grab-and-go bag?");
+  await page.getByLabel("Ask FireLens a question").fill("What belongs in a grab-and-go bag?");
   await page.getByLabel("Send question").click();
   await expect(page.getByText("Sources supporting this answer")).toBeVisible();
   await expect(page.getByText("Reviewed sources")).toBeVisible();
@@ -179,7 +179,7 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
 
 test("labels general background and exposes no evidence control", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("Ask a preparedness question").fill("Why can embers be dangerous?");
+  await page.getByLabel("Ask FireLens a question").fill("Why can embers be dangerous?");
   await page.getByLabel("Send question").click();
   await expect(page.getByText("General background", { exact: true })).toBeVisible();
   await expect(page.getByText("General background — no corpus evidence attached")).toBeVisible();
@@ -188,11 +188,11 @@ test("labels general background and exposes no evidence control", async ({ page 
 
 test("sends bounded conversation context and can clear it", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("Ask a preparedness question").fill("What should I pack?");
+  await page.getByLabel("Ask FireLens a question").fill("What should I pack?");
   await page.getByLabel("Send question").click();
   await expect(page.getByText("2 of 6 turns in context")).toBeVisible();
 
-  await page.getByLabel("Ask a preparedness question").fill("Why does that matter?");
+  await page.getByLabel("Ask FireLens a question").fill("Why does that matter?");
   await page.getByLabel("Send question").click();
   await expect.poll(() => seenRequests.length).toBe(2);
   expect(seenRequests[1]!.history).toEqual([
@@ -202,7 +202,7 @@ test("sends bounded conversation context and can clear it", async ({ page }) => 
 
   await page.getByLabel("Clear conversation history").click();
   await expect(page.getByText("0 of 6 turns in context")).toBeVisible();
-  await page.getByLabel("Ask a preparedness question").fill("Fresh question");
+  await page.getByLabel("Ask FireLens a question").fill("Fresh question");
   await page.getByLabel("Send question").click();
   await expect.poll(() => seenRequests.length).toBe(3);
   expect(seenRequests[2]!.history).toEqual([]);
@@ -210,7 +210,7 @@ test("sends bounded conversation context and can clear it", async ({ page }) => 
 
 test("redirects a completely tangent request", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("Ask a preparedness question").fill("Can you debug JavaScript for me?");
+  await page.getByLabel("Ask FireLens a question").fill("Can you debug JavaScript for me?");
   await page.getByLabel("Send question").click();
   await expect(page.getByText("Outside FireLens scope", { exact: true })).toBeVisible();
   await expect(page.getByText("Outside the FireLens collection", { exact: true })).toBeVisible();
@@ -218,7 +218,7 @@ test("redirects a completely tangent request", async ({ page }) => {
 
 test("shows official live records and a map through keyboard submission", async ({ page }) => {
   await page.goto("/");
-  const question = page.getByLabel("Ask a preparedness question");
+  const question = page.getByLabel("Ask FireLens a question");
   await question.fill("Is there an active wildfire near me right now?");
   await question.press("Enter");
   await expect(page.getByText("Current BC wildfire information")).toBeVisible();
@@ -241,7 +241,7 @@ test("uses local boundary context without third-party basemap requests", async (
     if (request.url().includes("tile.openstreetmap.org")) thirdPartyMapRequests.push(request.url());
   });
   await page.goto("/");
-  const question = page.getByLabel("Ask a preparedness question");
+  const question = page.getByLabel("Ask FireLens a question");
   await question.fill("Is there an active wildfire near me right now?");
   await question.press("Enter");
   await expect(page.getByText("Current official information: Test Fire is Out of Control.")).toBeVisible();
@@ -252,7 +252,7 @@ test("uses local boundary context without third-party basemap requests", async (
 
 test("shows stale and partial-layer state without hiding records", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("Ask a preparedness question").fill("Show stale official wildfire records");
+  await page.getByLabel("Ask FireLens a question").fill("Show stale official wildfire records");
   await page.getByLabel("Send question").click();
   await expect(page.getByText("BC wildfire information — includes stale records")).toBeVisible();
   await expect(page.getByText(/Cached official information \(refresh failed\)/)).toBeVisible();
@@ -270,7 +270,7 @@ test("shows stale and partial-layer state without hiding records", async ({ page
 
 test("opens an official source link with keyboard activation", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("Ask a preparedness question").fill("Is there an active wildfire near me right now?");
+  await page.getByLabel("Ask FireLens a question").fill("Is there an active wildfire near me right now?");
   await page.getByLabel("Send question").press("Enter");
   const source = page.getByRole("link", { name: "Source", exact: true });
   await expect(source).toBeVisible();
@@ -281,7 +281,7 @@ test("opens an official source link with keyboard activation", async ({ page }) 
 
 test("offers retry for a transient provider outage", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("Ask a preparedness question").fill("Simulate provider unavailable");
+  await page.getByLabel("Ask FireLens a question").fill("Simulate provider unavailable");
   await page.getByLabel("Send question").click();
   await expect(page.getByRole("button", { name: "Retry this question" })).toBeVisible();
 });

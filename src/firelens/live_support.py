@@ -139,6 +139,28 @@ def _geodesic_km(first: tuple[float, float], second: tuple[float, float]) -> flo
     return float(distance_m) / 1_000
 
 
+def distance_to_geometry_km(
+    geometry: dict[str, Any], *, latitude: float, longitude: float
+) -> float | None:
+    """Return geodesic distance to a point or nearest valid geometry boundary."""
+
+    try:
+        target = shape(geometry)
+        if target.is_empty or not target.is_valid:
+            return None
+        point = Point(longitude, latitude)
+        if isinstance(target, Point):
+            distance = _geodesic_km((longitude, latitude), (float(target.x), float(target.y)))
+        elif target.contains(point) or target.touches(point):
+            return 0.0
+        else:
+            nearest = nearest_points(point, target)[1]
+            distance = _geodesic_km((longitude, latitude), (float(nearest.x), float(nearest.y)))
+        return distance if math.isfinite(distance) else None
+    except (TypeError, ValueError):
+        return None
+
+
 def geometry_relation(
     geometry: dict[str, Any], *, latitude: float, longitude: float, radius_km: float
 ) -> GeometryRelation:
@@ -149,14 +171,10 @@ def geometry_relation(
         if target.is_empty or not target.is_valid:
             return GeometryRelation.UNKNOWN
         point = Point(longitude, latitude)
-        if isinstance(target, Point):
-            distance = _geodesic_km((longitude, latitude), (float(target.x), float(target.y)))
-        else:
-            if target.contains(point) or target.touches(point):
-                return GeometryRelation.INSIDE
-            nearest = nearest_points(point, target)[1]
-            distance = _geodesic_km((longitude, latitude), (float(nearest.x), float(nearest.y)))
-        if not math.isfinite(distance):
+        if not isinstance(target, Point) and (target.contains(point) or target.touches(point)):
+            return GeometryRelation.INSIDE
+        distance = distance_to_geometry_km(geometry, latitude=latitude, longitude=longitude)
+        if distance is None:
             return GeometryRelation.UNKNOWN
         return GeometryRelation.NEARBY if distance <= radius_km else GeometryRelation.OUTSIDE
     except (TypeError, ValueError):

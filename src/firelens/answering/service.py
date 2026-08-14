@@ -548,19 +548,13 @@ class StaticRAGService:
             return await self._record_ask(request, response, route=route.value)
 
         if route == QueryRoute.TANGENT:
-            response = AskResponse(
-                status=ResponseStatus.ANSWER,
+            return await self._background_answer(
+                request,
                 trace_id=trace_id,
-                response_mode=ResponseMode.SCOPE_REDIRECT,
-                answer=(
-                    "That request is outside FireLens's wildfire-preparedness scope. "
-                    "Here are some questions this collection can help with."
-                ),
+                route=route.value,
                 limitations=search.plan.limitations,
-                suggested_questions=list(SUGGESTED_QUESTIONS[:6]),
-                reason_code=ReasonCode.SCOPE_REDIRECT,
+                observer=observer,
             )
-            return await self._record_ask(request, response, route=route.value)
 
         if route in {QueryRoute.LIVE, QueryRoute.PROHIBITED}:
             response = _safe_abstention(
@@ -612,26 +606,23 @@ class StaticRAGService:
             return await self._record_ask(request, response, route=route.value)
 
         if search.support.status not in {SupportStatus.ANSWERABLE, SupportStatus.PARTIAL}:
-            response = _safe_abstention(
-                trace_id,
-                answer=(
-                    f"{search.support.explanation} Try a more specific question about "
-                    "the FireLens guidance topics."
-                ),
-                reason_code=search.support.reason_code,
+            return await self._background_answer(
+                request,
+                trace_id=trace_id,
+                route=route.value,
                 limitations=search.plan.limitations,
-            ).model_copy(update={"suggested_questions": list(SUGGESTED_QUESTIONS[:6])})
-            return await self._record_ask(request, response, route=route.value)
+                observer=observer,
+            )
 
         packet = execution.evidence_packet
         if packet is None:
-            response = _safe_abstention(
-                trace_id,
-                answer="No approved evidence packet was available.",
-                reason_code=ReasonCode.NO_APPROVED_EVIDENCE,
+            return await self._background_answer(
+                request,
+                trace_id=trace_id,
+                route=route.value,
                 limitations=search.plan.limitations,
+                observer=observer,
             )
-            return await self._record_ask(request, response, route=route.value)
         if search.support.status == SupportStatus.PARTIAL:
             packet = packet.model_copy(
                 update={

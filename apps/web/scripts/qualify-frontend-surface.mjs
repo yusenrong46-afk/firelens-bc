@@ -169,6 +169,22 @@ const responseFixtures = {
     evidence: [],
     limitations: [],
   },
+  "surface:requires-location": {
+    status: "answer",
+    response_mode: "requires_input",
+    trace_id: "surface-requires-location",
+    answer: "Share an approximate location or enter a BC community to continue.",
+    suggested_questions: [],
+    claims: [],
+    evidence: [],
+    limitations: [],
+    required_input: {
+      kind: "location",
+      prompt: "Use approximate location or enter a BC community.",
+      continuation_question: "surface:live-fresh",
+    },
+    selected_live_result_id: "incident:surface-7",
+  },
   "surface:abstention": {
     status: "abstention",
     response_mode: "abstention",
@@ -318,8 +334,8 @@ export async function loadProtocol(protocolPath = defaultProtocolPath) {
   ) {
     throw new Error("frontend surface protocol status and frozen_at disagree");
   }
-  if (!Array.isArray(protocol.states) || protocol.states.length !== 10) {
-    throw new Error("frontend surface protocol requires exactly 10 states");
+  if (!Array.isArray(protocol.states) || protocol.states.length !== 12) {
+    throw new Error("frontend surface protocol requires exactly 12 states");
   }
   if (!Array.isArray(protocol.viewports) || protocol.viewports.length !== 3) {
     throw new Error("frontend surface protocol requires exactly 3 viewports");
@@ -336,6 +352,8 @@ export async function loadProtocol(protocolPath = defaultProtocolPath) {
     "idle",
     "grounded",
     "partial",
+    "background",
+    "requires_input",
     "abstention",
     "provider_failure",
     "live",
@@ -388,9 +406,9 @@ export async function loadProtocol(protocolPath = defaultProtocolPath) {
   if (
     canonicalHttpUrl(privacyEvidence.request_url) !== privacyEvidence.request_url
     || JSON.stringify(privacyEvidence.expected_questions)
-      !== JSON.stringify(["surface:grounded", "surface:live-fresh"])
+      !== JSON.stringify(["surface:requires-location", "surface:live-fresh"])
     || JSON.stringify(privacyEvidence.allowed_body_keys)
-      !== JSON.stringify(["history", "location", "question"])
+      !== JSON.stringify(["context", "history", "location", "question"])
     || JSON.stringify(privacyEvidence.persistence_probe_tokens)
       !== JSON.stringify(["49.282729", "-123.120738", "49.28", "-123.12"])
     || privacyEvidence.fixture_location?.rounded_latitude !== 49.28
@@ -529,6 +547,20 @@ async function installDeterministicRoutes(page) {
   await page.route("https://*.tile.openstreetmap.org/**", async (route) => {
     await route.fulfill({ status: 200, contentType: "image/png", body: transparentPng });
   });
+  await page.route("**/api/v1/live/map", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        generated_at: "2026-08-06T12:00:00Z",
+        results: [],
+        aggregate_freshness: "fresh",
+        unavailable_layers: [],
+        layer_statuses: [],
+        limitations: ["No matching record is not a safety determination."],
+      }),
+    });
+  });
   await page.route("**/api/v1/ask", async (route) => {
     let body = {};
     try {
@@ -579,8 +611,8 @@ async function waitForText(page, text) {
 async function driveState(page, state) {
   await page.goto("/", { waitUntil: "networkidle" });
   if (state.question) {
-    await page.getByLabel("Ask a preparedness question").fill(state.question);
-    await page.getByLabel("Ask a preparedness question").press("Enter");
+    await page.getByLabel("Ask FireLens a question").fill(state.question);
+    await page.getByLabel("Ask FireLens a question").press("Enter");
   }
   await waitForText(page, state.ready_text);
   if (["live", "mixed", "stale", "partial_layer"].includes(state.id)) {
@@ -1395,7 +1427,7 @@ async function keyboardJourney(browser, protocol, baseUrl) {
   const errors = [];
   try {
     await page.goto("/", { waitUntil: "networkidle" });
-    const input = page.getByLabel("Ask a preparedness question");
+    const input = page.getByLabel("Ask FireLens a question");
     await input.fill("surface:grounded");
     await input.press("Enter");
     checks.question_submitted_with_enter = true;
@@ -1763,16 +1795,14 @@ async function privacyJourney(browser, protocol, baseUrl) {
     const geolocationBeforeOptIn = await page.evaluate(
       () => window.__surfaceGeolocationCalls,
     );
-    await page.getByLabel("Ask a preparedness question").fill("surface:grounded");
-    await page.getByLabel("Ask a preparedness question").press("Enter");
-    await waitForText(page, "Sources supporting this answer");
+    await page.getByLabel("Ask FireLens a question").fill("surface:requires-location");
+    await page.getByLabel("Ask FireLens a question").press("Enter");
+    await waitForText(page, "One detail needed");
     await page.getByRole("button", { name: "Use approximate location" }).click();
-    await waitForText(page, "Approximate location ready for this session.");
+    await waitForText(page, "Approximate location ready for this request.");
     const geolocationAfterOptIn = await page.evaluate(
       () => window.__surfaceGeolocationCalls,
     );
-    await page.getByLabel("Ask a preparedness question").fill("surface:live-fresh");
-    await page.getByLabel("Ask a preparedness question").press("Enter");
     await waitForText(page, "Current BC wildfire information");
     await page.waitForLoadState("networkidle");
     const browserSurfaces = await inspectPrivacyBrowserSurfaces(
@@ -1832,7 +1862,7 @@ async function historyJourney(browser, protocol, baseUrl) {
   const errors = [];
   try {
     await page.goto("/", { waitUntil: "networkidle" });
-    const input = page.getByLabel("Ask a preparedness question");
+    const input = page.getByLabel("Ask FireLens a question");
     await input.fill("surface:grounded");
     await input.press("Enter");
     await waitForText(page, "Sources supporting this answer");
@@ -1841,7 +1871,7 @@ async function historyJourney(browser, protocol, baseUrl) {
     await waitForText(page, "General background — no corpus evidence attached");
     checks.bounded_history_sent = routes.requestBodies[1]?.history?.length === 2;
     await page.getByLabel("Clear conversation history").click();
-    await waitForText(page, "Ask, then inspect the source");
+    await waitForText(page, "Select a fire or ask anything");
     checks.clear_returns_idle = true;
     await input.fill("surface:capability");
     await input.press("Enter");
@@ -1951,10 +1981,10 @@ async function performanceSample(
   try {
     await configurePerformancePage(page, protocol);
     await page.goto("/", { waitUntil: "networkidle" });
-    await waitForText(page, "Ask, then inspect the source");
+    await waitForText(page, "Select a fire or ask anything");
     await page.waitForTimeout(250);
     const beforeInteraction = await page.evaluate(() => ({ ...window.__surfaceVitals }));
-    const input = page.getByLabel("Ask a preparedness question");
+    const input = page.getByLabel("Ask FireLens a question");
     await input.fill("surface:live-fresh");
     const interactionStarted = await page.evaluate(() => performance.now());
     await input.press("Enter");

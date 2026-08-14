@@ -6,7 +6,7 @@ import math
 from collections import Counter
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 from pydantic import Field, HttpUrl, field_validator, model_validator
 
@@ -98,6 +98,23 @@ class LiveResult(FrozenStrictModel):
     issuer: str | None = Field(default=None, max_length=300)
     geometry_relation: GeometryRelation = GeometryRelation.UNKNOWN
     geometry: dict[str, Any]
+    distance_km: float | None = Field(default=None, ge=0)
+    distance_basis: Literal["incident_point", "perimeter_boundary"] | None = None
+
+    @model_validator(mode="after")
+    def distance_fields_are_consistent(self) -> Self:
+        if (self.distance_km is None) != (self.distance_basis is None):
+            raise ValueError(
+                "live distance and its measurement basis must be provided together"
+            )
+        if self.distance_basis == "incident_point" and self.kind != LiveResultKind.INCIDENT:
+            raise ValueError("incident-point distance requires an incident result")
+        if (
+            self.distance_basis == "perimeter_boundary"
+            and self.kind != LiveResultKind.PERIMETER
+        ):
+            raise ValueError("perimeter-boundary distance requires a perimeter result")
+        return self
 
 
 class LiveLayerStatus(FrozenStrictModel):
