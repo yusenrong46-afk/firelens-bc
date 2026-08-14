@@ -30,6 +30,7 @@ from firelens.providers.openrouter_support import (
     StagePressureState,
     locally_type_draft,
     model_identity_matches,
+    strict_wire_schema,
     wire_draft_schema,
 )
 from firelens.providers.openrouter_support import (
@@ -86,6 +87,20 @@ class OpenRouterProvider:
         if self.config.require_zdr:
             preferences["zdr"] = True
         return preferences
+
+    def _generation_sampling_parameters(self) -> dict[str, float]:
+        """Return only sampling parameters supported by the configured model."""
+
+        model_id = self.config.generation_model.split(":", maxsplit=1)[0]
+        if model_id == "openai/gpt-5.6-luna":
+            return {}
+        return {"temperature": self.config.generation_temperature}
+
+    def _generation_output_schema(self, output_schema: dict[str, Any]) -> dict[str, Any]:
+        model_id = self.config.generation_model.split(":", maxsplit=1)[0]
+        if model_id == "openai/gpt-5.6-luna":
+            return strict_wire_schema(output_schema)
+        return output_schema
 
     async def preflight_zdr_models(self) -> tuple[str, ...]:
         """Fail closed unless every configured model has a current ZDR endpoint.
@@ -582,14 +597,14 @@ class OpenRouterProvider:
                 "messages": list(messages),
                 "stream": False,
                 "max_tokens": max_tokens,
-                "temperature": self.config.generation_temperature,
+                **self._generation_sampling_parameters(),
                 "provider": self._provider_preferences(),
                 "response_format": {
                     "type": "json_schema",
                     "json_schema": {
                         "name": schema_name,
                         "strict": True,
-                        "schema": output_schema,
+                        "schema": self._generation_output_schema(output_schema),
                     },
                 },
             },

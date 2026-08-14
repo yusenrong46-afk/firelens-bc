@@ -73,6 +73,27 @@ def wire_draft_schema(output_schema: dict[str, Any]) -> dict[str, Any]:
     return schema
 
 
+def strict_wire_schema(output_schema: dict[str, Any]) -> dict[str, Any]:
+    """Normalize object schemas for OpenAI strict structured outputs."""
+
+    schema = deepcopy(output_schema)
+
+    def normalize(node: object) -> None:
+        if isinstance(node, dict):
+            properties = node.get("properties")
+            if node.get("type") == "object" and isinstance(properties, dict):
+                node["required"] = list(properties)
+                node["additionalProperties"] = False
+            for value in node.values():
+                normalize(value)
+        elif isinstance(node, list):
+            for value in node:
+                normalize(value)
+
+    normalize(schema)
+    return schema
+
+
 def locally_type_draft(
     payload: dict[str, Any], *, answer_type: str
 ) -> GroundedDraft | BackgroundDraft:

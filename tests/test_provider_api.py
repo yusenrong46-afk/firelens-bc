@@ -19,6 +19,7 @@ from firelens.contracts import (
     GenerationResponse,
     GroundedDraft,
     LiveResultKind,
+    PlanningDecision,
 )
 from firelens.errors import ProviderError
 from firelens.live import LiveDataService
@@ -28,6 +29,54 @@ from firelens.runtime import Runtime
 
 
 class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
+    async def test_luna_planning_omits_unsupported_temperature_parameter(self) -> None:
+        observed_body: dict[str, object] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal observed_body
+            observed_body = json.loads(request.content)
+            return httpx.Response(
+                200,
+                json={
+                    "model": "openai/gpt-5.6-luna",
+                    "choices": [
+                        {
+                            "message": {
+                                "content": (
+                                    '{"relation":"grounded_candidate",'
+                                    '"retrieval_queries":["wildfire kit"],'
+                                    '"explanation":"probe",'
+                                    '"required_aspects":[]}'
+                                )
+                            }
+                        }
+                    ],
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "generation_model": "openai/gpt-5.6-luna",
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                await OpenRouterProvider(config, client=client).plan(
+                    [{"role": "user", "content": "plan"}],
+                    output_schema=PlanningDecision.model_json_schema(),
+                )
+
+        self.assertNotIn("temperature", observed_body)
+        self.assertTrue(observed_body["provider"]["require_parameters"])
+        wire_schema = observed_body["response_format"]["json_schema"]["schema"]
+        self.assertEqual(
+            set(wire_schema["required"]),
+            set(wire_schema["properties"]),
+        )
+
     async def test_zdr_preflight_requires_every_configured_model(self) -> None:
         observed_authorization = ""
 
