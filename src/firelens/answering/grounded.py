@@ -100,7 +100,7 @@ class GroundedAnswerEngine:
         self.provider = provider
 
     @staticmethod
-    def _source_handoff(
+    def source_handoff(
         trace_id: str,
         evidence_packet: EvidencePacket,
         *,
@@ -147,7 +147,7 @@ class GroundedAnswerEngine:
         evidence_packet: EvidencePacket,
         validation: ValidationReport,
     ) -> AskResponse:
-        return cls._source_handoff(
+        return cls.source_handoff(
             trace_id,
             evidence_packet,
             answer=(
@@ -196,7 +196,7 @@ class GroundedAnswerEngine:
                     error_kind=exc.kind.value,
                 )
             )
-            response = self._source_handoff(
+            response = self.source_handoff(
                 trace_id,
                 evidence_packet,
                 answer=(

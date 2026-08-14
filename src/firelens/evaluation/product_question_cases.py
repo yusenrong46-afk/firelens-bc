@@ -330,7 +330,7 @@ def build_product_question_cases() -> list[ProductQuestionCase]:
                     if selected_distance
                     else ("live", "capability")
                     if named_location
-                    else ("grounded", "partial", "background")
+                    else ("grounded", "partial", "background", "scope_redirect")
                 ),
                 location_expectation=(
                     "required"

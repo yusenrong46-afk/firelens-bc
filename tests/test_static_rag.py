@@ -717,6 +717,20 @@ class AdjacentProvider(FakeProvider):
         )
 
 
+class UnsafeBackgroundProvider(FakeProvider):
+    async def generate_background(self, messages, *, output_schema):
+        del messages, output_schema
+        self.generate_calls += 1
+        return GenerationResponse(
+            model="fake/unsafe-background",
+            draft=BackgroundDraft(
+                answer_type="background",
+                claims=[BackgroundDraftClaim(text="You should leave immediately.")],
+                limitations=[BACKGROUND_LIMITATION],
+            ),
+        )
+
+
 class TangentProvider(FakeProvider):
     async def plan(self, messages, *, output_schema):
         del messages, output_schema
@@ -1108,6 +1122,30 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(response.claims)
         self.assertFalse(response.evidence)
         self.assertIsNone(response.validation)
+
+    async def test_invalid_background_with_retrieved_sources_returns_source_handoff(
+        self,
+    ) -> None:
+        chunk = make_chunk(
+            "smoke-guidance",
+            "Reduce indoor wildfire smoke by keeping windows and doors closed when appropriate.",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, _ = await make_runtime(
+                Path(directory), provider=UnsafeBackgroundProvider(), chunks=[chunk]
+            )
+            response = await runtime.service.ask(
+                QueryRequest(question="smoke in my house what can i do")
+            )
+            await runtime.aclose()
+
+        self.assertEqual(response.status, ResponseStatus.ANSWER)
+        self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
+        self.assertEqual(response.reason_code, "draft_validation_failed")
+        self.assertTrue(response.related_links)
+        self.assertTrue(response.validation)
+        self.assertFalse(response.validation.accepted)
+        self.assertNotIn("leave immediately", response.answer.casefold())
 
     async def test_live_and_prohibited_questions_make_no_provider_calls(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

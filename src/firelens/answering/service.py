@@ -443,6 +443,7 @@ class StaticRAGService:
         route: str,
         limitations: Sequence[str],
         observer: ExecutionObserver | None,
+        evidence_packet: EvidencePacket | None = None,
     ) -> AskResponse:
         started = perf_counter()
         try:
@@ -461,11 +462,29 @@ class StaticRAGService:
                         error_kind=exc.kind.value,
                     )
                 )
-            response = _provider_abstention(
-                trace_id,
-                reason_code=ReasonCode.GENERATION_UNAVAILABLE,
-                error_kind=exc.kind.value,
-                limitations=limitations,
+            response = (
+                self.grounded_answers.source_handoff(
+                    trace_id,
+                    evidence_packet,
+                    answer=(
+                        "FireLens found reviewed sources related to this question, but the "
+                        "language service is temporarily unavailable. Open the reviewed "
+                        "sources below for more information."
+                    ),
+                    reason_code=ReasonCode.GENERATION_UNAVAILABLE,
+                    error_kind=exc.kind.value,
+                    extra_limitation=(
+                        "No generated general-knowledge claim was published while the "
+                        "language service was unavailable."
+                    ),
+                )
+                if evidence_packet is not None
+                else _provider_abstention(
+                    trace_id,
+                    reason_code=ReasonCode.GENERATION_UNAVAILABLE,
+                    error_kind=exc.kind.value,
+                    limitations=limitations,
+                )
             )
             return await self._record_ask(request, response, route=route)
         generation_ms = (perf_counter() - started) * 1_000
@@ -500,12 +519,30 @@ class StaticRAGService:
                 )
             )
         if not validation.accepted:
-            response = _safe_abstention(
-                trace_id,
-                answer="The generated background answer did not pass FireLens validation.",
-                reason_code=ReasonCode.DRAFT_VALIDATION_FAILED,
-                limitations=generated.draft.limitations,
-            ).model_copy(update={"validation": validation})
+            response = (
+                self.grounded_answers.source_handoff(
+                    trace_id,
+                    evidence_packet,
+                    answer=(
+                        "FireLens found reviewed sources related to this question, but the "
+                        "general-knowledge summary did not pass safety validation. Open the "
+                        "reviewed sources below instead of relying on the rejected draft."
+                    ),
+                    reason_code=ReasonCode.DRAFT_VALIDATION_FAILED,
+                    validation=validation,
+                    extra_limitation=(
+                        "No generated general-knowledge claim was published from the rejected "
+                        "draft."
+                    ),
+                )
+                if evidence_packet is not None
+                else _safe_abstention(
+                    trace_id,
+                    answer="The generated background answer did not pass FireLens validation.",
+                    reason_code=ReasonCode.DRAFT_VALIDATION_FAILED,
+                    limitations=generated.draft.limitations,
+                ).model_copy(update={"validation": validation})
+            )
             return await self._record_ask(request, response, route=route)
         claims = [
             PublicClaim(
@@ -654,6 +691,7 @@ class StaticRAGService:
                 route=route.value,
                 limitations=search.plan.limitations,
                 observer=observer,
+                evidence_packet=execution.evidence_packet,
             )
 
         packet = execution.evidence_packet
