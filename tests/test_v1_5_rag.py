@@ -255,6 +255,7 @@ class V15RoutingTests(unittest.TestCase):
             "How can I prepare for wildfire smoke?",
             "what does outta control fire mean",
             "smoke in my house what can i do",
+            "evac alert vs order im confused",
         ):
             with self.subTest(question=question):
                 self.assertTrue(reviewed_guidance_intent(question))

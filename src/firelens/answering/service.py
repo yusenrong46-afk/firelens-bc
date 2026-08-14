@@ -646,13 +646,20 @@ class StaticRAGService:
 
         if not search.retrieval.complete:
             is_planning_failure = not search.plan.retrieval_requests
+            if is_planning_failure:
+                return await self._background_answer(
+                    request,
+                    trace_id=trace_id,
+                    route=route.value,
+                    limitations=[
+                        *search.plan.limitations,
+                        "The retrieval planner was unavailable; this response uses labelled general knowledge only.",
+                    ],
+                    observer=observer,
+                )
             response = _unavailable_response(
                 trace_id,
-                reason_code=(
-                    ReasonCode.PLANNING_UNAVAILABLE
-                    if is_planning_failure
-                    else ReasonCode.RETRIEVAL_UNAVAILABLE
-                ),
+                reason_code=ReasonCode.RETRIEVAL_UNAVAILABLE,
                 error_kind=search.retrieval.errors[0] if search.retrieval.errors else "unknown",
                 limitations=search.plan.limitations,
             )

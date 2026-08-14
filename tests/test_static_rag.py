@@ -900,7 +900,7 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
                 initial,
             )
 
-    async def test_planner_failure_is_typed_without_unbounded_query_fallback(self) -> None:
+    async def test_planner_failure_falls_back_to_labelled_background(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             provider = FailingPlanner()
             runtime, _, _ = await make_runtime(Path(directory), provider=provider)
@@ -912,17 +912,11 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             response = await runtime.service.ask(
                 QueryRequest(question="Explain why dry windy weather matters.")
             )
-            self.assertEqual(response.status, ResponseStatus.ERROR)
-            self.assertEqual(response.reason_code, "planning_unavailable")
+            self.assertEqual(response.status, ResponseStatus.ANSWER)
+            self.assertEqual(response.response_mode, ResponseMode.BACKGROUND)
             self.assertEqual(provider.plan_calls, 1)
-            self.assertEqual(
-                (
-                    provider.embed_calls,
-                    provider.rerank_calls,
-                    provider.generate_calls,
-                ),
-                initial,
-            )
+            self.assertEqual((provider.embed_calls, provider.rerank_calls), initial[:2])
+            self.assertGreater(provider.generate_calls, initial[2])
 
     async def test_planner_failure_uses_bounded_reviewed_guidance_fallback(self) -> None:
         chunk = make_chunk(
