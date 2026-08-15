@@ -869,9 +869,19 @@ gitignored `output/qualification/v1_5_v3_preview_safety_probe.json`.
 Package C was **not executed**. `make canary`, paid semantic holdout, and
 retrieval bakeoff were not run.
 
+### Git push retry
+
+`git push -u origin HEAD` from `e0e6ce9` was **rejected**:
+
+`refusing to allow an OAuth App to create or update workflow
+.github/workflows/candidate.yml without workflow scope`
+
+No force-push. Branch is still not on `origin`. Owner action:
+`gh auth refresh -h github.com -s workflow`, then push.
+
 ### Remaining EXTERNAL
 
-- Git push of `codex/v1-5-v3` (retry recorded below; may still lack `workflow` scope)
+- Git push of `codex/v1-5-v3` (blocked on GitHub `workflow` scope)
 - Named human review
 - Production `--prod`
 - Vercel Firewall publish
