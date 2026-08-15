@@ -18,6 +18,32 @@ html, body, #root { margin: 0; min-width: 320px; min-height: 100vh; }
 body { -webkit-font-smoothing: antialiased; }
 button, input { font: inherit; }
 button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #9a3f1f; outline-offset: 3px; }
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: 8px;
+  z-index: 20;
+  padding: 10px 14px;
+  color: #fff;
+  background: var(--navy);
+  border-radius: 4px;
+  transform: translateY(-160%);
+  font-size: 16px;
+  font-weight: 600;
+}
+.skip-link:focus { transform: none; }
+.workspace-jump { display: none; gap: 10px; }
+.workspace-jump a { min-height: 44px; display: inline-flex; align-items: center; color: var(--navy); font-size: 16px; font-weight: 600; text-decoration: none; }
+.connection-banner {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 10px 40px;
+  color: #623d20;
+  background: #fff3e4;
+  border-bottom: 1px solid #e0c19a;
+  font-size: 16px;
+}
 
 .app-shell { min-height: 100vh; background: #fbfbf8; }
 .topbar { height: 78px; display: flex; align-items: center; justify-content: space-between; padding: 0 40px 0 29px; background: #fff; border-bottom: 1px solid #d9dde0; }
@@ -34,7 +60,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .conversation-panel { min-width: 0; display: flex; flex-direction: column; background: #fff; border-right: 1px solid #d4d9dc; }
 .conversation-toolbar { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 28px; color: #415466; border-bottom: 1px solid #e1e4e5; font-size: 16px; }
 .conversation-toolbar span, .conversation-toolbar button { display: inline-flex; align-items: center; gap: 6px; }
-.conversation-toolbar button { min-height: 36px; padding: 7px 9px; color: #3d5164; background: transparent; border: 0; border-radius: 3px; cursor: pointer; font-size: 16px; font-weight: 600; }
+.conversation-toolbar button { min-height: 44px; padding: 7px 9px; color: #3d5164; background: transparent; border: 0; border-radius: 3px; cursor: pointer; font-size: 16px; font-weight: 600; }
 .conversation-toolbar button:hover { color: var(--copper); background: #fff8f3; }
 .conversation-scroll { flex: 1; overflow-y: auto; padding: 26px 28px 18px; }
 .panel-label { display: block; margin-bottom: 9px; color: #214f80; font-size: 12px; font-weight: 600; }
@@ -133,7 +159,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .source-name small { color: #455d50; font-size: 12px; }
 .stable-chip { padding: 8px 10px; color: #34543b; background: var(--moss); border-radius: 3px; font-size: 16px; font-weight: 600; white-space: nowrap; }
 .source-panel__head > a, .secondary-source > a { min-height: 44px; display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; color: var(--navy); background: #fff; border: 1px solid #2f4665; border-radius: 3px; text-decoration: none; font-size: 16px; font-weight: 600; white-space: nowrap; }
-.caret-button { min-width: 36px; min-height: 36px; display: grid; place-items: center; padding: 6px; color: var(--navy); background: transparent; border: 0; cursor: pointer; }
+.caret-button { min-width: 44px; min-height: 44px; display: grid; place-items: center; padding: 6px; color: var(--navy); background: transparent; border: 0; cursor: pointer; }
 .source-panel__body { min-height: 430px; display: grid; grid-template-columns: 222px 1fr; gap: 25px; padding: 25px 22px 28px; border-top: 1px solid #d8d8d1; }
 .source-details { padding-right: 19px; border-right: 1px solid #d7ddd8; }
 .source-details dl { margin: 0; }
@@ -196,7 +222,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 }
 @media (max-width: 850px) {
   .workspace { grid-template-columns: 1fr; height: auto; }
-  .conversation-panel { min-height: calc(100vh - 123px); border-right: 0; border-bottom: 1px solid var(--line); }
+  .workspace-jump { display: inline-flex; }
+  .conversation-panel { min-height: calc(100vh - 123px); min-width: 0; max-width: 100%; border-right: 0; border-bottom: 1px solid var(--line); }
   .evidence-panel { overflow: visible; }
   .evidence-inner { width: min(calc(100% - 36px), 780px); }
 }
@@ -506,14 +533,17 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
     min-height: 620px;
     overflow: hidden;
   }
+  .workspace-jump { display: inline-flex; }
   .evidence-panel { position: absolute; inset: 0; overflow: auto; }
   .evidence-inner, .evidence-inner--map-first { padding: 18px 16px calc(46vh + 42px); }
   .conversation-panel {
     position: absolute;
     inset: auto 8px 8px;
     width: auto;
-    height: min(45vh, 460px);
-    min-height: 330px;
+    min-width: 0;
+    max-width: calc(100% - 16px);
+    height: min(58vh, 540px);
+    min-height: 360px;
     border: 1px solid rgba(16, 36, 31, .1);
     border-radius: 24px;
     box-shadow: 0 -16px 48px rgba(14,36,29,.22);
@@ -523,14 +553,50 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 }
 
 @media (max-width: 620px) {
-  .topbar { height: 62px; }
+  .topbar { height: auto; min-height: 62px; flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
+  .workspace-jump { width: 100%; justify-content: flex-start; }
   .boundary { padding-inline: 16px; }
-  .official-link { font-size: 12px; }
+  .official-link { font-size: 16px; }
   .live-map__heading { margin-bottom: 10px; }
   .live-map__heading h1 { font-size: 28px; }
   .leaflet-container { min-height: 390px; }
   .live-list { grid-template-columns: 1fr; }
   .location-request { margin-left: 0; }
   .workspace { height: calc(100dvh - 104px); min-height: 580px; }
-  .conversation-panel { height: 43vh; min-height: 320px; }
+  .conversation-panel { height: 56vh; min-height: 340px; min-width: 0; }
 }
+
+#conversation,
+#official-map { scroll-margin-top: 88px; outline: none; }
+.conversation-scroll { min-height: 0; }
+.conversation-toolbar { min-height: 48px; font-size: 16px; }
+.conversation-toolbar button,
+.composer-input button,
+.suggestion-group button {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 16px;
+}
+.composer > p,
+.location-request > p,
+.location-request > strong,
+.response-badge,
+.answer-section__authority,
+.live-map__heading span,
+.official-link,
+.live-roster-summary,
+.live-roster-summary strong,
+.map-surface-status,
+.answer-limitations strong,
+.answer-limitations li,
+.assistant-message p,
+.feedback-controls,
+.feedback-controls button,
+.feedback-status,
+.live-map__context-note {
+  font-size: 16px;
+}
+.feedback-controls button { min-height: 44px; }
+.brand small { color: #8a341c; }
+.boundary,
+.boundary span { font-size: 16px; }

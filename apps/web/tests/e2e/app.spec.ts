@@ -294,6 +294,64 @@ test("shows stale and partial-layer state without hiding records", async ({ page
   await expect(page.getByText(/Some official layers are unavailable: evacuation/)).toBeVisible();
 });
 
+test("keeps the workspace usable at a 320px viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto("/");
+  await expect(page.getByLabel("Ask FireLens a question")).toBeVisible();
+  await expect(page.getByLabel("Official wildfire records map")).toBeVisible();
+  const overflowX = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflowX).toBeLessThanOrEqual(0);
+});
+
+test("keeps primary controls reachable at a 640px 200-percent zoom proxy", async ({ page }) => {
+  await page.setViewportSize({ width: 640, height: 400 });
+  await page.goto("/");
+  await expect(page.getByLabel("Ask FireLens a question")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Skip to conversation" })).toHaveAttribute("href", "#conversation");
+  const overflowX = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflowX).toBeLessThanOrEqual(0);
+});
+
+test("keeps the assistant answer in view on a short mobile overlay", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.getByLabel("Ask FireLens a question").fill("What belongs in a grab-and-go bag?");
+  await page.getByLabel("Send question").click();
+  const answer = page.locator("#conversation .assistant-message p");
+  await expect(answer).toHaveText("Prepare water, food, and medication.");
+  await expect(answer).toBeInViewport();
+  await expect(page.getByRole("status", { name: "Answer limitations" })).toBeInViewport();
+});
+
+test("places skip links and warnings before answer text", async ({ page }) => {
+  await page.goto("/");
+  const skipConversation = page.getByRole("link", { name: "Skip to conversation" });
+  await skipConversation.focus();
+  await expect(skipConversation).toBeVisible();
+  await skipConversation.press("Enter");
+  await expect(page.locator("#conversation")).toBeInViewport();
+  await page.getByLabel("Ask FireLens a question").fill("What belongs in a grab-and-go bag?");
+  await page.getByLabel("Send question").click();
+  const limitations = page.getByRole("status", { name: "Answer limitations" });
+  await expect(limitations).toBeVisible();
+  await expect(page.locator("#conversation .assistant-message p")).toHaveText(
+    "Prepare water, food, and medication.",
+  );
+  expect(await page.evaluate(() => {
+    const warning = document.querySelector('[aria-label="Answer limitations"]');
+    const answer = document.querySelector("#conversation .assistant-message p");
+    return Boolean(
+      warning
+      && answer
+      && (warning.compareDocumentPosition(answer) & Node.DOCUMENT_POSITION_FOLLOWING),
+    );
+  })).toBe(true);
+});
+
 test("opens an official source link with keyboard activation", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("Is there an active wildfire near me right now?");

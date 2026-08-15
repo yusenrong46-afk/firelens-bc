@@ -69,7 +69,9 @@ export function resultColour(kind: LiveResult["kind"]): string {
 }
 
 export function isRenderableGeometry(result: LiveResult): boolean {
-  const geometry = result.geometry as { type?: string; coordinates?: unknown };
-  if (!Array.isArray(geometry.coordinates) || geometry.coordinates.length === 0) return false;
+  const geometry = result.geometry as { type?: string; coordinates?: unknown } | undefined;
+  if (!geometry || !Array.isArray(geometry.coordinates) || geometry.coordinates.length === 0) {
+    return false;
+  }
   return ["Point", "Polygon", "MultiPolygon"].includes(geometry.type ?? "");
 }

@@ -58,6 +58,37 @@ describe("FireLens Source Lens", () => {
     render(<App />);
     expect(screen.getByRole("button", { name: "What belongs in a grab-and-go bag?" })).toBeInTheDocument();
     expect(screen.getByText("0 of 6 turns in context")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Skip to conversation" })).toHaveAttribute("href", "#conversation");
+    expect(screen.getByRole("link", { name: "Skip to official map" })).toHaveAttribute("href", "#official-map");
+  });
+
+  it("scrolls the assistant reply into view after an answer", async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      writable: true,
+      value: scrollIntoView,
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(answer), { status: 200 })));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "What belongs in a grab-and-go bag?");
+    await user.click(screen.getByLabelText("Send question"));
+    expect(
+      await screen.findByLabelText("Question and answer"),
+    ).toHaveTextContent("Keep water and food in a grab-and-go bag.");
+    expect(scrollIntoView).toHaveBeenCalled();
+  });
+
+  it("warns when the browser is offline and recovers when connectivity returns", async () => {
+    render(<App />);
+    expect(screen.queryByText(/You're offline/)).not.toBeInTheDocument();
+    window.dispatchEvent(new Event("offline"));
+    expect(await screen.findByRole("status", { name: "Connection status" })).toHaveTextContent(/offline/i);
+    window.dispatchEvent(new Event("online"));
+    await waitFor(() => {
+      expect(screen.queryByRole("status", { name: "Connection status" })).not.toBeInTheDocument();
+    });
   });
 
   it("renders a capability response with API suggestions and no evidence", async () => {
@@ -254,6 +285,9 @@ describe("FireLens Source Lens", () => {
       const limitations = await screen.findByRole("status", { name: "Answer limitations" });
       expect(within(limitations).getAllByText(limitation)).toHaveLength(1);
       expect(within(limitations).getAllByRole("listitem")).toHaveLength(1);
+      const conversation = screen.getByRole("region", { name: "Question and answer" });
+      const answerText = within(conversation).getByText(`Answer in ${responseMode} mode.`);
+      expect(limitations.compareDocumentPosition(answerText) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     },
   );
 
@@ -387,6 +421,7 @@ describe("FireLens Source Lens", () => {
     const map = screen.getByRole("region", { name: "Interactive map of official wildfire records" });
     expect(missingLayerWarning.compareDocumentPosition(matchingList) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(missingLayerWarning.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(map.compareDocumentPosition(matchingList) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByText(/Source updated/)).toBeInTheDocument();
     expect(screen.getByText(/Retrieved/)).toBeInTheDocument();
   });
@@ -748,6 +783,201 @@ describe("FireLens Source Lens", () => {
     await waitFor(() => expect(askCallOptions(fetchMock)).toHaveLength(2));
     const payload = JSON.parse(String(askCallOptions(fetchMock)[1]?.body));
     expect(payload.history).toEqual([]);
+  });
+
+  it("keeps mixed reviewed sources labelled when live records are also present", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+      if (String(url).startsWith("/api/v1/live/map")) {
+        return Promise.resolve(new Response(JSON.stringify({
+          generated_at: "2026-08-15T18:00:00Z",
+          results: [],
+          unavailable_layers: [],
+          layer_statuses: [],
+          limitations: [],
+        }), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        ...answer,
+        response_mode: "mixed",
+        answer: "Surface Test Fire is active; keep grab-and-go guidance ready.",
+        live_results: [{
+          result_id: "incident:surface-7",
+          kind: "incident",
+          authority: "BC Wildfire Service",
+          source_url: "https://example.test/incidents/surface-7",
+          source_updated_at: "2026-08-06T11:55:00Z",
+          retrieved_at: "2026-08-06T12:00:00Z",
+          freshness: "fresh",
+          status: "Out of Control",
+          name: "Surface Test Fire",
+          geometry: { type: "Point", coordinates: [-123.12, 49.28] },
+        }],
+      }), { status: 200 }));
+    }));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "surface:mixed");
+    await user.click(screen.getByLabelText("Send question"));
+    expect(await screen.findByText("Preparedness sources")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Wildfire Preparedness Guide" })).toBeInTheDocument();
+  });
+
+  it("uses the stale map title when the answer records are stale and the province map is empty", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+      if (String(url).startsWith("/api/v1/live/map")) {
+        return Promise.resolve(new Response(JSON.stringify({
+          generated_at: "2026-08-15T18:00:00Z",
+          results: [],
+          unavailable_layers: [],
+          layer_statuses: [],
+          limitations: [],
+        }), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "live",
+        trace_id: "stale-heading",
+        answer: "Cached official information (refresh failed): Surface Test Fire.",
+        claims: [],
+        evidence: [],
+        limitations: ["A refresh failed; this cached record is visibly stale."],
+        aggregate_freshness: "stale",
+        live_results: [{
+          result_id: "incident:surface-stale",
+          kind: "incident",
+          authority: "BC Wildfire Service",
+          source_url: "https://example.test/incidents/surface-stale",
+          source_updated_at: "2026-07-28T11:55:00Z",
+          retrieved_at: "2026-07-28T12:00:00Z",
+          freshness: "stale",
+          status: "Out of Control",
+          name: "Surface Test Fire",
+          geometry: { type: "Point", coordinates: [-123.12, 49.28] },
+        }],
+      }), { status: 200 }));
+    }));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "surface:live-stale");
+    await user.click(screen.getByLabelText("Send question"));
+    expect(await screen.findByRole("heading", {
+      name: "BC wildfire information — includes stale records",
+    })).toBeInTheDocument();
+  });
+
+  it("exposes every matching official record in the accessible list", async () => {
+    const liveResults = Array.from({ length: 10 }, (_, index) => ({
+      result_id: `incident:surface-${String(index + 1).padStart(2, "0")}`,
+      kind: "incident" as const,
+      authority: "BC Wildfire Service",
+      source_url: `https://example.test/incidents/surface-${index + 1}`,
+      source_updated_at: "2026-08-06T11:55:00Z",
+      retrieved_at: "2026-08-06T12:00:00Z",
+      freshness: "fresh" as const,
+      status: "Out of Control",
+      name: `Surface Test Fire ${String(index + 1).padStart(2, "0")}`,
+      geometry: { type: "Point" as const, coordinates: [-123.12 + index * 0.1, 49.28] },
+    }));
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+      if (String(url).startsWith("/api/v1/live/map")) {
+        return Promise.resolve(new Response(JSON.stringify({
+          generated_at: "2026-08-15T18:00:00Z",
+          results: [],
+          unavailable_layers: [],
+          layer_statuses: [],
+          limitations: [],
+        }), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "live",
+        trace_id: "ten-records",
+        answer: "Current official information: matching fires are listed.",
+        claims: [],
+        evidence: [],
+        limitations: ["No matching record is not a safety determination."],
+        aggregate_freshness: "fresh",
+        live_results: liveResults,
+      }), { status: 200 }));
+    }));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "surface:live-fresh");
+    await user.click(screen.getByLabelText("Send question"));
+    const matching = await screen.findByRole("list", { name: "Matching this question" });
+    expect(within(matching).getAllByRole("listitem")).toHaveLength(10);
+  });
+
+  it("keeps the approximate-location status visible after opt-in", async () => {
+    Object.defineProperty(navigator, "geolocation", {
+      configurable: true,
+      value: {
+        getCurrentPosition(success: (position: GeolocationPosition) => void) {
+          success({
+            coords: { latitude: 49.282729, longitude: -123.120738, accuracy: 100 },
+          } as GeolocationPosition);
+        },
+      },
+    });
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      if (String(url).startsWith("/api/v1/live/map")) {
+        return Promise.resolve(new Response(JSON.stringify({
+          generated_at: "2026-08-15T18:00:00Z",
+          results: [],
+          unavailable_layers: [],
+          layer_statuses: [],
+          limitations: [],
+        }), { status: 200 }));
+      }
+      const payload = JSON.parse(String(init?.body ?? "{}")) as { question?: string };
+      if (payload.question === "surface:requires-location") {
+        return Promise.resolve(new Response(JSON.stringify({
+          status: "requires_input",
+          response_mode: "requires_input",
+          trace_id: "needs-location",
+          answer: null,
+          claims: [],
+          evidence: [],
+          limitations: [],
+          required_input: {
+            kind: "location",
+            prompt: "Use approximate location or enter a BC community.",
+            continuation_question: "surface:live-fresh",
+          },
+        }), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "live",
+        trace_id: "after-location",
+        answer: "Current official information: Surface Test Fire is Out of Control.",
+        claims: [],
+        evidence: [],
+        limitations: [],
+        aggregate_freshness: "fresh",
+        live_results: [{
+          result_id: "incident:surface-7",
+          kind: "incident",
+          authority: "BC Wildfire Service",
+          source_url: "https://example.test/incidents/surface-7",
+          source_updated_at: "2026-08-06T11:55:00Z",
+          retrieved_at: "2026-08-06T12:00:00Z",
+          freshness: "fresh",
+          status: "Out of Control",
+          name: "Surface Test Fire",
+          geometry: { type: "Point", coordinates: [-123.12, 49.28] },
+        }],
+      }), { status: 200 }));
+    }));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "surface:requires-location");
+    await user.click(screen.getByLabelText("Send question"));
+    await screen.findByText("One detail needed");
+    await user.click(screen.getByRole("button", { name: "Use approximate location" }));
+    expect(await screen.findByText("Approximate location ready for this request.")).toBeInTheDocument();
+    expect(await screen.findByText("Current BC wildfire information")).toBeInTheDocument();
+    expect(screen.getByText("Approximate location ready for this request.")).toBeInTheDocument();
   });
 
   it("offers retry only for a retryable provider failure", async () => {

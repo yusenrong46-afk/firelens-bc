@@ -207,6 +207,14 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
                 initiallyOpen={index === 0}
               />
             ))}
+            {mode === "mixed" && (view.response.evidence ?? []).length > 0 && (
+              <div className="mixed-sources">
+                <strong>Preparedness sources</strong>
+                {(view.response.evidence ?? []).map((item) => (
+                  <a key={item.evidence_id} href={item.canonical_url} target="_blank" rel="noreferrer">{item.title}</a>
+                ))}
+              </div>
+            )}
             <div className="access-date"><Shield size={17} weight="fill" /> Sources come from the reviewed local corpus.</div>
           </>
         ) : view.kind === "answer" && (mode === "live" || mode === "mixed") ? (

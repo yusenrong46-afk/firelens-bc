@@ -12,8 +12,8 @@ export type MapFocus = { latitude: number; longitude: number };
 
 function pointCoordinates(results: LiveResult[]): [number, number][] {
   return results.flatMap((result) => {
-    const geometry = result.geometry as { type?: string; coordinates?: unknown };
-    if (geometry.type !== "Point" || !Array.isArray(geometry.coordinates)) return [];
+    const geometry = result.geometry as { type?: string; coordinates?: unknown } | undefined;
+    if (!geometry || geometry.type !== "Point" || !Array.isArray(geometry.coordinates)) return [];
     const [longitude, latitude] = geometry.coordinates as number[];
     return Number.isFinite(latitude) && Number.isFinite(longitude)
       ? ([[latitude, longitude]] as [number, number][])

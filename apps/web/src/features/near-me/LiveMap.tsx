@@ -74,7 +74,7 @@ export function LiveMap({
   );
   const hasMatchingResults = displayedMatchingResults.length > 0;
   return (
-    <section className="live-map" aria-label="Official wildfire records map">
+    <section className="live-map" id="official-map" aria-label="Official wildfire records map" tabIndex={-1}>
       <div className="live-map__heading">
         <div>
           <span>
@@ -116,11 +116,6 @@ export function LiveMap({
           The records below do not represent those missing layers.
         </p>
       )}
-      <MatchingRecordList
-        results={displayedMatchingResults}
-        selectedResultId={selectedResultId}
-        onSelectResult={onSelectResult}
-      />
       <div role="region" aria-label="Interactive map of official wildfire records">
         <MapContainer
           bounds={BC_BOUNDS}
@@ -208,6 +203,11 @@ export function LiveMap({
         })}
         </MapContainer>
       </div>
+      <MatchingRecordList
+        results={displayedMatchingResults}
+        selectedResultId={selectedResultId}
+        onSelectResult={onSelectResult}
+      />
       {focus && (
         <p className="map-surface-status" role="status">
           Map focused on the requested area near {focus.latitude.toFixed(2)}, {focus.longitude.toFixed(2)}.

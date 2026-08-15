@@ -9,49 +9,18 @@ import {
   UserCircle,
   WarningCircle,
 } from "@phosphor-icons/react";
-import type { AskResponse, ResponseMode } from "../../shared/api/api";
 import { FeedbackControls } from "../feedback/FeedbackControls";
-import { abstentionPresentation } from "./abstentionPresentation";
 import { answerSectionAuthority, getAnswerSections } from "./answerSections";
-import type { AggregateFreshness, Claim } from "./responseModel";
+import type { Claim } from "./responseModel";
+import { ResponseModeBadge } from "./responseModeBadge";
 import type { FireLensSession } from "./useFireLensSession";
 
-function ResponseModeBadge({
-  mode,
-  aggregateFreshness,
-  answerSectionKinds = [],
-  reasonCode,
-}: {
-  mode: ResponseMode;
-  aggregateFreshness?: AggregateFreshness | undefined;
-  answerSectionKinds?: string[] | undefined;
-  reasonCode?: AskResponse["reason_code"] | undefined;
-}) {
-  const labels: Record<ResponseMode, string> = {
-    grounded: "Reviewed sources",
-    partial: "Partially supported",
-    background: "General background",
-    capability: "FireLens topics",
-    scope_redirect: "Related official service",
-    abstention: "Could not complete",
-    live: "Official live records",
-    mixed: "Live records + reviewed guidance",
-    conflict: "Conflicting reviewed sources",
-    requires_input: "One detail needed",
-  };
-  if (mode === "abstention") labels.abstention = abstentionPresentation(reasonCode).badge;
-  if (mode === "mixed" && answerSectionKinds.includes("conflicting_guidance")) {
-    labels.mixed = "Live records + conflicting sources";
-  } else if (mode === "mixed" && answerSectionKinds.includes("general_background")) {
-    labels.mixed = "Live records + general background";
-  } else if (mode === "mixed" && answerSectionKinds.includes("official_handoff")) {
-    labels.mixed = "Live records + official link";
-  }
-  if (mode === "live" && aggregateFreshness === "stale") labels.live = "Official cached records";
-  else if (mode === "live" && aggregateFreshness === "mixed") labels.live = "Official records — mixed freshness";
-  else if (mode === "mixed" && aggregateFreshness === "stale") labels.mixed = labels.mixed.replace("Live records", "Cached records");
-  else if (mode === "mixed" && aggregateFreshness === "mixed") labels.mixed = labels.mixed.replace("Live records", "Mixed-freshness records");
-  return <span className={`response-badge response-badge--${mode}`}>{labels[mode]}</span>;
+function revealAssistantMessage(node: HTMLElement | null, active: boolean) {
+  if (!node || !active) return;
+  node.scrollIntoView?.({ block: "start", inline: "nearest" });
+  const scroller = node.closest(".conversation-scroll");
+  if (!(scroller instanceof HTMLElement)) return;
+  scroller.scrollTop += node.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
 }
 
 function ClaimButton({
@@ -122,7 +91,7 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
   );
 
   return (
-    <section className="conversation-panel" aria-label="Question and answer">
+    <section className="conversation-panel" id="conversation" aria-label="Question and answer" tabIndex={-1}>
       <div className="conversation-toolbar">
         <span><ChatsCircle size={16} /> {history.length} of 6 turns in context</span>
         {(history.length > 0 || view.kind !== "idle") && (
@@ -153,7 +122,7 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
           </div>
         )}
 
-        <div className={`assistant-message assistant-message--${view.kind}`}>
+        <div className={`assistant-message assistant-message--${view.kind}`} ref={(node) => revealAssistantMessage(node, view.kind !== "idle")}>
           <img src="/assets/firelens-mark.png" alt="" />
           <div>
             <span className="assistant-name">FireLens BC</span>
@@ -164,6 +133,17 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
                 answerSectionKinds={answerSections.map((section) => section.kind)}
                 reasonCode={response?.reason_code ?? undefined}
               />
+            )}
+            {view.kind === "answer" && visibleLimitations.length > 0 && (
+              <div className="answer-limitations" aria-label="Answer limitations" role="status">
+                <WarningCircle size={19} aria-hidden="true" />
+                <div>
+                  <strong>Important limits</strong>
+                  <ul>
+                    {visibleLimitations.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                </div>
+              </div>
             )}
             {answerSections.length > 0 ? (
               <div className="answer-sections" aria-label="Authority-labelled answer">
@@ -177,17 +157,6 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
               </div>
             ) : (
               <p>{assistantText}</p>
-            )}
-            {view.kind === "answer" && visibleLimitations.length > 0 && (
-              <div className="answer-limitations" aria-label="Answer limitations" role="status">
-                <WarningCircle size={19} aria-hidden="true" />
-                <div>
-                  <strong>Important limits</strong>
-                  <ul>
-                    {visibleLimitations.map((item) => <li key={item}>{item}</li>)}
-                  </ul>
-                </div>
-              </div>
             )}
             {(response?.related_links ?? []).length > 0 && (
               <div className="related-service-links" aria-label="Related official services">
@@ -232,9 +201,9 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
                 <Crosshair size={16} /> Use approximate location
               </button>
             </div>
-            {locationMessage && <p className="location-message" role="status">{locationMessage}</p>}
           </form>
         )}
+        {locationMessage && <p className="location-message" role="status">{locationMessage}</p>}
 
         {view.kind === "answer" && claims.length > 0 && (
           <div className="claim-group">

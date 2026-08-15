@@ -220,7 +220,7 @@ export function useFireLensSession(): FireLensSession {
         const continuation = response?.required_input?.continuation_question;
         if (continuation) void submitQuestionWithContext(continuation, location);
       },
-      () => setLocationMessage("Location was not shared."),
+      () => setLocationMessage("Location was not shared. You can enter a BC community name instead."),
       { enableHighAccuracy: false, maximumAge: 300_000, timeout: 8_000 },
     );
   }
