@@ -68,7 +68,7 @@ when the recovery commit was created via a temporary index.
 - **Commands:** `git rev-parse`, `git status`, `.venv/bin/python scripts/secret_scan.py`,
   recovery `git commit-tree` / `git bundle create`.
 - **Stop conditions:** Do not `git reset --hard`; do not push; do not copy `.env`.
-- **Verdict:** recorded after the Phase 1 commits in this pass.
+- **Verdict:** PASS for recovery, family commits, and gitignored candidate identity.
 
 ### Phase 2 — Heavy debugging
 
@@ -81,7 +81,8 @@ when the recovery commit was created via a temporary index.
 - **Risks:** Weakening thresholds; storing private user content; treating
   FakeProvider pass as semantic qualification.
 - **Stop conditions:** No paid calls; no frozen-catalog rewrite.
-- **Verdict:** pending execution.
+- **Verdict:** PASS for zero-cost class coverage (387 cases executed). Semantic
+  qualification remains EXTERNAL.
 
 ### Phase 3 — UI/UX
 
@@ -91,7 +92,8 @@ when the recovery commit was created via a temporary index.
   human review remains EXTERNAL.
 - **Stop conditions:** No accounts, notifications, saved locations, or
   persistence. No second primary mode.
-- **Verdict:** pending browser evidence.
+- **Verdict:** PASS for laboratory surface rows/journeys after the map-route
+  glob fix (see continuation). VoiceOver / consented UX review EXTERNAL.
 
 ### Phase 4 — Performance
 
@@ -100,7 +102,9 @@ when the recovery commit was created via a temporary index.
   cached-live timing if locally measurable without paid providers.
 - **Stop conditions:** Revert speculative changes without measured improvement.
   Do not change embedding/reranker.
-- **Verdict:** pending measurement.
+- **Verdict:** PASS for laboratory frontend budgets on `qualify:surface`
+  2026-08-15T18:31:44Z. Field Core Web Vitals EXTERNAL. Live-provider p95
+  EXTERNAL (no paid calls).
 
 ### Phase 5 — Pre-deployment (no deploy)
 
@@ -110,7 +114,8 @@ when the recovery commit was created via a temporary index.
 - **Stop conditions:** Do not deploy, push, merge, spend money, or perform
   human review. Production remains blocked while configured reranker is not
   proven ZDR-eligible **and** retrieval-qualified.
-- **Verdict:** pending rehearsal.
+- **Verdict:** BLOCKED_EXTERNAL for ZDR roster + retrieval qualification +
+  deploy. Local packaging path inspected; `make verify` recorded below.
 
 ## File classification (dirty worktree)
 
@@ -259,8 +264,8 @@ These become ledger items. They are **not** compliance claims.
 - **Root cause:** Provider roster vs frozen retrieval holdout are independent gates.
 - **Fix:** Keep fail-closed. Do not switch models. Zero-cost roster GET allowed later if no inference cost and keys are not printed.
 - **Tests:** `tests/test_runtime_candidate_binding.py::RuntimeCandidateStartupTests.test_production_lifespan_fails_when_reranker_is_zdr_ineligible`; OpenRouter privacy tests in `tests/test_provider_api.py`.
-- **Evidence:** inspected; roster re-check EXTERNAL.
-- **Disposition:** EXTERNAL for live roster and retrieval qualification; engineering fail-closed remains required.
+- **Evidence:** inspected; roster re-check **executed** 2026-08-15 via zero-cost `GET /endpoints/zdr` (HTTP 200, no inference). Configured embedding eligible=true; generation eligible=true; configured rerank `cohere/rerank-4-pro` eligible=**false**. Local `require_zdr=false`. Retrieval qualification not run (paid).
+- **Disposition:** EXTERNAL for live roster on a production origin and retrieval qualification; engineering fail-closed remains required. Do not switch reranker.
 
 ### REL-001 — BCWS disclaimer: live data is not a safety determination
 
@@ -354,8 +359,8 @@ These become ledger items. They are **not** compliance claims.
 - **Severity:** P0
 - **Reproduction:** `tests/test_product_question_cases.py::test_frozen_v1_artifact_is_not_rewritten_by_development_cases`.
 - **Expected:** SHA-256 `22c14123c5b8868bcd315167836f38f3a7b5daa56913452d13b17edff2c427a5`, 162 cases.
-- **Actual:** Test exists in dirty worktree; not executed yet in this pass.
-- **Disposition:** OPEN pending execution.
+- **Evidence:** executed (`tests/test_product_question_cases.py` passed on this worktree).
+- **Disposition:** VERIFIED for catalog identity. Semantic replay remains EXTERNAL.
 
 ### TEST-002 — Exploratory roster below required breadth
 
@@ -364,9 +369,11 @@ These become ledger items. They are **not** compliance claims.
 - **Expected:** Separate non-sealed roster; FakeProvider/deterministic execution; sanitized results.
 - **Actual:** Not present at start of this pass.
 - **Root cause:** Prior work froze V1 catalog and added a small V3 regression family only.
-- **Fix:** Add `v3_exploratory_roster` (name TBD) without rewriting the frozen artifact.
-- **Evidence:** inspected.
-- **Disposition:** OPEN.
+- **Fix:** Added `src/firelens/evaluation/v3_exploratory_roster.py` and `tests/test_v1_5_v3_exploratory_roster.py`.
+- **Tests added:** roster breadth, unique IDs, product-invariant loop, mixed-half coordinator cases.
+- **Commands executed:** `.venv/bin/python -m pytest tests/test_v1_5_v3_exploratory_roster.py` (pass); `roster_counts()` → 387 total / 325 single / 62 multi / 387 unique IDs and questions.
+- **Evidence:** executed. Sanitized class report path `output/v1_5_v3_exploratory/sanitized_roster_report.json` (gitignored).
+- **Disposition:** VERIFIED for zero-cost class coverage. Not a frozen catalog. Not semantic qualification.
 
 ## Command log (this pass, Phase 1 start)
 
@@ -380,3 +387,122 @@ These become ledger items. They are **not** compliance claims.
 | `git bundle create tmp/v1-5-v3-recovery-20260815/recovery.bundle …` | 0 | Gitignored path |
 
 Later phases append rows. Do not invent browser, performance, or human-review results.
+
+## Continuation 2026-08-15 (final engineering pass)
+
+HEAD at continuation start: `dab2e297f74eb7a78ec11ffe70e334a5967da751`.
+Recovery branch (not pushed): `recovery/v1-5-v3-pre-clean-20260815` @ `c1babddfb3ba3bb1c31df17c911a1a9be9f0867f`.
+
+### Candidate generation rehearsal (CLEAN-002)
+
+Executed: `.venv/bin/python scripts/write_runtime_candidate.py --output /tmp/firelens_candidate_rehearsal.json --commit $(git rev-parse HEAD)`
+
+Observed (no secrets): `schema_version=firelens.runtime_candidate.v2`, `release_version=1.5.3-rc.1`, `require_zdr=true`, `build_commit` equals HEAD, `candidate_id=firelens-v1-5-2:<HEAD SHA>`. The `firelens-v1-5-2` prefix is the frozen retrieval benchmark id, not the product release string. File remains gitignored. Docker `RUN write_runtime_candidate.py` and Vercel `prepare_vercel_build.py` generate at build time from `FIRELENS_BUILD_COMMIT` / `RENDER_GIT_COMMIT` / `VERCEL_GIT_COMMIT_SHA`.
+
+Disposition: VERIFIED for local bind-to-HEAD generation. Deployed identity EXTERNAL.
+
+### Env-var inventory (names only)
+
+`OPENROUTER_API_KEY`, `FIRELENS_ENVIRONMENT` / `VERCEL_ENV`, `FIRELENS_EMBEDDING_MODEL`, `FIRELENS_RERANK_MODEL`, `FIRELENS_GENERATION_MODEL`, `FIRELENS_RETRIEVAL_TEXT_STRATEGY`, `FIRELENS_REQUIRE_ZDR`, `FIRELENS_DEBUG`, `FIRELENS_TRACE_CONTENT`, `FIRELENS_TRACE_DIR`, `FIRELENS_DOCUMENT_CONTEXT_PATH`, `FIRELENS_RATE_LIMIT`, `FIRELENS_RATE_WINDOW_SECONDS`, `FIRELENS_MAX_REQUEST_BODY_BYTES`, `FIRELENS_PUBLIC_REQUEST_DEADLINE_SECONDS`, `FIRELENS_PROVIDER_MAX_CONCURRENCY`, `FIRELENS_PROVIDER_ADAPTIVE_MIN_CONCURRENCY`, `FIRELENS_PROVIDER_ADAPTIVE_SUCCESS_WINDOW`, `FIRELENS_RELEASE_VERSION`, `FIRELENS_BUILD_COMMIT`, `VERCEL_GIT_COMMIT_SHA`, `VERCEL_DEPLOYMENT_ID`, `VERCEL_URL`, `VERCEL`, `RENDER_GIT_COMMIT`, `RENDER_INSTANCE_ID`, `RENDER_SERVICE_ID`. Render.yaml binds ZDR true and model ids; key is unsynced.
+
+### DBG issues reproduced and patched
+
+#### DBG-001 — Follow-up safety / aircraft / mixed safety routing
+
+- **Severity:** P0
+- **Reproduction:** “Is it okay to return home?” RELATED not PROHIBITED; mixed live + “tell me if I am safe” LIVE; deictic follow-ups after evacuation; “current aircraft” pattern order; jailbreak overlapping return-home; kit “medicine” false-positive.
+- **Root cause:** `src/firelens/answering/intent.py::plan_query` pattern order.
+- **Fix:** Fail-first `tests/test_v1_5_v3_intent.py`, then intent patch. Commit `dab2e29`.
+- **Evidence:** reproduced, executed.
+- **Disposition:** VERIFIED in V3 intent tests. Not frozen-catalog identity.
+
+#### DBG-002 — Qualify harness missed live map query string
+
+- **Severity:** P1
+- **Reproduction:** `npm --prefix apps/web run qualify:surface` first run ~23 min, exit 2. Client fetches `/api/v1/live/map?layers=incidents,perimeters,evacuations`; harness mocked `**/api/v1/live/map` only. Unmocked map loaded ~306 records; mixed/stale ready_text timed out; keyboard 30 Tabs never reached `.source-toggle`; desktop CLS p75 0.126; `map_list_parity` truncated at 6.
+- **Expected:** Deterministic map fixture; 10 matching records listed; mixed “Preparedness sources”; stale H1; journeys pass.
+- **Root cause:** `apps/web/scripts/qualify-frontend-surface.mjs::installDeterministicRoutes` glob; `LiveRecordLists.tsx` matching truncation; `EvidencePanel.tsx` mixed label hidden in cited branch; `ConversationPanel` location status inside auto-submitting form.
+- **Fix:** glob `**/api/v1/live/map*`; render all matching records; show mixed sources in cited branch; location status outside form; guard missing geometry in `isRenderableGeometry` / `MapViewport.pointCoordinates`.
+- **Tests:** Vitest App.test (matching list, mixed sources, location status, stale title); `tests/liveResultPresentation.test.ts`.
+- **Evidence:** first run reproduced; second run 2026-08-15T18:31:44Z; third run after map-first 2026-08-15T18:41:58Z.
+- **Disposition:** VERIFIED on `qualify:surface` (36/36 rows, journeys true, lab performance true). Overall `qualified=false` because protocol `status=provisional`, `frozen_at=null`.
+
+#### UX-001 — Limitations after answer; skip links; 320px overflow; contrast; 13px body
+
+- **Severity:** P1
+- **Reproduction:** Conversation showed limitations after body; no skip links; V3 `.conversation-panel { min-width: 390px }` overflowed 320px by 64px; `.brand small` ember on cream contrast 3.41; `.boundary` 13px vs protocol 16px body.
+- **Fix:** limitations first; skip links `#conversation` / `#official-map`; ConnectionStatus; 44px targets; media `min-width: 0`; brand `#8a341c`; boundary 16px floor.
+- **Tests:** App.test + e2e 320px / 640×400 zoom proxy / skip+limitations.
+- **Evidence:** executed. Second qualify: axe findings 0, overflow 0, undersized text 0.
+- **Disposition:** VERIFIED for laboratory axe/layout. VoiceOver EXTERNAL.
+
+#### UX-002 — Matching list hid the map; mobile overlay clipped the answer
+
+- **Severity:** P1
+- **Reproduction:** `output/benchmark/frontend_surface/screenshots/live--desktop.png` after the passing qualify run showed 10 matching cards and no map canvas. `mixed--mobile.png` and `grounded--mobile.png` showed the user question and composer but not the assistant answer inside the 43vh overlay.
+- **Expected:** Map canvas before matching list. Assistant reply visible in the overlay.
+- **Root cause:** `LiveMap` listed matches above `MapContainer`. Conversation overlay did not `scrollIntoView` the assistant message.
+- **Fix:** Fail-first Vitest (map precedes matching list; scrollIntoView spy) and Playwright mobile in-viewport test; move matching list below the map; scroll assistant message `block: start`.
+- **Evidence:** reproduced from screenshots; unit tests executed; Playwright overlay in-viewport passed (desktop+mobile); third qualify screenshots show map canvas above matching cards and the reviewed-sources answer inside the mobile overlay (`live--desktop.png`, `grounded--mobile.png`).
+- **Disposition:** VERIFIED for laboratory browser evidence. VoiceOver EXTERNAL.
+
+#### PERF-001 — Laboratory Web Vitals / bundle
+
+Method: `npm --prefix apps/web run qualify:surface` with `PLAYWRIGHT_BROWSERS_PATH=$HOME/Library/Caches/ms-playwright`. Chromium, 4× CPU, 3G (150 ms, 200 kB/s), cache disabled, 1 warmup + 7 cold, p75 nearest-rank. Protocol provisional so overall `qualified` stays false.
+
+| Surface | Before (contaminated, unmocked map) | After glob+UI (18:31:44Z) | Budget |
+| --- | --- | --- | --- |
+| Mobile LCP p75 | 2220 ms | 848 ms | ≤2500 |
+| Mobile CLS p75 | 0.042 | 0.040 | ≤0.1 |
+| Mobile INP proxy p75 | 64.3 ms | 52.9 ms | ≤200 |
+| Mobile map ready p75 | 149.9 ms | 130.8 ms | ≤2000 |
+| Desktop LCP p75 | 2228 ms | 2116 ms | ≤2500 |
+| Desktop CLS p75 | 0.126 (over) | 0.047 | ≤0.1 |
+| Desktop INP proxy p75 | within | 56.7 ms | ≤200 |
+| Desktop map ready p75 | within | 128.3 ms | ≤2000 |
+| Initial JS gzip | 78.63 KiB prior / 78.90 this build | 79.05 KiB (`index-BSiOvB7m.js`, after map-first/scroll) | ≤120 |
+| Lazy map JS gzip | 54.61 / 54.62 | 54.50 KiB (`LiveMap-BJvJzZYD.js`) | ≤80 |
+| Total `dist/client` | not measured | 815476–~816k bytes (~0.78 MiB) | ≤1 MiB |
+
+Third qualify cold p75 (18:41:58Z, same method): mobile LCP 840 / CLS 0.040 / INP 52.1 / map 134.5; desktop LCP 2128 / CLS 0.047 / INP 53 / map 132.2. All within laboratory budgets. Field CWV EXTERNAL.
+
+No embedding/reranker change. No font pipeline change. Field CWV EXTERNAL.
+
+Disposition: VERIFIED laboratory after harness fix. Do not treat the contaminated first run as a product regression.
+
+### Security / privacy / ZDR
+
+- Production fail-closed without OpenRouter ZDR: inspected + unit tests (`test_runtime_candidate_binding.py`, `test_provider_api.py`, `test_security_operations.py`).
+- Qualify privacy journey: geolocation once after opt-in, coordinates to two decimals, not persisted, no cookies, history URL clean. Executed true on second qualify.
+- Configured reranker `cohere/rerank-4-pro` is **not** ZDR-eligible on the 2026-08-15 roster GET and is **not** retrieval-qualified. Do not switch to Qwen. REL-ZDR-001 remains EXTERNAL.
+- Zero-cost ZDR roster GET executed 2026-08-15: HTTP 200; embedding eligible; generation eligible; rerank ineligible. Keys not printed. No inference.
+- Paid Ask safety probe `--include-ask-probes` not run.
+
+### Screenshot evidence (gitignored, not committed)
+
+Directory: `output/benchmark/frontend_surface/screenshots/` (36 PNGs, 12 states × 3 viewports). Report: `output/benchmark/frontend_surface/report.json`. Origins observed: only `http://127.0.0.1:4175` (no third-party tiles).
+
+### External reference access date
+
+2026-08-15 for all mapped sources in the table above. Additional fetches this continuation: Grok Build CLI (https://x.ai/news/grok-build-cli) and xAI structured outputs docs. Standards remain requirement sources, not certifications.
+
+## Command log (continuation)
+
+| Command | Exit | Notes |
+| --- | --- | --- |
+| `.venv/bin/python scripts/secret_scan.py` | 0 | Tracked scan passed |
+| `git diff --check` | 0 | |
+| `.venv/bin/python -m pytest tests/test_architecture.py tests/test_v1_5_v3_exploratory_roster.py tests/test_product_question_cases.py tests/test_runtime_candidate_binding.py tests/test_deployment_gates.py tests/test_security_operations.py` | 0 | Architecture + catalog + gates |
+| `scripts/write_runtime_candidate.py --output /tmp/firelens_candidate_rehearsal.json` | 0 | Bound to HEAD SHA |
+| `npm --prefix apps/web run typecheck` | 0 after fixture fix | First fail: LiveResult fixture missing fields |
+| `npm --prefix apps/web test -- tests/liveResultPresentation.test.ts` | 0 | 1 passed |
+| `npm --prefix apps/web run qualify:surface` (first this continuation) | 2 | typecheck fail, 1.5s |
+| `npm --prefix apps/web run qualify:surface` (after typecheck + glob) | 2 | 93.7s; 36/36 rows; journeys+lab perf true; overall false because provisional protocol |
+| `npm --prefix apps/web test -- tests/App.test.tsx tests/liveResultPresentation.test.ts` | 0 | 31 passed after map-first + scroll patches |
+| `make verify` | 2 | secret-scan/ruff/mypy/openapi OK; pytest 745 passed / 3 skipped / 420 subtests; Vitest 36; Sites 4; e2e 26 failed: Playwright sandbox browser path |
+| `PLAYWRIGHT_BROWSERS_PATH=$HOME/Library/Caches/ms-playwright npm --prefix apps/web run test:e2e` | 0 | 26 passed (13.6s) after overlay/map-first patches |
+| `npm --prefix apps/web run test:surface` | 0 | 16 passed |
+| `npm --prefix apps/web test` | 0 | 36 passed / 3 files |
+| `npm --prefix apps/web run qualify:surface` (after map-first) | 2 | 92.7s; 36/36; journeys+lab perf true; gzip initial 79.05 / lazy map 54.50; overall false because provisional |
+| Zero-cost `GET /endpoints/zdr` | 0 | HTTP 200; embedding true; rerank false; generation true; no inference |
+| `.venv/bin/python -m pytest tests/test_architecture.py` | 0 | 14 passed |
