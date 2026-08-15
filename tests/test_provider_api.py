@@ -28,6 +28,7 @@ from firelens.contracts import (
 )
 from firelens.errors import ProviderError
 from firelens.live import LiveDataService
+from firelens.privacy_policy import APPROVED_PRODUCTION_PRIVACY
 from firelens.providers.fake import FakeProvider
 from firelens.providers.openrouter import OpenRouterProvider
 from firelens.runtime import Runtime
@@ -106,7 +107,7 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
                     "openrouter_api_key": SecretStr("test-key"),
                     "openrouter_base_url": "https://openrouter.test/api/v1",
                     "embedding_model": "openai/text-embedding-3-small",
-                    "require_zdr": True,
+                    "privacy": APPROVED_PRODUCTION_PRIVACY,
                 }
             )
             async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
@@ -116,7 +117,6 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
             models,
             (
                 "openai/text-embedding-3-small",
-                "cohere/rerank-4-pro",
                 "openai/gpt-5.6-luna",
             ),
         )
@@ -141,11 +141,11 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
                     "openrouter_api_key": SecretStr("test-key"),
                     "openrouter_base_url": "https://openrouter.test/api/v1",
                     "embedding_model": "openai/text-embedding-3-small",
-                    "require_zdr": True,
+                    "privacy": APPROVED_PRODUCTION_PRIVACY,
                 }
             )
             async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-                with self.assertRaisesRegex(ProviderError, "no eligible"):
+                with self.assertRaisesRegex(ProviderError, "required stages"):
                     await OpenRouterProvider(config, client=client).preflight_zdr_models()
 
     async def test_transient_rate_limit_retries_same_request(self) -> None:
@@ -204,7 +204,7 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
                     "openrouter_api_key": SecretStr("test-key"),
                     "openrouter_base_url": "https://openrouter.test/api/v1",
                     "embedding_model": "openai/text-embedding-3-small",
-                    "require_zdr": True,
+                    "privacy": APPROVED_PRODUCTION_PRIVACY,
                 }
             )
             async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
@@ -213,7 +213,7 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(observed["provider"]["data_collection"], "deny")
         self.assertFalse(observed["provider"]["allow_fallbacks"])
         self.assertTrue(observed["provider"]["zdr"])
-        source = Path(__file__).resolve().parents[1] / "src/firelens/providers/openrouter.py"
+        source = Path(__file__).resolve().parents[1] / "src/firelens/privacy_policy.py"
         text = source.read_text(encoding="utf-8")
         self.assertIn('"data_collection": "deny"', text)
         self.assertIn('"allow_fallbacks": False', text)

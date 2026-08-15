@@ -9,6 +9,11 @@ from typing import Literal, Self
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from firelens.contracts import RetrievalTextStrategy
+from firelens.privacy_policy import (
+    LOCAL_DEFAULT_PRIVACY,
+    OpenRouterPrivacyPolicy,
+    resolve_openrouter_privacy_from_env,
+)
 
 DEFAULT_RELEASE_VERSION = "1.5.3-rc.1"
 
@@ -90,7 +95,7 @@ class FireLensConfig(BaseModel):
     build_commit: str | None = None
     deployment_id: str | None = None
     frontend_dist_path: Path | None = None
-    require_zdr: bool = False
+    privacy: OpenRouterPrivacyPolicy = Field(default_factory=lambda: LOCAL_DEFAULT_PRIVACY)
     debug: bool = False
     trace_content: bool = False
     deployment_environment: Literal["local", "preview", "production"] = "local"
@@ -100,11 +105,31 @@ class FireLensConfig(BaseModel):
     def validate_adaptive_provider_bounds(self) -> Self:
         if self.provider_adaptive_min_concurrency > self.provider_max_concurrency:
             raise ValueError("provider adaptive minimum cannot exceed maximum concurrency")
-        if self.deployment_environment == "production" and not self.require_zdr:
-            raise ValueError("production requires OpenRouter zero-data-retention routing")
+        if self.deployment_environment == "production":
+            if (
+                self.privacy.embedding_zdr != "required"
+                or self.privacy.generation_zdr != "required"
+            ):
+                raise ValueError(
+                    "production requires OpenRouter zero-data-retention routing "
+                    "for embedding and generation"
+                )
+            if self.privacy.data_collection != "deny" or self.privacy.allow_fallbacks:
+                raise ValueError(
+                    "production requires OpenRouter data_collection=deny and disabled fallback"
+                )
         if self.deployment_environment == "production" and self.trace_content:
             raise ValueError("production cannot persist request or response content in traces")
         return self
+
+    @property
+    def require_zdr(self) -> bool:
+        """True when any configured stage requires ZDR. Not a universal-ZDR claim."""
+
+        return self.privacy.any_zdr_required
+
+    def with_privacy(self, **updates: object) -> Self:
+        return self.model_copy(update={"privacy": self.privacy.model_copy(update=updates)})
 
     @classmethod
     def from_env(cls, project_root: Path | None = None) -> FireLensConfig:
@@ -156,7 +181,7 @@ class FireLensConfig(BaseModel):
                 setting("FIRELENS_RETRIEVAL_TEXT_STRATEGY")
                 or RetrievalTextStrategy.METADATA_CONTEXT_V1
             ),
-            require_zdr=_bool_value(setting("FIRELENS_REQUIRE_ZDR")),
+            privacy=resolve_openrouter_privacy_from_env(setting),
             debug=_bool_value(setting("FIRELENS_DEBUG")),
             trace_content=_bool_value(setting("FIRELENS_TRACE_CONTENT")),
             anonymous_rate_limit=_int_value(setting("FIRELENS_RATE_LIMIT"), 30),

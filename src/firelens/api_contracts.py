@@ -84,7 +84,30 @@ class HealthResponse(FrozenStrictModel):
     index_ready: bool
     provider_configured: bool
     zdr_required: bool
-    zdr_policy_state: Literal["disabled", "required_unprobed", "eligible", "failed"]
+    zdr_policy_state: Literal[
+        "disabled",
+        "stage_bound_unprobed",
+        "required_stages_eligible",
+        "failed",
+    ]
+    data_collection: Literal["deny"]
+    allow_fallbacks: bool
+    embedding_zdr: Literal["required", "optional"]
+    reranking_zdr: Literal["required", "optional"]
+    generation_zdr: Literal["required", "optional"]
+    embedding_zdr_state: Literal[
+        "not_required", "unprobed", "eligible", "zdr_optional", "failed"
+    ]
+    generation_zdr_state: Literal[
+        "not_required", "unprobed", "eligible", "zdr_optional", "failed"
+    ]
+    reranking_zdr_state: Literal[
+        "not_required",
+        "unprobed",
+        "eligible",
+        "zdr_optional",
+        "failed",
+    ]
     provider_state: Literal[
         "not_configured",
         "configured_unprobed",

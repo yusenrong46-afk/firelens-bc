@@ -17,6 +17,7 @@ from rag_helpers import make_runtime
 from firelens.api import ERROR_RESPONSES, create_app
 from firelens.config import FireLensConfig
 from firelens.operational_logging import LOGGER_NAME
+from firelens.privacy_policy import APPROVED_PRODUCTION_PRIVACY
 from firelens.providers.openrouter import OpenRouterProvider
 from firelens.runtime import Runtime
 
@@ -39,7 +40,7 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
             config = FireLensConfig.from_env(Path(directory)).model_copy(
                 update={
                     "deployment_environment": "production",
-                    "require_zdr": True,
+                    "privacy": APPROVED_PRODUCTION_PRIVACY,
                     "build_commit": "b" * 40,
                     "openrouter_api_key": SecretStr("test-key"),
                 }
@@ -49,7 +50,7 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
             candidate_path.write_text(
                 json.dumps(
                     {
-                        "schema_version": "firelens.runtime_candidate.v2",
+                        "schema_version": "firelens.runtime_candidate.v3",
                         "candidate_id": "firelens-v1-5-2:" + "b" * 40,
                         "release_version": config.release_version,
                         "build_commit": "b" * 40,
@@ -58,7 +59,7 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
                         "retrieval_text_strategy": config.retrieval_text_strategy.value,
                         "rerank_model": config.rerank_model,
                         "generation_model": config.generation_model,
-                        "require_zdr": "true",
+                        **config.privacy.candidate_fields(),
                     },
                     indent=2,
                     sort_keys=True,
@@ -75,7 +76,7 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
                 )
                 app = create_app(config, runtime=runtime)
                 async with app.router.lifespan_context(app):
-                    self.assertEqual(runtime.zdr_policy_state, "eligible")
+                    self.assertEqual(runtime.zdr_policy_state, "required_stages_eligible")
 
     async def test_feedback_is_categorical_content_free_and_rate_limited(self) -> None:
         stream = io.StringIO()
@@ -231,7 +232,7 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
                 update={
                     "debug": True,
                     "deployment_environment": "production",
-                    "require_zdr": True,
+                    "privacy": APPROVED_PRODUCTION_PRIVACY,
                     "build_commit": "b" * 40,
                 }
             )
@@ -241,7 +242,7 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
             candidate_path.write_text(
                 json.dumps(
                     {
-                        "schema_version": "firelens.runtime_candidate.v2",
+                        "schema_version": "firelens.runtime_candidate.v3",
                         "candidate_id": "test-candidate",
                         "release_version": config.release_version,
                         "build_commit": "b" * 40,
@@ -250,7 +251,7 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
                         "retrieval_text_strategy": config.retrieval_text_strategy.value,
                         "rerank_model": config.rerank_model,
                         "generation_model": config.generation_model,
-                        "require_zdr": "true",
+                        **config.privacy.candidate_fields(),
                     },
                     indent=2,
                     sort_keys=True,
@@ -339,9 +340,9 @@ class ProductionImportBoundaryTests(unittest.TestCase):
             local = FireLensConfig.from_env(Path(directory))
             payload = local.model_dump()
             payload["deployment_environment"] = "production"
-            with pytest.raises(ValidationError, match="zero-data-retention"):
+            with pytest.raises(ValidationError, match="embedding and generation"):
                 FireLensConfig.model_validate(payload)
-            payload["require_zdr"] = True
+            payload["privacy"] = APPROVED_PRODUCTION_PRIVACY.model_dump()
             payload["trace_content"] = True
             with pytest.raises(ValidationError, match="cannot persist"):
                 FireLensConfig.model_validate(payload)
@@ -354,14 +355,16 @@ class ProductionImportBoundaryTests(unittest.TestCase):
             config = FireLensConfig.from_env(Path(directory)).model_copy(
                 update={
                     "deployment_environment": "production",
-                    "require_zdr": True,
+                    "privacy": APPROVED_PRODUCTION_PRIVACY,
                 }
             )
             runtime = Runtime(config=config, provider_configured=True)
 
         health = runtime.health()
         self.assertEqual(health.status, "not_ready")
-        self.assertEqual(health.zdr_policy_state, "required_unprobed")
+        self.assertEqual(health.zdr_policy_state, "stage_bound_unprobed")
+        self.assertEqual(health.embedding_zdr_state, "unprobed")
+        self.assertEqual(health.reranking_zdr_state, "unprobed")
 
     def test_production_entrypoint_does_not_import_experiments(self) -> None:
         experiment_modules = {

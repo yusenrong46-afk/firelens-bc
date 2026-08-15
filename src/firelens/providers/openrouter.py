@@ -23,6 +23,7 @@ from firelens.contracts import (
     RerankResult,
 )
 from firelens.errors import ProviderError, ProviderErrorKind
+from firelens.privacy_policy import ZdrPreflightReport, evaluate_zdr_preflight
 from firelens.providers.openrouter_support import (
     PROVIDER_STAGES,
     CircuitState,
@@ -78,15 +79,8 @@ class OpenRouterProvider:
             "X-Title": "FireLens BC",
         }
 
-    def _provider_preferences(self) -> dict[str, Any]:
-        preferences: dict[str, Any] = {
-            "require_parameters": True,
-            "data_collection": "deny",
-            "allow_fallbacks": False,
-        }
-        if self.config.require_zdr:
-            preferences["zdr"] = True
-        return preferences
+    def _provider_preferences(self, stage: ProviderStage) -> dict[str, Any]:
+        return self.config.privacy.provider_preferences(stage)
 
     def _generation_sampling_parameters(self) -> dict[str, float]:
         """Return only sampling parameters supported by the configured model."""
@@ -103,17 +97,31 @@ class OpenRouterProvider:
         return output_schema
 
     async def preflight_zdr_models(self) -> tuple[str, ...]:
-        """Fail closed unless every configured model has a current ZDR endpoint.
+        """Fail closed unless every ZDR-required model has a current ZDR endpoint.
 
         OpenRouter documents ``GET /endpoints/zdr`` as the programmatic endpoint
         roster affected by the caller's account, key, and guardrails. The check
         complements request-level ``provider.zdr=true``; it does not replace it.
+        Optional stages are classified but do not block production.
         """
 
-        if not self.config.require_zdr:
+        await self.preflight_zdr()
+        required: list[str] = []
+        if self.config.privacy.embedding_zdr == "required":
+            required.append(self.config.embedding_model)
+        if self.config.privacy.reranking_zdr == "required":
+            required.append(self.config.rerank_model)
+        if self.config.privacy.generation_zdr == "required":
+            required.append(self.config.generation_model)
+        return tuple(required)
+
+    async def preflight_zdr(self) -> ZdrPreflightReport:
+        """Return the stage report or raise if a required stage is ineligible."""
+
+        if not self.config.privacy.any_zdr_required:
             raise ProviderError(
                 ProviderErrorKind.INVALID_REQUEST,
-                "OpenRouter ZDR preflight requires the ZDR policy to be enabled.",
+                "OpenRouter ZDR preflight requires a ZDR-required stage.",
             )
         try:
             response = await self._client.get(
@@ -162,18 +170,21 @@ class OpenRouterProvider:
             for endpoint in payload["data"]
             if isinstance(endpoint, dict) and isinstance(endpoint.get("model_id"), str)
         }
-        required_models = (
-            self.config.embedding_model,
-            self.config.rerank_model,
-            self.config.generation_model,
+        report = evaluate_zdr_preflight(
+            self.config.privacy,
+            embedding_model=self.config.embedding_model,
+            rerank_model=self.config.rerank_model,
+            generation_model=self.config.generation_model,
+            eligible_models={model for model in eligible_models if isinstance(model, str)},
         )
-        missing = [model for model in required_models if model not in eligible_models]
-        if missing:
-            raise ProviderError(
+        if report.missing_required_models:
+            error = ProviderError(
                 ProviderErrorKind.MODEL_UNAVAILABLE,
-                "One or more configured models have no eligible OpenRouter ZDR endpoint.",
+                "One or more required stages have no eligible OpenRouter ZDR endpoint.",
+                zdr_report=report,
             )
-        return required_models
+            raise error
+        return report
 
     def operational_state(
         self,
@@ -506,7 +517,7 @@ class OpenRouterProvider:
             {
                 "model": self.config.embedding_model,
                 "input": list(texts),
-                "provider": self._provider_preferences(),
+                "provider": self._provider_preferences("embedding"),
             },
         )
         try:
@@ -547,7 +558,7 @@ class OpenRouterProvider:
                 "query": query,
                 "documents": list(documents),
                 "top_n": top_n,
-                "provider": self._provider_preferences(),
+                "provider": self._provider_preferences("reranking"),
             },
         )
         try:
@@ -598,7 +609,7 @@ class OpenRouterProvider:
                 "stream": False,
                 "max_tokens": max_tokens,
                 **self._generation_sampling_parameters(),
-                "provider": self._provider_preferences(),
+                "provider": self._provider_preferences(stage),
                 "response_format": {
                     "type": "json_schema",
                     "json_schema": {

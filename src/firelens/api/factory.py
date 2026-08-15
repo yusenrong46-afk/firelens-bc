@@ -17,6 +17,7 @@ from firelens.config import FireLensConfig
 from firelens.errors import ProviderError
 from firelens.live import LiveDataService
 from firelens.live_answering import LiveAnswerCoordinator
+from firelens.privacy_policy import ZdrPreflightReport
 from firelens.providers.openrouter import OpenRouterProvider
 from firelens.request_guard import AnonymousRequestGuard
 from firelens.runtime import Runtime, load_runtime
@@ -51,14 +52,18 @@ async def _qualify_production_provider(config: FireLensConfig, runtime: Runtime)
         return
     provider = runtime.provider
     if not isinstance(provider, OpenRouterProvider):
-        runtime.zdr_policy_state = "failed"
+        runtime.apply_zdr_preflight(None, failed=True)
         raise RuntimeError("Production requires an OpenRouter provider with ZDR preflight.")
     try:
-        await provider.preflight_zdr_models()
+        report = await provider.preflight_zdr()
     except ProviderError as exc:
-        runtime.zdr_policy_state = "failed"
+        failed_report = exc.zdr_report
+        runtime.apply_zdr_preflight(
+            failed_report if isinstance(failed_report, ZdrPreflightReport) else None,
+            failed=True,
+        )
         raise RuntimeError("Production OpenRouter ZDR endpoint preflight failed.") from exc
-    runtime.zdr_policy_state = "eligible"
+    runtime.apply_zdr_preflight(report, failed=False)
 
 
 def create_app(

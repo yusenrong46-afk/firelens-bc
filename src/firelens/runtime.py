@@ -15,6 +15,12 @@ from firelens.errors import CorpusValidationError, IndexValidationError
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.ingestion.pdf import IngestionError
 from firelens.ingestion.repairs import load_text_repairs, validate_chunk_repair_provenance
+from firelens.privacy_policy import (
+    ZdrPolicyState,
+    ZdrPreflightReport,
+    health_stage_state,
+    initial_zdr_policy_state,
+)
 from firelens.providers.base import AIProvider
 from firelens.providers.openrouter import OpenRouterProvider
 from firelens.retrieval.bm25 import load_chunk_records
@@ -40,15 +46,56 @@ class Runtime:
     problems: list[str] = field(default_factory=list)
     provider_configured: bool = False
     provider: AIProvider | None = None
-    zdr_policy_state: Literal["disabled", "required_unprobed", "eligible", "failed"] = (
-        "disabled"
-    )
+    zdr_policy_state: ZdrPolicyState = "disabled"
+    embedding_zdr_state: Literal[
+        "not_required", "unprobed", "eligible", "zdr_optional", "failed"
+    ] = "not_required"
+    generation_zdr_state: Literal[
+        "not_required", "unprobed", "eligible", "zdr_optional", "failed"
+    ] = "not_required"
+    reranking_zdr_state: Literal[
+        "not_required", "unprobed", "eligible", "zdr_optional", "failed"
+    ] = "not_required"
     bound_candidate: dict[str, str] | None = None
     candidate_binding_applied: bool = False
 
     def __post_init__(self) -> None:
-        if self.config.require_zdr and self.zdr_policy_state == "disabled":
-            self.zdr_policy_state = "required_unprobed"
+        if self.config.privacy.any_zdr_required and self.zdr_policy_state == "disabled":
+            self.zdr_policy_state = "stage_bound_unprobed"
+        if self.zdr_policy_state == "stage_bound_unprobed":
+            self.embedding_zdr_state = "unprobed"
+            self.generation_zdr_state = "unprobed"
+            self.reranking_zdr_state = "unprobed"
+
+    def apply_zdr_preflight(
+        self,
+        report: ZdrPreflightReport | None,
+        *,
+        failed: bool,
+    ) -> None:
+        self.zdr_policy_state = "failed" if failed else "required_stages_eligible"
+        if report is None:
+            self.embedding_zdr_state = (
+                "failed" if self.config.privacy.embedding_zdr == "required" else "not_required"
+            )
+            self.generation_zdr_state = (
+                "failed" if self.config.privacy.generation_zdr == "required" else "not_required"
+            )
+            self.reranking_zdr_state = (
+                "failed"
+                if self.config.privacy.reranking_zdr == "required"
+                else ("unprobed" if self.config.privacy.any_zdr_required else "not_required")
+            )
+            return
+        self.embedding_zdr_state = health_stage_state(
+            self.config.privacy.embedding_zdr, report.embedding, probed=True
+        )
+        self.generation_zdr_state = health_stage_state(
+            self.config.privacy.generation_zdr, report.generation, probed=True
+        )
+        self.reranking_zdr_state = health_stage_state(
+            self.config.privacy.reranking_zdr, report.reranking, probed=True
+        )
 
     @property
     def chunks_by_id(self) -> dict[str, ChunkRecord]:
@@ -59,7 +106,7 @@ class Runtime:
         index_ready = self.service is not None
         production_zdr_ready = (
             self.config.deployment_environment != "production"
-            or self.zdr_policy_state == "eligible"
+            or self.zdr_policy_state == "required_stages_eligible"
         )
         ready = (
             corpus_ready and index_ready and self.provider_configured and production_zdr_ready
@@ -89,8 +136,16 @@ class Runtime:
             corpus_ready=corpus_ready,
             index_ready=index_ready,
             provider_configured=self.provider_configured,
-            zdr_required=self.config.require_zdr,
+            zdr_required=self.config.privacy.any_zdr_required,
             zdr_policy_state=self.zdr_policy_state,
+            data_collection=self.config.privacy.data_collection,
+            allow_fallbacks=self.config.privacy.allow_fallbacks,
+            embedding_zdr=self.config.privacy.embedding_zdr,
+            reranking_zdr=self.config.privacy.reranking_zdr,
+            generation_zdr=self.config.privacy.generation_zdr,
+            embedding_zdr_state=self.embedding_zdr_state,
+            generation_zdr_state=self.generation_zdr_state,
+            reranking_zdr_state=self.reranking_zdr_state,
             provider_state=provider_state,
             corpus_version=self.corpus_version,
             chunk_count=len(self.chunks) if self.chunks else None,
@@ -207,7 +262,7 @@ def load_runtime(
     runtime = Runtime(
         config=config,
         provider_configured=provider is not None or config.openrouter_api_key is not None,
-        zdr_policy_state="required_unprobed" if config.require_zdr else "disabled",
+        zdr_policy_state=initial_zdr_policy_state(config.privacy),
     )
     try:
         chunks, corpus_version = load_corpus_resources(config)
