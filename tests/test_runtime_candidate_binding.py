@@ -12,6 +12,7 @@ from rag_helpers import make_runtime
 
 from firelens.api import create_app
 from firelens.config import FireLensConfig
+from firelens.privacy_policy import APPROVED_PRODUCTION_PRIVACY
 from firelens.providers.openrouter import OpenRouterProvider
 from firelens.runtime import Runtime, load_runtime
 from firelens.runtime_artifact_common import (
@@ -44,14 +45,14 @@ def _write_bound_candidate(config: FireLensConfig, **overrides: str) -> Path:
         "retrieval_text_strategy": config.retrieval_text_strategy.value,
         "rerank_model": config.rerank_model,
         "generation_model": config.generation_model,
-        "require_zdr": "true" if config.require_zdr else "false",
+        **config.privacy.candidate_fields(),
     }
     document.update(overrides)
     path.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return path
 
 
-def test_runtime_candidate_schema_v2_binds_rerank_generation_and_zdr() -> None:
+def test_runtime_candidate_schema_v3_binds_stage_privacy_policy() -> None:
     document = build_runtime_candidate(
         commit=COMMIT,
         benchmark_id="firelens_v1_5_2",
@@ -60,14 +61,19 @@ def test_runtime_candidate_schema_v2_binds_rerank_generation_and_zdr() -> None:
         vector_manifest_path=ROOT / "data/index/firelens_vectors.manifest.json",
         rerank_model="cohere/rerank-4-pro",
         generation_model="openai/gpt-5.6-luna",
-        require_zdr="true",
+        privacy=APPROVED_PRODUCTION_PRIVACY,
     )
 
-    assert document["schema_version"] == "firelens.runtime_candidate.v2"
+    assert document["schema_version"] == "firelens.runtime_candidate.v3"
     assert set(document) == CANDIDATE_REQUIRED_FIELDS
     assert document["rerank_model"] == "cohere/rerank-4-pro"
     assert document["generation_model"] == "openai/gpt-5.6-luna"
-    assert document["require_zdr"] == "true"
+    assert document["data_collection"] == "deny"
+    assert document["allow_fallbacks"] == "false"
+    assert document["require_parameters"] == "true"
+    assert document["embedding_zdr"] == "required"
+    assert document["reranking_zdr"] == "optional"
+    assert document["generation_zdr"] == "required"
     assert script_builder is build_runtime_candidate
 
 
@@ -82,7 +88,6 @@ def test_runtime_candidate_refuses_secrets_and_invalid_zdr_policy(tmp_path: Path
             vector_manifest_path=ROOT / "data/index/firelens_vectors.manifest.json",
             rerank_model=embedded_key,
             generation_model="openai/gpt-5.6-luna",
-            require_zdr="true",
         )
     with pytest.raises(ValueError, match="secret"):
         build_runtime_candidate(
@@ -93,16 +98,22 @@ def test_runtime_candidate_refuses_secrets_and_invalid_zdr_policy(tmp_path: Path
             vector_manifest_path=ROOT / "data/index/firelens_vectors.manifest.json",
             rerank_model="cohere/rerank-4-pro",
             generation_model="sk-not-a-model",
-            require_zdr="true",
         )
-    with pytest.raises(ValueError, match="require_zdr"):
-        build_runtime_candidate(
-            commit=COMMIT,
-            benchmark_id="firelens_v1_5_2",
-            release_version="1.5.3-rc.1",
-            corpus_manifest_path=ROOT / "data/processed/firelens_static_corpus.manifest.json",
-            vector_manifest_path=ROOT / "data/index/firelens_vectors.manifest.json",
-            require_zdr="1",
+    with pytest.raises(ValueError, match="fields are not exact"):
+        write_runtime_candidate(
+            tmp_path / "invalid-privacy.json",
+            {
+                "schema_version": CANDIDATE_SCHEMA,
+                "candidate_id": f"firelens-v1-5-2:{COMMIT}",
+                "release_version": "1.5.3-rc.1",
+                "build_commit": COMMIT,
+                "corpus_version": "firelens_static_corpus.v1",
+                "embedding_model": "openai/text-embedding-3-small",
+                "retrieval_text_strategy": "metadata_context_v1",
+                "rerank_model": "cohere/rerank-4-pro",
+                "generation_model": "openai/gpt-5.6-luna",
+                "require_zdr": "1",
+            },
         )
     output = tmp_path / "candidate.json"
     with pytest.raises(ValueError, match="secret"):
@@ -127,7 +138,7 @@ def test_loader_rejects_arbitrary_candidate_id_and_unbound_commit(tmp_path: Path
         "retrieval_text_strategy": "metadata_context_v1",
         "rerank_model": "cohere/rerank-4-pro",
         "generation_model": "openai/gpt-5.6-luna",
-        "require_zdr": "true",
+        **APPROVED_PRODUCTION_PRIVACY.candidate_fields(),
     }
     path.write_text(json.dumps(document, sort_keys=True), encoding="utf-8")
     with pytest.raises(RuntimeArtifactError, match="candidate_id"):
@@ -153,7 +164,7 @@ def test_production_binding_does_not_fail_open_on_retry(tmp_path: Path) -> None:
     config = FireLensConfig.from_env(tmp_path).model_copy(
         update={
             "deployment_environment": "production",
-            "require_zdr": True,
+            "privacy": APPROVED_PRODUCTION_PRIVACY,
             "build_commit": COMMIT,
             "rerank_model": "cohere/rerank-4-pro",
         }
@@ -172,7 +183,7 @@ def test_production_refuses_env_mismatch_with_bound_candidate(tmp_path: Path) ->
     config = FireLensConfig.from_env(tmp_path).model_copy(
         update={
             "deployment_environment": "production",
-            "require_zdr": True,
+            "privacy": APPROVED_PRODUCTION_PRIVACY,
             "build_commit": COMMIT,
             "rerank_model": "cohere/rerank-4-pro",
         }
@@ -186,7 +197,7 @@ def test_production_refuses_missing_candidate(tmp_path: Path) -> None:
     config = FireLensConfig.from_env(tmp_path).model_copy(
         update={
             "deployment_environment": "production",
-            "require_zdr": True,
+            "privacy": APPROVED_PRODUCTION_PRIVACY,
             "build_commit": COMMIT,
         }
     )
@@ -194,18 +205,17 @@ def test_production_refuses_missing_candidate(tmp_path: Path) -> None:
         apply_runtime_candidate_binding(config)
 
 
-def test_preview_refuses_require_zdr_false_when_candidate_requires_it(
+def test_preview_refuses_optional_embedding_when_candidate_requires_zdr(
     tmp_path: Path,
 ) -> None:
     config = FireLensConfig.from_env(tmp_path).model_copy(
         update={
             "deployment_environment": "preview",
-            "require_zdr": False,
             "build_commit": COMMIT,
         }
     )
-    _write_bound_candidate(config, require_zdr="true")
-    with pytest.raises(RuntimeError, match="require_zdr"):
+    _write_bound_candidate(config, embedding_zdr="required", generation_zdr="required")
+    with pytest.raises(RuntimeError, match="embedding_zdr"):
         apply_runtime_candidate_binding(config)
 
 
@@ -215,12 +225,16 @@ def test_local_mismatch_stays_usable_and_is_not_production_qualified(
     config = FireLensConfig.from_env(tmp_path).model_copy(
         update={
             "deployment_environment": "local",
-            "require_zdr": False,
             "embedding_model": "fake/embedding",
             "debug": True,
         }
     )
-    _write_bound_candidate(config, require_zdr="true", rerank_model="cohere/rerank-4-pro")
+    _write_bound_candidate(
+        config,
+        embedding_zdr="required",
+        generation_zdr="required",
+        rerank_model="cohere/rerank-4-pro",
+    )
     problems = apply_runtime_candidate_binding(config)
     assert problems
     assert any("not a production-qualified artifact" in problem for problem in problems)
@@ -243,16 +257,15 @@ def test_local_mismatch_stays_usable_and_is_not_production_qualified(
     ] == unqualified
 
 
-def test_production_config_still_refuses_require_zdr_false(tmp_path: Path) -> None:
+def test_production_config_still_refuses_optional_required_stages(tmp_path: Path) -> None:
     payload = FireLensConfig.from_env(tmp_path).model_dump()
     payload["deployment_environment"] = "production"
-    payload["require_zdr"] = False
-    with pytest.raises(ValidationError, match="zero-data-retention"):
+    with pytest.raises(ValidationError, match="embedding and generation"):
         FireLensConfig.model_validate(payload)
 
 
 class RuntimeCandidateStartupTests(unittest.IsolatedAsyncioTestCase):
-    async def test_production_lifespan_fails_when_reranker_is_zdr_ineligible(self) -> None:
+    async def test_production_lifespan_allows_optional_non_zdr_reranker(self) -> None:
         def handler(_request: httpx.Request) -> httpx.Response:
             return httpx.Response(
                 200,
@@ -269,7 +282,7 @@ class RuntimeCandidateStartupTests(unittest.IsolatedAsyncioTestCase):
             config = FireLensConfig.from_env(Path(directory)).model_copy(
                 update={
                     "deployment_environment": "production",
-                    "require_zdr": True,
+                    "privacy": APPROVED_PRODUCTION_PRIVACY,
                     "build_commit": COMMIT,
                     "openrouter_api_key": SecretStr("test-key"),
                     "embedding_model": "openai/text-embedding-3-small",
@@ -282,15 +295,14 @@ class RuntimeCandidateStartupTests(unittest.IsolatedAsyncioTestCase):
                 provider = OpenRouterProvider(config, client=client)
                 runtime = Runtime(config=config, provider_configured=True, provider=provider)
                 app = create_app(config, runtime=runtime)
-                with self.assertRaisesRegex(RuntimeError, "ZDR endpoint preflight failed"):
-                    async with app.router.lifespan_context(app):
-                        pass
-                self.assertEqual(runtime.zdr_policy_state, "failed")
+                async with app.router.lifespan_context(app):
+                    self.assertEqual(runtime.zdr_policy_state, "required_stages_eligible")
+                    self.assertEqual(runtime.reranking_zdr_state, "zdr_optional")
 
     async def test_local_create_app_does_not_claim_bound_production_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             runtime, _, config = await make_runtime(Path(directory))
-            _write_bound_candidate(config, require_zdr="true")
+            _write_bound_candidate(config, embedding_zdr="required")
             app = create_app(config, runtime=runtime)
             async with httpx.AsyncClient(
                 transport=httpx.ASGITransport(app=app), base_url="http://test"

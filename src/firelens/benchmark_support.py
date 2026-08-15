@@ -51,7 +51,12 @@ def benchmark_runtime_configuration(config: FireLensConfig) -> dict[str, Any]:
         "provider_circuit_cooldown_seconds": config.provider_circuit_cooldown_seconds,
         "embedding_batch_size": config.embedding_batch_size,
         "query_embedding_cache_size": config.query_embedding_cache_size,
-        "require_zdr": config.require_zdr,
+        "require_parameters": config.privacy.require_parameters,
+        "embedding_zdr": config.privacy.embedding_zdr,
+        "reranking_zdr": config.privacy.reranking_zdr,
+        "generation_zdr": config.privacy.generation_zdr,
+        "data_collection": config.privacy.data_collection,
+        "allow_fallbacks": config.privacy.allow_fallbacks,
     }
 
 

@@ -8,6 +8,10 @@ import subprocess
 from pathlib import Path
 
 from firelens.config import DEFAULT_RELEASE_VERSION
+from firelens.privacy_policy import (
+    APPROVED_PRODUCTION_PRIVACY,
+    resolve_openrouter_privacy_from_env,
+)
 from firelens.runtime_candidate import build_runtime_candidate, write_runtime_candidate
 
 
@@ -37,7 +41,9 @@ def main() -> None:
         vector_manifest_path=root / "data/index/firelens_vectors.manifest.json",
         rerank_model=os.environ.get("FIRELENS_RERANK_MODEL"),
         generation_model=os.environ.get("FIRELENS_GENERATION_MODEL"),
-        require_zdr=os.environ.get("FIRELENS_REQUIRE_ZDR", "true"),
+        privacy=resolve_openrouter_privacy_from_env(
+            os.environ.get, default=APPROVED_PRODUCTION_PRIVACY
+        ),
     )
     write_runtime_candidate(root / "config/runtime_candidate.v1.json", candidate)
 

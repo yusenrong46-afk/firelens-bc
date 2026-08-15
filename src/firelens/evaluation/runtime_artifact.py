@@ -331,7 +331,12 @@ def _runtime_artifact_metric_values(
         ),
         "rerank_model": (identity.get("configuration") or {}).get("rerank_model"),
         "generation_model": (identity.get("configuration") or {}).get("generation_model"),
-        "require_zdr": (identity.get("configuration") or {}).get("require_zdr"),
+        "data_collection": (identity.get("configuration") or {}).get("data_collection"),
+        "allow_fallbacks": (identity.get("configuration") or {}).get("allow_fallbacks"),
+        "require_parameters": (identity.get("configuration") or {}).get("require_parameters"),
+        "embedding_zdr": (identity.get("configuration") or {}).get("embedding_zdr"),
+        "reranking_zdr": (identity.get("configuration") or {}).get("reranking_zdr"),
+        "generation_zdr": (identity.get("configuration") or {}).get("generation_zdr"),
     }
     if expected_candidate["candidate_id"] != _runtime_candidate_id(benchmark_id, commit):
         raise ValueError("snapshot candidate ID is not canonical for its benchmark and commit")
@@ -402,8 +407,18 @@ def _runtime_artifact_metric_values(
             == expected_candidate["rerank_model"]
             and inventory["runtime_configuration"]["generation_model"]
             == expected_candidate["generation_model"]
-            and inventory["runtime_configuration"]["require_zdr"]
-            == expected_candidate["require_zdr"]
+            and inventory["runtime_configuration"]["data_collection"]
+            == expected_candidate["data_collection"]
+            and inventory["runtime_configuration"]["allow_fallbacks"]
+            == expected_candidate["allow_fallbacks"]
+            and inventory["runtime_configuration"]["require_parameters"]
+            == expected_candidate["require_parameters"]
+            and inventory["runtime_configuration"]["embedding_zdr"]
+            == expected_candidate["embedding_zdr"]
+            and inventory["runtime_configuration"]["reranking_zdr"]
+            == expected_candidate["reranking_zdr"]
+            and inventory["runtime_configuration"]["generation_zdr"]
+            == expected_candidate["generation_zdr"]
             for platform_name, inventory in inventories.items()
         )
     )

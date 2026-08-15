@@ -8,6 +8,10 @@ import os
 from pathlib import Path
 
 from firelens.config import DEFAULT_RELEASE_VERSION
+from firelens.privacy_policy import (
+    APPROVED_PRODUCTION_PRIVACY,
+    resolve_openrouter_privacy_from_env,
+)
 from firelens.runtime_candidate import build_runtime_candidate, write_runtime_candidate
 
 
@@ -43,10 +47,6 @@ def _parser() -> argparse.ArgumentParser:
         "--generation-model",
         default=os.environ.get("FIRELENS_GENERATION_MODEL"),
     )
-    parser.add_argument(
-        "--require-zdr",
-        default=os.environ.get("FIRELENS_REQUIRE_ZDR", "true"),
-    )
     return parser
 
 
@@ -61,7 +61,9 @@ def main(argv: list[str] | None = None) -> int:
             vector_manifest_path=args.vector_manifest,
             rerank_model=args.rerank_model,
             generation_model=args.generation_model,
-            require_zdr=args.require_zdr,
+            privacy=resolve_openrouter_privacy_from_env(
+                os.environ.get, default=APPROVED_PRODUCTION_PRIVACY
+            ),
         )
         write_runtime_candidate(args.output, document)
     except (OSError, ValueError) as exc:

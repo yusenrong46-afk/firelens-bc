@@ -51,7 +51,7 @@ def _artifact(root: Path, *, strategy: str = "metadata_context_v1") -> Path:
         root / "config/runtime_candidate.v1.json",
         json.dumps(
             {
-                "schema_version": "firelens.runtime_candidate.v2",
+                "schema_version": "firelens.runtime_candidate.v3",
                 "candidate_id": "candidate-1",
                 "release_version": "1.5.2-test.1",
                 "build_commit": COMMIT,
@@ -60,7 +60,12 @@ def _artifact(root: Path, *, strategy: str = "metadata_context_v1") -> Path:
                 "retrieval_text_strategy": strategy,
                 "rerank_model": "provider/rerank-test",
                 "generation_model": "provider/generation-test",
-                "require_zdr": "true",
+                "data_collection": "deny",
+                "allow_fallbacks": "false",
+                "require_parameters": "true",
+                "embedding_zdr": "required",
+                "reranking_zdr": "optional",
+                "generation_zdr": "required",
             },
             sort_keys=True,
         ),
@@ -200,10 +205,11 @@ def _inventory(root: Path, platform: str = "vercel") -> dict:
 def test_build_inventory_retains_normalized_paths_hashes_and_identity(tmp_path: Path) -> None:
     report = _inventory(_artifact(tmp_path / "artifact"))
 
-    assert report["schema_version"] == "firelens.runtime_artifact_inventory.v2"
+    assert report["schema_version"] == "firelens.runtime_artifact_inventory.v3"
     assert report["runtime_configuration"]["rerank_model"] == "provider/rerank-test"
     assert report["runtime_configuration"]["generation_model"] == "provider/generation-test"
-    assert report["runtime_configuration"]["require_zdr"] == "true"
+    assert report["runtime_configuration"]["reranking_zdr"] == "optional"
+    assert report["runtime_configuration"]["embedding_zdr"] == "required"
     assert report["assurance"] == {
         "scope": "staged_logical_bundle",
         "platform_export_provenance_verified": False,
@@ -494,7 +500,7 @@ def test_compare_fails_closed_when_rerank_or_zdr_policy_differs(tmp_path: Path) 
         (docker_root / "config/runtime_candidate.v1.json").read_text(encoding="utf-8")
     )
     docker_candidate["rerank_model"] = "provider/other-rerank"
-    docker_candidate["require_zdr"] = "false"
+    docker_candidate["reranking_zdr"] = "required"
     _write(
         docker_root / "config/runtime_candidate.v1.json",
         json.dumps(docker_candidate, sort_keys=True),

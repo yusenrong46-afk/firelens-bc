@@ -14,6 +14,7 @@ import yaml
 from PIL import Image
 
 import scripts.upgrade_benchmark as upgrade_benchmark
+from firelens.privacy_policy import APPROVED_PRODUCTION_PRIVACY
 from scripts.upgrade_benchmark import (
     _assert_recomputed_summary_matches,
     _build_before_snapshot_seal,
@@ -210,7 +211,7 @@ def _runtime_artifact_snapshot_fixture(identity: dict[str, object]) -> dict[str,
     contract = json.loads(contract_path.read_text(encoding="utf-8"))
     contract_sha256 = hashlib.sha256(contract_path.read_bytes()).hexdigest()
     candidate = {
-        "schema_version": "firelens.runtime_candidate.v2",
+        "schema_version": "firelens.runtime_candidate.v3",
         "candidate_id": identity["candidate_id"],
         "release_version": identity["release_version"],
         "build_commit": identity["commit"],
@@ -219,7 +220,12 @@ def _runtime_artifact_snapshot_fixture(identity: dict[str, object]) -> dict[str,
         "retrieval_text_strategy": identity["configuration"]["retrieval_text_strategy"],
         "rerank_model": identity["configuration"]["rerank_model"],
         "generation_model": identity["configuration"]["generation_model"],
-        "require_zdr": identity["configuration"]["require_zdr"],
+        "data_collection": identity["configuration"]["data_collection"],
+        "allow_fallbacks": identity["configuration"]["allow_fallbacks"],
+        "require_parameters": identity["configuration"]["require_parameters"],
+        "embedding_zdr": identity["configuration"]["embedding_zdr"],
+        "reranking_zdr": identity["configuration"]["reranking_zdr"],
+        "generation_zdr": identity["configuration"]["generation_zdr"],
     }
     candidate_raw = json.dumps(candidate, sort_keys=True)
     candidate_sha256 = hashlib.sha256(candidate_raw.encode()).hexdigest()
@@ -249,7 +255,7 @@ def _runtime_artifact_snapshot_fixture(identity: dict[str, object]) -> dict[str,
                 }
             )
         report: dict[str, object] = {
-            "schema_version": "firelens.runtime_artifact_inventory.v2",
+            "schema_version": "firelens.runtime_artifact_inventory.v3",
             "assurance": {
                 "scope": "staged_logical_bundle",
                 "platform_export_provenance_verified": False,
@@ -277,7 +283,12 @@ def _runtime_artifact_snapshot_fixture(identity: dict[str, object]) -> dict[str,
                 "retrieval_text_strategy": candidate["retrieval_text_strategy"],
                 "rerank_model": candidate["rerank_model"],
                 "generation_model": candidate["generation_model"],
-                "require_zdr": candidate["require_zdr"],
+                "data_collection": candidate["data_collection"],
+                "allow_fallbacks": candidate["allow_fallbacks"],
+                "require_parameters": candidate["require_parameters"],
+                "embedding_zdr": candidate["embedding_zdr"],
+                "reranking_zdr": candidate["reranking_zdr"],
+                "generation_zdr": candidate["generation_zdr"],
             },
             "file_count": len(rows),
             "total_size_bytes": sum(row["size_bytes"] for row in rows),
@@ -405,7 +416,7 @@ def _passing_snapshots() -> tuple[dict, dict]:
             "retrieval_text_strategy": "metadata_context_v1",
             "rerank_model": "provider/rerank-test",
             "generation_model": "provider/generation-test",
-            "require_zdr": "true",
+            **APPROVED_PRODUCTION_PRIVACY.candidate_fields(),
         },
         "execution_environment": {
             "os": "Darwin",
@@ -2371,7 +2382,7 @@ def _deployment_report() -> dict:
                 "embedding_model": "openai/text-embedding-3-small",
                 "rerank_model": "cohere/rerank-4-pro",
                 "generation_model": "openai/gpt-5.6-luna",
-                "require_zdr": "true",
+                **APPROVED_PRODUCTION_PRIVACY.candidate_fields(),
             },
             "restored_environment_snapshot": {
                 "release_version": "1.5.2",
@@ -2380,7 +2391,7 @@ def _deployment_report() -> dict:
                 "embedding_model": "openai/text-embedding-3-small",
                 "rerank_model": "cohere/rerank-4-pro",
                 "generation_model": "openai/gpt-5.6-luna",
-                "require_zdr": "true",
+                **APPROVED_PRODUCTION_PRIVACY.candidate_fields(),
             },
             "checks": {
                 "readiness_restored": True,

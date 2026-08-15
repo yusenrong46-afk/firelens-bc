@@ -58,10 +58,10 @@ from firelens.runtime_artifact_common import (
     read_json as _read_json,
 )
 from firelens.runtime_artifact_common import (
-    require_model_id as _require_model_id,
+    require_candidate_privacy as _require_candidate_privacy,
 )
 from firelens.runtime_artifact_common import (
-    require_zdr_policy as _require_zdr_policy,
+    require_model_id as _require_model_id,
 )
 from firelens.runtime_artifact_common import (
     sha256_bytes as _sha256_bytes,
@@ -291,10 +291,10 @@ def _load_candidate(
     candidate_contract = contract["candidate_configuration"]
     path = candidate_contract["logical_path"]
     candidate = _read_json(files[path], context="runtime candidate configuration")
-    expected_fields = set(candidate_contract["required_fields"])
-    _exact_keys(candidate, expected_fields, context="runtime candidate configuration")
     if candidate.get("schema_version") != candidate_contract["schema_version"]:
         raise RuntimeArtifactError("runtime candidate configuration has an unsupported schema")
+    expected_fields = set(candidate_contract["required_fields"])
+    _exact_keys(candidate, expected_fields, context="runtime candidate configuration")
     for field, expected in (
         ("candidate_id", identity.candidate_id),
         ("release_version", identity.release_version),
@@ -310,7 +310,7 @@ def _load_candidate(
         _require_model_id(candidate.get(field), field=f"runtime candidate {field}")
     if candidate.get("retrieval_text_strategy") not in SUPPORTED_RETRIEVAL_STRATEGIES:
         raise RuntimeArtifactError("runtime candidate retrieval_text_strategy is unsupported")
-    _require_zdr_policy(candidate.get("require_zdr"), context="runtime candidate")
+    _require_candidate_privacy(candidate, context="runtime candidate")
     _assert_candidate_has_no_secrets(candidate)
     return candidate
 
@@ -701,7 +701,12 @@ def build_runtime_inventory(
             "retrieval_text_strategy": candidate["retrieval_text_strategy"],
             "rerank_model": candidate["rerank_model"],
             "generation_model": candidate["generation_model"],
-            "require_zdr": candidate["require_zdr"],
+            "data_collection": candidate["data_collection"],
+            "allow_fallbacks": candidate["allow_fallbacks"],
+            "require_parameters": candidate["require_parameters"],
+            "embedding_zdr": candidate["embedding_zdr"],
+            "reranking_zdr": candidate["reranking_zdr"],
+            "generation_zdr": candidate["generation_zdr"],
         },
         "file_count": len(entries),
         "total_size_bytes": sum(entry["size_bytes"] for entry in entries),

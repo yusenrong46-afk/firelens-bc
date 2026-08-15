@@ -147,7 +147,12 @@ ROLLBACK_ENVIRONMENT_SNAPSHOT_KEYS = {
     "embedding_model",
     "rerank_model",
     "generation_model",
-    "require_zdr",
+    "data_collection",
+    "allow_fallbacks",
+    "require_parameters",
+    "embedding_zdr",
+    "reranking_zdr",
+    "generation_zdr",
 }
 
 
@@ -157,8 +162,15 @@ def require_environment_snapshot(value: Any, *, commit: str, context: str) -> No
     require_exact_keys(value, ROLLBACK_ENVIRONMENT_SNAPSHOT_KEYS, context=context)
     if value.get("build_commit") != commit:
         raise ValueError(f"{context} environment snapshot build commit does not match")
-    if value.get("require_zdr") not in {"true", "false"}:
-        raise ValueError(f"{context} environment snapshot require_zdr is invalid")
+    if value.get("data_collection") != "deny":
+        raise ValueError(f"{context} environment snapshot data_collection is invalid")
+    if value.get("allow_fallbacks") != "false":
+        raise ValueError(f"{context} environment snapshot allow_fallbacks is invalid")
+    if value.get("require_parameters") != "true":
+        raise ValueError(f"{context} environment snapshot require_parameters is invalid")
+    for field in ("embedding_zdr", "reranking_zdr", "generation_zdr"):
+        if value.get(field) not in {"required", "optional"}:
+            raise ValueError(f"{context} environment snapshot {field} is invalid")
     if any(not str(value.get(key) or "").strip() for key in ROLLBACK_ENVIRONMENT_SNAPSHOT_KEYS):
         raise ValueError(f"{context} environment snapshot is incomplete")
 

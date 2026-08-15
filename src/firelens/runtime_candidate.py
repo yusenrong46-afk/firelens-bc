@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from firelens.config import DEFAULT_RELEASE_VERSION, FireLensConfig
+from firelens.privacy_policy import APPROVED_PRODUCTION_PRIVACY, OpenRouterPrivacyPolicy
 from firelens.runtime_artifact_common import (
     CANDIDATE_RELATIVE_PATH,
     CANDIDATE_REQUIRED_FIELDS,
@@ -20,8 +21,8 @@ from firelens.runtime_artifact_common import (
     assert_not_symlink,
     nonempty_identity,
     read_json,
+    require_candidate_privacy,
     require_model_id,
-    require_zdr_policy,
 )
 
 COMMIT = re.compile(r"^[0-9a-f]{40}$")
@@ -76,7 +77,7 @@ def build_runtime_candidate(
     vector_manifest_path: Path,
     rerank_model: str | None = None,
     generation_model: str | None = None,
-    require_zdr: str | None = None,
+    privacy: OpenRouterPrivacyPolicy | None = None,
 ) -> dict[str, str]:
     """Build a strict candidate document from shipped manifests and model policy."""
 
@@ -109,11 +110,7 @@ def build_runtime_candidate(
         generation_model or str(FireLensConfig.model_fields["generation_model"].default),
         field="generation_model",
     )
-    policy = require_zdr if require_zdr is not None else "true"
-    try:
-        require_zdr_policy(policy, context="runtime candidate")
-    except RuntimeArtifactError as exc:
-        raise ValueError(str(exc)) from exc
+    policy = privacy if privacy is not None else APPROVED_PRODUCTION_PRIVACY
     document = {
         "schema_version": CANDIDATE_SCHEMA,
         "candidate_id": f"{benchmark_id.replace('_', '-')}:{commit}",
@@ -124,7 +121,7 @@ def build_runtime_candidate(
         "retrieval_text_strategy": str(retrieval_text_strategy),
         "rerank_model": rerank,
         "generation_model": generation,
-        "require_zdr": policy,
+        **policy.candidate_fields(),
     }
     try:
         assert_candidate_has_no_secrets(document)
@@ -140,13 +137,13 @@ def write_runtime_candidate(output: Path, document: dict[str, str]) -> None:
         assert_candidate_has_no_secrets(document)
     except RuntimeArtifactError as exc:
         raise ValueError(str(exc)) from exc
-    if set(document) != CANDIDATE_REQUIRED_FIELDS:
-        raise ValueError("runtime candidate fields are not exact")
     if document.get("schema_version") != CANDIDATE_SCHEMA:
         raise ValueError("runtime candidate schema is unsupported")
+    if set(document) != CANDIDATE_REQUIRED_FIELDS:
+        raise ValueError("runtime candidate fields are not exact")
     try:
         assert_candidate_has_no_secrets(document)
-        require_zdr_policy(document.get("require_zdr"), context="runtime candidate")
+        require_candidate_privacy(document, context="runtime candidate")
         require_candidate_identity(document)
     except RuntimeArtifactError as exc:
         raise ValueError(str(exc)) from exc
@@ -180,12 +177,12 @@ def load_runtime_candidate_document(path: Path) -> dict[str, str]:
 
     assert_not_symlink(path, context="runtime candidate")
     payload = read_json(path, context="runtime candidate")
-    if set(payload) != CANDIDATE_REQUIRED_FIELDS:
-        raise RuntimeArtifactError("runtime candidate fields are not exact")
     if payload.get("schema_version") != CANDIDATE_SCHEMA:
         raise RuntimeArtifactError("runtime candidate schema is unsupported")
+    if set(payload) != CANDIDATE_REQUIRED_FIELDS:
+        raise RuntimeArtifactError("runtime candidate fields are not exact")
     assert_candidate_has_no_secrets(payload)
-    require_zdr_policy(payload.get("require_zdr"), context="runtime candidate")
+    require_candidate_privacy(payload, context="runtime candidate")
     if payload.get("retrieval_text_strategy") not in SUPPORTED_RETRIEVAL_STRATEGIES:
         raise RuntimeArtifactError("runtime candidate retrieval_text_strategy is unsupported")
     for field in ("candidate_id", "release_version", "build_commit", "corpus_version"):
@@ -212,7 +209,7 @@ def candidate_mismatches(
         "rerank_model": config.rerank_model,
         "generation_model": config.generation_model,
         "retrieval_text_strategy": config.retrieval_text_strategy.value,
-        "require_zdr": "true" if config.require_zdr else "false",
+        **config.privacy.candidate_fields(),
         "release_version": config.release_version,
     }
     mismatched = [field for field, value in expected.items() if document.get(field) != value]

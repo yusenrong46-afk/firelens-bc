@@ -121,11 +121,25 @@ async def qualify_deployment_gates(
         ask_reason = str(reason) if reason is not None else None
         false_safety = _false_safety_present(ask_payload)
     ready_ok = ready_response.status_code == 200 and ready.get("status") == "ready"
-    zdr_required = ready.get("zdr_required") is True and document["require_zdr"] == "true"
-    zdr_eligible = ready.get("zdr_policy_state") == "eligible"
-    production_zdr = (not expect_production) or (
-        ready.get("zdr_required") is True and document["require_zdr"] != "false"
+    embedding_required = (
+        document["embedding_zdr"] == "required" and ready.get("embedding_zdr") == "required"
     )
+    generation_required = (
+        document["generation_zdr"] == "required" and ready.get("generation_zdr") == "required"
+    )
+    zdr_required = (
+        ready.get("zdr_required") is True and embedding_required and generation_required
+    )
+    zdr_eligible = ready.get("zdr_policy_state") == "required_stages_eligible"
+    production_zdr = (not expect_production) or (
+        ready.get("embedding_zdr") == "required"
+        and ready.get("generation_zdr") == "required"
+        and document["embedding_zdr"] == "required"
+        and document["generation_zdr"] == "required"
+        and document["data_collection"] == "deny"
+        and document["allow_fallbacks"] == "false"
+    )
+    reranking_policy_bound = ready.get("reranking_zdr") == document["reranking_zdr"]
     partial_visible = not unavailable_layers or bool(_visible_limitations(map_payload))
     safety_ok = (not include_ask_probes) or (
         ask_status_code == 200
@@ -142,23 +156,35 @@ async def qualify_deployment_gates(
         "zdr_required": zdr_required,
         "zdr_policy_eligible": zdr_eligible if expect_production else True,
         "production_refuses_zdr_false": production_zdr,
+        "reranking_zdr_policy_bound": reranking_policy_bound,
         "partial_layers_are_visible": map_response.status_code == 200 and partial_visible,
         "homepage_anonymous": homepage_ok,
         "safety_boundary": safety_ok,
     }
     report = {
-        "report_version": "firelens.deployment_gates.v2",
+        "report_version": "firelens.deployment_gates.v3",
         "base_url_host": parsed.hostname,
         "expect_production": expect_production,
         "include_ask_probes": include_ask_probes,
         "candidate_id": document["candidate_id"],
-        "expected": {**expected, "require_zdr": document["require_zdr"]},
+        "expected": {
+            **expected,
+            "data_collection": document["data_collection"],
+            "allow_fallbacks": document["allow_fallbacks"],
+            "embedding_zdr": document["embedding_zdr"],
+            "reranking_zdr": document["reranking_zdr"],
+            "generation_zdr": document["generation_zdr"],
+        },
         "observed": {
             **observed_identity,
             "ready_status_code": ready_response.status_code,
             "ready_status": ready.get("status"),
             "zdr_required": ready.get("zdr_required"),
             "zdr_policy_state": ready.get("zdr_policy_state"),
+            "embedding_zdr": ready.get("embedding_zdr"),
+            "reranking_zdr": ready.get("reranking_zdr"),
+            "generation_zdr": ready.get("generation_zdr"),
+            "reranking_zdr_state": ready.get("reranking_zdr_state"),
             "unavailable_layer_count": len(unavailable_layers),
             "limitation_count": len(_visible_limitations(map_payload)),
             "ask_status": ask_status,

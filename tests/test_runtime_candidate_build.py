@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from firelens.config import FireLensConfig
+from firelens.privacy_policy import APPROVED_PRODUCTION_PRIVACY
 from scripts.write_runtime_candidate import (
     build_runtime_candidate,
     main,
@@ -29,7 +30,7 @@ def _candidate(**overrides):
 
 def test_runtime_candidate_is_exactly_bound_to_commit_and_shipped_manifests() -> None:
     assert _candidate() == {
-        "schema_version": "firelens.runtime_candidate.v2",
+        "schema_version": "firelens.runtime_candidate.v3",
         "candidate_id": f"firelens-v1-5-2:{COMMIT}",
         "release_version": FireLensConfig.model_fields["release_version"].default,
         "build_commit": COMMIT,
@@ -38,7 +39,7 @@ def test_runtime_candidate_is_exactly_bound_to_commit_and_shipped_manifests() ->
         "retrieval_text_strategy": "metadata_context_v1",
         "rerank_model": "cohere/rerank-4-pro",
         "generation_model": "openai/gpt-5.6-luna",
-        "require_zdr": "true",
+        **APPROVED_PRODUCTION_PRIVACY.candidate_fields(),
     }
 
 
@@ -84,7 +85,9 @@ def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> N
         "data/repairs/text_overrides.yaml",
         "scripts/write_runtime_candidate.py",
         "RENDER_GIT_COMMIT",
-        "FIRELENS_REQUIRE_ZDR=true",
+        "FIRELENS_EMBEDDING_ZDR=required",
+        "FIRELENS_RERANKING_ZDR=optional",
+        "FIRELENS_GENERATION_ZDR=required",
         "FIRELENS_RERANK_MODEL",
         "FIRELENS_GENERATION_MODEL",
         "ARG FIRELENS_RELEASE_VERSION=1.5.3-rc.1",

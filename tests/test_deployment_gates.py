@@ -8,6 +8,7 @@ from pathlib import Path
 import httpx
 
 from firelens.deployment_gates import qualify_deployment_gates
+from firelens.privacy_policy import APPROVED_PRODUCTION_PRIVACY
 from firelens.runtime_artifact_common import CANDIDATE_SCHEMA, canonical_json, sha256_bytes
 
 COMMIT = "a" * 40
@@ -24,7 +25,7 @@ def _candidate() -> dict[str, str]:
         "retrieval_text_strategy": "metadata_context_v1",
         "rerank_model": "cohere/rerank-4-pro",
         "generation_model": "openai/gpt-5.6-luna",
-        "require_zdr": "true",
+        **APPROVED_PRODUCTION_PRIVACY.candidate_fields(),
     }
 
 
@@ -77,7 +78,15 @@ def _ready(**overrides: object) -> dict[str, object]:
         "generation_model": candidate["generation_model"],
         "retrieval_text_strategy": candidate["retrieval_text_strategy"],
         "zdr_required": True,
-        "zdr_policy_state": "eligible",
+        "zdr_policy_state": "required_stages_eligible",
+        "data_collection": "deny",
+        "allow_fallbacks": False,
+        "embedding_zdr": "required",
+        "reranking_zdr": "optional",
+        "generation_zdr": "required",
+        "embedding_zdr_state": "eligible",
+        "generation_zdr_state": "eligible",
+        "reranking_zdr_state": "zdr_optional",
         "problems": [],
     }
     payload.update(overrides)
@@ -125,6 +134,8 @@ class DeploymentGateTests(unittest.IsolatedAsyncioTestCase):
                         build_commit="b" * 40,
                         zdr_required=False,
                         zdr_policy_state="disabled",
+                        embedding_zdr="optional",
+                        generation_zdr="optional",
                     )
                 )
             )

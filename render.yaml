@@ -7,8 +7,16 @@ services:
     envVars:
       - key: OPENROUTER_API_KEY
         sync: false
-      - key: FIRELENS_REQUIRE_ZDR
-        value: "true"
+      - key: FIRELENS_EMBEDDING_ZDR
+        value: "required"
+      - key: FIRELENS_RERANKING_ZDR
+        value: "optional"
+      - key: FIRELENS_GENERATION_ZDR
+        value: "required"
+      - key: FIRELENS_DATA_COLLECTION
+        value: "deny"
+      - key: FIRELENS_ALLOW_FALLBACKS
+        value: "false"
       - key: FIRELENS_EMBEDDING_MODEL
         value: "openai/text-embedding-3-small"
       - key: FIRELENS_RERANK_MODEL

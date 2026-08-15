@@ -18,7 +18,7 @@ from firelens.runtime_artifact_common import (
     exact_keys,
     logical_path,
     nonempty_identity,
-    require_zdr_policy,
+    require_candidate_privacy,
     sha256_bytes,
     validate_identity,
 )
@@ -124,9 +124,7 @@ def _validate_runtime_configuration(runtime_configuration: Any, *, context: str)
         raise RuntimeArtifactError(
             f"{context} runtime configuration retrieval_text_strategy is invalid"
         )
-    require_zdr_policy(
-        runtime_configuration["require_zdr"], context=f"{context} runtime configuration"
-    )
+    require_candidate_privacy(runtime_configuration, context=f"{context} runtime configuration")
 
 
 def _validate_inventory_files(

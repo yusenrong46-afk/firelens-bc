@@ -13,8 +13,8 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 CONTRACT_SCHEMA = "firelens.runtime_artifact_allowlist.v1"
-CANDIDATE_SCHEMA = "firelens.runtime_candidate.v2"
-INVENTORY_SCHEMA = "firelens.runtime_artifact_inventory.v2"
+CANDIDATE_SCHEMA = "firelens.runtime_candidate.v3"
+INVENTORY_SCHEMA = "firelens.runtime_artifact_inventory.v3"
 COMPARISON_SCHEMA = "firelens.runtime_artifact_comparison.v1"
 CANDIDATE_REQUIRED_FIELDS = frozenset(
     {
@@ -27,7 +27,12 @@ CANDIDATE_REQUIRED_FIELDS = frozenset(
         "retrieval_text_strategy",
         "rerank_model",
         "generation_model",
-        "require_zdr",
+        "data_collection",
+        "allow_fallbacks",
+        "require_parameters",
+        "embedding_zdr",
+        "reranking_zdr",
+        "generation_zdr",
     }
 )
 RUNTIME_CONFIGURATION_FIELDS = frozenset(
@@ -39,10 +44,15 @@ RUNTIME_CONFIGURATION_FIELDS = frozenset(
         "retrieval_text_strategy",
         "rerank_model",
         "generation_model",
-        "require_zdr",
+        "data_collection",
+        "allow_fallbacks",
+        "require_parameters",
+        "embedding_zdr",
+        "reranking_zdr",
+        "generation_zdr",
     }
 )
-REQUIRE_ZDR_VALUES = frozenset({"true", "false"})
+ZDR_REQUIREMENT_VALUES = frozenset({"required", "optional"})
 CANDIDATE_RELATIVE_PATH = "config/runtime_candidate.v1.json"
 SECRET_FIELD_TOKENS = ("api_key", "token", "secret", "password", "authorization", "bearer")
 SECRET_VALUE_MARKERS = ("sk-", "or-v1-")
@@ -268,12 +278,18 @@ def validate_identity(identity: ArtifactIdentity) -> None:
         raise RuntimeArtifactError("build_commit must be a lowercase 40- or 64-hex commit")
 
 
-def require_zdr_policy(value: Any, *, context: str) -> str:
-    """Accept only the canonical string policy values bound into artifacts."""
+def require_candidate_privacy(payload: dict[str, Any], *, context: str) -> None:
+    """Accept only the stage-specific privacy policy bound into artifacts."""
 
-    if not isinstance(value, str) or value not in REQUIRE_ZDR_VALUES:
-        raise RuntimeArtifactError(f"{context} require_zdr must be 'true' or 'false'")
-    return value
+    if payload.get("data_collection") != "deny":
+        raise RuntimeArtifactError(f"{context} data_collection must be 'deny'")
+    if payload.get("allow_fallbacks") != "false":
+        raise RuntimeArtifactError(f"{context} allow_fallbacks must be 'false'")
+    if payload.get("require_parameters") != "true":
+        raise RuntimeArtifactError(f"{context} require_parameters must be 'true'")
+    for field in ("embedding_zdr", "reranking_zdr", "generation_zdr"):
+        if payload.get(field) not in ZDR_REQUIREMENT_VALUES:
+            raise RuntimeArtifactError(f"{context} {field} must be 'required' or 'optional'")
 
 
 def secret_shaped_text(value: str) -> bool:
