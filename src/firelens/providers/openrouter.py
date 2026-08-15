@@ -25,6 +25,7 @@ from firelens.contracts import (
 from firelens.errors import ProviderError, ProviderErrorKind
 from firelens.privacy_policy import ZdrPreflightReport, evaluate_zdr_preflight
 from firelens.providers.openrouter_support import (
+    CHAT_STAGES,
     PROVIDER_STAGES,
     CircuitState,
     ProviderStage,
@@ -79,20 +80,32 @@ class OpenRouterProvider:
             "X-Title": "FireLens BC",
         }
 
+    def _generation_model_id(self) -> str:
+        return self.config.generation_model.split(":", maxsplit=1)[0]
+
     def _provider_preferences(self, stage: ProviderStage) -> dict[str, Any]:
-        return self.config.privacy.provider_preferences(stage)
+        """Return stage privacy prefs, omitting Luna chat `require_parameters`.
+
+        OpenRouter ZDR chat endpoints for `openai/gpt-5.6-luna` return HTTP 404
+        "no endpoints matching your data policy" when `provider.zdr=true` is
+        combined with `require_parameters=true`. Embedding still sends it.
+        `data_collection=deny` and generation ZDR stay required.
+        """
+
+        preferences = dict(self.config.privacy.provider_preferences(stage))
+        if stage in CHAT_STAGES and self._generation_model_id() == "openai/gpt-5.6-luna":
+            preferences.pop("require_parameters", None)
+        return preferences
 
     def _generation_sampling_parameters(self) -> dict[str, float]:
         """Return only sampling parameters supported by the configured model."""
 
-        model_id = self.config.generation_model.split(":", maxsplit=1)[0]
-        if model_id == "openai/gpt-5.6-luna":
+        if self._generation_model_id() == "openai/gpt-5.6-luna":
             return {}
         return {"temperature": self.config.generation_temperature}
 
     def _generation_output_schema(self, output_schema: dict[str, Any]) -> dict[str, Any]:
-        model_id = self.config.generation_model.split(":", maxsplit=1)[0]
-        if model_id == "openai/gpt-5.6-luna":
+        if self._generation_model_id() == "openai/gpt-5.6-luna":
             return strict_wire_schema(output_schema)
         return output_schema
 

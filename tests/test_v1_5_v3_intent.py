@@ -288,6 +288,32 @@ class V3DeterministicIntentTests(unittest.TestCase):
                     "personalized_safety_decision",
                 )
 
+    def test_compound_fire_near_a_named_place_routes_live(self) -> None:
+        expected_layers = (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER)
+        for question in (
+            "is there a moutainfire near Vancouver",
+            "is there a mountainfire near Vancouver",
+            "is there a mountain fire near Vancouver",
+            "Is there a mountain fire near Vancouver?",
+        ):
+            with self.subTest(question=question):
+                location = coarse_location_from_question(question)
+                self.assertIsNotNone(location)
+                assert location is not None
+                self.assertEqual(location.label, "Vancouver")
+                self.assertEqual(plan_query(QueryRequest(question=question)).route, QueryRoute.LIVE)
+                self.assertEqual(live_layers_for_question(question), expected_layers)
+
+    def test_surefire_kit_wording_is_not_a_live_fire_query(self) -> None:
+        question = "Is there a surefire way to pack a kit?"
+        self.assertIsNone(coarse_location_from_question(question))
+        self.assertEqual(plan_query(QueryRequest(question=question)).route, QueryRoute.RELATED)
+        self.assertEqual(live_layers_for_question(question), ())
+
+    def test_named_place_safety_from_the_fire_stays_prohibited(self) -> None:
+        plan = plan_query(QueryRequest(question="Is Kelowna safe from the fire?"))
+        self.assertEqual(plan.route, QueryRoute.PROHIBITED)
+
     def test_current_aircraft_locations_are_an_unsupported_live_handoff(self) -> None:
         question = "Show fires around Terrace and current aircraft locations."
         self.assertEqual(

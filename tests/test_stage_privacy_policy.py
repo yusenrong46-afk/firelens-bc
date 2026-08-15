@@ -41,10 +41,18 @@ def _setting(values: dict[str, str]):
     return values.get
 
 
-def _assert_common_preferences(preferences: dict[str, object], *, zdr: bool) -> None:
+def _assert_common_preferences(
+    preferences: dict[str, object],
+    *,
+    zdr: bool,
+    require_parameters: bool = True,
+) -> None:
     assert preferences["data_collection"] == "deny"
     assert preferences["allow_fallbacks"] is False
-    assert preferences["require_parameters"] is True
+    if require_parameters:
+        assert preferences["require_parameters"] is True
+    else:
+        assert "require_parameters" not in preferences
     assert preferences.get("zdr") is not False
     if zdr:
         assert preferences["zdr"] is True
@@ -255,7 +263,7 @@ class StageAwareProviderWireTests(unittest.IsolatedAsyncioTestCase):
         plan_prefs = observed["/api/v1/chat/completions"]["provider"]
         _assert_common_preferences(embed_prefs, zdr=True)
         _assert_common_preferences(rerank_body["provider"], zdr=False)
-        _assert_common_preferences(plan_prefs, zdr=True)
+        _assert_common_preferences(plan_prefs, zdr=True, require_parameters=False)
         self.assertEqual(
             set(rerank_body),
             {"model", "query", "documents", "top_n", "provider"},
@@ -335,7 +343,7 @@ class StageAwareProviderWireTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(observed), 3)
         for body in observed:
-            _assert_common_preferences(body["provider"], zdr=True)
+            _assert_common_preferences(body["provider"], zdr=True, require_parameters=False)
 
     async def test_preflight_allows_missing_optional_reranker(self) -> None:
         def handler(_request: httpx.Request) -> httpx.Response:

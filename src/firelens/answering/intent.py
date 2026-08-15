@@ -135,6 +135,7 @@ _LIVE_PATTERNS = (
     r"\b(?:right now|currently|latest|today|tonight|this morning|this afternoon|this evening|this week|at the moment|now)\b.{0,60}\b(?:fires?|wildfires?|evacuat(?:ion|ing)|alerts?|orders?|smoke|air quality|roads?|highways?)\b",
     r"\b(active|current)\s+(fires?|wildfires?|evacuations?|alerts?|orders?|smoke|air quality)\b",
     r"\b(is there|are there)\s+(a\s+)?(fire|wildfire)\b",
+    r"\b(?:is there|are there)\b.{0,40}[a-z]{1,12}fires?\b.{0,30}\b(?:near|around|by|in|within)\b",
     r"\bwhere\s+is\s+the\s+(fire|wildfire)\b",
     r"\bnear\s+(me|my home|my house|my address)\b",
     r"\bhas\s+.*\s+(been evacuated|issued an evacuation)\b",
@@ -157,7 +158,7 @@ _LIVE_PATTERNS = (
     r"\b(?:is|are)\s+there\b.{1,60}\b(?:evacuation\s+)?(?:alerts?|orders?)\b",
     r"\b(?:current|latest|active|updated)\s+(?:fire\s+|wildfire\s+)?perimeters?\b",
     r"\b(?:show|display|where)\b.{0,40}\b(?:fire\s+|wildfire\s+)?perimeters?\b",
-    r"\b(?:fires?|wildfires?)\s+(?:near|around|by)\s+[a-z]",
+    r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?)\s+(?:near|around|by)\s+[a-z]",
     r"\b(?:show|display|list|map|check|find)\b.{0,80}"
     r"\b(?:(?:evacuation|evac)\s+)?(?:alerts?|orders?)\b",
 )
@@ -448,7 +449,8 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
             r"\bhow many\b.{0,40}\b(?:fires?|wildfires?)\b",
             r"\b(?:fire|wildfire)\s+(?:status|situation|map|update|updates)\b",
             r"\b(?:is there|are there|where is)\b.{0,30}\b(?:fire|wildfire)\b",
-            r"\b(?:fires?|wildfires?)\b.{0,40}\b(?:burning|near|around|in bc|in british columbia)\b",
+            r"\b(?:is there|are there|where is)\b.{0,40}[a-z]{1,12}fires?\b.{0,30}\b(?:near|around|by|in|within)\b",
+            r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?)\b.{0,40}\b(?:burning|near|around|in bc|in british columbia)\b",
             r"\b(?:fires?|wildfires?)\b.{0,60}\b(?:listed|reported|published)\s+by\s+"
             r"(?:bcws|bc wildfire service)\b",
             r"\b(?:bcws|bc wildfire service)\b.{0,50}\b(?:status|map|update|latest|fire)\b",
@@ -467,7 +469,7 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
     elif fire_status_requested:
         layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
     elif original_location is not None and re.search(
-        r"\b(?:fires?|wildfires?)\b(?!\s+smoke)|"
+        r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?)\b(?!\s+smoke)|"
         r"\b(?:fire|wildfire)\s+(?:map|status|situation|update)\b|"
         r"\b(?:map|burning|happening)\b",
         lowered,

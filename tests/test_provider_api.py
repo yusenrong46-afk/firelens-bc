@@ -76,7 +76,9 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
                 )
 
         self.assertNotIn("temperature", observed_body)
-        self.assertTrue(observed_body["provider"]["require_parameters"])
+        self.assertNotIn("require_parameters", observed_body["provider"])
+        self.assertEqual(observed_body["provider"]["data_collection"], "deny")
+        self.assertFalse(observed_body["provider"]["allow_fallbacks"])
         wire_schema = observed_body["response_format"]["json_schema"]["schema"]
         self.assertEqual(
             set(wire_schema["required"]),

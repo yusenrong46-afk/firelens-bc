@@ -34,6 +34,14 @@ PROVIDER_STAGES: tuple[ProviderStage, ...] = (
     "grounded_generation",
     "background_generation",
 )
+CHAT_STAGES: frozenset[ProviderStage] = frozenset(
+    {
+        "planning",
+        "context_generation",
+        "grounded_generation",
+        "background_generation",
+    }
+)
 
 
 @dataclass

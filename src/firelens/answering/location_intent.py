@@ -94,7 +94,7 @@ _PLACE_PATTERNS = (
 _CONTEXTUAL_PLACE_PATTERNS = (
     re.compile(
         r"\b(?:fires?|wildfires?|(?:fire|wildfire)\s+situation|"
-        r"(?:(?:fire|wildfire)\s+)?perimeters?)\s+"
+        r"(?:(?:fire|wildfire)\s+)?perimeters?|[a-z]{1,12}fires?)\s+"
         r"(?:near|around|round|by|within|in)\s+(?:the\s+)?"
         r"(?P<place>[a-z][a-z .'-]{1,80})",
         re.IGNORECASE,
