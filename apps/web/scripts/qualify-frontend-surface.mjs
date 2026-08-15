@@ -547,7 +547,7 @@ async function installDeterministicRoutes(page) {
   await page.route("https://*.tile.openstreetmap.org/**", async (route) => {
     await route.fulfill({ status: 200, contentType: "image/png", body: transparentPng });
   });
-  await page.route("**/api/v1/live/map", async (route) => {
+  await page.route("**/api/v1/live/map*", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
