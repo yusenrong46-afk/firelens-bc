@@ -25,7 +25,7 @@ flowchart LR
     P -->|"grounded candidate"| H["BM25 plus dense plus RRF"]
     H --> R["Cohere Rerank 4 Pro"]
     R --> E["Local evidence packet"]
-    E --> D["Gemini structured draft"]
+    E --> D["Luna structured draft"]
     D --> V["Deterministic validator"]
     V -->|"accepted"| O["Claims plus exact local support"]
     V -->|"rejected once"| X["One same-packet repair"]
@@ -77,11 +77,11 @@ manifest merely to force readiness.
 | `capability` | Greetings and “what can I ask?” | Deterministic local answer; no paid call |
 | `grounded` | Directly supported stable guidance | Every claim has an exact quote and local source record |
 | `background` | Related low-risk explanation outside direct corpus support | Clearly labelled; no corpus citation is allowed |
-| `scope_redirect` | Completely tangent request | Redirects to FireLens topics |
+| `scope_redirect` | A current source is not integrated or a request needs an official handoff | Links the relevant official service without claiming its current value |
 | `partial` | Only some requested stable aspects have evidence | Returns supported claims and names missing aspects |
 | `live` | Supported current incident, perimeter, or evacuation question | Official metadata, source/retrieval times, and GeoJSON |
-| `mixed` | Supported live records plus supported stable guidance | Separates current records from exact-cited guidance |
-| `abstention` | Unsupported live source, predictive, personalized, unsafe, or unvalidated request | No factual evidence claim is returned |
+| `mixed` | Supported live records plus reviewed guidance, labelled background, or an official handoff | Separates each section by authority and evidence status |
+| `abstention` | Personalized safety/medical decisions, prompt manipulation, or an unsafe unvalidated request | Explains the boundary and returns no factual evidence claim |
 
 The background mode is intentionally separated from grounded RAG: it improves
 conversation breadth without making unverified material look document-backed.
@@ -98,8 +98,9 @@ make benchmark-retrieval-v1-5 # development comparison with hash-bound addendum
 .venv/bin/python scripts/run_hard_probe.py --mode offline
 .venv/bin/python scripts/run_hard_probe.py --mode qualified --max-cost-usd 0.25
 make canary                 # 30 repeated live calls
-make model-bakeoff          # identical-evidence Gemini comparison
+make model-bakeoff          # identical-evidence model comparison
 make live-smoke             # opt-in OpenRouter endpoint smoke tests
+.venv/bin/python scripts/run_product_question_probe.py --suite v3-regression --max-cost-usd 0.75
 ```
 
 The permanent hard probe is public regression data, not a sealed release
@@ -107,6 +108,19 @@ holdout. Offline mode uses controlled provider and live-data doubles. Qualified
 mode uses the production OpenRouter boundary and refuses to start without an
 explicit positive cost ceiling. Each report binds the commit, dataset, corpus,
 retrieval strategy, provider stages, attempts, tokens, cost, and latency.
+
+The product-question probe at
+`data/evaluation/product_question_probe.v1.json` is also exploratory development
+data, not a sealed qualification set. V3 structural regressions are maintained as
+a separate case family in
+`build_product_question_regression_cases()`; they check typed capabilities such as
+map focus, live-result kinds, static claims/evidence, and required input. These
+checks do not establish semantic entailment or replace human review.
+The `--suite combined` option replays the frozen V1 catalog and V3 structural
+regressions together without modifying the frozen catalog artifact. Location-based
+V3 cases explicitly allow an empty official result set: a no-match response must
+retain map focus and uncertainty, while deterministic intent tests verify the
+requested layer. If records are returned, their required kinds are still checked.
 
 CLI equivalents:
 

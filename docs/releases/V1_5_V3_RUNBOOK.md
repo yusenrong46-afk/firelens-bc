@@ -11,11 +11,69 @@ semantic, accessibility, safety, retrieval, or UX review.
 3. Confirm the generated OpenAPI schema matches the frontend types.
 4. Confirm `OPENROUTER_API_KEY` is present without printing it.
 5. Set `FIRELENS_RELEASE_VERSION=1.5.3-rc.1` and the exact build commit.
-6. Set `FIRELENS_REQUIRE_ZDR=true` for production and keep content tracing off.
+6. Set `FIRELENS_REQUIRE_ZDR=true` for preview and production. Keep content tracing off.
+   Bind the same embedding, rerank, and generation model IDs in the environment that
+   the v2 runtime candidate document records. Local `make run` may use
+   `require_zdr=false` and is not a production-qualified artifact.
 7. Run the authenticated ZDR preflight for the configured embedding, rerank,
    and generation models. Do not deploy if any model is absent.
 8. Verify the configured reranker passed the frozen retrieval regressions; a
    ZDR listing alone is not a quality qualification.
+
+## Local, preview, and production evidence
+
+| Surface | What it proves | What it does not prove |
+| --- | --- | --- |
+| Local `make check` / `make verify` | Engineering regressions on this worktree | Deployed identity, ZDR roster, or human review |
+| Preview deployment | One HTTPS origin built from the bound candidate | Production traffic, firewall proof, or UX qualification |
+| Production | Fail-closed ZDR and the exact candidate artifact | Semantic, accessibility, safety, or UX approval |
+
+Zero-cost identity/ZDR/partial-layer gates (do not deploy; point at an
+authorized origin). Qualification requires HTTP 200 and `status: ready` from
+`GET /api/v1/health/ready`, plus a full match of candidate ID, candidate SHA-256,
+commit, release, corpus, embedding, rerank, generation, and retrieval-text
+strategy as observed on that endpoint. A 503/`not_ready` origin is not qualified.
+
+`--include-ask-probes` posts one safety Ask and expects
+`reason_code=personalized_safety_decision`. That probe is paid on a live
+provider. Do not add it without an explicit cost authorization.
+
+```bash
+.venv/bin/python scripts/qualify_deployment_gates.py \
+  --base-url https://PREVIEW_URL \
+  --candidate config/runtime_candidate.v1.json \
+  --expect-production
+```
+
+Localhost rehearsal only:
+
+```bash
+.venv/bin/python scripts/qualify_deployment_gates.py \
+  --base-url http://127.0.0.1:8000 \
+  --candidate config/runtime_candidate.v1.json \
+  --allow-http
+```
+
+`--include-ask-probes` posts one safety Ask (`personalized_safety_decision`)
+and is paid on a live provider. Do not add it without an explicit cost
+authorization.
+
+Paid retrieval comparison remains blocked until authorized. Smallest existing
+retrieval-only ceilings:
+
+- Development comparison, max `$1.25`:
+  `FIRELENS_RERANK_MODEL=<zdr-candidate> make benchmark-retrieval-v1-5`
+- Frozen holdout after owner review, max `$0.75`, three repetitions:
+  `FIRELENS_RERANK_MODEL=<zdr-candidate> make qualify-retrieval-v1-5`
+
+Promotion requires the frozen Recall@5 threshold on the sealed holdout. Do not
+edit labels or thresholds. Do not promote from a ZDR roster listing.
+
+Rollback proof must retain candidate and restored artifact SHA-256 values plus
+environment snapshots that include models and `require_zdr`.
+
+Human review launch commands are in
+`docs/audit/V1_5_V3_HUMAN_REVIEW_HANDOFF.md`. Grok cannot act as a reviewer.
 
 ## Product checks
 

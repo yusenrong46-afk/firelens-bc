@@ -29,6 +29,17 @@ official-live-data validators remain authoritative.
 9. Production requires OpenRouter ZDR and provider fallback remains disabled.
 10. Existing public clients remain compatible; all new request fields are optional.
 
+## Development regression boundary
+
+The frozen `product_question_probe.v1.json` remains unchanged and is not a sealed
+qualification artifact. V3 development regressions are kept in a separate case
+family for `my place`, named evacuation, perimeter, telegraphic live asks, and
+correction/source-context follow-ups. Their evaluator checks typed response
+capabilities—such as coarse `resolved_location`, `required_input`, live-result
+`kind`, claims/evidence, and related links where applicable—and requires both
+halves of a mixed response. Structural checks are engineering evidence only;
+they cannot prove semantic entailment, answer completeness, or human usability.
+
 ## Initial V3 tool surface
 
 - `list_active_fires`
@@ -48,10 +59,14 @@ if any stage is ineligible.
 
 On 2026-08-13, the public roster included the default embedding model and
 `openai/gpt-5.6-luna`, but not the currently benchmarked
-`cohere/rerank-4-pro`. This observation is not a permanent model policy. A
-production candidate must either qualify a ZDR-eligible reranker through the
-retrieval regression suite or wait until the benchmarked reranker is eligible;
-the release process must not bypass the preflight.
+`cohere/rerank-4-pro`. That observation is stale until re-verified against
+`GET /api/v1/endpoints/zdr` with the release account. A ZDR listing alone does
+not promote a reranker. Production remains fail-closed when any bound stage is
+ineligible. The staged candidate schema is `firelens.runtime_candidate.v2` and
+binds rerank model, generation model, and `require_zdr` in addition to commit,
+release, corpus, embedding, and retrieval-text strategy. Local processes may
+run with a mismatched candidate and must not be treated as production-qualified
+artifacts.
 
 ## Release evidence boundary
 
