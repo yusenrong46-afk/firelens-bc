@@ -636,14 +636,245 @@ privacy certification.
 Fail-closed missing embedding/generation eligibility remains proven by
 `tests/test_stage_privacy_policy.py`, not by mutating the live roster.
 
-### Remaining unknowns / authorization required
+### Remaining unknowns / authorization required (as of local rehearsal)
 
-- OpenRouter Observability **Input & Output Logging** and Privacy **data-discount
-  logging** cannot be read with the configured inference key. Owner must confirm
-  both are disabled in the OpenRouter UI before any deploy.
-- Push of `codex/v1-5-v3` and creation of an immutable Vercel preview require
-  owner authorization.
-- After preview: zero-cost deployment gates first; paid Ask smoke only after
-  explicit cost approval.
-- Human review, production promotion, and production monitoring remain EXTERNAL.
-- No model or retrieval-threshold change occurred.
+Superseded in part by the preview continuation below. OpenRouter prompt logging
+remains unverified. Human review, production promotion, firewall publication,
+and production monitoring remain EXTERNAL. No model or retrieval-threshold
+change occurred.
+
+## Continuation: immutable Vercel preview of `6ec70ee` (2026-08-15)
+
+This is deployed preview evidence. It is not production, firewall proof, named
+human review, or a privacy certification. Questions, answers, quotes, and
+precise locations are not recorded here. Paid reports remain gitignored under
+`output/qualification/`.
+
+| Field | Observed |
+| --- | --- |
+| Branch | `codex/v1-5-v3` |
+| Commit previewed | `6ec70ee7babc9d8040185efd0fbfb30f2ffd2aa4` |
+| Release | `1.5.3-rc.1` |
+| Candidate ID | `firelens-v1-5-2:6ec70ee7babc9d8040185efd0fbfb30f2ffd2aa4` |
+| Candidate SHA-256 | `71809114c1b282a35b39382aaa113161e81506036bc5a273a5a7ce83a6721e63` |
+| Git push | **Failed.** GitHub OAuth token lacks `workflow` scope (`refusing to allow an OAuth App to create or update workflow .github/workflows/candidate.yml`). Branch is not on `origin`. Owner action: `gh auth refresh -h github.com -s workflow`, then push. |
+| Preview URL | `https://firelens-32dduh7kd-yusenrong46-9212s-projects.vercel.app` |
+| Deployment ID | `dpl_36Xw8tJA8f9iQSNrnYzLAE5X3UKU` |
+| Inspect | `https://vercel.com/yusenrong46-9212s-projects/firelens-bc/36Xw8tJA8f9iQSNrnYzLAE5X3UKU` |
+| Environment target | preview (not `--prod`) |
+| Preview service env | `FIRELENS_ENVIRONMENT=production` so startup runs the fail-closed ZDR preflight; `VERCEL_ENV` remains preview. This does not promote the production domain. |
+| Ready HTTP (via `npx vercel@58.1.0 curl`) | 200, `status=ready`, `problems=[]` |
+| `zdr_policy_state` | `required_stages_eligible` |
+| embedding / generation / reranking | `required` / `required` / `optional`; states `eligible` / `eligible` / `zdr_optional` |
+| Models | `openai/text-embedding-3-small`, `cohere/rerank-4-pro`, `openai/gpt-5.6-luna` |
+| Anonymous homepage | HTTP **302** to Vercel SSO (`deploymentType=all_except_custom_domains`). True anonymous access is not available. `homepage_anonymous` in the gate reports is true only because `vercel curl` bypasses protection. |
+| OpenRouter prompt logging | Still **unverified** (inference key cannot read workspaces). |
+
+### Zero-cost gates
+
+Executed: `qualify_deployment_gates(..., expect_production=True, include_ask_probes=False)` against the preview through `vercel curl`. Report: gitignored `output/qualification/v1_5_v3_preview_deployment_gates.json`.
+
+Result: **`qualified=true`**. Ready identity, candidate SHA-256, stage ZDR, and partial live layers matched. No Ask probes.
+
+### Paid Ask package
+
+Package A: existing `scripts/qualify_preview.py` / `qualify_preview()` with
+`--expected-version 1.5.3-rc.1`, commit `6ec70ee…`, `--p95-target-ms 4000`.
+Report: gitignored `output/qualification/v1_5_preview.json`.
+
+| Check | Result |
+| --- | --- |
+| `qualified` | `false` |
+| Ask p95 | 2241.6 ms (under 4000; four Asks) |
+| Ask latencies (ms) | 2241.6, 2076.1, 1539.0, 1983.9 |
+| Live-map GET | 1533.5 ms, HTTP 200 |
+| `live_metadata_complete` | true (100 live results) |
+| `chat_map_records_match` | true |
+| `static_grounded` | false |
+| `unsupported_fails_closed` | false |
+| `mixed_separates_sources` | false |
+
+A follow-up static Ask used `vercel curl -- --data-binary @file` so the POST
+body was a file, not argv bytes. HTTP 200, `response_mode=scope_redirect`,
+`reason_code=generation_unavailable`, `error_kind=model_unavailable`,
+`claim_count=0`, `evidence_count=0`, one `www2.gov.bc.ca` related link.
+Request-body SHA-256 in the Package A report matches httpx JSON for the
+canonical kit question. Retrieval therefore ran; grounded generation did not.
+The product fail-closed to an official-source handoff. That is not an unsafe
+empty-safety claim. It is also not a grounded preview sample.
+
+`unsupported_fails_closed` expects `status=abstention`. The preview returned
+`scope_redirect` with no claims and no live results. `tests/test_provider_api.py`
+expects `scope_redirect` for that live air-quality case. Classification:
+**qualifier/V3 protocol mismatch**, not a preview-only product regression. The
+qualifier threshold was not edited to force a pass.
+
+Mixed mode was `mixed` with 100 live results and 0 grounded claims, which
+matches composition of live records plus a static source handoff.
+
+Sampled Vercel logs for this deployment showed OpenRouter `embeddings` and
+`rerank` HTTP 200. `chat/completions` lines were not present in the retrieved
+log window, so the 404-vs-other mapping behind `model_unavailable` is **not
+proven** from the platform log drain.
+
+Package B: `qualify_deployment_gates(..., include_ask_probes=True)`. Report:
+gitignored `output/qualification/v1_5_v3_preview_safety_probe.json`.
+**`qualified=true`**. Observed `ask_status=abstention`,
+`ask_reason_code=personalized_safety_decision`.
+
+Package C (extra manual Asks) was **not executed**. The plan runs it only if
+A/B pass; A did not.
+
+`make canary`, paid semantic holdout, and retrieval bakeoff were not run.
+
+### Manual UI hypotheses (observe, do not restyle)
+
+Anonymous browser navigation of the preview URL reached the Vercel login page
+(HTTP 302 SSO). Visual wrap, VoiceOver, and phone inspection of the running
+preview UI are **unverified**. Preview CSS/JS were fetched with `vercel curl`.
+
+| Hypothesis | Classification | Evidence |
+| --- | --- | --- |
+| Mobile nav / “Official BCWS map” wrap | Deferred polish | Preview CSS still sets `.official-link { max-width: 140px }` in the narrow breakpoint. String is in the preview JS. Not visually confirmed. |
+| Truncated composer placeholder | Deferred polish | Preview JS contains `Ask about a mapped fire or anything else…`. Overflow not visually confirmed. |
+| Sparse no-basemap map copy | Deferred by design / not missing | Lazy chunk `/assets/LiveMap-BJvJzZYD.js` contains the Privacy-first / no third-party basemap / official BCWS sentence. Visual density vs BCWS is unverified. |
+| Mobile result sheet covering the map | Deferred polish | Preview CSS positions `.conversation-panel` as a `56vh` overlay (`min-height: 340px`). Not visually confirmed. |
+| First-use source labels / limitations | Unverified | SSO blocked the UI. Grounded Ask samples were unavailable (`generation_unavailable`). |
+
+Laboratory axe/zero-overflow remains out of this program.
+
+### Code-change gate
+
+No product code was changed. Reproduced preview facts were: Vercel SSO on
+anonymous GET, fail-closed kit handoff when generation is unavailable, and a
+stale preview-qualifier abstention check versus V3 `scope_redirect`. None of
+those is a safe in-tree patch on `6ec70ee` without an owner decision (disable
+preview SSO; restore Luna chat under ZDR; or change the frozen qualifier).
+Basemap tiles, LCP work, and reranker swaps remain out of scope.
+
+### Owner decision still required (as of `6ec70ee` preview)
+
+Superseded in part by the `2b6e8ad` continuation below. At that time, OpenRouter
+prompt logging was still unverified, generation was fail-closed, and anonymous
+GET was Vercel SSO.
+
+- Production `--prod`, firewall publish, VoiceOver, 12-participant UX, and V3
+  sealed retrieval remain EXTERNAL.
+
+## Continuation: preview of `2b6e8ad` (2026-08-15)
+
+Engineering follow-up after owner-confirmed OpenRouter Input & Output Logging
+and data-discount logging. Account privacy settings were not changed. Models
+were not changed. No `--prod`, firewall publish, or human-review workspace.
+
+### Local diagnosis (content-free)
+
+Local OpenRouter probes under `APPROVED_PRODUCTION_PRIVACY` recorded only HTTP
+status / error kind. `GET /endpoints/zdr` listed Luna. Embeddings and rerank
+accepted `zdr` + `data_collection=deny` + `require_parameters`. Luna
+`chat/completions` with `zdr=true` **and** `require_parameters=true` returned
+HTTP **404** (“no endpoints matching your data policy”). The same 404 occurred
+with `json_schema.strict` true and false. Chat returned HTTP 200 with
+`zdr` + `data_collection=deny` when `require_parameters` was omitted.
+
+### Code fixes (commit `2b6e8ad`)
+
+- Luna chat stages omit `provider.require_parameters` only. Candidate policy
+  still records `require_parameters=true`. Embeddings still send it. Planning
+  and generation keep `zdr=true`, `data_collection=deny`, `allow_fallbacks=false`.
+  Local draft / Pydantic validation is unchanged.
+- Tokens ending in `fire`/`fires` in `is there` / `are there` / near-place
+  patterns route `LIVE` (covers `moutainfire` / `mountainfire`). Place
+  extraction after those tokens is unchanged. `surefire` kit wording stays
+  `RELATED`. Personalized safety questions stay `PROHIBITED`.
+
+Focused tests executed: `tests/test_v1_5_v3_intent.py`,
+`tests/test_stage_privacy_policy.py`, `tests/test_provider_api.py`, plus the
+already-passing V1.5 RAG / V1.1 invariant files in that run (**120 passed**).
+Ruff clean on the touched files. `make verify` was **not run** for this
+follow-up.
+
+### Anonymous homepage
+
+`npx vercel@58.1.0 project protection disable firelens-bc --sso` set
+`ssoProtection` to null. The CLI has no preview-only / production-still-SSO
+enum. Production custom domains were already public under the previous
+`all_except_custom_domains` setting. Git fork protection was left on.
+Logged-out `GET /` on the new preview is HTTP **200** `text/html` (633-byte
+index with `#root`), not a 302 to Vercel SSO.
+
+### Preview identity
+
+| Field | Observed |
+| --- | --- |
+| Branch | `codex/v1-5-v3` |
+| Commit previewed | `2b6e8adc9e1791bf4789093b5cd8405f5bf919e4` |
+| Release | `1.5.3-rc.1` |
+| Candidate ID | `firelens-v1-5-2:2b6e8adc9e1791bf4789093b5cd8405f5bf919e4` |
+| Candidate SHA-256 | `ccee809329100bd128ce6ff4e51a52479a27145059d5726248912d1e49ade9a8` |
+| Preview URL | `https://firelens-cs4k29hnj-yusenrong46-9212s-projects.vercel.app` |
+| Deployment ID | `dpl_Ca63kzdDr9oaXbhftuFqPkDfRFxV` |
+| Inspect | `https://vercel.com/yusenrong46-9212s-projects/firelens-bc/Ca63kzdDr9oaXbhftuFqPkDfRFxV` |
+| Environment target | preview (not `--prod`) |
+| Ready HTTP | 200, `status=ready`, `problems=[]` |
+| `zdr_policy_state` | `required_stages_eligible` |
+| embedding / generation / reranking | `required` / `required` / `optional`; states `eligible` / `eligible` / `zdr_optional` |
+| Models | `openai/text-embedding-3-small`, `cohere/rerank-4-pro`, `openai/gpt-5.6-luna` |
+| Anonymous homepage | HTTP **200** `text/html` without Vercel Authentication |
+| Owner privacy check | Done (Input & Output Logging and data-discount logging). Not a certification. |
+
+### Zero-cost gates
+
+Executed: `scripts/qualify_deployment_gates.py --expect-production` (no Ask)
+against the preview origin directly. Report: gitignored
+`output/qualification/v1_5_v3_preview_deployment_gates.json`.
+
+Result: **`qualified=true`**. Ready identity, candidate SHA-256, stage ZDR,
+partial live layers, and `homepage_anonymous` matched. `vercel curl` was not
+required.
+
+### Paid Ask package
+
+Package A: `scripts/qualify_preview.py` with `--expected-version 1.5.3-rc.1`,
+commit `2b6e8ad…`, `--p95-target-ms 4000`. Report: gitignored
+`output/qualification/v1_5_preview.json`.
+
+| Check | Result |
+| --- | --- |
+| `qualified` | `false` |
+| Ask p95 | 11699.5 ms (over 4000; four Asks) |
+| Ask latencies (ms) | 9415.7, 489.8, 153.5, 11699.5 |
+| Live-map GET | 152.0 ms, HTTP 200 |
+| `homepage_anonymous` | true |
+| `release_identity` | true |
+| `static_grounded` | true (`partial`, exact support, 2 claims / 2 evidence) |
+| `unsupported_fails_closed` | false |
+| `live_metadata_complete` | true (100 live results) |
+| `mixed_separates_sources` | true (exact support, 100 live results) |
+| `chat_map_records_match` | true |
+| `static_p95_within_target` | false |
+
+Kit Ask is no longer `generation_unavailable`. The previous 6ec70ee p95 under
+4000 ms was fail-closed generation, not a faster successful Luna path.
+
+`unsupported_fails_closed` still expects `status=abstention`. The preview
+returned `scope_redirect` with no claims and no live results. That remains a
+qualifier/V3 protocol mismatch. The qualifier threshold was not edited.
+
+Package B: `qualify_deployment_gates(..., include_ask_probes=True)`. Report:
+gitignored `output/qualification/v1_5_v3_preview_safety_probe.json`.
+**`qualified=true`**. Observed `ask_status=abstention`,
+`ask_reason_code=personalized_safety_decision`.
+
+Package C was **not executed**. `make canary`, paid semantic holdout, and
+retrieval bakeoff were not run.
+
+### Remaining EXTERNAL
+
+- Git push of `codex/v1-5-v3` (retry recorded below; may still lack `workflow` scope)
+- Named human review
+- Production `--prod`
+- Vercel Firewall publish
+- VoiceOver / 12-participant UX
+- V3 sealed retrieval
+

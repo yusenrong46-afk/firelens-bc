@@ -11,6 +11,16 @@ blocked because Cohere Rerank 4 Pro lacks ZDR. Embedding and generation still
 require ZDR. Cohere remains the retained retrieval-qualified reranker; Qwen
 remains unqualified and must not replace it.
 
+A non-production Vercel preview of commit `2b6e8adc9e1791bf4789093b5cd8405f5bf919e4`
+exists (`dpl_Ca63kzdDr9oaXbhftuFqPkDfRFxV`). Zero-cost identity/ZDR gates passed.
+Kit Ask is `partial` with exact support (no longer `generation_unavailable`).
+Logged-out `GET /` is HTTP 200 `text/html`. Package A still fails the frozen
+`unsupported_fails_closed` abstention check (`scope_redirect` is V3-correct)
+and the 4000 ms Ask p95 now that generation runs. Owner-confirmed OpenRouter
+Input & Output Logging and data-discount logging are done. Named-human review
+has not started. See `docs/audit/V1_5_V3_FINAL_ENGINEERING_LEDGER.md`.
+Grok cannot occupy a reviewer role.
+
 Automated checks, LLM analysis, Grok output, dry-run workspaces, and Playwright
 journeys are advisory. They cannot occupy any role in the table below.
 
