@@ -7,6 +7,7 @@ import re
 from firelens.answering.semantic_invariants import preservation_errors
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
+    MAX_GROUNDED_ANSWER_CHARS,
     BackgroundDraft,
     DraftProposalClaim,
     EvidencePacket,
@@ -14,6 +15,7 @@ from firelens.contracts import (
     EvidenceSpan,
     GroundedDraft,
     ValidationReport,
+    render_claim_texts,
 )
 from firelens.retrieval.bm25 import tokenize
 
@@ -60,6 +62,16 @@ _FORBIDDEN = (
     r"\b(?:take|use|stop)\s+(?:your|an? extra|[0-9]+\s*(?:mg|mcg|ml))\b.{0,40}\b(?:medicine|medication|dose|inhaler)\b",
     r"\bif i were you\b.{0,60}\bi would\s+(?:stay|leave|evacuate|return)\b",
     r"\b(?:staying|leaving|evacuating|returning)\s+would be\s+(?:the\s+)?(?:safest|best|right)\b",
+    r"\b(?:is|are)\s+(?:completely\s+|generally\s+)?safe\b",
+    r"\b(?:you|we|people|residents?|famil(?:y|ies)|(?:your|our)\s+family|"
+    r"households?|visitors?|(?:the\s+)?community)\s+"
+    r"(?:can|could|may|should|must|need to|ought to)\s+(?:safely\s+)?"
+    r"(?:stay|leave|evacuate|return|go back)\b",
+    r"\bit\s+is\s+(?:okay|safe)\s+to\s+(?:stay|leave|evacuate|return|go back)\b",
+    r"\b(?:drive|take|use|follow)\s+(?:the\s+)?(?:highway|road|route)\s*"
+    r"[a-z0-9-]*\b.{0,40}\b(?:evacuate|escape|leave)\b",
+    r"\b(?:highway|road|route)\s*[a-z0-9-]*\b.{0,30}\b(?:is|would be)\s+"
+    r"(?:the\s+)?(?:best|safest|recommended|preferred)\s+(?:route|way|option)?\b",
 )
 
 _LIVE_CLAIMS = (
@@ -73,11 +85,26 @@ _LIVE_CLAIMS = (
     r"\b(?:wildfire|fire|evacuation|alert|order|smoke|air quality|road|highway)\b.{0,80}\b(?:right now|currently|latest|today|tonight|at the moment)\b",
     r"\b(?:as of\s+)?(?:right now|currently|latest|today|tonight|at the moment)\b.{0,80}\b(?:wildfire|fire|evacuation|alert|order|smoke|air quality|road|highway)\b",
     r"\b(?:is|are)\s+under\s+(?:an?\s+)?evacuation\s+(?:alert|order)\b",
+    r"\b(?:weather|wind(?: speed| direction)?|smoke forecast|forecast|aqhi)\b.{0,80}"
+    r"\b(?:right now|currently|latest|today|tonight|at the moment)\b",
+    r"\b(?:right now|currently|latest|today|tonight|at the moment)\b.{0,80}"
+    r"\b(?:weather|wind(?: speed| direction)?|smoke forecast|forecast|aqhi)\b",
+    r"\bweather\s+(?:in|near|for)\s+.{1,50}\s+(?:is|will be)\b",
+    r"\bwind\s+(?:speed|direction)\s+(?:in|near|for)\s+.{1,50}\s+is\b",
+    r"\baqhi\s+(?:in|near|for)\s+.{1,50}\s+is\s+\d+\b",
+    r"\b(?:firefighting\s+)?(?:aircraft|airtankers?|air tankers?|helicopters?)\b"
+    r".{0,80}\b(?:right now|currently|today|located|flying|deployed|operating)\b",
+    r"\b(?:fire|wildfire)\b.{0,80}"
+    r"\b(?:will|is expected to|is forecast to|is predicted to)\b.{0,80}"
+    r"\b(?:reach|arrive|spread|be contained|be controlled|go out)\b",
 )
 
 _SAFE_NON_AUTHORIZATION = (
     r"\b(?:does not|doesn't)\s+(?:mean|tell you|indicate|say)\b.{0,50}\byou\s+(?:should|must|need to|ought to)\s+(?:stay|leave|evacuate|return)\b",
     r"\b(?:is|does)\s+not\s+(?:itself\s+)?(?:an?\s+)?evacuation instruction\b",
+    r"\b(?:does not|doesn't)\s+(?:mean|indicate|show|establish)\b.{0,80}"
+    r"\b(?:the\s+)?(?:area|community|place|people|residents?)\s+"
+    r"(?:is|are)\s+safe\b",
 )
 
 _SAFE_CONDITIONAL_STATUS = (
@@ -88,6 +115,9 @@ _SAFE_CONDITIONAL_STATUS = (
     r"\b(?:an?\s+)?evacuation order\s+(?:this\s+)?(?:means|requires|directs|tells (?:people|residents|you) to)\b.{0,80}\b(?:leave|evacuate) immediately\b",
     r"\bwhen\s+(?:an?\s+)?evacuation order is issued\b.{0,80}\b(?:leave|evacuate) immediately\b",
     r"\bevacuation order\s*(?:means|[=:—-])\s*(?:you\s+)?(?:must\s+)?(?:leave|evacuate)(?:\s+(?:now|immediately))?\b",
+    r"\b(?:if|when)\s+(?:an?\s+)?evacuation order\b.{0,100}"
+    r"\b(?:people|residents?|famil(?:y|ies)|households?|visitors?)\s+"
+    r"(?:should|must|need to)\s+(?:leave|evacuate)\b",
 )
 
 
@@ -161,8 +191,8 @@ def validate_draft(draft: GroundedDraft, packet: EvidencePacket) -> ValidationRe
     if is_guidance and not draft.claims:
         errors.append("guidance answer has no factual claims")
     if is_guidance:
-        rendered_answer = " ".join(claim.text.strip() for claim in draft.claims)
-        if len(rendered_answer) > 2_500:
+        rendered_answer = render_claim_texts(draft.claims)
+        if len(rendered_answer) > MAX_GROUNDED_ANSWER_CHARS:
             errors.append("rendered guidance answer is too long")
     for claim_number, claim in enumerate(draft.claims, start=1):
         claim_result = _validate_claim(claim, claim_number, candidates, evidence)

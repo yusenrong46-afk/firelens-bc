@@ -1,6 +1,8 @@
 import type { components } from "./api-schema";
 
 export type AskResponse = components["schemas"]["AskResponse"];
+export type AnswerSection = components["schemas"]["AnswerSection"];
+export type AnswerSectionKind = components["schemas"]["AnswerSectionKind"];
 export type ConversationTurn = components["schemas"]["ConversationTurn"];
 export type ResponseMode = components["schemas"]["ResponseMode"];
 export type ErrorEnvelope = components["schemas"]["ErrorEnvelope"];

@@ -79,6 +79,7 @@ from firelens.contracts import (
     RetrievalBundle,
     SearchResponse,
     SupportStatus,
+    render_claim_texts,
 )
 from firelens.errors import ProviderError
 from firelens.ingestion.chunking import ChunkRecord
@@ -557,7 +558,7 @@ class StaticRAGService:
             status=ResponseStatus.ANSWER,
             trace_id=trace_id,
             response_mode=ResponseMode.BACKGROUND,
-            answer=" ".join(claim.text for claim in claims),
+            answer=render_claim_texts(claims),
             claims=claims,
             limitations=generated.draft.limitations,
             validation=validation,

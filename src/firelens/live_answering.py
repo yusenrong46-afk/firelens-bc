@@ -6,66 +6,54 @@ import re
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from pydantic import HttpUrl
-
 from firelens.answering.intent import (
     live_layers_for_question,
     live_query_requires_location,
+    request_fragments,
     static_guidance_fragment,
     unsupported_live_topics,
 )
+from firelens.answering.live_composition import supported_static_when_live_missing
+from firelens.answering.live_distance import distance_answer, location_request
+from firelens.answering.live_handoffs import (
+    merge_related_links,
+    related_live_links,
+    unsupported_live_no_result_response,
+)
+from firelens.answering.live_request_intent import (
+    is_distance_request,
+    is_selected_live_request,
+    is_unsupported_selected_request,
+    render_live_record_answer,
+)
+from firelens.answering.live_response_support import (
+    freshness_limitation,
+    unique_limitations,
+)
 from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import (
+    BACKGROUND_LIMITATION,
+    PUBLIC_ANSWER_MAX_CHARS,
     AggregateFreshness,
+    AnswerSection,
+    AnswerSectionKind,
     AskResponse,
     CoarseResolvedLocation,
     LiveMapResponse,
     LiveResultKind,
     LocationInput,
     NearMeResponse,
+    QueryPlan,
     QueryRequest,
+    QueryRoute,
     ReasonCode,
     RelatedLink,
-    RequiredInput,
-    RequiredInputKind,
     ResponseMode,
     ResponseStatus,
     aggregate_live_freshness,
+    render_claim_texts,
 )
 from firelens.live import LiveDataService, LiveDataUnavailable
-from firelens.live_support import distance_to_geometry_km
-
-_DISTANCE_PATTERN = re.compile(
-    r"\b(?:how far|distance|kilomet(?:er|re)s?|miles?)\b", re.IGNORECASE
-)
-_SELECTED_LIVE_PATTERN = re.compile(
-    r"\b(?:this|that|selected)\s+(?:fire|wildfire|incident|perimeter)\b|"
-    r"\b(?:status|happening|updates?|updated|details?|official|size|large)\b",
-    re.IGNORECASE,
-)
-
-_RELATED_LIVE_LINKS = {
-    "air quality": RelatedLink(
-        title="Current B.C. AQHI",
-        url=HttpUrl("https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html"),
-        description="Environment and Climate Change Canada current AQHI observations and forecasts.",
-    ),
-    "road conditions": RelatedLink(
-        title="DriveBC road conditions",
-        url=HttpUrl("https://www.drivebc.ca/"),
-        description="Official B.C. road events, closures, delays, cameras, and conditions.",
-    ),
-    "weather or smoke forecast": RelatedLink(
-        title="Environment Canada weather",
-        url=HttpUrl("https://weather.gc.ca/"),
-        description="Official current conditions, wind, alerts, and forecasts by place.",
-    ),
-    "firefighting aircraft": RelatedLink(
-        title="BC Wildfire Service",
-        url=HttpUrl("https://wildfiresituation.nrs.gov.bc.ca/"),
-        description="Official wildfire situation, incidents, notices, and response information.",
-    ),
-}
 
 
 class LiveAnswerCoordinator:
@@ -76,59 +64,45 @@ class LiveAnswerCoordinator:
 
     @staticmethod
     def is_distance_request(request: QueryRequest) -> bool:
-        return bool(_DISTANCE_PATTERN.search(request.question)) and bool(
-            request.context.selected_live_result_id
-            or re.search(
-                r"\b(?:fire|wildfire|incident|perimeter|it|this|that)\b", request.question, re.I
-            )
-        )
+        return is_distance_request(request)
 
     @staticmethod
     def is_selected_live_request(request: QueryRequest) -> bool:
-        return bool(
-            request.context.selected_live_result_id
-            and _SELECTED_LIVE_PATTERN.search(request.question)
-        )
+        return is_selected_live_request(request)
+
+    @staticmethod
+    def is_unsupported_selected_request(request: QueryRequest) -> bool:
+        """Recognize selected-fire asks that available record fields cannot answer."""
+
+        return is_unsupported_selected_request(request)
 
     def handles(self, request: QueryRequest) -> bool:
         """Return whether this bounded coordinator owns the request."""
 
         from firelens.answering.intent import plan_query
-        from firelens.contracts import QueryRoute
 
         plan = plan_query(request)
+        layers = live_layers_for_question(request.question)
+        if plan.route == QueryRoute.PROHIBITED:
+            return bool(
+                plan.boundary_reason == ReasonCode.PERSONALIZED_SAFETY_DECISION
+                and unsupported_live_topics(request.question)
+                and not layers
+            )
         return (
             self.is_distance_request(request)
             or self.is_selected_live_request(request)
+            or self.is_unsupported_selected_request(request)
             or plan.route == QueryRoute.LIVE
-            or (
-                bool(unsupported_live_topics(request.question))
-                and plan.route == QueryRoute.PROHIBITED
-            )
         )
 
     @staticmethod
     def _freshness_limitation(state: AggregateFreshness) -> str | None:
-        if state == AggregateFreshness.STALE:
-            return "Cached official records; refresh failed. These records may be outdated."
-        if state == AggregateFreshness.MIXED:
-            return (
-                "Official records include stale cached data because a refresh failed; "
-                "some records may be outdated."
-            )
-        return None
+        return freshness_limitation(state)
 
     @staticmethod
     def _unique_limitations(*groups: list[str]) -> list[str]:
-        return list(dict.fromkeys(item for group in groups for item in group if item))
-
-    @staticmethod
-    def _related_links(topics: tuple[str, ...]) -> list[RelatedLink]:
-        return list(
-            dict.fromkeys(
-                _RELATED_LIVE_LINKS[topic] for topic in topics if topic in _RELATED_LIVE_LINKS
-            )
-        )
+        return unique_limitations(*groups)
 
     async def _nearby_records(
         self,
@@ -143,9 +117,84 @@ class LiveAnswerCoordinator:
             page_size=100,
         )
 
+    async def _prohibited_live_handoff(
+        self,
+        request: QueryRequest,
+        plan: QueryPlan,
+    ) -> AskResponse:
+        topics = unsupported_live_topics(request.question)
+        links = related_live_links(topics)
+        location = request.location or coarse_location_from_question(request.question)
+        resolved_location: CoarseResolvedLocation | None = None
+        if location is not None and links:
+            try:
+                latitude, longitude = await self.live_service.resolve_location(location)
+            except LiveDataUnavailable:
+                pass
+            else:
+                resolved_location = CoarseResolvedLocation(
+                    latitude=latitude,
+                    longitude=longitude,
+                )
+        boundary = (
+            plan.limitations[0]
+            if plan.limitations
+            else "FireLens cannot provide this personalized safety decision."
+        )
+        handoff = (
+            "Open the linked official service for current " + ", ".join(topics) + "."
+            if links
+            else "Use the responsible emergency authority for current direction."
+        )
+        sections = [
+            AnswerSection(
+                kind=AnswerSectionKind.UNCERTAINTY,
+                heading="Safety boundary",
+                text=boundary,
+            )
+        ]
+        if links:
+            sections.append(
+                AnswerSection(
+                    kind=AnswerSectionKind.OFFICIAL_HANDOFF,
+                    heading="Related official information",
+                    text=handoff,
+                )
+            )
+        return AskResponse(
+            status=ResponseStatus.ABSTENTION,
+            trace_id=uuid4().hex,
+            response_mode=ResponseMode.ABSTENTION,
+            answer=boundary + " " + handoff,
+            answer_sections=sections,
+            reason_code=(plan.boundary_reason or ReasonCode.PERSONALIZED_SAFETY_DECISION),
+            limitations=plan.limitations or [boundary],
+            related_links=links,
+            resolved_location=resolved_location,
+        )
+
     @staticmethod
     def static_request(request: QueryRequest) -> QueryRequest | None:
         fragment = static_guidance_fragment(request.question)
+        if fragment is None:
+            fragments = request_fragments(request.question)
+            live_fragments = [
+                item
+                for item in fragments
+                if live_layers_for_question(item)
+                or unsupported_live_topics(item)
+                or (
+                    coarse_location_from_question(item) is not None
+                    and re.search(
+                        r"\b(?:fire|wildfire|map|evacuation|alert|order|perimeter)\b",
+                        item,
+                        re.IGNORECASE,
+                    )
+                )
+            ]
+            non_live_fragments = [item for item in fragments if item not in live_fragments]
+            if live_fragments and non_live_fragments:
+                fragment = " and ".join(non_live_fragments)[:2_000]
         if fragment is None:
             return None
         return QueryRequest(
@@ -156,197 +205,29 @@ class LiveAnswerCoordinator:
 
     @staticmethod
     def _location_request(request: QueryRequest) -> AskResponse:
-        return AskResponse(
-            status=ResponseStatus.ANSWER,
-            trace_id=uuid4().hex,
-            response_mode=ResponseMode.REQUIRES_INPUT,
-            answer=(
-                "Share an approximate location or enter a BC community to continue. "
-                "FireLens uses it only for this request."
-            ),
-            required_input=RequiredInput(
-                kind=RequiredInputKind.LOCATION,
-                prompt="Use approximate location or enter a BC community.",
-                continuation_question=request.question,
-            ),
-            selected_live_result_id=request.context.selected_live_result_id,
-            reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-            limitations=[
-                "Distance is a straight-line geodesic measurement, not driving distance or a safety assessment."
-            ],
-        )
+        return location_request(request)
 
     async def _distance_answer(self, request: QueryRequest) -> AskResponse:
-        effective_location = request.location or coarse_location_from_question(request.question)
-        if effective_location is None:
-            return self._location_request(request)
-        try:
-            latitude, longitude = await self.live_service.resolve_location(effective_location)
-            live = await self.live_service.map_results(
-                layers=(LiveResultKind.INCIDENT, LiveResultKind.PERIMETER)
-            )
-        except LiveDataUnavailable:
-            return AskResponse(
-                status=ResponseStatus.ABSTENTION,
-                trace_id=uuid4().hex,
-                response_mode=ResponseMode.ABSTENTION,
-                answer=(
-                    "The official wildfire layers or BC place lookup are unavailable, so "
-                    "FireLens cannot calculate a current distance right now."
-                ),
-                reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-                limitations=["Unavailable current data is not a safety determination."],
-            )
-
-        measured = []
-        for item in live.results:
-            distance = distance_to_geometry_km(
-                item.geometry, latitude=latitude, longitude=longitude
-            )
-            if distance is None:
-                continue
-            measured.append(
-                item.model_copy(
-                    update={
-                        "distance_km": round(distance, 1),
-                        "distance_basis": (
-                            "incident_point"
-                            if item.kind == LiveResultKind.INCIDENT
-                            else "perimeter_boundary"
-                        ),
-                    }
-                )
-            )
-
-        selected_id = request.context.selected_live_result_id
-        chosen = (
-            next((item for item in measured if item.result_id == selected_id), None)
-            if selected_id
-            else None
-        )
-        if selected_id and chosen is None:
-            return AskResponse(
-                status=ResponseStatus.ABSTENTION,
-                trace_id=uuid4().hex,
-                response_mode=ResponseMode.ABSTENTION,
-                answer=(
-                    "The selected map record is not an available incident point or fire "
-                    "perimeter, so FireLens cannot calculate a meaningful fire distance "
-                    "from it. Select a mapped fire or perimeter and try again."
-                ),
-                reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-                selected_live_result_id=selected_id,
-                limitations=[
-                    "FireLens did not substitute a different nearby fire.",
-                    "No matching record is not a safety determination.",
-                ],
-                unavailable_layers=live.unavailable_layers,
-            )
-        if chosen is None and measured:
-            chosen = min(measured, key=lambda item: item.distance_km or 0.0)
-        if chosen is None:
-            return AskResponse(
-                status=ResponseStatus.ABSTENTION,
-                trace_id=uuid4().hex,
-                response_mode=ResponseMode.ABSTENTION,
-                answer=(
-                    "No measurable incident point or fire perimeter was available in the "
-                    "official layers. Open the related official map source for the latest details."
-                ),
-                reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-                limitations=["No matching record is not a safety determination."],
-                unavailable_layers=live.unavailable_layers,
-            )
-
-        distance = chosen.distance_km
-        assert distance is not None
-        basis = (
-            "the incident point"
-            if chosen.distance_basis == "incident_point"
-            else "the nearest mapped perimeter boundary"
-        )
-        freshness = aggregate_live_freshness([chosen])
-        assert freshness is not None
-        freshness_limitation = self._freshness_limitation(freshness)
-        return AskResponse(
-            status=ResponseStatus.ANSWER,
-            trace_id=uuid4().hex,
-            response_mode=ResponseMode.LIVE,
-            answer=(
-                f"{chosen.name or chosen.incident_number or 'The selected wildfire'} is "
-                f"approximately {distance:.1f} km away in a straight-line geodesic "
-                f"measurement to {basis}."
-            ),
-            live_results=[chosen],
-            aggregate_freshness=freshness,
-            selected_live_result_id=chosen.result_id,
-            resolved_location=CoarseResolvedLocation(
-                latitude=latitude,
-                longitude=longitude,
-            ),
-            limitations=self._unique_limitations(
-                live.limitations,
-                [
-                    "This is not driving distance, travel advice, or a safety assessment.",
-                    *([freshness_limitation] if freshness_limitation else []),
-                ],
-            ),
-            unavailable_layers=live.unavailable_layers,
-        )
-
-    @staticmethod
-    def _supported_static_partial(
-        static_result: AskResponse | None,
-        current_information: str,
-        *,
-        limitations: list[str],
-        unavailable_layers: list[LiveResultKind] | None = None,
-        related_links: list[RelatedLink] | None = None,
-        resolved_location: CoarseResolvedLocation | None = None,
-    ) -> AskResponse | None:
-        if not (
-            static_result is not None
-            and static_result.status == ResponseStatus.ANSWER
-            and static_result.response_mode in {ResponseMode.GROUNDED, ResponseMode.PARTIAL}
-            and static_result.answer
-            and static_result.claims
-            and static_result.evidence
-            and static_result.validation is not None
-            and static_result.validation.accepted
-        ):
-            return None
-        return AskResponse(
-            status=ResponseStatus.ANSWER,
-            trace_id=static_result.trace_id,
-            response_mode=ResponseMode.PARTIAL,
-            answer=(
-                "Current official information: "
-                + current_information
-                + "\n\nPreparedness guidance: "
-                + static_result.answer
-                + "\n\nUncertainty: the current-information part was not established."
-            ),
-            claims=static_result.claims,
-            evidence=static_result.evidence,
-            limitations=[*limitations, *static_result.limitations],
-            reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-            validation=static_result.validation,
-            unavailable_layers=unavailable_layers or [],
-            related_links=related_links or [],
-            resolved_location=resolved_location,
-        )
+        return await distance_answer(self.live_service, request)
 
     async def answer(
         self, request: QueryRequest, static_result: AskResponse | None
     ) -> AskResponse:
+        from firelens.answering.intent import plan_query
+
+        plan = plan_query(request)
+        if plan.route == QueryRoute.PROHIBITED:
+            return await self._prohibited_live_handoff(request, plan)
         if self.is_distance_request(request):
             return await self._distance_answer(request)
 
         layers = live_layers_for_question(request.question)
         effective_location = request.location or coarse_location_from_question(request.question)
         selected_request = self.is_selected_live_request(request)
+        unsupported_selected_request = self.is_unsupported_selected_request(request)
+        selected_context_request = selected_request or unsupported_selected_request
         selected_id = request.context.selected_live_result_id
-        if not layers and selected_request and selected_id is not None:
+        if not layers and selected_context_request and selected_id is not None:
             selected_kind = selected_id.partition(":")[0]
             layers = {
                 "incident": (LiveResultKind.INCIDENT,),
@@ -354,10 +235,10 @@ class LiveAnswerCoordinator:
                 "evacuation": (LiveResultKind.EVACUATION,),
             }.get(selected_kind, ())
         unsupported_topics = unsupported_live_topics(request.question)
+        unsupported_links = related_live_links(unsupported_topics)
 
         if not layers:
             topics = ", ".join(unsupported_topics) or "that live information"
-            related_links = self._related_links(unsupported_topics)
             resolved_location: CoarseResolvedLocation | None = None
             if effective_location is not None:
                 try:
@@ -375,14 +256,14 @@ class LiveAnswerCoordinator:
                 f"FireLens is not connected to an official live source for {topics}. "
                 "Use the related official service for the current value."
             )
-            partial = self._supported_static_partial(
+            partial = supported_static_when_live_missing(
                 static_result,
                 current_gap,
                 limitations=[
                     "No matching record is not a safety determination.",
                     f"Unsupported live topics: {topics}",
                 ],
-                related_links=related_links,
+                related_links=unsupported_links,
                 resolved_location=resolved_location,
             )
             if partial is not None:
@@ -398,11 +279,15 @@ class LiveAnswerCoordinator:
                 ),
                 reason_code=ReasonCode.SCOPE_REDIRECT,
                 limitations=["No matching record is not a safety determination."],
-                related_links=related_links,
+                related_links=unsupported_links,
                 resolved_location=resolved_location,
             )
 
-        if effective_location is None and live_query_requires_location(request.question):
+        if (
+            effective_location is None
+            and live_query_requires_location(request.question)
+            and not unsupported_selected_request
+        ):
             return self._location_request(request)
 
         try:
@@ -427,7 +312,7 @@ class LiveAnswerCoordinator:
                 if len(live.unavailable_layers) < len(layers)
                 else "Official live wildfire sources are unavailable, so FireLens cannot establish current conditions."
             )
-            partial = self._supported_static_partial(
+            partial = supported_static_when_live_missing(
                 static_result,
                 answer,
                 limitations=[
@@ -440,10 +325,27 @@ class LiveAnswerCoordinator:
                     ),
                 ],
                 unavailable_layers=live.unavailable_layers,
+                related_links=unsupported_links,
                 resolved_location=resolved_location,
             )
             if partial is not None:
                 return partial
+            if unsupported_links:
+                limitations = self._unique_limitations(
+                    live.limitations,
+                    [
+                        "No matching record is not a safety determination.",
+                        "Unsupported live topics: " + ", ".join(unsupported_topics),
+                    ],
+                )
+                return unsupported_live_no_result_response(
+                    current_information=answer,
+                    topics=unsupported_topics,
+                    links=unsupported_links,
+                    limitations=limitations,
+                    unavailable_layers=live.unavailable_layers,
+                    resolved_location=resolved_location,
+                )
             if resolved_location is not None:
                 return AskResponse(
                     status=ResponseStatus.ANSWER,
@@ -475,7 +377,7 @@ class LiveAnswerCoordinator:
                 unavailable_layers=live.unavailable_layers,
             )
 
-        if selected_request and selected_id is not None:
+        if selected_context_request and selected_id is not None:
             shown = [item for item in live.results if item.result_id == selected_id]
             if not shown:
                 return AskResponse(
@@ -492,24 +394,142 @@ class LiveAnswerCoordinator:
                 )
         else:
             shown = live.results[:100]
-        summary = "; ".join(
-            f"{item.name or item.incident_number or item.result_id}: {item.status}"
-            for item in shown[:5]
-        )
+        if unsupported_selected_request:
+            selected = shown[0]
+            selected_kind = {
+                LiveResultKind.INCIDENT: "wildfire incident record",
+                LiveResultKind.PERIMETER: "wildfire perimeter record",
+                LiveResultKind.EVACUATION: "evacuation record",
+            }[selected.kind]
+            return AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id=uuid4().hex,
+                response_mode=ResponseMode.SCOPE_REDIRECT,
+                answer=(
+                    "The selected official record does not contain the fields needed to "
+                    "answer that causal or predictive question. Open the selected official "
+                    "record for the fields its publishing authority provides."
+                ),
+                reason_code=ReasonCode.SCOPE_REDIRECT,
+                limitations=[
+                    "FireLens did not infer a cause or prediction that the selected record does not state."
+                ],
+                related_links=[
+                    RelatedLink(
+                        title=f"Selected official {selected_kind}",
+                        url=selected.source_url,
+                        description=(
+                            f"Official {selected.authority} source for the selected "
+                            f"{selected_kind}."
+                        )[:240].rstrip(),
+                    )
+                ],
+                selected_live_result_id=selected.result_id,
+            )
         aggregate_freshness = aggregate_live_freshness(shown)
         assert aggregate_freshness is not None
-        if aggregate_freshness == AggregateFreshness.STALE:
-            live_label = "Cached official information (refresh failed): "
-        elif aggregate_freshness == AggregateFreshness.MIXED:
-            live_label = "Official information (includes stale cached records): "
-        else:
-            live_label = "Current official information: "
-        live_answer = live_label + summary
+        live_answer = render_live_record_answer(request, shown, aggregate_freshness)
         freshness_limitation = self._freshness_limitation(aggregate_freshness)
         live_limitations = self._unique_limitations(
             live.limitations,
             [freshness_limitation] if freshness_limitation else [],
         )
+        unsupported_handoff = (
+            "FireLens is not connected to an official live source for "
+            + ", ".join(unsupported_topics)
+            + ". Open the linked official service for the current value."
+            if unsupported_links
+            else ""
+        )
+        unsupported_suffix = (
+            "\n\nRelated official information: " + unsupported_handoff
+            if unsupported_handoff
+            else ""
+        )
+        unsupported_sections = (
+            [
+                AnswerSection(
+                    kind=AnswerSectionKind.OFFICIAL_HANDOFF,
+                    heading="Related official information",
+                    text=unsupported_handoff,
+                )
+            ]
+            if unsupported_handoff
+            else []
+        )
+        unsupported_limitations = (
+            ["Unsupported live topics: " + ", ".join(unsupported_topics)]
+            if unsupported_topics
+            else []
+        )
+        if (
+            static_result is not None
+            and static_result.status == ResponseStatus.ANSWER
+            and static_result.response_mode == ResponseMode.CONFLICT
+            and static_result.answer
+            and static_result.claims
+            and static_result.evidence
+            and static_result.validation is not None
+            and static_result.validation.accepted
+        ):
+            conflict_text = static_result.answer
+            composed_answer = (
+                live_answer
+                + "\n\nConflicting reviewed sources: "
+                + conflict_text
+                + unsupported_suffix
+            )
+            conflict_bound_limitations: list[str] = []
+            if len(composed_answer) > PUBLIC_ANSWER_MAX_CHARS:
+                conflict_text = (
+                    "Reviewed sources conflict, so FireLens cannot combine them into one "
+                    "apparently certain answer. Inspect both reviewed sources before acting."
+                )
+                composed_answer = (
+                    live_answer
+                    + "\n\nConflicting reviewed sources: "
+                    + conflict_text
+                    + unsupported_suffix
+                )
+                conflict_bound_limitations.append(
+                    "The conflict summary was shortened to stay within the bounded public "
+                    "response contract; the conflicting claims and evidence remain available."
+                )
+            return AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id=static_result.trace_id,
+                response_mode=ResponseMode.MIXED,
+                answer=composed_answer,
+                answer_sections=[
+                    AnswerSection(
+                        kind=AnswerSectionKind.CURRENT_RECORDS,
+                        heading="Current official records",
+                        text=live_answer,
+                    ),
+                    AnswerSection(
+                        kind=AnswerSectionKind.CONFLICTING_GUIDANCE,
+                        heading="Conflicting reviewed sources",
+                        text=conflict_text,
+                    ),
+                    *unsupported_sections,
+                ],
+                claims=static_result.claims,
+                evidence=static_result.evidence,
+                live_results=shown,
+                aggregate_freshness=aggregate_freshness,
+                limitations=self._unique_limitations(
+                    live_limitations,
+                    static_result.limitations,
+                    unsupported_limitations,
+                    conflict_bound_limitations,
+                ),
+                related_links=unsupported_links,
+                reason_code=ReasonCode.CONFLICTING_EVIDENCE,
+                validation=static_result.validation,
+                unavailable_layers=live.unavailable_layers,
+                selected_live_result_id=selected_id if selected_request else None,
+                resolved_location=resolved_location,
+            )
         if (
             static_result is not None
             and static_result.status == ResponseStatus.ANSWER
@@ -520,40 +540,176 @@ class LiveAnswerCoordinator:
             and static_result.validation is not None
             and static_result.validation.accepted
         ):
+            static_text = render_claim_texts(static_result.claims)
             return AskResponse(
                 status=ResponseStatus.ANSWER,
                 trace_id=static_result.trace_id,
                 response_mode=ResponseMode.MIXED,
-                answer=live_answer + "\n\nPreparedness guidance: " + static_result.answer,
+                answer=(
+                    live_answer
+                    + "\n\nPreparedness guidance: "
+                    + static_text
+                    + unsupported_suffix
+                ),
+                answer_sections=[
+                    AnswerSection(
+                        kind=AnswerSectionKind.CURRENT_RECORDS,
+                        heading="Current official records",
+                        text=live_answer,
+                    ),
+                    AnswerSection(
+                        kind=AnswerSectionKind.REVIEWED_GUIDANCE,
+                        heading="Reviewed preparedness guidance",
+                        text=static_text,
+                    ),
+                    *unsupported_sections,
+                ],
                 claims=static_result.claims,
                 evidence=static_result.evidence,
                 live_results=shown,
                 aggregate_freshness=aggregate_freshness,
                 limitations=self._unique_limitations(
-                    live_limitations, static_result.limitations
+                    live_limitations,
+                    static_result.limitations,
+                    unsupported_limitations,
                 ),
+                related_links=unsupported_links,
                 validation=static_result.validation,
                 unavailable_layers=live.unavailable_layers,
                 selected_live_result_id=selected_id if selected_request else None,
                 resolved_location=resolved_location,
             )
+        if (
+            static_result is not None
+            and static_result.status == ResponseStatus.ANSWER
+            and static_result.response_mode == ResponseMode.BACKGROUND
+            and static_result.answer
+            and static_result.claims
+            and static_result.validation is not None
+            and static_result.validation.accepted
+        ):
+            static_text = render_claim_texts(static_result.claims)
+            return AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id=static_result.trace_id,
+                response_mode=ResponseMode.MIXED,
+                answer=(
+                    live_answer + "\n\nGeneral background: " + static_text + unsupported_suffix
+                ),
+                answer_sections=[
+                    AnswerSection(
+                        kind=AnswerSectionKind.CURRENT_RECORDS,
+                        heading="Current official records",
+                        text=live_answer,
+                    ),
+                    AnswerSection(
+                        kind=AnswerSectionKind.GENERAL_BACKGROUND,
+                        heading="General background",
+                        text=static_text,
+                    ),
+                    *unsupported_sections,
+                ],
+                claims=static_result.claims,
+                live_results=shown,
+                aggregate_freshness=aggregate_freshness,
+                limitations=self._unique_limitations(
+                    live_limitations,
+                    [BACKGROUND_LIMITATION],
+                    static_result.limitations,
+                    unsupported_limitations,
+                ),
+                related_links=unsupported_links,
+                validation=static_result.validation,
+                unavailable_layers=live.unavailable_layers,
+                selected_live_result_id=selected_id if selected_request else None,
+                resolved_location=resolved_location,
+            )
+        if (
+            static_result is not None
+            and static_result.status == ResponseStatus.ANSWER
+            and static_result.response_mode == ResponseMode.SCOPE_REDIRECT
+            and static_result.answer
+            and static_result.related_links
+        ):
+            handoff = static_result.answer + (
+                "\n\n" + unsupported_handoff if unsupported_handoff else ""
+            )
+            handoff_links = merge_related_links(
+                live_handoff_links=unsupported_links,
+                static_handoff_links=static_result.related_links,
+            )
+            handoff_limitations: list[str] = []
+            composed_answer = live_answer + "\n\nRelated official information: " + handoff
+            if len(composed_answer) > PUBLIC_ANSWER_MAX_CHARS:
+                handoff = (
+                    "FireLens found related official sources for the non-live part of this "
+                    "question. Open the links below for the official information."
+                )
+                if unsupported_handoff:
+                    handoff += "\n\n" + unsupported_handoff
+                composed_answer = live_answer + "\n\nRelated official information: " + handoff
+                handoff_limitations.append(
+                    "The related-source handoff was shortened to stay within the bounded "
+                    "public response contract."
+                )
+            return AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id=static_result.trace_id,
+                response_mode=ResponseMode.MIXED,
+                answer=composed_answer,
+                answer_sections=[
+                    AnswerSection(
+                        kind=AnswerSectionKind.CURRENT_RECORDS,
+                        heading="Current official records",
+                        text=live_answer,
+                    ),
+                    AnswerSection(
+                        kind=AnswerSectionKind.OFFICIAL_HANDOFF,
+                        heading="Related official information",
+                        text=handoff,
+                    ),
+                ],
+                related_links=handoff_links,
+                live_results=shown,
+                aggregate_freshness=aggregate_freshness,
+                limitations=self._unique_limitations(
+                    live_limitations,
+                    static_result.limitations,
+                    unsupported_limitations,
+                    handoff_limitations,
+                ),
+                unavailable_layers=live.unavailable_layers,
+                selected_live_result_id=selected_id if selected_request else None,
+                resolved_location=resolved_location,
+            )
+        unresolved_static = []
+        if static_result is not None:
+            unresolved_static = [
+                "The non-live part of this question could not be established; it was not silently omitted."
+            ]
         return AskResponse(
             status=ResponseStatus.ANSWER,
             trace_id=uuid4().hex,
-            response_mode=ResponseMode.LIVE,
-            answer=live_answer,
+            response_mode=(ResponseMode.MIXED if unsupported_links else ResponseMode.LIVE),
+            answer=live_answer + unsupported_suffix,
+            answer_sections=[
+                AnswerSection(
+                    kind=AnswerSectionKind.CURRENT_RECORDS,
+                    heading="Current official records",
+                    text=live_answer,
+                ),
+                *unsupported_sections,
+            ],
             live_results=shown,
             aggregate_freshness=aggregate_freshness,
             limitations=self._unique_limitations(
                 live_limitations,
                 [
-                    *(
-                        ["Unsupported live topics: " + ", ".join(unsupported_topics)]
-                        if unsupported_topics
-                        else []
-                    ),
+                    *unresolved_static,
+                    *unsupported_limitations,
                 ],
             ),
+            related_links=unsupported_links,
             unavailable_layers=live.unavailable_layers,
             selected_live_result_id=selected_id if selected_request else None,
             resolved_location=resolved_location,

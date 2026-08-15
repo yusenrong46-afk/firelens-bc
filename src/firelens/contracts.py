@@ -1,17 +1,17 @@
-"""Strict data contracts passed between FireLens RAG stages.
+"""Strict evidence-visible contracts passed between FireLens RAG stages.
 
-The public models deliberately make evidence provenance visible.  Internal model
-drafts are separate types so a background answer cannot accidentally acquire a
-corpus citation and a grounded answer cannot omit one.
+Internal model drafts stay separate from public grounded and background types.
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from enum import StrEnum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Protocol
 
 from pydantic import Field, HttpUrl, field_validator, model_validator
 
+from firelens import api_contracts as _api_contracts
 from firelens.contract_base import FrozenStrictModel, StrictModel
 from firelens.live_contracts import (
     AggregateFreshness as AggregateFreshness,
@@ -56,7 +56,42 @@ from firelens.live_contracts import (
     aggregate_live_freshness as aggregate_live_freshness,
 )
 
-ASSISTANT_HISTORY_LIMIT = 6_000
+DocumentContextDraft = _api_contracts.DocumentContextDraft
+DocumentContextItem = _api_contracts.DocumentContextItem
+DocumentContextResponse = _api_contracts.DocumentContextResponse
+EmbeddingResponse = _api_contracts.EmbeddingResponse
+ErrorEnvelope = _api_contracts.ErrorEnvelope
+FeedbackCategory = _api_contracts.FeedbackCategory
+FeedbackRequest = _api_contracts.FeedbackRequest
+FeedbackResponse = _api_contracts.FeedbackResponse
+HealthResponse = _api_contracts.HealthResponse
+LivenessResponse = _api_contracts.LivenessResponse
+MAX_RELATED_LINKS = _api_contracts.MAX_RELATED_LINKS
+RELATED_LINK_DESCRIPTION_MAX_CHARS = _api_contracts.RELATED_LINK_DESCRIPTION_MAX_CHARS
+RELATED_LINK_TITLE_MAX_CHARS = _api_contracts.RELATED_LINK_TITLE_MAX_CHARS
+RelatedLink = _api_contracts.RelatedLink
+RerankResponse = _api_contracts.RerankResponse
+RerankResult = _api_contracts.RerankResult
+ValidationReport = _api_contracts.ValidationReport
+response_history_prefix = _api_contracts.response_history_prefix
+
+PUBLIC_ANSWER_MAX_CHARS = 6_000
+ASSISTANT_HISTORY_LIMIT = PUBLIC_ANSWER_MAX_CHARS
+MAX_GROUNDED_ANSWER_CHARS = 2_500
+MAX_PUBLIC_CLAIMS = 12
+MAX_BACKGROUND_CLAIMS = 3
+
+
+class ClaimText(Protocol):
+    """Structural type shared by draft and public claim renderers."""
+
+    text: str
+
+
+def render_claim_texts(claims: Iterable[ClaimText]) -> str:
+    """Render claim text once so validation, publication, and composition agree."""
+
+    return " ".join(claim.text.strip() for claim in claims)
 
 
 def bounded_assistant_history(text: str) -> str:
@@ -68,6 +103,44 @@ def bounded_assistant_history(text: str) -> str:
     if len(normalized) <= ASSISTANT_HISTORY_LIMIT:
         return normalized
     return normalized[: ASSISTANT_HISTORY_LIMIT - 3].rstrip() + "..."
+
+
+def render_assistant_history(
+    *, authority_prefix: str, answer: str, limitations: Iterable[str]
+) -> str:
+    """Keep authority and limitations visible while bounding a later-turn transcript."""
+
+    normalized_prefix = " ".join(authority_prefix.split())
+    normalized_answer = " ".join(answer.split())
+    if not normalized_prefix or not normalized_answer:
+        raise ValueError("assistant history requires authority and answer text")
+    unique_limitations = list(
+        dict.fromkeys(
+            normalized
+            for limitation in limitations
+            if (normalized := " ".join(limitation.split()))
+        )
+    )
+    answer_prefix = normalized_prefix + " Answer: "
+    if not unique_limitations:
+        return bounded_assistant_history(answer_prefix + normalized_answer)
+
+    limitation_prefix = " Limitations: "
+    limitation_text = " | ".join(unique_limitations)
+    maximum_limitation_chars = (
+        ASSISTANT_HISTORY_LIMIT - len(answer_prefix) - len(limitation_prefix) - len("...")
+    )
+    if len(limitation_text) > maximum_limitation_chars:
+        limitation_text = limitation_text[: maximum_limitation_chars - 3].rstrip() + "..."
+    answer_budget = (
+        ASSISTANT_HISTORY_LIMIT
+        - len(answer_prefix)
+        - len(limitation_prefix)
+        - len(limitation_text)
+    )
+    if len(normalized_answer) > answer_budget:
+        normalized_answer = normalized_answer[: answer_budget - 3].rstrip() + "..."
+    return answer_prefix + normalized_answer + limitation_prefix + limitation_text
 
 
 class QueryRoute(StrEnum):
@@ -107,6 +180,17 @@ class ResponseMode(StrEnum):
     MIXED = "mixed"
     CONFLICT = "conflict"
     REQUIRES_INPUT = "requires_input"
+
+
+class AnswerSectionKind(StrEnum):
+    """Authority-labelled parts composed by the application agent."""
+
+    CURRENT_RECORDS = "current_records"
+    REVIEWED_GUIDANCE = "reviewed_guidance"
+    CONFLICTING_GUIDANCE = "conflicting_guidance"
+    GENERAL_BACKGROUND = "general_background"
+    OFFICIAL_HANDOFF = "official_handoff"
+    UNCERTAINTY = "uncertainty"
 
 
 class AuthorityClass(StrEnum):
@@ -439,16 +523,6 @@ class AbstentionDraft(StrictModel):
     claims: list[None] = Field(default_factory=list, max_length=0)
 
 
-class ValidationReport(FrozenStrictModel):
-    accepted: bool
-    schema_valid: bool = True
-    citation_ids_valid: bool
-    quotes_exact: bool
-    claim_support_valid: bool = True
-    policy_valid: bool
-    errors: list[str] = Field(default_factory=list)
-
-
 class PublicEvidence(FrozenStrictModel):
     evidence_id: str
     title: str
@@ -461,12 +535,12 @@ class PublicEvidence(FrozenStrictModel):
     context_text: str
 
 
-class RelatedLink(FrozenStrictModel):
-    """An official destination for information FireLens does not ingest live."""
+class AnswerSection(FrozenStrictModel):
+    """A user-visible answer part whose authority is fixed by local code."""
 
-    title: str = Field(min_length=1, max_length=120)
-    url: HttpUrl
-    description: str = Field(min_length=1, max_length=240)
+    kind: AnswerSectionKind
+    heading: str = Field(min_length=1, max_length=80)
+    text: str = Field(min_length=1, max_length=PUBLIC_ANSWER_MAX_CHARS)
 
 
 class SearchResponse(StrictModel):
@@ -481,17 +555,18 @@ class AskResponse(StrictModel):
     status: ResponseStatus
     trace_id: str
     response_mode: ResponseMode = ResponseMode.ABSTENTION
-    answer: str | None = None
+    answer: str | None = Field(default=None, max_length=PUBLIC_ANSWER_MAX_CHARS)
+    answer_sections: list[AnswerSection] = Field(default_factory=list, max_length=5)
     history_text: str | None = Field(
         default=None,
         min_length=1,
         max_length=ASSISTANT_HISTORY_LIMIT,
     )
-    claims: list[PublicClaim] = Field(default_factory=list)
+    claims: list[PublicClaim] = Field(default_factory=list, max_length=MAX_PUBLIC_CLAIMS)
     evidence: list[PublicEvidence] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
     suggested_questions: list[str] = Field(default_factory=list, max_length=6)
-    related_links: list[RelatedLink] = Field(default_factory=list, max_length=4)
+    related_links: list[RelatedLink] = Field(default_factory=list, max_length=MAX_RELATED_LINKS)
     reason_code: ReasonCode | None = None
     validation: ValidationReport | None = None
     error_kind: str | None = None
@@ -506,6 +581,7 @@ class AskResponse(StrictModel):
     def validate_public_state(self) -> AskResponse:
         self._validate_history()
         evidence_ids = self._validate_unique_public_ids()
+        self._validate_answer_sections()
         validators = {
             ResponseMode.GROUNDED: self._validate_grounded,
             ResponseMode.PARTIAL: self._validate_grounded,
@@ -527,12 +603,79 @@ class AskResponse(StrictModel):
             raise ValueError("aggregate freshness requires live results")
         return self
 
+    def _validate_answer_sections(self) -> None:
+        if not self.answer_sections:
+            return
+        if self.answer is None:
+            raise ValueError("answer sections require a public answer")
+        kinds = [section.kind for section in self.answer_sections]
+        if len(kinds) != len(set(kinds)):
+            raise ValueError("answer section kinds must be unique")
+        claim_statuses = {claim.evidence_status for claim in self.claims}
+        requirements = {
+            AnswerSectionKind.CURRENT_RECORDS: bool(self.live_results),
+            AnswerSectionKind.REVIEWED_GUIDANCE: (
+                EvidenceStatus.VERIFIED_CORPUS in claim_statuses and bool(self.evidence)
+            ),
+            AnswerSectionKind.CONFLICTING_GUIDANCE: (
+                self.reason_code == ReasonCode.CONFLICTING_EVIDENCE
+                and EvidenceStatus.VERIFIED_CORPUS in claim_statuses
+                and bool(self.evidence)
+                and self.validation is not None
+                and self.validation.accepted
+            ),
+            AnswerSectionKind.GENERAL_BACKGROUND: (
+                EvidenceStatus.GENERAL_BACKGROUND in claim_statuses
+            ),
+            AnswerSectionKind.OFFICIAL_HANDOFF: bool(self.related_links),
+            AnswerSectionKind.UNCERTAINTY: bool(self.limitations),
+        }
+        unsupported = [kind.value for kind in kinds if not requirements[kind]]
+        if unsupported:
+            raise ValueError(
+                "answer sections require matching typed response data: "
+                + ", ".join(unsupported)
+            )
+        if self.response_mode == ResponseMode.CONFLICT:
+            return
+        canonical_text = {
+            AnswerSectionKind.REVIEWED_GUIDANCE: render_claim_texts(
+                claim
+                for claim in self.claims
+                if claim.evidence_status == EvidenceStatus.VERIFIED_CORPUS
+            ),
+            AnswerSectionKind.GENERAL_BACKGROUND: render_claim_texts(
+                claim
+                for claim in self.claims
+                if claim.evidence_status == EvidenceStatus.GENERAL_BACKGROUND
+            ),
+        }
+        mismatched = [
+            section.kind.value
+            for section in self.answer_sections
+            if section.kind in canonical_text and section.text != canonical_text[section.kind]
+        ]
+        if mismatched:
+            raise ValueError(
+                "answer section text must match its typed public claims: "
+                + ", ".join(mismatched)
+            )
+
     def _validate_history(self) -> None:
         if self.answer is None:
             if self.history_text is not None:
                 raise ValueError("history text requires a public answer")
             return
-        expected_history = bounded_assistant_history(self.answer)
+        history_prefix = response_history_prefix(
+            response_mode=self.response_mode.value,
+            reason_code=(self.reason_code.value if self.reason_code is not None else None),
+            section_kinds=[section.kind.value for section in self.answer_sections],
+        )
+        expected_history = render_assistant_history(
+            authority_prefix=history_prefix,
+            answer=self.answer,
+            limitations=self.limitations,
+        )
         if self.history_text is None:
             self.history_text = expected_history
         elif self.history_text != expected_history:
@@ -555,10 +698,17 @@ class AskResponse(StrictModel):
         ):
             raise ValueError("grounded responses contain only verified claims")
         self._validate_support_ids(evidence_ids, label="grounded")
-        if self.response_mode == ResponseMode.CONFLICT and (
-            self.validation is None or not self.validation.accepted
-        ):
-            raise ValueError("conflict responses require deterministic validation")
+        if self.response_mode == ResponseMode.CONFLICT:
+            if self.validation is None or not self.validation.accepted:
+                raise ValueError("conflict responses require deterministic validation")
+            return
+        canonical_answer = render_claim_texts(self.claims)
+        if len(canonical_answer) > MAX_GROUNDED_ANSWER_CHARS:
+            raise ValueError("grounded public claim text exceeds its validated answer limit")
+        if (
+            self.response_mode == ResponseMode.GROUNDED or not self.answer_sections
+        ) and self.answer != canonical_answer:
+            raise ValueError("grounded answer must be rendered from its public claims")
 
     def _validate_background(self, _evidence_ids: list[str]) -> None:
         if self.status != ResponseStatus.ANSWER or not self.claims:
@@ -571,6 +721,11 @@ class AskResponse(StrictModel):
             raise ValueError("background responses cannot expose evidence")
         if BACKGROUND_LIMITATION not in self.limitations:
             raise ValueError("background response requires its visible limitation")
+        if len(self.claims) > MAX_BACKGROUND_CLAIMS:
+            raise ValueError("background responses exceed the public claim limit")
+        canonical_answer = render_claim_texts(self.claims)
+        if not self.answer_sections and self.answer != canonical_answer:
+            raise ValueError("background answer must be rendered from its public claims")
 
     def _validate_live(self, _evidence_ids: list[str]) -> None:
         if self.status != ResponseStatus.ANSWER or not self.answer:
@@ -585,15 +740,19 @@ class AskResponse(StrictModel):
     def _validate_mixed(self, evidence_ids: list[str]) -> None:
         if self.status != ResponseStatus.ANSWER or not self.live_results or not self.answer:
             raise ValueError("mixed responses require live results and an answer")
-        if not self.claims or not self.evidence:
-            raise ValueError("mixed responses require supported static claims")
-        if any(
-            claim.evidence_status != EvidenceStatus.VERIFIED_CORPUS for claim in self.claims
+        if not self.claims and not self.related_links:
+            raise ValueError("mixed responses require a non-live answer or official handoff")
+        if (
+            any(
+                claim.evidence_status == EvidenceStatus.GENERAL_BACKGROUND
+                for claim in self.claims
+            )
+            and BACKGROUND_LIMITATION not in self.limitations
         ):
-            raise ValueError("mixed responses contain only verified static claims")
+            raise ValueError("mixed background claims require their visible limitation")
         self._validate_support_ids(evidence_ids, label="mixed")
-        if self.validation is None or not self.validation.accepted:
-            raise ValueError("mixed responses require accepted static validation")
+        if self.claims and (self.validation is None or not self.validation.accepted):
+            raise ValueError("mixed response claims require accepted validation")
         if self.aggregate_freshness != aggregate_live_freshness(self.live_results):
             raise ValueError("mixed response requires matching aggregate freshness")
 
@@ -627,79 +786,6 @@ class AskResponse(StrictModel):
             raise ValueError("abstention and error responses cannot contain evidence claims")
 
 
-class HealthResponse(FrozenStrictModel):
-    status: Literal["ready", "not_ready"]
-    corpus_ready: bool
-    index_ready: bool
-    provider_configured: bool
-    zdr_required: bool
-    zdr_policy_state: Literal["disabled", "required_unprobed", "eligible", "failed"]
-    provider_state: Literal[
-        "not_configured",
-        "configured_unprobed",
-        "available",
-        "degraded",
-        "circuit_open",
-    ]
-    corpus_version: str | None = None
-    chunk_count: int | None = None
-    release_version: str
-    build_commit: str | None = None
-    deployment_id: str | None = None
-    rate_limit_scope: Literal["instance_local"] = "instance_local"
-    problems: list[str] = Field(default_factory=list)
-
-
-class LivenessResponse(FrozenStrictModel):
-    status: Literal["alive"] = "alive"
-
-
-class ErrorEnvelope(FrozenStrictModel):
-    trace_id: str
-    error_kind: str
-    message: str
-    retryable: bool = False
-
-
-FeedbackCategory = Literal[
-    "helpful",
-    "incorrect_or_unsupported",
-    "missing_information",
-    "stale_or_wrong_live_data",
-    "confusing",
-    "safety_concern",
-    "accessibility_issue",
-]
-
-
-class FeedbackRequest(FrozenStrictModel):
-    trace_id: str = Field(pattern=r"^[0-9a-f]{32}$")
-    category: FeedbackCategory
-
-
-class FeedbackResponse(FrozenStrictModel):
-    accepted: Literal[True] = True
-
-
-class EmbeddingResponse(FrozenStrictModel):
-    model: str
-    vectors: list[list[float]]
-    usage: dict[str, Any] = Field(default_factory=dict)
-    attempts: int = Field(default=1, ge=1)
-
-
-class RerankResult(FrozenStrictModel):
-    index: int = Field(ge=0)
-    relevance_score: float
-
-
-class RerankResponse(FrozenStrictModel):
-    model: str
-    results: list[RerankResult]
-    usage: dict[str, Any] = Field(default_factory=dict)
-    attempts: int = Field(default=1, ge=1)
-
-
 class PlanningResponse(FrozenStrictModel):
     model: str
     decision: PlanningDecision
@@ -710,29 +796,5 @@ class PlanningResponse(FrozenStrictModel):
 class GenerationResponse(FrozenStrictModel):
     model: str
     draft: GroundedDraft | BackgroundDraft
-    usage: dict[str, Any] = Field(default_factory=dict)
-    attempts: int = Field(default=1, ge=1)
-
-
-class DocumentContextItem(FrozenStrictModel):
-    chunk_id: str = Field(min_length=1)
-    context: str = Field(min_length=20, max_length=800)
-
-    @field_validator("context")
-    @classmethod
-    def bound_context_words(cls, value: str) -> str:
-        normalized = " ".join(value.split())
-        if not 20 <= len(normalized.split()) <= 120:
-            raise ValueError("document context must contain 20 to 120 words")
-        return normalized
-
-
-class DocumentContextDraft(FrozenStrictModel):
-    items: list[DocumentContextItem] = Field(min_length=1, max_length=12)
-
-
-class DocumentContextResponse(FrozenStrictModel):
-    model: str
-    draft: DocumentContextDraft
     usage: dict[str, Any] = Field(default_factory=dict)
     attempts: int = Field(default=1, ge=1)

@@ -1226,8 +1226,9 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(provider.generate_calls, 2)
         self.assertEqual(
             response.limitations[-1],
-            "This answer is incomplete: 1 generated item was omitted after validation. "
-            "Do not treat the remaining items as a complete list.",
+            "This answer is incomplete: FireLens could verify only part of the requested "
+            "guidance from the selected sources. Do not treat the remaining guidance as "
+            "a complete list.",
         )
 
     async def test_wrong_generation_draft_type_is_replaced_by_safe_source_handoff(self) -> None:

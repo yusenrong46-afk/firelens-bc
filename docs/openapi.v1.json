@@ -10,6 +10,47 @@
         "title": "AggregateFreshness",
         "type": "string"
       },
+      "AnswerSection": {
+        "additionalProperties": false,
+        "description": "A user-visible answer part whose authority is fixed by local code.",
+        "properties": {
+          "heading": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Heading",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AnswerSectionKind"
+          },
+          "text": {
+            "maxLength": 6000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "heading",
+          "text"
+        ],
+        "title": "AnswerSection",
+        "type": "object"
+      },
+      "AnswerSectionKind": {
+        "description": "Authority-labelled parts composed by the application agent.",
+        "enum": [
+          "current_records",
+          "reviewed_guidance",
+          "conflicting_guidance",
+          "general_background",
+          "official_handoff",
+          "uncertainty"
+        ],
+        "title": "AnswerSectionKind",
+        "type": "string"
+      },
       "AskResponse": {
         "additionalProperties": false,
         "properties": {
@@ -26,6 +67,7 @@
           "answer": {
             "anyOf": [
               {
+                "maxLength": 6000,
                 "type": "string"
               },
               {
@@ -34,10 +76,19 @@
             ],
             "title": "Answer"
           },
+          "answer_sections": {
+            "items": {
+              "$ref": "#/components/schemas/AnswerSection"
+            },
+            "maxItems": 5,
+            "title": "Answer Sections",
+            "type": "array"
+          },
           "claims": {
             "items": {
               "$ref": "#/components/schemas/PublicClaim"
             },
+            "maxItems": 12,
             "title": "Claims",
             "type": "array"
           },
@@ -375,6 +426,28 @@
             ],
             "title": "Build Commit"
           },
+          "candidate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Id"
+          },
+          "candidate_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Sha256"
+          },
           "chunk_count": {
             "anyOf": [
               {
@@ -412,6 +485,28 @@
             ],
             "title": "Deployment Id"
           },
+          "embedding_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Model"
+          },
+          "generation_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Model"
+          },
           "index_ready": {
             "title": "Index Ready",
             "type": "boolean"
@@ -447,6 +542,28 @@
           "release_version": {
             "title": "Release Version",
             "type": "string"
+          },
+          "rerank_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Model"
+          },
+          "retrieval_text_strategy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieval Text Strategy"
           },
           "status": {
             "enum": [

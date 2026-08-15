@@ -7,6 +7,7 @@ import unittest
 from datetime import UTC, datetime
 from pathlib import Path
 from time import monotonic
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -15,9 +16,13 @@ from rag_helpers import make_chunk, make_runtime, write_test_corpus
 
 from firelens.api import create_app
 from firelens.contracts import (
+    CoarseResolvedLocation,
     DraftProposalClaim,
+    Freshness,
     GenerationResponse,
     GroundedDraft,
+    LiveMapResponse,
+    LiveResult,
     LiveResultKind,
     PlanningDecision,
 )
@@ -175,7 +180,45 @@ class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(calls), 2)
         self.assertEqual(calls[0]["model"], calls[1]["model"])
         self.assertFalse(calls[0]["provider"]["allow_fallbacks"])
+        self.assertEqual(calls[0]["provider"]["data_collection"], "deny")
+        self.assertNotIn("zdr", calls[0]["provider"])
         self.assertEqual(provider.backpressure_limits()["embedding"], 2)
+
+    async def test_zdr_requests_set_privacy_enforcement_and_cannot_fallback(self) -> None:
+        observed: dict[str, object] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            observed.update(json.loads(request.content))
+            return httpx.Response(
+                200,
+                json={
+                    "model": "text-embedding-3-small",
+                    "data": [{"index": 0, "embedding": [1.0, 0.0]}],
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = write_test_corpus(Path(directory), [make_chunk("a", "water")])
+            config = config.model_copy(
+                update={
+                    "openrouter_api_key": SecretStr("test-key"),
+                    "openrouter_base_url": "https://openrouter.test/api/v1",
+                    "embedding_model": "openai/text-embedding-3-small",
+                    "require_zdr": True,
+                }
+            )
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                await OpenRouterProvider(config, client=client).embed(["water"])
+
+        self.assertEqual(observed["provider"]["data_collection"], "deny")
+        self.assertFalse(observed["provider"]["allow_fallbacks"])
+        self.assertTrue(observed["provider"]["zdr"])
+        source = Path(__file__).resolve().parents[1] / "src/firelens/providers/openrouter.py"
+        text = source.read_text(encoding="utf-8")
+        self.assertIn('"data_collection": "deny"', text)
+        self.assertIn('"allow_fallbacks": False', text)
+        self.assertNotIn('"allow_fallbacks": True', text)
+        self.assertNotIn('"data_collection": "allow"', text)
 
     async def test_rate_limit_honors_retry_after_outside_the_semaphore(self) -> None:
         calls = 0
@@ -818,9 +861,16 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                 health = await client.get("/api/v1/health/ready")
 
         self.assertEqual(health.status_code, 200)
-        self.assertEqual(health.json()["provider_state"], "circuit_open")
-        self.assertNotIn("model", health.text.casefold())
-        self.assertNotIn("key", health.text.casefold())
+        payload = health.json()
+        self.assertEqual(payload["provider_state"], "circuit_open")
+        self.assertEqual(payload["embedding_model"], config.embedding_model)
+        self.assertEqual(payload["rerank_model"], config.rerank_model)
+        self.assertEqual(payload["generation_model"], config.generation_model)
+        serialized = health.text.casefold()
+        self.assertNotIn("traceback", serialized)
+        self.assertNotIn("exception", serialized)
+        self.assertNotIn("api_key", serialized)
+        self.assertNotIn("key", serialized)
 
     async def test_public_deadline_cancels_every_provider_stage(self) -> None:
         class StageBlockingProvider(FakeProvider):
@@ -1373,9 +1423,44 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(oversized.json()["error_kind"], "request_too_large")
 
     async def test_http_contracts_and_statuses(self) -> None:
+        timestamp = datetime(2026, 8, 13, 19, tzinfo=UTC)
+        contract_result = LiveResult(
+            result_id="incident:contract",
+            kind=LiveResultKind.INCIDENT,
+            source_url="https://wildfiresituation.nrs.gov.bc.ca/incidents",
+            source_updated_at=timestamp,
+            retrieved_at=timestamp,
+            freshness=Freshness.FRESH,
+            status="Being Held",
+            name="Contract Fire",
+            geometry={"type": "Point", "coordinates": [-119.5, 49.89]},
+        )
+
+        class ContractLiveService:
+            async def resolve_location(self, _location):
+                return 49.89, -119.5
+
+            async def map_results(self, *args, **kwargs):
+                return LiveMapResponse(generated_at=timestamp, results=[contract_result])
+
+            async def nearby_page(self, *args, **kwargs):
+                return SimpleNamespace(
+                    results=[contract_result],
+                    limitations=[],
+                    unavailable_layers=[],
+                    resolved_location=CoarseResolvedLocation(
+                        latitude=49.89,
+                        longitude=-119.5,
+                    ),
+                )
+
         with tempfile.TemporaryDirectory() as directory:
             runtime, _, config = await make_runtime(Path(directory))
-            app = create_app(config, runtime=runtime)
+            app = create_app(
+                config,
+                runtime=runtime,
+                live_service=ContractLiveService(),
+            )
             transport = httpx.ASGITransport(app=app)
             async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
                 alive = await client.get("/api/v1/health/live")

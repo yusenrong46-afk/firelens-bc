@@ -16,6 +16,8 @@ from firelens.answering.generate import (
 )
 from firelens.answering.validate import salvage_valid_grounded_claims, validate_draft
 from firelens.contracts import (
+    RELATED_LINK_DESCRIPTION_MAX_CHARS,
+    RELATED_LINK_TITLE_MAX_CHARS,
     AskResponse,
     ClaimSupport,
     EvidencePacket,
@@ -30,11 +32,21 @@ from firelens.contracts import (
     ResponseStatus,
     TemporalClass,
     ValidationReport,
+    render_claim_texts,
 )
 from firelens.errors import ProviderError
 from firelens.providers.base import AIProvider
 
 MAX_REPAIR_COUNT = 1
+
+
+def _bounded_display_text(text: str, *, limit: int, fallback: str) -> str:
+    """Bound presentation metadata without changing source identity or evidence."""
+
+    normalized = " ".join(text.split()) or fallback
+    if len(normalized) <= limit:
+        return normalized
+    return normalized[: limit - 3].rstrip() + "..."
 
 
 @dataclass(frozen=True)
@@ -116,11 +128,22 @@ class GroundedAnswerEngine:
             if item.canonical_url in seen_urls:
                 continue
             seen_urls.add(item.canonical_url)
+            title = _bounded_display_text(
+                item.title,
+                limit=RELATED_LINK_TITLE_MAX_CHARS,
+                fallback="Official source",
+            )
+            publisher = " ".join(item.publisher.split()) or "official publisher"
+            description = _bounded_display_text(
+                f"Reviewed {publisher} source related to this question.",
+                limit=RELATED_LINK_DESCRIPTION_MAX_CHARS,
+                fallback="Reviewed official source related to this question.",
+            )
             links.append(
                 RelatedLink(
-                    title=item.title,
+                    title=title,
                     url=HttpUrl(item.canonical_url),
-                    description=(f"Reviewed {item.publisher} source related to this question."),
+                    description=description,
                 )
             )
             if len(links) == 3:
@@ -260,7 +283,6 @@ class GroundedAnswerEngine:
             )
 
         salvaged = False
-        salvaged_claim_count = 0
         if not validation.accepted:
             original_draft = active_draft
             original_validation = validation
@@ -320,19 +342,15 @@ class GroundedAnswerEngine:
 
             if not validation.accepted:
                 salvage = None
-                salvage_source: GroundedDraft | None = None
                 for candidate in (repaired_draft, original_draft):
                     if candidate is None:
                         continue
                     salvage = salvage_valid_grounded_claims(candidate, evidence_packet)
                     if salvage is not None:
-                        salvage_source = candidate
                         break
                 if salvage is not None:
                     active_draft, validation = salvage
                     salvaged = True
-                    assert salvage_source is not None
-                    salvaged_claim_count = len(salvage_source.claims) - len(active_draft.claims)
                 else:
                     validation = repair_validation or original_validation
                     response = self._validation_handoff(trace_id, evidence_packet, validation)
@@ -384,18 +402,16 @@ class GroundedAnswerEngine:
             response_mode=(
                 ResponseMode.PARTIAL if force_partial or salvaged else ResponseMode.GROUNDED
             ),
-            answer=" ".join(claim.text.strip() for claim in public_claims),
+            answer=render_claim_texts(public_claims),
             claims=public_claims,
             evidence=evidence,
             limitations=[
                 *evidence_packet.limitations,
                 *(
                     [
-                        "This answer is incomplete: "
-                        f"{salvaged_claim_count} generated "
-                        f"{'item was' if salvaged_claim_count == 1 else 'items were'} "
-                        "omitted after validation. Do not treat the remaining items "
-                        "as a complete list."
+                        "This answer is incomplete: FireLens could verify only part of "
+                        "the requested guidance from the selected sources. Do not treat "
+                        "the remaining guidance as a complete list."
                     ]
                     if salvaged
                     else []

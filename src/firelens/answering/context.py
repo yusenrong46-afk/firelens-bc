@@ -500,7 +500,8 @@ def _immediate_support_decision(
             status=SupportStatus.INSUFFICIENT_EVIDENCE,
             reason_code=ReasonCode.NO_APPROVED_EVIDENCE,
             explanation=(
-                "The selected evidence does not directly support the user's question."
+                "The reviewed sources are related, but they do not verify the requested "
+                "claim as official guidance."
             ),
         )
     if packet.conflicts:

@@ -65,6 +65,12 @@ _PROHIBITED_PATTERNS = (
     r"\bwhether\s+(?:i|we)\s+should\s+(?:stay|leave|evacuate|return)\b",
     r"\bshould\s+(?:i|we)\s+go\s+(?:now|today|tonight|this morning|this afternoon|this evening)\b",
     r"\b(?:is it|tell me (?:if|whether))\s+.{0,30}\bsafe\s+to\s+(?:drive|travel|go)\b",
+    r"\bis\s+(?!a\b|an\b).{1,80}\bsafe(?:\s+(?:right now|today|tonight)|"
+    r"\s+from\b.{0,50}|\s+to\s+(?:stay|return|drive|travel)\b.{0,40})?[?!.]*$",
+    r"\b(?:can|could|may)\s+(?:people|residents?|famil(?:y|ies)|households?|"
+    r"visitors?|(?:the\s+)?community)\s+safely\s+(?:stay|leave|evacuate|return)\b",
+    r"\bshould\s+.{0,50}\b(?:people|residents?|famil(?:y|ies)|households?|"
+    r"visitors?)\s+(?:safely\s+)?(?:stay|leave|evacuate|return)\b",
     r"\b(?:my|our)\s+(?:address|street|property|home)\b.{0,50}\b\d{1,6}\b.{0,40}\b(?:under|in)\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\b",
     r"\b(?:decide|choose|recommend)\b.{0,80}\b(?:evacuat(?:e|ion)|shelter(?:-in-place)?|stay|leave)\b.{0,30}\b(?:versus|vs\.?|or)\b",
     r"\b(?:rank|prioriti[sz]e|compare)\b.{0,80}\b(?:roads?|routes?|highways?)\b.{0,80}\b(?:family|evacuat(?:e|ion)|escape|safest)\b",
@@ -132,35 +138,95 @@ _LIVE_PATTERNS = (
     r"\b(?:fires|wildfires)\b.{0,40}\bburning\b",
     r"\bburning\b.{0,40}\b(?:fires|wildfires)\b",
     r"\b(?:roads?|highways?)\b.{0,40}\b(?:open|closed|closure|blocked)\b",
-    r"\b(?:is|are|whether)\s+.{1,60}\b(?:under|on)\s+(?:an?\s+)?evacuation\s+(?:alert|order)\b",
-    r"\bdoes\s+.{1,60}\bhave\s+(?:an?\s+)?evacuation\s+(?:alert|order)\b",
-    r"\bis\s+(?:there\s+)?(?:an?\s+)?evacuation\s+(?:alert|order)\s+(?:active|in effect)\b",
+    r"\b(?:is|are|whether)\s+.{1,60}\b(?:under|on)\s+(?:an?\s+)?evacuation\s+(?:alerts?|orders?)\b",
+    r"\bdoes\s+.{1,60}\bhave\s+(?:an?\s+)?evacuation\s+(?:alerts?|orders?)\b",
+    r"\bis\s+(?:there\s+)?(?:an?\s+)?evacuation\s+(?:alerts?|orders?)\s+(?:active|in effect)\b",
     r"\b(?:fire|wildfire|evacuation|alert|order|smoke|air quality|road|highway)\b.{0,50}\b(?:active|in effect)\b",
     r"\b(?:what|how)\s+(?:is|are)\s+(?:the\s+)?(?:air quality|smoke conditions?)\b",
     r"\bis\s+(?:it|.{1,50})\s+smoky\b",
     r"\b(?:fires?|wildfires?)\b.{0,60}\b(?:current|updated|up[- ]to[- ]date)\b",
     r"\b(?:emergencyinfo\s*bc|emergencyinfobc|bc wildfire service|bcws)\b.{0,60}\b(?:post(?:ed)?|new|update|latest|today|now)\b",
-    r"\b(?:my|our)\s+(?:address|home|property|location)\s+is\s+under\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\b",
-    r"\b(?:is|are)\s+there\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\s+(?:for|near|around|in)\b",
-    r"\bis\s+there\b.{1,60}\b(?:evacuation\s+)?(?:alert|order)\b",
+    r"\b(?:my|our)\s+(?:address|home|property|location)\s+is\s+under\s+(?:an?\s+)?(?:evacuation\s+)?(?:alerts?|orders?)\b",
+    r"\b(?:is|are)\s+there\s+(?:an?\s+)?(?:evacuation\s+)?(?:alerts?|orders?)\s+(?:for|near|around|in)\b",
+    r"\b(?:is|are)\s+there\b.{1,60}\b(?:evacuation\s+)?(?:alerts?|orders?)\b",
+    r"\b(?:current|latest|active|updated)\s+(?:fire\s+|wildfire\s+)?perimeters?\b",
+    r"\b(?:show|display|where)\b.{0,40}\b(?:fire\s+|wildfire\s+)?perimeters?\b",
     r"\b(?:fires?|wildfires?)\s+(?:near|around|by)\s+[a-z]",
+    r"\b(?:show|display|list|map|check|find)\b.{0,80}"
+    r"\b(?:(?:evacuation|evac)\s+)?(?:alerts?|orders?)\b",
 )
 
-_UNSUPPORTED_LIVE_TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("air quality", ("air quality", "aqhi", "smoke conditions", "smoky")),
+_REQUEST_FRAGMENT_SPLIT = re.compile(
+    r"[?;+]|\s+(?:and|also|plus)\s+"
+    r"(?!(?:an?\s+)?(?:(?:evacuation|evac)\s+)?orders?\b)",
+    re.IGNORECASE,
+)
+_CURRENT_CUE_TEXT = (
+    r"(?:right now|currently|current|latest|today|tonight|tomorrow|now|at the moment)"
+)
+_CURRENT_CUE = re.compile(rf"\b{_CURRENT_CUE_TEXT}\b", re.IGNORECASE)
+_EXPLANATORY_UNSUPPORTED = re.compile(
+    r"\b(?:what\s+(?:does|do)\b.{0,80}\bmean|what\s+is\s+an?\b|"
+    r"(?:explain|define)\b|how\s+does\b.{0,80}\b(?:affect|work))",
+    re.IGNORECASE,
+)
+_UNSUPPORTED_LIVE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    (
+        "air quality",
+        re.compile(
+            rf"\b(?:what|how)\s+(?:is|are)\s+(?:the\s+)?"
+            rf"(?:air quality|aqhi|smoke conditions?)\b|"
+            rf"\bis\s+(?:it|.{{1,50}})\s+smoky\b|"
+            rf"\b{_CURRENT_CUE_TEXT}\b.{{0,60}}\b"
+            rf"(?:air quality|aqhi|smoke conditions?|smoky)\b|"
+            rf"\b(?:air quality|aqhi|smoke conditions?|smoky)\b.{{0,60}}"
+            rf"\b{_CURRENT_CUE_TEXT}\b",
+            re.IGNORECASE,
+        ),
+    ),
     (
         "road conditions",
-        ("road", "roads", "highway", "highways", "route closure", "drive", "driving", "travel"),
+        re.compile(
+            r"\b(?:roads?|highways?|routes?)\b.{0,40}"
+            r"\b(?:open|closed|closures?|blocked|conditions?)\b|"
+            r"\b(?:open|closed|closures?|blocked|conditions?)\b.{0,40}"
+            r"\b(?:roads?|highways?|routes?)\b|"
+            r"\bsafe\s+to\s+(?:drive|travel)\b",
+            re.IGNORECASE,
+        ),
     ),
-    ("weather or smoke forecast", ("wind", "weather", "smoke forecast")),
-    ("firefighting aircraft", ("aircraft", "airtanker", "air tanker", "helicopter")),
+    (
+        "weather or smoke forecast",
+        re.compile(
+            rf"\bwhat\s+will\s+(?:the\s+)?(?:wind|weather|smoke)\b|"
+            rf"\b(?:wind|weather|smoke)\b.{{0,60}}"
+            rf"\b(?:forecast|speed|direction|{_CURRENT_CUE_TEXT})\b|"
+            rf"\b(?:forecast|{_CURRENT_CUE_TEXT})\b.{{0,60}}"
+            rf"\b(?:wind|weather|smoke)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "firefighting aircraft",
+        re.compile(
+            r"\b(?:where|show|display|track|locate)\b.{0,60}"
+            r"\b(?:firefighting\s+)?(?:aircraft|airtankers?|air tankers?|helicopters?)\b|"
+            rf"\b(?:aircraft|airtankers?|air tankers?|helicopters?)\b.{{0,60}}"
+            rf"\b{_CURRENT_CUE_TEXT}\b",
+            re.IGNORECASE,
+        ),
+    ),
 )
-
-_PRIMARY_UNSUPPORTED_LIVE_PATTERN = re.compile(
-    r"\b(?:air quality|aqhi|smoke forecast|weather forecast|"
-    r"wind (?:do|speed|direction)|firefighting aircraft|airtankers?|air tankers?)\b|"
-    r"\b(?:roads?|highways?)\b.{0,40}\b(?:open|closed|closure|blocked)\b|"
-    r"\bsafe\s+to\s+(?:drive|travel)\b",
+_EVACUATION_TOPIC = re.compile(
+    r"\b(?:evacuations?|(?:(?:evacuation|evac)\s+)?(?:alerts?|orders?)|"
+    r"emergencyinfo\s*bc)\b",
+    re.IGNORECASE,
+)
+_EVACUATION_DEFINITION = re.compile(
+    r"\b(?:explain|define|meaning|mean|difference|versus|vs\.?)\b.{0,80}"
+    r"\b(?:alerts?|orders?)\b|"
+    r"\b(?:alerts?|orders?)\b.{0,80}"
+    r"\b(?:mean|meaning|difference|versus|vs\.?)\b",
     re.IGNORECASE,
 )
 
@@ -178,6 +244,17 @@ _STATIC_GUIDANCE_TERMS = (
     "alert mean",
     "order mean",
 )
+
+
+def request_fragments(question: str) -> tuple[str, ...]:
+    """Split top-level request clauses without breaking alert/order definitions."""
+
+    return tuple(
+        fragment
+        for part in _REQUEST_FRAGMENT_SPLIT.split(question)
+        if (fragment := part.strip(" ,.?;"))
+    )
+
 
 _REVIEWED_GUIDANCE_PATTERNS = (
     r"\b(?:home ignition zone|firesmart|combustible material|ember risk)\b",
@@ -328,31 +405,52 @@ def _requires_personal_live_location(question: str) -> bool:
 def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
     """Return only official layers that can answer the user's live intent."""
 
-    lowered = question.casefold()
-    if _PRIMARY_UNSUPPORTED_LIVE_PATTERN.search(question):
+    original_question = question
+    original_location = coarse_location_from_question(original_question)
+    supported_fragments = [
+        fragment
+        for fragment in request_fragments(question)
+        if not unsupported_live_topics(fragment)
+    ]
+    if not supported_fragments:
         return ()
+    question = " and ".join(supported_fragments)
+    lowered = question.casefold()
     layers: list[LiveResultKind] = []
     personal_location = _requires_personal_live_location(question)
     fire_status_requested = any(
         re.search(pattern, lowered)
         for pattern in (
             r"\b(?:active|current|latest)\s+(?:fires?|wildfires?)\b",
-            r"\b(?:fire|wildfire)\s+(?:status|situation|map|update|updates|perimeter)\b",
+            r"\bhow many\b.{0,40}\b(?:fires?|wildfires?)\b",
+            r"\b(?:fire|wildfire)\s+(?:status|situation|map|update|updates)\b",
             r"\b(?:is there|are there|where is)\b.{0,30}\b(?:fire|wildfire)\b",
             r"\b(?:fires?|wildfires?)\b.{0,40}\b(?:burning|near|around|in bc|in british columbia)\b",
+            r"\b(?:fires?|wildfires?)\b.{0,60}\b(?:listed|reported|published)\s+by\s+"
+            r"(?:bcws|bc wildfire service)\b",
             r"\b(?:bcws|bc wildfire service)\b.{0,50}\b(?:status|map|update|latest|fire)\b",
         )
     )
-    if fire_status_requested:
+    perimeter_requested = bool(re.search(r"\bperimeters?\b", lowered))
+    incident_requested = bool(re.search(r"\bincidents?\b", lowered))
+    perimeter_only_phrase = bool(re.search(r"\b(?:fire|wildfire)\s+perimeters?\b", lowered))
+    if perimeter_requested and not incident_requested and perimeter_only_phrase:
+        layers.append(LiveResultKind.PERIMETER)
+    elif perimeter_requested and not fire_status_requested:
+        if incident_requested:
+            layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
+        else:
+            layers.append(LiveResultKind.PERIMETER)
+    elif fire_status_requested:
         layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
-    elif coarse_location_from_question(question) is not None and re.search(
+    elif original_location is not None and re.search(
         r"\b(?:fires?|wildfires?)\b(?!\s+smoke)|"
-        r"\b(?:fire|wildfire)\s+(?:map|status|situation|update|perimeter)\b|"
+        r"\b(?:fire|wildfire)\s+(?:map|status|situation|update)\b|"
         r"\b(?:map|burning|happening)\b",
         lowered,
     ):
         layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
-    elif coarse_location_from_question(question) is not None and re.search(
+    elif original_location is not None and re.search(
         r"\bofficial\s+(?:live\s+)?records?\b",
         lowered,
     ):
@@ -378,17 +476,27 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
         )
     elif re.search(r"\bincident\b", lowered) and re.search(r"\bperimeter\b", lowered):
         layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
-    if any(term in lowered for term in ("evacuation", "alert", "order", "emergencyinfobc")):
+    if any(
+        _EVACUATION_TOPIC.search(fragment)
+        and plan_query(QueryRequest(question=fragment)).route == QueryRoute.LIVE
+        for fragment in request_fragments(original_question)
+    ):
         layers.append(LiveResultKind.EVACUATION)
     return tuple(dict.fromkeys(layers))
 
 
 def unsupported_live_topics(question: str) -> tuple[str, ...]:
-    lowered = question.casefold()
+    fragments = request_fragments(question)
     return tuple(
         label
-        for label, terms in _UNSUPPORTED_LIVE_TOPICS
-        if any(term in lowered for term in terms)
+        for label, pattern in _UNSUPPORTED_LIVE_PATTERNS
+        if any(
+            pattern.search(fragment)
+            and not (
+                _EXPLANATORY_UNSUPPORTED.search(fragment) and not _CURRENT_CUE.search(fragment)
+            )
+            for fragment in fragments
+        )
     )
 
 
@@ -401,16 +509,20 @@ def live_query_requires_location(question: str) -> bool:
 def static_guidance_fragment(question: str) -> str | None:
     """Keep the user's own stable-guidance clause for a mixed live/static request."""
 
-    fragments = [
-        fragment.strip(" ,.?;")
-        for fragment in re.split(r"(?:[?;+]|\s+(?:and|also|plus)\s+)", question, flags=re.I)
-    ]
+    fragments = request_fragments(question)
     selected = [
         fragment
         for fragment in fragments
         if fragment
-        and any(term in fragment.casefold() for term in _STATIC_GUIDANCE_TERMS)
-        and not any(re.search(pattern, fragment.casefold()) for pattern in _LIVE_PATTERNS)
+        and (
+            any(term in fragment.casefold() for term in _STATIC_GUIDANCE_TERMS)
+            or any(
+                re.search(pattern, fragment.casefold())
+                for pattern in _REVIEWED_GUIDANCE_PATTERNS
+            )
+            or _EVACUATION_DEFINITION.search(fragment)
+        )
+        and plan_query(QueryRequest(question=fragment)).route == QueryRoute.RELATED
     ]
     if not selected:
         return None
@@ -442,11 +554,13 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
         re.search(pattern, text) for text in safety_texts for pattern in _PROHIBITED_PATTERNS
     )
     live = any(re.search(pattern, text) for text in routing_texts for pattern in _LIVE_PATTERNS)
+    live = live or bool(unsupported_live_topics(processing_question))
     named_location = coarse_location_from_question(processing_question)
     named_live_command = named_location is not None and bool(
         re.search(
             r"\b(?:where|show|map|current|latest|right now|rn|today|situation|status|"
-            r"active|burning|happening|alert|order|official|records?|fires?|wildfires?)\b",
+            r"active|burning|happening|alert|alerts?|order|orders?|official|records?|"
+            r"fires?|wildfires?|perimeters?)\b",
             lowered,
         )
     )

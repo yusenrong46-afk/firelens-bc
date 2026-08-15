@@ -30,6 +30,7 @@ from firelens.contracts import (
     ResponseMode,
     ResponseStatus,
     ValidationReport,
+    bounded_assistant_history,
 )
 from firelens.errors import IndexValidationError
 from firelens.retrieval.embeddings import load_embedding_cache
@@ -41,7 +42,7 @@ from firelens.traces import TraceRecorder
 
 class ContractPropertyTests(unittest.TestCase):
     def test_every_response_mode_has_server_bounded_assistant_history(self) -> None:
-        long_answer = "word " * 1_500
+        bounded_answer = "word " * 1_200
         timestamp = datetime(2026, 7, 30, tzinfo=UTC)
         validation = ValidationReport(
             accepted=True,
@@ -87,7 +88,7 @@ class ContractPropertyTests(unittest.TestCase):
                 status=ResponseStatus.ANSWER,
                 trace_id="grounded",
                 response_mode=ResponseMode.GROUNDED,
-                answer=long_answer,
+                answer=grounded_claim.text,
                 claims=[grounded_claim],
                 evidence=[evidence],
             ),
@@ -95,7 +96,7 @@ class ContractPropertyTests(unittest.TestCase):
                 status=ResponseStatus.ANSWER,
                 trace_id="partial",
                 response_mode=ResponseMode.PARTIAL,
-                answer=long_answer,
+                answer=grounded_claim.text,
                 claims=[grounded_claim],
                 evidence=[evidence],
             ),
@@ -103,7 +104,7 @@ class ContractPropertyTests(unittest.TestCase):
                 status=ResponseStatus.ANSWER,
                 trace_id="conflict",
                 response_mode=ResponseMode.CONFLICT,
-                answer=long_answer,
+                answer=bounded_answer,
                 claims=[grounded_claim],
                 evidence=[evidence],
                 validation=validation,
@@ -112,7 +113,7 @@ class ContractPropertyTests(unittest.TestCase):
                 status=ResponseStatus.ANSWER,
                 trace_id="background",
                 response_mode=ResponseMode.BACKGROUND,
-                answer=long_answer,
+                answer=background_claim.text,
                 claims=[background_claim],
                 limitations=[BACKGROUND_LIMITATION],
             ),
@@ -120,19 +121,19 @@ class ContractPropertyTests(unittest.TestCase):
                 status=ResponseStatus.ANSWER,
                 trace_id="capability",
                 response_mode=ResponseMode.CAPABILITY,
-                answer=long_answer,
+                answer=bounded_answer,
             ),
             ResponseMode.SCOPE_REDIRECT: AskResponse(
                 status=ResponseStatus.ANSWER,
                 trace_id="scope",
                 response_mode=ResponseMode.SCOPE_REDIRECT,
-                answer=long_answer,
+                answer=bounded_answer,
             ),
             ResponseMode.REQUIRES_INPUT: AskResponse(
                 status=ResponseStatus.ANSWER,
                 trace_id="requires-input",
                 response_mode=ResponseMode.REQUIRES_INPUT,
-                answer=long_answer,
+                answer=bounded_answer,
                 required_input=RequiredInput(
                     kind=RequiredInputKind.LOCATION,
                     prompt="Share an approximate location.",
@@ -143,13 +144,13 @@ class ContractPropertyTests(unittest.TestCase):
                 status=ResponseStatus.ABSTENTION,
                 trace_id="abstention",
                 response_mode=ResponseMode.ABSTENTION,
-                answer=long_answer,
+                answer=bounded_answer,
             ),
             ResponseMode.LIVE: AskResponse(
                 status=ResponseStatus.ANSWER,
                 trace_id="live",
                 response_mode=ResponseMode.LIVE,
-                answer=long_answer,
+                answer=bounded_answer,
                 live_results=[live],
                 aggregate_freshness=AggregateFreshness.FRESH,
             ),
@@ -157,7 +158,7 @@ class ContractPropertyTests(unittest.TestCase):
                 status=ResponseStatus.ANSWER,
                 trace_id="mixed",
                 response_mode=ResponseMode.MIXED,
-                answer=long_answer,
+                answer=bounded_answer,
                 claims=[grounded_claim],
                 evidence=[evidence],
                 validation=validation,
@@ -171,7 +172,12 @@ class ContractPropertyTests(unittest.TestCase):
             with self.subTest(mode=mode):
                 turn = ConversationTurn(role="assistant", content=response.history_text)
                 self.assertLessEqual(len(turn.content), 6_000)
-                self.assertTrue(turn.content.endswith("..."))
+                self.assertTrue(turn.content.startswith(("Authority:", "Safety boundary:")))
+                self.assertIn("Answer:", turn.content)
+
+        truncated = bounded_assistant_history("word " * 1_500)
+        self.assertEqual(len(truncated), 6_000)
+        self.assertTrue(truncated.endswith("..."))
 
     def test_valid_long_answer_can_round_trip_as_assistant_history(self) -> None:
         answer = "A" * 2_500

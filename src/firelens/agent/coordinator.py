@@ -2,18 +2,43 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Protocol
 
 from firelens.agent.tools import AgentTool
+from firelens.answering.intent import (
+    live_layers_for_question,
+    plan_query,
+    reviewed_guidance_intent,
+)
+from firelens.answering.location_intent import (
+    asks_for_personal_location,
+    coarse_location_from_question,
+)
 from firelens.contracts import (
     AskResponse,
+    EvidenceStatus,
     LiveResultKind,
+    LocationInput,
     QueryRequest,
     QueryRoute,
     ResponseMode,
 )
 from firelens.live_answering import LiveAnswerCoordinator
+
+_PLACE_CORRECTION_PATTERNS = (
+    re.compile(
+        r"^(?:i\s+(?:mean|meant)|actually|no[,]?\s*wait[,]?)\s+"
+        r"(?P<place>[a-z][a-z .'-]{1,80}?)(?:\s+(?:not|instead of)\b.*)?[.?!]*$",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"^(?P<place>[a-z][a-z .'-]{1,80}?)\s+(?:not|instead of)\s+"
+        r"[a-z][a-z .'-]{1,80}[.?!]*$",
+        re.IGNORECASE,
+    ),
+)
 
 
 class StaticAnswerService(Protocol):
@@ -46,7 +71,9 @@ def _live_tools(request: QueryRequest, response: AskResponse) -> tuple[AgentTool
     tools: list[AgentTool] = []
     if LiveAnswerCoordinator.is_distance_request(request):
         tools.append(AgentTool.CALCULATE_FIRE_DISTANCE)
-    elif LiveAnswerCoordinator.is_selected_live_request(request):
+    elif LiveAnswerCoordinator.is_selected_live_request(
+        request
+    ) or LiveAnswerCoordinator.is_unsupported_selected_request(request):
         tools.append(AgentTool.GET_FIRE_DETAILS)
     else:
         kinds = {result.kind for result in response.live_results}
@@ -54,9 +81,75 @@ def _live_tools(request: QueryRequest, response: AskResponse) -> tuple[AgentTool
             tools.append(AgentTool.LIST_ACTIVE_FIRES)
         if LiveResultKind.EVACUATION in kinds:
             tools.append(AgentTool.GET_EVACUATION_INFORMATION)
-    if response.response_mode in {ResponseMode.MIXED, ResponseMode.PARTIAL}:
+    claim_statuses = {claim.evidence_status for claim in response.claims}
+    if EvidenceStatus.VERIFIED_CORPUS in claim_statuses:
         tools.append(AgentTool.SEARCH_REVIEWED_GUIDANCE)
+    if EvidenceStatus.GENERAL_BACKGROUND in claim_statuses:
+        tools.append(AgentTool.ANSWER_GENERAL_BACKGROUND)
     return tuple(dict.fromkeys(tools))
+
+
+def _live_place_correction(request: QueryRequest) -> QueryRequest | None:
+    """Reapply a terse place correction only to the latest live user task."""
+
+    place: str | None = None
+    for pattern in _PLACE_CORRECTION_PATTERNS:
+        match = pattern.match(request.question.strip())
+        if match is not None:
+            place = match.group("place").strip(" .?!'\"")
+            break
+    if place is None:
+        return None
+    previous_questions = [turn.content for turn in request.history if turn.role == "user"]
+    if not previous_questions:
+        return None
+    previous = previous_questions[-1]
+    previous_request = QueryRequest(question=previous)
+    if plan_query(previous_request).route != QueryRoute.LIVE and not live_layers_for_question(
+        previous
+    ):
+        return None
+    if asks_for_personal_location(place):
+        previous_location = coarse_location_from_question(previous)
+        corrected_question = previous
+        if previous_location is not None and previous_location.label is not None:
+            corrected_question = re.sub(
+                re.escape(previous_location.label),
+                "my place",
+                previous,
+                count=1,
+                flags=re.IGNORECASE,
+            )
+        if corrected_question == previous:
+            layers = set(live_layers_for_question(previous))
+            if LiveResultKind.EVACUATION in layers:
+                corrected_question = "Show current evacuation alerts and orders near my place."
+            elif layers == {LiveResultKind.PERIMETER}:
+                corrected_question = "Show the current wildfire perimeters near my place."
+            else:
+                corrected_question = "Show current wildfires near my place."
+        return request.model_copy(
+            update={
+                "question": corrected_question,
+                "location": None,
+            }
+        )
+    if reviewed_guidance_intent(place):
+        return None
+    parsed_place = coarse_location_from_question(f"map {place}")
+    if parsed_place is None or parsed_place.label is None:
+        return None
+    place = parsed_place.label
+    try:
+        location = LocationInput(label=place)
+    except ValueError:
+        return None
+    return request.model_copy(
+        update={
+            "question": previous,
+            "location": location,
+        }
+    )
 
 
 class FireLensAgent:
@@ -71,7 +164,8 @@ class FireLensAgent:
         self.live_coordinator = live_coordinator
 
     async def answer(self, request: QueryRequest) -> AgentExecution:
-        if not self.live_coordinator.handles(request):
+        effective_request = _live_place_correction(request) or request
+        if not self.live_coordinator.handles(effective_request):
             response = await self.static_service.ask(request)
             return AgentExecution(
                 response=response,
@@ -79,15 +173,15 @@ class FireLensAgent:
                 tools=(_static_tool(response),),
             )
 
-        static_request = self.live_coordinator.static_request(request)
+        static_request = self.live_coordinator.static_request(effective_request)
         static_response = (
             await self.static_service.ask(static_request, allow_live=False)
             if static_request is not None
             else None
         )
-        response = await self.live_coordinator.answer(request, static_response)
+        response = await self.live_coordinator.answer(effective_request, static_response)
         return AgentExecution(
             response=response,
             route=QueryRoute.LIVE,
-            tools=_live_tools(request, response),
+            tools=_live_tools(effective_request, response),
         )

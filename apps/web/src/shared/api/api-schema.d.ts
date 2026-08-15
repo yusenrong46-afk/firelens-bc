@@ -115,11 +115,30 @@ export interface components {
          * @enum {string}
          */
         AggregateFreshness: "fresh" | "stale" | "mixed";
+        /**
+         * AnswerSection
+         * @description A user-visible answer part whose authority is fixed by local code.
+         */
+        AnswerSection: {
+            /** Heading */
+            heading: string;
+            kind: components["schemas"]["AnswerSectionKind"];
+            /** Text */
+            text: string;
+        };
+        /**
+         * AnswerSectionKind
+         * @description Authority-labelled parts composed by the application agent.
+         * @enum {string}
+         */
+        AnswerSectionKind: "current_records" | "reviewed_guidance" | "conflicting_guidance" | "general_background" | "official_handoff" | "uncertainty";
         /** AskResponse */
         AskResponse: {
             aggregate_freshness?: components["schemas"]["AggregateFreshness"] | null;
             /** Answer */
             answer?: string | null;
+            /** Answer Sections */
+            answer_sections?: components["schemas"]["AnswerSection"][];
             /** Claims */
             claims?: components["schemas"]["PublicClaim"][];
             /** Error Kind */
@@ -231,6 +250,10 @@ export interface components {
         HealthResponse: {
             /** Build Commit */
             build_commit?: string | null;
+            /** Candidate Id */
+            candidate_id?: string | null;
+            /** Candidate Sha256 */
+            candidate_sha256?: string | null;
             /** Chunk Count */
             chunk_count?: number | null;
             /** Corpus Ready */
@@ -239,6 +262,10 @@ export interface components {
             corpus_version?: string | null;
             /** Deployment Id */
             deployment_id?: string | null;
+            /** Embedding Model */
+            embedding_model?: string | null;
+            /** Generation Model */
+            generation_model?: string | null;
             /** Index Ready */
             index_ready: boolean;
             /** Problems */
@@ -258,6 +285,10 @@ export interface components {
             rate_limit_scope: "instance_local";
             /** Release Version */
             release_version: string;
+            /** Rerank Model */
+            rerank_model?: string | null;
+            /** Retrieval Text Strategy */
+            retrieval_text_strategy?: string | null;
             /**
              * Status
              * @enum {string}
