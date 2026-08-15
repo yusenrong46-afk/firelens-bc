@@ -38,6 +38,19 @@ let seenRequests: AskRequest[] = [];
 
 test.beforeEach(async ({ page }) => {
   seenRequests = [];
+  await page.route("**/api/v1/live/map*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        generated_at: "2026-08-13T19:00:00Z",
+        results: [],
+        unavailable_layers: [],
+        layer_statuses: [],
+        limitations: [],
+      }),
+    });
+  });
   await page.route("**/api/v1/ask", async (route) => {
     const request = route.request().postDataJSON() as AskRequest;
     seenRequests.push(request);
@@ -231,13 +244,20 @@ test("shows official live records and a map through keyboard submission", async 
   const marker = page.locator(".live-map__record-geometry").first();
   await expect(marker).toBeVisible();
   if (testInfo.project.name === "desktop") {
-    await marker.click({ force: true });
+    await marker.dispatchEvent("click");
     await expect(page.locator(".leaflet-popup").getByText("Test Fire", { exact: true })).toBeVisible();
   } else {
     await testFire.press("Enter");
     await expect(testFire.locator("..")).toHaveClass(/live-list__selected/);
   }
-  await expect(page.getByText("No matching record is not a safety determination.")).toBeVisible();
+  await expect(
+    page.getByRole("status", { name: "Answer limitations" })
+      .getByText("No matching record is not a safety determination.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Official wildfire records map" })
+      .getByText(/No matching record is not a safety determination\. Follow instructions/),
+  ).toBeVisible();
   await expect(page.getByText("Sources supporting this answer")).toHaveCount(0);
 });
 
@@ -278,7 +298,13 @@ test("opens an official source link with keyboard activation", async ({ page }) 
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("Is there an active wildfire near me right now?");
   await page.getByLabel("Send question").press("Enter");
-  const source = page.getByRole("listitem").filter({ hasText: "Test Fire" }).getByRole("link", { name: "Source", exact: true });
+  const source = page
+    .getByRole("listitem")
+    .filter({ hasText: "Test Fire" })
+    .getByRole("link", {
+      name: "Open Source for Test Fire, record incident:7",
+      exact: true,
+    });
   await expect(source).toBeVisible();
   await expect(source).toHaveAttribute("href", "https://example.test/incidents/7");
   const [popup] = await Promise.all([page.waitForEvent("popup"), source.press("Enter")]);

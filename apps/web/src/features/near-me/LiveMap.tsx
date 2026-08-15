@@ -1,39 +1,22 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { CircleMarker, GeoJSON, MapContainer, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import type { LiveResult } from "../../shared/api/api";
 import { bcBoundaryFeature } from "./bcBoundary";
+import { MatchingRecordList, ProvinceRecordList } from "./LiveRecordLists";
 import { BC_BOUNDS, FitResults, type MapFocus } from "./MapViewport";
-
-function formatTimestamp(value: string): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "Timestamp unavailable";
-  return new Intl.DateTimeFormat("en-CA", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZoneName: "short",
-  }).format(parsed);
-}
-
-const INITIAL_LIST_LIMIT = 12;
-
-function resultColour(kind: LiveResult["kind"]): string {
-  if (kind === "evacuation") return "#9b3f26";
-  if (kind === "perimeter") return "#c26b2d";
-  return "#b42318";
-}
-
-function isRenderableGeometry(result: LiveResult): boolean {
-  const geometry = result.geometry as { type?: string; coordinates?: unknown };
-  if (!Array.isArray(geometry.coordinates) || geometry.coordinates.length === 0) return false;
-  return ["Point", "Polygon", "MultiPolygon"].includes(geometry.type ?? "");
-}
+import {
+  formatTimestamp,
+  isRenderableGeometry,
+  resultColour,
+  resultDisplayName,
+  resultStatus,
+} from "./liveResultPresentation";
 
 export function LiveMap({
   results,
+  matchingResults,
+  provinceResults,
   aggregateFreshness,
   unavailableLayers = [],
   focus,
@@ -43,6 +26,8 @@ export function LiveMap({
   onAskAboutResult,
 }: {
   results: LiveResult[];
+  matchingResults?: LiveResult[] | undefined;
+  provinceResults?: LiveResult[] | undefined;
   aggregateFreshness?: "fresh" | "stale" | "mixed" | undefined;
   unavailableLayers?: string[] | undefined;
   focus?: MapFocus | undefined;
@@ -51,7 +36,15 @@ export function LiveMap({
   onSelectResult?: ((resultId: string) => void) | undefined;
   onAskAboutResult?: ((resultId: string, question: string) => void) | undefined;
 }) {
-  const [showAllRecords, setShowAllRecords] = useState(false);
+  const displayedMatchingResults = matchingResults ?? focusResults;
+  const displayedMatchingIds = useMemo(
+    () => new Set(displayedMatchingResults.map((result) => result.result_id)),
+    [displayedMatchingResults],
+  );
+  const displayedProvinceResults = useMemo(
+    () => provinceResults ?? results.filter((result) => !displayedMatchingIds.has(result.result_id)),
+    [displayedMatchingIds, provinceResults, results],
+  );
   const freshnessState = aggregateFreshness ?? (results.length === 0
     ? undefined
     : results.every((result) => result.freshness === "stale")
@@ -79,15 +72,7 @@ export function LiveMap({
     ),
     [results],
   );
-  const listedResults = useMemo(() => {
-    if (showAllRecords || results.length <= INITIAL_LIST_LIMIT) return results;
-    const initial = results.slice(0, INITIAL_LIST_LIMIT);
-    const selected = selectedResultId
-      ? results.find((result) => result.result_id === selectedResultId)
-      : undefined;
-    if (!selected || initial.some((result) => result.result_id === selected.result_id)) return initial;
-    return [selected, ...initial.slice(0, INITIAL_LIST_LIMIT - 1)];
-  }, [results, selectedResultId, showAllRecords]);
+  const hasMatchingResults = displayedMatchingResults.length > 0;
   return (
     <section className="live-map" aria-label="Official wildfire records map">
       <div className="live-map__heading">
@@ -125,12 +110,24 @@ export function LiveMap({
           Official records include stale cached data because a refresh failed. Check each record timestamp.
         </p>
       )}
-      <MapContainer
-        bounds={BC_BOUNDS}
-        scrollWheelZoom={false}
-        attributionControl={false}
-        aria-label="Interactive map of official wildfire records"
-      >
+      {unavailableLayers.length > 0 && (
+        <p className="live-map__warning" role="status">
+          Some official layers are unavailable: {unavailableLayers.join(", ")}.
+          The records below do not represent those missing layers.
+        </p>
+      )}
+      <MatchingRecordList
+        results={displayedMatchingResults}
+        selectedResultId={selectedResultId}
+        onSelectResult={onSelectResult}
+      />
+      <div role="region" aria-label="Interactive map of official wildfire records">
+        <MapContainer
+          bounds={BC_BOUNDS}
+          scrollWheelZoom={false}
+          keyboard={false}
+          attributionControl={false}
+        >
         <GeoJSON
           data={bcBoundaryFeature as unknown as GeoJSON.Feature}
           interactive={false}
@@ -153,13 +150,16 @@ export function LiveMap({
               className: "live-map__record-geometry",
               color: resultColour(result.kind),
               weight: result.result_id === selectedResultId ? 4 : 2,
-              fillOpacity: result.result_id === selectedResultId ? 0.38 : 0.22,
+              opacity: displayedMatchingIds.size === 0 || displayedMatchingIds.has(result.result_id) ? 1 : 0.32,
+              fillOpacity: result.result_id === selectedResultId
+                ? 0.38
+                : displayedMatchingIds.size === 0 || displayedMatchingIds.has(result.result_id) ? 0.22 : 0.07,
             }}
             eventHandlers={{ click: () => onSelectResult?.(result.result_id) }}
           >
             <Popup>
-              <strong>{result.name}</strong><br />
-              {result.status}<br />
+              <strong>{resultDisplayName(result)}</strong><br />
+              {resultStatus(result)}<br />
               Updated {formatTimestamp(result.source_updated_at)}
               {onAskAboutResult && (
                 <div className="map-popup-actions">
@@ -188,12 +188,13 @@ export function LiveMap({
                 color: "#fff",
                 weight: result.result_id === selectedResultId ? 4 : 2,
                 fillColor: resultColour(result.kind),
-                fillOpacity: 1,
+                opacity: displayedMatchingIds.size === 0 || displayedMatchingIds.has(result.result_id) ? 1 : 0.35,
+                fillOpacity: displayedMatchingIds.size === 0 || displayedMatchingIds.has(result.result_id) ? 1 : 0.25,
               }}
             >
               <Popup>
-                <strong>{result.name}</strong><br />
-                {result.status}<br />
+                <strong>{resultDisplayName(result)}</strong><br />
+                {resultStatus(result)}<br />
                 Updated {formatTimestamp(result.source_updated_at)}
                 {onAskAboutResult && (
                   <div className="map-popup-actions">
@@ -205,7 +206,8 @@ export function LiveMap({
             </CircleMarker>
           );
         })}
-      </MapContainer>
+        </MapContainer>
+      </div>
       {focus && (
         <p className="map-surface-status" role="status">
           Map focused on the requested area near {focus.latitude.toFixed(2)}, {focus.longitude.toFixed(2)}.
@@ -217,12 +219,6 @@ export function LiveMap({
         {" "}under the <a href="https://www2.gov.bc.ca/gov/content/data/open-data/open-government-licence-bc" target="_blank" rel="noreferrer">Open Government Licence – BC</a>.
         No third-party basemap request is made. Use the official BCWS map for detailed geographic context.
       </p>
-      {unavailableLayers.length > 0 && (
-        <p className="live-map__warning" role="status">
-          Some official layers are unavailable: {unavailableLayers.join(", ")}.
-          The records below do not represent those missing layers.
-        </p>
-      )}
       {results.length > 0 && (
         <div className="live-roster-summary" aria-label="Official record totals">
           <strong>{results.length} official map records</strong>
@@ -231,33 +227,12 @@ export function LiveMap({
           <span>{kindCounts.perimeter} perimeters</span>
         </div>
       )}
-      <ul className="live-list">
-        {listedResults.map((result) => (
-          <li key={result.result_id} className={result.result_id === selectedResultId ? "live-list__selected" : ""}>
-            <span className={`live-dot live-dot--${result.kind}`} />
-            <button type="button" className="live-list__select" onClick={() => onSelectResult?.(result.result_id)}>
-              <strong>{result.name}</strong>
-              <small>{result.status} · {result.freshness} · {result.authority}</small>
-              <small>Source updated {formatTimestamp(result.source_updated_at)}</small>
-              <small>Retrieved {formatTimestamp(result.retrieved_at)}</small>
-              {result.distance_km != null && <small>{result.distance_km.toFixed(1)} km · {result.distance_basis?.replaceAll("_", " ")}</small>}
-            </button>
-            <a href={result.source_url} target="_blank" rel="noreferrer">Source</a>
-          </li>
-        ))}
-      </ul>
-      {results.length > INITIAL_LIST_LIMIT && (
-        <button
-          type="button"
-          className="live-list-toggle"
-          onClick={() => setShowAllRecords((current) => !current)}
-          aria-expanded={showAllRecords}
-        >
-          {showAllRecords
-            ? "Show fewer records"
-            : `Show all ${results.length} official records`}
-        </button>
-      )}
+      <ProvinceRecordList
+        results={displayedProvinceResults}
+        hasMatchingResults={hasMatchingResults}
+        selectedResultId={selectedResultId}
+        onSelectResult={onSelectResult}
+      />
       <p className="live-map__note">No matching record is not a safety determination. Follow instructions from the issuing authority.</p>
     </section>
   );

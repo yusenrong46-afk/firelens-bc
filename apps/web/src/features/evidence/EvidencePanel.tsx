@@ -8,10 +8,20 @@ import {
   Shield,
   WarningCircle,
 } from "@phosphor-icons/react";
+import type { AskResponse, LiveResult } from "../../shared/api/api";
+import { abstentionPresentation } from "../ask/abstentionPresentation";
 import type { Evidence, Support } from "../ask/responseModel";
+import { answerSectionAuthority, getAnswerSections } from "../ask/answerSections";
 import type { FireLensSession } from "../ask/useFireLensSession";
 
 const LiveMap = lazy(() => import("../near-me/LiveMap").then((module) => ({ default: module.LiveMap })));
+
+function mapResultLinkText(item: LiveResult): string {
+  const fallback = item.name || item.incident_number || "Official wildfire record";
+  return /(?:featureserver|mapserver|arcgis)/i.test(item.source_url)
+    ? `GIS dataset — ${fallback}`
+    : fallback;
+}
 
 function HighlightedPassage({ text, quote }: { text: string; quote: string }) {
   const start = text.indexOf(quote);
@@ -89,12 +99,40 @@ function SourcePanel({
   );
 }
 
-function EvidencePlaceholder({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+type RelatedLink = NonNullable<AskResponse["related_links"]>[number];
+
+function EvidencePlaceholder({
+  icon,
+  title,
+  children,
+  links = [],
+}: {
+  icon: ReactNode;
+  title: string;
+  children: ReactNode;
+  links?: RelatedLink[] | undefined;
+}) {
   return (
     <div className="evidence-placeholder">
       <span>{icon}</span>
-      <h1>{title}</h1>
+      <h2>{title}</h2>
       <p>{children}</p>
+      {links.length > 0 && (
+        <div className="related-service-links evidence-placeholder__links" aria-label="Related official sources for this boundary">
+          {links.map((item) => (
+            <a
+              key={item.url}
+              href={item.url}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`Open ${item.title} from the answer context`}
+            >
+              <span><strong>{item.title}</strong><small>{item.description}</small></span>
+              <ArrowSquareOut size={18} aria-hidden="true" />
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -110,6 +148,8 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
     mapLoading,
     mapMessage,
     mapResults,
+    mapMatchingResults,
+    mapProvinceResults,
     mapUnavailableLayers,
     mode,
     selected,
@@ -118,6 +158,10 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
     view,
   } = session;
   const selectedClaim = citedMode ? claims[selected] : undefined;
+  const answerSections = getAnswerSections(view.kind === "answer" ? view.response : undefined);
+  const abstentionCopy = abstentionPresentation(
+    view.kind === "abstention" ? view.response.reason_code : undefined,
+  );
   const evidenceById = useMemo(
     () => new Map((view.kind === "answer" ? (view.response.evidence ?? []) : []).map((item) => [item.evidence_id, item])),
     [view],
@@ -132,6 +176,8 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
         <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading the official map">Preparing map layers…</EvidencePlaceholder>}>
           <LiveMap
             results={mapResults}
+            matchingResults={mapMatchingResults}
+            provinceResults={mapProvinceResults}
             aggregateFreshness={mapAggregateFreshness}
             unavailableLayers={mapUnavailableLayers}
             focus={mapFocus}
@@ -148,7 +194,7 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
         {view.kind === "answer" && citedMode && selectedClaim ? (
           <>
             <span className="selected-kicker">Selected claim {selected + 1}</span>
-            <h1>{selectedClaim.text}</h1>
+            <h2>{selectedClaim.text}</h2>
             <div className="answer-claim">
               <Shield size={18} /><strong>Answer claim</strong><span>{selectedClaim.text}</span>
             </div>
@@ -166,10 +212,22 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
         ) : view.kind === "answer" && (mode === "live" || mode === "mixed") ? (
           <div className="map-answer-summary">
             <span className="selected-kicker">Official map answer</span>
-            <h1>{view.response.answer}</h1>
+            {answerSections.length > 0 ? (
+              <div className="answer-sections" aria-label="Authority-labelled map answer">
+                {answerSections.map((section) => (
+                  <section className="answer-section" key={section.kind}>
+                    <span className="answer-section__authority">{answerSectionAuthority(section.kind)}</span>
+                    <h2>{section.heading}</h2>
+                    <p>{section.text}</p>
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <h2>{view.response.answer}</h2>
+            )}
             {(view.response.live_results ?? []).map((item) => (
               <a key={item.result_id} href={item.source_url} target="_blank" rel="noreferrer">
-                {item.name || item.incident_number || "Official wildfire record"} <ArrowSquareOut size={15} />
+                {mapResultLinkText(item)} <ArrowSquareOut size={15} />
               </a>
             ))}
             {mode === "mixed" && (view.response.evidence ?? []).length > 0 && (
@@ -194,8 +252,13 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
             The agent is selecting between official live tools, reviewed retrieval, and labelled general knowledge.
           </EvidencePlaceholder>
         ) : view.kind === "abstention" ? (
-          <EvidencePlaceholder icon={<WarningCircle size={34} />} title="No evidence-backed answer">
-            The request crossed a product boundary or the approved corpus could not support an answer. Use the official-current-information link for live conditions.
+          <EvidencePlaceholder
+            icon={<WarningCircle size={34} />}
+            title={abstentionCopy.title}
+            links={view.response.related_links ?? []}
+          >
+            {abstentionCopy.summary}{" "}
+            {(view.response.related_links ?? []).length > 0 ? abstentionCopy.linkLead : ""}
           </EvidencePlaceholder>
         ) : view.kind === "unavailable" || view.kind === "error" ? (
           <EvidencePlaceholder icon={<WarningCircle size={34} />} title="Local service unavailable">

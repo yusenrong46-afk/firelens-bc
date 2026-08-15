@@ -121,7 +121,7 @@ function privacyEvidence(protocol) {
       method: "POST",
       url: protocol.privacy_evidence.request_url,
       resourceType: "fetch",
-      body: { question: "surface:grounded", history: [] },
+      body: { question: "surface:requires-location", history: [] },
       responseStatus: 200,
     }),
     canonicalApiRequestRecord({
@@ -132,7 +132,7 @@ function privacyEvidence(protocol) {
       body: {
         question: "surface:live-fresh",
         history: [
-          { role: "user", content: "surface:grounded" },
+          { role: "user", content: "surface:requires-location" },
           { role: "assistant", content: "fixture answer" },
         ],
         location: { latitude: 49.28, longitude: -123.12, radius_km: 50 },
@@ -372,6 +372,8 @@ test("JSON-compatible YAML freezes the exact safety-critical matrix", async () =
     "idle",
     "grounded",
     "partial",
+    "background",
+    "requires_input",
     "abstention",
     "provider_failure",
     "live",
@@ -385,7 +387,7 @@ test("JSON-compatible YAML freezes the exact safety-critical matrix", async () =
     "tablet",
     "desktop",
   ]);
-  assert.equal(protocol.matrix.expected_rows, 30);
+  assert.equal(protocol.matrix.expected_rows, 36);
   assert.equal(protocol.performance.warmup_samples, 1);
   assert.equal(protocol.performance.cold_samples, 7);
   assert.equal(protocol.performance.network.download_bytes_per_second, 200_000);

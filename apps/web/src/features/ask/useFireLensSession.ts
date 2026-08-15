@@ -38,6 +38,8 @@ export type FireLensSession = {
   visibleQuestion: string | undefined;
   assistantText: string;
   mapResults: LiveResult[];
+  mapMatchingResults: LiveResult[];
+  mapProvinceResults: LiveResult[];
   mapLoading: boolean;
   mapMessage: string | undefined;
   mapAggregateFreshness: "fresh" | "stale" | "mixed" | undefined;
@@ -55,6 +57,15 @@ export type FireLensSession = {
   clearManualLocation: () => void;
 };
 
+function displayedAggregateFreshness(
+  results: LiveResult[],
+): FireLensSession["mapAggregateFreshness"] {
+  if (results.length === 0) return undefined;
+  if (results.every((result) => result.freshness === "stale")) return "stale";
+  if (results.some((result) => result.freshness === "stale")) return "mixed";
+  return "fresh";
+}
+
 export function useFireLensSession(): FireLensSession {
   const provinceMap = useProvinceMap();
   const [query, setQuery] = useState("");
@@ -69,7 +80,7 @@ export function useFireLensSession(): FireLensSession {
   const response = view.kind === "answer" || view.kind === "abstention" ? view.response : undefined;
   const mode = response ? getResponseMode(response) : undefined;
   const claims = view.kind === "answer" ? (view.response.claims ?? []) : [];
-  const citedMode = mode === "grounded" || mode === "partial" || mode === "mixed" || mode === "conflict";
+  const citedMode = claims.some((claim) => claim.evidence_status === "verified_corpus");
   const currentPairIsStored =
     (view.kind === "answer" || view.kind === "abstention") &&
     history.length >= 2 &&
@@ -90,10 +101,21 @@ export function useFireLensSession(): FireLensSession {
     }
     return [...resultById.values()];
   }, [provinceMap.data?.results, response?.live_results]);
+  const mapMatchingResults = response?.live_results ?? [];
+  const matchingResultIds = useMemo(
+    () => new Set(mapMatchingResults.map((result) => result.result_id)),
+    [mapMatchingResults],
+  );
+  const mapProvinceResults = useMemo(
+    () => mapResults.filter((result) => !matchingResultIds.has(result.result_id)),
+    [mapResults, matchingResultIds],
+  );
   const mapFocus = response?.resolved_location ?? undefined;
   const mapFocusResults = response?.live_results ?? [];
-  const mapAggregateFreshness =
-    response?.aggregate_freshness ?? provinceMap.data?.aggregate_freshness ?? undefined;
+  const mapAggregateFreshness = useMemo(
+    () => displayedAggregateFreshness(mapResults),
+    [mapResults],
+  );
   const mapUnavailableLayers = [
     ...new Set([
       ...(provinceMap.data?.unavailable_layers ?? []),
@@ -230,7 +252,7 @@ export function useFireLensSession(): FireLensSession {
     view.kind === "answer" || view.kind === "abstention"
       ? responseText(view.response)
       : view.kind === "loading"
-        ? "Searching the reviewed guidance and validating its evidence…"
+        ? "FireLens is checking the available sources and preparing a response…"
         : view.kind === "unavailable" || view.kind === "error"
           ? (view.message ?? "FireLens is unavailable.")
           : provinceMap.loading
@@ -257,6 +279,8 @@ export function useFireLensSession(): FireLensSession {
     visibleQuestion,
     assistantText,
     mapResults,
+    mapMatchingResults,
+    mapProvinceResults,
     mapLoading: provinceMap.loading,
     mapMessage: provinceMap.message,
     mapAggregateFreshness,

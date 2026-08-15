@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
@@ -84,6 +84,94 @@ describe("FireLens Source Lens", () => {
     expect(screen.queryByText("Retrieved passage")).not.toBeInTheDocument();
   });
 
+  it("renders optional authority-labelled answer sections", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "mixed",
+        trace_id: "trace-sections",
+        answer: "Current records are available; general context follows.",
+        answer_sections: [
+          { kind: "current_records", heading: "Current official records", text: "The official record is available." },
+          { kind: "general_background", heading: "General background", text: "This context is not a live official record." },
+        ],
+        claims: [{
+          claim_id: "C1",
+          text: "This context is not a live official record.",
+          evidence_status: "general_background",
+          supports: [],
+        }],
+        evidence: [],
+        limitations: ["General background — not verified against the FireLens corpus."],
+        live_results: [{
+          result_id: "incident:sections",
+          kind: "incident",
+          authority: "BC Wildfire Service",
+          source_url: "https://example.test/incidents/sections",
+          source_updated_at: "2026-08-13T18:55:00Z",
+          retrieved_at: "2026-08-13T19:00:00Z",
+          freshness: "fresh",
+          status: "Being Held",
+          name: "Section Fire",
+          geometry_relation: "nearby",
+          geometry: { type: "Point", coordinates: [-119.5, 49.89] },
+        }],
+        aggregate_freshness: "fresh",
+        validation: { accepted: true },
+      }), { status: 200 }),
+    ));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "What is happening?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect((await screen.findAllByText("Official current records")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Current official records").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("General background").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("This context is not a live official record.").length).toBeGreaterThan(0);
+    expect(screen.getByText("Live records + general background")).toBeInTheDocument();
+    expect(screen.getByText("General background in this answer")).toBeInTheDocument();
+    expect(screen.queryByText("Sources supporting this answer")).not.toBeInTheDocument();
+  });
+
+  it("keeps reviewed-source conflicts visible beside live records", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({
+        ...answer,
+        response_mode: "mixed",
+        trace_id: "trace-mixed-conflict",
+        answer: "A current record is available, but the reviewed guidance conflicts.",
+        answer_sections: [
+          { kind: "current_records", heading: "Current official records", text: "Current official information: Section Fire is Being Held." },
+          { kind: "conflicting_guidance", heading: "Conflicting reviewed sources", text: "The reviewed sources disagree; inspect both before acting." },
+        ],
+        reason_code: "conflicting_evidence",
+        live_results: [{
+          result_id: "incident:conflict",
+          kind: "incident",
+          authority: "BC Wildfire Service",
+          source_url: "https://example.test/incidents/conflict",
+          source_updated_at: "2026-08-13T18:55:00Z",
+          retrieved_at: "2026-08-13T19:00:00Z",
+          freshness: "fresh",
+          status: "Being Held",
+          name: "Section Fire",
+          geometry_relation: "nearby",
+          geometry: { type: "Point", coordinates: [-119.5, 49.89] },
+        }],
+        aggregate_freshness: "fresh",
+      }), { status: 200 }),
+    ));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Show this fire and explain the conflicting guidance.");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText("Live records + conflicting sources")).toBeInTheDocument();
+    expect(screen.getAllByText("Conflicting reviewed sources").length).toBeGreaterThan(0);
+    expect(screen.getByText("The reviewed sources disagree; inspect both before acting.")).toBeInTheDocument();
+  });
+
   it("renders a verified answer and its local evidence", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
       new Response(JSON.stringify(answer), { status: 200 }),
@@ -130,6 +218,44 @@ describe("FireLens Source Lens", () => {
     expect(screen.queryByRole("button", { name: backgroundClaim })).not.toBeInTheDocument();
     expect(screen.queryByText("Retrieved passage")).not.toBeInTheDocument();
   });
+
+  it.each(["partial", "background", "live"] as const)(
+    "shows and deduplicates limitations for a %s answer",
+    async (responseMode) => {
+      const limitation = `Visible ${responseMode} limitation.`;
+      const fetchMock = vi.fn().mockImplementation((url: string) => {
+        if (url.startsWith("/api/v1/live/map")) {
+          return Promise.resolve(new Response(JSON.stringify({
+            generated_at: "2026-08-13T19:00:00Z",
+            results: [],
+            unavailable_layers: [],
+            layer_statuses: [],
+            limitations: [],
+          }), { status: 200 }));
+        }
+        return Promise.resolve(new Response(JSON.stringify({
+          status: "answer",
+          response_mode: responseMode,
+          trace_id: `trace-limit-${responseMode}`,
+          answer: `Answer in ${responseMode} mode.`,
+          claims: [],
+          evidence: [],
+          limitations: [limitation, "", limitation],
+          live_results: [],
+        }), { status: 200 }));
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      const user = userEvent.setup();
+      render(<App />);
+
+      await user.type(screen.getByLabelText("Ask FireLens a question"), `Test ${responseMode} limitations`);
+      await user.click(screen.getByLabelText("Send question"));
+
+      const limitations = await screen.findByRole("status", { name: "Answer limitations" });
+      expect(within(limitations).getAllByText(limitation)).toHaveLength(1);
+      expect(within(limitations).getAllByRole("listitem")).toHaveLength(1);
+    },
+  );
 
   it("keeps unsupported live requests useful with an official next link", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
@@ -183,9 +309,43 @@ describe("FireLens Source Lens", () => {
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByText("FireLens did not generate guidance")).toBeInTheDocument();
-    expect(screen.getByText("Official current information required")).toBeInTheDocument();
+    expect(screen.getAllByText("Current source unavailable").length).toBeGreaterThan(0);
+    expect(screen.getByText(/could not establish the requested current status/)).toBeInTheDocument();
     expect(screen.getByText(/live_data_required/)).toBeInTheDocument();
     expect(screen.queryByText("Sources supporting this answer")).not.toBeInTheDocument();
+  });
+
+  it("labels a personal-safety abstention and exposes its actual official handoff", async () => {
+    const officialUrl = "https://www.emergencyinfobc.gov.bc.ca/";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({
+        status: "abstention",
+        response_mode: "abstention",
+        trace_id: "trace-safety-boundary",
+        answer: "FireLens cannot decide whether you should evacuate.",
+        claims: [],
+        evidence: [],
+        limitations: ["Follow instructions from the issuing authority."],
+        reason_code: "personalized_safety_decision",
+        related_links: [{
+          title: "EmergencyInfoBC current evacuation information",
+          url: officialUrl,
+          description: "Current evacuation notices from issuing authorities.",
+        }],
+      }), { status: 200 }),
+    ));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Should I evacuate now?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText("Personal safety boundary")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Personal safety decision boundary", level: 2 })).toBeInTheDocument();
+    expect(screen.getByText(/cannot decide whether you should stay, leave, evacuate, return/)).toBeInTheDocument();
+    expect(screen.getByRole("link", {
+      name: "Open EmergencyInfoBC current evacuation information from the answer context",
+    })).toHaveAttribute("href", officialUrl);
+    expect(screen.queryByText(/Use the official-current-information link/)).not.toBeInTheDocument();
   });
 
   it("renders official live records in the map panel", async () => {
@@ -222,9 +382,134 @@ describe("FireLens Source Lens", () => {
     expect(await screen.findByText("Current BC wildfire information")).toBeInTheDocument();
     expect(screen.getAllByText("Official live records").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Test Fire").length).toBeGreaterThan(0);
-    expect(screen.getByText(/Some official layers are unavailable: evacuation/)).toBeInTheDocument();
+    const matchingList = screen.getByRole("list", { name: "Matching this question" });
+    const missingLayerWarning = screen.getByText(/Some official layers are unavailable: evacuation/);
+    const map = screen.getByRole("region", { name: "Interactive map of official wildfire records" });
+    expect(missingLayerWarning.compareDocumentPosition(matchingList) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(missingLayerWarning.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByText(/Source updated/)).toBeInTheDocument();
     expect(screen.getByText(/Retrieved/)).toBeInTheDocument();
+  });
+
+  it("derives map freshness from all displayed deduplicated records", async () => {
+    const freshMatch = {
+      result_id: "incident:fresh-match",
+      kind: "incident",
+      authority: "BC Wildfire Service",
+      source_url: "https://example.test/incidents/fresh-match",
+      source_updated_at: "2026-08-13T18:55:00Z",
+      retrieved_at: "2026-08-13T19:00:00Z",
+      freshness: "fresh",
+      status: "Being Held",
+      name: "Fresh Question Fire",
+      geometry_relation: "nearby",
+      geometry: { type: "Point", coordinates: [-119.5, 49.89] },
+    };
+    const staleProvinceRecord = {
+      ...freshMatch,
+      result_id: "incident:stale-province",
+      source_url: "https://example.test/incidents/stale-province",
+      freshness: "stale",
+      name: "Stale Province Fire",
+    };
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.startsWith("/api/v1/live/map")) {
+        return Promise.resolve(new Response(JSON.stringify({
+          generated_at: "2026-08-13T19:00:00Z",
+          results: [staleProvinceRecord],
+          aggregate_freshness: "stale",
+          unavailable_layers: [],
+          layer_statuses: [],
+          limitations: [],
+        }), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "live",
+        trace_id: "trace-combined-freshness",
+        answer: "Fresh Question Fire is the matching official record.",
+        claims: [],
+        evidence: [],
+        limitations: [],
+        live_results: [freshMatch],
+        aggregate_freshness: "fresh",
+        unavailable_layers: [],
+      }), { status: 200 }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Show the matching fire");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect((await screen.findAllByText("Fresh Question Fire is the matching official record.")).length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: "BC wildfire information — mixed freshness", level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(/Official records include stale cached data/)).toBeInTheDocument();
+  });
+
+  it("separates question matches from an interleaved, collapsible province roster", async () => {
+    const matching = {
+      result_id: "incident:match",
+      kind: "incident",
+      authority: "BC Wildfire Service",
+      source_url: "https://example.test/incidents/match",
+      source_updated_at: "2026-08-13T18:55:00Z",
+      retrieved_at: "2026-08-13T19:00:00Z",
+      freshness: "fresh",
+      status: "Out of Control",
+      name: "Question Fire",
+      geometry_relation: "nearby",
+      geometry: { type: "Point", coordinates: [-123.5, 49.5] },
+    };
+    const provinceResults = [
+      { ...matching, result_id: "incident:province", name: "Province Fire" },
+      { ...matching, result_id: "evacuation:province", kind: "evacuation", name: null, incident_number: "EA-7", status: "Alert" },
+      { ...matching, result_id: "perimeter:province", kind: "perimeter", name: null, source_url: "https://services.arcgis.com/example/FeatureServer/0" },
+    ];
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.startsWith("/api/v1/live/map")) {
+        return Promise.resolve(new Response(JSON.stringify({
+          generated_at: "2026-08-13T19:00:00Z",
+          results: provinceResults,
+          aggregate_freshness: "fresh",
+          unavailable_layers: [],
+          layer_statuses: [],
+          limitations: [],
+        }), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "live",
+        trace_id: "trace-partition",
+        answer: "Question Fire is the matching official record.",
+        claims: [],
+        evidence: [],
+        limitations: [],
+        live_results: [matching],
+        resolved_location: { latitude: 49.89, longitude: -119.5 },
+        aggregate_freshness: "fresh",
+        unavailable_layers: [],
+      }), { status: 200 }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Where is Question Fire?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByRole("heading", { name: "Matching this question", level: 2 })).toBeInTheDocument();
+    const matchingList = screen.getByRole("list", { name: "Matching this question" });
+    expect(within(matchingList).getByText("Question Fire")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Rest of B.C.", level: 2 })).toBeInTheDocument();
+    expect(screen.queryByText("Province Fire")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Show rest of B\.C\./ }));
+    const provinceList = screen.getByRole("list", { name: "Rest of B.C." });
+    const provinceNames = within(provinceList).getAllByRole("button").map((button) => button.querySelector("strong")?.textContent);
+    expect(provinceNames).toEqual(["Province Fire", "Evacuation area EA-7", "Wildfire perimeter"]);
+    expect(within(provinceList).getByRole("link", { name: "Open GIS dataset for Wildfire perimeter, record perimeter:province" })).toBeInTheDocument();
   });
 
   it("focuses the map from a named community without asking for location again", async () => {
