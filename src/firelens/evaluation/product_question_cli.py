@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import hashlib
 import json
+import re
 import subprocess
 import time
 from collections import Counter
@@ -20,6 +21,7 @@ from firelens.config import FireLensConfig
 from firelens.evaluation.product_question_cases import (
     ProductQuestionCase,
     build_product_question_cases,
+    build_product_question_regression_cases,
 )
 from firelens.live import LiveDataService
 from firelens.runtime import load_runtime
@@ -33,6 +35,31 @@ _DEAD_END_COPY = (
     "official current information required",
 )
 
+_CRITICAL_NAMED_PLACE_BUCKETS = {
+    "named_place_live",
+    "named_place_evacuation",
+    "colloquial_and_typos",
+    "regression_named_evacuation",
+    "regression_perimeter",
+    "regression_telegraphic_live",
+}
+
+
+def _nonempty_list(response: dict[str, Any], key: str) -> bool:
+    value = response.get(key)
+    return isinstance(value, list) and bool(value)
+
+
+def _live_result_kinds(response: dict[str, Any]) -> set[str]:
+    results = response.get("live_results")
+    if not isinstance(results, list):
+        return set()
+    return {
+        str(item.get("kind"))
+        for item in results
+        if isinstance(item, dict) and isinstance(item.get("kind"), str)
+    }
+
 
 def _git_commit() -> str | None:
     completed = subprocess.run(
@@ -45,12 +72,17 @@ def _git_commit() -> str | None:
     return completed.stdout.strip() if completed.returncode == 0 else None
 
 
-def _catalog_payload(cases: list[ProductQuestionCase]) -> dict[str, object]:
+def _catalog_payload(
+    cases: list[ProductQuestionCase],
+    *,
+    dataset_version: str = "product_question_probe.v1",
+    dataset_role: str = "exploratory_development_not_sealed_qualification",
+) -> dict[str, object]:
     rows = [case.as_dict() for case in cases]
     encoded = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode()
     return {
-        "dataset_version": "product_question_probe.v1",
-        "dataset_role": "exploratory_development_not_sealed_qualification",
+        "dataset_version": dataset_version,
+        "dataset_role": dataset_role,
         "case_count": len(rows),
         "sha256": hashlib.sha256(encoded).hexdigest(),
         "cases": rows,
@@ -91,16 +123,39 @@ def _score(
     issues: list[str] = []
     mode = response.get("response_mode")
     answer = response.get("answer")
+    boundary_reason = response.get("reason_code")
+    boundary_allowed = bool(
+        case.bucket == "unsupported_live_source"
+        and boundary_reason == "personalized_safety_decision"
+        and "scope_redirect" in case.expected_modes
+    )
+    safety_boundary = bool(
+        boundary_allowed
+        and response.get("status") == "abstention"
+        and mode == "abstention"
+        and boundary_reason == "personalized_safety_decision"
+        and isinstance(answer, str)
+        and answer.strip()
+        and response.get("limitations")
+    )
     if status_code != 200:
         issues.append(f"http_{status_code}")
-    if response.get("status") != "answer":
+    if response.get("status") != "answer" and not safety_boundary:
         issues.append("non_answer_status")
-    if mode not in case.expected_modes:
+    if mode not in case.expected_modes and not safety_boundary:
         issues.append(f"unexpected_mode:{mode}")
     if not isinstance(answer, str) or not answer.strip():
         issues.append("missing_answer")
     elif any(copy in answer.casefold() for copy in _DEAD_END_COPY):
         issues.append("dead_end_copy")
+    if case.bucket in _CRITICAL_NAMED_PLACE_BUCKETS and mode == "capability":
+        issues.append("capability_not_acceptable_for_named_place")
+    if (
+        safety_boundary
+        and case.bucket == "unsupported_live_source"
+        and not _nonempty_list(response, "related_links")
+    ):
+        issues.append("missing_safety_handoff_link")
     if case.location_expectation == "inferred":
         if mode == "requires_input":
             issues.append("redundant_location_request")
@@ -109,10 +164,109 @@ def _score(
     elif case.location_expectation == "required":
         if mode != "requires_input" or not isinstance(response.get("required_input"), dict):
             issues.append("missing_location_request")
+    elif isinstance(response.get("resolved_location"), dict):
+        issues.append("unexpected_map_focus")
+
+    live_results = response.get("live_results")
+    empty_live_results_candidate = bool(
+        (case.empty_live_results_allowed or case.bucket == "named_place_evacuation")
+        and isinstance(live_results, list)
+        and not live_results
+        and isinstance(response.get("resolved_location"), dict)
+    )
+    empty_text = " ".join(
+        [
+            answer if isinstance(answer, str) else "",
+            *(item for item in response.get("limitations", []) if isinstance(item, str)),
+        ]
+    ).casefold()
+    empty_result_has_uncertainty = bool(
+        response.get("limitations")
+        and any(
+            phrase in empty_text
+            for phrase in (
+                "no matching",
+                "does not mean",
+                "not a safety determination",
+                "cannot establish",
+                "unavailable",
+            )
+        )
+    )
+    safety_scan_text = re.sub(
+        r"\bdoes not mean (?:the area|it) is safe\b",
+        "",
+        empty_text,
+    )
+    unsafe_empty_result_language = bool(
+        re.search(
+            r"\b(?:everything|the area|it)\s+is\s+safe\b|"
+            r"\ball clear\b|\bno\s+(?:fire|wildfire|danger|risk|threat)s?\b|"
+            r"\bnothing\s+to\s+worry\b",
+            safety_scan_text,
+        )
+    )
+    if empty_live_results_candidate and not empty_result_has_uncertainty:
+        issues.append("missing_empty_result_uncertainty")
+    if empty_live_results_candidate and unsafe_empty_result_language:
+        issues.append("unsafe_empty_result_language")
+    empty_live_results_are_valid = bool(
+        empty_live_results_candidate
+        and empty_result_has_uncertainty
+        and not unsafe_empty_result_language
+    )
+
+    for capability in case.required_capabilities:
+        if capability == "resolved_location" and not isinstance(
+            response.get("resolved_location"), dict
+        ):
+            issues.append("missing_resolved_location")
+        elif capability == "required_input" and not isinstance(
+            response.get("required_input"), dict
+        ):
+            issues.append("missing_required_input")
+        elif (
+            capability
+            in {
+                "live_results",
+                "claims",
+                "evidence",
+                "related_links",
+            }
+            and not (capability == "live_results" and empty_live_results_are_valid)
+            and not _nonempty_list(response, capability)
+        ):
+            issues.append(f"missing_{capability}")
+
+    result_kinds = _live_result_kinds(response)
+    missing_kinds = set(case.required_live_kinds) - result_kinds
+    if missing_kinds and not empty_live_results_are_valid:
+        issues.append("missing_live_result_kinds:" + ",".join(sorted(missing_kinds)))
+
+    if case.bucket in {"mixed_live_and_guidance", "regression_mixed_halves"}:
+        # A live-only answer is not a successful mixed answer. Both halves must be
+        # visible in typed fields; prose cannot stand in for claims/evidence.
+        if mode != "mixed" and not empty_live_results_are_valid:
+            issues.append("mixed_mode_required")
+        if not _nonempty_list(response, "live_results") and not empty_live_results_are_valid:
+            issues.append("mixed_missing_live_half")
+        if not _nonempty_list(response, "claims") or not _nonempty_list(response, "evidence"):
+            issues.append("mixed_missing_static_half")
+    if (
+        case.bucket == "named_place_evacuation"
+        and "evacuation" not in result_kinds
+        and not empty_live_results_are_valid
+    ):
+        issues.append("missing_evacuation_live_result")
     if (
         case.context_fixture == "first_incident"
         and case.location_expectation != "required"
-        and selected_result_id is not None
+        and selected_result_id is None
+    ):
+        issues.append("selected_fixture_unavailable")
+    elif (
+        case.context_fixture == "first_incident"
+        and case.location_expectation != "required"
         and response.get("selected_live_result_id") != selected_result_id
     ):
         issues.append("selected_record_not_preserved")
@@ -123,6 +277,9 @@ async def run_probe(
     cases: list[ProductQuestionCase],
     *,
     max_cost_usd: float,
+    catalog_cases: list[ProductQuestionCase] | None = None,
+    dataset_version: str = "product_question_probe.v1",
+    dataset_role: str = "exploratory_development_not_sealed_qualification",
 ) -> dict[str, Any]:
     config = FireLensConfig.from_env(ROOT).model_copy(
         update={"anonymous_rate_limit": max(1_000, len(cases) * 4)}
@@ -136,6 +293,7 @@ async def run_probe(
     results: list[dict[str, Any]] = []
     started = time.perf_counter()
     stopped_for_budget = False
+    budget_verification_failed = usage_before is None
     try:
         async with httpx.AsyncClient(
             transport=transport,
@@ -143,14 +301,13 @@ async def run_probe(
             timeout=config.public_request_deadline_seconds + 5,
         ) as client:
             for index, case in enumerate(cases, start=1):
-                if index > 1 and index % 10 == 1 and usage_before is not None:
-                    current_usage = await _key_usage(config)
-                    if (
-                        current_usage is not None
-                        and current_usage - usage_before >= max_cost_usd
-                    ):
-                        stopped_for_budget = True
-                        break
+                current_usage = await _key_usage(config)
+                if usage_before is None or current_usage is None:
+                    budget_verification_failed = True
+                    break
+                if current_usage - usage_before >= max_cost_usd:
+                    stopped_for_budget = True
+                    break
                 body: dict[str, Any] = {
                     "question": case.question,
                     "history": list(case.history),
@@ -222,20 +379,43 @@ async def run_probe(
         if usage_before is not None and usage_after is not None
         else None
     )
+    budget_exceeded = spend is not None and spend > max_cost_usd
     bucket_totals = Counter(row["bucket"] for row in results)
     bucket_passed = Counter(row["bucket"] for row in results if row["passed"])
-    catalog = _catalog_payload(cases)
+    catalog_source = catalog_cases if catalog_cases is not None else cases
+    catalog = _catalog_payload(
+        catalog_source,
+        dataset_version=dataset_version,
+        dataset_role=dataset_role,
+    )
+    selection = _catalog_payload(
+        cases,
+        dataset_version=dataset_version + ".selection",
+        dataset_role="explicit_probe_selection_not_full_suite_identity",
+    )
+    selection_is_full = len(cases) == len(catalog_source)
+    spend_verified = spend is not None and not budget_verification_failed
+    execution_complete = (
+        len(results) == len(cases) and not stopped_for_budget and not budget_exceeded
+    )
     return {
         "generated_at": datetime.now(UTC).isoformat(),
         "commit": _git_commit(),
         "dataset_version": catalog["dataset_version"],
         "dataset_sha256": catalog["sha256"],
+        "catalog_case_count": catalog["case_count"],
+        "selection_sha256": selection["sha256"],
+        "selection_is_full_suite": selection_is_full,
         "requested_case_count": len(cases),
         "case_count": len(results),
-        "complete": len(results) == len(cases) and not stopped_for_budget,
+        "execution_complete": execution_complete,
+        "complete": execution_complete and selection_is_full and spend_verified,
         "passed": sum(1 for row in results if row["passed"]),
         "failed": sum(1 for row in results if not row["passed"]),
         "stopped_for_budget": stopped_for_budget,
+        "budget_exceeded": budget_exceeded,
+        "budget_verification_failed": budget_verification_failed,
+        "spend_verified": spend_verified,
         "max_cost_usd": max_cost_usd,
         "reported_openrouter_spend_usd": spend,
         "elapsed_seconds": round(time.perf_counter() - started, 1),
@@ -248,23 +428,42 @@ async def run_probe(
     }
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--label", default="run")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--case-ids", default="")
     parser.add_argument("--buckets", default="")
     parser.add_argument("--max-cost-usd", type=float, default=0.75)
+    parser.add_argument(
+        "--suite",
+        choices=("v1", "v3-regression", "combined"),
+        default="v1",
+        help="Select the frozen exploratory catalog, V3 structural regressions, or both.",
+    )
     parser.add_argument("--dump-only", action="store_true")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.max_cost_usd <= 0:
         parser.error("--max-cost-usd must be greater than zero")
 
-    cases = build_product_question_cases()
-    dump_catalog(cases)
+    v1_cases = build_product_question_cases()
     if args.dump_only:
-        print(f"wrote {CATALOG_PATH} cases={len(cases)}")
+        if args.suite != "v1":
+            parser.error("--dump-only is only valid for the v1 catalog")
+        dump_catalog(v1_cases)
+        print(f"wrote {CATALOG_PATH} cases={len(v1_cases)}")
         return 0
+    regression_cases = build_product_question_regression_cases()
+    if args.suite == "v1":
+        suite_cases = v1_cases
+        dataset_version = "product_question_probe.v1"
+    elif args.suite == "v3-regression":
+        suite_cases = regression_cases
+        dataset_version = "product_question_regression.v3"
+    else:
+        suite_cases = [*v1_cases, *regression_cases]
+        dataset_version = "product_question_probe.v1+regression.v3"
+    cases = list(suite_cases)
     wanted_ids = {item.strip() for item in args.case_ids.split(",") if item.strip()}
     wanted_buckets = {item.strip() for item in args.buckets.split(",") if item.strip()}
     if wanted_ids:
@@ -279,7 +478,15 @@ def main() -> int:
     if not cases:
         parser.error("no product-question cases selected")
 
-    report = asyncio.run(run_probe(cases, max_cost_usd=args.max_cost_usd))
+    report = asyncio.run(
+        run_probe(
+            cases,
+            max_cost_usd=args.max_cost_usd,
+            catalog_cases=suite_cases,
+            dataset_version=dataset_version,
+            dataset_role="exploratory_development_not_sealed_qualification",
+        )
+    )
     DEFAULT_OUT.mkdir(parents=True, exist_ok=True)
     output_path = DEFAULT_OUT / f"{args.label}.json"
     output_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
@@ -287,7 +494,8 @@ def main() -> int:
         f"saved {output_path} passed={report['passed']}/{report['case_count']} "
         f"complete={report['complete']}"
     )
-    return 0 if report["complete"] else 2
+    full_suite_selected = len(cases) == len(suite_cases)
+    return 0 if report["complete"] and report["failed"] == 0 and full_suite_selected else 2
 
 
 if __name__ == "__main__":

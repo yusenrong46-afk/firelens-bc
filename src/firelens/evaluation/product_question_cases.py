@@ -9,6 +9,16 @@ LocationExpectation = Literal["inferred", "required", "none"]
 ContextFixture = Literal["none", "first_incident"]
 
 
+Capability = Literal[
+    "resolved_location",
+    "required_input",
+    "live_results",
+    "claims",
+    "evidence",
+    "related_links",
+]
+
+
 @dataclass(frozen=True)
 class ProductQuestionCase:
     id: str
@@ -19,11 +29,26 @@ class ProductQuestionCase:
     context_fixture: ContextFixture = "none"
     history: tuple[dict[str, str], ...] = ()
     notes: str = ""
+    required_capabilities: tuple[Capability, ...] = ()
+    required_live_kinds: tuple[str, ...] = ()
+    empty_live_results_allowed: bool = False
 
     def as_dict(self) -> dict[str, object]:
         payload = asdict(self)
         payload["expected_modes"] = list(self.expected_modes)
         payload["history"] = list(self.history)
+        # Keep the frozen v1 catalog byte-compatible unless a development case
+        # explicitly opts into a structural capability assertion.
+        if self.required_capabilities:
+            payload["required_capabilities"] = list(self.required_capabilities)
+        else:
+            payload.pop("required_capabilities", None)
+        if self.required_live_kinds:
+            payload["required_live_kinds"] = list(self.required_live_kinds)
+        else:
+            payload.pop("required_live_kinds", None)
+        if not self.empty_live_results_allowed:
+            payload.pop("empty_live_results_allowed", None)
         return payload
 
 
@@ -220,6 +245,178 @@ _UNSUPPORTED_LIVE_QUESTIONS = (
     "What is the current smoke forecast for Kamloops?",
     "Tell me whether it is safe to drive to Kelowna right now.",
 )
+
+
+def build_product_question_regression_cases() -> list[ProductQuestionCase]:
+    """Return non-sealed V3 structural regressions for development replay.
+
+    These cases deliberately live outside ``build_product_question_cases`` and the
+    frozen v1 artifact.  Their checks cover typed response capabilities only; they
+    do not establish semantic entailment or replace human review.
+    """
+
+    return [
+        ProductQuestionCase(
+            id="PQ-REG-MY-PLACE-01",
+            bucket="regression_my_place",
+            question="Are there fires near my place right now?",
+            expected_modes=("requires_input",),
+            location_expectation="required",
+            required_capabilities=("required_input",),
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-MY-PLACE-02",
+            bucket="regression_my_place",
+            question="How close is the nearest perimeter to my home?",
+            expected_modes=("requires_input",),
+            location_expectation="required",
+            required_capabilities=("required_input",),
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-NAMED-EVAC-01",
+            bucket="regression_named_evacuation",
+            question="Is Kelowna under an evacuation order right now?",
+            expected_modes=("live",),
+            location_expectation="inferred",
+            required_capabilities=("resolved_location", "live_results"),
+            required_live_kinds=("evacuation",),
+            empty_live_results_allowed=True,
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-NAMED-EVAC-02",
+            bucket="regression_named_evacuation",
+            question="Show evacuation alerts around Kamloops today.",
+            expected_modes=("live",),
+            location_expectation="inferred",
+            required_capabilities=("resolved_location", "live_results"),
+            required_live_kinds=("evacuation",),
+            empty_live_results_allowed=True,
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-PERIMETER-01",
+            bucket="regression_perimeter",
+            question="How close is the wildfire perimeter near Vernon today?",
+            expected_modes=("live",),
+            location_expectation="inferred",
+            required_capabilities=("resolved_location", "live_results"),
+            required_live_kinds=("perimeter",),
+            empty_live_results_allowed=True,
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-PERIMETER-02",
+            bucket="regression_perimeter",
+            question="Show the current fire perimeter around Penticton.",
+            expected_modes=("live",),
+            location_expectation="inferred",
+            required_capabilities=("resolved_location", "live_results"),
+            required_live_kinds=("perimeter",),
+            empty_live_results_allowed=True,
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-TELEGRAPHIC-01",
+            bucket="regression_telegraphic_live",
+            question="fires by Kelowna today",
+            expected_modes=("live",),
+            location_expectation="inferred",
+            required_capabilities=("resolved_location", "live_results"),
+            required_live_kinds=("incident",),
+            empty_live_results_allowed=True,
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-TELEGRAPHIC-02",
+            bucket="regression_telegraphic_live",
+            question="perimeter near Kamloops now",
+            expected_modes=("live",),
+            location_expectation="inferred",
+            required_capabilities=("resolved_location", "live_results"),
+            required_live_kinds=("perimeter",),
+            empty_live_results_allowed=True,
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-MIXED-01",
+            bucket="regression_mixed_halves",
+            question="Are there fires near Kelowna today, and what belongs in an emergency kit?",
+            expected_modes=("mixed", "partial"),
+            location_expectation="inferred",
+            required_capabilities=("resolved_location", "live_results", "claims", "evidence"),
+            required_live_kinds=("incident",),
+            empty_live_results_allowed=True,
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-MIXED-HANDOFF-01",
+            bucket="regression_mixed_handoff",
+            question="Show fires around Kelowna and the current air quality.",
+            expected_modes=("mixed", "scope_redirect"),
+            location_expectation="inferred",
+            required_capabilities=("resolved_location", "live_results", "related_links"),
+            required_live_kinds=("incident",),
+            empty_live_results_allowed=True,
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-PLACE-CORRECTION-01",
+            bucket="regression_place_correction",
+            question="I meant Vernon",
+            expected_modes=("live",),
+            location_expectation="inferred",
+            history=(
+                {"role": "user", "content": "Show fires around Kelowna."},
+                {
+                    "role": "assistant",
+                    "content": "Current official information was shown for Kelowna.",
+                },
+            ),
+            required_capabilities=("resolved_location", "live_results"),
+            required_live_kinds=("incident",),
+            empty_live_results_allowed=True,
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-PERSONAL-CORRECTION-01",
+            bucket="regression_place_correction",
+            question="I meant my place",
+            expected_modes=("requires_input",),
+            location_expectation="required",
+            history=(
+                {"role": "user", "content": "Show fires around Kelowna."},
+                {
+                    "role": "assistant",
+                    "content": "Current official information was shown for Kelowna.",
+                },
+            ),
+            required_capabilities=("required_input",),
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-CORRECTION-01",
+            bucket="regression_correction_source_context",
+            question="Correction: I meant wildfire smoke, not evacuation orders. What should I prepare?",
+            expected_modes=("grounded", "partial"),
+            history=(
+                {"role": "user", "content": "What should I know about evacuation orders?"},
+                {
+                    "role": "assistant",
+                    "content": "The source context was about evacuation orders.",
+                },
+            ),
+            required_capabilities=("claims", "evidence"),
+            notes="Structural claims/evidence presence does not prove semantic correction or source entailment.",
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-SOURCE-CONTEXT-01",
+            bucket="regression_correction_source_context",
+            question="According to the official guide, what belongs in a grab-and-go bag?",
+            expected_modes=("grounded", "partial"),
+            required_capabilities=("claims", "evidence"),
+            notes="Exact citation identity is provenance evidence; human review remains required for meaning.",
+        ),
+        ProductQuestionCase(
+            id="PQ-REG-RELATED-LINK-01",
+            bucket="regression_correction_source_context",
+            question="What is the current air quality in Kelowna?",
+            expected_modes=("partial", "scope_redirect"),
+            location_expectation="inferred",
+            required_capabilities=("resolved_location", "related_links"),
+            notes="A related official link is a scope handoff, not evidence that FireLens verified the value.",
+        ),
+    ]
 
 
 def build_product_question_cases() -> list[ProductQuestionCase]:
