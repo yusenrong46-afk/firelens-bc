@@ -212,8 +212,9 @@ For answer generation:
 - strict JSON Schema output;
 - `provider.require_parameters: true` so the chosen endpoint supports the
   requested schema feature;
-- `provider.data_collection: "deny"`;
-- configurable `provider.zdr: true`; if ZDR is required and unavailable,
+- `provider.data_collection: "deny"` on every request (not equivalent to ZDR);
+- stage-specific `provider.zdr: true` for embedding and generation; omit ZDR for
+  the approved Cohere rerank exception; if a required stage has no ZDR endpoint,
   fail closed rather than silently weakening privacy;
 - explicit output-token cap;
 - no temperature/top-p tuning until an experiment proves a need.

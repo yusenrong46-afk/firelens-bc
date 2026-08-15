@@ -75,8 +75,9 @@ Confirm in the packet, not from this chat:
 
 - Frozen V1 product-question catalog SHA-256
   `22c14123c5b8868bcd315167836f38f3a7b5daa56913452d13b17edff2c427a5`
-- Bound runtime candidate schema `firelens.runtime_candidate.v2`, including
-  rerank model, generation model, and `require_zdr`
+- Bound runtime candidate schema `firelens.runtime_candidate.v3`, including
+  stage privacy policy (`data_collection`, fallback, embedding/reranking/generation
+  ZDR requirements), rerank model, and generation model
 - Exact commit, release version, and official source links in the review inputs
 
 Do not fill reviewer names, pass/fail cells, or adjudication records here.

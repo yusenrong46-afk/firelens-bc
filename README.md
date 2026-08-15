@@ -215,8 +215,16 @@ cannot provide a globally durable quota. Production must retain Vercel Firewall
 or equivalent platform rate limiting as the outer distributed control.
 
 Readiness returns HTTP 503 when the corpus, index, or required provider
-configuration is unavailable. Debug routes are never registered in production,
+configuration is unavailable. Production readiness reports stage-bound ZDR:
+embedding and generation eligibility, plus `reranking_zdr_optional` when Cohere
+operates under the approved exception. Debug routes are never registered in production,
 even if the debug flag is set.
+
+Do not submit exact addresses, medical details, or other private information.
+FireLens does not store raw questions, answers, history, precise locations, or
+deterministic query hashes. OpenRouter account prompt logging must be confirmed
+disabled before deployment. Provider retention remains a residual third-party
+risk for the bounded rerank query. This is not a privacy certification.
 
 Live location is optional, coarse, and request-scoped. Coordinates are rounded
 to two decimals. Exact-address labels are rejected, and location is not written

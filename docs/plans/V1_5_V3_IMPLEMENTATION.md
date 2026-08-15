@@ -26,7 +26,9 @@ official-live-data validators remain authoritative.
 8. The application owns tool schemas, dispatch, source authority, limits, and
    validation. The language model cannot execute arbitrary tools or select a
    different provider.
-9. Production requires OpenRouter ZDR and provider fallback remains disabled.
+9. Production requires OpenRouter ZDR for embedding and generation. Reranking may
+   operate under the approved non-ZDR exception. Provider fallback remains disabled
+   and every OpenRouter request sends `data_collection=deny`.
 10. Existing public clients remain compatible; all new request fields are optional.
 
 ## Development regression boundary
@@ -53,20 +55,28 @@ they cannot prove semantic entailment, answer completeness, or human usability.
 
 The three OpenRouter stage models are explicit environment configuration:
 `FIRELENS_EMBEDDING_MODEL`, `FIRELENS_RERANK_MODEL`, and
-`FIRELENS_GENERATION_MODEL`. Production startup checks every configured model
-against OpenRouter's current `GET /api/v1/endpoints/zdr` roster and fails closed
-if any stage is ineligible.
+`FIRELENS_GENERATION_MODEL`. Privacy is stage-specific:
 
-On 2026-08-13, the public roster included the default embedding model and
-`openai/gpt-5.6-luna`, but not the currently benchmarked
-`cohere/rerank-4-pro`. That observation is stale until re-verified against
-`GET /api/v1/endpoints/zdr` with the release account. A ZDR listing alone does
-not promote a reranker. Production remains fail-closed when any bound stage is
-ineligible. The staged candidate schema is `firelens.runtime_candidate.v2` and
-binds rerank model, generation model, and `require_zdr` in addition to commit,
-release, corpus, embedding, and retrieval-text strategy. Local processes may
-run with a mismatched candidate and must not be treated as production-qualified
-artifacts.
+- embedding ZDR: required
+- generation ZDR (planning, grounded, repair, background): required
+- reranking ZDR: optional for the retrieval-qualified `cohere/rerank-4-pro`
+- every request: `data_collection=deny`, `allow_fallbacks=false`, `require_parameters=true`
+
+`data_collection=deny` is provider data-policy filtering. It is not ZDR. Production
+startup checks the authenticated `GET /api/v1/endpoints/zdr` roster once and fails
+closed if the embedding or generation model is missing. A missing ZDR endpoint for
+the reranker does not prevent startup under this approved policy. A reranker marked
+`required` would still fail closed if missing.
+
+On 2026-08-13 and 2026-08-15, the roster included the default embedding model and
+`openai/gpt-5.6-luna`, but not `cohere/rerank-4-pro`. Those observations remain
+historical evidence collected under the previous all-model ZDR gate. A ZDR listing
+alone does not promote a reranker. The staged candidate schema is
+`firelens.runtime_candidate.v3` and binds data-collection policy, fallback policy,
+stage ZDR requirements, model IDs, commit, release, corpus, embedding, and
+retrieval-text strategy. A v2 all-ZDR candidate must not be interpreted as this
+policy. Local processes may run with a mismatched candidate and must not be treated
+as production-qualified artifacts.
 
 ## Release evidence boundary
 

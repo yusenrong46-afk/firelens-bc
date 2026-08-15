@@ -356,7 +356,10 @@ outside both capacity controls, cancellation releases permits, and invalid
 successful payloads affect the circuit but are not misclassified as upstream
 load. These bounds are included in benchmark runtime identity. Supported
 parameters are required, data-collecting routes are denied, and fallback is
-disabled. `FIRELENS_REQUIRE_ZDR=true` makes ZDR a fail-closed requirement.
+disabled. Embedding and generation ZDR are fail-closed in production. Reranking
+may omit `provider.zdr` under the approved Cohere exception. Every request still
+sends `data_collection=deny`, `allow_fallbacks=false`, and `require_parameters=true`.
+`FIRELENS_REQUIRE_ZDR=true` is a migration shim for that mix, not universal ZDR.
 
 Timeouts, 429 responses, and transient 5xx failures receive at most two retries
 after the first attempt, against the exact same requested model. Authentication,

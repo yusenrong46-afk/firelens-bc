@@ -9,7 +9,7 @@ production privacy attestation or security approval.
 |---|---|---|---|---|
 | Browser to FireLens API | Question, at most six bounded conversation turns, or a user-entered community/coarse coordinates after a Near Me action | Request content is not accepted by operational logging; process memory is transient | Request/body bounds, same-origin API, no-store API responses, coordinates rounded to two decimals by client and server | Browser privacy probes against URLs, history, service workers, analytics, and traces |
 | API to official BC sources | Bounded layer queries, coarse bounding box, or community lookup | Privacy-safe source-version-bound live cache only | Official allowlisted adapters, deadlines, bounded concurrency, fail-closed parsing, explicit partial/unavailable state | Three-region production SLO capture and upstream contribution measurements |
-| API to OpenRouter | Bounded messages/evidence needed by the selected response plan | FireLens does not persist provider payloads | Production requires ZDR; requests deny data collection and provider fallback; model output is untrusted until deterministic validation passes | Eligible-endpoint canary and deployed ZDR/readiness evidence |
+| API to OpenRouter | Bounded messages/evidence needed by the selected response plan. Reranking receives only the bounded normalized retrieval query and public corpus passages. | FireLens does not persist provider payloads | Embedding and generation require ZDR and fail closed without an eligible endpoint. Reranking may use the retrieval-qualified Cohere model under a reviewed non-ZDR exception. Every OpenRouter request still sends `data_collection=deny`, `allow_fallbacks=false`, and `require_parameters=true`. `data_collection=deny` is not ZDR. Model output is untrusted until deterministic validation passes. | Eligible-endpoint canary and deployed stage-bound ZDR/readiness evidence |
 | API to Vercel logs/drain | Content-free request/feedback event | Intended retention is exactly 30 days | Strict Pydantic event schemas do not accept question, answer, evidence, coordinates, names, email, device fingerprint, or arbitrary metadata | Vercel Pro drain configuration, deletion/retention proof, and access-control review |
 | Browser to product analytics | Content-free task and failure-class events only | Aggregate anonymous analytics, separate from trace-linked feedback | No conversation/location fields are part of the event contract | Deployed analytics configuration and network capture |
 | Feedback to restricted operations view | 32-character trace ID and one allowlisted category | Intended retention is exactly 30 days | `POST /api/v1/feedback` forbids free text and extra fields; rate and body limits apply | Durable sink, role access, daily critical-feedback review, and expiry proof |
@@ -31,7 +31,7 @@ semantic correctness, accessibility, product safety, and release adjudication.
 | Risk family | V1.5-2 control | Required verification |
 |---|---|---|
 | Prompt injection | No arbitrary tools; retrieved text is evidence, not executable instruction; system contract and response validation remain authoritative | Adversarial corpus and live-source probes |
-| Sensitive information disclosure | Content-free telemetry, coarse location, no query hash, ZDR/no-fallback provider policy, no-store API responses | Production network/log/privacy probes |
+| Sensitive information disclosure | Content-free telemetry, coarse location, no query hash, stage-bound ZDR plus deny-collection/no-fallback provider policy, no-store API responses | Production network/log/privacy probes |
 | Supply-chain and source poisoning | Official-source registry, hashes, quarantine/repair provenance, corpus admission, lockfiles, SBOM workflow | Human review of every quarantined repair and current advisory scans |
 | Improper output handling | React text rendering, validated typed response contracts, canonical official links, restrictive CSP | Browser XSS/link/markup probes and human safety review |
 | Excessive agency | Models cannot call tools, change labels, select providers, declare live safety, or bypass validation | Architecture tests and critical-code review |
@@ -42,8 +42,11 @@ semantic correctness, accessibility, product safety, and release adjudication.
 ## Deletion and incident handling
 
 No account, saved location, alert, or location-history store exists. Operational feedback and
-content-free telemetry must expire after 30 days in the deployed sink. A privacy leak, ZDR failure,
-silent partial live response, wrong artifact, or safety-boundary breach is a rollback condition.
+content-free telemetry must expire after 30 days in the deployed sink. A privacy leak, required-stage
+ZDR failure, silent partial live response, wrong artifact, or safety-boundary breach is a rollback
+condition. FireLens does not claim universal ZDR. Cohere reranking is a reviewed non-ZDR exception
+with residual third-party retention risk for the bounded rerank query. Confirm OpenRouter account
+prompt logging is disabled before deployment. This document is not a privacy certification.
 Rollback evidence must include both the immutable artifact and environment snapshot because code
 rollback alone does not restore environment values.
 
@@ -51,6 +54,8 @@ rollback alone does not restore environment values.
 
 - OpenRouter Zero Data Retention and programmatic ZDR endpoint roster:
   <https://openrouter.ai/docs/guides/features/zdr>
+- OpenRouter provider logging / data policy (not equivalent to ZDR):
+  <https://openrouter.ai/docs/guides/privacy/provider-logging>
 - OpenRouter provider routing controls:
   <https://openrouter.ai/docs/guides/routing/provider-selection>
 - OWASP Top 10 for Large Language Model Applications:

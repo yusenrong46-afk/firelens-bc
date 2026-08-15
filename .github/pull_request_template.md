@@ -13,7 +13,7 @@
 
 - [ ] No benchmark label or threshold was changed to fit the implementation.
 - [ ] No query, answer, deterministic query hash, precise location, secret, or human-review content was added to telemetry.
-- [ ] Provider fallback and ZDR behavior remain fail-closed.
+- [ ] Provider fallback remains disabled. Embedding and generation ZDR remain fail-closed. Reranking may use the approved non-ZDR exception without claiming universal ZDR.
 
 ## Review
 

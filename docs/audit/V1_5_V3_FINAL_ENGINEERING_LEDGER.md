@@ -506,3 +506,22 @@ Directory: `output/benchmark/frontend_surface/screenshots/` (36 PNGs, 12 states 
 | `npm --prefix apps/web run qualify:surface` (after map-first) | 2 | 92.7s; 36/36; journeys+lab perf true; gzip initial 79.05 / lazy map 54.50; overall false because provisional |
 | Zero-cost `GET /endpoints/zdr` | 0 | HTTP 200; embedding true; rerank false; generation true; no inference |
 | `.venv/bin/python -m pytest tests/test_architecture.py` | 0 | 14 passed |
+
+## Continuation: stage-specific ZDR policy (2026-08-15)
+
+Formal policy revision, not a silent waiver. Historical REL-ZDR-001 evidence
+above remains evidence collected under the previous all-model ZDR gate.
+
+| Item | Status |
+| --- | --- |
+| Approved mix | embedding ZDR required; generation ZDR required; reranking ZDR optional for `cohere/rerank-4-pro` |
+| Every OpenRouter request | `data_collection=deny`, `allow_fallbacks=false`, `require_parameters=true` |
+| Candidate schema | `firelens.runtime_candidate.v3`; v2 all-ZDR documents are unsupported |
+| Models | unchanged: `openai/text-embedding-3-small`, `cohere/rerank-4-pro`, `openai/gpt-5.6-luna` |
+| Retrieval thresholds | unchanged |
+| Universal ZDR claim | not made |
+| Privacy certification | not claimed |
+
+`data_collection=deny` is not equivalent to ZDR. Residual third-party retention
+risk remains for the bounded Cohere rerank query. OpenRouter account prompt
+logging must be confirmed disabled before deployment.

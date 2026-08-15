@@ -11,14 +11,21 @@ semantic, accessibility, safety, retrieval, or UX review.
 3. Confirm the generated OpenAPI schema matches the frontend types.
 4. Confirm `OPENROUTER_API_KEY` is present without printing it.
 5. Set `FIRELENS_RELEASE_VERSION=1.5.3-rc.1` and the exact build commit.
-6. Set `FIRELENS_REQUIRE_ZDR=true` for preview and production. Keep content tracing off.
-   Bind the same embedding, rerank, and generation model IDs in the environment that
-   the v2 runtime candidate document records. Local `make run` may use
-   `require_zdr=false` and is not a production-qualified artifact.
-7. Run the authenticated ZDR preflight for the configured embedding, rerank,
-   and generation models. Do not deploy if any model is absent.
+6. Set the stage privacy policy for preview and production:
+   `FIRELENS_EMBEDDING_ZDR=required`, `FIRELENS_GENERATION_ZDR=required`,
+   `FIRELENS_RERANKING_ZDR=optional`, `FIRELENS_DATA_COLLECTION=deny`,
+   `FIRELENS_ALLOW_FALLBACKS=false`. Keep content tracing off. Bind the same
+   embedding, rerank, and generation model IDs in the environment that the v3
+   runtime candidate document records. `FIRELENS_REQUIRE_ZDR=true` remains a
+   migration shim for the approved mix (rerank optional). Local `make run` may
+   use optional ZDR stages and is not a production-qualified artifact.
+7. Run the authenticated ZDR preflight for embedding and generation. Do not
+   deploy if either required model is absent. Cohere reranking may be absent
+   from the ZDR roster under the approved exception. Confirm OpenRouter account
+   prompt logging is disabled.
 8. Verify the configured reranker passed the frozen retrieval regressions; a
-   ZDR listing alone is not a quality qualification.
+   ZDR listing alone is not a quality qualification. FireLens does not claim
+   universal ZDR or a privacy certification.
 
 ## Local, preview, and production evidence
 
@@ -26,7 +33,7 @@ semantic, accessibility, safety, retrieval, or UX review.
 | --- | --- | --- |
 | Local `make check` / `make verify` | Engineering regressions on this worktree | Deployed identity, ZDR roster, or human review |
 | Preview deployment | One HTTPS origin built from the bound candidate | Production traffic, firewall proof, or UX qualification |
-| Production | Fail-closed ZDR and the exact candidate artifact | Semantic, accessibility, safety, or UX approval |
+| Production | Fail-closed embedding/generation ZDR, deny-collection, no fallback, and the exact candidate artifact | Semantic, accessibility, safety, UX, or privacy certification |
 
 Zero-cost identity/ZDR/partial-layer gates (do not deploy; point at an
 authorized origin). Qualification requires HTTP 200 and `status: ready` from
@@ -70,7 +77,9 @@ Promotion requires the frozen Recall@5 threshold on the sealed holdout. Do not
 edit labels or thresholds. Do not promote from a ZDR roster listing.
 
 Rollback proof must retain candidate and restored artifact SHA-256 values plus
-environment snapshots that include models and `require_zdr`.
+environment snapshots that include models and the stage privacy policy
+(`data_collection`, `allow_fallbacks`, `require_parameters`, `embedding_zdr`,
+`reranking_zdr`, `generation_zdr`).
 
 Human review launch commands are in
 `docs/audit/V1_5_V3_HUMAN_REVIEW_HANDOFF.md`. Grok cannot act as a reviewer.

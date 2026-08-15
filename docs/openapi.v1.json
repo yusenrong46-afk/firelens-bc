@@ -415,6 +415,10 @@
       "HealthResponse": {
         "additionalProperties": false,
         "properties": {
+          "allow_fallbacks": {
+            "title": "Allow Fallbacks",
+            "type": "boolean"
+          },
           "build_commit": {
             "anyOf": [
               {
@@ -474,6 +478,11 @@
             ],
             "title": "Corpus Version"
           },
+          "data_collection": {
+            "const": "deny",
+            "title": "Data Collection",
+            "type": "string"
+          },
           "deployment_id": {
             "anyOf": [
               {
@@ -496,6 +505,25 @@
             ],
             "title": "Embedding Model"
           },
+          "embedding_zdr": {
+            "enum": [
+              "required",
+              "optional"
+            ],
+            "title": "Embedding Zdr",
+            "type": "string"
+          },
+          "embedding_zdr_state": {
+            "enum": [
+              "not_required",
+              "unprobed",
+              "eligible",
+              "zdr_optional",
+              "failed"
+            ],
+            "title": "Embedding Zdr State",
+            "type": "string"
+          },
           "generation_model": {
             "anyOf": [
               {
@@ -506,6 +534,25 @@
               }
             ],
             "title": "Generation Model"
+          },
+          "generation_zdr": {
+            "enum": [
+              "required",
+              "optional"
+            ],
+            "title": "Generation Zdr",
+            "type": "string"
+          },
+          "generation_zdr_state": {
+            "enum": [
+              "not_required",
+              "unprobed",
+              "eligible",
+              "zdr_optional",
+              "failed"
+            ],
+            "title": "Generation Zdr State",
+            "type": "string"
           },
           "index_ready": {
             "title": "Index Ready",
@@ -554,6 +601,25 @@
             ],
             "title": "Rerank Model"
           },
+          "reranking_zdr": {
+            "enum": [
+              "required",
+              "optional"
+            ],
+            "title": "Reranking Zdr",
+            "type": "string"
+          },
+          "reranking_zdr_state": {
+            "enum": [
+              "not_required",
+              "unprobed",
+              "eligible",
+              "zdr_optional",
+              "failed"
+            ],
+            "title": "Reranking Zdr State",
+            "type": "string"
+          },
           "retrieval_text_strategy": {
             "anyOf": [
               {
@@ -576,8 +642,8 @@
           "zdr_policy_state": {
             "enum": [
               "disabled",
-              "required_unprobed",
-              "eligible",
+              "stage_bound_unprobed",
+              "required_stages_eligible",
               "failed"
             ],
             "title": "Zdr Policy State",
@@ -595,6 +661,14 @@
           "provider_configured",
           "zdr_required",
           "zdr_policy_state",
+          "data_collection",
+          "allow_fallbacks",
+          "embedding_zdr",
+          "reranking_zdr",
+          "generation_zdr",
+          "embedding_zdr_state",
+          "generation_zdr_state",
+          "reranking_zdr_state",
           "provider_state",
           "release_version"
         ],

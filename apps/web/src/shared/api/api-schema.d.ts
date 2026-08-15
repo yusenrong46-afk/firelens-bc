@@ -248,6 +248,8 @@ export interface components {
         };
         /** HealthResponse */
         HealthResponse: {
+            /** Allow Fallbacks */
+            allow_fallbacks: boolean;
             /** Build Commit */
             build_commit?: string | null;
             /** Candidate Id */
@@ -260,12 +262,37 @@ export interface components {
             corpus_ready: boolean;
             /** Corpus Version */
             corpus_version?: string | null;
+            /**
+             * Data Collection
+             * @constant
+             */
+            data_collection: "deny";
             /** Deployment Id */
             deployment_id?: string | null;
             /** Embedding Model */
             embedding_model?: string | null;
+            /**
+             * Embedding Zdr
+             * @enum {string}
+             */
+            embedding_zdr: "required" | "optional";
+            /**
+             * Embedding Zdr State
+             * @enum {string}
+             */
+            embedding_zdr_state: "not_required" | "unprobed" | "eligible" | "zdr_optional" | "failed";
             /** Generation Model */
             generation_model?: string | null;
+            /**
+             * Generation Zdr
+             * @enum {string}
+             */
+            generation_zdr: "required" | "optional";
+            /**
+             * Generation Zdr State
+             * @enum {string}
+             */
+            generation_zdr_state: "not_required" | "unprobed" | "eligible" | "zdr_optional" | "failed";
             /** Index Ready */
             index_ready: boolean;
             /** Problems */
@@ -287,6 +314,16 @@ export interface components {
             release_version: string;
             /** Rerank Model */
             rerank_model?: string | null;
+            /**
+             * Reranking Zdr
+             * @enum {string}
+             */
+            reranking_zdr: "required" | "optional";
+            /**
+             * Reranking Zdr State
+             * @enum {string}
+             */
+            reranking_zdr_state: "not_required" | "unprobed" | "eligible" | "zdr_optional" | "failed";
             /** Retrieval Text Strategy */
             retrieval_text_strategy?: string | null;
             /**
@@ -298,7 +335,7 @@ export interface components {
              * Zdr Policy State
              * @enum {string}
              */
-            zdr_policy_state: "disabled" | "required_unprobed" | "eligible" | "failed";
+            zdr_policy_state: "disabled" | "stage_bound_unprobed" | "required_stages_eligible" | "failed";
             /** Zdr Required */
             zdr_required: boolean;
         };
