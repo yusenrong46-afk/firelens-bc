@@ -59,6 +59,12 @@ _PROHIBITED_PATTERNS = (
     r"\btell me\s+whether\s+to\s+evacuate\b",
     r"\bshould\s+(?:my|our)\s+family\s+(?:stay|leave|evacuate|return)\b",
     r"\b(?:can|could|may)\s+(?:i|we)\s+(?:return|go back)\s+home\b",
+    r"\bis it okay to\s+(?:return|stay|leave|go back|evacuate|drive)\b",
+    r"\bokay to return home\b",
+    r"\bshould\s+(?:i|we)\s+take\s+(?:that|this|the)\s+(?:road|route|way)\b",
+    r"\b(?:if|whether)\s+i\s+am\s+safe\b",
+    r"\b(?:if|whether)\s+we\s+are\s+safe\b",
+    r"\btell me if\s+(?:i am|i'm|we are)\s+safe\b",
     r"\b(?:return|go back)\s+home\s+(?:yet|now|today|tonight)\b",
     r"\b(?:are|is)\s+(?:i|we|my family|our family)\s+okay\s+to\s+(?:wait|stay|leave|evacuate|return)\b",
     r"\b(?:decide|tell me)\s+(?:if|whether)\s+(?:i|we)\s+(?:stay|leave|evacuate|return)\b",
@@ -212,7 +218,9 @@ _UNSUPPORTED_LIVE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
             r"\b(?:where|show|display|track|locate)\b.{0,60}"
             r"\b(?:firefighting\s+)?(?:aircraft|airtankers?|air tankers?|helicopters?)\b|"
             rf"\b(?:aircraft|airtankers?|air tankers?|helicopters?)\b.{{0,60}}"
-            rf"\b{_CURRENT_CUE_TEXT}\b",
+            rf"\b{_CURRENT_CUE_TEXT}\b|"
+            rf"\b{_CURRENT_CUE_TEXT}\b.{{0,60}}"
+            r"\b(?:firefighting\s+)?(?:aircraft|airtankers?|air tankers?|helicopters?)\b",
             re.IGNORECASE,
         ),
     ),
@@ -338,17 +346,32 @@ def _routing_texts(request: QueryRequest) -> tuple[str, ...]:
 def _deictic_action_boundary(request: QueryRequest) -> ReasonCode | None:
     """Resolve only a narrow "should I do that" high-risk antecedent."""
 
+    lowered = request.question.lower()
     if not re.search(
-        r"\bshould\s+(?:i|we)\s+(?:do|follow|take|use)\s+(?:that|this|it)\b",
-        request.question.lower(),
+        r"\bshould\s+(?:i|we)\s+(?:do|follow|take|use)\s+(?:that|this|it)\b|"
+        r"\bshould\s+(?:i|we)\s+take\s+(?:that|this|the)\s+(?:road|route|way)\b|"
+        r"\b(?:can|could|may)\s+(?:i|we)\s+return\b|"
+        r"\bis it safe to do that\b",
+        lowered,
     ):
         return None
     antecedent = " ".join(turn.content.lower() for turn in request.history[-2:])
-    if any(term in antecedent for term in ("dose", "inhaler", "medication", "medicine")):
+    if any(
+        term in antecedent for term in ("dose", "inhaler", "medication", "prescribe", "diagnos")
+    ):
         return ReasonCode.PERSONALIZED_MEDICAL_ADVICE
     if any(
         term in antecedent
-        for term in ("leave", "evacuate", "return", "evacuation route", "which road")
+        for term in (
+            "leave",
+            "evacuat",
+            "return",
+            "stay",
+            "route",
+            "road",
+            "alert",
+            "order",
+        )
     ):
         return ReasonCode.PERSONALIZED_SAFETY_DECISION
     return None
@@ -583,16 +606,6 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
             boundary_reason=ReasonCode.PERSONALIZED_MEDICAL_ADVICE,
             limitations=["FireLens cannot provide personalized medical advice."],
         )
-    if personalized or deictic_boundary == ReasonCode.PERSONALIZED_SAFETY_DECISION:
-        return QueryPlan(
-            original_question=question,
-            normalized_question=processing_question,
-            route=QueryRoute.PROHIBITED,
-            boundary_reason=ReasonCode.PERSONALIZED_SAFETY_DECISION,
-            limitations=[
-                "FireLens cannot provide personalized safety advice or evacuation decisions."
-            ],
-        )
     if manipulation:
         return QueryPlan(
             original_question=question,
@@ -601,6 +614,16 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
             boundary_reason=ReasonCode.POLICY_MANIPULATION,
             limitations=[
                 "Conversation text cannot override FireLens safety and evidence rules."
+            ],
+        )
+    if personalized or deictic_boundary == ReasonCode.PERSONALIZED_SAFETY_DECISION:
+        return QueryPlan(
+            original_question=question,
+            normalized_question=processing_question,
+            route=QueryRoute.PROHIBITED,
+            boundary_reason=ReasonCode.PERSONALIZED_SAFETY_DECISION,
+            limitations=[
+                "FireLens cannot provide personalized safety advice or evacuation decisions."
             ],
         )
     if live and allow_live:

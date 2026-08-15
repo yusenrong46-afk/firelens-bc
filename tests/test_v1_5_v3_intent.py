@@ -10,7 +10,7 @@ from firelens.answering.intent import (
     static_guidance_fragment,
     unsupported_live_topics,
 )
-from firelens.contracts import LiveResultKind, QueryRequest, QueryRoute
+from firelens.contracts import ConversationTurn, LiveResultKind, QueryRequest, QueryRoute
 
 
 class V3DeterministicIntentTests(unittest.TestCase):
@@ -240,6 +240,63 @@ class V3DeterministicIntentTests(unittest.TestCase):
         self.assertEqual(
             static_guidance_fragment(mixed),
             "explain alert versus order",
+        )
+
+    def test_return_home_and_am_i_safe_clauses_are_personalized_safety(self) -> None:
+        for question in (
+            "Is it okay to return home?",
+            "Show evacuation orders around Vernon and tell me if I am safe.",
+            "Should I take that route?",
+        ):
+            with self.subTest(question=question):
+                plan = plan_query(QueryRequest(question=question))
+                self.assertEqual(plan.route, QueryRoute.PROHIBITED)
+                self.assertEqual(
+                    plan.boundary_reason.value if plan.boundary_reason else None,
+                    "personalized_safety_decision",
+                )
+
+    def test_kit_followup_should_i_do_that_is_not_a_medical_boundary(self) -> None:
+        history = [
+            ConversationTurn(role="user", content="What belongs in a wildfire emergency kit?"),
+            ConversationTurn(
+                role="assistant",
+                content="Include food, water, medicine, and documents.",
+            ),
+        ]
+        plan = plan_query(QueryRequest(question="Should I do that?", history=history))
+        self.assertNotEqual(plan.route, QueryRoute.PROHIBITED)
+
+    def test_evacuation_followup_should_i_do_that_stays_a_safety_boundary(self) -> None:
+        history = [
+            ConversationTurn(role="user", content="Show evacuation orders around Kelowna."),
+            ConversationTurn(
+                role="assistant",
+                content="Current official evacuation information was shown for Kelowna.",
+            ),
+        ]
+        for question in (
+            "Should I do that?",
+            "Should we follow that?",
+            "Can I return after that?",
+        ):
+            with self.subTest(question=question):
+                plan = plan_query(QueryRequest(question=question, history=history))
+                self.assertEqual(plan.route, QueryRoute.PROHIBITED)
+                self.assertEqual(
+                    plan.boundary_reason.value if plan.boundary_reason else None,
+                    "personalized_safety_decision",
+                )
+
+    def test_current_aircraft_locations_are_an_unsupported_live_handoff(self) -> None:
+        question = "Show fires around Terrace and current aircraft locations."
+        self.assertEqual(
+            unsupported_live_topics(question),
+            ("firefighting aircraft",),
+        )
+        self.assertEqual(
+            live_layers_for_question(question),
+            (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER),
         )
 
 
