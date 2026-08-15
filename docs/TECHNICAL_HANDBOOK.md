@@ -360,6 +360,13 @@ disabled. Embedding and generation ZDR are fail-closed in production. Reranking
 may omit `provider.zdr` under the approved Cohere exception. Every request still
 sends `data_collection=deny`, `allow_fallbacks=false`, and `require_parameters=true`.
 `FIRELENS_REQUIRE_ZDR=true` is a migration shim for that mix, not universal ZDR.
+Production and preview environment names (no values): `FIRELENS_EMBEDDING_ZDR`,
+`FIRELENS_RERANKING_ZDR`, `FIRELENS_GENERATION_ZDR`, `FIRELENS_DATA_COLLECTION`,
+`FIRELENS_ALLOW_FALLBACKS`, plus the existing model, release, and commit
+variables. Docker and Render bind embedding/generation required and reranking
+optional. Cohere Rerank 4 Pro remains the retained retrieval-qualified
+reranker; Qwen remains unqualified. Production is no longer blocked because
+Cohere lacks a ZDR endpoint. Account prompt logging remains an owner check.
 
 Timeouts, 429 responses, and transient 5xx failures receive at most two retries
 after the first attempt, against the exact same requested model. Authentication,

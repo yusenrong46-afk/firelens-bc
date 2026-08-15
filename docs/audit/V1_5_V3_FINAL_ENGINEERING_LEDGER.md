@@ -112,10 +112,26 @@ when the recovery commit was created via a temporary index.
   Vercel packaging, health, ZDR fail-closed, runbook, env inventory without
   values.
 - **Stop conditions:** Do not deploy, push, merge, spend money, or perform
-  human review. Production remains blocked while configured reranker is not
-  proven ZDR-eligible **and** retrieval-qualified.
-- **Verdict:** BLOCKED_EXTERNAL for ZDR roster + retrieval qualification +
-  deploy. Local packaging path inspected; `make verify` recorded below.
+  human review.
+- **Historical stop condition (superseded 2026-08-15):** “Production remains
+  blocked while configured reranker is not proven ZDR-eligible **and**
+  retrieval-qualified.” That wording belongs to the previous all-model ZDR
+  gate recorded in REL-ZDR-001. It is retained as historical evidence only.
+- **Current gate summary:** Production is no longer blocked because Cohere
+  Rerank 4 Pro lacks a ZDR endpoint. Embedding and generation ZDR remain
+  fail-closed. Cohere Rerank 4 Pro is the retained retrieval-qualified
+  reranker; Qwen remains unqualified and must not replace it. FireLens does
+  not claim universal ZDR or privacy certification. Remaining EXTERNAL work:
+  owner confirmation that OpenRouter account prompt logging is disabled,
+  authorized Vercel preview, human review, paid Ask smoke, and production
+  monitoring.
+- **Verdict (historical, start of this pass):** BLOCKED_EXTERNAL for ZDR
+  roster + retrieval qualification + deploy. Local packaging path inspected;
+  `make verify` recorded below.
+- **Current verdict:** LOCAL_PRODUCTION_REHEARSAL_PASS on `4a4cd54` (see
+  continuation below). Still EXTERNAL for OpenRouter account prompt logging,
+  authorized Vercel preview, human review, paid Ask, and production
+  monitoring.
 
 ## File classification (dirty worktree)
 
@@ -207,7 +223,7 @@ These become ledger items. They are **not** compliance claims.
 | [OWASP ASVS 5.0](https://owasp.org/www-project-application-security-verification-standard/) | L1-relevant: validation, output encoding, logging without sensitive data, sessionless anonymous API, rate limits. Full ASVS verification EXTERNAL. | EXT-ASVS-001 |
 | [OWASP GenAI LLM Top 10](https://genai.owasp.org/llm-top-10/) | LLM01 injection, LLM02 disclosure, LLM05 output handling, LLM06 agency, LLM08 embeddings, LLM09 misinformation, LLM10 consumption. 2026 list exists; 2025 categories still used as requirement source. | PRIV-LLM-001 |
 | [SLSA v1.2](https://slsa.dev/spec/v1.2/) | Build provenance / protected build. Local Docker/Vercel generation is not a SLSA Build L2+ attestation. | EXT-SLSA-001 |
-| [OpenRouter ZDR](https://openrouter.ai/docs/guides/features/zdr) | Production ZDR required; no non-ZDR fallback. Roster GET is zero-cost if no inference. | REL-ZDR-001 |
+| [OpenRouter ZDR](https://openrouter.ai/docs/guides/features/zdr) | Historical mapping: production ZDR required with no non-ZDR fallback. Current policy (REL-ZDR-002): embedding and generation require ZDR; reranking is the reviewed Cohere exception; roster GET remains zero-cost if no inference. | REL-ZDR-001 (superseded as startup blocker), REL-ZDR-002 |
 | [WCAG 2.2](https://www.w3.org/TR/WCAG22/) | Keyboard, focus visible, name/role/value, status messages, 200% zoom, reflow, contrast, target size. Human AT review EXTERNAL. | UX-A11Y-001 |
 | [Core Web Vitals thresholds](https://web.dev/articles/defining-core-web-vitals-thresholds) | Good: LCP ≤2.5s, INP ≤200ms, CLS ≤0.1. Laboratory proxies ≠ field p75. | PERF-001 |
 | [OPC mobile/digital guidance](https://www.priv.gc.ca/en/privacy-topics/technology/mobile-and-digital-devices/mobile-apps/gd_app_201210/) | Minimize collection; no persistence of precise location; purpose limitation; transparency. | PRIV-001 |
@@ -257,15 +273,47 @@ These become ledger items. They are **not** compliance claims.
 
 ### REL-ZDR-001 — Production ZDR fail-closed; reranker not dual-qualified
 
-- **Severity:** P0
+- **Status:** SUPERSEDED as a production-startup blocker by the 2026-08-15
+  stage-specific privacy policy (`3bf7a63`, `e5cb3be`, `4a4cd54`). Historical
+  roster evidence below is retained and must not be rewritten as if it had
+  been collected under the new policy.
+- **Severity:** P0 (historical all-model gate)
 - **Reproduction:** Production config with `require_zdr=true`; configured rerank `cohere/rerank-4-pro`. Last account check (prior pass, stale until re-verified) did not list that reranker on ZDR roster. `qwen/qwen3-reranker-8b` appeared roster-eligible but is **not** retrieval-qualified. Switching reranker is forbidden.
-- **Expected:** Production starts only if every bound stage is on the current ZDR roster **and** the reranker is retrieval-qualified.
-- **Actual:** Engineering fail-closed code exists; live roster + retrieval qualification are EXTERNAL.
-- **Root cause:** Provider roster vs frozen retrieval holdout are independent gates.
-- **Fix:** Keep fail-closed. Do not switch models. Zero-cost roster GET allowed later if no inference cost and keys are not printed.
-- **Tests:** `tests/test_runtime_candidate_binding.py::RuntimeCandidateStartupTests.test_production_lifespan_fails_when_reranker_is_zdr_ineligible`; OpenRouter privacy tests in `tests/test_provider_api.py`.
-- **Evidence:** inspected; roster re-check **executed** 2026-08-15 via zero-cost `GET /endpoints/zdr` (HTTP 200, no inference). Configured embedding eligible=true; generation eligible=true; configured rerank `cohere/rerank-4-pro` eligible=**false**. Local `require_zdr=false`. Retrieval qualification not run (paid).
-- **Disposition:** EXTERNAL for live roster on a production origin and retrieval qualification; engineering fail-closed remains required. Do not switch reranker.
+- **Expected (historical all-model gate):** Production starts only if every bound stage is on the current ZDR roster **and** the reranker is retrieval-qualified.
+- **Actual:** Under the superseded all-model gate, production refused to start because Cohere was absent from the ZDR roster. The same 2026-08-15 roster GET found embedding and generation eligible. Qwen was roster-eligible and remains **not** retrieval-qualified.
+- **Root cause:** Provider roster vs frozen retrieval holdout are independent gates. The all-model Boolean could not express the approved Cohere exception.
+- **Fix (current, not a silent waiver):** Keep embedding and generation fail-closed. Treat Cohere reranking as the reviewed non-ZDR exception. Do not switch models. `data_collection=deny` and disabled fallback remain mandatory.
+- **Tests (historical):** `tests/test_runtime_candidate_binding.py` previously expected production lifespan failure when the reranker was ZDR-ineligible. That expectation was the old all-model gate, not a retrieval-threshold change.
+- **Evidence:** inspected; roster re-check **executed** 2026-08-15 via zero-cost `GET /endpoints/zdr` (HTTP 200, no inference). Configured embedding eligible=true; generation eligible=true; configured rerank `cohere/rerank-4-pro` eligible=**false**. Local process then had `require_zdr=false`. Paid retrieval comparison was not run.
+- **Disposition:** SUPERSEDED for startup blocking. Current policy is REL-ZDR-002. Do not switch reranker. Do not treat this item as a current “Cohere is unqualified” statement.
+
+### REL-ZDR-002 — Stage-specific ZDR; Cohere is the reviewed non-ZDR exception
+
+- **Severity:** P0
+- **Policy:** embedding ZDR required; generation ZDR required; reranking ZDR
+  optional for `cohere/rerank-4-pro`; every OpenRouter request sends
+  `data_collection=deny`, `allow_fallbacks=false`, and `require_parameters=true`.
+- **Expected:** Production starts when embedding and generation are ZDR-eligible
+  even if Cohere is absent from the ZDR roster. Missing embedding or generation
+  eligibility still fails closed. A reranker marked `required` would still fail
+  if missing. Readiness reports `required_stages_eligible` plus per-stage
+  states, not a whole-provider “ZDR eligible” claim.
+- **Reranker identity:** Cohere Rerank 4 Pro remains the retained
+  retrieval-qualified reranker. Qwen remains unqualified and must not replace
+  it. A later owner-authorized V3 sealed retrieval comparison is a separate
+  gate, not a reason to treat Cohere as unqualified.
+- **Tests:** `tests/test_stage_privacy_policy.py`,
+  `tests/test_runtime_candidate_binding.py`, `tests/test_deployment_gates.py`,
+  `tests/test_provider_api.py`.
+- **Evidence:** code and unit tests executed on `4a4cd54`. Local production-mode
+  lifespan rehearsal executed 2026-08-15 against `127.0.0.1:8010` (zero-cost
+  ZDR GET during startup; readiness HTTP 200; `required_stages_eligible`;
+  embedding/generation `eligible`; reranking `zdr_optional`). OpenRouter account
+  prompt logging is unverified until owner confirmation. Deployed origin
+  evidence is EXTERNAL.
+- **Disposition:** VERIFIED for local engineering. EXTERNAL for account prompt
+  logging, Vercel preview, human review, paid Ask, and production monitoring.
+  Not a privacy certification.
 
 ### REL-001 — BCWS disclaimer: live data is not a safety determination
 
@@ -403,7 +451,14 @@ Disposition: VERIFIED for local bind-to-HEAD generation. Deployed identity EXTER
 
 ### Env-var inventory (names only)
 
-`OPENROUTER_API_KEY`, `FIRELENS_ENVIRONMENT` / `VERCEL_ENV`, `FIRELENS_EMBEDDING_MODEL`, `FIRELENS_RERANK_MODEL`, `FIRELENS_GENERATION_MODEL`, `FIRELENS_RETRIEVAL_TEXT_STRATEGY`, `FIRELENS_REQUIRE_ZDR`, `FIRELENS_DEBUG`, `FIRELENS_TRACE_CONTENT`, `FIRELENS_TRACE_DIR`, `FIRELENS_DOCUMENT_CONTEXT_PATH`, `FIRELENS_RATE_LIMIT`, `FIRELENS_RATE_WINDOW_SECONDS`, `FIRELENS_MAX_REQUEST_BODY_BYTES`, `FIRELENS_PUBLIC_REQUEST_DEADLINE_SECONDS`, `FIRELENS_PROVIDER_MAX_CONCURRENCY`, `FIRELENS_PROVIDER_ADAPTIVE_MIN_CONCURRENCY`, `FIRELENS_PROVIDER_ADAPTIVE_SUCCESS_WINDOW`, `FIRELENS_RELEASE_VERSION`, `FIRELENS_BUILD_COMMIT`, `VERCEL_GIT_COMMIT_SHA`, `VERCEL_DEPLOYMENT_ID`, `VERCEL_URL`, `VERCEL`, `RENDER_GIT_COMMIT`, `RENDER_INSTANCE_ID`, `RENDER_SERVICE_ID`. Render.yaml binds ZDR true and model ids; key is unsynced.
+Historical inventory from the all-model ZDR era (names only; superseded as a
+current source of truth):
+
+`OPENROUTER_API_KEY`, `FIRELENS_ENVIRONMENT` / `VERCEL_ENV`, `FIRELENS_EMBEDDING_MODEL`, `FIRELENS_RERANK_MODEL`, `FIRELENS_GENERATION_MODEL`, `FIRELENS_RETRIEVAL_TEXT_STRATEGY`, `FIRELENS_REQUIRE_ZDR`, `FIRELENS_DEBUG`, `FIRELENS_TRACE_CONTENT`, `FIRELENS_TRACE_DIR`, `FIRELENS_DOCUMENT_CONTEXT_PATH`, `FIRELENS_RATE_LIMIT`, `FIRELENS_RATE_WINDOW_SECONDS`, `FIRELENS_MAX_REQUEST_BODY_BYTES`, `FIRELENS_PUBLIC_REQUEST_DEADLINE_SECONDS`, `FIRELENS_PROVIDER_MAX_CONCURRENCY`, `FIRELENS_PROVIDER_ADAPTIVE_MIN_CONCURRENCY`, `FIRELENS_PROVIDER_ADAPTIVE_SUCCESS_WINDOW`, `FIRELENS_RELEASE_VERSION`, `FIRELENS_BUILD_COMMIT`, `VERCEL_GIT_COMMIT_SHA`, `VERCEL_DEPLOYMENT_ID`, `VERCEL_URL`, `VERCEL`, `RENDER_GIT_COMMIT`, `RENDER_INSTANCE_ID`, `RENDER_SERVICE_ID`. Render.yaml then bound a global ZDR true flag and model ids; key is unsynced.
+
+Current production/preview inventory (names only; no values):
+
+`OPENROUTER_API_KEY`, `FIRELENS_ENVIRONMENT` / `VERCEL_ENV`, `FIRELENS_EMBEDDING_MODEL`, `FIRELENS_RERANK_MODEL`, `FIRELENS_GENERATION_MODEL`, `FIRELENS_RETRIEVAL_TEXT_STRATEGY`, `FIRELENS_EMBEDDING_ZDR`, `FIRELENS_RERANKING_ZDR`, `FIRELENS_GENERATION_ZDR`, `FIRELENS_DATA_COLLECTION`, `FIRELENS_ALLOW_FALLBACKS`, `FIRELENS_REQUIRE_PARAMETERS`, `FIRELENS_REQUIRE_ZDR` (migration shim only), `FIRELENS_DEBUG`, `FIRELENS_TRACE_CONTENT`, `FIRELENS_TRACE_DIR`, `FIRELENS_DOCUMENT_CONTEXT_PATH`, `FIRELENS_RATE_LIMIT`, `FIRELENS_RATE_WINDOW_SECONDS`, `FIRELENS_MAX_REQUEST_BODY_BYTES`, `FIRELENS_PUBLIC_REQUEST_DEADLINE_SECONDS`, `FIRELENS_PROVIDER_MAX_CONCURRENCY`, `FIRELENS_PROVIDER_ADAPTIVE_MIN_CONCURRENCY`, `FIRELENS_PROVIDER_ADAPTIVE_SUCCESS_WINDOW`, `FIRELENS_RELEASE_VERSION`, `FIRELENS_BUILD_COMMIT`, `VERCEL_GIT_COMMIT_SHA`, `VERCEL_DEPLOYMENT_ID`, `VERCEL_URL`, `VERCEL`, `RENDER_GIT_COMMIT`, `RENDER_INSTANCE_ID`, `RENDER_SERVICE_ID`. Docker and Render now bind embedding/generation ZDR required, reranking ZDR optional, `data_collection=deny`, and disabled fallback. `FIRELENS_REQUIRE_ZDR` is not the production source of truth.
 
 ### DBG issues reproduced and patched
 
@@ -474,7 +529,11 @@ Disposition: VERIFIED laboratory after harness fix. Do not treat the contaminate
 
 - Production fail-closed without OpenRouter ZDR: inspected + unit tests (`test_runtime_candidate_binding.py`, `test_provider_api.py`, `test_security_operations.py`).
 - Qualify privacy journey: geolocation once after opt-in, coordinates to two decimals, not persisted, no cookies, history URL clean. Executed true on second qualify.
-- Configured reranker `cohere/rerank-4-pro` is **not** ZDR-eligible on the 2026-08-15 roster GET and is **not** retrieval-qualified. Do not switch to Qwen. REL-ZDR-001 remains EXTERNAL.
+- Historical roster fact (2026-08-15 GET, all-model gate): configured reranker
+  `cohere/rerank-4-pro` is **not** ZDR-eligible. That fact remains true and does
+  **not** mean Cohere is retrieval-unqualified. Cohere Rerank 4 Pro is the
+  retained retrieval-qualified reranker. Qwen remains unqualified and must not
+  replace it. REL-ZDR-001 is superseded as a startup blocker; see REL-ZDR-002.
 - Zero-cost ZDR roster GET executed 2026-08-15: HTTP 200; embedding eligible; generation eligible; rerank ineligible. Keys not printed. No inference.
 - Paid Ask safety probe `--include-ask-probes` not run.
 
@@ -525,3 +584,66 @@ above remains evidence collected under the previous all-model ZDR gate.
 `data_collection=deny` is not equivalent to ZDR. Residual third-party retention
 risk remains for the bounded Cohere rerank query. OpenRouter account prompt
 logging must be confirmed disabled before deployment.
+
+Current release is no longer blocked because Cohere lacks ZDR. Phase 5's
+historical “blocked until reranker is ZDR-eligible and retrieval-qualified”
+stop condition is superseded. Cohere remains the retained retrieval-qualified
+reranker; Qwen remains unqualified.
+
+## Continuation: local production-mode rehearsal (2026-08-15)
+
+This is local engineering evidence. It is not deployment, human review, or a
+privacy certification.
+
+| Field | Observed |
+| --- | --- |
+| Branch | `codex/v1-5-v3` |
+| HEAD | `4a4cd54a30696ba2624fe8224a26cf15da57e243` |
+| Candidate schema | `firelens.runtime_candidate.v3` |
+| Candidate ID | `firelens-v1-5-2:4a4cd54a30696ba2624fe8224a26cf15da57e243` |
+| Candidate SHA-256 | `6a07130b39de1ed06c59de3cdbfe1350e294fde44f964354bf562ec799ae3083` |
+| Release | `1.5.3-rc.1` |
+| Corpus | `firelens_static_corpus.v1` |
+| Retrieval strategy | `metadata_context_v1` |
+| Models | `openai/text-embedding-3-small`, `cohere/rerank-4-pro`, `openai/gpt-5.6-luna` |
+| Privacy | `data_collection=deny`, `allow_fallbacks=false`, `require_parameters=true`, embedding/generation ZDR required, reranking ZDR optional |
+| Rehearsal origin | `http://127.0.0.1:8010` (port 8000 already served an unrelated `1.5.0-rc.1` process; left untouched) |
+| Ready HTTP | 200, `status=ready` |
+| `zdr_policy_state` | `required_stages_eligible` |
+| embedding / generation / reranking states | `eligible` / `eligible` / `zdr_optional` |
+| Identity match | exact against the generated v3 candidate |
+| Ask / embedding / chat / rerank HTTP | none observed |
+| Secrets in readiness or server log | none observed |
+| Candidate file | gitignored; not committed |
+
+### Command log
+
+| Command | Exit | Notes |
+| --- | --- | --- |
+| `scripts/write_runtime_candidate.py --output config/runtime_candidate.v1.json --commit 4a4cd54…` | 0 | v3 document bound to HEAD |
+| Production `firelens serve --host 127.0.0.1 --port 8010` | 0 after shutdown | Lifespan completed; zero-cost authenticated `GET /endpoints/zdr` only |
+| `GET /api/v1/health/ready` | 200 | Fields above; no secrets |
+| `scripts/qualify_deployment_gates.py --base-url http://127.0.0.1:8010 --expect-production --allow-http` | 0 | `qualified=true`; `include_ask_probes=false` |
+| Read-only `GET /api/v1/key` | 200 | Not a management key; no logging fields |
+| Read-only `GET /api/v1/workspaces` | 401 | Management key required; prompt logging **unverified** |
+| `git diff --check` | 0 | |
+| `.venv/bin/python scripts/secret_scan.py` | 0 | |
+| focused privacy/provider/candidate/deployment tests | 0 | 132 passed, 5 subtests |
+| ruff / mypy | 0 | |
+| OpenAPI export during `make verify` | 0 | no tracked schema drift |
+| `make verify` | 0 | pytest 769 passed / 3 skipped / 420 subtests; Vitest 36; sites 4; e2e 26 |
+
+Fail-closed missing embedding/generation eligibility remains proven by
+`tests/test_stage_privacy_policy.py`, not by mutating the live roster.
+
+### Remaining unknowns / authorization required
+
+- OpenRouter Observability **Input & Output Logging** and Privacy **data-discount
+  logging** cannot be read with the configured inference key. Owner must confirm
+  both are disabled in the OpenRouter UI before any deploy.
+- Push of `codex/v1-5-v3` and creation of an immutable Vercel preview require
+  owner authorization.
+- After preview: zero-cost deployment gates first; paid Ask smoke only after
+  explicit cost approval.
+- Human review, production promotion, and production monitoring remain EXTERNAL.
+- No model or retrieval-threshold change occurred.

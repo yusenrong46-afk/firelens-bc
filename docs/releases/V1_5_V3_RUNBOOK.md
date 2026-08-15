@@ -23,9 +23,10 @@ semantic, accessibility, safety, retrieval, or UX review.
    deploy if either required model is absent. Cohere reranking may be absent
    from the ZDR roster under the approved exception. Confirm OpenRouter account
    prompt logging is disabled.
-8. Verify the configured reranker passed the frozen retrieval regressions; a
-   ZDR listing alone is not a quality qualification. FireLens does not claim
-   universal ZDR or a privacy certification.
+8. Confirm the configured reranker is still the retained retrieval-qualified
+   `cohere/rerank-4-pro`. A ZDR listing alone is not a quality qualification.
+   Qwen remains unqualified and must not replace Cohere. FireLens does not
+   claim universal ZDR or a privacy certification.
 
 ## Local, preview, and production evidence
 
@@ -52,7 +53,8 @@ provider. Do not add it without an explicit cost authorization.
   --expect-production
 ```
 
-Localhost rehearsal only:
+Localhost rehearsal only (identity/map; not production-mode unless the
+process was started as production):
 
 ```bash
 .venv/bin/python scripts/qualify_deployment_gates.py \
@@ -61,12 +63,25 @@ Localhost rehearsal only:
   --allow-http
 ```
 
+Local production-mode rehearsal (zero-cost; no Ask probe):
+
+```bash
+.venv/bin/python scripts/qualify_deployment_gates.py \
+  --base-url http://127.0.0.1:8000 \
+  --candidate config/runtime_candidate.v1.json \
+  --expect-production \
+  --allow-http
+```
+
 `--include-ask-probes` posts one safety Ask (`personalized_safety_decision`)
 and is paid on a live provider. Do not add it without an explicit cost
 authorization.
 
-Paid retrieval comparison remains blocked until authorized. Smallest existing
-retrieval-only ceilings:
+Paid comparison of a *different* reranker remains blocked until authorized.
+Cohere Rerank 4 Pro remains the retained retrieval-qualified reranker; Qwen
+must not replace it. A later V3 sealed holdout is a separate owner-authorized
+gate, not a current Cohere-unqualified finding. Smallest existing retrieval-only
+ceilings:
 
 - Development comparison, max `$1.25`:
   `FIRELENS_RERANK_MODEL=<zdr-candidate> make benchmark-retrieval-v1-5`

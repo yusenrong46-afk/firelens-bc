@@ -226,6 +226,15 @@ deterministic query hashes. OpenRouter account prompt logging must be confirmed
 disabled before deployment. Provider retention remains a residual third-party
 risk for the bounded rerank query. This is not a privacy certification.
 
+Production and preview must set `FIRELENS_EMBEDDING_ZDR=required`,
+`FIRELENS_GENERATION_ZDR=required`, `FIRELENS_RERANKING_ZDR=optional`,
+`FIRELENS_DATA_COLLECTION=deny`, and `FIRELENS_ALLOW_FALLBACKS=false`. Models
+remain `openai/text-embedding-3-small`, `cohere/rerank-4-pro`, and
+`openai/gpt-5.6-luna`. Cohere is the retained retrieval-qualified reranker, not
+a ZDR-universal claim. `FIRELENS_REQUIRE_ZDR` is only a migration shim.
+Qwen must not replace Cohere. Current release is no longer blocked because
+Cohere lacks a ZDR endpoint.
+
 Live location is optional, coarse, and request-scoped. Coordinates are rounded
 to two decimals. Exact-address labels are rejected, and location is not written
 to traces or ordinary application storage.

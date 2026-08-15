@@ -70,8 +70,9 @@ the reranker does not prevent startup under this approved policy. A reranker mar
 
 On 2026-08-13 and 2026-08-15, the roster included the default embedding model and
 `openai/gpt-5.6-luna`, but not `cohere/rerank-4-pro`. Those observations remain
-historical evidence collected under the previous all-model ZDR gate. A ZDR listing
-alone does not promote a reranker. The staged candidate schema is
+historical evidence collected under the previous all-model ZDR gate. Current
+release is no longer blocked by Cohere’s absence from that roster. A ZDR listing
+alone does not promote a reranker, and Qwen remains unqualified. The staged candidate schema is
 `firelens.runtime_candidate.v3` and binds data-collection policy, fallback policy,
 stage ZDR requirements, model IDs, commit, release, corpus, embedding, and
 retrieval-text strategy. A v2 all-ZDR candidate must not be interpreted as this

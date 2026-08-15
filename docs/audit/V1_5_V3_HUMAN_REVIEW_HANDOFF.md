@@ -1,12 +1,15 @@
 # FireLens BC V1.5 V3 human-review handoff
 
-Updated: 2026-08-14
+Updated: 2026-08-15
 
 This handoff prepares named-human review. It does not record any human decision,
 does not count a model as a reviewer, and does not qualify a release.
 
 Status of this product after engineering work: **engineering-complete preview
-candidate only**. It is not a human-qualified release.
+candidate only**. It is not a human-qualified release. Production is no longer
+blocked because Cohere Rerank 4 Pro lacks ZDR. Embedding and generation still
+require ZDR. Cohere remains the retained retrieval-qualified reranker; Qwen
+remains unqualified and must not replace it.
 
 Automated checks, LLM analysis, Grok output, dry-run workspaces, and Playwright
 journeys are advisory. They cannot occupy any role in the table below.
@@ -24,8 +27,10 @@ workspace boundary, and stop conditions. Workspaces must stay outside Git.
 | UX review | Frozen five tasks with ≥12 consented participants; facilitator does not rewrite outcomes | `prepare-ux-template` |
 | Final release adjudication | Exact-candidate evidence, open findings, and whether promotion is allowed | distinct release adjudicator, not a model |
 
-Retrieval-label review remains blocked until the owner confirms a frozen V3
-sealed set. Do not reuse an already-exposed holdout for that track.
+Retrieval-label review for a *new* V3 sealed set remains blocked until the
+owner confirms that freeze. That is not a statement that Cohere Rerank 4 Pro
+is unqualified. Do not reuse an already-exposed holdout for that track. Do not
+replace Cohere with Qwen.
 
 ## Launch commands
 
