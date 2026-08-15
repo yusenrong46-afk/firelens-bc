@@ -20,6 +20,15 @@ from firelens.providers.openrouter import OpenRouterProvider
 from firelens.retrieval.bm25 import load_chunk_records
 from firelens.retrieval.pipeline import RetrievalPipeline
 from firelens.retrieval.vector import VectorIndex
+from firelens.runtime_artifact_common import (
+    CANDIDATE_RELATIVE_PATH,
+    canonical_json,
+    sha256_bytes,
+)
+from firelens.runtime_candidate import (
+    apply_runtime_candidate_binding,
+    load_runtime_candidate_document,
+)
 
 
 @dataclass
@@ -34,6 +43,8 @@ class Runtime:
     zdr_policy_state: Literal["disabled", "required_unprobed", "eligible", "failed"] = (
         "disabled"
     )
+    bound_candidate: dict[str, str] | None = None
+    candidate_binding_applied: bool = False
 
     def __post_init__(self) -> None:
         if self.config.require_zdr and self.zdr_policy_state == "disabled":
@@ -72,6 +83,7 @@ class Runtime:
                     "circuit_open",
                 }:
                     provider_state = observed_state
+        candidate = self.bound_candidate
         return HealthResponse(
             status="ready" if ready else "not_ready",
             corpus_ready=corpus_ready,
@@ -85,8 +97,31 @@ class Runtime:
             release_version=self.config.release_version,
             build_commit=self.config.build_commit,
             deployment_id=self.config.deployment_id,
+            candidate_id=None if candidate is None else candidate["candidate_id"],
+            candidate_sha256=(
+                None if candidate is None else sha256_bytes(canonical_json(candidate))
+            ),
+            embedding_model=self.config.embedding_model,
+            rerank_model=self.config.rerank_model,
+            generation_model=self.config.generation_model,
+            retrieval_text_strategy=self.config.retrieval_text_strategy.value,
             problems=self.problems,
         )
+
+    def apply_bound_candidate(self) -> list[str]:
+        """Bind once after validation. A raised production failure stays fail-closed."""
+
+        if self.candidate_binding_applied:
+            return []
+        problems = apply_runtime_candidate_binding(
+            self.config, corpus_version=self.corpus_version
+        )
+        if not problems:
+            path = self.config.project_root / CANDIDATE_RELATIVE_PATH
+            if path.is_file():
+                self.bound_candidate = load_runtime_candidate_document(path)
+        self.candidate_binding_applied = True
+        return problems
 
     async def aclose(self) -> None:
         close = getattr(self.provider, "aclose", None)
@@ -180,6 +215,7 @@ def load_runtime(
         runtime.corpus_version = corpus_version
     except (CorpusValidationError, OSError, ValueError) as exc:
         runtime.problems.append(str(exc))
+        runtime.problems.extend(runtime.apply_bound_candidate())
         return runtime
 
     try:
@@ -194,6 +230,7 @@ def load_runtime(
         )
     except IndexValidationError as exc:
         runtime.problems.append(str(exc))
+        runtime.problems.extend(runtime.apply_bound_candidate())
         return runtime
 
     active_provider = provider or OpenRouterProvider(config)
@@ -211,4 +248,5 @@ def load_runtime(
         provider=active_provider,
         config=config,
     )
+    runtime.problems.extend(runtime.apply_bound_candidate())
     return runtime

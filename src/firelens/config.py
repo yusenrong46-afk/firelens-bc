@@ -10,6 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from firelens.contracts import RetrievalTextStrategy
 
+DEFAULT_RELEASE_VERSION = "1.5.3-rc.1"
+
 
 def _read_dotenv(path: Path) -> dict[str, str]:
     """Read a small dotenv file without adding another runtime dependency."""
@@ -84,7 +86,7 @@ class FireLensConfig(BaseModel):
     anonymous_rate_limit: int = Field(default=30, ge=1, le=1_000)
     anonymous_rate_window_seconds: int = Field(default=60, ge=1, le=3_600)
     max_request_body_bytes: int = Field(default=65_536, ge=1_024, le=1_048_576)
-    release_version: str = "1.5.3-rc.1"
+    release_version: str = DEFAULT_RELEASE_VERSION
     build_commit: str | None = None
     deployment_id: str | None = None
     frontend_dist_path: Path | None = None
@@ -176,7 +178,7 @@ class FireLensConfig(BaseModel):
             provider_adaptive_success_window=_int_value(
                 setting("FIRELENS_PROVIDER_ADAPTIVE_SUCCESS_WINDOW"), 20
             ),
-            release_version=setting("FIRELENS_RELEASE_VERSION") or "1.5.3-rc.1",
+            release_version=setting("FIRELENS_RELEASE_VERSION") or DEFAULT_RELEASE_VERSION,
             build_commit=(
                 setting("VERCEL_GIT_COMMIT_SHA")
                 or setting("RENDER_GIT_COMMIT")

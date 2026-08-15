@@ -34,6 +34,7 @@ def _lifespan_factory(
         app.state.live_service = live_service
         try:
             active_runtime = cast(Runtime, app.state.runtime)
+            active_runtime.problems.extend(active_runtime.apply_bound_candidate())
             await _qualify_production_provider(config, active_runtime)
             yield
         finally:

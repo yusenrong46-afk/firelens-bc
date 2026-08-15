@@ -9,9 +9,15 @@ services:
         sync: false
       - key: FIRELENS_REQUIRE_ZDR
         value: "true"
+      - key: FIRELENS_EMBEDDING_MODEL
+        value: "openai/text-embedding-3-small"
+      - key: FIRELENS_RERANK_MODEL
+        value: "cohere/rerank-4-pro"
+      - key: FIRELENS_GENERATION_MODEL
+        value: "openai/gpt-5.6-luna"
       - key: FIRELENS_DEBUG
         value: "false"
       - key: FIRELENS_TRACE_CONTENT
         value: "false"
       - key: FIRELENS_RELEASE_VERSION
-        value: "1.5.0-rc.1"
+        value: "1.5.3-rc.1"

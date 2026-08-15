@@ -13,9 +13,44 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 CONTRACT_SCHEMA = "firelens.runtime_artifact_allowlist.v1"
-CANDIDATE_SCHEMA = "firelens.runtime_candidate.v1"
-INVENTORY_SCHEMA = "firelens.runtime_artifact_inventory.v1"
+CANDIDATE_SCHEMA = "firelens.runtime_candidate.v2"
+INVENTORY_SCHEMA = "firelens.runtime_artifact_inventory.v2"
 COMPARISON_SCHEMA = "firelens.runtime_artifact_comparison.v1"
+CANDIDATE_REQUIRED_FIELDS = frozenset(
+    {
+        "schema_version",
+        "candidate_id",
+        "release_version",
+        "build_commit",
+        "corpus_version",
+        "embedding_model",
+        "retrieval_text_strategy",
+        "rerank_model",
+        "generation_model",
+        "require_zdr",
+    }
+)
+RUNTIME_CONFIGURATION_FIELDS = frozenset(
+    {
+        "logical_path",
+        "sha256",
+        "corpus_version",
+        "embedding_model",
+        "retrieval_text_strategy",
+        "rerank_model",
+        "generation_model",
+        "require_zdr",
+    }
+)
+REQUIRE_ZDR_VALUES = frozenset({"true", "false"})
+CANDIDATE_RELATIVE_PATH = "config/runtime_candidate.v1.json"
+SECRET_FIELD_TOKENS = ("api_key", "token", "secret", "password", "authorization", "bearer")
+SECRET_VALUE_MARKERS = ("sk-", "or-v1-")
+MODEL_ID_MAX_CHARS = 200
+MODEL_ID_PATTERN = re.compile(
+    r"^[a-z0-9][a-z0-9._-]{0,63}(?:/[a-z0-9][a-z0-9._-]{0,127}){1,3}"
+    r"(?::[a-z0-9][a-z0-9._-]{0,63})?$"
+)
 SUPPORTED_PLATFORMS = frozenset({"docker", "vercel"})
 SUPPORTED_RETRIEVAL_STRATEGIES = frozenset(
     {"original_v1", "metadata_context_v1", "document_context_v2"}
@@ -231,6 +266,43 @@ def validate_identity(identity: ArtifactIdentity) -> None:
         identity.build_commit
     ):
         raise RuntimeArtifactError("build_commit must be a lowercase 40- or 64-hex commit")
+
+
+def require_zdr_policy(value: Any, *, context: str) -> str:
+    """Accept only the canonical string policy values bound into artifacts."""
+
+    if not isinstance(value, str) or value not in REQUIRE_ZDR_VALUES:
+        raise RuntimeArtifactError(f"{context} require_zdr must be 'true' or 'false'")
+    return value
+
+
+def secret_shaped_text(value: str) -> bool:
+    """True when a string contains a credential-shaped token anywhere."""
+
+    lowered = value.lower()
+    return any(marker in lowered for marker in SECRET_VALUE_MARKERS)
+
+
+def require_model_id(value: Any, *, field: str) -> str:
+    """Accept only a bounded OpenRouter-style model id with no credential material."""
+
+    identity = nonempty_identity(value, field=field)
+    if secret_shaped_text(identity):
+        raise RuntimeArtifactError("runtime candidate cannot contain secrets")
+    if len(identity) > MODEL_ID_MAX_CHARS or MODEL_ID_PATTERN.fullmatch(identity) is None:
+        raise RuntimeArtifactError(f"{field} is not a valid model id")
+    return identity
+
+
+def assert_candidate_has_no_secrets(payload: dict[str, Any]) -> None:
+    """Refuse API keys or other credentials in a candidate document."""
+
+    for key, value in payload.items():
+        lowered = key.lower()
+        if any(token in lowered for token in SECRET_FIELD_TOKENS):
+            raise RuntimeArtifactError("runtime candidate cannot contain secrets")
+        if isinstance(value, str) and secret_shaped_text(value):
+            raise RuntimeArtifactError("runtime candidate cannot contain secrets")
 
 
 def assert_not_symlink(path: Path, *, context: str) -> None:

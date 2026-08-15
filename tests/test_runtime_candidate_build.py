@@ -20,7 +20,6 @@ def _candidate(**overrides):
     values = {
         "commit": COMMIT,
         "benchmark_id": "firelens_v1_5_2",
-        "release_version": "1.5.0-rc.1",
         "corpus_manifest_path": (ROOT / "data/processed/firelens_static_corpus.manifest.json"),
         "vector_manifest_path": ROOT / "data/index/firelens_vectors.manifest.json",
     }
@@ -30,13 +29,16 @@ def _candidate(**overrides):
 
 def test_runtime_candidate_is_exactly_bound_to_commit_and_shipped_manifests() -> None:
     assert _candidate() == {
-        "schema_version": "firelens.runtime_candidate.v1",
+        "schema_version": "firelens.runtime_candidate.v2",
         "candidate_id": f"firelens-v1-5-2:{COMMIT}",
-        "release_version": "1.5.0-rc.1",
+        "release_version": FireLensConfig.model_fields["release_version"].default,
         "build_commit": COMMIT,
         "corpus_version": "firelens_static_corpus.v1",
         "embedding_model": "openai/text-embedding-3-small",
         "retrieval_text_strategy": "metadata_context_v1",
+        "rerank_model": "cohere/rerank-4-pro",
+        "generation_model": "openai/gpt-5.6-luna",
+        "require_zdr": "true",
     }
 
 
@@ -82,8 +84,24 @@ def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> N
         "data/repairs/text_overrides.yaml",
         "scripts/write_runtime_candidate.py",
         "RENDER_GIT_COMMIT",
+        "FIRELENS_REQUIRE_ZDR=true",
+        "FIRELENS_RERANK_MODEL",
+        "FIRELENS_GENERATION_MODEL",
+        "ARG FIRELENS_RELEASE_VERSION=1.5.3-rc.1",
     ):
         assert required in dockerfile
+    assert "1.5.0-rc.1" not in dockerfile
+    render = (ROOT / "render.yaml").read_text(encoding="utf-8")
+    assert "FIRELENS_RELEASE_VERSION" in render
+    assert 'value: "1.5.3-rc.1"' in render
+    assert "1.5.0-rc.1" not in render
+    writer = (ROOT / "scripts/write_runtime_candidate.py").read_text(encoding="utf-8")
+    vercel_prep = (ROOT / "scripts/prepare_vercel_build.py").read_text(encoding="utf-8")
+    assert "1.5.0-rc.1" not in writer
+    assert "1.5.0-rc.1" not in vercel_prep
+    assert "DEFAULT_RELEASE_VERSION" in writer
+    assert "DEFAULT_RELEASE_VERSION" in vercel_prep
+    assert FireLensConfig.model_fields["release_version"].default == "1.5.3-rc.1"
     vercel = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
     include = vercel["services"]["firelens"]["functions"]["**/*.py"]["includeFiles"]
     assert include != "data/**"

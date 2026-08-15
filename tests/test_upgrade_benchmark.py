@@ -210,13 +210,16 @@ def _runtime_artifact_snapshot_fixture(identity: dict[str, object]) -> dict[str,
     contract = json.loads(contract_path.read_text(encoding="utf-8"))
     contract_sha256 = hashlib.sha256(contract_path.read_bytes()).hexdigest()
     candidate = {
-        "schema_version": "firelens.runtime_candidate.v1",
+        "schema_version": "firelens.runtime_candidate.v2",
         "candidate_id": identity["candidate_id"],
         "release_version": identity["release_version"],
         "build_commit": identity["commit"],
         "corpus_version": identity["corpus_version"],
         "embedding_model": identity["configuration"]["embedding_model"],
         "retrieval_text_strategy": identity["configuration"]["retrieval_text_strategy"],
+        "rerank_model": identity["configuration"]["rerank_model"],
+        "generation_model": identity["configuration"]["generation_model"],
+        "require_zdr": identity["configuration"]["require_zdr"],
     }
     candidate_raw = json.dumps(candidate, sort_keys=True)
     candidate_sha256 = hashlib.sha256(candidate_raw.encode()).hexdigest()
@@ -246,7 +249,7 @@ def _runtime_artifact_snapshot_fixture(identity: dict[str, object]) -> dict[str,
                 }
             )
         report: dict[str, object] = {
-            "schema_version": "firelens.runtime_artifact_inventory.v1",
+            "schema_version": "firelens.runtime_artifact_inventory.v2",
             "assurance": {
                 "scope": "staged_logical_bundle",
                 "platform_export_provenance_verified": False,
@@ -272,6 +275,9 @@ def _runtime_artifact_snapshot_fixture(identity: dict[str, object]) -> dict[str,
                 "corpus_version": candidate["corpus_version"],
                 "embedding_model": candidate["embedding_model"],
                 "retrieval_text_strategy": candidate["retrieval_text_strategy"],
+                "rerank_model": candidate["rerank_model"],
+                "generation_model": candidate["generation_model"],
+                "require_zdr": candidate["require_zdr"],
             },
             "file_count": len(rows),
             "total_size_bytes": sum(row["size_bytes"] for row in rows),
@@ -397,6 +403,9 @@ def _passing_snapshots() -> tuple[dict, dict]:
         "configuration": {
             "embedding_model": "provider/embedding-test",
             "retrieval_text_strategy": "metadata_context_v1",
+            "rerank_model": "provider/rerank-test",
+            "generation_model": "provider/generation-test",
+            "require_zdr": "true",
         },
         "execution_environment": {
             "os": "Darwin",
@@ -2353,10 +2362,31 @@ def _deployment_report() -> dict:
             "restored_deployment_id": "previous-a",
             "restored_commit": "b" * 40,
             "verified_at": "2026-08-06T12:05:00+00:00",
+            "candidate_artifact_sha256": "d" * 64,
+            "restored_artifact_sha256": "e" * 64,
+            "candidate_environment_snapshot": {
+                "release_version": "1.5.3-rc.1",
+                "build_commit": "a" * 40,
+                "candidate_id": "firelens-v1-5-2:" + "a" * 40,
+                "embedding_model": "openai/text-embedding-3-small",
+                "rerank_model": "cohere/rerank-4-pro",
+                "generation_model": "openai/gpt-5.6-luna",
+                "require_zdr": "true",
+            },
+            "restored_environment_snapshot": {
+                "release_version": "1.5.2",
+                "build_commit": "b" * 40,
+                "candidate_id": "firelens-v1-5-2:" + "b" * 40,
+                "embedding_model": "openai/text-embedding-3-small",
+                "rerank_model": "cohere/rerank-4-pro",
+                "generation_model": "openai/gpt-5.6-luna",
+                "require_zdr": "true",
+            },
             "checks": {
                 "readiness_restored": True,
                 "homepage_anonymous": True,
                 "release_identity_restored": True,
+                "environment_snapshot_restored": True,
                 "grounded_smoke_passed": True,
                 "live_smoke_passed": True,
             },
@@ -4576,6 +4606,21 @@ def test_deployment_parser_rejects_same_deployment_rollback(tmp_path: Path) -> N
     rate_limit_path, rollback_path = _write_deployment_evidence(tmp_path, report)
 
     with pytest.raises(ValueError, match="distinct deployment"):
+        _deployment(
+            report,
+            rate_limit_artifact=rate_limit_path,
+            rollback_artifact=rollback_path,
+        )
+
+
+def test_deployment_parser_requires_rollback_environment_snapshots(
+    tmp_path: Path,
+) -> None:
+    report = _deployment_report()
+    del report["rollback_evidence"]["candidate_environment_snapshot"]
+    rate_limit_path, rollback_path = _write_deployment_evidence(tmp_path, report)
+
+    with pytest.raises(ValueError, match="environment snapshot"):
         _deployment(
             report,
             rate_limit_artifact=rate_limit_path,

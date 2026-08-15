@@ -140,6 +140,55 @@ def require_exact_keys(payload: dict[str, Any], expected: set[str], *, context: 
     )
 
 
+ROLLBACK_ENVIRONMENT_SNAPSHOT_KEYS = {
+    "release_version",
+    "build_commit",
+    "candidate_id",
+    "embedding_model",
+    "rerank_model",
+    "generation_model",
+    "require_zdr",
+}
+
+
+def require_environment_snapshot(value: Any, *, commit: str, context: str) -> None:
+    if not isinstance(value, dict):
+        raise ValueError(f"{context} environment snapshot must be an object")
+    require_exact_keys(value, ROLLBACK_ENVIRONMENT_SNAPSHOT_KEYS, context=context)
+    if value.get("build_commit") != commit:
+        raise ValueError(f"{context} environment snapshot build commit does not match")
+    if value.get("require_zdr") not in {"true", "false"}:
+        raise ValueError(f"{context} environment snapshot require_zdr is invalid")
+    if any(not str(value.get(key) or "").strip() for key in ROLLBACK_ENVIRONMENT_SNAPSHOT_KEYS):
+        raise ValueError(f"{context} environment snapshot is incomplete")
+
+
+def blank_environment_snapshot() -> dict[str, None]:
+    return {key: None for key in sorted(ROLLBACK_ENVIRONMENT_SNAPSHOT_KEYS)}
+
+
+def blank_rollback_evidence() -> dict[str, Any]:
+    return {
+        "candidate_deployment_id": None,
+        "candidate_commit": None,
+        "restored_deployment_id": None,
+        "restored_commit": None,
+        "verified_at": None,
+        "candidate_artifact_sha256": None,
+        "restored_artifact_sha256": None,
+        "candidate_environment_snapshot": blank_environment_snapshot(),
+        "restored_environment_snapshot": blank_environment_snapshot(),
+        "checks": {
+            "readiness_restored": None,
+            "homepage_anonymous": None,
+            "release_identity_restored": None,
+            "environment_snapshot_restored": None,
+            "grounded_smoke_passed": None,
+            "live_smoke_passed": None,
+        },
+    }
+
+
 @overload
 def require_digest(value: Any, *, context: str, optional: Literal[False] = False) -> str: ...
 

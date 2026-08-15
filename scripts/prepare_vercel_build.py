@@ -7,18 +7,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
-try:
-    from scripts.write_runtime_candidate import (
-        build_runtime_candidate,
-        write_runtime_candidate,
-    )
-except ModuleNotFoundError as error:  # Direct execution puts scripts/ on sys.path.
-    if error.name != "scripts":
-        raise
-    from write_runtime_candidate import (  # type: ignore[no-redef]
-        build_runtime_candidate,
-        write_runtime_candidate,
-    )
+from firelens.config import DEFAULT_RELEASE_VERSION
+from firelens.runtime_candidate import build_runtime_candidate, write_runtime_candidate
 
 
 def main() -> None:
@@ -42,9 +32,12 @@ def main() -> None:
     candidate = build_runtime_candidate(
         commit=commit,
         benchmark_id="firelens_v1_5_2",
-        release_version=os.environ.get("FIRELENS_RELEASE_VERSION", "1.5.0-rc.1"),
+        release_version=os.environ.get("FIRELENS_RELEASE_VERSION") or DEFAULT_RELEASE_VERSION,
         corpus_manifest_path=(root / "data/processed/firelens_static_corpus.manifest.json"),
         vector_manifest_path=root / "data/index/firelens_vectors.manifest.json",
+        rerank_model=os.environ.get("FIRELENS_RERANK_MODEL"),
+        generation_model=os.environ.get("FIRELENS_GENERATION_MODEL"),
+        require_zdr=os.environ.get("FIRELENS_REQUIRE_ZDR", "true"),
     )
     write_runtime_candidate(root / "config/runtime_candidate.v1.json", candidate)
 

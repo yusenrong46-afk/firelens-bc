@@ -15,6 +15,7 @@ from firelens.runtime_artifact import (
     build_runtime_inventory,
     compare_runtime_inventories,
 )
+from firelens.runtime_artifact_common import CANDIDATE_REQUIRED_FIELDS, CANDIDATE_SCHEMA
 from firelens.storage import atomic_text_writer
 
 RUNTIME_ARTIFACT_CONTRACT = ROOT / "config/runtime_artifact_allowlist.v1.json"
@@ -246,18 +247,10 @@ def _runtime_candidate_document(evidence: Any, *, platform_name: str) -> dict[st
         document = json.loads(raw_json)
     except json.JSONDecodeError as error:
         raise ValueError(f"{platform_name} runtime candidate is invalid JSON") from error
-    expected_document_keys = {
-        "schema_version",
-        "candidate_id",
-        "release_version",
-        "build_commit",
-        "corpus_version",
-        "embedding_model",
-        "retrieval_text_strategy",
-    }
+    expected_document_keys = set(CANDIDATE_REQUIRED_FIELDS)
     if not isinstance(document, dict) or set(document) != expected_document_keys:
         raise ValueError(f"{platform_name} runtime candidate fields are not exact")
-    if document["schema_version"] != "firelens.runtime_candidate.v1":
+    if document["schema_version"] != CANDIDATE_SCHEMA:
         raise ValueError(f"{platform_name} runtime candidate schema is unsupported")
     return document
 
@@ -336,6 +329,9 @@ def _runtime_artifact_metric_values(
         "retrieval_text_strategy": (identity.get("configuration") or {}).get(
             "retrieval_text_strategy"
         ),
+        "rerank_model": (identity.get("configuration") or {}).get("rerank_model"),
+        "generation_model": (identity.get("configuration") or {}).get("generation_model"),
+        "require_zdr": (identity.get("configuration") or {}).get("require_zdr"),
     }
     if expected_candidate["candidate_id"] != _runtime_candidate_id(benchmark_id, commit):
         raise ValueError("snapshot candidate ID is not canonical for its benchmark and commit")
@@ -376,7 +372,7 @@ def _runtime_artifact_metric_values(
             )
 
     expected_document = {
-        "schema_version": "firelens.runtime_candidate.v1",
+        "schema_version": CANDIDATE_SCHEMA,
         **expected_candidate,
     }
     candidate_commit_match = all(
@@ -402,6 +398,12 @@ def _runtime_artifact_metric_values(
             == expected_candidate["embedding_model"]
             and inventory["runtime_configuration"]["retrieval_text_strategy"]
             == expected_candidate["retrieval_text_strategy"]
+            and inventory["runtime_configuration"]["rerank_model"]
+            == expected_candidate["rerank_model"]
+            and inventory["runtime_configuration"]["generation_model"]
+            == expected_candidate["generation_model"]
+            and inventory["runtime_configuration"]["require_zdr"]
+            == expected_candidate["require_zdr"]
             for platform_name, inventory in inventories.items()
         )
     )

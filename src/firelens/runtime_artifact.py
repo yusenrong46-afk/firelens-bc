@@ -18,6 +18,7 @@ import yaml
 
 from firelens.runtime_artifact_closure import allowed_files as _allowed_files
 from firelens.runtime_artifact_common import (
+    CANDIDATE_REQUIRED_FIELDS,
     CANDIDATE_SCHEMA,
     CHUNK_KEYS,
     CONTRACT_SCHEMA,
@@ -31,6 +32,9 @@ from firelens.runtime_artifact_common import (
 )
 from firelens.runtime_artifact_common import (
     RuntimeArtifactError as RuntimeArtifactError,
+)
+from firelens.runtime_artifact_common import (
+    assert_candidate_has_no_secrets as _assert_candidate_has_no_secrets,
 )
 from firelens.runtime_artifact_common import (
     assert_not_symlink as _assert_not_symlink,
@@ -52,6 +56,12 @@ from firelens.runtime_artifact_common import (
 )
 from firelens.runtime_artifact_common import (
     read_json as _read_json,
+)
+from firelens.runtime_artifact_common import (
+    require_model_id as _require_model_id,
+)
+from firelens.runtime_artifact_common import (
+    require_zdr_policy as _require_zdr_policy,
 )
 from firelens.runtime_artifact_common import (
     sha256_bytes as _sha256_bytes,
@@ -132,16 +142,7 @@ def _validate_candidate_contract(value: Any) -> dict[str, Any]:
         or len(required_candidate_fields) != len(set(required_candidate_fields))
     ):
         raise RuntimeArtifactError("candidate required_fields must be unique strings")
-    expected_candidate_fields = {
-        "schema_version",
-        "candidate_id",
-        "release_version",
-        "build_commit",
-        "corpus_version",
-        "embedding_model",
-        "retrieval_text_strategy",
-    }
-    if set(required_candidate_fields) != expected_candidate_fields:
+    if set(required_candidate_fields) != CANDIDATE_REQUIRED_FIELDS:
         raise RuntimeArtifactError(
             "candidate required_fields must bind the complete runtime and release identity"
         )
@@ -301,13 +302,16 @@ def _load_candidate(
     ):
         if candidate.get(field) != expected:
             raise RuntimeArtifactError(f"runtime candidate {field} differs from build identity")
-    for field in ("corpus_version", "embedding_model"):
-        value = candidate.get(field)
-        if not isinstance(value, str):
-            raise RuntimeArtifactError(f"runtime candidate {field} must be a string")
-        _nonempty_identity(value, field=f"runtime candidate {field}")
+    corpus_version = candidate.get("corpus_version")
+    if not isinstance(corpus_version, str):
+        raise RuntimeArtifactError("runtime candidate corpus_version must be a string")
+    _nonempty_identity(corpus_version, field="runtime candidate corpus_version")
+    for field in ("embedding_model", "rerank_model", "generation_model"):
+        _require_model_id(candidate.get(field), field=f"runtime candidate {field}")
     if candidate.get("retrieval_text_strategy") not in SUPPORTED_RETRIEVAL_STRATEGIES:
         raise RuntimeArtifactError("runtime candidate retrieval_text_strategy is unsupported")
+    _require_zdr_policy(candidate.get("require_zdr"), context="runtime candidate")
+    _assert_candidate_has_no_secrets(candidate)
     return candidate
 
 
@@ -695,6 +699,9 @@ def build_runtime_inventory(
             "corpus_version": candidate["corpus_version"],
             "embedding_model": candidate["embedding_model"],
             "retrieval_text_strategy": candidate["retrieval_text_strategy"],
+            "rerank_model": candidate["rerank_model"],
+            "generation_model": candidate["generation_model"],
+            "require_zdr": candidate["require_zdr"],
         },
         "file_count": len(entries),
         "total_size_bytes": sum(entry["size_bytes"] for entry in entries),

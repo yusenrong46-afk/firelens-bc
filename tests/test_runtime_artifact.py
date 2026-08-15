@@ -51,13 +51,16 @@ def _artifact(root: Path, *, strategy: str = "metadata_context_v1") -> Path:
         root / "config/runtime_candidate.v1.json",
         json.dumps(
             {
-                "schema_version": "firelens.runtime_candidate.v1",
+                "schema_version": "firelens.runtime_candidate.v2",
                 "candidate_id": "candidate-1",
                 "release_version": "1.5.2-test.1",
                 "build_commit": COMMIT,
                 "corpus_version": "corpus.test.v1",
                 "embedding_model": "provider/embedding-test",
                 "retrieval_text_strategy": strategy,
+                "rerank_model": "provider/rerank-test",
+                "generation_model": "provider/generation-test",
+                "require_zdr": "true",
             },
             sort_keys=True,
         ),
@@ -197,7 +200,10 @@ def _inventory(root: Path, platform: str = "vercel") -> dict:
 def test_build_inventory_retains_normalized_paths_hashes_and_identity(tmp_path: Path) -> None:
     report = _inventory(_artifact(tmp_path / "artifact"))
 
-    assert report["schema_version"] == "firelens.runtime_artifact_inventory.v1"
+    assert report["schema_version"] == "firelens.runtime_artifact_inventory.v2"
+    assert report["runtime_configuration"]["rerank_model"] == "provider/rerank-test"
+    assert report["runtime_configuration"]["generation_model"] == "provider/generation-test"
+    assert report["runtime_configuration"]["require_zdr"] == "true"
     assert report["assurance"] == {
         "scope": "staged_logical_bundle",
         "platform_export_provenance_verified": False,
@@ -477,6 +483,26 @@ def test_compare_requires_same_logical_identity_across_vercel_and_docker(
             "docker": comparison["mismatches"][0]["docker"],
         }
     ]
+
+
+def test_compare_fails_closed_when_rerank_or_zdr_policy_differs(tmp_path: Path) -> None:
+    vercel_root = _artifact(tmp_path / "vercel")
+    docker_root = tmp_path / "docker"
+    shutil.copytree(vercel_root, docker_root)
+    vercel = _inventory(vercel_root, "vercel")
+    docker_candidate = json.loads(
+        (docker_root / "config/runtime_candidate.v1.json").read_text(encoding="utf-8")
+    )
+    docker_candidate["rerank_model"] = "provider/other-rerank"
+    docker_candidate["require_zdr"] = "false"
+    _write(
+        docker_root / "config/runtime_candidate.v1.json",
+        json.dumps(docker_candidate, sort_keys=True),
+    )
+    docker = _inventory(docker_root, "docker")
+    comparison = compare_runtime_inventories(vercel, docker)
+    assert comparison["qualified"] is False
+    assert {"kind": "runtime_configuration_mismatch"} in comparison["mismatches"]
 
 
 def test_compare_rejects_tampered_inventory(tmp_path: Path) -> None:

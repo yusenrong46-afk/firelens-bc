@@ -40,8 +40,31 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
                 update={
                     "deployment_environment": "production",
                     "require_zdr": True,
+                    "build_commit": "b" * 40,
                     "openrouter_api_key": SecretStr("test-key"),
                 }
+            )
+            candidate_path = Path(directory) / "config/runtime_candidate.v1.json"
+            candidate_path.parent.mkdir(parents=True, exist_ok=True)
+            candidate_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "firelens.runtime_candidate.v2",
+                        "candidate_id": "firelens-v1-5-2:" + "b" * 40,
+                        "release_version": config.release_version,
+                        "build_commit": "b" * 40,
+                        "corpus_version": "test-corpus.v1",
+                        "embedding_model": config.embedding_model,
+                        "retrieval_text_strategy": config.retrieval_text_strategy.value,
+                        "rerank_model": config.rerank_model,
+                        "generation_model": config.generation_model,
+                        "require_zdr": "true",
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
             )
             async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
                 provider = OpenRouterProvider(config, client=client)
@@ -205,21 +228,42 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
         with tempfile.TemporaryDirectory() as directory:
             runtime, _, config = await make_runtime(Path(directory))
             config = config.model_copy(
-                update={"debug": True, "deployment_environment": "production"}
+                update={
+                    "debug": True,
+                    "deployment_environment": "production",
+                    "require_zdr": True,
+                    "build_commit": "b" * 40,
+                }
             )
             runtime.config = config
-            app = create_app(config, runtime=runtime)
-            async with httpx.AsyncClient(
-                transport=httpx.ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                debug_chunk = await client.get("/api/v1/debug/chunks/chunk-a0")
-                debug_search = await client.post(
-                    "/api/v1/search", json={"question": "emergency kit"}
+            candidate_path = Path(directory) / "config/runtime_candidate.v1.json"
+            candidate_path.parent.mkdir(parents=True, exist_ok=True)
+            candidate_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "firelens.runtime_candidate.v2",
+                        "candidate_id": "test-candidate",
+                        "release_version": config.release_version,
+                        "build_commit": "b" * 40,
+                        "corpus_version": "test-corpus.v1",
+                        "embedding_model": config.embedding_model,
+                        "retrieval_text_strategy": config.retrieval_text_strategy.value,
+                        "rerank_model": config.rerank_model,
+                        "generation_model": config.generation_model,
+                        "require_zdr": "true",
+                    },
+                    indent=2,
+                    sort_keys=True,
                 )
+                + "\n",
+                encoding="utf-8",
+            )
+            app = create_app(config, runtime=runtime)
+            paths = {getattr(route, "path", "") for route in app.routes}
             await runtime.aclose()
 
-        self.assertEqual(debug_chunk.status_code, 404)
-        self.assertEqual(debug_search.status_code, 404)
+        self.assertFalse(any("debug/chunks" in path for path in paths))
+        self.assertNotIn("/api/v1/search", paths)
 
     async def test_operational_log_excludes_question_location_and_evidence(self) -> None:
         stream = io.StringIO()

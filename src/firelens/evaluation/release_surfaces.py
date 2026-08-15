@@ -8,6 +8,9 @@ from typing import Any
 import yaml
 
 from firelens.evaluation.common import (
+    blank_rollback_evidence as _blank_rollback_evidence,
+)
+from firelens.evaluation.common import (
     file_sha256,
 )
 from firelens.evaluation.common import (
@@ -18,6 +21,9 @@ from firelens.evaluation.common import (
 )
 from firelens.evaluation.common import (
     require_digest as _require_digest,
+)
+from firelens.evaluation.common import (
+    require_environment_snapshot as _require_environment_snapshot,
 )
 from firelens.evaluation.common import (
     require_exact_keys as _require_exact_keys,
@@ -617,9 +623,19 @@ def _deployment(
             "restored_deployment_id",
             "restored_commit",
             "verified_at",
+            "candidate_artifact_sha256",
+            "restored_artifact_sha256",
         }
         if not all(str(rollback_evidence.get(key) or "").strip() for key in required):
             raise ValueError("rollback proof is incomplete")
+        _validate_artifact_digest(
+            rollback_evidence.get("candidate_artifact_sha256"),
+            "rollback candidate artifact",
+        )
+        _validate_artifact_digest(
+            rollback_evidence.get("restored_artifact_sha256"),
+            "rollback restored artifact",
+        )
         rollback_candidate_deployment_id = str(rollback_evidence["candidate_deployment_id"])
         if (
             candidate_deployment_id is not None
@@ -634,11 +650,22 @@ def _deployment(
             raise ValueError("rollback proof candidate commit does not match the report")
         if rollback_evidence.get("restored_commit") == report.get("commit"):
             raise ValueError("rollback proof did not restore a prior commit")
+        _require_environment_snapshot(
+            rollback_evidence.get("candidate_environment_snapshot"),
+            commit=str(rollback_evidence["candidate_commit"]),
+            context="rollback candidate",
+        )
+        _require_environment_snapshot(
+            rollback_evidence.get("restored_environment_snapshot"),
+            commit=str(rollback_evidence["restored_commit"]),
+            context="rollback restored",
+        )
         rollback_checks = rollback_evidence.get("checks")
         expected_rollback_checks = {
             "readiness_restored",
             "homepage_anonymous",
             "release_identity_restored",
+            "environment_snapshot_restored",
             "grounded_smoke_passed",
             "live_smoke_passed",
         }
@@ -744,20 +771,7 @@ def _write_deployment_template(path: Path, label: str) -> None:
             "first_rejected_combined_ordinal": None,
             "observations": [],
         },
-        "rollback_evidence": {
-            "candidate_deployment_id": None,
-            "candidate_commit": None,
-            "restored_deployment_id": None,
-            "restored_commit": None,
-            "verified_at": None,
-            "checks": {
-                "readiness_restored": None,
-                "homepage_anonymous": None,
-                "release_identity_restored": None,
-                "grounded_smoke_passed": None,
-                "live_smoke_passed": None,
-            },
-        },
+        "rollback_evidence": _blank_rollback_evidence(),
         "notes": "",
     }
     path.parent.mkdir(parents=True, exist_ok=True)

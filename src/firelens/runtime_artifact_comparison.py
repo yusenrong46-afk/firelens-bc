@@ -9,6 +9,7 @@ from firelens.runtime_artifact_common import (
     COMPARISON_SCHEMA,
     CONTRACT_SCHEMA,
     INVENTORY_SCHEMA,
+    RUNTIME_CONFIGURATION_FIELDS,
     SHA256_PATTERN,
     SUPPORTED_RETRIEVAL_STRATEGIES,
     ArtifactIdentity,
@@ -17,6 +18,7 @@ from firelens.runtime_artifact_common import (
     exact_keys,
     logical_path,
     nonempty_identity,
+    require_zdr_policy,
     sha256_bytes,
     validate_identity,
 )
@@ -105,13 +107,7 @@ def _validate_runtime_configuration(runtime_configuration: Any, *, context: str)
         raise RuntimeArtifactError(f"{context} runtime configuration must be an object")
     exact_keys(
         runtime_configuration,
-        {
-            "logical_path",
-            "sha256",
-            "corpus_version",
-            "embedding_model",
-            "retrieval_text_strategy",
-        },
+        set(RUNTIME_CONFIGURATION_FIELDS),
         context=f"{context} runtime configuration",
     )
     logical_path(runtime_configuration["logical_path"], context="runtime configuration path")
@@ -119,7 +115,7 @@ def _validate_runtime_configuration(runtime_configuration: Any, *, context: str)
         runtime_configuration["sha256"]
     ):
         raise RuntimeArtifactError(f"{context} runtime configuration hash is invalid")
-    for field in ("corpus_version", "embedding_model"):
+    for field in ("corpus_version", "embedding_model", "rerank_model", "generation_model"):
         value = runtime_configuration[field]
         if not isinstance(value, str):
             raise RuntimeArtifactError(f"{context} runtime configuration {field} is invalid")
@@ -128,6 +124,9 @@ def _validate_runtime_configuration(runtime_configuration: Any, *, context: str)
         raise RuntimeArtifactError(
             f"{context} runtime configuration retrieval_text_strategy is invalid"
         )
+    require_zdr_policy(
+        runtime_configuration["require_zdr"], context=f"{context} runtime configuration"
+    )
 
 
 def _validate_inventory_files(
