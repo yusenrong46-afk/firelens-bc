@@ -28,7 +28,11 @@ check: secret-scan openapi
 verify: check
 	$(PYTHON) -m pytest -q
 	npm --prefix $(FRONTEND) run test:sites
-	npm --prefix $(FRONTEND) run test:e2e
+	@if [ -d "$(HOME)/Library/Caches/ms-playwright" ]; then \
+		PLAYWRIGHT_BROWSERS_PATH="$(HOME)/Library/Caches/ms-playwright" npm --prefix $(FRONTEND) run test:e2e; \
+	else \
+		npm --prefix $(FRONTEND) run test:e2e; \
+	fi
 
 run:
 	npm --prefix $(FRONTEND) run build
