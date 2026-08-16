@@ -1,4 +1,6 @@
-# FireLens engineering contract
+# Contributing to FireLens BC
+
+These are the engineering standards every change to this repository follows.
 
 Treat generated code and prose as untrusted proposals until repository evidence verifies them.
 
@@ -10,6 +12,4 @@ Keep the deterministic authority boundary intact: models propose language; sourc
 
 Run targeted checks after each coherent change and `make verify` before release claims. Report evidence as read, inspected, executed, reproduced, or not run. A passing local or synthetic check is not human or deployed evidence.
 
-Keep modules cohesive, scripts thin, public interfaces typed, and generated artifacts clearly separated. Preserve unrelated user changes and historical evidence.
-
-Frontend-specific instructions continue in `apps/web/AGENTS.md` until the production web app migration is complete.
+Keep modules cohesive, scripts thin, public interfaces typed, and generated artifacts clearly separated. Preserve unrelated changes and historical evidence.

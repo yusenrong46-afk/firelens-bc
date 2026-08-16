@@ -1,7 +1,0 @@
-interface:
-  display_name: "Project Mastery Tutor"
-  short_description: "Learn this repository from first principles"
-  default_prompt: "Use $project-mastery-tutor to teach me this repository from Level 0, then test my understanding."
-
-policy:
-  allow_implicit_invocation: true
