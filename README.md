@@ -1,47 +1,97 @@
-# FireLens BC V1.5 release candidate
+# FireLens BC
 
-FireLens BC is a local, evidence-first conversational assistant for reviewed
-British Columbia wildfire-preparedness guidance. V1.5 adds bounded official
-incident, perimeter, and evacuation records plus a restrained map. Stable RAG
-claims still require exact local evidence; current records remain visibly
-separate and never authorize a personal safety decision.
+FireLens BC is a map-first wildfire assistant for British Columbia. One
+conversation answers three kinds of questions with three different standards
+of evidence: what official BC sources currently report (active fires,
+perimeters, and fire-related evacuation orders and alerts), what reviewed
+preparedness guidance says (grab-and-go kits, FireSmart, smoke, evacuation
+definitions), and ordinary questions that deserve a plainly labelled general
+answer. A language model chooses tools and writes prose. It is never the
+authority for what is true.
 
-**Release status:** `principal-remediation candidate; owner qualification deferred`.
-`main` still contains the earlier review candidate. The complete paid probe
-rerun and owner retrieval and semantic reviews remain deferred; this README
-does not claim that the remediated branch or current production deployment has
-been qualified as V1.5.
+**Release status:** V1.5 V3 engineering candidate on `main`, live at
+[firelens-bc.vercel.app](https://firelens-bc.vercel.app). The evidence behind
+this release is automated verification, deployed-preview probes, and a
+production deploy — not a completed human qualification. Named human review,
+firewall publish, assistive-technology and participant UX studies, and sealed
+V3 retrieval qualification remain open and are tracked in
+[`docs/audit/V1_5_V3_FINAL_ENGINEERING_LEDGER.md`](docs/audit/V1_5_V3_FINAL_ENGINEERING_LEDGER.md).
+
+## Why this design matters
+
+Conversational AI fails worst exactly where it sounds best. A fluent model
+will happily invent a fire name, an evacuation status, or a reassuring
+"no fires near you" — and in an emergency domain a confident wrong answer is
+worse than no answer. FireLens is built around one organizing idea:
+
+> **Models propose language. Source contracts, deterministic validation, and
+> humans decide.**
+
+Everything notable in this codebase is a consequence of taking that boundary
+seriously:
+
+1. **A deterministic authority boundary.** Luna (the LLM) proposes tool calls
+   and wording. The application owns the tool schemas, dispatch, official
+   source adapters, geodesic distance math, freshness labeling, output rails,
+   and final publication. If the model's prose asserts something the fetched
+   records do not support, rails veto it and a deterministic composer writes
+   the answer instead.
+2. **Two evidence lanes, never blended silently.** Current facts come only
+   from official BC Wildfire Service and EmergencyInfoBC records, stamped with
+   source and retrieval times. Stable guidance comes only from a reviewed
+   corpus through hybrid retrieval (BM25 + embeddings + reciprocal-rank
+   fusion + Cohere rerank) where every claim must carry an exact local quote
+   that a validator re-checks. Mixed answers keep the two lanes in separate,
+   labelled sections.
+3. **Honesty as a typed contract.** Every response declares its mode —
+   `live`, `grounded`, `partial`, `mixed`, `background`, `scope_redirect`,
+   `requires_input`, `abstention` — so honesty is machine-checkable, not a
+   tone. Cached-stale records are never called "current". An empty result is
+   never presented as an all-clear. Out-of-scope questions get fixed,
+   deterministic copy rather than free model prose.
+4. **Fail-closed inputs.** The BC Geocoder is only trusted at a minimum match
+   score and community-level precision inside BC bounds, so "Calgary" or a
+   typo can never silently become a BC coordinate; out-of-province and
+   Canada-wide questions are redirected to the right jurisdiction instead of
+   being fuzzy-matched. Official-layer outages surface as typed limitations,
+   not crashes or silence.
+5. **Privacy by construction.** Embedding and generation require OpenRouter
+   zero-data-retention endpoints, every request sends `data_collection=deny`,
+   provider fallback is disabled, and the service persists no questions,
+   answers, query hashes, or precise locations. Conversation memory is six
+   bounded turns that live in the browser and are re-sent per request; the
+   server is stateless.
+6. **Evaluation as a gate, not a demo.** Frozen benchmark catalogs with
+   hash-bound identity, hard adversarial probe sheets run against deployed
+   previews, an accessibility surface gate (zero axe WCAG A/AA findings,
+   minimum text sizes, 44px touch targets), and architecture tests that
+   enforce module line limits. Checks report what was actually executed;
+   passing local evidence is never presented as human or deployed evidence.
+
+## How a question flows
 
 ```mermaid
 flowchart LR
-    Q["Question plus at most 6 prior turns"] --> B["Deterministic safety boundary"]
-    B -->|"prohibited"| A["Typed abstention"]
-    B -->|"supported live intent"| L["Official BC ArcGIS adapters"]
-    L --> M["Typed records plus shared map"]
-    B -->|"capability"| C["Local scope answer"]
-    B -->|"ordinary"| P["Bounded planner"]
-    P -->|"tangent"| T["Scope redirect"]
-    P -->|"adjacent"| G["Labelled general background"]
-    P -->|"grounded candidate"| H["BM25 plus dense plus RRF"]
-    H --> R["Cohere Rerank 4 Pro"]
-    R --> E["Local evidence packet"]
-    E --> D["Luna structured draft"]
-    D --> V["Deterministic validator"]
-    V -->|"accepted"| O["Claims plus exact local support"]
-    V -->|"rejected once"| X["One same-packet repair"]
-    X --> V2["Same deterministic validator"]
-    V2 -->|"accepted"| O
-    V2 -->|"valid subset"| PARTIAL["Supported partial answer"]
-    V2 -->|"unsupported"| A
+    Q["Question plus at most 6 browser-held turns"] --> R1["Deterministic input rails"]
+    R1 -->|"prohibited"| A["Typed abstention"]
+    R1 -->|"needs a place"| RL["Typed location request"]
+    R1 --> PF["Concurrent prefetch: official layers plus reviewed RAG"]
+    PF -->|"packet ready"| W["Luna writes once from the official packet"]
+    PF -->|"packet not ready"| TL["Bounded Luna tool loop"]
+    TL --> W
+    W --> R2["Output rails: veto, one rewrite, deterministic fallback"]
+    R2 --> C["Typed AskResponse composition"]
+    C --> UI["Conversation plus shared official map"]
 ```
 
-Local Python code owns policy, routing, retrieval, source metadata, evidence
-construction, validation, and public responses. OpenRouter supplies bounded
-planning, embeddings, reranking, and generation. There is no hidden model
-substitution, retrieval fallback, provider fallback, or model-memory fallback.
-A rejected grounded draft may receive exactly one same-evidence repair;
-deterministic validation still owns acceptance, partial salvage, and abstention.
-See [ADR 0009](docs/adr/0009-bounded-grounded-answer-repair.md).
+When deterministic heuristics are confident about intent, the official layers
+and the reviewed-guidance retrieval run concurrently before the model is ever
+consulted, so a ready evidence packet costs exactly one model call. Distance,
+size, count, and comparison questions are answered by application-owned
+analysis over the fetched records — the model never does safety-relevant
+arithmetic. See [ADR 0011](docs/adr/0011-luna-brain-thin-app.md) for the
+agent-loop decision and [ADR 0009](docs/adr/0009-bounded-grounded-answer-repair.md)
+for bounded grounded repair.
 
 ## Quick start
 

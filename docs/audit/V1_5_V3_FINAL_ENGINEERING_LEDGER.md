@@ -240,7 +240,7 @@ These become ledger items. They are **not** compliance claims.
 - **Severity:** P2
 - **Reproduction:** `git status --porcelain` on `codex/v1-5-v3` at `fbfb5d3` shows 50 modified and 19 untracked files.
 - **Expected:** Reviewable commits by family; clean worktree of intended production/test/docs changes.
-- **Actual:** Uncommitted prior-agent production work.
+- **Actual:** Uncommitted earlier production work.
 - **Root cause:** Sequential engineering on a dirty branch without family commits.
 - **Fix:** Recovery snapshot, then local commits by family. Do not push.
 - **Tests added:** None (process).
@@ -1042,4 +1042,33 @@ Sheet: `docs/audit/V1_5_V3_PREVIEW_ASK_HARD_V2.md`.
 Totals: **Pass 47 / Fail 2 / Blocked 1**. Fails: H03 (two-largest BC compare,
 0 live rows) and H27 (Canada-wide ask still attached 1 BC row). Blocked: H20
 (`ReadTimeout` on a firebreak follow-up with a selected id). No `--prod`.
+
+## Continuation: ship to `main` and production (2026-08-16, afternoon)
+
+The V1.5 V3 lineage was pushed and released after `04a2f97`:
+
+- **Hardening commit** — trusted geocoding (`GEOCODER_MIN_SCORE=70`,
+  community-level `matchPrecision`), deterministic BC-only redirects for
+  out-of-province and national asks (closes the H27 class), honest
+  cached-record wording (stale is never called current), fixed terminal
+  scope-redirect copy instead of free model prose, concurrent official-layer
+  and reviewed-guidance prefetch with a one-call provider write path, precise
+  selected-record follow-up handling in the web client, and module splits
+  (`agent/compose.py`, `live_support.resolve_bc_location`,
+  `evaluation/preview_probe.py`) to hold architecture line limits.
+- **UI commit** — one tokenized design layer replacing the two stacked style
+  generations. Sealed surface constraints kept: body text ≥16px, secondary
+  ≥12px only on exempt selectors, ≥44px targets, axe A/AA, reduced motion.
+- Preview smoke on the hardening commit: Calgary ask returned the BC-only
+  scope redirect with zero live rows; Kelowna returned live records; the
+  grab-and-go ask returned grounded claims (one transient provider retry).
+- `make verify` passed locally on the UI commit before release (ruff, mypy,
+  full Python suite, 26 Playwright flows).
+- `origin/main` fast-forwarded to this lineage and `codex/v1-5-v3` was
+  published. Vercel `--prod` aliased `https://firelens-bc.vercel.app` to
+  deployment `dpl_42YkwX58G9CQVjdxth15yxkSSKXf`.
+
+Still open after this ship: named human review, Vercel Firewall publish,
+VoiceOver / 12-participant UX, V3 sealed retrieval, and a re-run of the hard
+Ask sheet against the production alias.
 

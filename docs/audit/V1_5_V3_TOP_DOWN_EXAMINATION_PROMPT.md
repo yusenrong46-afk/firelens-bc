@@ -59,8 +59,7 @@ Copy these into every layer. They override helpfulness.
    owner explicitly authorizes cost. Default to zero-cost: read, inspect,
    existing tests, FakeProvider.
 8. Do not `git push`, `--prod`, merge to `main`, rewrite git config, or skip
-   hooks. Do not treat Grok, Cursor, or any model as a semantic/safety/UX
-   reviewer.
+   hooks. Do not treat any model as a semantic/safety/UX reviewer.
 9. Cite `path`, symbol, and line range. Prefer current source over
    `docs/TECHNICAL_HANDBOOK.md` (dated 2026-07-30; still describes
    planner-as-brain) and over `docs/firelens_complete_system_design.md`
