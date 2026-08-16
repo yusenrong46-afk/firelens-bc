@@ -175,6 +175,16 @@ _REJECTED_PLACES = {
     "fire",
     "wildfire",
     "perimeter",
+    "mountain",
+    "mountains",
+    "moutain",
+    "mountian",
+    "forest",
+    "bush",
+    "grass",
+    "wildland",
+    "interface",
+    "prescribed",
 }
 
 _PLACE_ALIASES = {

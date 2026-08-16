@@ -7,20 +7,20 @@ from typing import Any
 
 from firelens.agent.packet import AgentPacket
 from firelens.agent.tools import AgentTool
-from firelens.answering.intent import live_layers_for_question, unsupported_live_topics
+from firelens.answering.intent import (
+    live_layers_for_question,
+    reviewed_guidance_intent,
+    unsupported_live_topics,
+)
 from firelens.answering.live_analysis import compose_official_answer
 from firelens.answering.live_request_intent import is_selected_live_request
 from firelens.answering.location_intent import coarse_location_from_question
-from firelens.contracts import QueryRequest
+from firelens.contracts import LiveResultKind, QueryRequest
 
-_FIRE_TOKEN = re.compile(
-    r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?|perimeters?|hectares?|"
-    r"closest|nearest|distribution|geography|evacuat)",
-    re.IGNORECASE,
-)
 _GUIDANCE = re.compile(
     r"\b(?:kit|grab-and-go|go bag|firesmart|prepare|preparing|preparedness|"
-    r"emergency plan|what belongs|smoke preparedness|pack(?:ing)?)\b",
+    r"precaution|precautions|emergency plan|what belongs|smoke preparedness|"
+    r"pack(?:ing)?|what should i (?:take|do|pack))\b",
     re.IGNORECASE,
 )
 _DEFINITION = re.compile(
@@ -34,10 +34,6 @@ _PREDICTION = re.compile(
     r"\b(?:when will|will it|predict|forecast|reach|spread to|be contained)\b",
     re.IGNORECASE,
 )
-_EVAC_LIST = re.compile(
-    r"\b(?:evacuat|under\b.+\b(?:orders?|alerts?))\b",
-    re.IGNORECASE,
-)
 
 
 def heuristic_tool_calls(request: QueryRequest) -> list[dict[str, Any]]:
@@ -47,6 +43,7 @@ def heuristic_tool_calls(request: QueryRequest) -> list[dict[str, Any]]:
     calls: list[dict[str, Any]] = []
     location = request.location or coarse_location_from_question(question)
     place = location.label if location is not None else None
+    layers = live_layers_for_question(question)
     if request.context.selected_live_result_id and (
         _PREDICTION.search(question)
         or is_selected_live_request(request)
@@ -58,24 +55,24 @@ def heuristic_tool_calls(request: QueryRequest) -> list[dict[str, Any]]:
                 "arguments": {"result_id": request.context.selected_live_result_id},
             }
         )
-    elif (
-        (_FIRE_TOKEN.search(question) or _EVAC_LIST.search(question))
-        and (live_layers_for_question(question) or not unsupported_live_topics(question))
-        and not _DEFINITION.search(question)
-    ):
+    elif layers:
         arguments: dict[str, Any] = {}
         if place:
             arguments["place_label"] = place
-        if _FIRE_TOKEN.search(question) or not _EVAC_LIST.search(question):
+        if LiveResultKind.INCIDENT in layers or LiveResultKind.PERIMETER in layers:
             calls.append({"name": AgentTool.LIST_OFFICIAL_FIRES.value, "arguments": arguments})
-        if _EVAC_LIST.search(question):
+        if LiveResultKind.EVACUATION in layers:
             calls.append(
                 {
                     "name": AgentTool.LIST_OFFICIAL_EVACUATIONS.value,
                     "arguments": arguments,
                 }
             )
-    if _GUIDANCE.search(question) or _DEFINITION.search(question):
+    if (
+        _GUIDANCE.search(question)
+        or _DEFINITION.search(question)
+        or (reviewed_guidance_intent(question) and not unsupported_live_topics(question))
+    ):
         calls.append(
             {
                 "name": AgentTool.SEARCH_REVIEWED_GUIDANCE.value,

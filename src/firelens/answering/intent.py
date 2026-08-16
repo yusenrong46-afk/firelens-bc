@@ -242,6 +242,7 @@ _EVACUATION_DEFINITION = re.compile(
 _STATIC_GUIDANCE_TERMS = (
     "prepare",
     "preparedness",
+    "precaution",
     "kit",
     "bag",
     "grab-and-go",
@@ -267,6 +268,8 @@ def request_fragments(question: str) -> tuple[str, ...]:
 
 _REVIEWED_GUIDANCE_PATTERNS = (
     r"\b(?:home ignition zone|firesmart|combustible material|ember risk)\b",
+    r"\bprecautions?\b",
+    r"\bwhat should i (?:take|do|pack|prepare)\b.{0,80}\b(?:fire|wildfire|evacuat)",
     r"\b(?:grab-and-go|go bag|emergency kit|emergency plan(?:ning)?|household plan)\b",
     r"\b(?:family|household|pets?)\b.{0,50}\b(?:prepare|evacuation|emergency)\b",
     r"\b(?:prepare|preparing)\b.{0,50}\b(?:family|household|pets?|evacuation)\b",
@@ -507,6 +510,18 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
         for fragment in request_fragments(original_question)
     ):
         layers.append(LiveResultKind.EVACUATION)
+    if (
+        not layers
+        and re.search(
+            r"\b(?:distribution|geography|hectares?|largest|oldest)\b",
+            lowered,
+        )
+        and re.search(
+            r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?)\b",
+            lowered,
+        )
+    ):
+        layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
     return tuple(dict.fromkeys(layers))
 
 

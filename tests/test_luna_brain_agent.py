@@ -18,6 +18,7 @@ from firelens.contracts import (
     AskResponse,
     ClaimSupport,
     CoarseResolvedLocation,
+    ConversationTurn,
     EvidenceStatus,
     Freshness,
     GeometryRelation,
@@ -376,10 +377,20 @@ class CountingMapService(FixedLiveService):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.map_calls = 0
+        self.nearby_calls = 0
+        self.resolve_calls = 0
 
     async def map_results(self, *args: Any, **kwargs: Any) -> LiveMapResponse:
         self.map_calls += 1
         return await super().map_results(*args, **kwargs)
+
+    async def nearby_page(self, location: Any, *args: Any, **kwargs: Any) -> Any:
+        self.nearby_calls += 1
+        return await super().nearby_page(location, *args, **kwargs)
+
+    async def resolve_location(self, location: Any) -> tuple[float, float]:
+        self.resolve_calls += 1
+        return await super().resolve_location(location)
 
 
 class UnavailableLiveService:
@@ -558,6 +569,59 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             execution.response.claims[0].supports[0].quote, execution.response.answer
         )
         self.assertFalse(execution.response.live_results)
+
+    async def test_partial_layer_outage_response_survives_contract_revalidation(self) -> None:
+        class PartialLive(FixedLiveService):
+            async def map_results(self, *args: Any, **kwargs: Any) -> LiveMapResponse:
+                layers = kwargs.get("layers")
+                if layers and LiveResultKind.EVACUATION in layers:
+                    raise LiveDataUnavailable("evacuation source is unavailable")
+                return await super().map_results(*args, **kwargs)
+
+            async def nearby_page(self, location: Any, *args: Any, **kwargs: Any) -> Any:
+                layers = kwargs.get("layers")
+                if layers and LiveResultKind.EVACUATION in layers:
+                    raise LiveDataUnavailable("evacuation source is unavailable")
+                return await super().nearby_page(location, *args, **kwargs)
+
+        agent = FireLensAgent(
+            cast(Any, SilentStatic()),
+            LiveAnswerCoordinator(
+                cast(Any, PartialLive([_fire(result_id="incident:1", name="Ridge Fire")]))
+            ),
+        )
+        execution = await agent.answer(
+            QueryRequest(question="Are there fires and evacuation orders near Kelowna?")
+        )
+
+        response = execution.response
+        self.assertIn(LiveResultKind.EVACUATION, response.unavailable_layers)
+        # FastAPI revalidates the response model on serialization; a stale
+        # history_text after the limitation append must not 500 a served Ask.
+        AskResponse.model_validate(response.model_dump(mode="json"))
+
+    async def test_precaution_near_mountain_fire_uses_reviewed_guidance_not_live(self) -> None:
+        live = CountingMapService([])
+        agent = FireLensAgent(
+            cast(Any, KitStatic()),
+            LiveAnswerCoordinator(cast(Any, live)),
+        )
+        for question in (
+            "what precaution should I take if I am near moutain fire",
+            "What precautions should I take if I am near a mountain fire?",
+        ):
+            with self.subTest(question=question):
+                live.map_calls = 0
+                live.nearby_calls = 0
+                live.resolve_calls = 0
+                execution = await agent.answer(QueryRequest(question=question))
+                self.assertEqual(execution.tools, (AgentTool.SEARCH_REVIEWED_GUIDANCE,))
+                self.assertEqual(execution.response.response_mode, ResponseMode.GROUNDED)
+                self.assertFalse(execution.response.live_results)
+                self.assertEqual(live.map_calls, 0)
+                self.assertEqual(live.nearby_calls, 0)
+                self.assertEqual(live.resolve_calls, 0)
+                self.assertIn("water", (execution.response.answer or "").casefold())
 
     async def test_safety_language_is_vetoed_then_rewritten(self) -> None:
         provider = InventingThenRewritingProvider()
@@ -948,9 +1012,39 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("            content", user)
         payload = json.loads(user["content"])
         self.assertEqual(payload["question"], "Are there active wildfires in BC currently?")
+        self.assertEqual(payload["history"], [])
         self.assertIn("official_packet", payload)
         self.assertEqual(
             payload["official_packet"]["official_records"][0]["name"], "Ridge Fire"
+        )
+
+    async def test_provider_first_user_turn_includes_bounded_history(self) -> None:
+        provider = CapturingProvider()
+        live = FixedLiveService([_fire(result_id="incident:9", name="Ridge Fire")])
+        agent = FireLensAgent(
+            cast(Any, _ProviderStatic(provider)),
+            LiveAnswerCoordinator(cast(Any, live)),
+        )
+        history = (
+            ConversationTurn(role="user", content="Are there active wildfires near Kelowna?"),
+            ConversationTurn(
+                role="assistant",
+                content="Official BC Wildfire Service records show Ridge Fire near Kelowna.",
+            ),
+        )
+        await agent.answer(
+            QueryRequest(
+                question="How large is that fire?",
+                history=list(history),
+            )
+        )
+
+        assert provider.messages is not None
+        payload = json.loads(provider.messages[1]["content"])
+        self.assertEqual(payload["question"], "How large is that fire?")
+        self.assertEqual(
+            payload["history"],
+            [turn.model_dump(mode="json") for turn in history],
         )
 
     def test_compose_official_answer_does_not_substitute_selected(self) -> None:

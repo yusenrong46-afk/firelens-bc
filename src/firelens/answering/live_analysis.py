@@ -176,6 +176,7 @@ def official_analysis_answer(
         ("alert" in lowered and "order" in lowered)
         or "grab-and-go" in lowered
         or "kit" in lowered
+        or "precaution" in lowered
     ):
         return _guidance_with_halves(request.question, static_answer)
     return None

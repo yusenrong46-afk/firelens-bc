@@ -251,6 +251,8 @@ class V15RoutingTests(unittest.TestCase):
         for question in (
             "What is the home ignition zone?",
             "How should my family prepare for a possible evacuation?",
+            "what precaution should I take if I am near moutain fire",
+            "What precautions should I take if I am near a mountain fire?",
             "What belongs in a grab-and-go bag?",
             "How can I prepare for wildfire smoke?",
             "what does outta control fire mean",

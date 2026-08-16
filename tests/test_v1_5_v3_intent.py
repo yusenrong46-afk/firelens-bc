@@ -306,6 +306,20 @@ class V3DeterministicIntentTests(unittest.TestCase):
                 )
                 self.assertEqual(live_layers_for_question(question), expected_layers)
 
+    def test_precaution_near_a_mountain_fire_is_guidance_not_a_place(self) -> None:
+        for question in (
+            "what precaution should I take if I am near moutain fire",
+            "what precaution should I take if I am near mountain fire",
+            "What precautions should I take if I am near a mountain fire?",
+        ):
+            with self.subTest(question=question):
+                self.assertIsNone(coarse_location_from_question(question))
+                self.assertEqual(
+                    plan_query(QueryRequest(question=question)).route,
+                    QueryRoute.RELATED,
+                )
+                self.assertEqual(live_layers_for_question(question), ())
+
     def test_surefire_kit_wording_is_not_a_live_fire_query(self) -> None:
         question = "Is there a surefire way to pack a kit?"
         self.assertIsNone(coarse_location_from_question(question))

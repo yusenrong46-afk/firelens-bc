@@ -199,6 +199,7 @@ async def _provider_loop(
             "content": json.dumps(
                 {
                     "question": request.question,
+                    "history": [turn.model_dump(mode="json") for turn in request.history],
                     "selected_live_result_id": request.context.selected_live_result_id,
                     "place_label": request.location.label if request.location else None,
                     **(
@@ -207,7 +208,8 @@ async def _provider_loop(
                             "instruction": (
                                 "Official records are already fetched. Write from "
                                 "official_packet. Do not pass BC or British Columbia "
-                                "as place_label."
+                                "as place_label. Use history only to resolve this "
+                                "turn's referents."
                             ),
                         }
                         if packet.live_results
@@ -246,11 +248,13 @@ async def _rewrite(
             "content": json.dumps(
                 {
                     "question": request.question,
+                    "history": [turn.model_dump(mode="json") for turn in request.history],
                     "official_packet": packet.facts_for_model(),
                     "previous_answer_rejected_for": errors,
                     "instruction": (
                         "Rewrite using only official_packet. Remove safety advice, "
-                        "unfetched fires, and civic addresses."
+                        "unfetched fires, and civic addresses. Use history only to "
+                        "resolve this turn's referents."
                     ),
                 },
                 ensure_ascii=False,
@@ -490,11 +494,21 @@ def _with_packet_fields(
         if _LAYER_UNAVAILABLE not in limitations:
             limitations.append(_LAYER_UNAVAILABLE)
             updates["limitations"] = limitations
+            # history_text embeds limitations; clear it so the contract
+            # validator derives it again instead of serving a stale value
+            # that fails response-model revalidation.
+            updates["history_text"] = None
     if request.context.selected_live_result_id and not response.selected_live_result_id:
         updates["selected_live_result_id"] = request.context.selected_live_result_id
     if packet.resolved_location is not None and response.resolved_location is None:
         updates["resolved_location"] = packet.resolved_location
-    return response.model_copy(update=updates) if updates else response
+    if not updates:
+        return response
+    if "history_text" in updates:
+        return AskResponse.model_validate(
+            response.model_copy(update=updates).model_dump(mode="python")
+        )
+    return response.model_copy(update=updates)
 
 
 def _missing_selected(request: QueryRequest, packet: AgentPacket) -> bool:
