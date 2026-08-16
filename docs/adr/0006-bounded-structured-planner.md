@@ -1,6 +1,6 @@
 # ADR 0006: A bounded structured planner after safety routing
 
-Status: accepted
+Status: superseded in part by ADR 0011 (2026-08-15)
 Date: 2026-07-26
 
 ## Context

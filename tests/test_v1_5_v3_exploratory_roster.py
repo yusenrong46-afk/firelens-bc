@@ -250,13 +250,13 @@ class V3ExploratoryRosterTests(unittest.TestCase):
                 "distance": distance,
                 "mixed_static_fragment": bool(fragment),
                 "tool_hint": (
-                    "calculate_fire_distance"
-                    if distance
-                    else "get_fire_details"
+                    "get_official_fire"
                     if selected or unsupported_selected
-                    else "list_active_fires"
-                    if LiveResultKind.INCIDENT in layers or LiveResultKind.PERIMETER in layers
-                    else "get_evacuation_information"
+                    else "list_official_fires"
+                    if distance
+                    or LiveResultKind.INCIDENT in layers
+                    or LiveResultKind.PERIMETER in layers
+                    else "list_official_evacuations"
                     if LiveResultKind.EVACUATION in layers
                     else None
                 ),
@@ -384,14 +384,22 @@ class V3ExploratoryCompositionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.claims[0].evidence_status, EvidenceStatus.GENERAL_BACKGROUND)
 
     async def test_unmatched_selected_distance_does_not_substitute(self) -> None:
-        coordinator = LiveAnswerCoordinator(cast(Any, FixedLiveService()))
-        response = await coordinator.answer(
-            QueryRequest(
-                question="How far is this fire from Kelowna?",
-                context=MapContext(selected_live_result_id="incident:missing"),
-            ),
-            None,
+        class UnexpectedStatic:
+            async def ask(self, *args: Any, **kwargs: Any) -> AskResponse:
+                raise AssertionError("unmatched selected distance must not call static RAG")
+
+        agent = FireLensAgent(
+            cast(Any, UnexpectedStatic()),
+            LiveAnswerCoordinator(cast(Any, FixedLiveService())),
         )
+        response = (
+            await agent.answer(
+                QueryRequest(
+                    question="How far is this fire from Kelowna?",
+                    context=MapContext(selected_live_result_id="incident:missing"),
+                )
+            )
+        ).response
         self.assertTrue(
             any("did not substitute" in item.casefold() for item in response.limitations)
         )

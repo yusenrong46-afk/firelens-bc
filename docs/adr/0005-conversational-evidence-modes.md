@@ -27,11 +27,15 @@ require local support pairs and exact quotes. `general_background` claims must
 have no support pairs and must include the prescribed limitation. A response
 cannot mix the two kinds of factual claim.
 
-Deterministic safety routing runs before planning and every paid provider call.
-It remains authoritative for current incident status, personalized evacuation
-or safety decisions, and personalized medical advice. The planner cannot
-override it. Tangent requests receive a short redirect rather than an invented
-answer.
+Deterministic safety routing runs before planning and every paid provider call
+for personalized evacuation, safety-to-return, and medical advice. That
+seatbelt remains authoritative and cannot be disabled by the model.
+
+**Superseded 2026-08-15 by ADR 0011:** topic routing (live vs related vs
+closest) is no longer a pre-call regex forest. Luna chooses official-fetch and
+RAG tools for fire-related questions. Current incident *analysis* comes from
+fetched official records plus Luna, not from the static corpus. Tangent
+requests still receive a short redirect rather than an invented answer.
 
 This decision changes ADR 0001's corpus-only conversation boundary and
 supersedes ADR 0002's single-turn request restriction. It does not change the

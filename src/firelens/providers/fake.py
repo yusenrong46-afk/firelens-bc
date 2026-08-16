@@ -9,6 +9,8 @@ import re
 from collections.abc import Sequence
 from typing import Any
 
+from pydantic import HttpUrl
+
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
     BackgroundDraft,
@@ -264,3 +266,120 @@ class FakeProvider:
                 limitations=[BACKGROUND_LIMITATION],
             ),
         )
+
+    async def chat_turn(
+        self,
+        messages: Sequence[dict[str, Any]],
+        *,
+        tools: list[dict[str, Any]] | None = None,
+    ) -> Any:
+        from firelens.agent.chat import ChatToolCall, ChatTurn
+        from firelens.agent.fallback_brain import fallback_write, heuristic_tool_calls
+        from firelens.agent.packet import AgentPacket
+        from firelens.contracts import (
+            Freshness,
+            LiveResult,
+            LiveResultKind,
+            MapContext,
+            QueryRequest,
+        )
+
+        self.generate_calls += 1
+        user_payload: dict[str, Any] = {}
+        for message in messages:
+            if message.get("role") != "user":
+                continue
+            raw = message.get("content")
+            if not isinstance(raw, str):
+                continue
+            try:
+                parsed = json.loads(raw)
+            except json.JSONDecodeError:
+                parsed = {"question": raw}
+            if isinstance(parsed, dict):
+                user_payload = parsed
+        question = str(user_payload.get("question") or "wildfire question")
+        selected = user_payload.get("selected_live_result_id")
+        request = QueryRequest(
+            question=question,
+            context=MapContext(
+                selected_live_result_id=selected if isinstance(selected, str) else None
+            ),
+        )
+        has_tool_results = any(message.get("role") == "tool" for message in messages)
+        if tools and not has_tool_results:
+            calls = heuristic_tool_calls(request)
+            if not calls:
+                return ChatTurn(
+                    content=("That question is outside FireLens fire and preparedness sources.")
+                )
+            return ChatTurn(
+                content=None,
+                tool_calls=tuple(
+                    ChatToolCall(
+                        id=f"fake_{index}",
+                        name=str(call["name"]),
+                        arguments=dict(call.get("arguments") or {}),
+                    )
+                    for index, call in enumerate(calls)
+                ),
+            )
+        packet = AgentPacket()
+        official = (
+            user_payload.get("official_packet") if isinstance(user_payload, dict) else None
+        )
+        records = official.get("official_records") if isinstance(official, dict) else None
+        guidance_answer: str | None = None
+        if not isinstance(records, list):
+            records = []
+            for message in messages:
+                if message.get("role") != "tool":
+                    continue
+                raw = message.get("content")
+                if not isinstance(raw, str):
+                    continue
+                try:
+                    payload = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(payload, dict):
+                    continue
+                if isinstance(payload.get("records"), list):
+                    records.extend(
+                        item for item in payload["records"] if isinstance(item, dict)
+                    )
+                if isinstance(payload.get("answer"), str) and payload["answer"]:
+                    guidance_answer = payload["answer"]
+        if records:
+            from datetime import UTC, datetime
+
+            timestamp = datetime(2026, 8, 15, tzinfo=UTC)
+            for index, row in enumerate(records):
+                if not isinstance(row, dict):
+                    continue
+                coords = row.get("coordinates") or [-119.0, 50.0]
+                kind_name = str(row.get("kind") or "incident")
+                try:
+                    kind = LiveResultKind(kind_name)
+                except ValueError:
+                    kind = LiveResultKind.INCIDENT
+                packet.live_results.append(
+                    LiveResult(
+                        result_id=str(row.get("result_id") or f"incident:{index}"),
+                        kind=kind,
+                        source_url=HttpUrl("https://example.test/live/fake"),
+                        source_updated_at=timestamp,
+                        retrieved_at=timestamp,
+                        freshness=Freshness.FRESH,
+                        status=str(row.get("status") or "Official record"),
+                        name=row.get("name"),
+                        size_hectares=row.get("size_hectares"),
+                        fire_centre=row.get("fire_centre"),
+                        geometry={"type": "Point", "coordinates": coords},
+                    )
+                )
+        if packet.live_results:
+            return ChatTurn(content=fallback_write(request, packet))
+        if guidance_answer:
+            return ChatTurn(content=guidance_answer)
+        return ChatTurn(content=fallback_write(request, packet))

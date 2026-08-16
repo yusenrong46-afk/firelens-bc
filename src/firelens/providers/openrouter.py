@@ -11,6 +11,7 @@ from typing import Any, Literal
 import httpx
 from pydantic import ValidationError
 
+from firelens.agent.chat import ChatTurn
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     DocumentContextDraft,
@@ -32,6 +33,7 @@ from firelens.providers.openrouter_support import (
     StagePressureState,
     locally_type_draft,
     model_identity_matches,
+    parse_chat_turn,
     strict_wire_schema,
     wire_draft_schema,
 )
@@ -761,3 +763,35 @@ class OpenRouterProvider:
         response = GenerationResponse(model=model, draft=draft, usage=usage, attempts=attempts)
         await self._record_stage_success("background_generation")
         return response
+
+    async def chat_turn(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        tools: list[dict[str, Any]] | None = None,
+    ) -> ChatTurn:
+        """One OpenRouter chat turn for the Luna tool loop."""
+
+        payload: dict[str, Any] = {
+            "model": self.config.generation_model,
+            "messages": list(messages),
+            "stream": False,
+            "max_tokens": 1_200,
+            **self._generation_sampling_parameters(),
+            "provider": self._provider_preferences("grounded_generation"),
+        }
+        if tools:
+            payload["tools"] = tools
+            payload["tool_choice"] = "auto"
+        body, _attempts = await self._post("grounded_generation", "chat/completions", payload)
+        try:
+            turn = parse_chat_turn(body, self.config.generation_model)
+        except (IndexError, KeyError, TypeError, ValueError) as exc:
+            error = ProviderError(
+                ProviderErrorKind.INVALID_RESPONSE,
+                "OpenRouter returned an invalid chat turn.",
+            )
+            await self._record_stage_failure("grounded_generation", error)
+            raise error from exc
+        await self._record_stage_success("grounded_generation")
+        return turn

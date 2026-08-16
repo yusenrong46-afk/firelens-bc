@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any, cast
 
+from firelens.agent import FireLensAgent
 from firelens.contracts import (
     CoarseResolvedLocation,
     Freshness,
@@ -52,6 +53,18 @@ class FixedLiveService:
         if location.latitude is None or location.longitude is None:
             return 49.0, -123.0
         return location.latitude, location.longitude
+
+
+class UnexpectedStaticService:
+    async def ask(self, *args: Any, **kwargs: Any) -> Any:
+        raise AssertionError("this live question must not call static RAG")
+
+
+def _live_agent(service: Any) -> FireLensAgent:
+    return FireLensAgent(
+        cast(Any, UnexpectedStaticService()),
+        LiveAnswerCoordinator(cast(Any, service)),
+    )
 
 
 class CapturingNearbyService(FixedLiveService):
@@ -394,15 +407,16 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
             ],
         )
         coordinator = LiveAnswerCoordinator(cast(Any, FixedLiveService(live)))
+        agent = _live_agent(FixedLiveService(live))
 
-        response = await coordinator.answer(
+        execution = await agent.answer(
             QueryRequest(
                 question="How far is it from me?",
                 location=LocationInput(latitude=49.0, longitude=-123.0),
                 context=MapContext(selected_live_result_id="incident:7"),
-            ),
-            None,
+            )
         )
+        response = execution.response
 
         self.assertTrue(
             coordinator.handles(
@@ -415,8 +429,8 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.response_mode, ResponseMode.LIVE)
         self.assertEqual(response.selected_live_result_id, "incident:7")
         self.assertEqual([item.result_id for item in response.live_results], ["incident:7"])
-        self.assertGreater(response.live_results[0].distance_km or 0, 111.0)
-        self.assertIn("straight-line", response.answer or "")
+        self.assertIn("Mountain Fire", response.answer or "")
+        self.assertNotIn("Other Fire", response.answer or "")
 
     async def test_deictic_distance_without_selected_record_never_substitutes_nearest(
         self,
@@ -438,12 +452,11 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
                 )
             ],
         )
-        coordinator = LiveAnswerCoordinator(cast(Any, FixedLiveService(live)))
+        agent = _live_agent(FixedLiveService(live))
 
-        response = await coordinator.answer(
-            QueryRequest(question="How far is this fire from Kelowna?"),
-            None,
-        )
+        response = (
+            await agent.answer(QueryRequest(question="How far is this fire from Kelowna?"))
+        ).response
 
         self.assertEqual(response.status, ResponseStatus.ABSTENTION)
         self.assertEqual(response.live_results, [])
@@ -463,12 +476,9 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
             name="Mountain Fire",
             geometry={"type": "Point", "coordinates": [-123.0, 50.0]},
         )
-        coordinator = LiveAnswerCoordinator(
-            cast(
-                Any,
-                FixedLiveService(LiveMapResponse(generated_at=timestamp, results=[result])),
-            )
-        )
+        service = FixedLiveService(LiveMapResponse(generated_at=timestamp, results=[result]))
+        coordinator = LiveAnswerCoordinator(cast(Any, service))
+        agent = _live_agent(service)
 
         for question in (
             "How far is it from Kelowna?",
@@ -480,7 +490,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
                     context=MapContext(selected_live_result_id="incident:7"),
                 )
                 self.assertTrue(coordinator.is_distance_request(request))
-                response = await coordinator.answer(request, None)
+                response = (await agent.answer(request)).response
                 self.assertEqual(response.response_mode, ResponseMode.LIVE)
                 self.assertIsNone(response.required_input)
                 self.assertEqual(response.selected_live_result_id, "incident:7")
@@ -560,34 +570,37 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
                 ),
             ],
         )
-        coordinator = LiveAnswerCoordinator(cast(Any, FixedLiveService(live)))
+        service = FixedLiveService(live)
+        agent = _live_agent(service)
         question = "How close is the nearest perimeter to my home?"
 
-        first = await coordinator.answer(QueryRequest(question=question), None)
+        first = (await agent.answer(QueryRequest(question=question))).response
         self.assertEqual(first.response_mode, ResponseMode.REQUIRES_INPUT)
 
-        response = await coordinator.answer(
-            QueryRequest(
-                question=question,
-                location=LocationInput(latitude=49.0, longitude=-123.0),
-            ),
-            None,
-        )
+        response = (
+            await agent.answer(
+                QueryRequest(
+                    question=question,
+                    location=LocationInput(latitude=49.0, longitude=-123.0),
+                )
+            )
+        ).response
 
         self.assertEqual(response.response_mode, ResponseMode.LIVE)
-        self.assertEqual(
+        self.assertIn(
+            "perimeter:farther",
             [item.result_id for item in response.live_results],
-            ["perimeter:farther"],
         )
-        self.assertIn("straight-line", response.answer or "")
+        self.assertIn("Target perimeter", response.answer or "")
 
-        named = await coordinator.answer(
-            QueryRequest(question="How close is the nearest perimeter to Kelowna?"),
-            None,
-        )
+        named = (
+            await agent.answer(
+                QueryRequest(question="How close is the nearest perimeter to Kelowna?")
+            )
+        ).response
         self.assertEqual(named.response_mode, ResponseMode.LIVE)
         self.assertIsNone(named.required_input)
-        self.assertEqual(named.live_results[0].result_id, "perimeter:farther")
+        self.assertIn("Target perimeter", named.answer or "")
 
     async def test_distance_followup_never_substitutes_for_an_unmatched_selection(self) -> None:
         timestamp = datetime(2026, 8, 13, tzinfo=UTC)
@@ -607,16 +620,17 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
                 )
             ],
         )
-        coordinator = LiveAnswerCoordinator(cast(Any, FixedLiveService(live)))
+        agent = _live_agent(FixedLiveService(live))
 
-        response = await coordinator.answer(
-            QueryRequest(
-                question="How far is this fire from me?",
-                location=LocationInput(label="Vancouver"),
-                context=MapContext(selected_live_result_id="evacuation:99"),
-            ),
-            None,
-        )
+        response = (
+            await agent.answer(
+                QueryRequest(
+                    question="How far is this fire from me?",
+                    location=LocationInput(label="Vancouver"),
+                    context=MapContext(selected_live_result_id="evacuation:99"),
+                )
+            )
+        ).response
 
         self.assertEqual(response.status, ResponseStatus.ABSTENTION)
         self.assertEqual(response.selected_live_result_id, "evacuation:99")

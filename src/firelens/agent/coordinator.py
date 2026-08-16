@@ -5,7 +5,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import Protocol
+from uuid import uuid4
 
+from firelens.agent.loop import run_agent_loop
+from firelens.agent.rails import input_seatbelt
 from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
     live_layers_for_question,
@@ -16,6 +19,7 @@ from firelens.answering.location_intent import (
     asks_for_personal_location,
     coarse_location_from_question,
 )
+from firelens.answering.responses import safe_abstention
 from firelens.contracts import (
     AskResponse,
     EvidenceStatus,
@@ -47,6 +51,7 @@ class StaticAnswerService(Protocol):
         request: QueryRequest,
         *,
         allow_live: bool = True,
+        prefer_reviewed_quotes: bool = False,
     ) -> AskResponse: ...
 
 
@@ -69,18 +74,16 @@ def _static_tool(response: AskResponse) -> AgentTool:
 
 def _live_tools(request: QueryRequest, response: AskResponse) -> tuple[AgentTool, ...]:
     tools: list[AgentTool] = []
-    if LiveAnswerCoordinator.is_distance_request(request):
-        tools.append(AgentTool.CALCULATE_FIRE_DISTANCE)
-    elif LiveAnswerCoordinator.is_selected_live_request(
+    if LiveAnswerCoordinator.is_selected_live_request(
         request
     ) or LiveAnswerCoordinator.is_unsupported_selected_request(request):
-        tools.append(AgentTool.GET_FIRE_DETAILS)
+        tools.append(AgentTool.GET_OFFICIAL_FIRE)
     else:
         kinds = {result.kind for result in response.live_results}
         if LiveResultKind.INCIDENT in kinds or LiveResultKind.PERIMETER in kinds:
-            tools.append(AgentTool.LIST_ACTIVE_FIRES)
+            tools.append(AgentTool.LIST_OFFICIAL_FIRES)
         if LiveResultKind.EVACUATION in kinds:
-            tools.append(AgentTool.GET_EVACUATION_INFORMATION)
+            tools.append(AgentTool.LIST_OFFICIAL_EVACUATIONS)
     claim_statuses = {claim.evidence_status for claim in response.claims}
     if EvidenceStatus.VERIFIED_CORPUS in claim_statuses:
         tools.append(AgentTool.SEARCH_REVIEWED_GUIDANCE)
@@ -164,24 +167,35 @@ class FireLensAgent:
         self.live_coordinator = live_coordinator
 
     async def answer(self, request: QueryRequest) -> AgentExecution:
-        effective_request = _live_place_correction(request) or request
-        if not self.live_coordinator.handles(effective_request):
+        seatbelt = input_seatbelt(request)
+        if seatbelt is not None:
+            reason, answer = seatbelt
+            return AgentExecution(
+                response=safe_abstention(
+                    uuid4().hex,
+                    answer=answer,
+                    reason_code=reason,
+                    limitations=[answer],
+                ),
+                route=QueryRoute.PROHIBITED,
+                tools=(),
+            )
+        plan = plan_query(request)
+        if plan.route == QueryRoute.CAPABILITY:
             response = await self.static_service.ask(request)
             return AgentExecution(
                 response=response,
-                route=QueryRoute.RELATED,
+                route=QueryRoute.CAPABILITY,
                 tools=(_static_tool(response),),
             )
-
-        static_request = self.live_coordinator.static_request(effective_request)
-        static_response = (
-            await self.static_service.ask(static_request, allow_live=False)
-            if static_request is not None
-            else None
+        effective_request = _live_place_correction(request) or request
+        provider = getattr(self.static_service, "provider", None)
+        response, route, tools = await run_agent_loop(
+            effective_request,
+            live_coordinator=self.live_coordinator,
+            static_service=self.static_service,
+            provider=provider if hasattr(provider, "chat_turn") else None,
         )
-        response = await self.live_coordinator.answer(effective_request, static_response)
-        return AgentExecution(
-            response=response,
-            route=QueryRoute.LIVE,
-            tools=_live_tools(effective_request, response),
-        )
+        if not tools and response.live_results:
+            tools = _live_tools(effective_request, response)
+        return AgentExecution(response=response, route=route, tools=tools)

@@ -95,6 +95,8 @@ class LiveResult(FrozenStrictModel):
     name: str | None = Field(default=None, max_length=300)
     incident_number: str | None = Field(default=None, max_length=100)
     size_hectares: float | None = Field(default=None, ge=0)
+    fire_centre: str | None = Field(default=None, max_length=200)
+    fire_zone: str | None = Field(default=None, max_length=200)
     issuer: str | None = Field(default=None, max_length=300)
     geometry_relation: GeometryRelation = GeometryRelation.UNKNOWN
     geometry: dict[str, Any]

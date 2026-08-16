@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from typing import Any, Literal
 
+from firelens.agent.chat import ChatToolCall, ChatTurn
 from firelens.contracts import BackgroundDraft, GroundedDraft
 
 _CANONICAL_RESPONSE_MODELS: dict[str, frozenset[str]] = {
@@ -113,6 +115,40 @@ def locally_type_draft(
     if answer_type == "grounded":
         return GroundedDraft.model_validate(typed_payload)
     return BackgroundDraft.model_validate(typed_payload)
+
+
+def parse_chat_turn(body: dict[str, Any], requested_model: str) -> ChatTurn:
+    """Parse one OpenRouter chat/completions message into a ChatTurn."""
+
+    if not model_identity_matches(requested_model, body.get("model")):
+        raise ValueError("generation model mismatch")
+    message = body["choices"][0]["message"]
+    raw_calls = message.get("tool_calls") or []
+    calls: list[ChatToolCall] = []
+    for index, raw in enumerate(raw_calls):
+        if not isinstance(raw, dict):
+            continue
+        function = raw.get("function") or {}
+        arguments = function.get("arguments") or "{}"
+        if isinstance(arguments, str):
+            try:
+                parsed = json.loads(arguments)
+            except json.JSONDecodeError:
+                parsed = {}
+        else:
+            parsed = arguments if isinstance(arguments, dict) else {}
+        calls.append(
+            ChatToolCall(
+                id=str(raw.get("id") or f"call_{index}"),
+                name=str(function.get("name") or ""),
+                arguments=parsed,
+            )
+        )
+    content = message.get("content")
+    return ChatTurn(
+        content=content if isinstance(content, str) else None,
+        tool_calls=tuple(call for call in calls if call.name),
+    )
 
 
 def model_identity_matches(requested: str, returned: object) -> bool:

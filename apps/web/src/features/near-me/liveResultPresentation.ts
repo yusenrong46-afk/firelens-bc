@@ -21,7 +21,7 @@ export function resultKindLabel(kind: LiveResult["kind"]): string {
 
 export function resultDisplayName(result: LiveResult): string {
   const name = result.name?.trim();
-  if (name) return name;
+  if (name && name.toLowerCase() !== "unnamed official record") return name;
   const incidentNumber = result.incident_number?.trim();
   if (incidentNumber) return `${resultKindLabel(result.kind)} ${incidentNumber}`;
   return resultKindLabel(result.kind);
@@ -74,4 +74,30 @@ export function isRenderableGeometry(result: LiveResult): boolean {
     return false;
   }
   return ["Point", "Polygon", "MultiPolygon"].includes(geometry.type ?? "");
+}
+
+export function geometryLatLngs(result: LiveResult): [number, number][] {
+  const geometry = result.geometry as { type?: string; coordinates?: unknown } | undefined;
+  if (!geometry || !Array.isArray(geometry.coordinates)) return [];
+  if (geometry.type === "Point") {
+    const [longitude, latitude] = geometry.coordinates as number[];
+    return Number.isFinite(latitude) && Number.isFinite(longitude)
+      ? ([[latitude, longitude]] as [number, number][])
+      : [];
+  }
+  const points: [number, number][] = [];
+  const walk = (value: unknown): void => {
+    if (!Array.isArray(value)) return;
+    if (value.length >= 2 && typeof value[0] === "number" && typeof value[1] === "number") {
+      const longitude = value[0];
+      const latitude = value[1];
+      if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+        points.push([latitude, longitude]);
+      }
+      return;
+    }
+    value.forEach(walk);
+  };
+  walk(geometry.coordinates);
+  return points;
 }

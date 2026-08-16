@@ -256,15 +256,15 @@ test("shows official live records and a map through keyboard submission", async 
   ).toBeVisible();
   await expect(
     page.getByRole("region", { name: "Official wildfire records map" })
-      .getByText(/No matching record is not a safety determination\. Follow instructions/),
+      .getByText(/The map is not a safety determination/),
   ).toBeVisible();
   await expect(page.getByText("Sources supporting this answer")).toHaveCount(0);
 });
 
-test("uses local boundary context without third-party basemap requests", async ({ page }) => {
-  const thirdPartyMapRequests: string[] = [];
+test("uses an OSM street basemap with required attribution", async ({ page }) => {
+  const osmTileRequests: string[] = [];
   page.on("request", (request) => {
-    if (request.url().includes("tile.openstreetmap.org")) thirdPartyMapRequests.push(request.url());
+    if (request.url().includes("tile.openstreetmap.org")) osmTileRequests.push(request.url());
   });
   await page.goto("/");
   const question = page.getByLabel("Ask FireLens a question");
@@ -272,8 +272,9 @@ test("uses local boundary context without third-party basemap requests", async (
   await question.press("Enter");
   await expect(page.getByLabel("Question and answer").getByText("Current official information: Test Fire is Out of Control.")).toBeVisible();
   await expect(page.getByRole("button", { name: /Test Fire Out of Control/ })).toBeVisible();
-  await expect(page.getByText(/No third-party basemap request is made/)).toBeVisible();
-  expect(thirdPartyMapRequests).toEqual([]);
+  await expect(page.getByText(/Tile requests go to OpenStreetMap/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "OpenStreetMap" })).toBeVisible();
+  expect(osmTileRequests.length).toBeGreaterThan(0);
 });
 
 test("shows stale and partial-layer state without hiding records", async ({ page }) => {
@@ -327,7 +328,7 @@ test("keeps the assistant answer in view on a short mobile overlay", async ({ pa
   await expect(page.getByRole("status", { name: "Answer limitations" })).toBeInViewport();
 });
 
-test("places skip links and warnings before answer text", async ({ page }) => {
+test("places skip links first and limitations after the answer", async ({ page }) => {
   await page.goto("/");
   const skipConversation = page.getByRole("link", { name: "Skip to conversation" });
   await skipConversation.focus();
@@ -347,7 +348,7 @@ test("places skip links and warnings before answer text", async ({ page }) => {
     return Boolean(
       warning
       && answer
-      && (warning.compareDocumentPosition(answer) & Node.DOCUMENT_POSITION_FOLLOWING),
+      && (warning.compareDocumentPosition(answer) & Node.DOCUMENT_POSITION_PRECEDING),
     );
   })).toBe(true);
 });

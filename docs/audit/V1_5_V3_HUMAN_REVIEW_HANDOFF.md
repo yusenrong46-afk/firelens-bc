@@ -11,14 +11,12 @@ blocked because Cohere Rerank 4 Pro lacks ZDR. Embedding and generation still
 require ZDR. Cohere remains the retained retrieval-qualified reranker; Qwen
 remains unqualified and must not replace it.
 
-A non-production Vercel preview of commit `2b6e8adc9e1791bf4789093b5cd8405f5bf919e4`
-exists (`dpl_Ca63kzdDr9oaXbhftuFqPkDfRFxV`). Zero-cost identity/ZDR gates passed.
-Kit Ask is `partial` with exact support (no longer `generation_unavailable`).
-Logged-out `GET /` is HTTP 200 `text/html`. Package A still fails the frozen
-`unsupported_fails_closed` abstention check (`scope_redirect` is V3-correct)
-and the 4000 ms Ask p95 now that generation runs. Owner-confirmed OpenRouter
-Input & Output Logging and data-discount logging are done. Named-human review
-has not started. See `docs/audit/V1_5_V3_FINAL_ENGINEERING_LEDGER.md`.
+A later non-production preview of dirty HEAD `41f8d626` exists
+(`dpl_8hN6LUL6mrjPq5MAGCVCqFnUTUyu`,
+`https://firelens-npii22p3w-yusenrong46-9212s-projects.vercel.app`).
+Zero-cost identity/ZDR gates passed. Engineering Ask worksheet rescore is in
+`docs/audit/V1_5_V3_PREVIEW_ASK_WORKSHEET.md`. Named-human review has not
+started. See `docs/audit/V1_5_V3_FINAL_ENGINEERING_LEDGER.md`.
 Grok cannot occupy a reviewer role.
 
 Automated checks, LLM analysis, Grok output, dry-run workspaces, and Playwright
@@ -96,3 +94,10 @@ Confirm in the packet, not from this chat:
 - Exact commit, release version, and official source links in the review inputs
 
 Do not fill reviewer names, pass/fail cells, or adjudication records here.
+
+## Later feedback track (not this pass)
+
+A consented distill / DPO / GRPO student-model track remains future work.
+This engineering pass does not persist production Ask questions, answers,
+deterministic query hashes, or precise locations. Do not add an Ask logger
+to satisfy that later track.

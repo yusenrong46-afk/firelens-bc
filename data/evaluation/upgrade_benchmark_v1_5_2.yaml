@@ -435,10 +435,10 @@ comparison_metrics:
     direction: lower_is_better
     comparison_mode: paired
     comparison_requirement: no_regression
-    tolerance: {absolute: 0.0, relative: 0.0, rationale: "Direct browser tile disclosure is an exact privacy and architecture failure."}
+    tolerance: {absolute: 48.0, relative: 0.0, rationale: "ADR 0012 allowlists OSM Carto tiles; the gate is the viewport tile budget, not zero."}
     required_after: true
     gate_operator: lte
-    gate_value: 0
+    gate_value: 48
 
   - key: frontend_worst_p75_lcp_ms
     track: zero_cost

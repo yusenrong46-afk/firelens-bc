@@ -181,6 +181,17 @@ _PLACE_ALIASES = {
     "west k": "West Kelowna",
 }
 
+_PROVINCE_WIDE_LABELS = frozenset(
+    {
+        "bc",
+        "british columbia",
+        "the province",
+        "province",
+        "bcws",
+        "bc wildfire service",
+    }
+)
+
 
 def _clean_place(candidate: str) -> str | None:
     place = candidate.split(",", maxsplit=1)[0]
@@ -236,6 +247,18 @@ def _clean_place(candidate: str) -> str | None:
     ):
         return None
     return _PLACE_ALIASES.get(lowered, place)
+
+
+def is_province_wide_label(label: str | None) -> bool:
+    """True for BC / province labels that must not be geocoded as a community."""
+
+    if not isinstance(label, str) or not label.strip():
+        return False
+    normalized = " ".join(label.split()).casefold().strip(" .,")
+    for suffix in (", canada", " canada"):
+        if normalized.endswith(suffix):
+            normalized = normalized[: -len(suffix)].strip(" .,")
+    return normalized in _PROVINCE_WIDE_LABELS
 
 
 def coarse_location_from_question(question: str) -> LocationInput | None:

@@ -11,6 +11,7 @@ from typing import Any
 from pydantic import HttpUrl
 from pyproj import Geod
 from shapely.geometry import Point, shape
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import nearest_points
 
 from firelens.contracts import GeometryRelation, LiveResultKind
@@ -179,3 +180,19 @@ def geometry_relation(
         return GeometryRelation.NEARBY if distance <= radius_km else GeometryRelation.OUTSIDE
     except (TypeError, ValueError):
         return GeometryRelation.UNKNOWN
+
+
+def map_geometry_state(geometry: dict[str, Any] | None, bounds: BaseGeometry | None) -> str:
+    """Classify a feature as ok, spatially invalid, or outside the requested bbox."""
+
+    if not isinstance(geometry, dict):
+        return "invalid"
+    try:
+        candidate = shape(geometry)
+        if candidate.is_empty or not candidate.is_valid:
+            return "invalid"
+        if bounds is not None and not candidate.intersects(bounds):
+            return "outside"
+        return "ok"
+    except (TypeError, ValueError, AttributeError):
+        return "invalid"

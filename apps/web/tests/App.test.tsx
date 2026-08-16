@@ -287,7 +287,7 @@ describe("FireLens Source Lens", () => {
       expect(within(limitations).getAllByRole("listitem")).toHaveLength(1);
       const conversation = screen.getByRole("region", { name: "Question and answer" });
       const answerText = within(conversation).getByText(`Answer in ${responseMode} mode.`);
-      expect(limitations.compareDocumentPosition(answerText) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(limitations.compareDocumentPosition(answerText) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
     },
   );
 
@@ -319,7 +319,7 @@ describe("FireLens Source Lens", () => {
       "href",
       "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html",
     );
-    expect(screen.getByText(/Map focused on the requested area near 49.89, -119.50/)).toBeInTheDocument();
+    expect(screen.getByText(/Approximate place marker near 49.89, -119.50/)).toBeInTheDocument();
     expect(screen.queryByText("FireLens did not generate guidance")).not.toBeInTheDocument();
   });
 
@@ -600,7 +600,7 @@ describe("FireLens Source Lens", () => {
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Where are the fires in Kelowna?");
     await user.click(screen.getByLabelText("Send question"));
 
-    expect(await screen.findByText(/Map focused on the requested area near 49.89, -119.50/)).toBeInTheDocument();
+    expect(await screen.findByText(/Approximate place marker near 49.89, -119.50/)).toBeInTheDocument();
     expect(screen.queryByText("One detail needed")).not.toBeInTheDocument();
     expect(screen.getAllByText("Kelowna Area Fire").length).toBeGreaterThan(0);
     const payload = JSON.parse(String(askCallOptions(fetchMock)[0]?.body));
@@ -688,6 +688,114 @@ describe("FireLens Source Lens", () => {
     await waitFor(() => expect(askCallOptions(fetchMock)).toHaveLength(3));
     const laterPayload = JSON.parse(String(askCallOptions(fetchMock)[2]?.body));
     expect(laterPayload.location).toBeUndefined();
+    expect(laterPayload.context?.selected_live_result_id).toBeUndefined();
+  });
+
+  it("resumes a location continuation from the main composer", async () => {
+    const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      if (url.startsWith("/api/v1/live/map")) {
+        return Promise.resolve(new Response(JSON.stringify({
+          generated_at: "2026-08-13T19:00:00Z",
+          results: [],
+          unavailable_layers: [],
+          layer_statuses: [],
+          limitations: [],
+        }), { status: 200 }));
+      }
+      const payload = JSON.parse(String(init?.body ?? "{}")) as {
+        question?: string;
+        location?: { label?: string };
+      };
+      if (payload.location?.label === "Kelowna") {
+        return Promise.resolve(new Response(JSON.stringify({
+          status: "answer",
+          response_mode: "live",
+          trace_id: "trace-resumed",
+          answer: "Current official information: Kelowna Area Fire is Being Held.",
+          claims: [],
+          evidence: [],
+          limitations: [],
+        }), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "requires_input",
+        trace_id: "trace-location-composer",
+        answer: "Share an approximate location or enter a BC community to continue.",
+        claims: [],
+        evidence: [],
+        limitations: [],
+        required_input: {
+          kind: "location",
+          prompt: "Use approximate location or enter a BC community.",
+          continuation_question: "How close is the wildfire perimeter near me today?",
+        },
+      }), { status: 200 }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "How close is the wildfire perimeter near me today?");
+    await user.click(screen.getByLabelText("Send question"));
+    expect(await screen.findByText("One detail needed")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Kelowna");
+    await user.click(screen.getByLabelText("Send question"));
+    expect(await screen.findByText(/Kelowna Area Fire/)).toBeInTheDocument();
+    const resumed = JSON.parse(String(askCallOptions(fetchMock).at(-1)?.body));
+    expect(resumed.question).toBe("How close is the wildfire perimeter near me today?");
+    expect(resumed.location).toEqual({ label: "Kelowna", radius_km: 50 });
+  });
+
+  it("does not treat a new question as a community label during location input", async () => {
+    const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      if (url.startsWith("/api/v1/live/map")) {
+        return Promise.resolve(new Response(JSON.stringify({
+          generated_at: "2026-08-13T19:00:00Z",
+          results: [],
+          unavailable_layers: [],
+          layer_statuses: [],
+          limitations: [],
+        }), { status: 200 }));
+      }
+      const payload = JSON.parse(String(init?.body ?? "{}")) as { question?: string };
+      if (payload.question?.includes("grab-and-go")) {
+        return Promise.resolve(new Response(JSON.stringify({
+          status: "answer",
+          response_mode: "grounded",
+          trace_id: "trace-kit",
+          answer: "Keep water and food in a grab-and-go bag.",
+          claims: [],
+          evidence: [],
+          limitations: [],
+        }), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "requires_input",
+        trace_id: "trace-location-new-question",
+        answer: "Share an approximate location or enter a BC community to continue.",
+        claims: [],
+        evidence: [],
+        limitations: [],
+        required_input: {
+          kind: "location",
+          prompt: "Use approximate location or enter a BC community.",
+          continuation_question: "How close is the wildfire perimeter near me today?",
+        },
+      }), { status: 200 }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "How close is the wildfire perimeter near me today?");
+    await user.click(screen.getByLabelText("Send question"));
+    expect(await screen.findByText("One detail needed")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "What belongs in a grab-and-go bag?");
+    await user.click(screen.getByLabelText("Send question"));
+    expect(await screen.findByText("Keep water and food in a grab-and-go bag.")).toBeInTheDocument();
+    const followUp = JSON.parse(String(askCallOptions(fetchMock).at(-1)?.body));
+    expect(followUp.question).toBe("What belongs in a grab-and-go bag?");
+    expect(followUp.location).toBeUndefined();
   });
 
   it("sends completed turns with a follow-up question", async () => {

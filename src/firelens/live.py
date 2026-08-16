@@ -14,7 +14,7 @@ from typing import Any
 
 import httpx
 from pydantic import HttpUrl
-from shapely.geometry import box, shape
+from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
 from firelens.contracts import (
@@ -57,6 +57,9 @@ from firelens.live_support import (
 )
 from firelens.live_support import (
     geometry_relation as geometry_relation,
+)
+from firelens.live_support import (
+    map_geometry_state as map_geometry_state,
 )
 from firelens.live_support import (
     property_value as _property,
@@ -492,16 +495,19 @@ class LiveDataService:
                 )
                 or "Official record"
             ),
-            name=str(
-                _property(
-                    properties,
-                    "INCIDENT_NAME",
-                    "FIRE_NAME",
-                    "EVENT_NAME",
-                    "NAME",
-                    "LOCATION_DESCRIPTION",
+            name=(
+                str(raw_name).strip()
+                if (
+                    raw_name := _property(
+                        properties,
+                        "INCIDENT_NAME",
+                        "FIRE_NAME",
+                        "EVENT_NAME",
+                        "NAME",
+                        "LOCATION_DESCRIPTION",
+                    )
                 )
-                or "Unnamed official record"
+                else None
             ),
             incident_number=(
                 str(value)
@@ -510,6 +516,16 @@ class LiveDataService:
                 else None
             ),
             size_hectares=float(size) if isinstance(size, (int, float)) else None,
+            fire_centre=(
+                str(value)
+                if (value := _property(properties, "FIRE_CENTRE", "FIRE_CENTER")) is not None
+                else None
+            ),
+            fire_zone=(
+                str(value)
+                if (value := _property(properties, "FIRE_ZONE")) is not None
+                else None
+            ),
             issuer=(
                 str(value)
                 if (value := _property(properties, "ISSUING_AGENCY", "ISSUED_BY", "AGENCY"))
@@ -526,7 +542,7 @@ class LiveDataService:
         *,
         bbox: _BBox | None,
         bounds: BaseGeometry | None,
-    ) -> tuple[list[LiveResult], LiveLayerStatus, str | None]:
+    ) -> tuple[list[LiveResult], LiveLayerStatus, str | None, bool]:
         try:
             entry, freshness = await self._features(kind, bbox=bbox)
         except LiveDataUnavailable as exc:
@@ -543,9 +559,11 @@ class LiveDataService:
                     matching_result_count=0,
                 ),
                 str(exc),
+                False,
             )
 
         results: list[LiveResult] = []
+        skipped_invalid = False
         for feature in entry.features:
             properties = feature["properties"]
             status = str(
@@ -571,17 +589,10 @@ class LiveDataService:
                 event_type = str(_property(properties, "EVENT_TYPE") or "").casefold()
                 if event_type and "fire" not in event_type:
                     continue
-            if bounds is not None:
-                try:
-                    candidate_geometry = shape(feature["geometry"])
-                    if (
-                        not candidate_geometry.is_empty
-                        and candidate_geometry.is_valid
-                        and not candidate_geometry.intersects(bounds)
-                    ):
-                        continue
-                except (TypeError, ValueError):
-                    pass
+            state = map_geometry_state(feature.get("geometry"), bounds)
+            if state != "ok":
+                skipped_invalid = skipped_invalid or state == "invalid"
+                continue
             try:
                 result = self._to_result(
                     kind,
@@ -606,6 +617,7 @@ class LiveDataService:
                 matching_result_count=len(results),
             ),
             None,
+            skipped_invalid,
         )
 
     async def map_results(
@@ -622,9 +634,11 @@ class LiveDataService:
         layer_outcomes = await asyncio.gather(
             *(self._map_layer_results(kind, bbox=bbox, bounds=bounds) for kind in layers)
         )
-        for kind, (layer_results, layer_status, unavailable_reason) in zip(
+        skipped_invalid = False
+        for kind, (layer_results, layer_status, unavailable_reason, layer_skipped) in zip(
             layers, layer_outcomes, strict=True
         ):
+            skipped_invalid = skipped_invalid or layer_skipped
             layer_statuses.append(layer_status)
             if unavailable_reason is not None:
                 unavailable.append(kind)
@@ -643,6 +657,10 @@ class LiveDataService:
         if any(result.freshness == Freshness.STALE for result in results):
             limitations.append(
                 "A refresh failed; cached records are stale and are not current conditions."
+            )
+        if skipped_invalid:
+            limitations.append(
+                "Some official records could not be located spatially; check them directly with the issuing authority."
             )
         return LiveMapResponse(
             generated_at=datetime.now(UTC),
@@ -670,6 +688,7 @@ class LiveDataService:
             bbox=bbox,
         )
         related: list[LiveResult] = []
+        unknown_located = False
         for result in response.results:
             relation = geometry_relation(
                 result.geometry,
@@ -677,14 +696,13 @@ class LiveDataService:
                 longitude=longitude,
                 radius_km=location.radius_km,
             )
-            if relation in {
-                GeometryRelation.INSIDE,
-                GeometryRelation.NEARBY,
-                GeometryRelation.UNKNOWN,
-            }:
+            if relation == GeometryRelation.UNKNOWN:
+                unknown_located = True
+                continue
+            if relation in {GeometryRelation.INSIDE, GeometryRelation.NEARBY}:
                 related.append(result.model_copy(update={"geometry_relation": relation}))
         limitations = list(response.limitations)
-        if any(result.geometry_relation == GeometryRelation.UNKNOWN for result in related):
+        if unknown_located:
             limitations.append(
                 "Some official records could not be located spatially; check them directly with the issuing authority."
             )

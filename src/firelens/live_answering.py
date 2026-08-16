@@ -14,7 +14,7 @@ from firelens.answering.intent import (
     unsupported_live_topics,
 )
 from firelens.answering.live_composition import supported_static_when_live_missing
-from firelens.answering.live_distance import distance_answer, location_request
+from firelens.answering.live_distance import location_request
 from firelens.answering.live_handoffs import (
     merge_related_links,
     related_live_links,
@@ -207,19 +207,16 @@ class LiveAnswerCoordinator:
     def _location_request(request: QueryRequest) -> AskResponse:
         return location_request(request)
 
-    async def _distance_answer(self, request: QueryRequest) -> AskResponse:
-        return await distance_answer(self.live_service, request)
-
     async def answer(
         self, request: QueryRequest, static_result: AskResponse | None
     ) -> AskResponse:
+        """Legacy live composer. Public Ask uses FireLensAgent, not this method."""
+
         from firelens.answering.intent import plan_query
 
         plan = plan_query(request)
         if plan.route == QueryRoute.PROHIBITED:
             return await self._prohibited_live_handoff(request, plan)
-        if self.is_distance_request(request):
-            return await self._distance_answer(request)
 
         layers = live_layers_for_question(request.question)
         effective_location = request.location or coarse_location_from_question(request.question)

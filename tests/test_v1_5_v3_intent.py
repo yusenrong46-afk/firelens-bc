@@ -301,7 +301,9 @@ class V3DeterministicIntentTests(unittest.TestCase):
                 self.assertIsNotNone(location)
                 assert location is not None
                 self.assertEqual(location.label, "Vancouver")
-                self.assertEqual(plan_query(QueryRequest(question=question)).route, QueryRoute.LIVE)
+                self.assertEqual(
+                    plan_query(QueryRequest(question=question)).route, QueryRoute.LIVE
+                )
                 self.assertEqual(live_layers_for_question(question), expected_layers)
 
     def test_surefire_kit_wording_is_not_a_live_fire_query(self) -> None:

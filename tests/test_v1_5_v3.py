@@ -157,4 +157,4 @@ class V3AgentTests(unittest.IsolatedAsyncioTestCase):
         execution = await agent.answer(request)
 
         self.assertEqual(execution.response.response_mode, ResponseMode.REQUIRES_INPUT)
-        self.assertEqual(execution.tools, (AgentTool.CALCULATE_FIRE_DISTANCE,))
+        self.assertEqual(execution.tools, (AgentTool.GET_OFFICIAL_FIRE,))

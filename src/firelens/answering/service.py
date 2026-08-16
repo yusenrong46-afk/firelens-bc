@@ -579,6 +579,7 @@ class StaticRAGService:
         *,
         observer: ExecutionObserver | None = None,
         allow_live: bool = True,
+        prefer_reviewed_quotes: bool = False,
     ) -> AskResponse:
         trace_id = uuid4().hex
         try:
@@ -587,6 +588,7 @@ class StaticRAGService:
                 trace_id=trace_id,
                 observer=observer,
                 allow_live=allow_live,
+                prefer_reviewed_quotes=prefer_reviewed_quotes,
             )
         finally:
             self._active_operations.pop(trace_id, None)
@@ -598,6 +600,7 @@ class StaticRAGService:
         trace_id: str,
         observer: ExecutionObserver | None,
         allow_live: bool,
+        prefer_reviewed_quotes: bool = False,
     ) -> AskResponse:
         operation_started = perf_counter()
         execution = await self.execute_search(request, trace_id=trace_id, allow_live=allow_live)
@@ -670,7 +673,11 @@ class StaticRAGService:
         # Until direct-support calibration is complete, an adjacent classification
         # is intentionally background-only. Dense retrieval always returns nearby
         # chunks, so packet presence by itself is not proof of semantic support.
-        if search.plan.relation == QueryRelation.ADJACENT:
+        # An explicit reviewed-guidance tool call may keep quote-ready support.
+        if search.plan.relation == QueryRelation.ADJACENT and not (
+            prefer_reviewed_quotes
+            and search.support.status in {SupportStatus.ANSWERABLE, SupportStatus.PARTIAL}
+        ):
             return await self._background_answer(
                 request,
                 trace_id=trace_id,

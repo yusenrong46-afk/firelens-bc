@@ -400,7 +400,7 @@ test("JSON-compatible YAML freezes the exact safety-critical matrix", async () =
       map_ready_after_interaction_ms_max: 2000,
     });
   }
-  assert.equal(protocol.surface_thresholds.direct_third_party_tile_requests_max, 0);
+  assert.equal(protocol.surface_thresholds.direct_third_party_tile_requests_max, 48);
   assert.equal(protocol.surface_thresholds.axe_wcag_a_aa_findings_max, 0);
   assert.deepEqual(protocol.surface_thresholds.allowed_failed_request_urls, []);
   assert.deepEqual(protocol.map_parity.applicable_state_ids, [

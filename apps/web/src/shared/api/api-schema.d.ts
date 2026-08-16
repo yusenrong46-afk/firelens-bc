@@ -407,6 +407,10 @@ export interface components {
             distance_basis?: ("incident_point" | "perimeter_boundary") | null;
             /** Distance Km */
             distance_km?: number | null;
+            /** Fire Centre */
+            fire_centre?: string | null;
+            /** Fire Zone */
+            fire_zone?: string | null;
             freshness: components["schemas"]["Freshness"];
             /** Geometry */
             geometry: {

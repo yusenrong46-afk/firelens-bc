@@ -503,7 +503,7 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(set(requested_hosts), {"official.example.test"})
 
-    async def test_nearby_results_keep_records_with_unknown_geometry(self) -> None:
+    async def test_nearby_results_exclude_records_with_unknown_geometry(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(LiveResultKind.EVACUATION))
@@ -532,9 +532,40 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
                 layers=(LiveResultKind.EVACUATION,),
             )
 
-        self.assertEqual([result.result_id for result in response.results], ["evacuation:12"])
-        self.assertEqual(response.results[0].geometry_relation, GeometryRelation.UNKNOWN)
+        self.assertEqual(response.results, [])
         self.assertTrue(any("could not be located" in item for item in response.limitations))
+
+    async def test_map_results_exclude_invalid_geometry(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            return httpx.Response(
+                200,
+                json={
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "properties": {"OBJECTID": 1, "FIRE_STATUS": "Out of Control"},
+                            "geometry": {"type": "Polygon", "coordinates": []},
+                        },
+                        {
+                            "type": "Feature",
+                            "properties": {"OBJECTID": 2, "FIRE_STATUS": "Out of Control"},
+                            "geometry": {"type": "Point", "coordinates": [-123.5, 49.5]},
+                        },
+                    ],
+                },
+            )
+
+        bbox = (-124.0, 49.0, -123.0, 50.0)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            service = LiveDataService(client=client)
+            bounded = await service.map_results(layers=(LiveResultKind.INCIDENT,), bbox=bbox)
+            unbounded = await service.map_results(layers=(LiveResultKind.INCIDENT,))
+
+        self.assertEqual([item.result_id for item in bounded.results], ["incident:2"])
+        self.assertEqual([item.result_id for item in unbounded.results], ["incident:2"])
 
     async def test_nearby_page_is_bounded_explicit_and_roster_complete(self) -> None:
         features = [

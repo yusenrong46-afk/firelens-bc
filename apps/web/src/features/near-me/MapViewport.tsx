@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useMap } from "react-leaflet";
 import type { LatLngBoundsExpression } from "leaflet";
 import type { LiveResult } from "../../shared/api/api";
+import { geometryLatLngs } from "./liveResultPresentation";
 
 export const BC_BOUNDS: LatLngBoundsExpression = [
   [48.2, -139.2],
@@ -10,28 +11,21 @@ export const BC_BOUNDS: LatLngBoundsExpression = [
 
 export type MapFocus = { latitude: number; longitude: number };
 
-function pointCoordinates(results: LiveResult[]): [number, number][] {
-  return results.flatMap((result) => {
-    const geometry = result.geometry as { type?: string; coordinates?: unknown } | undefined;
-    if (!geometry || geometry.type !== "Point" || !Array.isArray(geometry.coordinates)) return [];
-    const [longitude, latitude] = geometry.coordinates as number[];
-    return Number.isFinite(latitude) && Number.isFinite(longitude)
-      ? ([[latitude, longitude]] as [number, number][])
-      : [];
-  });
-}
-
 export function FitResults({
   results,
   focus,
   focusResults,
+  selectedResultId,
 }: {
   results: LiveResult[];
   focus?: MapFocus | undefined;
   focusResults: LiveResult[];
+  selectedResultId?: string | undefined;
 }) {
   const map = useMap();
+  const selected = results.find((result) => result.result_id === selectedResultId);
   const signature = [
+    selectedResultId,
     focus?.latitude,
     focus?.longitude,
     ...focusResults.map((result) => result.result_id),
@@ -39,8 +33,15 @@ export function FitResults({
   ].join("|");
 
   useEffect(() => {
+    if (selected) {
+      const selectedCoordinates = geometryLatLngs(selected);
+      if (selectedCoordinates.length > 0) {
+        map.fitBounds(selectedCoordinates, { padding: [40, 40], maxZoom: 12 });
+        return;
+      }
+    }
     if (focus) {
-      const nearbyCoordinates = pointCoordinates(focusResults);
+      const nearbyCoordinates = focusResults.flatMap(geometryLatLngs);
       if (nearbyCoordinates.length > 0) {
         map.fitBounds(
           [[focus.latitude, focus.longitude], ...nearbyCoordinates],
@@ -55,12 +56,12 @@ export function FitResults({
       map.fitBounds(BC_BOUNDS, { padding: [12, 12] });
       return;
     }
-    const coordinates = pointCoordinates(results);
+    const coordinates = results.flatMap(geometryLatLngs);
     if (coordinates.length > 0) {
       map.fitBounds(coordinates, { padding: [40, 40], maxZoom: 9 });
     } else {
       map.fitBounds(BC_BOUNDS, { padding: [12, 12] });
     }
-  }, [map, signature, results, focus, focusResults]);
+  }, [map, signature, results, focus, focusResults, selected]);
   return null;
 }

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from collections.abc import Callable
 from time import perf_counter
 from typing import Literal
@@ -22,7 +23,6 @@ from firelens.config import FireLensConfig
 from firelens.contracts import (
     AskResponse,
     QueryRequest,
-    QueryRoute,
     ResponseStatus,
     SearchResponse,
 )
@@ -30,6 +30,8 @@ from firelens.ingestion.chunking import ChunkRecord
 from firelens.live_answering import LiveAnswerCoordinator
 from firelens.operational_logging import log_operation
 from firelens.runtime import Runtime
+
+_FULL_COMMIT = re.compile(r"^[0-9a-f]{40}$")
 
 
 def _validation_disposition(
@@ -58,9 +60,7 @@ async def _answer_request(
         )
     execution = await FireLensAgent(runtime.service, live_coordinator).answer(request)
     response = execution.response
-    if execution.route != QueryRoute.LIVE:
-        if response.status != ResponseStatus.ERROR:
-            return response
+    if response.status == ResponseStatus.ERROR:
         return error_response(
             provider_error_status(response.error_kind),
             trace_id=response.trace_id,
@@ -69,26 +69,26 @@ async def _answer_request(
             retryable=response.error_kind
             in {"rate_limit", "timeout", "unavailable", "model_unavailable"},
         )
-
-    live_response = response
     log_operation(
-        trace_id=live_response.trace_id,
-        route=QueryRoute.LIVE.value,
-        response_mode=live_response.response_mode.value,
-        status=live_response.status.value,
+        trace_id=response.trace_id,
+        route=execution.route.value,
+        response_mode=response.response_mode.value,
+        status=response.status.value,
         latency_ms=(perf_counter() - request_started) * 1_000,
         provider_stages=(),
-        error_category=live_response.error_kind,
-        evidence_count=len(live_response.evidence),
-        claim_count=len(live_response.claims),
-        live_result_count=len(live_response.live_results),
-        validation_disposition=_validation_disposition(live_response),
+        error_category=response.error_kind,
+        evidence_count=len(response.evidence),
+        claim_count=len(response.claims),
+        live_result_count=len(response.live_results),
+        validation_disposition=_validation_disposition(response),
         corpus_version=runtime.corpus_version,
         release_version=config.release_version,
-        build_commit=config.build_commit,
+        build_commit=(
+            config.build_commit if _FULL_COMMIT.match(config.build_commit or "") else None
+        ),
         deployment_environment=config.deployment_environment,
     )
-    return live_response
+    return response
 
 
 def install_answer_routes(

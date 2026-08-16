@@ -888,3 +888,125 @@ No force-push. Branch is still not on `origin`. Owner action:
 - VoiceOver / 12-participant UX
 - V3 sealed retrieval
 
+## Luna brain / thin app (2026-08-15)
+
+ADR 0011 records the responsibility split: Luna chooses tools and writes;
+the application owns official fetch, RAG, prompts, rails, and the privacy
+wire. A content-free Luna tool-call probe under ZDR + `data_collection=deny`
+returned HTTP 200 with `has_tool_calls=true`. Ask now uses a bounded native
+tool loop; FakeProvider is the offline stand-in. The geodesic Ask composer
+`distance_answer` was restored after fetch. Nearby bbox geometry may still
+bound fetch. Province-wide labels use the full layer.
+
+Focused tests executed on this worktree: `test_luna_brain_agent` and the
+affected live/V3 files. `make verify` was executed after the OSM/composer
+slice and passed (792 pytest, 37 vitest, 26 e2e). Frozen benchmark labels
+were not edited. Production Ask content is not persisted. A distilled /
+DPO / GRPO student model was not shipped.
+
+## Continuation: dirty-tree preview of HEAD `41f8d626` (2026-08-15)
+
+This is deployed preview evidence of the uncommitted Luna-brain / OSM /
+kilometre worktree. It is not production, firewall proof, named human
+review, or a clean-commit identity. Questions and answers are not copied
+here. Paid reports remain gitignored under `output/qualification/`.
+
+| Field | Observed |
+| --- | --- |
+| Branch | `codex/v1-5-v3` |
+| HEAD when deployed | `41f8d626eccbaeedafab4bf5b88258b00165eb58` |
+| Artifact | Dirty worktree uploaded by `npx vercel@58.1.0 deploy` (no `--prod`) |
+| Release | `1.5.3-rc.1` |
+| Candidate ID | `firelens-v1-5-2:41f8d626eccbaeedafab4bf5b88258b00165eb58` |
+| Candidate SHA-256 | `005e0f13a513e416c9ffa204b3ce19d6d2b2459b35169245d11bc09198d2252f` |
+| Preview URL | `https://firelens-npii22p3w-yusenrong46-9212s-projects.vercel.app` |
+| Deployment ID | `dpl_8hN6LUL6mrjPq5MAGCVCqFnUTUyu` |
+| Inspect | `https://vercel.com/yusenrong46-9212s-projects/firelens-bc/8hN6LUL6mrjPq5MAGCVCqFnUTUyu` |
+| Environment target | preview (`target=preview`, not `--prod`) |
+| Ready HTTP | 200, `status=ready`, `problems=[]` |
+| `zdr_policy_state` | `required_stages_eligible` |
+| Models | `openai/text-embedding-3-small`, `cohere/rerank-4-pro`, `openai/gpt-5.6-luna` |
+| Homepage CSP | `img-src` includes `https://*.tile.openstreetmap.org` |
+| Anonymous homepage | HTTP **200** `text/html` |
+| Git push | Still blocked on GitHub `workflow` scope. No commit was created in this pass. |
+
+### Local verify
+
+Executed: `make verify` on this worktree after the OSM / composer / kilometre
+slice. Result: ruff and mypy clean; **792 passed, 3 skipped** pytest;
+**37** frontend vitest; production web build OK; **26** Playwright e2e
+including OSM attribution.
+
+### Zero-cost gates
+
+Executed: `scripts/qualify_deployment_gates.py --expect-production` against
+the preview origin with a generated candidate bound to `41f8d626`. Report:
+gitignored `output/qualification/v1_5_v3_preview_deployment_gates.json`.
+Result: **`qualified=true`**.
+
+### Paid Ask package
+
+Executed: `scripts/qualify_preview.py` with `--expected-version 1.5.3-rc.1`,
+commit `41f8d626…`. Report: gitignored `output/qualification/v1_5_preview.json`.
+
+| Check | Result |
+| --- | --- |
+| `qualified` | `false` |
+| Ask p95 | 22396.4 ms (over 4000; four Asks) |
+| `homepage_anonymous` | true |
+| `release_identity` | true |
+| `static_grounded` | true (`partial`, exact support) |
+| `unsupported_fails_closed` | false (AQHI ask was `mixed` with 1 live result; qualifier still wants `abstention`) |
+| `live_metadata_complete` | false on the first qualifier live ask (`scope_redirect`, 0 records) |
+| `mixed_separates_sources` | false (kit half only; 0 live results) |
+| `chat_map_records_match` | false |
+| `static_p95_within_target` | false |
+
+Vercel logs for that first live qualifier ask showed Luna passing
+`place_label=British Columbia`, which the BC geocoder resolved to a coastal
+bbox (`-123.5,48.6,-122.0,49.6`). Nearby filtering then returned no fires.
+A later repeat of the same question on this same deployment returned 205
+live records, so the miss is tool-argument dependent, not an ArcGIS outage.
+
+### Worksheet rescore
+
+Executed API probes of the prior 14 fails and 4 blocked items. Sheet:
+`docs/audit/V1_5_V3_PREVIEW_ASK_WORKSHEET.md`. Engineering totals on this
+origin: **Pass 43 / Fail 7 / Blocked 0**. Place-based items that previously
+failed now pass, including Q16 (8.9 km geodesic to a Vernon-area perimeter),
+Q26 (grounded kit quotes), Q38 (selected id echoed), and the four previously
+blocked items. Remaining fails: Q01, Q04, Q06, Q07, Q08, Q18 (province-wide
+empty fetch) and Q27 (definition ask became a safety abstention).
+
+### Local fixes after this deploy (not on `dpl_8hN6LUL6`)
+
+- Province-wide labels (`BC`, `British Columbia`) use `map_results` instead
+  of a community geocode. If Luna skips live tools, the app fetches the
+  heuristic official layers.
+- If Luna’s definition prose trips the safety rail, an accepted grounded /
+  partial guidance response is published instead of a hard safety abstention.
+
+A second preview deploy of those two fixes was not executed. Owner action
+to pick them up: `npx vercel@58.1.0 deploy` with no `--prod`.
+
+### Follow-up local improvements (2026-08-15, after the preview)
+
+Still not on `dpl_8hN6LUL6`. App now prefetches official layers before Luna,
+applies analysis composers after fetch (hectares, two-largest, oldest-absent,
+existence, geography, fire-centre counts, roster counts), omits raw
+coordinates from the model packet, and strips precise WGS84 points from the
+published answer. Existence matching no longer treats `Ridge Fire` as
+`Phantom Ridge Fire`. Focused `test_luna_brain_agent` executed. `make verify`
+was not re-run for this slice.
+
+### Remaining EXTERNAL
+
+- Git commit of this dirty tree (not requested in this pass)
+- Git push of `codex/v1-5-v3` (blocked on GitHub `workflow` scope)
+- Second preview deploy of the province-wide / Q27 fixes
+- Named human review
+- Production `--prod`
+- Vercel Firewall publish
+- VoiceOver / 12-participant UX
+- V3 sealed retrieval
+

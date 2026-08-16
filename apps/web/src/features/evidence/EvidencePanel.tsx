@@ -11,7 +11,7 @@ import {
 import type { AskResponse, LiveResult } from "../../shared/api/api";
 import { abstentionPresentation } from "../ask/abstentionPresentation";
 import type { Evidence, Support } from "../ask/responseModel";
-import { answerSectionAuthority, getAnswerSections } from "../ask/answerSections";
+import { resultDisplayName } from "../near-me/liveResultPresentation";
 import type { FireLensSession } from "../ask/useFireLensSession";
 
 const LiveMap = lazy(() => import("../near-me/LiveMap").then((module) => ({ default: module.LiveMap })));
@@ -158,7 +158,6 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
     view,
   } = session;
   const selectedClaim = citedMode ? claims[selected] : undefined;
-  const answerSections = getAnswerSections(view.kind === "answer" ? view.response : undefined);
   const abstentionCopy = abstentionPresentation(
     view.kind === "abstention" ? view.response.reason_code : undefined,
   );
@@ -219,24 +218,16 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
           </>
         ) : view.kind === "answer" && (mode === "live" || mode === "mixed") ? (
           <div className="map-answer-summary">
-            <span className="selected-kicker">Official map answer</span>
-            {answerSections.length > 0 ? (
-              <div className="answer-sections" aria-label="Authority-labelled map answer">
-                {answerSections.map((section) => (
-                  <section className="answer-section" key={section.kind}>
-                    <span className="answer-section__authority">{answerSectionAuthority(section.kind)}</span>
-                    <h2>{section.heading}</h2>
-                    <p>{section.text}</p>
-                  </section>
-                ))}
-              </div>
-            ) : (
-              <h2>{view.response.answer}</h2>
-            )}
+            <span className="selected-kicker">Official map records</span>
             {(view.response.live_results ?? []).map((item) => (
-              <a key={item.result_id} href={item.source_url} target="_blank" rel="noreferrer">
-                {mapResultLinkText(item)} <ArrowSquareOut size={15} />
-              </a>
+              <div className="map-record-actions" key={item.result_id}>
+                <button type="button" onClick={() => setSelectedLiveResultId(item.result_id)}>
+                  {resultDisplayName(item)}
+                </button>
+                <a href={item.source_url} target="_blank" rel="noreferrer">
+                  {mapResultLinkText(item)} <ArrowSquareOut size={15} />
+                </a>
+              </div>
             ))}
             {mode === "mixed" && (view.response.evidence ?? []).length > 0 && (
               <div className="mixed-sources">

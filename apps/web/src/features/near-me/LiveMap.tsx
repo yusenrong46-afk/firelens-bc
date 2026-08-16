@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import { CircleMarker, GeoJSON, MapContainer, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import type { LiveResult } from "../../shared/api/api";
-import { bcBoundaryFeature } from "./bcBoundary";
 import { MatchingRecordList, ProvinceRecordList } from "./LiveRecordLists";
 import { BC_BOUNDS, FitResults, type MapFocus } from "./MapViewport";
+import { OfficialBasemap } from "./OfficialBasemap";
 import {
   formatTimestamp,
   isRenderableGeometry,
@@ -121,20 +121,15 @@ export function LiveMap({
           bounds={BC_BOUNDS}
           scrollWheelZoom={false}
           keyboard={false}
-          attributionControl={false}
+          attributionControl={true}
         >
-        <GeoJSON
-          data={bcBoundaryFeature as unknown as GeoJSON.Feature}
-          interactive={false}
-          style={{
-            className: "live-map__bc-boundary",
-            color: "#315f4a",
-            weight: 1.5,
-            fillColor: "#edf2e8",
-            fillOpacity: 0.92,
-          }}
+        <OfficialBasemap focus={focus} />
+        <FitResults
+          results={results}
+          focus={focus}
+          focusResults={focusResults}
+          selectedResultId={selectedResultId}
         />
-        <FitResults results={results} focus={focus} focusResults={focusResults} />
         {featureResults.map((result) => (
           <GeoJSON
             key={result.result_id}
@@ -210,14 +205,14 @@ export function LiveMap({
       />
       {focus && (
         <p className="map-surface-status" role="status">
-          Map focused on the requested area near {focus.latitude.toFixed(2)}, {focus.longitude.toFixed(2)}.
+          Approximate place marker near {focus.latitude.toFixed(2)}, {focus.longitude.toFixed(2)}.
         </p>
       )}
       <p className="live-map__context-note">
-        Privacy-first map context uses a locally bundled, simplified
+        Street context is OpenStreetMap Carto tiles. The BC outline is a locally bundled
         {" "}<a href="https://catalogue.data.gov.bc.ca/dataset/province-of-british-columbia-legally-defined-administrative-areas-of-bc" target="_blank" rel="noreferrer">Government of BC provincial boundary</a>
         {" "}under the <a href="https://www2.gov.bc.ca/gov/content/data/open-data/open-government-licence-bc" target="_blank" rel="noreferrer">Open Government Licence – BC</a>.
-        No third-party basemap request is made. Use the official BCWS map for detailed geographic context.
+        Tile requests go to OpenStreetMap. Use the official BCWS map for operational context.
       </p>
       {results.length > 0 && (
         <div className="live-roster-summary" aria-label="Official record totals">
@@ -233,7 +228,7 @@ export function LiveMap({
         selectedResultId={selectedResultId}
         onSelectResult={onSelectResult}
       />
-      <p className="live-map__note">No matching record is not a safety determination. Follow instructions from the issuing authority.</p>
+      <p className="live-map__note">Follow instructions from the issuing authority. The map is not a safety determination.</p>
     </section>
   );
 }

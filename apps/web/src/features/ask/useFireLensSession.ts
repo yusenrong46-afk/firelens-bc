@@ -10,6 +10,7 @@ import {
   type ResponseMode,
 } from "../../shared/api/api";
 import { useProvinceMap } from "../near-me/useProvinceMap";
+import { looksLikeCommunityLabel, selectedResultIdForQuestion } from "./askContinuation";
 import {
   getResponseMode,
   INITIAL_SUGGESTIONS,
@@ -17,6 +18,7 @@ import {
   type Claim,
   type ViewState,
 } from "./responseModel";
+import { deriveSessionMapView, type MapAggregateFreshness } from "./sessionMap";
 
 export type FireLensSession = {
   query: string;
@@ -42,12 +44,12 @@ export type FireLensSession = {
   mapProvinceResults: LiveResult[];
   mapLoading: boolean;
   mapMessage: string | undefined;
-  mapAggregateFreshness: "fresh" | "stale" | "mixed" | undefined;
+  mapAggregateFreshness: MapAggregateFreshness;
   mapUnavailableLayers: string[];
   mapFocus: { latitude: number; longitude: number } | undefined;
   mapFocusResults: LiveResult[];
   selectedLiveResultId: string | undefined;
-  setSelectedLiveResultId: (resultId: string) => void;
+  setSelectedLiveResultId: (resultId: string | undefined) => void;
   askAboutResult: (resultId: string, question: string) => void;
   submitQuestion: (question: string) => Promise<void>;
   clearHistory: () => void;
@@ -56,15 +58,6 @@ export type FireLensSession = {
   submit: (event: FormEvent<HTMLFormElement>) => void;
   clearManualLocation: () => void;
 };
-
-function displayedAggregateFreshness(
-  results: LiveResult[],
-): FireLensSession["mapAggregateFreshness"] {
-  if (results.length === 0) return undefined;
-  if (results.every((result) => result.freshness === "stale")) return "stale";
-  if (results.some((result) => result.freshness === "stale")) return "mixed";
-  return "fresh";
-}
 
 export function useFireLensSession(): FireLensSession {
   const provinceMap = useProvinceMap();
@@ -92,42 +85,21 @@ export function useFireLensSession(): FireLensSession {
     : view.kind === "idle"
       ? INITIAL_SUGGESTIONS
       : [];
-
-  const mapResults = useMemo(() => {
-    const resultById = new Map<string, LiveResult>();
-    for (const result of response?.live_results ?? []) resultById.set(result.result_id, result);
-    for (const result of provinceMap.data?.results ?? []) {
-      if (!resultById.has(result.result_id)) resultById.set(result.result_id, result);
-    }
-    return [...resultById.values()];
-  }, [provinceMap.data?.results, response?.live_results]);
-  const mapMatchingResults = response?.live_results ?? [];
-  const matchingResultIds = useMemo(
-    () => new Set(mapMatchingResults.map((result) => result.result_id)),
-    [mapMatchingResults],
+  const mapView = useMemo(
+    () =>
+      deriveSessionMapView(
+        response,
+        provinceMap.data?.results,
+        provinceMap.data?.unavailable_layers,
+      ),
+    [provinceMap.data?.results, provinceMap.data?.unavailable_layers, response],
   );
-  const mapProvinceResults = useMemo(
-    () => mapResults.filter((result) => !matchingResultIds.has(result.result_id)),
-    [mapResults, matchingResultIds],
-  );
-  const mapFocus = response?.resolved_location ?? undefined;
-  const mapFocusResults = response?.live_results ?? [];
-  const mapAggregateFreshness = useMemo(
-    () => displayedAggregateFreshness(mapResults),
-    [mapResults],
-  );
-  const mapUnavailableLayers = [
-    ...new Set([
-      ...(provinceMap.data?.unavailable_layers ?? []),
-      ...(response?.unavailable_layers ?? []),
-    ]),
-  ];
   const requiresLocation = response?.required_input?.kind === "location";
 
   useEffect(() => {
-    const selectedFromResponse = response?.selected_live_result_id;
-    if (selectedFromResponse) setSelectedLiveResultId(selectedFromResponse);
-  }, [response?.selected_live_result_id]);
+    if (view.kind !== "answer" && view.kind !== "abstention") return;
+    setSelectedLiveResultId(view.response.selected_live_result_id ?? undefined);
+  }, [view]);
 
   async function submitQuestionWithContext(
     question: string,
@@ -144,9 +116,13 @@ export function useFireLensSession(): FireLensSession {
     setView({ kind: "loading", question: normalized });
     try {
       const context: MapContext = {
-        visible_live_result_ids: mapResults.slice(0, 100).map((result) => result.result_id),
+        visible_live_result_ids: mapView.mapResults.slice(0, 100).map((result) => result.result_id),
       };
-      const contextSelected = selectedResultOverride ?? selectedLiveResultId;
+      const contextSelected = selectedResultIdForQuestion(
+        normalized,
+        selectedLiveResultId,
+        selectedResultOverride,
+      );
       if (contextSelected) context.selected_live_result_id = contextSelected;
       const nextResponse = await askFireLens(
         normalized,
@@ -242,8 +218,17 @@ export function useFireLensSession(): FireLensSession {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const question = query;
+    const question = query.trim();
     setQuery("");
+    if (!question) return;
+    if (requiresLocation) {
+      const continuation = response?.required_input?.continuation_question;
+      if (continuation && looksLikeCommunityLabel(question)) {
+        const location: LocationInput = { label: question, radius_km: 50 };
+        void submitQuestionWithContext(continuation, location);
+        return;
+      }
+    }
     void submitQuestion(question);
   }
 
@@ -278,15 +263,15 @@ export function useFireLensSession(): FireLensSession {
     suggestions,
     visibleQuestion,
     assistantText,
-    mapResults,
-    mapMatchingResults,
-    mapProvinceResults,
+    mapResults: mapView.mapResults,
+    mapMatchingResults: mapView.mapMatchingResults,
+    mapProvinceResults: mapView.mapProvinceResults,
     mapLoading: provinceMap.loading,
     mapMessage: provinceMap.message,
-    mapAggregateFreshness,
-    mapUnavailableLayers,
-    mapFocus,
-    mapFocusResults,
+    mapAggregateFreshness: mapView.mapAggregateFreshness,
+    mapUnavailableLayers: mapView.mapUnavailableLayers,
+    mapFocus: mapView.mapFocus,
+    mapFocusResults: mapView.mapFocusResults,
     selectedLiveResultId,
     setSelectedLiveResultId,
     askAboutResult,

@@ -26,7 +26,7 @@ _GUARDED_ROUTES = frozenset(
 def _apply_security_headers(request: Request, response: Response) -> Response:
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; script-src 'self'; style-src 'self'; "
-        "img-src 'self' data:; connect-src 'self'; "
+        "img-src 'self' data: https://*.tile.openstreetmap.org https://tile.openstreetmap.org; connect-src 'self'; "
         "font-src 'self' data:; object-src 'none'; base-uri 'self'; "
         "frame-ancestors 'none'; form-action 'self'"
     )

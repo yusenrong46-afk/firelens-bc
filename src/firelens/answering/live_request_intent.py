@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
+from firelens.answering.live_analysis import official_display_name
+from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import AggregateFreshness, LiveResult, LiveResultKind, QueryRequest
 
 _DISTANCE_PATTERN = re.compile(
@@ -71,6 +73,32 @@ _COUNT_PATTERN = re.compile(
 )
 
 
+_DEICTIC_DISTANCE = re.compile(
+    r"\b(?:how\s+(?:far|close).{0,40}\b(?:this|that|it)\b|"
+    r"how\s+(?:far|close)\s+is\s+it\b|"
+    r"distance\s+(?:from|to)\s+.+\s+to\s+it\b)",
+    re.IGNORECASE,
+)
+
+
+def is_unbound_distance_request(request: QueryRequest) -> bool:
+    """Deictic distance without a selected record. Named-place how-close proceeds."""
+
+    if request.context.selected_live_result_id:
+        return False
+    if _DEICTIC_DISTANCE.search(request.question):
+        return True
+    if not is_distance_request(request):
+        return False
+    if request.location is not None:
+        return False
+    if coarse_location_from_question(request.question) is not None:
+        return False
+    if re.search(r"\b(?:nearest|closest|how close)\b", request.question, re.IGNORECASE):
+        return False
+    return True
+
+
 def is_distance_request(request: QueryRequest) -> bool:
     """Recognize distance requests with an explicit or selected wildfire target."""
 
@@ -129,13 +157,10 @@ def render_live_record_answer(
     """Render the same bounded summary or selected-record attribute deterministically."""
 
     selected_request = is_selected_live_request(request)
-    summary = "; ".join(
-        f"{item.name or item.incident_number or item.result_id}: {item.status}"
-        for item in shown[:5]
-    )
+    summary = "; ".join(f"{official_display_name(item)}: {item.status}" for item in shown[:5])
     if selected_request and _UPDATED_PATTERN.search(request.question):
         selected = shown[0]
-        display_name = selected.name or selected.incident_number or "The selected record"
+        display_name = official_display_name(selected)
         return (
             f"The official source record for {display_name} was updated at "
             f"{selected.source_updated_at.isoformat()}."
@@ -144,14 +169,14 @@ def render_live_record_answer(
         )
     if selected_request and _SOURCE_PATTERN.search(request.question):
         selected = shown[0]
-        display_name = selected.name or selected.incident_number or "The selected record"
+        display_name = official_display_name(selected)
         return (
             f"Official source for {display_name}: {selected.authority}. "
             "Open the linked official record for its source data and latest timestamp."
         )
     if selected_request and _SIZE_PATTERN.search(request.question):
         selected = shown[0]
-        display_name = selected.name or selected.incident_number or "The selected record"
+        display_name = official_display_name(selected)
         return (
             f"The official record reports {display_name} at "
             f"{selected.size_hectares:g} hectares."
@@ -162,8 +187,8 @@ def render_live_record_answer(
         incident_count = sum(item.kind == LiveResultKind.INCIDENT for item in shown)
         perimeter_count = sum(item.kind == LiveResultKind.PERIMETER for item in shown)
         return (
-            f"This bounded official response contains {incident_count} incident records"
-            f" and {perimeter_count} perimeter records. This is a record count, not a "
+            f"Official layers currently return {incident_count} incident records "
+            f"and {perimeter_count} perimeter records. This is a record count, not a "
             "distinct-fire count or a safety determination."
         )
     if aggregate_freshness == AggregateFreshness.STALE:

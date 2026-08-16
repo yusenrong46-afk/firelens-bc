@@ -890,6 +890,30 @@
             ],
             "title": "Distance Km"
           },
+          "fire_centre": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fire Centre"
+          },
+          "fire_zone": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fire Zone"
+          },
           "freshness": {
             "$ref": "#/components/schemas/Freshness"
           },

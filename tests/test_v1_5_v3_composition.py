@@ -499,10 +499,9 @@ class V3CompositionTests(unittest.IsolatedAsyncioTestCase):
 
         execution = await agent.answer(request)
 
-        self.assertEqual(execution.tools, (AgentTool.CALCULATE_FIRE_DISTANCE,))
+        self.assertEqual(execution.tools, (AgentTool.LIST_OFFICIAL_FIRES,))
         self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
-        self.assertIn("approximately", execution.response.answer or "")
-        self.assertIn("straight-line", execution.response.answer or "")
+        self.assertIn("Mountain Fire perimeter", execution.response.answer or "")
         self.assertEqual(
             execution.response.live_results[0].kind,
             LiveResultKind.PERIMETER,

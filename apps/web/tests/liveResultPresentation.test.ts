@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isRenderableGeometry } from "../src/features/near-me/liveResultPresentation";
+import { isRenderableGeometry, geometryLatLngs } from "../src/features/near-me/liveResultPresentation";
 import type { LiveResult } from "../src/shared/api/api";
 
 const base: LiveResult = {
@@ -20,5 +20,30 @@ describe("isRenderableGeometry", () => {
     const missingGeometry = { ...base };
     delete (missingGeometry as { geometry?: LiveResult["geometry"] }).geometry;
     expect(isRenderableGeometry(missingGeometry)).toBe(false);
+  });
+
+  it("walks perimeter coordinates for map fitting", () => {
+    const perimeter: LiveResult = {
+      ...base,
+      result_id: "perimeter:1",
+      kind: "perimeter",
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-119.9, 49.8],
+            [-119.8, 49.8],
+            [-119.8, 49.9],
+            [-119.9, 49.8],
+          ],
+        ],
+      },
+    };
+    expect(geometryLatLngs(perimeter)).toEqual([
+      [49.8, -119.9],
+      [49.8, -119.8],
+      [49.9, -119.8],
+      [49.8, -119.9],
+    ]);
   });
 });

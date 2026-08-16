@@ -97,6 +97,12 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .answer-limitations strong { font-size: 14px; }
 .answer-limitations ul { display: grid; gap: 4px; margin: 5px 0 0; padding-left: 18px; }
 .answer-limitations li { font-size: 14px; line-height: 1.45; }
+.answer-lead { margin: 10px 0 0; color: #213651; font-size: 16px; line-height: 1.6; }
+.map-record-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.map-record-actions button, .selected-fire-chip button {
+  min-height: 36px; padding: 6px 10px; color: #163a62; background: #eef4fb; border: 1px solid #c3ced8; border-radius: 4px; cursor: pointer; font-size: 14px;
+}
+.selected-fire-chip { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; padding: 8px 10px; background: #f8e5de; color: #6f2f20; border-radius: 4px; font-size: 14px; font-weight: 600; }
 .related-service-links { display: grid; gap: 8px; margin-top: 14px; }
 .related-service-links a { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 13px; color: #163a62; text-decoration: none; background: #f5f8fb; border: 1px solid #c3ced8; border-radius: 5px; }
 .related-service-links a:hover { border-color: #8fa2b4; background: #eef4fb; }

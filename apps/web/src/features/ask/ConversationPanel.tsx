@@ -10,7 +10,9 @@ import {
   WarningCircle,
 } from "@phosphor-icons/react";
 import { FeedbackControls } from "../feedback/FeedbackControls";
-import { answerSectionAuthority, getAnswerSections } from "./answerSections";
+import { resultDisplayName } from "../near-me/liveResultPresentation";
+import { AnswerBody } from "./AnswerBody";
+import { getAnswerSections } from "./answerSections";
 import type { Claim } from "./responseModel";
 import { ResponseModeBadge } from "./responseModeBadge";
 import type { FireLensSession } from "./useFireLensSession";
@@ -84,10 +86,16 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
     useApproximateLocation,
     view,
     visibleQuestion,
+    selectedLiveResultId,
+    setSelectedLiveResultId,
+    mapResults,
   } = session;
   const answerSections = getAnswerSections(response);
   const visibleLimitations = Array.from(
     new Set((response?.limitations ?? []).map((item) => item.trim()).filter(Boolean)),
+  );
+  const selectedRecord = [...mapResults, ...(response?.live_results ?? [])].find(
+    (item) => item.result_id === selectedLiveResultId,
   );
 
   return (
@@ -134,27 +142,19 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
                 reasonCode={response?.reason_code ?? undefined}
               />
             )}
-            {view.kind === "answer" && visibleLimitations.length > 0 && (
-              <div className="answer-limitations" aria-label="Answer limitations" role="status">
-                <WarningCircle size={19} aria-hidden="true" />
-                <div>
-                  <strong>Important limits</strong>
-                  <ul>
-                    {visibleLimitations.map((item) => <li key={item}>{item}</li>)}
-                  </ul>
-                </div>
+            {selectedRecord && (
+              <div className="selected-fire-chip" aria-label="Selected official record">
+                <span>Selected: {resultDisplayName(selectedRecord)}</span>
+                <button type="button" onClick={() => setSelectedLiveResultId(undefined)}>
+                  Clear selection
+                </button>
               </div>
             )}
-            {answerSections.length > 0 ? (
-              <div className="answer-sections" aria-label="Authority-labelled answer">
-                {answerSections.map((section) => (
-                  <section className="answer-section" key={section.kind}>
-                    <span className="answer-section__authority">{answerSectionAuthority(section.kind)}</span>
-                    <h2>{section.heading}</h2>
-                    <p>{section.text}</p>
-                  </section>
-                ))}
-              </div>
+            {view.kind === "answer" ? (
+              <AnswerBody
+                response={response}
+                assistantText={assistantText}
+              />
             ) : (
               <p>{assistantText}</p>
             )}
