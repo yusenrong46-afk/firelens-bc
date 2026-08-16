@@ -1065,10 +1065,24 @@ The V1.5 V3 lineage was pushed and released after `04a2f97`:
 - `make verify` passed locally on the UI commit before release (ruff, mypy,
   full Python suite, 26 Playwright flows).
 - `origin/main` fast-forwarded to this lineage and `codex/v1-5-v3` was
-  published. Vercel `--prod` aliased `https://firelens-bc.vercel.app` to
-  deployment `dpl_42YkwX58G9CQVjdxth15yxkSSKXf`.
+  published.
+- **Production correction.** The first `--prod` deployments built and aliased
+  successfully but crashed on every invocation: `FireLensConfig.from_env`
+  correctly refuses to start in production without the stage privacy policy,
+  and the Vercel production environment had no `FIRELENS_*` variables. Nobody
+  had smoke-checked production after aliasing, so the alias was serving
+  `FUNCTION_INVOCATION_FAILED`. The fail-closed config did its job. Fix:
+  `FIRELENS_EMBEDDING_ZDR=required`, `FIRELENS_GENERATION_ZDR=required`,
+  `FIRELENS_RERANKING_ZDR=optional`, `FIRELENS_DATA_COLLECTION=deny`, and
+  `FIRELENS_ALLOW_FALLBACKS=false` were added to the Vercel production
+  environment (`OPENROUTER_API_KEY` was already scoped to production) and
+  production was redeployed. Executed evidence on the new alias target:
+  `/api/v1/health/ready` returns `ready` with
+  `zdr_policy_state=required_stages_eligible`; a grab-and-go ask returned
+  grounded claims; a Calgary ask returned the BC-only scope redirect with
+  zero live rows.
 
 Still open after this ship: named human review, Vercel Firewall publish,
-VoiceOver / 12-participant UX, V3 sealed retrieval, and a re-run of the hard
-Ask sheet against the production alias.
+VoiceOver / 12-participant UX, V3 sealed retrieval, and a full re-run of the
+hard Ask sheet against the production alias.
 
