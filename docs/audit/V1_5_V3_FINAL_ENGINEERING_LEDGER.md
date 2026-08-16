@@ -1010,3 +1010,36 @@ was not re-run for this slice.
 - VoiceOver / 12-participant UX
 - V3 sealed retrieval
 
+## Continuation: preview of `04a2f97` (2026-08-16)
+
+This is deployed preview evidence of the committed Luna-brain / OSM / audit-fix
+tree. It is not production, firewall proof, or named human review. Paid Ask
+transcripts stay gitignored under `output/qualification/`.
+
+| Field | Observed |
+| --- | --- |
+| Branch | `codex/v1-5-v3` |
+| Commit previewed | `04a2f97ce80a1a72273c38243c85064cc0ad28c5` |
+| Artifact | Clean worktree uploaded by `npx vercel@58.1.0 deploy --yes` (no `--prod`) |
+| Release | `1.5.3-rc.1` |
+| Candidate ID | `firelens-v1-5-2:04a2f97ce80a1a72273c38243c85064cc0ad28c5` |
+| Preview URL | `https://firelens-fzy1dfq18-yusenrong46-9212s-projects.vercel.app` |
+| Deployment ID | `dpl_2QC1MC6mELQqr86eajZbzqwGk5Gt` |
+| Inspect | `https://vercel.com/yusenrong46-9212s-projects/firelens-bc/2QC1MC6mELQqr86eajZbzqwGk5Gt` |
+| Ready HTTP | 200, `status=ready`, `problems=[]` |
+| `zdr_policy_state` | `required_stages_eligible` |
+| Models | `openai/text-embedding-3-small`, `cohere/rerank-4-pro`, `openai/gpt-5.6-luna` |
+| Anonymous homepage | Gate `homepage_anonymous=true` |
+| Local `make verify` | Passed on this commit before deploy |
+
+Zero-cost `qualify_deployment_gates.py --expect-production` was **`qualified=false`**
+only because `candidate_identity` compared this preview to the local gitignored
+runtime candidate file (still the previous SHA). Ready, ZDR, homepage, and
+safety-boundary checks were true.
+
+Hard Ask sheet v2: 50 executed `POST /api/v1/ask` probes.
+Sheet: `docs/audit/V1_5_V3_PREVIEW_ASK_HARD_V2.md`.
+Totals: **Pass 47 / Fail 2 / Blocked 1**. Fails: H03 (two-largest BC compare,
+0 live rows) and H27 (Canada-wide ask still attached 1 BC row). Blocked: H20
+(`ReadTimeout` on a firebreak follow-up with a selected id). No `--prod`.
+
