@@ -9,6 +9,7 @@ from collections.abc import Sequence
 from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import (
     CoarseResolvedLocation,
+    Freshness,
     GeometryRelation,
     LiveResult,
     LiveResultKind,
@@ -49,6 +50,17 @@ _HEDGE = re.compile(
     re.IGNORECASE,
 )
 _PRECISE_COORD = re.compile(r"\b-?\d{1,3}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}\b")
+
+
+def official_information_prefix(records: Sequence[LiveResult]) -> str:
+    """Honest lead-in: cached-stale records are never called current."""
+
+    if any(item.freshness == Freshness.STALE for item in records):
+        return (
+            "Official information from cached records (a live refresh failed, "
+            "so these may be outdated): "
+        )
+    return "Current official information: "
 
 
 def official_display_name(result: LiveResult) -> str:
@@ -245,7 +257,7 @@ def compose_official_answer(
             "authority provides."
         )
     summary = "; ".join(f"{official_display_name(item)}: {item.status}" for item in records[:8])
-    return "Current official information: " + summary
+    return official_information_prefix(records) + summary
 
 
 def replace_ungrounded_live_hedge(answer: str, replacement: str) -> str:

@@ -17,6 +17,31 @@ describe("selectedResultIdForQuestion", () => {
     );
     expect(selectedResultIdForQuestion("What is a firebreak?", "incident:7")).toBeUndefined();
   });
+
+  it("keeps the id for short elliptical attribute follow-ups", () => {
+    expect(selectedResultIdForQuestion("status?", "incident:7")).toBe("incident:7");
+    expect(selectedResultIdForQuestion("how large?", "incident:7")).toBe("incident:7");
+    expect(selectedResultIdForQuestion("What is the source?", "incident:7")).toBe("incident:7");
+    expect(selectedResultIdForQuestion("what's its size", "incident:7")).toBe("incident:7");
+  });
+
+  it("does not hijack broad-subject questions with a stale selection", () => {
+    expect(
+      selectedResultIdForQuestion(
+        "What's the status of fires across the province?",
+        "incident:7",
+      ),
+    ).toBeUndefined();
+    expect(
+      selectedResultIdForQuestion("How many wildfires are burning in BC?", "incident:7"),
+    ).toBeUndefined();
+    expect(
+      selectedResultIdForQuestion("Show evacuation orders near Kelowna", "incident:7"),
+    ).toBeUndefined();
+    expect(
+      selectedResultIdForQuestion("What size fires count as large in BC?", "incident:7"),
+    ).toBeUndefined();
+  });
 });
 
 describe("looksLikeCommunityLabel", () => {

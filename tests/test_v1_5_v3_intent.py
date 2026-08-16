@@ -10,10 +10,33 @@ from firelens.answering.intent import (
     static_guidance_fragment,
     unsupported_live_topics,
 )
+from firelens.answering.location_intent import is_out_of_province_label
 from firelens.contracts import ConversationTurn, LiveResultKind, QueryRequest, QueryRoute
 
 
 class V3DeterministicIntentTests(unittest.TestCase):
+    def test_out_of_province_labels_are_never_geocoded_as_bc(self) -> None:
+        for label in (
+            "Alberta",
+            "Calgary",
+            "calgary, alberta, canada",
+            "Seattle",
+            "Canada",
+            "Yukon",
+        ):
+            with self.subTest(label=label):
+                self.assertTrue(is_out_of_province_label(label))
+        for label in (
+            "Kelowna",
+            "Vancouver, Canada",
+            "West Kelowna",
+            "100 Mile House",
+            None,
+            "",
+        ):
+            with self.subTest(label=label):
+                self.assertFalse(is_out_of_province_label(label))
+
     def test_named_and_group_safety_decisions_are_prohibited(self) -> None:
         for question in (
             "Is West Kelowna safe right now?",

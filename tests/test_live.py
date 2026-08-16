@@ -206,6 +206,76 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(location, (49.28, -123.12))
 
+    async def test_geocoder_requests_a_minimum_match_score(self) -> None:
+        seen_params: dict[str, str] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen_params.update(dict(request.url.params))
+            return httpx.Response(
+                200,
+                json={"features": [{"geometry": {"coordinates": [-123.1207, 49.2827]}}]},
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            service = LiveDataService(client=client)
+            await service.resolve_location(LocationInput(label="Vancouver"))
+
+        self.assertEqual(seen_params.get("minScore"), "70")
+
+    async def test_geocoder_rejects_low_confidence_and_imprecise_matches(self) -> None:
+        scenarios = (
+            # Fuzzy garbage ("hectares") comes back as a low-score guess.
+            {"score": 55, "matchPrecision": "LOCALITY"},
+            # "British Columbia" style input matches the whole province.
+            {"score": 100, "matchPrecision": "PROVINCE"},
+            # "Calgary" fuzzy-matches a street somewhere in BC.
+            {"score": 82, "matchPrecision": "STREET"},
+        )
+        for properties in scenarios:
+            with self.subTest(properties=properties):
+
+                def handler(
+                    _request: httpx.Request,
+                    response_properties: dict[str, object] = properties,
+                ) -> httpx.Response:
+                    return httpx.Response(
+                        200,
+                        json={
+                            "features": [
+                                {
+                                    "properties": response_properties,
+                                    "geometry": {"coordinates": [-123.1207, 49.2827]},
+                                }
+                            ]
+                        },
+                    )
+
+                async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                    service = LiveDataService(client=client)
+                    with self.assertRaises(LiveDataUnavailable) as raised:
+                        await service.resolve_location(LocationInput(label="hectares"))
+                self.assertEqual(raised.exception.kind, LiveDataErrorKind.NOT_FOUND)
+
+    async def test_geocoder_accepts_confident_locality_matches(self) -> None:
+        def handler(_request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "features": [
+                        {
+                            "properties": {"score": 96, "matchPrecision": "LOCALITY"},
+                            "geometry": {"coordinates": [-119.4960, 49.8880]},
+                        }
+                    ]
+                },
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            service = LiveDataService(client=client)
+            location = await service.resolve_location(LocationInput(label="Kelowna"))
+
+        self.assertEqual(location, (49.89, -119.5))
+
     async def test_record_ceiling_fails_closed_and_is_visible(self) -> None:
         features = [
             {

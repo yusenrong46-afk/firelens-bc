@@ -101,7 +101,11 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
   return (
     <section className="conversation-panel" id="conversation" aria-label="Question and answer" tabIndex={-1}>
       <div className="conversation-toolbar">
-        <span><ChatsCircle size={16} /> {history.length} of 6 turns in context</span>
+        <span
+          title="FireLens keeps your last 3 question-answer pairs in this browser only and re-sends them with your next question. Nothing is stored on a server."
+        >
+          <ChatsCircle size={16} /> {history.length} of 6 turns in context
+        </span>
         {(history.length > 0 || view.kind !== "idle") && (
           <button type="button" onClick={clearHistory} aria-label="Clear conversation history">
             <Trash size={15} /> Clear

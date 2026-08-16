@@ -68,7 +68,21 @@ export function useFireLensSession(): FireLensSession {
   const [locationLabel, setLocationLabel] = useState("");
   const [locationMessage, setLocationMessage] = useState("");
   const [selectedLiveResultId, setSelectedLiveResultId] = useState<string>();
+  const [loadingSeconds, setLoadingSeconds] = useState(0);
   const activeRequest = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (view.kind !== "loading") {
+      setLoadingSeconds(0);
+      return;
+    }
+    const started = Date.now();
+    const timer = window.setInterval(
+      () => setLoadingSeconds(Math.floor((Date.now() - started) / 1000)),
+      1_000,
+    );
+    return () => window.clearInterval(timer);
+  }, [view]);
 
   const response = view.kind === "answer" || view.kind === "abstention" ? view.response : undefined;
   const mode = response ? getResponseMode(response) : undefined;
@@ -237,7 +251,11 @@ export function useFireLensSession(): FireLensSession {
     view.kind === "answer" || view.kind === "abstention"
       ? responseText(view.response)
       : view.kind === "loading"
-        ? "FireLens is checking the available sources and preparing a response…"
+        ? loadingSeconds >= 20
+          ? "Official sources are responding slowly — FireLens is still working on this request…"
+          : loadingSeconds >= 6
+            ? "Fetching official records and composing a grounded answer — usually a few more seconds…"
+            : "Checking official BC wildfire layers and reviewed guidance…"
         : view.kind === "unavailable" || view.kind === "error"
           ? (view.message ?? "FireLens is unavailable.")
           : provinceMap.loading

@@ -202,6 +202,63 @@ _PROVINCE_WIDE_LABELS = frozenset(
     }
 )
 
+# Places FireLens must never geocode as BC communities. The BC Geocoder
+# fuzzy-matches anything, so these are rejected before it is asked.
+_OUT_OF_PROVINCE_PLACES = frozenset(
+    {
+        "alberta",
+        "saskatchewan",
+        "manitoba",
+        "ontario",
+        "quebec",
+        "new brunswick",
+        "nova scotia",
+        "prince edward island",
+        "newfoundland",
+        "newfoundland and labrador",
+        "yukon",
+        "northwest territories",
+        "nunavut",
+        "calgary",
+        "edmonton",
+        "banff",
+        "jasper",
+        "lethbridge",
+        "red deer",
+        "grande prairie",
+        "fort mcmurray",
+        "toronto",
+        "ottawa",
+        "montreal",
+        "winnipeg",
+        "regina",
+        "saskatoon",
+        "whitehorse",
+        "yellowknife",
+        "alaska",
+        "washington",
+        "washington state",
+        "oregon",
+        "idaho",
+        "montana",
+        "california",
+        "seattle",
+        "portland",
+        "spokane",
+        "bellingham",
+    }
+)
+
+_WHOLE_COUNTRY_LABELS = frozenset(
+    {"canada", "the rest of canada", "united states", "usa", "us", "america"}
+)
+
+_NATIONAL_SCOPE = re.compile(
+    r"\b(?:across|all of|rest of|throughout|in)\s+(?:canada|the\s+(?:us|usa|united states)|america)\b"
+    r"|\bcanada[- ]?wide\b|\bnation[- ]?wide\b|\bevery province\b|\ball provinces\b",
+    re.IGNORECASE,
+)
+
 
 def _clean_place(candidate: str) -> str | None:
     place = candidate.split(",", maxsplit=1)[0]
@@ -257,6 +314,30 @@ def _clean_place(candidate: str) -> str | None:
     ):
         return None
     return _PLACE_ALIASES.get(lowered, place)
+
+
+def is_out_of_province_label(label: str | None) -> bool:
+    """True for labels outside British Columbia that must not be geocoded.
+
+    "Vancouver, Canada" stays in-province; "Calgary, Alberta, Canada" and a
+    bare "Canada" (a national ask) do not.
+    """
+
+    if not isinstance(label, str) or not label.strip():
+        return False
+    normalized = " ".join(label.split()).casefold().strip(" .,")
+    if normalized in _WHOLE_COUNTRY_LABELS:
+        return True
+    segments = [segment.strip(" .,") for segment in normalized.split(",")]
+    while segments and segments[-1] in _WHOLE_COUNTRY_LABELS:
+        segments.pop()
+    return any(segment in _OUT_OF_PROVINCE_PLACES for segment in segments if segment)
+
+
+def is_national_scope_question(question: str) -> bool:
+    """True when the question asks about Canada-wide or non-BC national scope."""
+
+    return bool(_NATIONAL_SCOPE.search(question))
 
 
 def is_province_wide_label(label: str | None) -> bool:

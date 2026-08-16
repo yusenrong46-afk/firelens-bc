@@ -35,7 +35,7 @@ from firelens.contracts import (
     TemporalClass,
     ValidationReport,
 )
-from firelens.live import LiveDataUnavailable
+from firelens.live import LiveDataErrorKind, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
 
 
@@ -56,6 +56,7 @@ def _fire(
     latitude: float = 49.9,
     geometry: dict[str, object] | None = None,
     geometry_relation: GeometryRelation = GeometryRelation.UNKNOWN,
+    freshness: Freshness = Freshness.FRESH,
 ) -> LiveResult:
     stamp = _timestamp()
     return LiveResult(
@@ -64,7 +65,7 @@ def _fire(
         source_url=f"https://example.test/live/{result_id}",
         source_updated_at=stamp,
         retrieved_at=stamp,
-        freshness=Freshness.FRESH,
+        freshness=freshness,
         status=status,
         name=name,
         incident_number=incident_number,
@@ -297,6 +298,8 @@ class WriteOnlyProvider:
 class CapturingProvider:
     def __init__(self) -> None:
         self.messages: list[dict[str, Any]] | None = None
+        self.calls = 0
+        self.tools_seen: list[list[dict[str, Any]] | None] = []
 
     async def chat_turn(
         self,
@@ -306,8 +309,25 @@ class CapturingProvider:
     ) -> ChatTurn:
         if self.messages is None:
             self.messages = list(messages)
-        del tools
+        self.calls += 1
+        self.tools_seen.append(tools)
         return ChatTurn(content="Ridge Fire is Being Held.")
+
+
+class ChattyOffScopeProvider:
+    async def chat_turn(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        tools: list[dict[str, Any]] | None = None,
+    ) -> ChatTurn:
+        del messages, tools
+        return ChatTurn(
+            content=(
+                "Dragons are fascinating! In BC folklore they are said to guard "
+                "mountain lakes and start legendary blazes."
+            )
+        )
 
 
 class GetThenWriteProvider:
@@ -1210,6 +1230,129 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             AgentPacket(unknown_topics=["air quality"]),
         )
         self.assertNotIn("unfetched_live_feed", errors)
+
+    async def test_out_of_province_live_ask_redirects_without_bc_rows(self) -> None:
+        for question in (
+            "Are there wildfires near Calgary right now?",
+            "Are there wildfires across Canada right now?",
+        ):
+            with self.subTest(question=question):
+                live = CountingMapService([_fire(result_id="incident:7", name="Mountain Fire")])
+                agent = FireLensAgent(
+                    cast(Any, SilentStatic()),
+                    LiveAnswerCoordinator(cast(Any, live)),
+                )
+                execution = await agent.answer(QueryRequest(question=question))
+
+                self.assertEqual(execution.response.response_mode, ResponseMode.SCOPE_REDIRECT)
+                self.assertFalse(execution.response.live_results)
+                self.assertEqual(live.map_calls, 0)
+                self.assertEqual(live.nearby_calls, 0)
+                self.assertEqual(live.resolve_calls, 0)
+                answer = execution.response.answer or ""
+                self.assertIn("British Columbia", answer)
+                self.assertNotIn("Mountain Fire", answer)
+
+    async def test_unresolved_place_asks_for_a_bc_community(self) -> None:
+        class UnresolvedPlaceLive(FixedLiveService):
+            async def nearby_page(self, location: Any, *args: Any, **kwargs: Any) -> Any:
+                del location, args, kwargs
+                raise LiveDataUnavailable(
+                    "the place label could not be resolved",
+                    kind=LiveDataErrorKind.NOT_FOUND,
+                )
+
+            async def resolve_location(self, _location: Any) -> tuple[float, float]:
+                raise LiveDataUnavailable(
+                    "the place label could not be resolved",
+                    kind=LiveDataErrorKind.NOT_FOUND,
+                )
+
+        question = "Are there wildfires near Xyzzyville?"
+        agent = FireLensAgent(
+            cast(Any, SilentStatic()),
+            LiveAnswerCoordinator(cast(Any, UnresolvedPlaceLive([]))),
+        )
+        execution = await agent.answer(QueryRequest(question=question))
+
+        response = execution.response
+        self.assertEqual(response.response_mode, ResponseMode.REQUIRES_INPUT)
+        assert response.required_input is not None
+        self.assertEqual(response.required_input.continuation_question, question)
+        self.assertIn("BC community", response.answer or "")
+        self.assertFalse(response.unavailable_layers)
+
+    async def test_stale_records_are_not_called_current(self) -> None:
+        agent = _agent(
+            [
+                _fire(
+                    result_id="incident:7",
+                    name="Mountain Fire",
+                    freshness=Freshness.STALE,
+                )
+            ]
+        )
+        execution = await agent.answer(
+            QueryRequest(question="What official fires are near Kelowna?")
+        )
+
+        answer = execution.response.answer or ""
+        self.assertNotIn("Current official information", answer)
+        self.assertIn("cached records", answer)
+        self.assertIn("Mountain Fire", answer)
+        self.assertTrue(
+            any("cached and may be outdated" in item for item in execution.response.limitations)
+        )
+
+    async def test_terminal_free_prose_is_replaced_deterministically(self) -> None:
+        agent = FireLensAgent(
+            cast(Any, _ProviderStatic(ChattyOffScopeProvider())),
+            LiveAnswerCoordinator(cast(Any, FixedLiveService([]))),
+        )
+        execution = await agent.answer(QueryRequest(question="Tell me a story about dragons."))
+
+        answer = execution.response.answer or ""
+        self.assertEqual(execution.response.response_mode, ResponseMode.SCOPE_REDIRECT)
+        self.assertNotIn("Dragons", answer)
+        self.assertIn("outside the grounded sources", answer)
+
+    async def test_prefetched_packet_gets_single_write_call_without_tools(self) -> None:
+        provider = CapturingProvider()
+        agent = FireLensAgent(
+            cast(Any, _ProviderStatic(provider)),
+            LiveAnswerCoordinator(
+                cast(Any, FixedLiveService([_fire(result_id="incident:9", name="Ridge Fire")]))
+            ),
+        )
+        execution = await agent.answer(
+            QueryRequest(question="What official fires are near Kelowna?")
+        )
+
+        self.assertEqual(provider.calls, 1)
+        self.assertEqual(provider.tools_seen, [None])
+        self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
+
+    async def test_guidance_prefetch_single_call_includes_reviewed_answer(self) -> None:
+        provider = CapturingProvider()
+
+        class KitStaticWithProvider(KitStatic):
+            def __init__(self, chat_provider: Any) -> None:
+                self.provider = chat_provider
+
+        agent = FireLensAgent(
+            cast(Any, KitStaticWithProvider(provider)),
+            LiveAnswerCoordinator(cast(Any, FixedLiveService([]))),
+        )
+        execution = await agent.answer(
+            QueryRequest(question="What belongs in a grab-and-go bag?")
+        )
+
+        self.assertEqual(provider.calls, 1)
+        self.assertEqual(provider.tools_seen, [None])
+        assert provider.messages is not None
+        payload = json.loads(provider.messages[1]["content"])
+        self.assertIn("reviewed_guidance_answer", payload["official_packet"])
+        self.assertEqual(execution.response.response_mode, ResponseMode.GROUNDED)
 
     async def test_public_ask_seatbelt_does_not_use_legacy_live_composer(self) -> None:
         class ForbiddenCoordinator(LiveAnswerCoordinator):

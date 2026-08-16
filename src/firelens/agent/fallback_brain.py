@@ -36,6 +36,16 @@ _PREDICTION = re.compile(
 )
 
 
+def confident_guidance_intent(question: str) -> bool:
+    """Guidance or definition intent strong enough to prefetch reviewed RAG."""
+
+    return bool(
+        _GUIDANCE.search(question)
+        or _DEFINITION.search(question)
+        or (reviewed_guidance_intent(question) and not unsupported_live_topics(question))
+    )
+
+
 def heuristic_tool_calls(request: QueryRequest) -> list[dict[str, Any]]:
     """Offline tool choice for tests without a provider chat loop."""
 
@@ -68,11 +78,7 @@ def heuristic_tool_calls(request: QueryRequest) -> list[dict[str, Any]]:
                     "arguments": arguments,
                 }
             )
-    if (
-        _GUIDANCE.search(question)
-        or _DEFINITION.search(question)
-        or (reviewed_guidance_intent(question) and not unsupported_live_topics(question))
-    ):
+    if confident_guidance_intent(question):
         calls.append(
             {
                 "name": AgentTool.SEARCH_REVIEWED_GUIDANCE.value,

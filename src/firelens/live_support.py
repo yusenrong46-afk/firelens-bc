@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
+import httpx
 from pydantic import HttpUrl
 from pyproj import Geod
 from shapely.geometry import Point, shape
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import nearest_points
 
-from firelens.contracts import GeometryRelation, LiveResultKind
+from firelens.contracts import GeometryRelation, LiveResultKind, LocationInput
 
 ACTIVE_FIRES_URL = (
     "https://services6.arcgis.com/ubm4tcTYICKBpist/arcgis/rest/services/"
@@ -133,6 +135,113 @@ def authority(kind: LiveResultKind) -> str:
         if kind == LiveResultKind.EVACUATION
         else "BC Wildfire Service"
     )
+
+
+# BC Geocoder match-quality gate. Scores below this are fuzzy guesses, and
+# PROVINCE/STREET-precision matches mean the label was not a specific BC
+# community (e.g. "Calgary" fuzzy-matching a street, or "hectares" matching
+# the province centroid). Test doubles may omit these fields; absent fields
+# are accepted so only a present-but-poor match fails closed.
+GEOCODER_MIN_SCORE = 70
+GEOCODER_ACCEPTED_PRECISIONS = frozenset(
+    {"LOCALITY", "CIVIC_NUMBER", "BLOCK", "SITE", "UNIT", "INTERSECTION", "OCCUPANT"}
+)
+
+_HttpGet = Callable[..., Awaitable[httpx.Response]]
+
+
+async def resolve_bc_location(get: _HttpGet, location: LocationInput) -> tuple[float, float]:
+    """Resolve a coarse label to rounded BC coordinates, failing closed."""
+
+    if location.latitude is not None and location.longitude is not None:
+        return location.latitude, location.longitude
+    if location.label is None:
+        raise LiveDataUnavailable("a coarse location is required for a nearby query")
+    try:
+        response = await get(
+            BC_GEOCODER_URL,
+            params={
+                "addressString": location.label,
+                "maxResults": 1,
+                "outputSRS": 4326,
+                "echo": "false",
+                "minScore": GEOCODER_MIN_SCORE,
+            },
+        )
+        response.raise_for_status()
+    except httpx.TimeoutException as exc:
+        raise LiveDataUnavailable(
+            "the official place service timed out",
+            kind=LiveDataErrorKind.TIMEOUT,
+        ) from exc
+    except httpx.HTTPStatusError as exc:
+        raise LiveDataUnavailable(
+            "the official place service returned an error",
+            kind=LiveDataErrorKind.UPSTREAM_HTTP,
+        ) from exc
+    except httpx.HTTPError as exc:
+        raise LiveDataUnavailable(
+            "the official place service could not be reached",
+            kind=LiveDataErrorKind.UNREACHABLE,
+        ) from exc
+    try:
+        payload = response.json()
+    except (UnicodeDecodeError, ValueError) as exc:
+        raise LiveDataUnavailable(
+            "the official place service returned invalid data",
+            kind=LiveDataErrorKind.INVALID_RESPONSE,
+        ) from exc
+    features = payload.get("features") if isinstance(payload, dict) else None
+    if not isinstance(features, list) or not features:
+        raise LiveDataUnavailable(
+            "the place label could not be resolved",
+            kind=LiveDataErrorKind.NOT_FOUND,
+        )
+    first = features[0]
+    properties = first.get("properties") if isinstance(first, dict) else None
+    if isinstance(properties, dict):
+        score = properties.get("score")
+        if isinstance(score, (int, float)) and score < GEOCODER_MIN_SCORE:
+            raise LiveDataUnavailable(
+                "the place label did not confidently match a British Columbia place",
+                kind=LiveDataErrorKind.NOT_FOUND,
+            )
+        precision = properties.get("matchPrecision")
+        if (
+            isinstance(precision, str)
+            and precision.strip()
+            and precision.strip().upper() not in GEOCODER_ACCEPTED_PRECISIONS
+        ):
+            raise LiveDataUnavailable(
+                "the place label did not match a specific British Columbia community",
+                kind=LiveDataErrorKind.NOT_FOUND,
+            )
+    geometry = first.get("geometry") if isinstance(first, dict) else None
+    coordinates = geometry.get("coordinates") if isinstance(geometry, dict) else None
+    if not isinstance(coordinates, list) or len(coordinates) < 2:
+        raise LiveDataUnavailable(
+            "the official place service returned invalid coordinates",
+            kind=LiveDataErrorKind.INVALID_RESPONSE,
+        )
+    try:
+        longitude = float(coordinates[0])
+        latitude = float(coordinates[1])
+    except (TypeError, ValueError) as exc:
+        raise LiveDataUnavailable(
+            "the official place service returned invalid coordinates",
+            kind=LiveDataErrorKind.INVALID_RESPONSE,
+        ) from exc
+    if (
+        not math.isfinite(latitude)
+        or not math.isfinite(longitude)
+        or not 48.0 <= latitude <= 61.0
+        or not -140.0 <= longitude <= -113.0
+    ):
+        raise LiveDataUnavailable(
+            "the official place service returned coordinates outside British Columbia",
+            kind=LiveDataErrorKind.INVALID_RESPONSE,
+        )
+    return round(latitude, 2), round(longitude, 2)
 
 
 def _geodesic_km(first: tuple[float, float], second: tuple[float, float]) -> float:

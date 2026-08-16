@@ -15,6 +15,8 @@ from firelens.answering.intent import (
 from firelens.answering.live_analysis import annotate_live_results
 from firelens.answering.location_intent import (
     coarse_location_from_question,
+    is_national_scope_question,
+    is_out_of_province_label,
     is_province_wide_label,
 )
 from firelens.contracts import (
@@ -23,7 +25,7 @@ from firelens.contracts import (
     LocationInput,
     QueryRequest,
 )
-from firelens.live import LiveDataService, LiveDataUnavailable
+from firelens.live import LiveDataErrorKind, LiveDataService, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
 
 
@@ -165,6 +167,9 @@ async def _fetch_layers(
     layers: tuple[LiveResultKind, ...],
     packet: AgentPacket,
 ) -> tuple[list[Any], CoarseResolvedLocation | None, int | None]:
+    if is_national_scope_question(request.question):
+        _note_topic(packet, "out_of_province_place")
+        return [], None, None
     label = (
         str(place_label).strip()
         if isinstance(place_label, str) and place_label.strip()
@@ -181,6 +186,9 @@ async def _fetch_layers(
             location = coarse_location_from_question(f"near {label}")
     if location is None and not province_wide:
         location = coarse_location_from_question(request.question)
+    if location is not None and is_out_of_province_label(location.label):
+        _note_topic(packet, "out_of_province_place")
+        return [], None, None
     try:
         if location is not None:
             page = await live_service.nearby_page(
@@ -205,9 +213,20 @@ async def _fetch_layers(
             resolved,
             len(mapped.results),
         )
-    except LiveDataUnavailable:
+    except LiveDataUnavailable as exc:
+        if exc.kind == LiveDataErrorKind.NOT_FOUND:
+            # The place label did not resolve to a BC community. The layers
+            # themselves are healthy, so ask for a usable place instead of
+            # reporting an outage.
+            _note_topic(packet, "unresolved_place")
+            return [], None, None
         packet.mark_unavailable(layers)
         return [], None, None
+
+
+def _note_topic(packet: AgentPacket, topic: str) -> None:
+    if topic not in packet.unknown_topics:
+        packet.unknown_topics.append(topic)
 
 
 async def _resolve(

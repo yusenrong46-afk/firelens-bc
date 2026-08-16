@@ -32,12 +32,17 @@ from firelens.contracts import (
     aggregate_live_freshness,
 )
 from firelens.live_support import (
-    BC_GEOCODER_URL,
     DEFAULT_LAYER_DEFINITIONS,
     OFFICIAL_FALLBACK_URLS,
     WGS84_GEOD,
     _BBox,
     _CacheKey,
+)
+from firelens.live_support import (
+    GEOCODER_ACCEPTED_PRECISIONS as GEOCODER_ACCEPTED_PRECISIONS,
+)
+from firelens.live_support import (
+    GEOCODER_MIN_SCORE as GEOCODER_MIN_SCORE,
 )
 from firelens.live_support import LAYER_URLS as _LAYER_URLS
 from firelens.live_support import (
@@ -63,6 +68,9 @@ from firelens.live_support import (
 )
 from firelens.live_support import (
     property_value as _property,
+)
+from firelens.live_support import (
+    resolve_bc_location as _resolve_bc_location,
 )
 from firelens.live_support import (
     timestamp as _timestamp,
@@ -131,76 +139,7 @@ class LiveDataService:
             return await self.client.get(url, params=params)
 
     async def resolve_location(self, location: LocationInput) -> tuple[float, float]:
-        if location.latitude is not None and location.longitude is not None:
-            return location.latitude, location.longitude
-        if location.label is None:
-            raise LiveDataUnavailable("a coarse location is required for a nearby query")
-        try:
-            response = await self._get(
-                BC_GEOCODER_URL,
-                params={
-                    "addressString": location.label,
-                    "maxResults": 1,
-                    "outputSRS": 4326,
-                    "echo": "false",
-                },
-            )
-            response.raise_for_status()
-        except httpx.TimeoutException as exc:
-            raise LiveDataUnavailable(
-                "the official place service timed out",
-                kind=LiveDataErrorKind.TIMEOUT,
-            ) from exc
-        except httpx.HTTPStatusError as exc:
-            raise LiveDataUnavailable(
-                "the official place service returned an error",
-                kind=LiveDataErrorKind.UPSTREAM_HTTP,
-            ) from exc
-        except httpx.HTTPError as exc:
-            raise LiveDataUnavailable(
-                "the official place service could not be reached",
-                kind=LiveDataErrorKind.UNREACHABLE,
-            ) from exc
-        try:
-            payload = response.json()
-        except (UnicodeDecodeError, ValueError) as exc:
-            raise LiveDataUnavailable(
-                "the official place service returned invalid data",
-                kind=LiveDataErrorKind.INVALID_RESPONSE,
-            ) from exc
-        features = payload.get("features") if isinstance(payload, dict) else None
-        if not isinstance(features, list) or not features:
-            raise LiveDataUnavailable(
-                "the place label could not be resolved",
-                kind=LiveDataErrorKind.NOT_FOUND,
-            )
-        first = features[0]
-        geometry = first.get("geometry") if isinstance(first, dict) else None
-        coordinates = geometry.get("coordinates") if isinstance(geometry, dict) else None
-        if not isinstance(coordinates, list) or len(coordinates) < 2:
-            raise LiveDataUnavailable(
-                "the official place service returned invalid coordinates",
-                kind=LiveDataErrorKind.INVALID_RESPONSE,
-            )
-        try:
-            longitude = float(coordinates[0])
-            latitude = float(coordinates[1])
-        except (TypeError, ValueError) as exc:
-            raise LiveDataUnavailable(
-                "the official place service returned invalid coordinates",
-                kind=LiveDataErrorKind.INVALID_RESPONSE,
-            ) from exc
-        if (
-            not math.isfinite(latitude)
-            or not math.isfinite(longitude)
-            or not 48.0 <= latitude <= 61.0
-            or not -140.0 <= longitude <= -113.0
-        ):
-            raise LiveDataUnavailable(
-                "the official place service returned coordinates outside British Columbia",
-                kind=LiveDataErrorKind.INVALID_RESPONSE,
-            )
-        return round(latitude, 2), round(longitude, 2)
+        return await _resolve_bc_location(self._get, location)
 
     def _layer(self, kind: LiveResultKind) -> LayerDefinition:
         try:

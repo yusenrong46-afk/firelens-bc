@@ -1,5 +1,12 @@
-const SELECTED_FOLLOW_UP =
-  /\b(?:this|that|it|its|selected|source|status|size|how large|how far|how close)\b/i;
+// A stored selection stays attached only when the question clearly refers to
+// it: a deictic reference ("this fire", "its size") or a short elliptical
+// attribute question ("status?", "how large?"). Broad-subject questions
+// ("status of fires across the province") must not inherit a stale selection.
+const DEICTIC_FOLLOW_UP = /\b(?:this|that|it|its|selected)\b/i;
+const BROAD_SUBJECT =
+  /\b(?:fires|wildfires|perimeters|evacuations?|orders|alerts|province|province-wide|bc|british columbia|near|around|map)\b/i;
+const SHORT_ATTRIBUTE_FOLLOW_UP =
+  /^(?:and\s+)?(?:what(?:'s|\s+is)\s+(?:the\s+)?)?(?:status|size|source|how\s+(?:large|big|far|close|old))\b[\s\S]{0,30}$/i;
 
 export function selectedResultIdForQuestion(
   question: string,
@@ -8,7 +15,10 @@ export function selectedResultIdForQuestion(
 ): string | undefined {
   if (override) return override;
   if (!selectedId) return undefined;
-  return SELECTED_FOLLOW_UP.test(question) ? selectedId : undefined;
+  const trimmed = question.trim();
+  if (DEICTIC_FOLLOW_UP.test(trimmed)) return selectedId;
+  if (BROAD_SUBJECT.test(trimmed)) return undefined;
+  return SHORT_ATTRIBUTE_FOLLOW_UP.test(trimmed) ? selectedId : undefined;
 }
 
 export function looksLikeCommunityLabel(text: string): boolean {
