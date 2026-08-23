@@ -56,6 +56,7 @@ afterEach(() => {
 describe("FireLens Source Lens", () => {
   it("shows capability suggestions before the first question", () => {
     render(<App />);
+    expect(screen.getByRole("link", { name: "FireLens BC V1.6 RC1" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "What belongs in a grab-and-go bag?" })).toBeInTheDocument();
     expect(screen.getByText("0 of 6 turns in context")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Skip to conversation" })).toHaveAttribute("href", "#conversation");

@@ -157,6 +157,35 @@ test.beforeEach(async ({ page }) => {
       });
       return;
     }
+    if (question.includes("rejected air quality")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "answer",
+          response_mode: "scope_redirect",
+          trace_id: "rejected-scope-trace",
+          answer: "Use the official air-quality service for current observations.",
+          suggested_questions: [],
+          claims: [],
+          evidence: [],
+          limitations: [],
+          related_links: [{
+            title: "Current B.C. AQHI",
+            url: "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html",
+            description: "Environment Canada current AQHI observations and forecasts.",
+          }],
+          validation: { accepted: false },
+          status_banner: {
+            headline: "Grounded in reviewed official sources",
+            detail: "All content was validated against reviewed sources.",
+            freshness_label: "Stable reviewed guidance",
+            availability_label: "Sources required for this request were available.",
+          },
+        }),
+      });
+      return;
+    }
     if (question.includes("provider unavailable")) {
       await route.fulfill({
         status: 503,
@@ -231,6 +260,28 @@ test("redirects a completely tangent request", async ({ page }) => {
   await page.getByLabel("Send question").click();
   await expect(page.getByText("Related official service", { exact: true })).toBeVisible();
   await expect(page.getByText("That request is outside the FireLens guidance collection.", { exact: true })).toBeVisible();
+});
+
+test("fails closed for a rejected no-claim response", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Ask FireLens a question").fill("Show rejected air quality");
+  await page.getByLabel("Send question").click();
+  const conversation = page.getByLabel("Question and answer");
+  await expect(conversation.getByText("Support not established", { exact: true })).toBeVisible();
+  await expect(conversation.getByText(
+    "FireLens did not establish or validate support for this response.",
+    { exact: true },
+  )).toBeVisible();
+  const status = conversation.getByRole("status", { name: "Answer status" });
+  await expect(status).toContainText("Freshness: Freshness not established");
+  await expect(status).toContainText(
+    "Availability: This request did not complete with established sources.",
+  );
+  await expect(conversation.getByText("Grounded in reviewed official sources")).toHaveCount(0);
+  await expect(conversation.getByRole("link", { name: "Current B.C. AQHI", exact: true })).toHaveAttribute(
+    "href",
+    "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html",
+  );
 });
 
 test("shows official live records and a map through keyboard submission", async ({ page }, testInfo) => {

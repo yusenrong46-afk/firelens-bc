@@ -43,6 +43,22 @@ export type ProofCardView = {
   official_url?: string | null;
 };
 
+function unknownProofCard(card: ProofCardView): ProofCardView {
+  return {
+    ...card,
+    support_state: "unknown",
+    support_label: SUPPORT_LABELS.unknown,
+    authority: "Authority not established",
+    exact_passage: null,
+    source_title: null,
+    source_revision: null,
+    review_state: "Review state not established",
+    critical_fields_checked: "Critical-field validation not established",
+    freshness: "Freshness not established",
+    official_url: null,
+  };
+}
+
 const HEADLINES: Record<string, string> = {
   grounded: "Grounded in reviewed official sources",
   partial: "Partially supported by reviewed sources",
@@ -228,6 +244,23 @@ function bannerDetail(response: AskResponse): string {
 export function getStatusBanner(response: AskResponse | undefined): StatusBannerView | undefined {
   if (!response) return undefined;
   const api = response.status_banner;
+  if (response.validation?.accepted === false) {
+    const official = api?.official_escalation_title && api.official_escalation_url
+      ? { title: api.official_escalation_title, url: api.official_escalation_url }
+      : escalation(response);
+    const retrieved = response.live_results?.map((item) => item.retrieved_at).filter(Boolean).sort().at(-1);
+    const updated = response.live_results?.map((item) => item.source_updated_at).filter(Boolean).sort().at(-1);
+    return {
+      headline: "Support not established",
+      detail: "FireLens did not establish or validate support for this response.",
+      freshness_label: "Freshness not established",
+      availability_label: "This request did not complete with established sources.",
+      retrieval_completed_at: retrieved ?? null,
+      source_updated_at: updated ?? null,
+      official_escalation_title: official.title ?? null,
+      official_escalation_url: official.url ?? null,
+    };
+  }
   const authority = publicationBanner(response);
   if (api?.headline && api.detail) {
     return {
@@ -292,13 +325,23 @@ export function getSupportChecklist(response: AskResponse | undefined): {
 
 export function getProofCards(response: AskResponse | undefined): ProofCardView[] {
   if (!response) return [];
+  const projectValidation = (card: ProofCardView) =>
+    response.validation?.accepted === false || card.support_state === "unknown"
+      ? unknownProofCard(card)
+      : card;
   if ((response.proof_cards?.length ?? 0) > 0) {
-    const claimsById = new Map((response.claims ?? []).map((claim) => [claim.claim_id, claim]));
-    return (response.proof_cards ?? []).map((card) => {
+    const claims = response.claims ?? [];
+    const claimsById = new Map(claims.map((claim) => [claim.claim_id, claim]));
+    const validCardIds = new Set(
+      claims.length > 0
+        ? claims.map((claim) => claim.claim_id)
+        : (response.live_results ?? []).map((result) => result.result_id),
+    );
+    return (response.proof_cards ?? []).filter((card) => validCardIds.has(card.claim_id)).map((card) => {
       const claim = claimsById.get(card.claim_id);
-      if (!claim) return card;
+      if (!claim) return projectValidation(card);
       const state = getClaimSupportState(response, claim);
-      return {
+      return projectValidation({
         ...card,
         support_state: state,
         support_label: SUPPORT_LABELS[state],
@@ -306,7 +349,7 @@ export function getProofCards(response: AskResponse | undefined): ProofCardView[
           ? "Source extraction only; no structured-claim review"
           : card.review_state,
         freshness: state === "official_quote_only" ? "Stable source wording" : card.freshness,
-      };
+      });
     });
   }
   const evidenceById = new Map((response.evidence ?? []).map((item) => [item.evidence_id, item]));
@@ -345,8 +388,8 @@ export function getProofCards(response: AskResponse | undefined): ProofCardView[
       official_url: evidence?.canonical_url ?? null,
     } satisfies ProofCardView;
   });
-  if (fromClaims.length > 0) return fromClaims;
-  return (response.live_results ?? []).map((result) => ({
+  if (fromClaims.length > 0) return fromClaims.map(projectValidation);
+  return (response.live_results ?? []).map((result) => projectValidation({
     claim_id: result.result_id,
     claim_text: resultName(result),
     support_state: "live_record" as const,

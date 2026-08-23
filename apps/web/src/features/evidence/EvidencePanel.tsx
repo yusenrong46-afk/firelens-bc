@@ -79,7 +79,7 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
     : undefined;
   const proofCards = getProofCards(answerResponse);
   const selectedProof = selectedClaim
-    ? proofCards.find((card) => card.claim_id === selectedClaim.claim_id) ?? proofCards[0]
+    ? proofCards.find((card) => card.claim_id === selectedClaim.claim_id)
     : proofCards[0];
   const abstentionCopy = abstentionPresentation(
     view.kind === "abstention" ? view.response.reason_code : undefined,
@@ -88,9 +88,11 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
     () => new Map((view.kind === "answer" ? (view.response.evidence ?? []) : []).map((item) => [item.evidence_id, item])),
     [view],
   );
-  const supportedEvidence = (selectedClaim?.supports ?? [])
-    .map((support) => ({ support, evidence: evidenceById.get(support.evidence_id) }))
-    .filter((item): item is { support: Support; evidence: Evidence } => Boolean(item.evidence));
+  const supportedEvidence = selectedState === "unknown" || selectedState === "background"
+    ? []
+    : (selectedClaim?.supports ?? [])
+      .map((support) => ({ support, evidence: evidenceById.get(support.evidence_id) }))
+      .filter((item): item is { support: Support; evidence: Evidence } => Boolean(item.evidence));
 
   return (
     <section className="evidence-panel" aria-label="Selected claim evidence">

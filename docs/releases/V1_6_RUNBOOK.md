@@ -18,6 +18,12 @@ The current continuation report is
 Round 1, Round 2, Round 3, and structured-publication reports remain snapshots
 of their recorded identities.
 
+RC2 is the name of this hardening and qualification campaign. The tracked
+Python package, web package, runtime default, Docker configuration, and OpenAPI
+remain `1.6.0-rc.1`. Candidate evidence must use that exact version until a
+separate version change is authorized; a workflow label may not relabel the
+runnable artifact.
+
 ## Candidate preflight
 
 1. Freeze the candidate only after RC2 integration. Record its exact Git commit
@@ -30,7 +36,10 @@ of their recorded identities.
    adaptive comparison is in progress.
 4. Run `make secret-scan` before any recovery or snapshot artifact.
 5. Run `make v1-6-package-verify` and `make v1-6-gate` for zero-cost identity.
-6. Do not treat missing H4 sealed 46/47 or H10 evidence as a pass.
+6. Run the permanent hard probe with `--expectation-profile rc2`. Confirm that
+   report v2 binds the unchanged historical dataset, the RC2 profile and
+   manifest, the effective-expectations hash, and the exact candidate commit/tree.
+7. Do not treat missing H4 sealed 46/47 or H10 evidence as a pass.
 
 ## Structured-publication continuation
 
@@ -59,12 +68,18 @@ reviewer identity or approve a claim.
 | `make v1-6-baseline` | Frozen before snapshot / seal at Stage 0 | After-implementation improvement |
 | `make v1-6-gate` | Standard identity and current inventory | H10 release GO |
 | `make v1-6-package-verify` | Allowlist / Docker / Vercel logical parity helpers | A deployed origin |
+| RC2 offline hard probe | Historical cases plus stronger declared migration invariants at zero cost | Paid provider quality, sealed labels, or deployed behavior |
 | Preview / production qualify scripts | One HTTPS origin when authorized | UX, VoiceOver, firewall, or sealed retrieval |
 
 Archive limitation: a local report, an archived report, or a CI result from a
 different commit/tree cannot qualify this candidate. Qualification requires the
 exact candidate commit and tree, the matching CI artifact, and the required
 human-authorized external gates.
+
+Candidate-evidence v2 must bind both the unchanged historical hard-probe
+dataset/manifest and the named RC2 expectation profile/manifest. It rejects a
+historical current report, an arbitrary overlay, a stale Git identity, a changed
+material, an unlisted expectation migration, provider credentials, or cost.
 
 Paid comparison, preview Ask probes, firewall publish, rollback proof,
 VoiceOver, participant UX, and sealed V3 47-case retrieval stay `EXTERNAL`

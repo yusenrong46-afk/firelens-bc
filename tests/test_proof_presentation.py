@@ -18,6 +18,7 @@ from firelens.contracts import (
     ResponseStatus,
     ValidationReport,
 )
+from firelens.proof_presentation import AnswerStatusBanner, ProofCard
 from firelens.publication_contracts import PublicationAuthority, PublicationKind
 
 _VALIDATION = ValidationReport(
@@ -94,6 +95,27 @@ def test_grounded_response_carries_proof_cards_and_checklist() -> None:
     assert str(card.official_url) == "https://example.test/guide.pdf"
 
 
+def test_accepted_existing_cards_drop_orphans_and_preserve_matching_claim_card() -> None:
+    original = _grounded()
+    matching = original.proof_cards[0]
+    orphan = matching.model_copy(
+        update={"claim_id": "C2", "claim_text": "Stale structured orphan"}
+    )
+    response = AskResponse.model_validate(
+        {
+            **original.model_dump(mode="python"),
+            "proof_cards": [
+                matching.model_dump(mode="python"),
+                orphan.model_dump(mode="python"),
+            ],
+        }
+    )
+
+    assert [card.claim_id for card in response.proof_cards] == ["C1"]
+    assert response.proof_cards[0].authority == "PreparedBC"
+    assert response.proof_cards[0].exact_passage == "Food & water"
+
+
 def test_stale_live_banner_escalates_to_official_map() -> None:
     timestamp = datetime(2026, 8, 13, 19, 0, tzinfo=UTC)
     response = AskResponse(
@@ -132,6 +154,22 @@ def test_stale_live_banner_escalates_to_official_map() -> None:
     assert response.proof_cards[0].support_label == "Official live record as published"
     assert response.status_banner.retrieval_completed_at == timestamp
     assert response.status_banner.source_updated_at == timestamp
+    matching = response.proof_cards[0]
+    orphan = matching.model_copy(
+        update={"claim_id": "incident:orphan", "claim_text": "Stale live orphan"}
+    )
+    revalidated = AskResponse.model_validate(
+        {
+            **response.model_dump(mode="python"),
+            "proof_cards": [
+                matching.model_dump(mode="python"),
+                orphan.model_dump(mode="python"),
+            ],
+        }
+    )
+    assert [card.claim_id for card in revalidated.proof_cards] == ["incident:7"]
+    assert revalidated.proof_cards[0].support_state == "live_record"
+    assert revalidated.proof_cards[0].authority == "BC Wildfire Service"
 
 
 def _published_claim(
@@ -265,14 +303,114 @@ def test_rejected_publication_is_not_strengthened_by_additive_proof_fields(
         ],
         evidence=[_published_evidence("E1", text)],
         validation=_REJECTED_VALIDATION,
+        proof_cards=[
+            ProofCard(
+                claim_id="C1",
+                claim_text=text,
+                support_state="structured_reviewed",
+                support_label="Reviewed structured claim",
+                authority="PreparedBC",
+                exact_passage=text,
+                source_title="Official emergency guidance",
+                source_revision="Emergency guidance",
+                review_state="Human-verified source transcription",
+                critical_fields_checked="Critical fields checked and preserved",
+                freshness="Stable reviewed guidance",
+                official_url="https://example.test/e1",
+            )
+        ],
     )
 
     assert response.status_banner is not None
     assert response.status_banner.headline == "Support not established"
     assert response.status_banner.freshness_label == "Freshness not established"
     assert response.supported_items == []
-    assert response.proof_cards[0].support_state == "unknown"
-    assert response.proof_cards[0].support_label == "Not established from FireLens sources"
+    card = response.proof_cards[0]
+    assert card.support_state == "unknown"
+    assert card.support_label == "Not established from FireLens sources"
+    assert card.authority == "Authority not established"
+    assert card.review_state == "Review state not established"
+    assert card.critical_fields_checked == "Critical-field validation not established"
+    assert card.freshness == "Freshness not established"
+    assert card.exact_passage is None
+    assert card.source_title is None
+    assert card.source_revision is None
+    assert card.official_url is None
+
+
+def test_rejected_live_response_neutralizes_derived_no_claim_card() -> None:
+    timestamp = datetime(2026, 8, 13, 19, 0, tzinfo=UTC)
+    response = AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id="trace-rejected-live-proof",
+        response_mode=ResponseMode.LIVE,
+        answer="Test Fire is Out of Control.",
+        live_results=[
+            LiveResult(
+                result_id="incident:7",
+                kind=LiveResultKind.INCIDENT,
+                authority="BC Wildfire Service",
+                source_url="https://example.test/incidents/7",
+                source_updated_at=timestamp,
+                retrieved_at=timestamp,
+                freshness=Freshness.FRESH,
+                status="Out of Control",
+                name="Test Fire",
+                geometry={"type": "Point", "coordinates": [-119.5, 49.89]},
+            )
+        ],
+        aggregate_freshness="fresh",
+        validation=_REJECTED_VALIDATION,
+    )
+
+    card = response.proof_cards[0]
+    assert card.support_state == "unknown"
+    assert card.support_label == "Not established from FireLens sources"
+    assert card.authority == "Authority not established"
+    assert card.review_state == "Review state not established"
+    assert card.critical_fields_checked == "Critical-field validation not established"
+    assert card.freshness == "Freshness not established"
+    assert card.exact_passage is None
+    assert card.source_title is None
+    assert card.source_revision is None
+    assert card.official_url is None
+
+
+def test_rejected_no_claim_response_replaces_strengthening_banner() -> None:
+    response = AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id="trace-rejected-no-claim",
+        response_mode=ResponseMode.SCOPE_REDIRECT,
+        answer="Use the official air-quality service for current observations.",
+        claims=[],
+        evidence=[],
+        limitations=[],
+        validation=_REJECTED_VALIDATION,
+        status_banner=AnswerStatusBanner(
+            headline="Grounded in reviewed official sources",
+            detail="All content was validated against reviewed sources.",
+            freshness_label="Stable reviewed guidance",
+            availability_label="Sources required for this request were available.",
+            official_escalation_title="Current B.C. AQHI",
+            official_escalation_url=(
+                "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html"
+            ),
+        ),
+    )
+
+    assert response.status_banner is not None
+    assert response.status_banner.headline == "Support not established"
+    assert response.status_banner.detail == (
+        "FireLens did not establish or validate support for this response."
+    )
+    assert response.status_banner.freshness_label == "Freshness not established"
+    assert response.status_banner.availability_label == (
+        "This request did not complete with established sources."
+    )
+    assert response.status_banner.official_escalation_title == "Current B.C. AQHI"
+    assert str(response.status_banner.official_escalation_url) == (
+        "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html"
+    )
 
 
 def test_failed_critical_field_preservation_is_not_listed_as_supported() -> None:
@@ -303,4 +441,13 @@ def test_failed_critical_field_preservation_is_not_listed_as_supported() -> None
     assert response.status_banner is not None
     assert response.status_banner.headline == "Support not established"
     assert response.supported_items == []
-    assert response.proof_cards[0].support_state == "unknown"
+    card = response.proof_cards[0]
+    assert card.support_state == "unknown"
+    assert card.authority == "Authority not established"
+    assert card.review_state == "Review state not established"
+    assert card.critical_fields_checked == "Critical-field validation not established"
+    assert card.freshness == "Freshness not established"
+    assert card.exact_passage is None
+    assert card.source_title is None
+    assert card.source_revision is None
+    assert card.official_url is None

@@ -82,20 +82,51 @@ class ProofCard(FrozenStrictModel):
 
 
 def attach_proof_presentation(response: Any) -> None:
-    """Fill empty additive proof fields. Safe to call from AskResponse validation."""
+    """Fill additive proof fields and neutralize any unestablished cards."""
 
-    if getattr(response, "status_banner", None) is None:
+    if _validation_rejected(response) or getattr(response, "status_banner", None) is None:
         response.status_banner = build_status_banner(response)
     if not getattr(response, "supported_items", None):
         response.supported_items = build_supported_items(response)
     if not getattr(response, "unknown_items", None):
         response.unknown_items = build_unknown_items(response)
-    if not getattr(response, "proof_cards", None):
+    existing_cards = list(getattr(response, "proof_cards", None) or [])
+    if _validation_rejected(response):
         response.proof_cards = build_proof_cards(response)
+    elif not existing_cards:
+        response.proof_cards = build_proof_cards(response)
+    else:
+        claims_by_id = {claim.claim_id: claim for claim in response.claims}
+        valid_card_ids = set(claims_by_id) or {
+            result.result_id for result in response.live_results
+        }
+        response.proof_cards = [
+            _unknown_card(card)
+            if card.support_state == "unknown"
+            or (
+                card.claim_id in claims_by_id
+                and _support_state(response, claims_by_id[card.claim_id]) == "unknown"
+            )
+            else card
+            for card in existing_cards
+            if card.claim_id in valid_card_ids
+        ]
 
 
 def build_status_banner(response: Any) -> AnswerStatusBanner:
     mode = _mode(response)
+    if _validation_rejected(response):
+        title, url = _escalation(response)
+        return AnswerStatusBanner(
+            headline="Support not established",
+            detail="FireLens did not establish or validate support for this response.",
+            freshness_label="Freshness not established",
+            availability_label="This request did not complete with established sources.",
+            retrieval_completed_at=_latest_attr(response.live_results, "retrieved_at"),
+            source_updated_at=_latest_attr(response.live_results, "source_updated_at"),
+            official_escalation_title=title,
+            official_escalation_url=url,
+        )
     publication_presentation = _publication_banner(response)
     freshness = (
         publication_presentation[2]
@@ -166,7 +197,7 @@ def build_proof_cards(response: Any) -> list[ProofCard]:
     cards = [_claim_card(response, claim, evidence_by_id) for claim in response.claims]
     if cards:
         return cards[:12]
-    return [_live_card(result) for result in response.live_results][:12]
+    return [_live_card(response, result) for result in response.live_results][:12]
 
 
 def _claim_card(response: Any, claim: Any, evidence_by_id: dict[str, Any]) -> ProofCard:
@@ -177,7 +208,7 @@ def _claim_card(response: Any, claim: Any, evidence_by_id: dict[str, Any]) -> Pr
     unknowns = list(response.limitations[:4])
     if trust is not None and trust.conflict_or_supersession != "none":
         unknowns.insert(0, f"Conflict or supersession: {trust.conflict_or_supersession}")
-    return ProofCard(
+    card = ProofCard(
         claim_id=claim.claim_id,
         claim_text=claim.text,
         support_state=state,
@@ -204,11 +235,12 @@ def _claim_card(response: Any, claim: Any, evidence_by_id: dict[str, Any]) -> Pr
             evidence.canonical_url if evidence is not None else _escalation(response)[1]
         ),
     )
+    return _unknown_card(card) if state == "unknown" else card
 
 
-def _live_card(result: Any) -> ProofCard:
+def _live_card(response: Any, result: Any) -> ProofCard:
     name = result.name or result.incident_number or result.result_id
-    return ProofCard(
+    card = ProofCard(
         claim_id=result.result_id,
         claim_text=name,
         support_state="live_record",
@@ -223,11 +255,35 @@ def _live_card(result: Any) -> ProofCard:
         conflicts_or_unknowns=[],
         official_url=result.source_url,
     )
+    return _unknown_card(card) if _validation_rejected(response) else card
+
+
+def _unknown_card(card: Any) -> ProofCard:
+    return ProofCard(
+        claim_id=card.claim_id,
+        claim_text=card.claim_text,
+        support_state="unknown",
+        support_label=_SUPPORT_LABELS["unknown"],
+        authority="Authority not established",
+        exact_passage=None,
+        source_title=None,
+        source_revision=None,
+        review_state="Review state not established",
+        critical_fields_checked="Critical-field validation not established",
+        freshness="Freshness not established",
+        conflicts_or_unknowns=list(card.conflicts_or_unknowns),
+        official_url=None,
+    )
 
 
 def _mode(response: Any) -> str:
     mode = response.response_mode
     return mode.value if hasattr(mode, "value") else str(mode)
+
+
+def _validation_rejected(response: Any) -> bool:
+    validation = getattr(response, "validation", None)
+    return validation is not None and getattr(validation, "accepted", True) is False
 
 
 def _publication_banner(response: Any) -> tuple[str, str, str] | None:
@@ -322,6 +378,11 @@ def _escalation(response: Any) -> tuple[str | None, HttpUrl | None]:
         return "Open official source", response.evidence[0].canonical_url
     if response.live_results:
         return "Open BCWS map", HttpUrl(BCWS_MAP_URL)
+    banner = getattr(response, "status_banner", None)
+    banner_title = getattr(banner, "official_escalation_title", None)
+    banner_url = getattr(banner, "official_escalation_url", None)
+    if banner_title and banner_url:
+        return banner_title, banner_url
     return None, None
 
 

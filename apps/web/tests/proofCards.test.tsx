@@ -1,9 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import { App } from "../src/app/App";
-import { getStatusBanner } from "../src/features/ask/proofPresentation";
+import { getProofCards, getStatusBanner } from "../src/features/ask/proofPresentation";
 import { TileFailureWarning } from "../src/features/near-me/OfficialBasemap";
 import { MatchingRecordList } from "../src/features/near-me/LiveRecordLists";
 import type { AskResponse, LiveResult } from "../src/shared/api/api";
@@ -190,6 +190,164 @@ describe("proof-carrying answer surface", () => {
     expect(await screen.findByText("Support not established")).toBeInTheDocument();
     expect(screen.getAllByText("Not established from FireLens sources").length).toBeGreaterThan(0);
     expect(screen.queryByText("Reviewed structured claim")).not.toBeInTheDocument();
+    const proofCard = screen.getByRole("article", {
+      name: "Proof card for Keep water and food in a grab-and-go bag.",
+    });
+    expect(within(proofCard).getByText("Authority not established")).toBeInTheDocument();
+    expect(within(proofCard).getByText("Review state not established")).toBeInTheDocument();
+    expect(within(proofCard).getByText("Critical-field validation not established")).toBeInTheDocument();
+    expect(within(proofCard).getByText("Freshness not established")).toBeInTheDocument();
+    expect(within(proofCard).queryByText("Human-verified source transcription")).not.toBeInTheDocument();
+    expect(within(proofCard).queryByText("Critical fields checked and preserved")).not.toBeInTheDocument();
+    expect(within(proofCard).queryByText("Stable reviewed guidance")).not.toBeInTheDocument();
+    expect(within(proofCard).queryByText("Food & water")).not.toBeInTheDocument();
+    expect(within(proofCard).queryByText("Wildfire Preparedness Guide")).not.toBeInTheDocument();
+    expect(within(proofCard).queryByText("PDF page 5")).not.toBeInTheDocument();
+    expect(within(proofCard).queryByRole("link", { name: "Open official source" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Source passage")).not.toBeInTheDocument();
+  });
+
+  it("neutralizes proof metadata and claim evidence after a critical-field failure", async () => {
+    const failedCritical = {
+      ...grounded,
+      claims: grounded.claims.map((claim) => ({
+        ...claim,
+        trust: { ...claim.trust, critical_field_preservation: "failed" },
+      })),
+      proof_cards: grounded.proof_cards.map((card) => ({
+        ...card,
+        support_state: "structured_reviewed",
+        support_label: "Reviewed structured claim",
+      })),
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(failedCritical), { status: 200 })));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Did critical fields pass?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    const proofCard = await screen.findByRole("article", {
+      name: "Proof card for Keep water and food in a grab-and-go bag.",
+    });
+    expect(within(proofCard).getByText("Not established from FireLens sources")).toBeInTheDocument();
+    expect(within(proofCard).getByText("Authority not established")).toBeInTheDocument();
+    expect(within(proofCard).getByText("Review state not established")).toBeInTheDocument();
+    expect(within(proofCard).getByText("Critical-field validation not established")).toBeInTheDocument();
+    expect(within(proofCard).getByText("Freshness not established")).toBeInTheDocument();
+    expect(within(proofCard).queryByText("Human-verified source transcription")).not.toBeInTheDocument();
+    expect(within(proofCard).queryByText("Critical fields checked and preserved")).not.toBeInTheDocument();
+    expect(within(proofCard).queryByText("Stable reviewed guidance")).not.toBeInTheDocument();
+    expect(within(proofCard).queryByText("Food & water")).not.toBeInTheDocument();
+    expect(within(proofCard).queryByText("Wildfire Preparedness Guide")).not.toBeInTheDocument();
+    expect(within(proofCard).queryByText("PDF page 5")).not.toBeInTheDocument();
+    expect(within(proofCard).queryByRole("link", { name: "Open official source" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Source passage")).not.toBeInTheDocument();
+  });
+
+  it("does not borrow a stale orphan card for a selected unknown claim", async () => {
+    const orphaned = {
+      ...grounded,
+      claims: grounded.claims.map((claim) => ({
+        ...claim,
+        trust: { ...claim.trust, critical_field_preservation: "failed" },
+      })),
+      proof_cards: grounded.proof_cards.map((card) => ({
+        ...card,
+        claim_id: "C2",
+        claim_text: "Stale structured orphan",
+        support_state: "structured_reviewed",
+        support_label: "Reviewed structured claim",
+      })),
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(orphaned), { status: 200 })));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Can an orphan card be reused?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText("Content not established")).toBeInTheDocument();
+    expect(screen.queryByRole("article", { name: "Proof card for Stale structured orphan" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Stale structured orphan")).not.toBeInTheDocument();
+    expect(screen.queryByText("Human-verified source transcription")).not.toBeInTheDocument();
+    expect(screen.queryByText("Critical fields checked and preserved")).not.toBeInTheDocument();
+    expect(screen.queryByText("Stable reviewed guidance")).not.toBeInTheDocument();
+    expect(screen.queryByText("Food & water")).not.toBeInTheDocument();
+    expect(screen.queryByText("Wildfire Preparedness Guide")).not.toBeInTheDocument();
+    expect(screen.queryByText("PDF page 5")).not.toBeInTheDocument();
+    expect(screen.queryByText("Source passage")).not.toBeInTheDocument();
+  });
+
+  it("preserves a matching accepted live proof card", () => {
+    const response = {
+      status: "answer",
+      response_mode: "live",
+      trace_id: "trace-live-card",
+      answer: "Listed Fire is Out of Control.",
+      claims: [],
+      evidence: [],
+      limitations: [],
+      live_results: [record],
+      proof_cards: [{
+        claim_id: record.result_id,
+        claim_text: "Listed Fire",
+        support_state: "live_record",
+        support_label: "Official live record as published",
+        authority: record.authority,
+        exact_passage: record.status,
+        source_title: "Listed Fire",
+        source_revision: record.source_updated_at,
+        review_state: "Official live feed as published",
+        critical_fields_checked: "Not applicable — live record, not a reviewed claim",
+        freshness: record.freshness,
+        official_url: record.source_url,
+      }],
+      validation: { accepted: true },
+    } as unknown as AskResponse;
+
+    expect(getProofCards(response)).toMatchObject([{
+      claim_id: "incident:7",
+      support_state: "live_record",
+      authority: "BC Wildfire Service",
+      exact_passage: "Out of Control",
+      official_url: "https://example.test/incidents/7",
+    }]);
+  });
+
+  it("forces a conservative banner for rejected no-claim responses", () => {
+    const response = {
+      status: "answer",
+      response_mode: "scope_redirect",
+      trace_id: "trace-rejected-no-claim",
+      answer: "Use the official air-quality service for current observations.",
+      claims: [],
+      evidence: [],
+      limitations: [],
+      related_links: [{
+        title: "Current B.C. AQHI",
+        url: "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html",
+        description: "Environment Canada current AQHI observations and forecasts.",
+      }],
+      validation: { accepted: false },
+      status_banner: {
+        headline: "Grounded in reviewed official sources",
+        detail: "All content was validated against reviewed sources.",
+        freshness_label: "Stable reviewed guidance",
+        availability_label: "Sources required for this request were available.",
+        official_escalation_title: "Broken older escalation",
+        official_escalation_url: null,
+      },
+    } as unknown as AskResponse;
+
+    expect(getStatusBanner(response)).toEqual({
+      headline: "Support not established",
+      detail: "FireLens did not establish or validate support for this response.",
+      freshness_label: "Freshness not established",
+      availability_label: "This request did not complete with established sources.",
+      retrieval_completed_at: null,
+      source_updated_at: null,
+      official_escalation_title: "Current B.C. AQHI",
+      official_escalation_url: "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html",
+    });
   });
 
   it("uses the frozen mixed wording for reviewed and quote-only claims", () => {
