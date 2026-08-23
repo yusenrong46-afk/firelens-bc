@@ -1,0 +1,156 @@
+{
+  "compare": {
+    "generative_call_reduction": 0.4166666666666667,
+    "label": "representative_workload_average",
+    "meets_20pct_generate_reduction": true,
+    "not_fleet_average": true,
+    "pure_static_round2_generate_calls": 1.0,
+    "round2_average_generate_calls": 0.7000000000000001,
+    "route_p95": {
+      "capability": {
+        "regressed_over_10pct": false,
+        "relative_change": -0.03260312115946186,
+        "round2_p95_ms": 5.427500000223517,
+        "v1_5_p95_ms": 5.610417108982801
+      },
+      "deterministic_fallback": {
+        "regressed_over_10pct": false,
+        "relative_change": -0.9217718799277544,
+        "round2_p95_ms": 1.499959034845233,
+        "v1_5_p95_ms": 19.174166955053806
+      },
+      "missing_location": {
+        "regressed_over_10pct": false,
+        "relative_change": -0.028018182547060493,
+        "round2_p95_ms": 0.9540410246700048,
+        "v1_5_p95_ms": 0.9815420489758253
+      },
+      "mixed_live_and_static": {
+        "regressed_over_10pct": true,
+        "relative_change": 13.341188040434135,
+        "round2_p95_ms": 21.410792134702206,
+        "v1_5_p95_ms": 1.4929580502212048
+      },
+      "output_rail_rewrite": {
+        "regressed_over_10pct": true,
+        "relative_change": 0.1854004168880533,
+        "round2_p95_ms": 1.6882079653441906,
+        "v1_5_p95_ms": 1.424166839569807
+      },
+      "prohibited_personalized_safety": {
+        "regressed_over_10pct": false,
+        "relative_change": 0.009333318498305793,
+        "round2_p95_ms": 1.0138328652828932,
+        "v1_5_p95_ms": 1.0044579394161701
+      },
+      "pure_static_guidance": {
+        "regressed_over_10pct": false,
+        "relative_change": 0.004651557747175213,
+        "round2_p95_ms": 11.159125017002225,
+        "v1_5_p95_ms": 11.107458034530282
+      },
+      "ready_live": {
+        "regressed_over_10pct": false,
+        "relative_change": 0.09300746900365159,
+        "round2_p95_ms": 1.5194171573966742,
+        "v1_5_p95_ms": 1.390125136822462
+      },
+      "unresolved_tool_loop": {
+        "regressed_over_10pct": true,
+        "relative_change": 0.1268745692331072,
+        "round2_p95_ms": 1.1964589357376099,
+        "v1_5_p95_ms": 1.0617498774081469
+      },
+      "unsupported_tangent": {
+        "regressed_over_10pct": false,
+        "relative_change": -0.7984369504783924,
+        "round2_p95_ms": 1.3432078994810581,
+        "v1_5_p95_ms": 6.663959007710218
+      }
+    },
+    "schema_version": "firelens_v1_6_round2_performance_compare.v1",
+    "v1_5_average_generate_calls": 1.2000000000000002
+  },
+  "current_average_generate_calls": 0.7000000000000001,
+  "current_routes": {
+    "capability": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 4.019583109766245,
+      "p95_ms": 5.427500000223517
+    },
+    "deterministic_fallback": {
+      "failures": 0,
+      "mean_generate_calls": 1.0,
+      "p50_ms": 1.3381249736994505,
+      "p95_ms": 1.499959034845233
+    },
+    "missing_location": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 0.768458005040884,
+      "p95_ms": 0.9540410246700048
+    },
+    "mixed_live_and_static": {
+      "failures": 0,
+      "mean_generate_calls": 2.0,
+      "p50_ms": 20.343667129054666,
+      "p95_ms": 21.410792134702206
+    },
+    "output_rail_rewrite": {
+      "failures": 0,
+      "mean_generate_calls": 1.0,
+      "p50_ms": 1.418416853994131,
+      "p95_ms": 1.6882079653441906
+    },
+    "prohibited_personalized_safety": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 0.7708750199526548,
+      "p95_ms": 1.0138328652828932
+    },
+    "pure_static_guidance": {
+      "failures": 0,
+      "mean_generate_calls": 1.0,
+      "p50_ms": 10.599792003631592,
+      "p95_ms": 11.159125017002225
+    },
+    "ready_live": {
+      "failures": 0,
+      "mean_generate_calls": 1.0,
+      "p50_ms": 1.2017081025987864,
+      "p95_ms": 1.5194171573966742
+    },
+    "unresolved_tool_loop": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 0.9017088450491428,
+      "p95_ms": 1.1964589357376099
+    },
+    "unsupported_tangent": {
+      "failures": 0,
+      "mean_generate_calls": 1.0,
+      "p50_ms": 1.115167047828436,
+      "p95_ms": 1.3432078994810581
+    }
+  },
+  "evidence_class": "EXECUTED",
+  "interpretation": {
+    "capability_p95_note": "Zero generate calls in both versions. Sub-millisecond FakeProvider tail; not extra model calls.",
+    "meets_h8_20pct_generate_reduction": true,
+    "mixed_p95_increase_reason": "Round-2 mixed path runs reviewed-guidance generation (2 generate calls) instead of V1.5 live-only (1 call). Documented product behavior, not an unexplained stall.",
+    "not_fleet_average": true,
+    "output_rail_and_tool_loop_p95": "Flags above 10% are 0.13-0.26ms FakeProvider jitter with unchanged generate-call counts.",
+    "p95_relative_flags_are_not_production_slo": true,
+    "pure_static_generate_calls_round2": 1.0,
+    "pure_static_generate_calls_v1_5": 2.0,
+    "pure_static_outer_write": "V1.5 FakeProvider generate_calls=2 includes the discarded outer write; Round-2 is 1 grounded generation. Golden traces separately record outer_chat_turns=0.",
+    "representative_generate_reduction": 0.4166666666666667
+  },
+  "label": "representative_workload_average",
+  "measured_per_route": 30,
+  "not_fleet_average": true,
+  "pure_static_generate_calls": 1.0,
+  "v1_5_status": "EXECUTED",
+  "warmup_per_route": 10
+}

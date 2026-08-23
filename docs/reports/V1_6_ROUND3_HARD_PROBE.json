@@ -1,0 +1,180 @@
+{
+  "corpus_manifest_sha256": "2d0d6b9b445f5ab0ef59e7f19bd0dce058a93f3a93b9599338702b95058ed687",
+  "corpus_sha256": "d5fcd794f9ec0486a256ae511366fde982254342b7d07b9c83a21ea8ead291eb",
+  "dataset_sha256": "ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035",
+  "evaluator_unchanged": true,
+  "evidence_class": "EXECUTED",
+  "failed_ids": [
+    "F06",
+    "F07",
+    "F09",
+    "F10",
+    "F11",
+    "G03",
+    "H01",
+    "H02",
+    "H03",
+    "H04",
+    "I04",
+    "I08",
+    "K03",
+    "K09",
+    "L01",
+    "L02",
+    "L05",
+    "M03",
+    "M04"
+  ],
+  "frozen_expected_outcomes_unchanged": true,
+  "gate_floor": 86,
+  "independent_proof": false,
+  "mode": "offline",
+  "newly_passing_vs_round2": [],
+  "note": "Offline FakeProvider. Passing 86/105 is not independent semantic proof.",
+  "paired_regressions_vs_round2": [],
+  "passed_ids": [
+    "A01",
+    "A02",
+    "A03",
+    "A04",
+    "A05",
+    "A06",
+    "A07",
+    "A08",
+    "A09",
+    "A10",
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C09",
+    "C10",
+    "D01",
+    "D02",
+    "D03",
+    "D04",
+    "D05",
+    "D06",
+    "D07",
+    "D08",
+    "D09",
+    "D10",
+    "D11",
+    "D12",
+    "E01",
+    "E02",
+    "E03",
+    "E04",
+    "E05",
+    "E06",
+    "E07",
+    "E08",
+    "E09",
+    "E10",
+    "F01",
+    "F02",
+    "F03",
+    "F04",
+    "F05",
+    "F08",
+    "F12",
+    "G01",
+    "G02",
+    "G04",
+    "G05",
+    "G06",
+    "H05",
+    "H06",
+    "I01",
+    "I02",
+    "I03",
+    "I05",
+    "I06",
+    "I07",
+    "J01",
+    "J02",
+    "J03",
+    "J04",
+    "J05",
+    "J06",
+    "K01",
+    "K02",
+    "K04",
+    "K05",
+    "K06",
+    "K07",
+    "K08",
+    "K10",
+    "K11",
+    "K12",
+    "K13",
+    "K14",
+    "K15",
+    "L03",
+    "L04",
+    "M01",
+    "M02",
+    "M05"
+  ],
+  "round2": "86/105",
+  "round3": "86/105",
+  "schema_version": "firelens_hard_probe_summary.v1",
+  "summary": {
+    "by_section": {
+      "A": {
+        "passed": 10
+      },
+      "C": {
+        "passed": 10
+      },
+      "D": {
+        "passed": 12
+      },
+      "E": {
+        "passed": 10
+      },
+      "F": {
+        "failed": 5,
+        "passed": 7
+      },
+      "G": {
+        "failed": 1,
+        "passed": 5
+      },
+      "H": {
+        "failed": 4,
+        "passed": 2
+      },
+      "I": {
+        "failed": 2,
+        "passed": 6
+      },
+      "J": {
+        "passed": 6
+      },
+      "K": {
+        "failed": 2,
+        "passed": 13
+      },
+      "L": {
+        "failed": 3,
+        "passed": 2
+      },
+      "M": {
+        "failed": 2,
+        "passed": 3
+      }
+    },
+    "cost_usd": 0.0,
+    "elapsed_seconds": 0.9,
+    "executed": 105,
+    "failed": 19,
+    "passed": 86
+  },
+  "vector_manifest_sha256": "437181a2a9aa03498b4bb4de2445d0e0b0bf3fe1c4d4fa76a50019d31f3f1046",
+  "vector_matrix_sha256": "fd0b171488809c5a87f3aee5c912b07358231cac6478bb621f6d2fc79d41efb7"
+}

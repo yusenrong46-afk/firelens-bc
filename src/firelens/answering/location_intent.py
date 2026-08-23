@@ -59,24 +59,24 @@ _PLACE_PATTERNS = (
         re.IGNORECASE,
     ),
     re.compile(
-        r"\b(?:how\s+far\s+is\s+(?:this|that|the\s+selected)\s+"
+        r"\b(?:how\s+far\s+is\s+(?:(?:this|that)(?:\s+selected)?|the\s+selected)\s+"
         r"(?:fire|wildfire|incident|perimeter)|"
         r"(?:what(?:'s|\s+is)\s+the\s+)?distance)\s+from\s+"
         r"(?P<place>[a-z][a-z .'-]{1,80}?)"
-        r"(?=\s+to\s+(?:(?:this|that|the\s+selected)\s+"
+        r"(?=\s+to\s+(?:(?:(?:this|that)(?:\s+selected)?|the\s+selected)\s+"
         r"(?:fire|wildfire|incident|perimeter)|it)\b|"
         r"\s+(?:and|but|then)\b|[?!.,]*$)",
         re.IGNORECASE,
     ),
     re.compile(
         r"\bhow\s+far\s+from\s+(?P<place>[a-z][a-z .'-]{1,80}?)\s+"
-        r"is\s+(?:this|that|the\s+selected)\s+"
+        r"is\s+(?:(?:this|that)(?:\s+selected)?|the\s+selected)\s+"
         r"(?:fire|wildfire|incident|perimeter)\b",
         re.IGNORECASE,
     ),
     re.compile(
         r"\bhow\s+(?:far|close)(?:\s+away)?\s+is\s+"
-        r"(?:it|(?:this|that|the\s+selected)\s+"
+        r"(?:it|(?:(?:this|that)(?:\s+selected)?|the\s+selected)\s+"
         r"(?:fire|wildfire|incident|perimeter))\s+(?:from|to)\s+"
         r"(?P<place>[a-z][a-z .'-]{1,80}?)"
         r"(?=\s+(?:and|but|then)\b|[?!.,]*$)",
@@ -140,7 +140,7 @@ _TRAILING_LIVE_NOUNS = re.compile(
     re.IGNORECASE,
 )
 _TRAILING_SELECTED_REFERENCE = re.compile(
-    r"\s+(?:to|from)\s+(?:(?:this|that|the\s+selected)\s+"
+    r"\s+(?:to|from)\s+(?:(?:(?:this|that)(?:\s+selected)?|the\s+selected)\s+"
     r"(?:fire|wildfire|incident|perimeter)|it)\b.*$",
     re.IGNORECASE,
 )

@@ -1,0 +1,12 @@
+{
+  "batch": 3,
+  "contains_reviewer_identity": false,
+  "decision_fields_blank": true,
+  "decision_template_filename": "v1_6_typed_claim_review_batch_03_decisions.yaml",
+  "decision_template_sha256": "13a7ddfcebb6c553b3779a16ade44aa2dcb63d560219acbc46f0b3c2bcc1f183",
+  "html_filename": "v1_6_typed_claim_review_batch_03.html",
+  "html_sha256": "825de0df184f6bda625538c05802915b70013feb600b854fa1a7b0ed2cc96a6c",
+  "record_count": 10,
+  "review_state": "pending_review_only",
+  "schema_version": "firelens.typed_claim_review_packet_manifest.v1"
+}

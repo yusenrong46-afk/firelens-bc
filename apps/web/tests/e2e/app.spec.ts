@@ -185,7 +185,7 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
   await expect(page.getByText("Sources supporting this answer")).toBeVisible();
   await expect(page.getByText("Reviewed sources")).toBeVisible();
   await expect(page.locator("mark")).toHaveText("Food & water");
-  await expect(page.getByText("PreparedBC")).toBeVisible();
+  await expect(page.getByRole("complementary").getByText("PreparedBC")).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
 });
@@ -283,7 +283,7 @@ test("shows stale and partial-layer state without hiding records", async ({ page
   await page.getByLabel("Send question").click();
   await expect(page.getByText("BC wildfire information — includes stale records")).toBeVisible();
   await expect(page.getByLabel("Question and answer").getByText(/Cached official information \(refresh failed\)/)).toBeVisible();
-  await expect(page.getByText("Official cached records", { exact: true })).toHaveCount(2);
+  await expect(page.getByText("Official cached records", { exact: true })).toHaveCount(3);
   const staleWarning = page.getByRole("status").filter({ hasText: "Cached official records; refresh failed" });
   await expect(staleWarning).toBeVisible();
   await expect(page.getByText("Current BC wildfire information")).toHaveCount(0);
@@ -322,7 +322,7 @@ test("keeps the assistant answer in view on a short mobile overlay", async ({ pa
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("What belongs in a grab-and-go bag?");
   await page.getByLabel("Send question").click();
-  const answer = page.locator("#conversation .assistant-message p");
+  const answer = page.locator("#conversation .assistant-message .answer-lead");
   await expect(answer).toHaveText("Prepare water, food, and medication.");
   await expect(answer).toBeInViewport();
   await expect(page.getByRole("status", { name: "Answer limitations" })).toBeInViewport();
@@ -339,12 +339,12 @@ test("places skip links first and limitations after the answer", async ({ page }
   await page.getByLabel("Send question").click();
   const limitations = page.getByRole("status", { name: "Answer limitations" });
   await expect(limitations).toBeVisible();
-  await expect(page.locator("#conversation .assistant-message p")).toHaveText(
+  await expect(page.locator("#conversation .assistant-message .answer-lead")).toHaveText(
     "Prepare water, food, and medication.",
   );
   expect(await page.evaluate(() => {
     const warning = document.querySelector('[aria-label="Answer limitations"]');
-    const answer = document.querySelector("#conversation .assistant-message p");
+    const answer = document.querySelector("#conversation .assistant-message .answer-lead");
     return Boolean(
       warning
       && answer

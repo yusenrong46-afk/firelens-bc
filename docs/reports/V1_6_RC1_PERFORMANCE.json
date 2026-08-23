@@ -1,0 +1,158 @@
+{
+  "compare": {
+    "generative_call_reduction": 0.5833333333333334,
+    "label": "representative_workload_average",
+    "meets_20pct_generate_reduction": true,
+    "not_fleet_average": true,
+    "pure_static_round2_generate_calls": 0.0,
+    "round2_average_generate_calls": 0.5,
+    "route_p95": {
+      "capability": {
+        "regressed_over_10pct": true,
+        "relative_change": 0.10139157169053066,
+        "round2_p95_ms": 6.384583000908606,
+        "v1_5_p95_ms": 5.796832992928103
+      },
+      "deterministic_fallback": {
+        "regressed_over_10pct": false,
+        "relative_change": -0.9204653827776933,
+        "round2_p95_ms": 1.495791002525948,
+        "v1_5_p95_ms": 18.806791995302774
+      },
+      "missing_location": {
+        "regressed_over_10pct": false,
+        "relative_change": 0.012736870883220822,
+        "round2_p95_ms": 0.9442090085940436,
+        "v1_5_p95_ms": 0.9323339909315109
+      },
+      "mixed_live_and_static": {
+        "regressed_over_10pct": true,
+        "relative_change": 16.337431262091712,
+        "round2_p95_ms": 25.20862501114607,
+        "v1_5_p95_ms": 1.4539999974658713
+      },
+      "output_rail_rewrite": {
+        "regressed_over_10pct": false,
+        "relative_change": 0.06986050338016309,
+        "round2_p95_ms": 1.5856670070206746,
+        "v1_5_p95_ms": 1.482125007896684
+      },
+      "prohibited_personalized_safety": {
+        "regressed_over_10pct": false,
+        "relative_change": 0.010071914564144554,
+        "round2_p95_ms": 0.9610410052118823,
+        "v1_5_p95_ms": 0.9514580015093088
+      },
+      "pure_static_guidance": {
+        "regressed_over_10pct": true,
+        "relative_change": 0.383938482633703,
+        "round2_p95_ms": 14.850583000225015,
+        "v1_5_p95_ms": 10.73066699609626
+      },
+      "ready_live": {
+        "regressed_over_10pct": false,
+        "relative_change": 0.0570704369675701,
+        "round2_p95_ms": 1.4200419973349199,
+        "v1_5_p95_ms": 1.3433749991236255
+      },
+      "unresolved_tool_loop": {
+        "regressed_over_10pct": false,
+        "relative_change": 0.0027391925365905737,
+        "round2_p95_ms": 1.0674579971237108,
+        "v1_5_p95_ms": 1.0645420115906745
+      },
+      "unsupported_tangent": {
+        "regressed_over_10pct": false,
+        "relative_change": -0.7947951602178299,
+        "round2_p95_ms": 1.3089589920127764,
+        "v1_5_p95_ms": 6.378792008035816
+      }
+    },
+    "schema_version": "firelens_v1_6_round2_performance_compare.v1",
+    "v1_5_average_generate_calls": 1.2000000000000002
+  },
+  "current_average_generate_calls": 0.5,
+  "current_routes": {
+    "capability": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 3.939749993151054,
+      "p95_ms": 6.384583000908606
+    },
+    "deterministic_fallback": {
+      "failures": 0,
+      "mean_generate_calls": 1.0,
+      "p50_ms": 1.3159999944036826,
+      "p95_ms": 1.495791002525948
+    },
+    "missing_location": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 0.7720419962424785,
+      "p95_ms": 0.9442090085940436
+    },
+    "mixed_live_and_static": {
+      "failures": 0,
+      "mean_generate_calls": 1.0,
+      "p50_ms": 24.227000001701526,
+      "p95_ms": 25.20862501114607
+    },
+    "output_rail_rewrite": {
+      "failures": 0,
+      "mean_generate_calls": 1.0,
+      "p50_ms": 1.4136249956209213,
+      "p95_ms": 1.5856670070206746
+    },
+    "prohibited_personalized_safety": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 0.7724579918431118,
+      "p95_ms": 0.9610410052118823
+    },
+    "pure_static_guidance": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 13.567832997068763,
+      "p95_ms": 14.850583000225015
+    },
+    "ready_live": {
+      "failures": 0,
+      "mean_generate_calls": 1.0,
+      "p50_ms": 1.2229579879203811,
+      "p95_ms": 1.4200419973349199
+    },
+    "unresolved_tool_loop": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 0.9044170001288876,
+      "p95_ms": 1.0674579971237108
+    },
+    "unsupported_tangent": {
+      "failures": 0,
+      "mean_generate_calls": 1.0,
+      "p50_ms": 1.1561249993974343,
+      "p95_ms": 1.3089589920127764
+    }
+  },
+  "evidence_class": "EXECUTED",
+  "h8_review": {
+    "regressed_routes_over_10pct": [
+      "capability",
+      "mixed_live_and_static",
+      "pure_static_guidance"
+    ],
+    "requires_accepted_evidence": true,
+    "status": "NEEDS_HUMAN_TRADEOFF_ACCEPTANCE"
+  },
+  "identity": {
+    "branch": "upgrade/v1-6-pre-release-candidate-1",
+    "commit": "a5cd967ee97fc22f38b3ca79ef9a1672e50260ba",
+    "tree": "4c45af3bf6ec1e0f8fe91aa741295f300d4053d9"
+  },
+  "label": "representative_workload_average",
+  "measured_per_route": 100,
+  "not_fleet_average": true,
+  "pure_static_generate_calls": 0.0,
+  "v1_5_status": "EXECUTED",
+  "warmup_per_route": 10
+}

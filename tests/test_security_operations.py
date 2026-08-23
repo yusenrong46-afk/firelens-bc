@@ -326,9 +326,16 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
                 "release_version",
                 "build_commit",
                 "deployment_environment",
+                "tool_names",
+                "tool_attempts",
+                "retrieval_cycles",
+                "cache_used",
+                "stage_latency_ms",
+                "fallback_category",
+                "candidate_id",
             },
         )
-        self.assertEqual(event["schema_version"], "firelens.operational_event.v2")
+        self.assertEqual(event["schema_version"], "firelens.operational_event.v3")
         self.assertEqual(event["corpus_version"], "test-corpus.v1")
         self.assertEqual(event["deployment_environment"], "local")
         self.assertGreaterEqual(event["evidence_count"], 0)

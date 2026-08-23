@@ -132,6 +132,25 @@ export interface components {
          * @enum {string}
          */
         AnswerSectionKind: "current_records" | "reviewed_guidance" | "conflicting_guidance" | "general_background" | "official_handoff" | "uncertainty";
+        /** AnswerStatusBanner */
+        AnswerStatusBanner: {
+            /** Availability Label */
+            availability_label: string;
+            /** Detail */
+            detail: string;
+            /** Freshness Label */
+            freshness_label: string;
+            /** Headline */
+            headline: string;
+            /** Official Escalation Title */
+            official_escalation_title?: string | null;
+            /** Official Escalation Url */
+            official_escalation_url?: string | null;
+            /** Retrieval Completed At */
+            retrieval_completed_at?: string | null;
+            /** Source Updated At */
+            source_updated_at?: string | null;
+        };
         /** AskResponse */
         AskResponse: {
             aggregate_freshness?: components["schemas"]["AggregateFreshness"] | null;
@@ -151,6 +170,8 @@ export interface components {
             limitations?: string[];
             /** Live Results */
             live_results?: components["schemas"]["LiveResult"][];
+            /** Proof Cards */
+            proof_cards?: components["schemas"]["ProofCard"][];
             reason_code?: components["schemas"]["ReasonCode"] | null;
             /** Related Links */
             related_links?: components["schemas"]["RelatedLink"][];
@@ -161,12 +182,17 @@ export interface components {
             /** Selected Live Result Id */
             selected_live_result_id?: string | null;
             status: components["schemas"]["ResponseStatus"];
+            status_banner?: components["schemas"]["AnswerStatusBanner"] | null;
             /** Suggested Questions */
             suggested_questions?: string[];
+            /** Supported Items */
+            supported_items?: string[];
             /** Trace Id */
             trace_id: string;
             /** Unavailable Layers */
             unavailable_layers?: components["schemas"]["LiveResultKind"][];
+            /** Unknown Items */
+            unknown_items?: string[];
             validation?: components["schemas"]["ValidationReport"] | null;
         };
         /** ClaimSupport */
@@ -175,6 +201,53 @@ export interface components {
             evidence_id: string;
             /** Quote */
             quote: string;
+        };
+        /** ClaimTrust */
+        ClaimTrust: {
+            /**
+             * Conflict Or Supersession
+             * @default none
+             * @enum {string}
+             */
+            conflict_or_supersession: "none" | "conflict_shown" | "superseded";
+            /**
+             * Critical Field Preservation
+             * @enum {string}
+             */
+            critical_field_preservation: "preserved" | "not_applicable" | "failed";
+            /**
+             * Extraction Repair State
+             * @enum {string}
+             */
+            extraction_repair_state: "native_text" | "human_verified_repair" | "unknown";
+            /**
+             * Freshness
+             * @default stable_guidance
+             * @enum {string}
+             */
+            freshness: "stable_guidance" | "fresh" | "stale" | "mixed" | "unknown";
+            /**
+             * Human Review State
+             * @enum {string}
+             */
+            human_review_state: "approved_static" | "human_verified_repair" | "pending_review" | "none";
+            /**
+             * Jurisdiction
+             * @default british_columbia
+             */
+            jurisdiction: string;
+            /**
+             * Semantic Support State
+             * @enum {string}
+             */
+            semantic_support_state: "exact_quote" | "insufficient" | "background" | "none";
+            /** Source Authority */
+            source_authority: string;
+            /**
+             * Source Provenance
+             * @enum {string}
+             */
+            source_provenance: "approved_static_corpus" | "official_live_record" | "none";
         };
         /** CoarseResolvedLocation */
         CoarseResolvedLocation: {
@@ -542,15 +615,49 @@ export interface components {
             unavailable_layers?: components["schemas"]["LiveResultKind"][];
             viewport: components["schemas"]["MapViewport"];
         };
+        /** ProofCard */
+        ProofCard: {
+            /** Authority */
+            authority: string;
+            /** Claim Id */
+            claim_id: string;
+            /** Claim Text */
+            claim_text: string;
+            /** Conflicts Or Unknowns */
+            conflicts_or_unknowns?: string[];
+            /** Critical Fields Checked */
+            critical_fields_checked: string;
+            /** Exact Passage */
+            exact_passage?: string | null;
+            /** Freshness */
+            freshness: string;
+            /** Official Url */
+            official_url?: string | null;
+            /** Review State */
+            review_state: string;
+            /** Source Revision */
+            source_revision?: string | null;
+            /** Source Title */
+            source_title?: string | null;
+            /** Support Label */
+            support_label: string;
+            /**
+             * Support State
+             * @enum {string}
+             */
+            support_state: "supported" | "structured_reviewed" | "official_live_typed" | "official_quote_only" | "source_linked_explanation" | "unknown" | "background" | "conflict" | "live_record";
+        };
         /** PublicClaim */
         PublicClaim: {
             /** Claim Id */
             claim_id: string;
             evidence_status: components["schemas"]["EvidenceStatus"];
+            publication?: components["schemas"]["PublicationAuthority"] | null;
             /** Supports */
             supports?: components["schemas"]["ClaimSupport"][];
             /** Text */
             text: string;
+            trust?: components["schemas"]["ClaimTrust"] | null;
         };
         /** PublicEvidence */
         PublicEvidence: {
@@ -583,6 +690,40 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** PublicationAuthority */
+        PublicationAuthority: {
+            kind: components["schemas"]["PublicationKind"];
+            /**
+             * Renderer Id
+             * @default none
+             */
+            renderer_id: string;
+            /**
+             * Review Status
+             * @default none
+             */
+            review_status: string;
+            /** Risk Tier */
+            risk_tier?: string | null;
+            /** Source Revision Sha256 */
+            source_revision_sha256?: string | null;
+            /** Source Span Sha256 */
+            source_span_sha256?: string | null;
+            /**
+             * Support Provenance
+             * @default none
+             */
+            support_provenance: string;
+            /** Typed Claim Id */
+            typed_claim_id?: string | null;
+            /** Typed Live Fact Id */
+            typed_live_fact_id?: string | null;
+        };
+        /**
+         * PublicationKind
+         * @enum {string}
+         */
+        PublicationKind: "structured_reviewed" | "official_live_typed" | "official_quote_only" | "source_linked_explanation" | "general_background" | "unsupported";
         /** QueryRequest */
         QueryRequest: {
             context?: components["schemas"]["MapContext"];
@@ -596,7 +737,7 @@ export interface components {
          * ReasonCode
          * @enum {string}
          */
-        ReasonCode: "capability_overview" | "scope_redirect" | "personalized_safety_decision" | "personalized_medical_advice" | "policy_manipulation" | "live_data_required" | "planning_unavailable" | "retrieval_unavailable" | "retrieval_incomplete" | "no_approved_evidence" | "wrong_temporal_class" | "required_authority_missing" | "approved_static_evidence" | "generation_unavailable" | "draft_validation_failed" | "model_abstained" | "conflicting_evidence";
+        ReasonCode: "capability_overview" | "scope_redirect" | "personalized_safety_decision" | "personalized_medical_advice" | "policy_manipulation" | "live_data_required" | "planning_unavailable" | "retrieval_unavailable" | "retrieval_incomplete" | "no_approved_evidence" | "wrong_temporal_class" | "required_authority_missing" | "approved_static_evidence" | "generation_unavailable" | "draft_validation_failed" | "model_abstained" | "conflicting_evidence" | "high_risk_claim_not_structured";
         /**
          * RelatedLink
          * @description An official destination for information FireLens does not ingest live.

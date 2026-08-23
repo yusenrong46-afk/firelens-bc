@@ -69,13 +69,14 @@ async def _answer_request(
             retryable=response.error_kind
             in {"rate_limit", "timeout", "unavailable", "model_unavailable"},
         )
+    latency_ms = (perf_counter() - request_started) * 1_000
     log_operation(
         trace_id=response.trace_id,
         route=execution.route.value,
         response_mode=response.response_mode.value,
         status=response.status.value,
-        latency_ms=(perf_counter() - request_started) * 1_000,
-        provider_stages=(),
+        latency_ms=latency_ms,
+        provider_stages=tuple(execution.policy.provider_stages),
         error_category=response.error_kind,
         evidence_count=len(response.evidence),
         claim_count=len(response.claims),
@@ -87,6 +88,13 @@ async def _answer_request(
             config.build_commit if _FULL_COMMIT.match(config.build_commit or "") else None
         ),
         deployment_environment=config.deployment_environment,
+        tool_names=tuple(tool.value for tool in execution.tools),
+        tool_attempts=execution.policy.tool_rounds + execution.policy.outer_chat_turns,
+        retrieval_cycles=execution.policy.retrieval_cycles,
+        cache_used=execution.policy.cache_used,
+        stage_latency_ms=latency_ms,
+        fallback_category=execution.policy.fallback_reason,
+        candidate_id=runtime.corpus_version,
     )
     return response
 

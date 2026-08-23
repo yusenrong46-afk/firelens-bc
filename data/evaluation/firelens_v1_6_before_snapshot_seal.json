@@ -1,0 +1,51 @@
+{
+  "before_snapshot": {
+    "path": "output/benchmark/v1_6/before/snapshot.json",
+    "sha256": "670cbe65c36964e299e74eafd0d1b679c3f25e90cd51ba3d03d02e524f263c20"
+  },
+  "benchmark_id": "firelens_v1_6",
+  "candidate_identity": {
+    "branch": "upgrade/v1-6",
+    "commit": "3de745a22ad0801e19563f90ac64f18609ecae03",
+    "package_version": "1.5.3rc1",
+    "release_version": "1.5.3-rc.1"
+  },
+  "dataset_identity": {
+    "identity_input_sha256": {
+      "config/runtime_artifact_allowlist.v1.json": "06a38b064ecb1a044aea2b66724498b15bc8ec99b0d6370cd820708606d7c64d",
+      "data/evaluation/benchmark_v1.manifest.json": "5f56692847befab25f5a463f022e97730333a5092076fbb7af0509d8abef57fb",
+      "data/evaluation/benchmark_v1.yaml": "c0e8499ff0ce74b1706e5c4b54b8382dae271479329e7f743a802882503e932c",
+      "data/evaluation/benchmark_v1_1_conversation.manifest.json": "9d5b2834cbf9a02da4f95a783775929388d2c96f1cd7fb6043dc6d0ecd378a88",
+      "data/evaluation/benchmark_v1_1_conversation.yaml": "cec624121e9c22e7fd92e209a47ba4d93a3dcb3a4de19190c4125d4cb3d95e5f",
+      "data/evaluation/benchmark_v1_5_relevance_addendum.yaml": "f99e8c1e7fcef629072765f1e6d8dcd284172f9512f71f85b6f7f0b78c1cf4a3",
+      "data/evaluation/firelens_v1_6_dataset_roles.yaml": "0ba87a389ff8a31f56b0101d4869ee5306859e525cdebfc33f4c8abd55061798",
+      "data/evaluation/frontend_surface.v1.yaml": "017049de18e421f91c9aab3032a24c5e97b7aa6b796fae1f738b3fa02a685562",
+      "data/evaluation/hard_probe.v1.manifest.json": "7f051c79169b7a31fae8c6d6e71dd064cbd501280794d62467e114e6635404d5",
+      "data/evaluation/hard_probe.v1.yaml": "ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035"
+    },
+    "registry": "data/evaluation/firelens_v1_6_dataset_roles.yaml"
+  },
+  "harness_identity": {
+    "harness_input_sha256": {
+      ".dockerignore": "b65aa966e293d90dfe394dbad1e0d628d09866833dd28e3ea47652c14ae39a2f",
+      ".vercelignore": "0c08e4d3fcc201d7933c98686b9f90e4aaca15568cf4eadaad95d79240771546",
+      "Dockerfile": "b3ed8e52988689958908842f669f4819d88eb384a1fe1304a52c6973f74cdb46",
+      "Makefile": "ff767a62c070755bb3729533885e39f6fe65d341f747f095d22d38cc6a9d23c0",
+      "render.yaml": "15b9c5c8d816f9698c5a6c8dd82e30c6138109c96d5e1483e23b4999c19dd9db",
+      "scripts/v1_6_upgrade.py": "ceaf994c1b6762e7364a7f4f0226a38bb3da0b727c7987b3731eae611c2f687c",
+      "src/firelens/evaluation/v1_6_baseline.py": "b5894c7b99c7fad94783915ea0c036d4465c2c84b6531aae4978cd7e09f7605d",
+      "src/firelens/evaluation/v1_6_cli.py": "32b7a33546011272e9b1eee2c4893cff7c9a709a64c161ce4aa1beedc7f06f4b",
+      "src/firelens/evaluation/v1_6_standard.py": "b806977166f6cea10eed3924e9c5782f85f8b476c7705645998445cd27520313",
+      "tests/test_v1_6_standard.py": "93404d034a0170fb6358dc20cbec8e590769685066a5e0e7bf509a81d5d9629f",
+      "vercel.json": "093190ad2512ccbeb8ea7608201883b8c16e4e14dbeb852a31a0386f4c02605f"
+    }
+  },
+  "schema_version": "firelens_v1_6_before_snapshot_seal.v1",
+  "sealed_at": "2026-08-17T05:18:53.492298+00:00",
+  "sealed_by": "FireLens V1.6 engineering owner",
+  "spec_identity": {
+    "path": "data/evaluation/firelens_v1_6_upgrade_standard.yaml",
+    "sha256": "55e16b86960d51fb732970691a0c00850f6c56eb258cd363fd74a418b34d1bef"
+  },
+  "standard_id": "FL-V16-S1"
+}

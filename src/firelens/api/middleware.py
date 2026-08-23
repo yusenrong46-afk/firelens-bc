@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Awaitable, Callable
 from uuid import uuid4
 
@@ -9,8 +10,11 @@ from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from firelens.agent.failures import shout_unexpected
 from firelens.api.responses import error_response
+from firelens.config import FireLensConfig
 from firelens.contracts import ErrorEnvelope
+from firelens.operational_logging import log_operation
 from firelens.request_guard import AnonymousRequestGuard
 
 _GUARDED_ROUTES = frozenset(
@@ -115,7 +119,7 @@ def install_middlewares(
         return _apply_security_headers(request, await call_next(request))
 
 
-def install_exception_handlers(app: FastAPI) -> None:
+def install_exception_handlers(app: FastAPI, config: FireLensConfig) -> None:
     @app.exception_handler(RequestValidationError)
     async def request_validation_handler(
         request: Request, exc: RequestValidationError
@@ -137,10 +141,27 @@ def install_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def unexpected_error_handler(_request: Request, _exc: Exception) -> JSONResponse:
+    async def unexpected_error_handler(_request: Request, exc: Exception) -> JSONResponse:
+        classified = shout_unexpected(exc, environment=config.deployment_environment)
+        trace_id = uuid4().hex
+        build_commit = config.build_commit
+        if build_commit is None or not re.fullmatch(r"[0-9a-f]{40}", build_commit):
+            build_commit = None
+        log_operation(
+            trace_id=trace_id,
+            route="ask",
+            response_mode="abstention",
+            status="error",
+            latency_ms=0,
+            error_category=classified.public_kind,
+            fallback_category=classified.public_kind,
+            release_version=config.release_version,
+            build_commit=build_commit,
+            deployment_environment=config.deployment_environment,
+        )
         return error_response(
             500,
-            trace_id=uuid4().hex,
-            error_kind="internal_error",
-            message="FireLens encountered an unexpected internal error.",
+            trace_id=trace_id,
+            error_kind=classified.public_kind,
+            message=classified.public_message,
         )

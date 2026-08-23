@@ -1,0 +1,127 @@
+{
+  "candidate_note": "Executed on the Round-2 working tree after typed critical-field preservation. Quotes are examiner-owned nearby mutations, not sealed labels.",
+  "checker_module": "firelens.answering.semantic_invariants.preservation_errors",
+  "correct": 15,
+  "evidence_class": "EXECUTED",
+  "faithful_false_rejects": [],
+  "label": "EXECUTED",
+  "round1_reproduction_path": "docs/reports/V1_6_ROUND2_FABLE_MUTATION_REPRODUCTION.json",
+  "schema_version": "firelens_v1_6_round2_fable_mutation_after.v1",
+  "total": 15,
+  "unsafe_false_accepts": [],
+  "rows": [
+    {
+      "accepted": false,
+      "correct": true,
+      "error_kinds": [
+        "changes a required safety action",
+        "weakens a requirement into an option"
+      ],
+      "expect_accept": false,
+      "name": "leave_to_stay"
+    },
+    {
+      "accepted": false,
+      "correct": true,
+      "error_kinds": ["weakens immediate action into delay"],
+      "expect_accept": false,
+      "name": "immediate_to_delayed"
+    },
+    {
+      "accepted": false,
+      "correct": true,
+      "error_kinds": [
+        "weakens a requirement into an option",
+        "removes a material condition from its quotes"
+      ],
+      "expect_accept": false,
+      "name": "required_to_optional"
+    },
+    {
+      "accepted": false,
+      "correct": true,
+      "error_kinds": ["introduces an unsupported quantity or unit: 1.5 foot"],
+      "expect_accept": false,
+      "name": "unit_swap"
+    },
+    {
+      "accepted": false,
+      "correct": true,
+      "error_kinds": ["reverses a comparator"],
+      "expect_accept": false,
+      "name": "comparator_flip"
+    },
+    {
+      "accepted": false,
+      "correct": true,
+      "error_kinds": [
+        "introduces or substitutes an unsupported authority: environment canada"
+      ],
+      "expect_accept": false,
+      "name": "authority_swap"
+    },
+    {
+      "accepted": false,
+      "correct": true,
+      "error_kinds": ["reverses a material exception"],
+      "expect_accept": false,
+      "name": "exception_reversal"
+    },
+    {
+      "accepted": false,
+      "correct": true,
+      "error_kinds": ["describes stale or dated guidance as current"],
+      "expect_accept": false,
+      "name": "stale_as_current"
+    },
+    {
+      "accepted": false,
+      "correct": true,
+      "error_kinds": ["changes the polarity of a safety action"],
+      "expect_accept": false,
+      "name": "overlap_opposite"
+    },
+    {
+      "accepted": true,
+      "correct": true,
+      "error_kinds": [],
+      "expect_accept": true,
+      "name": "metre_alias"
+    },
+    {
+      "accepted": true,
+      "correct": true,
+      "error_kinds": [],
+      "expect_accept": true,
+      "name": "feet_conversion"
+    },
+    {
+      "accepted": true,
+      "correct": true,
+      "error_kinds": [],
+      "expect_accept": true,
+      "name": "at_least_alias"
+    },
+    {
+      "accepted": true,
+      "correct": true,
+      "error_kinds": [],
+      "expect_accept": true,
+      "name": "bc_alias"
+    },
+    {
+      "accepted": true,
+      "correct": true,
+      "error_kinds": [],
+      "expect_accept": true,
+      "name": "optional_restatement"
+    },
+    {
+      "accepted": true,
+      "correct": true,
+      "error_kinds": [],
+      "expect_accept": true,
+      "name": "kit_reorder"
+    }
+  ]
+}

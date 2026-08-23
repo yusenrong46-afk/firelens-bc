@@ -1,0 +1,40 @@
+{
+  "schema_version": "firelens.structured_publication_after_snapshot.v1",
+  "evidence_class": "EXECUTED",
+  "independent_proof": false,
+  "final_status": "NEEDS_HUMAN_CLAIM_REVIEW",
+  "branch": "upgrade/v1-6-structured-publication",
+  "package": "1.6.0rc1 / 1.6.0-rc.1",
+  "python": "3.14.5",
+  "node": "v25.9.0",
+  "examined_starting_commit": "8b2da4ce8e334fcc53f053cbefb9e01e3caf17b2",
+  "examined_starting_tree": "0e885a652e20d89ae54bb83d90bd41720149fd74",
+  "rollback_ref": "examined/v1-6-semantic-round3",
+  "pre_freeze_commit": "9f2700e6e4ed4a7f76379ee8735cd7545f32fb64",
+  "pre_freeze_tree": "8748749d6de3a419289f38536a1c0f8b2a3210f5",
+  "note": "The freeze commit that introduces this file is the candidate. Recipients must run git rev-parse HEAD and git rev-parse 'HEAD^{tree}'.",
+  "renderer_id": "firelens.structured_renderer.v1",
+  "hashes": {
+    "FL-V16-S1": "55e16b86960d51fb732970691a0c00850f6c56eb258cd363fd74a418b34d1bef",
+    "claimbench_v1": "bcf885f65345e0b869982113c0890314bca522b8a9a3877eaf90140c6c6362d1",
+    "claimbench_v2": "402b3dca3a53227d823861d2216446148a426174f388e94e8558eebf14ca3557",
+    "hard_probe": "ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035",
+    "corpus": "d5fcd794f9ec0486a256ae511366fde982254342b7d07b9c83a21ea8ead291eb",
+    "corpus_manifest": "2d0d6b9b445f5ab0ef59e7f19bd0dce058a93f3a93b9599338702b95058ed687",
+    "vectors": "fd0b171488809c5a87f3aee5c912b07358231cac6478bb621f6d2fc79d41efb7",
+    "vector_manifest": "437181a2a9aa03498b4bb4de2445d0e0b0bf3fe1c4d4fa76a50019d31f3f1046",
+    "openapi": "fb92a6eaba30de18ae0d306e4ff90884d9fc3b81439f1f252b770eee7238651e",
+    "typed_inventory": "b8e75fcf0170e0d7d728518a2ae108966f42c4b46e04d0ef97cc5df7e9e8b44f",
+    "pending_candidates": "008274a5cda237473697b5ddd9c8c04d3a42a8738c560d594ea682ed74344f9c"
+  },
+  "gates": {
+    "hard_probe": "86/105",
+    "paired_regressions_vs_round3": 0,
+    "claimbench_v1": "200/200",
+    "claimbench_v2": "332/332",
+    "backend_pytest": "906 passed, 3 skipped",
+    "frontend_vitest": "47/47",
+    "frontend_e2e": "26/26",
+    "tier_ab_generate_calls": 0
+  }
+}

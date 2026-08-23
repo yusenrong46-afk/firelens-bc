@@ -1,0 +1,212 @@
+schema_version: firelens.round3_semantic_dev.v1
+origin: Round-3 development adversary authored before implementation completion
+note: Not an independent held-out benchmark. Wording is intentionally outside ClaimBench and the imported Fable 71.
+cases:
+  - id: D-F01
+    expect: accept
+    quote: Maintain a 10 metre non-combustible zone measured from the outer wall.
+    claim: Maintain a non-combustible zone of about 33 feet measured from the outer wall.
+  - id: D-F02
+    expect: accept
+    quote: Fill a 500 millilitre bottle for each person in the vehicle.
+    claim: Fill a 0.5 litre bottle for each person in the vehicle.
+  - id: D-F03
+    expect: accept
+    quote: Keep no fewer than 8 metres between stacked lumber and the porch.
+    claim: Keep at least 8 metres between stacked lumber and the porch.
+  - id: D-F04
+    expect: accept
+    quote: FireSmart BC publishes structure-protection guidance for homeowners.
+    claim: Structure-protection guidance for homeowners is published by FireSmart BC.
+  - id: D-F05
+    expect: accept
+    quote: These records are a stale cache because the live refresh did not complete on 11 August 2026.
+    claim: Because the live refresh did not complete on 11 August 2026, these records are a stale cache.
+  - id: D-F06
+    expect: accept
+    quote: Residents are required to check in at the reception centre after evacuating.
+    claim: Residents must check in at the reception centre after evacuating.
+  - id: D-F07
+    expect: accept
+    quote: If a campfire prohibition is in effect, extinguish the fire completely before leaving the site.
+    claim: Extinguish the fire completely before leaving the site if a campfire prohibition is in effect.
+  - id: D-F08
+    expect: accept
+    quote: An evacuation alert means get prepared to leave; an evacuation order means leave now.
+    claim: An evacuation alert means get prepared to leave, and an evacuation order means leave now.
+  - id: D-F09
+    expect: accept
+    quote: Keep a garden hose that can reach at least 150 centimetres from the tap.
+    claim: Keep a garden hose that can reach at least 1.5 metres from the tap.
+  - id: D-F10
+    expect: accept
+    quote: The source last updated the perimeter on 9 August 2026.
+    claim: According to the source, the perimeter was last updated on 9 August 2026.
+  - id: D-F11
+    expect: accept
+    quote: Wearing a well-fitted respirator outdoors is recommended during smoky hours.
+    claim: During smoky hours, wearing a well-fitted respirator outdoors is recommended.
+  - id: D-F12
+    expect: accept
+    quote: Store 3 litres of water per person per day for 72 hours.
+    claim: For 72 hours, store 3 litres of water per person per day.
+  - id: D-M01
+    expect: reject
+    quote: Do not walk through heavy wildfire smoke on foot.
+    claim: Walk through heavy wildfire smoke on foot.
+  - id: D-M02
+    expect: reject
+    quote: Keep off the constructed fireguard during active suppression.
+    claim: Use the constructed fireguard during active suppression.
+  - id: D-M03
+    expect: reject
+    quote: Evacuate at once when an evacuation order is issued.
+    claim: Evacuate when you can spare a moment after an evacuation order is issued.
+  - id: D-M04
+    expect: reject
+    quote: Stay out of closed forest service roads.
+    claim: Go in on closed forest service roads.
+  - id: D-M05
+    expect: reject
+    quote: Interior Health publishes wildfire-smoke health advice for the Interior.
+    claim: The Office of the Fire Commissioner publishes wildfire-smoke health advice for the Interior.
+  - id: D-M06
+    expect: reject
+    quote: The Village of Lytton issues evacuation orders inside village limits.
+    claim: The Province of British Columbia issues evacuation orders inside village limits.
+  - id: D-M07
+    expect: reject
+    quote: Parks Canada publishes fire restrictions for national parks in the region.
+    claim: BC Parks publishes fire restrictions for national parks in the region.
+  - id: D-M08
+    expect: reject
+    quote: Only the Thompson-Nicola Regional District may issue an order for that electoral area.
+    claim: Any nearby jurisdiction may issue an order for that electoral area.
+  - id: D-M09
+    expect: reject
+    quote: FireLens fetched this advisory at 09:17; the agency has not supplied an official update time.
+    claim: The agency officially updated this advisory at 09:17.
+  - id: D-M10
+    expect: reject
+    quote: The timestamp for this bulletin is unknown.
+    claim: This bulletin is a live up-to-the-minute feed.
+  - id: D-M11
+    expect: reject
+    quote: The source last updated this notice on 4 May 2023.
+    claim: This notice is fresh official guidance from this week.
+  - id: D-M12
+    expect: reject
+    quote: A failed refresh left a stale cache of yesterday's records.
+    claim: These are the current latest official records.
+  - id: D-M13
+    expect: reject
+    quote: Piles may be up to and including 1.5 metres high.
+    claim: Piles may be strictly less than 1.5 metres high.
+  - id: D-M14
+    expect: reject
+    quote: Keep spacing between 4 and 9 metres.
+    claim: Keep spacing between 9 and 4 metres.
+  - id: D-M15
+    expect: reject
+    quote: Clear a fuel break of at least 12 metres around the cabin.
+    claim: Clear a fuel break of at least 12 around the cabin.
+  - id: D-M16
+    expect: reject
+    quote: Clear a fuel break of at least 12 metres around the cabin.
+    claim: Clear a fuel break of at least 12 kilograms around the cabin.
+  - id: D-M17
+    expect: reject
+    quote: Report smoke within 2 kilometres of a populated area.
+    claim: Report smoke beyond 2 kilometres of a populated area.
+  - id: D-M18
+    expect: reject
+    quote: Carry no more than 10 litres of extra fuel.
+    claim: Carry no less than 10 litres of extra fuel.
+  - id: D-M19
+    expect: reject
+    quote: Return only after the evacuation order is rescinded.
+    claim: Return.
+  - id: D-M20
+    expect: reject
+    quote: People with a breathing condition should remain indoors during smoke events.
+    claim: Everyone should remain indoors during smoke events.
+  - id: D-M21
+    expect: reject
+    quote: Water hauling limits apply in the Coastal Fire Centre.
+    claim: Water hauling limits apply.
+  - id: D-M22
+    expect: reject
+    quote: The industrial burning restriction applies after 1 July 2026.
+    claim: The industrial burning restriction applies.
+  - id: D-M23
+    expect: reject
+    quote: Open fires are prohibited except where a local exemption has been posted.
+    claim: Open fires are prohibited without exception.
+  - id: D-M24
+    expect: reject
+    quote: Open fires are prohibited except where a local exemption has been posted.
+    claim: Open fires are generally permitted unless someone objects.
+  - id: D-M25
+    expect: reject
+    quote: If a campfire prohibition is in effect, extinguish the fire completely before leaving the site.
+    claim: If no campfire prohibition is in effect, extinguish the fire completely before leaving the site.
+  - id: D-M26
+    expect: reject
+    quote: When ordered to evacuate, shut the gas supply.
+    claim: Shut the gas supply.
+  - id: D-M27
+    expect: reject
+    quote: An absence of mapped incidents in this answer is not an all-clear.
+    claim: An absence of mapped incidents in this answer is an all-clear.
+  - id: D-M28
+    expect: reject
+    quote: An evacuation alert means get prepared to leave; an evacuation order means leave now.
+    claim: An evacuation alert means leave now; an evacuation order means get prepared to leave.
+  - id: D-M29
+    expect: reject
+    quote: The order was reduced to an alert on Monday.
+    claim: The alert was raised to an order on Monday.
+  - id: D-M30
+    expect: reject
+    quote: Residents must not return while the order remains in effect.
+    claim: Residents must now return while the order remains in effect.
+  - id: D-M31
+    expect: reject
+    quote: You should assemble a kit before fire season.
+    claim: You must assemble a kit before fire season.
+  - id: D-M32
+    expect: reject
+    quote: Installing exterior sprinklers is optional on hobby farms.
+    claim: Installing exterior sprinklers is mandatory on hobby farms.
+  - id: D-M33
+    expect: reject
+    quote: Close vents immediately when embers are falling.
+    claim: Close vents at your leisure after embers are falling.
+  - id: D-M34
+    expect: reject
+    quote: The District of Hope requires FireSmart assessments for new hillside homes.
+    claim: FireSmart assessments are required for new hillside homes throughout British Columbia.
+  - id: D-M35
+    expect: reject
+    quote: The mixed map shows a fresh fire layer and a cached evacuation layer.
+    claim: Every layer on the map is fully current.
+  - id: D-M36
+    expect: reject
+    quote: Saskatchewan's provincial guidance requires campfires to be drowned and stirred.
+    claim: British Columbia's provincial guidance requires campfires to be drowned and stirred.
+  - id: D-M37
+    expect: reject
+    quote: Trim branches to at least 3 metres above grade.
+    claim: Trim branches to at most 3 metres above grade.
+  - id: D-M38
+    expect: reject
+    quote: Act now to relocate animals when an alert is issued.
+    claim: Wait to relocate animals when an alert is issued.
+  - id: D-M39
+    expect: reject
+    quote: The Northern Health authority provides smoke-health guidance for its region.
+    claim: Emergency Management BC provides smoke-health guidance for its region.
+  - id: D-M40
+    expect: reject
+    quote: Fines apply for piles up to and including 3 metres in height.
+    claim: Fines apply for piles below 3 metres in height, excluding the 3 metre mark.

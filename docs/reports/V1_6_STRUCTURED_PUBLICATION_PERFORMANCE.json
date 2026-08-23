@@ -1,0 +1,29 @@
+{
+  "evidence_class": "EXECUTED",
+  "independent_proof": false,
+  "note": "FakeProvider timings are not production evidence. High-risk Ask used the compiler and made zero grounded generation calls.",
+  "high_risk_questions": [
+    {
+      "question": "What is the difference between an evacuation alert and an evacuation order?",
+      "mode": "grounded",
+      "generate_calls": 0
+    },
+    {
+      "question": "What should people do in dense smoke?",
+      "mode": "grounded",
+      "generate_calls": 0
+    },
+    {
+      "question": "What belongs in a grab-and-go bag?",
+      "mode": "grounded",
+      "generate_calls": 0
+    },
+    {
+      "question": "How do structure-protection sprinklers work?",
+      "mode": "grounded",
+      "generate_calls": 0
+    }
+  ],
+  "tier_ab_factual_generation_calls": 0,
+  "provider": "FakeProvider"
+}

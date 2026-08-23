@@ -1,0 +1,32 @@
+FireLens V1.6 structured-publication failing tests
+Captured before implementation on upgrade/v1-6-structured-publication
+Parent: 04e88e4420efd9b6faccbe65fd2a2e323e93a8b7 (flow + ADR only)
+Label: EXECUTED
+
+Command:
+  .venv/bin/python -m pytest \
+    tests/test_structured_publication_architecture.py \
+    tests/test_structured_publication_dev_cases.py --tb=line -q
+
+Result: 13 failed, 1 passed
+
+FAILED test_a_constructor_requires_publication_authority
+FAILED test_b_high_risk_plan_has_no_factual_text_field
+FAILED test_c_free_generated_claim_cannot_become_tier_ab_supported
+FAILED test_d_uncovered_high_risk_is_quote_only_partial_or_handoff
+FAILED test_e_mixed_composition_preserves_compiled_blocks
+FAILED test_f_rewrite_cannot_modify_compiled_tier_ab_text
+FAILED test_g_salvage_cannot_promote_untyped_high_risk
+FAILED test_h_proof_card_shares_compiled_object
+FAILED test_i_source_revision_or_span_hash_change_invalidates
+FAILED test_k_live_typed_facts_are_rendered_from_records_not_model_prose
+FAILED test_l_only_compiler_may_create_structured_reviewed_claims
+FAILED test_risk_may_only_rise
+FAILED test_free_form_tier_ab_cannot_obtain_supported_status
+  published on starting candidate: SP-ACTION-REVERSE, SP-URGENCY-DOWN, SP-FAITHFUL-UNUSUAL
+
+PASSED test_j_compositional_laundering_cannot_support_one_unsafe_clause
+  (validate_draft already rejects that mixed draft)
+
+Typical failure: missing firelens.publication / firelens.publication_contracts
+or generated VERIFIED_CORPUS publication without typed authority.

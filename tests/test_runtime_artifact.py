@@ -158,6 +158,22 @@ def _artifact(root: Path, *, strategy: str = "metadata_context_v1") -> Path:
             sort_keys=True,
         ),
     )
+    _write(
+        root / "data/typed_claims/high_risk_v1.yaml",
+        "schema_version: firelens.typed_claim_inventory.v1\n"
+        "policy_version: firelens.claim_risk_policy.v1\n"
+        "records:\n"
+        "  - claim_id: TC-TEST-001\n"
+        "    risk_tier: A\n"
+        "    authority: PreparedBC\n"
+        "    jurisdiction: british_columbia\n"
+        "    subject: synthetic reviewed claim\n"
+        "    source_span_ids: [synthetic-span]\n"
+        "    source_revision: test\n"
+        "    human_review_state: approved_static\n"
+        "    canonical_text: Leave immediately when an evacuation order is issued.\n"
+        "    source_span_text: Leave immediately when an evacuation order is issued.\n",
+    )
 
     frontend = root / "apps/web/dist/client"
     _write(

@@ -7,8 +7,13 @@ import re
 from firelens.agent.packet import AgentPacket
 from firelens.agent.tools import AgentTool
 from firelens.answering.intent import plan_query
+from firelens.answering.typed_compare import typed_preservation_errors
 from firelens.answering.validate import _FORBIDDEN, _policy_text
 from firelens.contracts import QueryRequest, QueryRoute, ReasonCode
+from firelens.freshness_language import (
+    aggregate_freshness_from_records,
+    current_language_errors,
+)
 
 _ALLOWED_TOOLS = {
     AgentTool.LIST_OFFICIAL_FIRES.value,
@@ -101,4 +106,19 @@ def output_rail_errors(answer: str, packet: AgentPacket) -> list[str]:
                 if not packet_hit:
                     errors.append("unfetched_fire_name")
                     break
+    errors.extend(
+        current_language_errors(
+            answer, aggregate_freshness_from_records(list(packet.live_results))
+        )
+    )
+    static = packet.static_response
+    if static is not None:
+        quotes = [
+            support.quote
+            for claim in static.claims
+            for support in claim.supports
+            if support.quote
+        ]
+        if quotes and typed_preservation_errors(answer, quotes):
+            errors.append("typed_claim_mutation")
     return errors

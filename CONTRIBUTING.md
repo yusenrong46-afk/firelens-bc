@@ -12,4 +12,6 @@ Keep the deterministic authority boundary intact: models propose language; sourc
 
 Run targeted checks after each coherent change and `make verify` before release claims. Report evidence as read, inspected, executed, reproduced, or not run. A passing local or synthetic check is not human or deployed evidence.
 
+GitHub updates follow `docs/protocols/V1_6_GITHUB_UPDATE_STANDARD.md`: local-only by default; push, PR, or merge only when the human explicitly authorizes it; never deploy from an agent session. `README.md` and merge commits must read as Thomas's engineering record, not OpenAI or Codex output. No vendor `Co-authored-by` trailers.
+
 Keep modules cohesive, scripts thin, public interfaces typed, and generated artifacts clearly separated. Preserve unrelated changes and historical evidence.

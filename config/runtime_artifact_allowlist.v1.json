@@ -33,6 +33,7 @@
     "data/index/firelens_vectors.npy",
     "data/index/firelens_vectors.manifest.json",
     "data/repairs/text_overrides.yaml",
+    "data/typed_claims/high_risk_v1.yaml",
     "apps/web/dist/client/index.html",
     "apps/web/dist/client/.vite/manifest.json"
   ],

@@ -9,11 +9,16 @@ from collections.abc import Sequence
 from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import (
     CoarseResolvedLocation,
-    Freshness,
     GeometryRelation,
     LiveResult,
     LiveResultKind,
     QueryRequest,
+)
+from firelens.freshness_language import (
+    aggregate_freshness_from_records,
+)
+from firelens.freshness_language import (
+    official_information_prefix as freshness_prefix,
 )
 from firelens.live_support import distance_to_geometry_km, geometry_relation
 
@@ -55,12 +60,7 @@ _PRECISE_COORD = re.compile(r"\b-?\d{1,3}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}\b")
 def official_information_prefix(records: Sequence[LiveResult]) -> str:
     """Honest lead-in: cached-stale records are never called current."""
 
-    if any(item.freshness == Freshness.STALE for item in records):
-        return (
-            "Official information from cached records (a live refresh failed, "
-            "so these may be outdated): "
-        )
-    return "Current official information: "
+    return freshness_prefix(aggregate_freshness_from_records(list(records)))
 
 
 def official_display_name(result: LiveResult) -> str:
@@ -372,7 +372,7 @@ def _count(records: Sequence[LiveResult], roster_total: int | None) -> str:
             "count, not a distinct-fire count or a safety determination."
         )
     return (
-        f"Official layers currently return {incident_count} incident records "
+        f"Official layers return {incident_count} incident records "
         f"and {perimeter_count} perimeter records. This is a record count, not "
         "a distinct-fire count or a safety determination."
     )

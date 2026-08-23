@@ -1,0 +1,90 @@
+{
+  "commit": "9558fd06f9607b6b14096930a11def36efbe13ba",
+  "dataset_sha256": "ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035",
+  "evaluator_unchanged": true,
+  "evidence_class": "EXECUTED",
+  "includes_uncommitted_intent_patches": true,
+  "failed_ids": [
+    "F06",
+    "F07",
+    "F09",
+    "F10",
+    "F11",
+    "G03",
+    "H01",
+    "H02",
+    "H03",
+    "H04",
+    "I04",
+    "I08",
+    "K03",
+    "K09",
+    "L01",
+    "L02",
+    "L05",
+    "M03",
+    "M04"
+  ],
+  "newly_passing_vs_round1": [
+    "D10",
+    "J03",
+    "K04",
+    "K10"
+  ],
+  "paired_v1_5": "78/105 INSPECTED from Fable Round-1",
+  "round1": "82/105",
+  "round2_after_pg3": "86/105",
+  "schema_version": "firelens_hard_probe_summary.v1",
+  "summary": {
+    "by_section": {
+      "A": {
+        "passed": 10
+      },
+      "C": {
+        "passed": 10
+      },
+      "D": {
+        "passed": 12
+      },
+      "E": {
+        "passed": 10
+      },
+      "F": {
+        "failed": 5,
+        "passed": 7
+      },
+      "G": {
+        "failed": 1,
+        "passed": 5
+      },
+      "H": {
+        "failed": 4,
+        "passed": 2
+      },
+      "I": {
+        "failed": 2,
+        "passed": 6
+      },
+      "J": {
+        "passed": 6
+      },
+      "K": {
+        "failed": 2,
+        "passed": 13
+      },
+      "L": {
+        "failed": 3,
+        "passed": 2
+      },
+      "M": {
+        "failed": 2,
+        "passed": 3
+      }
+    },
+    "cost_usd": 0.0,
+    "elapsed_seconds": 0.7,
+    "executed": 105,
+    "failed": 19,
+    "passed": 86
+  }
+}

@@ -9,13 +9,17 @@ definitions), and ordinary questions that deserve a plainly labelled general
 answer. A language model chooses tools and writes prose. It is never the
 authority for what is true.
 
-**Release status:** V1.5 V3 engineering candidate on `main`, live at
-[firelens-bc.vercel.app](https://firelens-bc.vercel.app). The evidence behind
-this release is automated verification, deployed-preview probes, and a
-production deploy — not a completed human qualification. Named human review,
-firewall publish, assistive-technology and participant UX studies, and sealed
-V3 retrieval qualification remain open and are tracked in
-[`docs/audit/V1_5_V3_FINAL_ENGINEERING_LEDGER.md`](docs/audit/V1_5_V3_FINAL_ENGINEERING_LEDGER.md).
+**Repository status:** V1.6.0-rc.1 engineering candidate. All 20 prepared
+atomic claims and one edited sprinkler claim have named human decisions and
+were integrated through corpus-bound deterministic publication; nine defective
+source extractions were explicitly deferred. The exact RC1 H8
+representative-workload tradeoff is accepted, and the candidate is ready for
+independent examination. It is not paid-qualified, release-approved, or
+deployment proof. The existing site at
+[firelens-bc.vercel.app](https://firelens-bc.vercel.app) must not be assumed to
+match this checkout until a commit-bound deployment is separately verified.
+Current evidence and open gates are recorded in
+[`docs/reports/V1_6_RC1_LOCAL_QUALIFICATION.md`](docs/reports/V1_6_RC1_LOCAL_QUALIFICATION.md).
 
 ## Why this design matters
 
@@ -209,11 +213,13 @@ Strict contracts reject unknown fields. Public source metadata is always
 reconstructed from local corpus records; the model cannot supply publishers,
 URLs, locators, hashes, or page numbers.
 
-The current V1.5 corpus contains 170 native or human-verified chunks across
-eight approved sources and a 170 × 1,536 vector index. Ten chunks derived from
-a FireSmart page repair are quarantined until that replacement text receives
-human approval. Runtime startup verifies the repair registry, chunk provenance,
-corpus hash, vector row order, and matrix hash together.
+The V1.6 candidate retains the admitted 170-chunk corpus and 170 × 1,536 vector
+index across eight approved sources. Ten chunks derived from a FireSmart page
+repair remain quarantined until that replacement text receives human approval.
+Runtime startup verifies the repair registry, chunk provenance, corpus hash,
+vector row order, and matrix hash together. High-risk structured publication
+adds a separate 26-record, hash-bound typed-claim inventory; it does not make
+quarantined corpus material compilable.
 
 ## Historical V1.1 checkpoint
 
@@ -241,8 +247,12 @@ claim completeness. The exact owner-review action and artifact hashes are in
 
 Further reading:
 
+- [`docs/ARCHITECTURE_V1_6.md`](docs/ARCHITECTURE_V1_6.md): current public Ask,
+  structured-publication, proof, and authority boundaries.
+- [`docs/releases/V1_6_RUNBOOK.md`](docs/releases/V1_6_RUNBOOK.md): current
+  candidate gates and independent-examination handoff.
 - [`docs/reports/V1_5_PRINCIPAL_REMEDIATION.md`](docs/reports/V1_5_PRINCIPAL_REMEDIATION.md):
-  current finding ledger, fixes, evidence, and remaining release blockers.
+  historical V1.5 finding ledger, fixes, evidence, and release blockers.
 - [`docs/TECHNICAL_HANDBOOK.md`](docs/TECHNICAL_HANDBOOK.md): authoritative
   architecture, contracts, operations, and code-reading guide.
 - [`docs/reports/FIRELENS_V1_1_TECHNICAL_REPORT.md`](docs/reports/FIRELENS_V1_1_TECHNICAL_REPORT.md):

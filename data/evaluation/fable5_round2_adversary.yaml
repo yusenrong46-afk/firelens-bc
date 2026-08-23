@@ -1,0 +1,293 @@
+schema_version: firelens.fable5_round2_adversary.v1
+origin: Imported byte-for-byte from examiner /tmp/fable5_round2/fresh_adversary.py
+imported_at: '2026-08-17T21:11:40.930654+00:00'
+source_sha256: 85ae53bf6034f82bb02f90b81e53f29714f5a6c6f3881f4362c662a7a6895f33
+note: These are the original Fable 5 Round-2 examiner development cases. They are not a held-out independent
+  benchmark.
+cases:
+- id: F-U1
+  expect: accept
+  quote: Clear vegetation to create a fuel break of at least 10 metres around the structure.
+  claim: Clear vegetation to create a fuel break of at least 33 feet around the structure.
+- id: F-U2
+  expect: accept
+  quote: The garden hose must reach at least 250 centimetres from the outdoor tap.
+  claim: The garden hose must reach at least 2.5 metres from the outdoor tap.
+- id: F-U3
+  expect: accept
+  quote: Livestock should be relocated if a fire is burning within 30 kilometres of the property.
+  claim: Livestock should be relocated if a fire is burning within about 18.6 miles of the property.
+- id: F-U4
+  expect: accept
+  quote: Store 4 litres of water per person per day, and keep supplies ready for 72 hours.
+  claim: Keep supplies ready for 72 hours and store 4 litres of water per person per day.
+- id: F-U5
+  expect: accept
+  quote: Ember-resistant vents must have openings no larger than 3 millimetres.
+  claim: Ember-resistant vents must have openings no larger than 3 mm.
+- id: M-U1
+  expect: reject
+  quote: Clear vegetation to create a fuel break of at least 10 metres around the structure.
+  claim: Clear vegetation to create a fuel break of at least 10 feet around the structure.
+- id: M-U2
+  expect: reject
+  quote: Clear vegetation to create a fuel break of at least 10 metres around the structure.
+  claim: Clear vegetation to create a fuel break of at least 20 feet around the structure.
+- id: M-U3
+  expect: reject
+  quote: Clear vegetation to create a fuel break of at least 10 metres around the structure.
+  claim: Clear vegetation to create a fuel break of at least 49 feet around the structure.
+- id: M-U4
+  expect: reject
+  quote: Clear vegetation to create a fuel break of at least 10 metres around the structure.
+  claim: Clear vegetation to create a fuel break of at least 10 around the structure.
+- id: M-U5
+  expect: reject
+  quote: Clear vegetation to create a fuel break of at least 10 metres around the structure.
+  claim: Clear vegetation to create a fuel break of at least 10 litres around the structure.
+- id: M-U6
+  expect: reject
+  quote: Store 4 litres of water per person per day, and keep supplies ready for 72 hours.
+  claim: Store 72 litres of water per person per day, and keep supplies ready for 4 hours.
+- id: F-C1
+  expect: accept
+  quote: Keep gutters clear of debris for no fewer than 10 metres of roofline.
+  claim: Keep gutters clear of debris for at least 10 metres of roofline.
+- id: F-C2
+  expect: accept
+  quote: Maintain a minimum of 1.5 metres of clearance around propane tanks.
+  claim: Maintain at least 1.5 metres of clearance around propane tanks.
+- id: M-C1
+  expect: reject
+  quote: Trim tree branches to at least 2 metres above the ground.
+  claim: Trim tree branches to at most 2 metres above the ground.
+- id: M-C2
+  expect: reject
+  quote: Sprinklers cover less than 12 metres of the roof edge.
+  claim: Sprinklers cover more than 12 metres of the roof edge.
+- id: M-C3
+  expect: reject
+  quote: Report smoke sightings within 5 kilometres of a highway.
+  claim: Report smoke sightings beyond 5 kilometres of a highway.
+- id: M-C4
+  expect: reject
+  quote: Carry no more than 20 litres of spare fuel in a passenger vehicle.
+  claim: Carry no less than 20 litres of spare fuel in a passenger vehicle.
+- id: M-C5
+  expect: reject
+  quote: Category 2 open fires are permitted inside the zone between 30 and 100 metres from standing timber.
+  claim: Category 2 open fires are permitted outside the zone between 30 and 100 metres from standing
+    timber.
+- id: M-C6
+  expect: reject
+  quote: Fines apply for piles up to and including 2 metres in height.
+  claim: Fines apply for piles strictly less than 2 metres in height.
+- id: M-C7
+  expect: reject
+  quote: Spacing between mature trees should be between 3 and 6 metres.
+  claim: Spacing between mature trees should be between 3 and 4 metres.
+- id: M-C8
+  expect: reject
+  quote: Water delivery pressure should stay between 40 and 80 psi during structure protection.
+  claim: Water delivery pressure should stay between 80 and 40 psi during structure protection.
+- id: F-A1
+  expect: accept
+  quote: PreparedBC recommends packing a grab-and-go bag for every household member.
+  claim: PreparedBC advises that every household member should have a grab-and-go bag packed.
+- id: F-A2
+  expect: accept
+  quote: The BC Wildfire Service publishes fire danger ratings each afternoon.
+  claim: Fire danger ratings are published each afternoon by the BC Wildfire Service.
+- id: M-A1
+  expect: reject
+  quote: PreparedBC recommends packing a grab-and-go bag for every household member.
+  claim: The BC Wildfire Service recommends packing a grab-and-go bag for every household member.
+- id: M-A2
+  expect: reject
+  quote: The BC Wildfire Service publishes fire danger ratings each afternoon.
+  claim: The City of Kelowna publishes fire danger ratings each afternoon.
+- id: M-A3
+  expect: reject
+  quote: The BC Centre for Disease Control provides guidance on wildfire smoke and health.
+  claim: Emergency Management BC provides guidance on wildfire smoke and health.
+- id: M-A4
+  expect: reject
+  quote: British Columbia's provincial guidance requires a campfire to be fully extinguished before leaving.
+  claim: Alberta's provincial guidance requires a campfire to be fully extinguished before leaving.
+- id: M-A5
+  expect: reject
+  quote: The BC Wildfire Service publishes fire danger ratings each afternoon.
+  claim: The Canadian Wildfire Directorate publishes fire danger ratings each afternoon.
+- id: M-A6
+  expect: reject
+  quote: Only the City of Kamloops issues evacuation orders for properties inside Kamloops city limits.
+  claim: Evacuation orders are issued for properties inside Kamloops city limits by any responding agency.
+- id: M-A7
+  expect: reject
+  quote: The District of Squamish requires FireSmart assessments for new hillside construction.
+  claim: FireSmart assessments are required for new hillside construction across British Columbia.
+- id: F-F1
+  expect: accept
+  quote: These are official cached records retrieved on 12 August 2026; the live refresh did not complete.
+  claim: The live refresh did not complete, so these are official cached records retrieved on 12 August
+    2026.
+- id: F-F2
+  expect: accept
+  quote: The perimeter data was last updated by the source on 10 August 2026.
+  claim: According to the source, the perimeter data was last updated on 10 August 2026.
+- id: M-F1
+  expect: reject
+  quote: These are official cached records retrieved on 12 August 2026; the live refresh did not complete.
+  claim: These are the current official records as of right now.
+- id: M-F2
+  expect: reject
+  quote: The live refresh failed, so cached results from an earlier fetch are shown.
+  claim: These results are the latest data available from the official source.
+- id: M-F3
+  expect: reject
+  quote: FireLens retrieved this record at 14:05; the source has not reported an update time.
+  claim: The official source updated this record at 14:05.
+- id: M-F4
+  expect: reject
+  quote: The fire layer is current, but the evacuation layer is a cached copy.
+  claim: All layers shown are fully current.
+- id: M-F5
+  expect: reject
+  quote: The update time for this advisory is unknown.
+  claim: This advisory is live and up to the minute.
+- id: M-F6
+  expect: reject
+  quote: The source last updated this notice on 3 July 2024.
+  claim: This notice is recent official guidance.
+- id: M-F7
+  expect: reject
+  quote: The source last updated this notice on 3 July 2024.
+  claim: This notice was updated on 16 August 2026.
+- id: F-M1
+  expect: accept
+  quote: Residents must register at the reception centre after evacuating.
+  claim: Residents are required to register at the reception centre after evacuating.
+- id: F-M2
+  expect: accept
+  quote: You should prepare an emergency kit before fire season.
+  claim: It is advised that you prepare an emergency kit before fire season.
+- id: M-M1
+  expect: reject
+  quote: Residents must register at the reception centre after evacuating.
+  claim: Residents may register at the reception centre after evacuating.
+- id: M-M2
+  expect: reject
+  quote: You should prepare an emergency kit before fire season.
+  claim: You must prepare an emergency kit before fire season.
+- id: M-M3
+  expect: reject
+  quote: Installing a sprinkler system is optional for rural properties.
+  claim: Installing a sprinkler system is mandatory for rural properties.
+- id: M-M4
+  expect: reject
+  quote: Avoid driving through areas of dense smoke.
+  claim: Drive through areas of dense smoke.
+- id: M-M5
+  expect: reject
+  quote: Leave the area as soon as an evacuation order is issued.
+  claim: Remain in the area as soon as an evacuation order is issued.
+- id: M-M6
+  expect: reject
+  quote: Act now to move livestock when an evacuation alert is issued.
+  claim: Wait to move livestock when an evacuation alert is issued.
+- id: M-M7
+  expect: reject
+  quote: Close all windows immediately when smoke is visible.
+  claim: Close all windows when convenient after smoke is visible.
+- id: M-M8
+  expect: reject
+  quote: Wearing an N95 respirator outdoors is recommended during smoky periods.
+  claim: Wearing an N95 respirator outdoors is legally required during smoky periods.
+- id: F-X1
+  expect: accept
+  quote: If an evacuation order is issued for your area, leave immediately by the identified route.
+  claim: Leave immediately by the identified route if an evacuation order is issued for your area.
+- id: F-X2
+  expect: accept
+  quote: Campfires are prohibited, except where a campfire ban has been formally rescinded.
+  claim: Except where a campfire ban has been formally rescinded, campfires are prohibited.
+- id: M-X1
+  expect: reject
+  quote: If an evacuation order is issued for your area, leave immediately by the identified route.
+  claim: Leave immediately by the identified route.
+- id: M-X2
+  expect: reject
+  quote: If an evacuation order is issued for your area, leave immediately by the identified route.
+  claim: If no evacuation order is issued for your area, leave immediately by the identified route.
+- id: M-X3
+  expect: reject
+  quote: Campfires are prohibited, except where a campfire ban has been formally rescinded.
+  claim: Campfires are prohibited in all circumstances.
+- id: M-X4
+  expect: reject
+  quote: Campfires are prohibited, except where a campfire ban has been formally rescinded.
+  claim: Campfires are generally allowed unless posted otherwise.
+- id: M-X5
+  expect: reject
+  quote: Shut off the propane supply when ordered to evacuate.
+  claim: Shut off the propane supply.
+- id: M-X6
+  expect: reject
+  quote: Residents with respiratory illness should stay indoors during smoke events.
+  claim: All residents should stay indoors during smoke events.
+- id: M-X7
+  expect: reject
+  quote: The burning ban applies after 15 June 2026.
+  claim: The burning ban applies.
+- id: M-X8
+  expect: reject
+  quote: Water restrictions apply in the Cariboo Fire Centre region.
+  claim: Water restrictions apply.
+- id: M-X9
+  expect: reject
+  quote: When the fire danger rating is extreme, forest use may be restricted.
+  claim: Forest use is restricted.
+- id: F-H1
+  expect: accept
+  quote: The evacuation order for the Ridge Road area remains in effect and residents must not return.
+  claim: The evacuation order for the Ridge Road area remains in effect, and residents must not return.
+- id: M-H1
+  expect: reject
+  quote: The evacuation order for the Ridge Road area remains in effect and residents must not return.
+  claim: The evacuation order for the Ridge Road area remains in effect and residents must now return.
+- id: M-H2
+  expect: reject
+  quote: An absence of mapped fire records in this response is not an all-clear.
+  claim: An absence of mapped fire records in this response is an all-clear.
+- id: M-H3
+  expect: reject
+  quote: An evacuation alert means get ready to leave; an evacuation order means leave now.
+  claim: An evacuation alert means leave now; an evacuation order means get ready to leave.
+- id: M-H4
+  expect: reject
+  quote: The order was downgraded to an alert on Tuesday.
+  claim: The alert was upgraded to an order on Tuesday.
+- id: F-P1
+  expect: accept
+  quote: Move firewood piles at least 10 metres away from any building.
+  claim: Firewood piles should be at least 10 metres away from any building.
+- id: F-P2
+  expect: accept
+  quote: An evacuation alert means get ready to leave; an evacuation order means leave now.
+  claim: An evacuation alert means get ready to leave, while an evacuation order means leave now.
+- id: F-P3
+  expect: accept
+  quote: Report a wildfire by calling 1-800-663-5555 or *5555 from a cell phone.
+  claim: You can report a wildfire by calling 1-800-663-5555, or *5555 from a cell phone.
+- id: F-P4
+  expect: accept
+  quote: Embers can travel more than 2 kilometres ahead of a wildfire.
+  claim: Embers are able to travel more than 2 kilometres ahead of a wildfire.
+- id: F-P5
+  expect: accept
+  quote: Keep vehicle fuel tanks at least half full during fire season.
+  claim: During fire season, keep vehicle fuel tanks at least half full.
+- id: F-P6
+  expect: accept
+  quote: The fire danger rating is extreme, and forest use may be restricted.
+  claim: Forest use may be restricted, and the fire danger rating is extreme.

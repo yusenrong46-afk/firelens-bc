@@ -23,18 +23,23 @@ from firelens.api import create_app
 from firelens.benchmark import _usage_cost, _usage_total, benchmark_runtime_configuration
 from firelens.config import FireLensConfig
 from firelens.contracts import (
+    CoarseResolvedLocation,
     ConversationTurn,
     Freshness,
     GeometryRelation,
     LiveMapResponse,
+    LivePagination,
     LiveResult,
     LiveResultKind,
+    MapViewport,
+    NearMeResponse,
     QueryRequest,
     QueryRoute,
     ResponseMode,
 )
 from firelens.live import LAYER_URLS, LiveDataService
 from firelens.live_contracts import LocationInput
+from firelens.live_support import OFFICIAL_FALLBACK_URLS
 from firelens.providers.fake import FakeProvider
 from firelens.retrieval.embeddings import sha256_file
 from firelens.runtime import Runtime, load_runtime
@@ -163,6 +168,43 @@ class OfflineLiveDataService:
                     for result in response.results
                 ]
             }
+        )
+
+    async def resolve_location(self, location: LocationInput) -> tuple[float, float]:
+        del location
+        return 49.88, -119.49
+
+    async def nearby_page(
+        self,
+        location: LocationInput,
+        *,
+        layers: tuple[LiveResultKind, ...] = tuple(LiveResultKind),
+        page: int = 1,
+        page_size: int = 100,
+    ) -> NearMeResponse:
+        mapped = await self.nearby_results(location, layers=layers)
+        total = len(mapped.results)
+        return NearMeResponse(
+            generated_at=mapped.generated_at,
+            requested_radius_km=location.radius_km,
+            requested_layers=list(layers) or list(LiveResultKind),
+            resolved_location=CoarseResolvedLocation(latitude=49.88, longitude=-119.49),
+            viewport=MapViewport(west=-120.0, south=49.0, east=-119.0, north=50.5),
+            results=mapped.results,
+            pagination=LivePagination(
+                page=page,
+                page_size=page_size,
+                total_results=total,
+                total_pages=1 if total else 0,
+                returned_results=total,
+                has_previous=False,
+                has_next=False,
+            ),
+            aggregate_freshness=mapped.aggregate_freshness,
+            unavailable_layers=list(mapped.unavailable_layers),
+            layer_statuses=list(mapped.layer_statuses),
+            limitations=list(mapped.limitations),
+            official_fallback_urls=list(OFFICIAL_FALLBACK_URLS),
         )
 
 

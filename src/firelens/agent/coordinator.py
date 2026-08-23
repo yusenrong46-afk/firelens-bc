@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 from uuid import uuid4
 
+from firelens.agent.budget import RequestExecutionPolicy
 from firelens.agent.loop import run_agent_loop
 from firelens.agent.rails import input_seatbelt
 from firelens.agent.tools import AgentTool
@@ -60,6 +61,7 @@ class AgentExecution:
     response: AskResponse
     route: QueryRoute
     tools: tuple[AgentTool, ...]
+    policy: RequestExecutionPolicy = field(default_factory=RequestExecutionPolicy)
 
 
 def _static_tool(response: AskResponse) -> AgentTool:
@@ -170,6 +172,7 @@ class FireLensAgent:
         seatbelt = input_seatbelt(request)
         if seatbelt is not None:
             reason, answer = seatbelt
+            policy = RequestExecutionPolicy(route="prohibited")
             return AgentExecution(
                 response=safe_abstention(
                     uuid4().hex,
@@ -179,6 +182,7 @@ class FireLensAgent:
                 ),
                 route=QueryRoute.PROHIBITED,
                 tools=(),
+                policy=policy,
             )
         plan = plan_query(request)
         if plan.route == QueryRoute.CAPABILITY:
@@ -187,10 +191,11 @@ class FireLensAgent:
                 response=response,
                 route=QueryRoute.CAPABILITY,
                 tools=(_static_tool(response),),
+                policy=RequestExecutionPolicy(route="capability"),
             )
         effective_request = _live_place_correction(request) or request
         provider = getattr(self.static_service, "provider", None)
-        response, route, tools = await run_agent_loop(
+        response, route, tools, packet = await run_agent_loop(
             effective_request,
             live_coordinator=self.live_coordinator,
             static_service=self.static_service,
@@ -198,4 +203,4 @@ class FireLensAgent:
         )
         if not tools and response.live_results:
             tools = _live_tools(effective_request, response)
-        return AgentExecution(response=response, route=route, tools=tools)
+        return AgentExecution(response=response, route=route, tools=tools, policy=packet.policy)

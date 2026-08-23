@@ -1,0 +1,25 @@
+{
+  "schema_version": "firelens_v1_6_round3_typed_claim_inventory.v1",
+  "evidence_class": "INSPECTED",
+  "policy_version": "firelens.claim_risk_policy.v1",
+  "path": "data/typed_claims/high_risk_v1.yaml",
+  "sha256": "902a953384fa430786289d02a52156e7fc80f6b0b4d2fdd7ec37e4c6abd0e714",
+  "production_supported_ids": [
+    "TC-EVAC-ALERT-001",
+    "TC-EVAC-ORDER-001",
+    "TC-EVAC-RESCIND-001",
+    "TC-GAS-001",
+    "TC-SPRINKLER-001",
+    "TC-FRESHNESS-001"
+  ],
+  "unreviewed_may_not_publish": true,
+  "does_not_compile_corpus": true,
+  "rendering_coverage": "Reviewed records may replace compatible Tier A/B paraphrases after validation. Residual typed compare still applies to all grounded claims.",
+  "unsupported_high_risk_areas": [
+    "Most corpus spans have no reviewed typed record",
+    "Smoke driving/health actions are checker-protected, not inventory-rendered",
+    "Live incident/evacuation records are not typed claims",
+    "High-risk numerical grab-and-go quantities are checker-protected, not inventory-rendered",
+    "No production queue publishes unreviewed model-extracted claims"
+  ]
+}

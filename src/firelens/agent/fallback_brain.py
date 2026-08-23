@@ -18,7 +18,7 @@ from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import LiveResultKind, QueryRequest
 
 _GUIDANCE = re.compile(
-    r"\b(?:kit|grab-and-go|go bag|firesmart|prepare|preparing|preparedness|"
+    r"\b(?:kit|grab-and-go|go[- ]bags?|firesmart|prepare|preparing|preparedness|"
     r"precaution|precautions|emergency plan|what belongs|smoke preparedness|"
     r"pack(?:ing)?|what should i (?:take|do|pack))\b",
     re.IGNORECASE,
@@ -44,6 +44,16 @@ def confident_guidance_intent(question: str) -> bool:
         or _DEFINITION.search(question)
         or (reviewed_guidance_intent(question) and not unsupported_live_topics(question))
     )
+
+
+def should_prefetch_reviewed_guidance(question: str) -> bool:
+    """Skip static prefetch on live-only questions so official records stay first."""
+
+    if _GUIDANCE.search(question) or _DEFINITION.search(question):
+        return True
+    if live_layers_for_question(question):
+        return False
+    return confident_guidance_intent(question)
 
 
 def heuristic_tool_calls(request: QueryRequest) -> list[dict[str, Any]]:
@@ -78,14 +88,14 @@ def heuristic_tool_calls(request: QueryRequest) -> list[dict[str, Any]]:
                     "arguments": arguments,
                 }
             )
-    if confident_guidance_intent(question):
+    if should_prefetch_reviewed_guidance(question):
         calls.append(
             {
                 "name": AgentTool.SEARCH_REVIEWED_GUIDANCE.value,
                 "arguments": {"query": question},
             }
         )
-    if not calls and not unsupported_live_topics(question):
+    if not calls and should_prefetch_reviewed_guidance(question):
         calls.append(
             {
                 "name": AgentTool.SEARCH_REVIEWED_GUIDANCE.value,

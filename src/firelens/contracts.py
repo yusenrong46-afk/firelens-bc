@@ -12,6 +12,10 @@ from typing import Annotated, Any, Literal, Protocol
 from pydantic import Field, HttpUrl, field_validator, model_validator
 
 from firelens import api_contracts as _api_contracts
+from firelens.assistant_history import ASSISTANT_HISTORY_LIMIT as ASSISTANT_HISTORY_LIMIT
+from firelens.assistant_history import bounded_assistant_history as bounded_assistant_history
+from firelens.assistant_history import render_assistant_history as render_assistant_history
+from firelens.claim_trust import ClaimTrust
 from firelens.contract_base import FrozenStrictModel, StrictModel
 from firelens.live_contracts import (
     AggregateFreshness as AggregateFreshness,
@@ -55,6 +59,8 @@ from firelens.live_contracts import (
 from firelens.live_contracts import (
     aggregate_live_freshness as aggregate_live_freshness,
 )
+from firelens.proof_presentation import AnswerStatusBanner, ProofCard, attach_proof_presentation
+from firelens.publication_contracts import PublicationAuthority
 
 DocumentContextDraft = _api_contracts.DocumentContextDraft
 DocumentContextItem = _api_contracts.DocumentContextItem
@@ -75,8 +81,7 @@ RerankResult = _api_contracts.RerankResult
 ValidationReport = _api_contracts.ValidationReport
 response_history_prefix = _api_contracts.response_history_prefix
 
-PUBLIC_ANSWER_MAX_CHARS = 6_000
-ASSISTANT_HISTORY_LIMIT = PUBLIC_ANSWER_MAX_CHARS
+PUBLIC_ANSWER_MAX_CHARS = ASSISTANT_HISTORY_LIMIT
 MAX_GROUNDED_ANSWER_CHARS = 2_500
 MAX_PUBLIC_CLAIMS = 12
 MAX_BACKGROUND_CLAIMS = 3
@@ -92,55 +97,6 @@ def render_claim_texts(claims: Iterable[ClaimText]) -> str:
     """Render claim text once so validation, publication, and composition agree."""
 
     return " ".join(claim.text.strip() for claim in claims)
-
-
-def bounded_assistant_history(text: str) -> str:
-    """Return the deterministic representation allowed in a later request."""
-
-    normalized = " ".join(text.split())
-    if not normalized:
-        raise ValueError("assistant history cannot be blank")
-    if len(normalized) <= ASSISTANT_HISTORY_LIMIT:
-        return normalized
-    return normalized[: ASSISTANT_HISTORY_LIMIT - 3].rstrip() + "..."
-
-
-def render_assistant_history(
-    *, authority_prefix: str, answer: str, limitations: Iterable[str]
-) -> str:
-    """Keep authority and limitations visible while bounding a later-turn transcript."""
-
-    normalized_prefix = " ".join(authority_prefix.split())
-    normalized_answer = " ".join(answer.split())
-    if not normalized_prefix or not normalized_answer:
-        raise ValueError("assistant history requires authority and answer text")
-    unique_limitations = list(
-        dict.fromkeys(
-            normalized
-            for limitation in limitations
-            if (normalized := " ".join(limitation.split()))
-        )
-    )
-    answer_prefix = normalized_prefix + " Answer: "
-    if not unique_limitations:
-        return bounded_assistant_history(answer_prefix + normalized_answer)
-
-    limitation_prefix = " Limitations: "
-    limitation_text = " | ".join(unique_limitations)
-    maximum_limitation_chars = (
-        ASSISTANT_HISTORY_LIMIT - len(answer_prefix) - len(limitation_prefix) - len("...")
-    )
-    if len(limitation_text) > maximum_limitation_chars:
-        limitation_text = limitation_text[: maximum_limitation_chars - 3].rstrip() + "..."
-    answer_budget = (
-        ASSISTANT_HISTORY_LIMIT
-        - len(answer_prefix)
-        - len(limitation_prefix)
-        - len(limitation_text)
-    )
-    if len(normalized_answer) > answer_budget:
-        normalized_answer = normalized_answer[: answer_budget - 3].rstrip() + "..."
-    return answer_prefix + normalized_answer + limitation_prefix + limitation_text
 
 
 class QueryRoute(StrEnum):
@@ -228,6 +184,7 @@ class ReasonCode(StrEnum):
     DRAFT_VALIDATION_FAILED = "draft_validation_failed"
     MODEL_ABSTAINED = "model_abstained"
     CONFLICTING_EVIDENCE = "conflicting_evidence"
+    HIGH_RISK_CLAIM_NOT_STRUCTURED = "high_risk_claim_not_structured"
 
 
 class SupportStatus(StrEnum):
@@ -451,10 +408,12 @@ class ClaimSupport(FrozenStrictModel):
 
 
 class PublicClaim(FrozenStrictModel):
-    claim_id: str = Field(pattern=r"^C[1-9][0-9]*$")
+    claim_id: str = Field(pattern=r"^[CL][1-9][0-9]*$")
     text: str = Field(min_length=1, max_length=600)
     evidence_status: EvidenceStatus
     supports: list[ClaimSupport] = Field(default_factory=list, max_length=5)
+    trust: ClaimTrust | None = None
+    publication: PublicationAuthority | None = None
 
     @field_validator("text")
     @classmethod
@@ -576,6 +535,10 @@ class AskResponse(StrictModel):
     required_input: RequiredInput | None = None
     selected_live_result_id: str | None = Field(default=None, min_length=1, max_length=200)
     resolved_location: CoarseResolvedLocation | None = None
+    status_banner: AnswerStatusBanner | None = None
+    supported_items: list[str] = Field(default_factory=list, max_length=12)
+    unknown_items: list[str] = Field(default_factory=list, max_length=12)
+    proof_cards: list[ProofCard] = Field(default_factory=list, max_length=12)
 
     @model_validator(mode="after")
     def validate_public_state(self) -> AskResponse:
@@ -601,6 +564,7 @@ class AskResponse(StrictModel):
             raise ValueError("required input is only valid for resumable input responses")
         if not self.live_results and self.aggregate_freshness is not None:
             raise ValueError("aggregate freshness requires live results")
+        attach_proof_presentation(self)
         return self
 
     def _validate_answer_sections(self) -> None:

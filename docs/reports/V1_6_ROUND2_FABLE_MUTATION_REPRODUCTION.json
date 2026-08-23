@@ -1,0 +1,172 @@
+{
+  "candidate_commit": "6f038b4cacc2204be2da0147240143ecfbde3c96",
+  "checker_module": "firelens.answering.semantic_invariants.preservation_errors",
+  "correct": 7,
+  "faithful_false_rejects": [],
+  "label": "EXECUTED",
+  "note": "Quotes and claims are examiner-owned nearby mutations, not sealed labels.",
+  "output_rail_on_selected_mutations": {
+    "immediate_to_delayed": [
+      "safety_or_medical_language"
+    ],
+    "leave_to_stay": [
+      "safety_or_medical_language"
+    ],
+    "overlap_opposite": [
+      "safety_or_medical_language"
+    ]
+  },
+  "rows": [
+    {
+      "accepted": true,
+      "correct": false,
+      "error_count": 0,
+      "error_kinds": [],
+      "expect_accept": false,
+      "name": "leave_to_stay"
+    },
+    {
+      "accepted": true,
+      "correct": false,
+      "error_count": 0,
+      "error_kinds": [],
+      "expect_accept": false,
+      "name": "immediate_to_delayed"
+    },
+    {
+      "accepted": false,
+      "correct": true,
+      "error_count": 1,
+      "error_kinds": [
+        "changes a protected incident or evacuation status"
+      ],
+      "expect_accept": false,
+      "name": "alert_to_order"
+    },
+    {
+      "accepted": false,
+      "correct": true,
+      "error_count": 1,
+      "error_kinds": [
+        "changes the polarity of a safety action"
+      ],
+      "expect_accept": false,
+      "name": "negation_drop"
+    },
+    {
+      "accepted": true,
+      "correct": false,
+      "error_count": 0,
+      "error_kinds": [],
+      "expect_accept": false,
+      "name": "required_to_optional"
+    },
+    {
+      "accepted": false,
+      "correct": true,
+      "error_count": 1,
+      "error_kinds": [
+        "introduces an unsupported quantity or unit: 15 metre"
+      ],
+      "expect_accept": false,
+      "name": "decimal_shift"
+    },
+    {
+      "accepted": true,
+      "correct": false,
+      "error_count": 0,
+      "error_kinds": [],
+      "expect_accept": false,
+      "name": "unit_swap"
+    },
+    {
+      "accepted": true,
+      "correct": false,
+      "error_count": 0,
+      "error_kinds": [],
+      "expect_accept": false,
+      "name": "comparator_flip"
+    },
+    {
+      "accepted": true,
+      "correct": false,
+      "error_count": 0,
+      "error_kinds": [],
+      "expect_accept": false,
+      "name": "authority_swap"
+    },
+    {
+      "accepted": false,
+      "correct": true,
+      "error_count": 1,
+      "error_kinds": [
+        "introduces an unsupported date: 2019"
+      ],
+      "expect_accept": false,
+      "name": "date_swap"
+    },
+    {
+      "accepted": false,
+      "correct": true,
+      "error_count": 1,
+      "error_kinds": [
+        "removes a material condition from its quotes"
+      ],
+      "expect_accept": false,
+      "name": "condition_omission"
+    },
+    {
+      "accepted": true,
+      "correct": false,
+      "error_count": 0,
+      "error_kinds": [],
+      "expect_accept": false,
+      "name": "exception_reversal"
+    },
+    {
+      "accepted": true,
+      "correct": false,
+      "error_count": 0,
+      "error_kinds": [],
+      "expect_accept": false,
+      "name": "stale_as_current"
+    },
+    {
+      "accepted": true,
+      "correct": false,
+      "error_count": 0,
+      "error_kinds": [],
+      "expect_accept": false,
+      "name": "overlap_opposite"
+    },
+    {
+      "accepted": true,
+      "correct": true,
+      "error_count": 0,
+      "error_kinds": [],
+      "expect_accept": true,
+      "name": "faithful_reorder"
+    },
+    {
+      "accepted": true,
+      "correct": true,
+      "error_count": 0,
+      "error_kinds": [],
+      "expect_accept": true,
+      "name": "faithful_hedge"
+    }
+  ],
+  "schema_version": "firelens_v1_6_round2_fable_reproduction.v1",
+  "total": 16,
+  "unsafe_false_accepts": [
+    "leave_to_stay",
+    "immediate_to_delayed",
+    "required_to_optional",
+    "unit_swap",
+    "comparator_flip",
+    "authority_swap",
+    "exception_reversal",
+    "stale_as_current",
+    "overlap_opposite"
+  ]
+}

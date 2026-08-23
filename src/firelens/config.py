@@ -15,7 +15,7 @@ from firelens.privacy_policy import (
     resolve_openrouter_privacy_from_env,
 )
 
-DEFAULT_RELEASE_VERSION = "1.5.3-rc.1"
+DEFAULT_RELEASE_VERSION = "1.6.0-rc.1"
 
 
 def _read_dotenv(path: Path) -> dict[str, str]:
@@ -100,6 +100,7 @@ class FireLensConfig(BaseModel):
     trace_content: bool = False
     deployment_environment: Literal["local", "preview", "production"] = "local"
     trusted_proxy_platform: Literal["none", "vercel"] = "none"
+    retrieval_strategy: Literal["baseline", "adaptive_v1"] = "baseline"
 
     @model_validator(mode="after")
     def validate_adaptive_provider_bounds(self) -> Self:
@@ -217,4 +218,9 @@ class FireLensConfig(BaseModel):
             ),
             deployment_environment=configured_environment,
             trusted_proxy_platform="vercel" if setting("VERCEL") else "none",
+            retrieval_strategy=(
+                "adaptive_v1"
+                if (setting("FIRELENS_RETRIEVAL_STRATEGY") or "baseline") == "adaptive_v1"
+                else "baseline"
+            ),
         )

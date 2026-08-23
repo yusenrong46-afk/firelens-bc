@@ -9,6 +9,13 @@ from __future__ import annotations
 
 import re
 
+from firelens.answering.intent_patterns import (
+    _CORPUS_REFERENCE_PATTERNS,
+    _LIVE_PATTERNS,
+    _PERSONALIZED_MEDICAL_PATTERNS,
+    _POLICY_MANIPULATION_PATTERNS,
+    _PROHIBITED_PATTERNS,
+)
 from firelens.answering.location_intent import (
     asks_for_personal_location,
     coarse_location_from_question,
@@ -47,121 +54,6 @@ TOPIC_CATALOGUE: tuple[tuple[str, str], ...] = (
 )
 
 SUGGESTED_QUESTIONS: tuple[str, ...] = tuple(item[1] for item in TOPIC_CATALOGUE)
-
-_PROHIBITED_PATTERNS = (
-    r"\b(safest|best)\s+(?:(?:evacuation|escape)\s+)?(road|route|way)\b",
-    r"\bwhich\s+(road|route)\s+should\s+(?:i|we)\s+take\b",
-    r"\b(am i|are we|is it)\s+safe\b",
-    r"\bis\s+(?:my|our)\s+.{0,40}\bsafe\b",
-    r"\bshould\s+(?:i|we)\s+(stay|leave|evacuate|return)\b",
-    r"\b(?:can|could|may)\s+(?:i|we)\s+safely\s+(?:stay|leave|evacuate|return)\b",
-    r"\bwhether\s+(?:my|our)\s+.{0,40}\bsafe\b",
-    r"\btell me\s+whether\s+to\s+evacuate\b",
-    r"\bshould\s+(?:my|our)\s+family\s+(?:stay|leave|evacuate|return)\b",
-    r"\b(?:can|could|may)\s+(?:i|we)\s+(?:return|go back)\s+home\b",
-    r"\bis it okay to\s+(?:return|stay|leave|go back|evacuate|drive)\b",
-    r"\bokay to return home\b",
-    r"\bshould\s+(?:i|we)\s+take\s+(?:that|this|the)\s+(?:road|route|way)\b",
-    r"\b(?:if|whether)\s+i\s+am\s+safe\b",
-    r"\b(?:if|whether)\s+we\s+are\s+safe\b",
-    r"\btell me if\s+(?:i am|i'm|we are)\s+safe\b",
-    r"\b(?:return|go back)\s+home\s+(?:yet|now|today|tonight)\b",
-    r"\b(?:are|is)\s+(?:i|we|my family|our family)\s+okay\s+to\s+(?:wait|stay|leave|evacuate|return)\b",
-    r"\b(?:decide|tell me)\s+(?:if|whether)\s+(?:i|we)\s+(?:stay|leave|evacuate|return)\b",
-    r"\bwhether\s+(?:i|we)\s+should\s+(?:stay|leave|evacuate|return)\b",
-    r"\bshould\s+(?:i|we)\s+go\s+(?:now|today|tonight|this morning|this afternoon|this evening)\b",
-    r"\b(?:is it|tell me (?:if|whether))\s+.{0,30}\bsafe\s+to\s+(?:drive|travel|go)\b",
-    r"\bis\s+(?!a\b|an\b).{1,80}\bsafe(?:\s+(?:right now|today|tonight)|"
-    r"\s+from\b.{0,50}|\s+to\s+(?:stay|return|drive|travel)\b.{0,40})?[?!.]*$",
-    r"\b(?:can|could|may)\s+(?:people|residents?|famil(?:y|ies)|households?|"
-    r"visitors?|(?:the\s+)?community)\s+safely\s+(?:stay|leave|evacuate|return)\b",
-    r"\bshould\s+.{0,50}\b(?:people|residents?|famil(?:y|ies)|households?|"
-    r"visitors?)\s+(?:safely\s+)?(?:stay|leave|evacuate|return)\b",
-    r"\b(?:my|our)\s+(?:address|street|property|home)\b.{0,50}\b\d{1,6}\b.{0,40}\b(?:under|in)\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)\b",
-    r"\b(?:decide|choose|recommend)\b.{0,80}\b(?:evacuat(?:e|ion)|shelter(?:-in-place)?|stay|leave)\b.{0,30}\b(?:versus|vs\.?|or)\b",
-    r"\b(?:rank|prioriti[sz]e|compare)\b.{0,80}\b(?:roads?|routes?|highways?)\b.{0,80}\b(?:family|evacuat(?:e|ion)|escape|safest)\b",
-    r"\b(?:roads?|routes?|highways?)\b.{0,80}\b(?:rank|priority|safest|best)\b.{0,50}\b(?:family|evacuat(?:e|ion)|escape)\b",
-    r"\b(?:authorize|approve|clear)\b.{0,90}\b(?:return(?:ing)?|go back|evacuat(?:e|ion)|stay|leave)\b",
-    r"\b(?:exact\s+)?address\s+(?:at\s+)?\d{1,6}\b.{0,100}\b(?:evacuation\s+)?(?:alert|order)\b",
-    r"\basap\s+evac(?:uate|uation)?\b",
-)
-
-_PERSONALIZED_MEDICAL_PATTERNS = (
-    r"\bdiagnos(?:e|is)\b.{0,80}\b(?:me|my|our|whether|cough|symptoms?)\b",
-    r"\bprescribe\b.{0,80}\b(?:me|my|for|smoke|headache|cough|medicine|medication)\b",
-    r"\bwhat\s+dose\s+of\s+.{0,60}\b(?:safe|take|use|for me)\b",
-    r"\bwhat\s+(?:medicine|medication|dose|treatment)\s+should\s+i\b",
-    r"\bshould\s+i\s+(?:take|stop taking|use)\s+.{0,50}\b(?:medicine|medication|inhaler)\b",
-    r"\bdo\s+i\s+have\s+(?:smoke inhalation|carbon monoxide poisoning|asthma)\b",
-    r"\bshould\s+i\s+.{0,50}\b(?:dose|inhaler|medication|medicine)\b",
-    r"\b(?:i|my|we|our)\b.{0,80}\b(?:chest (?:pain|hurts?|tightness)|difficulty breathing|shortness of breath|wheez(?:e|ing)|faint(?:ed|ing)?|dizz(?:y|iness))\b",
-    r"\b(?:chest (?:pain|hurts?|tightness)|difficulty breathing|shortness of breath|wheez(?:e|ing))\b.{0,80}\bwhat should (?:i|we) do\b",
-    r"\bhow should (?:i|we)\s+(?:treat|manage)\s+(?:my|our|the|this)\b",
-    r"\b(?:i|my|me|we|our|us)\b.{0,100}\b(?:treat|manage)\s+(?:my|our|the|this)\s+(?:burn|injury|symptom|headache|cough|pain)\b",
-    r"\b(?:my|our|personal)\b.{0,50}\b(?:inhaler|medicine|medication|meds?)\b.{0,60}\b(?:schedule|dose|dosage|frequency|how often)\b",
-    r"\b(?:schedule|dose|dosage|frequency|how often)\b.{0,60}\b(?:my|our|personal)\b.{0,40}\b(?:inhaler|medicine|medication|meds?)\b",
-    r"\b(?:stop|pause|skip|double|increase|decrease|change)\b.{0,40}\b(?:my|our)\b.{0,40}\b(?:medicine|medication|meds?|inhaler|prescription)\b",
-    r"\b(?:is|are)\s+(?:this|my|our|the)\b.{0,80}\b(?:disease|illness|condition|smoke inhalation|asthma|infection)\b.{0,30}\b(?:yes or no|diagnos|from smoke|caused by)\b",
-    r"\b(?:yes or no|diagnos)\b.{0,80}\b(?:disease|illness|condition|symptoms?|cough|smoke inhalation)\b",
-)
-
-_POLICY_MANIPULATION_PATTERNS = (
-    r"\bignore\s+.{0,50}\b(?:safety|evidence|boundary|rules?|instructions?)\b",
-    r"\b(?:override|bypass|disable)\s+.{0,40}\b(?:safety|evidence|boundary|rules?)\b",
-    r"\buse\s+(?:your\s+)?model memory\b",
-    r"\bignore\s+.{0,60}\b(?:official|current|live)[-\s]+(?:information|data|source)\s+requirement\b",
-    r"\bignore\s+(?:all\s+)?(?:previous|prior|earlier|system|developer)\s+(?:instructions?|rules?|messages?|prompts?)\b",
-    r"\b(?:reveal|print|show|repeat|expose)\b.{0,50}\b(?:hidden|system|developer|internal)\s+(?:instructions?|prompt|messages?|rules?)\b",
-    r"\b(?:act|behave|respond)\s+as\s+(?:an?\s+)?(?:unrestricted|uncensored|jailbroken)\b",
-    r"\b(?:cite|create|provide|use)\b.{0,50}\b(?:fake|fabricated|invented|nonexistent)\b.{0,50}\b(?:citations?|pages?|sources?|urls?|documents?|evidence)\b",
-    r"\b(?:invent|fabricate|forge|make up)\b.{0,60}\b(?:evidence|citation|source|url|document|record|perimeter|status|bulletin)\b",
-    r"\bbase64[- ]decode\b.{0,80}\b(?:obey|follow|execute|instruction)\b",
-    r"\b(?:roleplay|pretend|act)\b.{0,50}\b(?:bc wildfire service|bcws|emergencyinfo\s*bc|authority|official)\b",
-    r"\b(?:say|claim|state)\s+the\s+opposite\b.{0,80}\b(?:order|alert|safe|stay|leave|evacuat)\b",
-    r"\b(?:hide|omit|suppress)\b.{0,50}\b(?:other|conflict|disagreement|authority|source|evidence)\b",
-    r"\b(?:invent|fabricate|make up)\b.{0,50}\b(?:blended|consensus|compromise)\b.{0,40}\b(?:answer|guidance|recommendation)\b",
-)
-
-_CORPUS_REFERENCE_PATTERNS = (
-    r"\b(?:document|guide|checklist|source)s?\b.{0,80}\b(?:require|recommend|say|agree|disagree|follow)\b",
-    r"\b(?:require|recommend|say|agree|disagree|follow)\b.{0,80}\b(?:document|guide|checklist|source)s?\b",
-    r"\bwhat\b.{0,60}\b(?:document|guide|checklist|source)s?\b",
-    r"\b(?:require|recommend)\b.{0,100}\b(?:grab-and-go|emergency kit|firesmart|wildfire smoke)\b",
-    r"\b(?:grab-and-go|emergency kit|firesmart|wildfire smoke)\b.{0,100}\b(?:require|recommend)\b",
-)
-
-_LIVE_PATTERNS = (
-    r"\b(?:fires?|wildfires?|evacuat(?:ion|ing)|alerts?|orders?|smoke|air quality|roads?|highways?)\b.{0,60}\b(?:right now|currently|latest|today|tonight|this morning|this afternoon|this evening|this week|at the moment|now)\b",
-    r"\b(?:right now|currently|latest|today|tonight|this morning|this afternoon|this evening|this week|at the moment|now)\b.{0,60}\b(?:fires?|wildfires?|evacuat(?:ion|ing)|alerts?|orders?|smoke|air quality|roads?|highways?)\b",
-    r"\b(active|current)\s+(fires?|wildfires?|evacuations?|alerts?|orders?|smoke|air quality)\b",
-    r"\b(is there|are there)\s+(a\s+)?(fire|wildfire)\b",
-    r"\b(?:is there|are there)\b.{0,40}[a-z]{1,12}fires?\b.{0,30}\b(?:near|around|by|in|within)\b",
-    r"\bwhere\s+is\s+the\s+(fire|wildfire)\b",
-    r"\bnear\s+(me|my home|my house|my address)\b",
-    r"\bhas\s+.*\s+(been evacuated|issued an evacuation)\b",
-    r"\bwhat(?:'s| is)\s+(?:the\s+)?(?:wildfire|fire)\s+(?:status|situation)\b",
-    r"\bhow many\s+(?:active\s+)?(?:fires|wildfires)\b",
-    r"\b(?:evacuation|wildfire|fire|smoke|air quality)\s+(?:map|status|update|updates)\b",
-    r"\b(?:fires|wildfires)\b.{0,40}\bburning\b",
-    r"\bburning\b.{0,40}\b(?:fires|wildfires)\b",
-    r"\b(?:roads?|highways?)\b.{0,40}\b(?:open|closed|closure|blocked)\b",
-    r"\b(?:is|are|whether)\s+.{1,60}\b(?:under|on)\s+(?:an?\s+)?evacuation\s+(?:alerts?|orders?)\b",
-    r"\bdoes\s+.{1,60}\bhave\s+(?:an?\s+)?evacuation\s+(?:alerts?|orders?)\b",
-    r"\bis\s+(?:there\s+)?(?:an?\s+)?evacuation\s+(?:alerts?|orders?)\s+(?:active|in effect)\b",
-    r"\b(?:fire|wildfire|evacuation|alert|order|smoke|air quality|road|highway)\b.{0,50}\b(?:active|in effect)\b",
-    r"\b(?:what|how)\s+(?:is|are)\s+(?:the\s+)?(?:air quality|smoke conditions?)\b",
-    r"\bis\s+(?:it|.{1,50})\s+smoky\b",
-    r"\b(?:fires?|wildfires?)\b.{0,60}\b(?:current|updated|up[- ]to[- ]date)\b",
-    r"\b(?:emergencyinfo\s*bc|emergencyinfobc|bc wildfire service|bcws)\b.{0,60}\b(?:post(?:ed)?|new|update|latest|today|now)\b",
-    r"\b(?:my|our)\s+(?:address|home|property|location)\s+is\s+under\s+(?:an?\s+)?(?:evacuation\s+)?(?:alerts?|orders?)\b",
-    r"\b(?:is|are)\s+there\s+(?:an?\s+)?(?:evacuation\s+)?(?:alerts?|orders?)\s+(?:for|near|around|in)\b",
-    r"\b(?:is|are)\s+there\b.{1,60}\b(?:evacuation\s+)?(?:alerts?|orders?)\b",
-    r"\b(?:current|latest|active|updated)\s+(?:fire\s+|wildfire\s+)?perimeters?\b",
-    r"\b(?:show|display|where)\b.{0,40}\b(?:fire\s+|wildfire\s+)?perimeters?\b",
-    r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?)\s+(?:near|around|by)\s+[a-z]",
-    r"\b(?:show|display|list|map|check|find)\b.{0,80}"
-    r"\b(?:(?:evacuation|evac)\s+)?(?:alerts?|orders?)\b",
-)
 
 _REQUEST_FRAGMENT_SPLIT = re.compile(
     r"[?;+]|\s+(?:and|also|plus)\s+"
@@ -448,7 +340,7 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
     fire_status_requested = any(
         re.search(pattern, lowered)
         for pattern in (
-            r"\b(?:active|current|latest)\s+(?:fires?|wildfires?)\b",
+            r"\b(?:active|current|latest)\s+(?:(?:bc|b\.c\.|british columbia)\s+)?(?:fires?|wildfires?)\b",
             r"\bhow many\b.{0,40}\b(?:fires?|wildfires?)\b",
             r"\b(?:fire|wildfire)\s+(?:status|situation|map|update|updates)\b",
             r"\b(?:is there|are there|where is)\b.{0,30}\b(?:fire|wildfire)\b",

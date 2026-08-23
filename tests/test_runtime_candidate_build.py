@@ -82,7 +82,8 @@ def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> N
     for required in (
         "app.py",
         "config/runtime_artifact_allowlist.v1.json",
-        "data/repairs/text_overrides.yaml",
+        "COPY data/repairs/",
+        "COPY data/typed_claims/",
         "scripts/write_runtime_candidate.py",
         "RENDER_GIT_COMMIT",
         "FIRELENS_EMBEDDING_ZDR=required",
@@ -90,13 +91,14 @@ def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> N
         "FIRELENS_GENERATION_ZDR=required",
         "FIRELENS_RERANK_MODEL",
         "FIRELENS_GENERATION_MODEL",
-        "ARG FIRELENS_RELEASE_VERSION=1.5.3-rc.1",
+        "ARG FIRELENS_RELEASE_VERSION=1.6.0-rc.1",
     ):
         assert required in dockerfile
+    assert (ROOT / "data/repairs/text_overrides.yaml").is_file()
     assert "1.5.0-rc.1" not in dockerfile
     render = (ROOT / "render.yaml").read_text(encoding="utf-8")
     assert "FIRELENS_RELEASE_VERSION" in render
-    assert 'value: "1.5.3-rc.1"' in render
+    assert 'value: "1.6.0-rc.1"' in render
     assert "1.5.0-rc.1" not in render
     writer = (ROOT / "scripts/write_runtime_candidate.py").read_text(encoding="utf-8")
     vercel_prep = (ROOT / "scripts/prepare_vercel_build.py").read_text(encoding="utf-8")
@@ -104,12 +106,13 @@ def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> N
     assert "1.5.0-rc.1" not in vercel_prep
     assert "DEFAULT_RELEASE_VERSION" in writer
     assert "DEFAULT_RELEASE_VERSION" in vercel_prep
-    assert FireLensConfig.model_fields["release_version"].default == "1.5.3-rc.1"
+    assert FireLensConfig.model_fields["release_version"].default == "1.6.0-rc.1"
     vercel = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
     include = vercel["services"]["firelens"]["functions"]["**/*.py"]["includeFiles"]
     assert include != "data/**"
     assert "data/evaluation" not in include
     assert "data/repairs/text_overrides.yaml" in include
+    assert "data/typed_claims/high_risk_v1.yaml" in include
     assert "config/runtime_*.json" in include
     assert len(include) <= 256
 

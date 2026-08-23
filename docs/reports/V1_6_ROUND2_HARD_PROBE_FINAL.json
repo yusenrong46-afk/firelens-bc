@@ -1,0 +1,46 @@
+{
+  "dataset_sha256": "ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035",
+  "evaluator_unchanged": true,
+  "evidence_class": "EXECUTED",
+  "failed_ids": [
+    "F06",
+    "F07",
+    "F09",
+    "F10",
+    "F11",
+    "G03",
+    "H01",
+    "H02",
+    "H03",
+    "H04",
+    "I04",
+    "I08",
+    "K03",
+    "K09",
+    "L01",
+    "L02",
+    "L05",
+    "M03",
+    "M04"
+  ],
+  "frozen_expected_outcomes_unchanged": true,
+  "gate_floor": 86,
+  "newly_passing_vs_round1": [
+    "D10",
+    "J03",
+    "K04",
+    "K10"
+  ],
+  "note": "Re-executed offline during PG7. Manifest commit field names HEAD at execution time, which was 23da2b0 before the identity commit. Version strings do not change probe behavior.",
+  "paired_v1_5": "78/105 INSPECTED from Fable Round-1",
+  "round1": "82/105",
+  "round2": "86/105",
+  "schema_version": "firelens_hard_probe_summary.v1",
+  "summary": {
+    "cost_usd": 0.0,
+    "elapsed_seconds": 0.7,
+    "executed": 105,
+    "failed": 19,
+    "passed": 86
+  }
+}

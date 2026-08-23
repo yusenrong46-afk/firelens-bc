@@ -1,0 +1,27 @@
+schema_version: firelens.typed_claim_source_repair_scope_decisions.v1
+source_template_sha256: 59330bda03ecec0090b1731820f1a2dd6ed06225f77c57cff51e34093b92f61d
+raw_queue_sha256: 008274a5cda237473697b5ddd9c8c04d3a42a8738c560d594ea682ed74344f9c
+reviewer: Thomas
+decision_time: "2026-08-23T11:34:55-03:00"
+note: >
+  Thomas deferred all nine extraction-defect candidates outside V1.6 scope.
+  Deferral does not repair, approve, or make any candidate compilable.
+decisions:
+  - parent_candidate_id: PC-EVAC-001
+    owner_scope_decision: defer_out_of_scope
+  - parent_candidate_id: PC-SMOKE-009
+    owner_scope_decision: defer_out_of_scope
+  - parent_candidate_id: PC-SMOKE-010
+    owner_scope_decision: defer_out_of_scope
+  - parent_candidate_id: PC-SMOKE-011
+    owner_scope_decision: defer_out_of_scope
+  - parent_candidate_id: PC-UTILITIE-015
+    owner_scope_decision: defer_out_of_scope
+  - parent_candidate_id: PC-FIRESMAR-018
+    owner_scope_decision: defer_out_of_scope
+  - parent_candidate_id: PC-FIRESMAR-019
+    owner_scope_decision: defer_out_of_scope
+  - parent_candidate_id: PC-VULNERAB-025
+    owner_scope_decision: defer_out_of_scope
+  - parent_candidate_id: PC-CONDITIO-027
+    owner_scope_decision: defer_out_of_scope

@@ -1,0 +1,29 @@
+{
+  "document_context_in_docker": true,
+  "document_context_in_vercel": true,
+  "logical_paths": [
+    "config/runtime_artifact_allowlist.v1.json",
+    "config/runtime_candidate.v1.json",
+    "data/processed/firelens_static_corpus.chunks.jsonl",
+    "data/processed/firelens_static_corpus.manifest.json",
+    "data/index/firelens_vectors.npy",
+    "data/index/firelens_vectors.manifest.json",
+    "data/repairs/text_overrides.yaml",
+    "apps/web/dist/client/index.html",
+    "apps/web/dist/client/.vite/manifest.json",
+    "data/index/document_context_v2.jsonl"
+  ],
+  "missing_from_dockerfile": [],
+  "missing_from_vercel": [],
+  "reuse": [
+    "python -m firelens.runtime_artifact inventory",
+    "python -m firelens.runtime_artifact compare",
+    "python scripts/qualify_deployment_gates.py",
+    "python scripts/candidate_evidence.py"
+  ],
+  "staged_inventories": {
+    "reason": "staged Vercel/Docker inventories are not captured in this environment",
+    "status": "BLOCKED"
+  },
+  "status": "passed"
+}

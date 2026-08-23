@@ -5,12 +5,28 @@ import type { MapFocus } from "./MapViewport";
 export const OSM_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
-export function OfficialBasemap({ focus }: { focus?: MapFocus | undefined }) {
+export function TileFailureWarning({ failed }: { failed: boolean }) {
+  if (!failed) return null;
+  return (
+    <p className="live-map__warning" role="status">
+      Map tiles failed to load. Official records remain listed below.
+    </p>
+  );
+}
+
+export function OfficialBasemap({
+  focus,
+  onTileError,
+}: {
+  focus?: MapFocus | undefined;
+  onTileError?: (() => void) | undefined;
+}) {
   return (
     <>
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution={OSM_ATTRIBUTION}
+        {...(onTileError ? { eventHandlers: { tileerror: () => onTileError() } } : {})}
       />
       <GeoJSON
         data={bcBoundaryFeature as never}

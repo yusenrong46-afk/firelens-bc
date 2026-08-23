@@ -27,6 +27,7 @@ from firelens.contracts import (
     aggregate_live_freshness,
     render_claim_texts,
 )
+from firelens.publication.compiler import public_mixed_answer
 
 _LAYER_UNAVAILABLE = (
     "Some official live layers were unavailable for this request. That is not an all-clear."
@@ -259,6 +260,7 @@ def _build_ask_response(
         and static.validation.accepted
     ):
         freshness = aggregate_live_freshness(live)
+        answer = public_mixed_answer(packet, answer)
         return AskResponse(
             status=ResponseStatus.ANSWER,
             trace_id=static.trace_id,

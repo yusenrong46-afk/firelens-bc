@@ -10,6 +10,8 @@ import {
 } from "@phosphor-icons/react";
 import type { AskResponse, LiveResult } from "../../shared/api/api";
 import { abstentionPresentation } from "../ask/abstentionPresentation";
+import { ProofCard } from "../ask/StatusBanner";
+import { getProofCards } from "../ask/proofPresentation";
 import type { Evidence, Support } from "../ask/responseModel";
 import { resultDisplayName } from "../near-me/liveResultPresentation";
 import type { FireLensSession } from "../ask/useFireLensSession";
@@ -158,6 +160,10 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
     view,
   } = session;
   const selectedClaim = citedMode ? claims[selected] : undefined;
+  const proofCards = getProofCards(view.kind === "answer" ? view.response : undefined);
+  const selectedProof = selectedClaim
+    ? proofCards.find((card) => card.claim_id === selectedClaim.claim_id) ?? proofCards[0]
+    : proofCards[0];
   const abstentionCopy = abstentionPresentation(
     view.kind === "abstention" ? view.response.reason_code : undefined,
   );
@@ -194,6 +200,7 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
           <>
             <span className="selected-kicker">Selected claim {selected + 1}</span>
             <h2>{selectedClaim.text}</h2>
+            {selectedProof && <ProofCard card={selectedProof} />}
             <div className="answer-claim">
               <Shield size={18} /><strong>Answer claim</strong><span>{selectedClaim.text}</span>
             </div>
@@ -219,6 +226,7 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
         ) : view.kind === "answer" && (mode === "live" || mode === "mixed") ? (
           <div className="map-answer-summary">
             <span className="selected-kicker">Official map records</span>
+            {selectedProof && <ProofCard card={selectedProof} />}
             {(view.response.live_results ?? []).map((item) => (
               <div className="map-record-actions" key={item.result_id}>
                 <button type="button" onClick={() => setSelectedLiveResultId(item.result_id)}>

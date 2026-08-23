@@ -1,0 +1,1209 @@
+schema_version: firelens_claimbench.v1
+catalog_id: firelens_claimbench_v1_6
+cases:
+- id: F001
+  kind: faithful
+  dimension: paraphrase
+  quote: Include water, medication, and copies of important documents.
+  claim: A grab-and-go bag should include water, medication, and copies of important
+    documents.
+  expect: accept
+- id: F002
+  kind: faithful
+  dimension: paraphrase
+  quote: Include water, medication, and copies of important documents.
+  claim: Reviewed guidance says to include water, medication, and copies of important
+    documents.
+  expect: accept
+- id: F003
+  kind: faithful
+  dimension: paraphrase
+  quote: Include water, medication, and copies of important documents.
+  claim: The cited text says to include water, medication, and copies of important
+    documents.
+  expect: accept
+- id: F004
+  kind: faithful
+  dimension: paraphrase
+  quote: Include water, medication, and copies of important documents.
+  claim: Pack water, medication, and copies of important documents.
+  expect: accept
+- id: F005
+  kind: faithful
+  dimension: paraphrase
+  quote: Include water, medication, and copies of important documents.
+  claim: Important documents, medication, and water belong in the kit.
+  expect: accept
+- id: F006
+  kind: faithful
+  dimension: paraphrase
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: The non-combustible area extends 1.5 m around the home.
+  expect: accept
+- id: F007
+  kind: faithful
+  dimension: paraphrase
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Keep a non-combustible area extending 1.5 metres around the home.
+  expect: accept
+- id: F008
+  kind: faithful
+  dimension: paraphrase
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.5 meters around the home.
+  expect: accept
+- id: F009
+  kind: faithful
+  dimension: paraphrase
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: A non-combustible area of 1.5 metres should extend around the home.
+  expect: accept
+- id: F010
+  kind: faithful
+  dimension: paraphrase
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: The home should have a 1.5-metre non-combustible area around it.
+  expect: accept
+- id: F011
+  kind: faithful
+  dimension: paraphrase
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation alert means people are ready to leave.
+  expect: accept
+- id: F012
+  kind: faithful
+  dimension: paraphrase
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation alert means being ready to leave.
+  expect: accept
+- id: F013
+  kind: faithful
+  dimension: paraphrase
+  quote: An evacuation alert means be ready to leave.
+  claim: Be ready to leave when an evacuation alert is issued.
+  expect: accept
+- id: F014
+  kind: faithful
+  dimension: paraphrase
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation alert means residents are ready to leave.
+  expect: accept
+- id: F015
+  kind: faithful
+  dimension: paraphrase
+  quote: An evacuation alert means be ready to leave.
+  claim: The cited text says an evacuation alert means be ready to leave.
+  expect: accept
+- id: F016
+  kind: faithful
+  dimension: paraphrase
+  quote: An evacuation order means leave the area now.
+  claim: An evacuation order means leave the area now.
+  expect: accept
+- id: F017
+  kind: faithful
+  dimension: paraphrase
+  quote: An evacuation order means leave the area now.
+  claim: An evacuation order means people leave the area now.
+  expect: accept
+- id: F018
+  kind: faithful
+  dimension: paraphrase
+  quote: An evacuation order means leave the area now.
+  claim: Leave the area now when an evacuation order is in effect.
+  expect: accept
+- id: F019
+  kind: faithful
+  dimension: paraphrase
+  quote: An evacuation order means leave the area now.
+  claim: The cited text says an evacuation order means leave the area now.
+  expect: accept
+- id: F020
+  kind: faithful
+  dimension: paraphrase
+  quote: An evacuation order means leave the area now.
+  claim: An evacuation order means leaving the area now.
+  expect: accept
+- id: F021
+  kind: faithful
+  dimension: paraphrase
+  quote: If time permits, close all windows before leaving.
+  claim: If time permits, close all windows before leaving.
+  expect: accept
+- id: F022
+  kind: faithful
+  dimension: paraphrase
+  quote: If time permits, close all windows before leaving.
+  claim: When feasible, close all windows before leaving.
+  expect: accept
+- id: F023
+  kind: faithful
+  dimension: paraphrase
+  quote: If time permits, close all windows before leaving.
+  claim: Close all windows before leaving if time permits.
+  expect: accept
+- id: F024
+  kind: faithful
+  dimension: paraphrase
+  quote: If time permits, close all windows before leaving.
+  claim: If time permits, all windows should be closed before leaving.
+  expect: accept
+- id: F025
+  kind: faithful
+  dimension: paraphrase
+  quote: If time permits, close all windows before leaving.
+  claim: The cited text says to close all windows before leaving if time permits.
+  expect: accept
+- id: F026
+  kind: faithful
+  dimension: paraphrase
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Do not return until the evacuation order is rescinded.
+  expect: accept
+- id: F027
+  kind: faithful
+  dimension: paraphrase
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Do not return until the evacuation order is rescinded by officials.
+  expect: accept
+- id: F028
+  kind: faithful
+  dimension: paraphrase
+  quote: Do not return until the evacuation order is rescinded.
+  claim: People should not return until the evacuation order is rescinded.
+  expect: accept
+- id: F029
+  kind: faithful
+  dimension: paraphrase
+  quote: Do not return until the evacuation order is rescinded.
+  claim: The cited text says do not return until the evacuation order is rescinded.
+  expect: accept
+- id: F030
+  kind: faithful
+  dimension: paraphrase
+  quote: Do not return until the evacuation order is rescinded.
+  claim: People should not return until the evacuation order is rescinded.
+  expect: accept
+- id: F031
+  kind: faithful
+  dimension: paraphrase
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide was updated in 2024.
+  expect: accept
+- id: F032
+  kind: faithful
+  dimension: paraphrase
+  quote: The preparedness guide was updated in 2024.
+  claim: The guide's preparedness content was updated in 2024.
+  expect: accept
+- id: F033
+  kind: faithful
+  dimension: paraphrase
+  quote: The preparedness guide was updated in 2024.
+  claim: Reviewed guidance says the preparedness guide was updated in 2024.
+  expect: accept
+- id: F034
+  kind: faithful
+  dimension: paraphrase
+  quote: The preparedness guide was updated in 2024.
+  claim: In 2024, the preparedness guide was updated.
+  expect: accept
+- id: F035
+  kind: faithful
+  dimension: paraphrase
+  quote: The preparedness guide was updated in 2024.
+  claim: The 2024 update applies to the preparedness guide.
+  expect: accept
+- id: F036
+  kind: faithful
+  dimension: paraphrase
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: PreparedBC says households should prepare an emergency kit.
+  expect: accept
+- id: F037
+  kind: faithful
+  dimension: paraphrase
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: PreparedBC says an emergency kit should be prepared by households.
+  expect: accept
+- id: F038
+  kind: faithful
+  dimension: paraphrase
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: According to PreparedBC, households should prepare an emergency kit.
+  expect: accept
+- id: F039
+  kind: faithful
+  dimension: paraphrase
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: PreparedBC advises that households should prepare an emergency kit.
+  expect: accept
+- id: F040
+  kind: faithful
+  dimension: paraphrase
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: Households should prepare an emergency kit, PreparedBC says.
+  expect: accept
+- id: F041
+  kind: faithful
+  dimension: paraphrase
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: Residents in Kamloops should keep an emergency kit ready.
+  expect: accept
+- id: F042
+  kind: faithful
+  dimension: paraphrase
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: In Kamloops, residents should keep an emergency kit ready.
+  expect: accept
+- id: F043
+  kind: faithful
+  dimension: paraphrase
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: Kamloops residents should keep an emergency kit ready.
+  expect: accept
+- id: F044
+  kind: faithful
+  dimension: paraphrase
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: Reviewed guidance says residents in Kamloops should keep an emergency kit
+    ready.
+  expect: accept
+- id: F045
+  kind: faithful
+  dimension: paraphrase
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: People in Kamloops should keep an emergency kit ready.
+  expect: accept
+- id: F046
+  kind: faithful
+  dimension: paraphrase
+  quote: Households should keep an emergency kit if they are able.
+  claim: Households should keep an emergency kit if they are able.
+  expect: accept
+- id: F047
+  kind: faithful
+  dimension: paraphrase
+  quote: Households should keep an emergency kit if they are able.
+  claim: If they are able, households should keep an emergency kit.
+  expect: accept
+- id: F048
+  kind: faithful
+  dimension: paraphrase
+  quote: Households should keep an emergency kit if they are able.
+  claim: Households should keep an emergency kit when they are able.
+  expect: accept
+- id: F049
+  kind: faithful
+  dimension: paraphrase
+  quote: Households should keep an emergency kit if they are able.
+  claim: The cited text says households should keep an emergency kit if they are able.
+  expect: accept
+- id: F050
+  kind: faithful
+  dimension: paraphrase
+  quote: Households should keep an emergency kit if they are able.
+  claim: Households should keep an emergency kit if able.
+  expect: accept
+- id: U001
+  kind: mutation
+  dimension: action_reversal
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return before the evacuation order is rescinded (1).
+  expect: reject
+- id: U002
+  kind: mutation
+  dimension: action_reversal
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return before the evacuation order is rescinded (2).
+  expect: reject
+- id: U003
+  kind: mutation
+  dimension: action_reversal
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return before the evacuation order is rescinded (3).
+  expect: reject
+- id: U004
+  kind: mutation
+  dimension: action_reversal
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return before the evacuation order is rescinded (4).
+  expect: reject
+- id: U005
+  kind: mutation
+  dimension: action_reversal
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return before the evacuation order is rescinded (5).
+  expect: reject
+- id: U006
+  kind: mutation
+  dimension: action_reversal
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return before the evacuation order is rescinded (6).
+  expect: reject
+- id: U007
+  kind: mutation
+  dimension: action_reversal
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return before the evacuation order is rescinded (7).
+  expect: reject
+- id: U008
+  kind: mutation
+  dimension: action_reversal
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return before the evacuation order is rescinded (8).
+  expect: reject
+- id: U009
+  kind: mutation
+  dimension: action_reversal
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return before the evacuation order is rescinded (9).
+  expect: reject
+- id: U010
+  kind: mutation
+  dimension: action_reversal
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return before the evacuation order is rescinded (10).
+  expect: reject
+- id: U011
+  kind: mutation
+  dimension: urgency
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation alert means leave the area now (1).
+  expect: reject
+- id: U012
+  kind: mutation
+  dimension: urgency
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation alert means leave the area now (2).
+  expect: reject
+- id: U013
+  kind: mutation
+  dimension: urgency
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation alert means leave the area now (3).
+  expect: reject
+- id: U014
+  kind: mutation
+  dimension: urgency
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation alert means leave the area now (4).
+  expect: reject
+- id: U015
+  kind: mutation
+  dimension: urgency
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation alert means leave the area now (5).
+  expect: reject
+- id: U016
+  kind: mutation
+  dimension: urgency
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation alert means leave the area now (6).
+  expect: reject
+- id: U017
+  kind: mutation
+  dimension: urgency
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation alert means leave the area now (7).
+  expect: reject
+- id: U018
+  kind: mutation
+  dimension: urgency
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation alert means leave the area now (8).
+  expect: reject
+- id: U019
+  kind: mutation
+  dimension: urgency
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation alert means leave the area now (9).
+  expect: reject
+- id: U020
+  kind: mutation
+  dimension: urgency
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation alert means leave the area now (10).
+  expect: reject
+- id: U021
+  kind: mutation
+  dimension: alert_order
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation order means be ready to leave (1).
+  expect: reject
+- id: U022
+  kind: mutation
+  dimension: alert_order
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation order means be ready to leave (2).
+  expect: reject
+- id: U023
+  kind: mutation
+  dimension: alert_order
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation order means be ready to leave (3).
+  expect: reject
+- id: U024
+  kind: mutation
+  dimension: alert_order
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation order means be ready to leave (4).
+  expect: reject
+- id: U025
+  kind: mutation
+  dimension: alert_order
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation order means be ready to leave (5).
+  expect: reject
+- id: U026
+  kind: mutation
+  dimension: alert_order
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation order means be ready to leave (6).
+  expect: reject
+- id: U027
+  kind: mutation
+  dimension: alert_order
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation order means be ready to leave (7).
+  expect: reject
+- id: U028
+  kind: mutation
+  dimension: alert_order
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation order means be ready to leave (8).
+  expect: reject
+- id: U029
+  kind: mutation
+  dimension: alert_order
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation order means be ready to leave (9).
+  expect: reject
+- id: U030
+  kind: mutation
+  dimension: alert_order
+  quote: An evacuation alert means be ready to leave.
+  claim: An evacuation order means be ready to leave (10).
+  expect: reject
+- id: U031
+  kind: mutation
+  dimension: negation
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return while the evacuation order is in effect (1).
+  expect: reject
+- id: U032
+  kind: mutation
+  dimension: negation
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return while the evacuation order is in effect (2).
+  expect: reject
+- id: U033
+  kind: mutation
+  dimension: negation
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return while the evacuation order is in effect (3).
+  expect: reject
+- id: U034
+  kind: mutation
+  dimension: negation
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return while the evacuation order is in effect (4).
+  expect: reject
+- id: U035
+  kind: mutation
+  dimension: negation
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return while the evacuation order is in effect (5).
+  expect: reject
+- id: U036
+  kind: mutation
+  dimension: negation
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return while the evacuation order is in effect (6).
+  expect: reject
+- id: U037
+  kind: mutation
+  dimension: negation
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return while the evacuation order is in effect (7).
+  expect: reject
+- id: U038
+  kind: mutation
+  dimension: negation
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return while the evacuation order is in effect (8).
+  expect: reject
+- id: U039
+  kind: mutation
+  dimension: negation
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return while the evacuation order is in effect (9).
+  expect: reject
+- id: U040
+  kind: mutation
+  dimension: negation
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Return while the evacuation order is in effect (10).
+  expect: reject
+- id: U041
+  kind: mutation
+  dimension: modality
+  quote: Households should keep an emergency kit if they are able.
+  claim: Households must keep an emergency kit (1).
+  expect: reject
+- id: U042
+  kind: mutation
+  dimension: modality
+  quote: Households should keep an emergency kit if they are able.
+  claim: Households must keep an emergency kit (2).
+  expect: reject
+- id: U043
+  kind: mutation
+  dimension: modality
+  quote: Households should keep an emergency kit if they are able.
+  claim: Households must keep an emergency kit (3).
+  expect: reject
+- id: U044
+  kind: mutation
+  dimension: modality
+  quote: Households should keep an emergency kit if they are able.
+  claim: Households must keep an emergency kit (4).
+  expect: reject
+- id: U045
+  kind: mutation
+  dimension: modality
+  quote: Households should keep an emergency kit if they are able.
+  claim: Households must keep an emergency kit (5).
+  expect: reject
+- id: U046
+  kind: mutation
+  dimension: modality
+  quote: Households should keep an emergency kit if they are able.
+  claim: Households must keep an emergency kit (6).
+  expect: reject
+- id: U047
+  kind: mutation
+  dimension: modality
+  quote: Households should keep an emergency kit if they are able.
+  claim: Households must keep an emergency kit (7).
+  expect: reject
+- id: U048
+  kind: mutation
+  dimension: modality
+  quote: Households should keep an emergency kit if they are able.
+  claim: Households must keep an emergency kit (8).
+  expect: reject
+- id: U049
+  kind: mutation
+  dimension: modality
+  quote: Households should keep an emergency kit if they are able.
+  claim: Households must keep an emergency kit (9).
+  expect: reject
+- id: U050
+  kind: mutation
+  dimension: modality
+  quote: Households should keep an emergency kit if they are able.
+  claim: Households must keep an emergency kit (10).
+  expect: reject
+- id: U051
+  kind: mutation
+  dimension: quantity
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 15 metres around the home.
+  expect: reject
+- id: U052
+  kind: mutation
+  dimension: quantity
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 10 metres around the home.
+  expect: reject
+- id: U053
+  kind: mutation
+  dimension: quantity
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 3 metres around the home.
+  expect: reject
+- id: U054
+  kind: mutation
+  dimension: quantity
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 2 metres around the home.
+  expect: reject
+- id: U055
+  kind: mutation
+  dimension: quantity
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 0.5 metres around the home.
+  expect: reject
+- id: U056
+  kind: mutation
+  dimension: quantity
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 150 metres around the home.
+  expect: reject
+- id: U057
+  kind: mutation
+  dimension: quantity
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.6 metres around the home.
+  expect: reject
+- id: U058
+  kind: mutation
+  dimension: quantity
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 15.0 metres around the home.
+  expect: reject
+- id: U059
+  kind: mutation
+  dimension: quantity
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.5 kilometres around the home.
+  expect: reject
+- id: U060
+  kind: mutation
+  dimension: quantity
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.5 centimetres around the home.
+  expect: reject
+- id: U061
+  kind: mutation
+  dimension: authority
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: FireSmart BC says households should prepare an emergency kit.
+  expect: reject
+- id: U062
+  kind: mutation
+  dimension: authority
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: FireSmart Canada says households should prepare an emergency kit.
+  expect: reject
+- id: U063
+  kind: mutation
+  dimension: authority
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: BC Wildfire Service says households should prepare an emergency kit.
+  expect: reject
+- id: U064
+  kind: mutation
+  dimension: authority
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: BC Centre for Disease Control says households should prepare an emergency
+    kit.
+  expect: reject
+- id: U065
+  kind: mutation
+  dimension: authority
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: EmergencyInfoBC says households should prepare an emergency kit.
+  expect: reject
+- id: U066
+  kind: mutation
+  dimension: authority
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: Government of British Columbia says households should prepare an emergency
+    kit.
+  expect: reject
+- id: U067
+  kind: mutation
+  dimension: authority
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: BCCDC says households should prepare an emergency kit.
+  expect: reject
+- id: U068
+  kind: mutation
+  dimension: authority
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: BCWS says households should prepare an emergency kit.
+  expect: reject
+- id: U069
+  kind: mutation
+  dimension: authority
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: FireSmart BC says households should prepare an emergency kit.
+  expect: reject
+- id: U070
+  kind: mutation
+  dimension: authority
+  quote: PreparedBC says households should prepare an emergency kit.
+  claim: EmergencyInfoBC says households should prepare an emergency kit.
+  expect: reject
+- id: U071
+  kind: mutation
+  dimension: location
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: Residents in Kelowna should keep an emergency kit ready.
+  expect: reject
+- id: U072
+  kind: mutation
+  dimension: location
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: Residents in Prince George should keep an emergency kit ready.
+  expect: reject
+- id: U073
+  kind: mutation
+  dimension: location
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: Residents in Victoria should keep an emergency kit ready.
+  expect: reject
+- id: U074
+  kind: mutation
+  dimension: location
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: Residents in Nanaimo should keep an emergency kit ready.
+  expect: reject
+- id: U075
+  kind: mutation
+  dimension: location
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: Residents in Cranbrook should keep an emergency kit ready.
+  expect: reject
+- id: U076
+  kind: mutation
+  dimension: location
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: Residents in Terrace should keep an emergency kit ready.
+  expect: reject
+- id: U077
+  kind: mutation
+  dimension: location
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: Residents in Penticton should keep an emergency kit ready.
+  expect: reject
+- id: U078
+  kind: mutation
+  dimension: location
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: Residents in Vernon should keep an emergency kit ready.
+  expect: reject
+- id: U079
+  kind: mutation
+  dimension: location
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: Residents in Kamloops Junction should keep an emergency kit ready.
+  expect: reject
+- id: U080
+  kind: mutation
+  dimension: location
+  quote: Residents in Kamloops should keep an emergency kit ready.
+  claim: Residents in Williams Lake should keep an emergency kit ready.
+  expect: reject
+- id: U081
+  kind: mutation
+  dimension: date
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide was updated in 2025.
+  expect: reject
+- id: U082
+  kind: mutation
+  dimension: date
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide was updated in 2023.
+  expect: reject
+- id: U083
+  kind: mutation
+  dimension: date
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide was updated in 2022.
+  expect: reject
+- id: U084
+  kind: mutation
+  dimension: date
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide was updated in 2021.
+  expect: reject
+- id: U085
+  kind: mutation
+  dimension: date
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide was updated in 2020.
+  expect: reject
+- id: U086
+  kind: mutation
+  dimension: date
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide was updated in 2019.
+  expect: reject
+- id: U087
+  kind: mutation
+  dimension: date
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide was updated in 2018.
+  expect: reject
+- id: U088
+  kind: mutation
+  dimension: date
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide was updated in 2016.
+  expect: reject
+- id: U089
+  kind: mutation
+  dimension: date
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide was updated in 2015.
+  expect: reject
+- id: U090
+  kind: mutation
+  dimension: date
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide was updated in 2010.
+  expect: reject
+- id: U091
+  kind: mutation
+  dimension: condition
+  quote: If time permits, close all windows before leaving.
+  claim: Close all windows (1).
+  expect: reject
+- id: U092
+  kind: mutation
+  dimension: condition
+  quote: If time permits, close all windows before leaving.
+  claim: Close all windows (2).
+  expect: reject
+- id: U093
+  kind: mutation
+  dimension: condition
+  quote: If time permits, close all windows before leaving.
+  claim: Close all windows (3).
+  expect: reject
+- id: U094
+  kind: mutation
+  dimension: condition
+  quote: If time permits, close all windows before leaving.
+  claim: Close all windows (4).
+  expect: reject
+- id: U095
+  kind: mutation
+  dimension: condition
+  quote: If time permits, close all windows before leaving.
+  claim: Close all windows (5).
+  expect: reject
+- id: U096
+  kind: mutation
+  dimension: condition
+  quote: If time permits, close all windows before leaving.
+  claim: Close all windows (6).
+  expect: reject
+- id: U097
+  kind: mutation
+  dimension: condition
+  quote: If time permits, close all windows before leaving.
+  claim: Close all windows (7).
+  expect: reject
+- id: U098
+  kind: mutation
+  dimension: condition
+  quote: If time permits, close all windows before leaving.
+  claim: Close all windows (8).
+  expect: reject
+- id: U099
+  kind: mutation
+  dimension: condition
+  quote: If time permits, close all windows before leaving.
+  claim: Close all windows (9).
+  expect: reject
+- id: U100
+  kind: mutation
+  dimension: condition
+  quote: If time permits, close all windows before leaving.
+  claim: Close all windows (10).
+  expect: reject
+- id: U101
+  kind: mutation
+  dimension: stale_current
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide is currently being updated in 2025.
+  expect: reject
+- id: U102
+  kind: mutation
+  dimension: stale_current
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide is currently being updated in 2023.
+  expect: reject
+- id: U103
+  kind: mutation
+  dimension: stale_current
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide is currently being updated in 2022.
+  expect: reject
+- id: U104
+  kind: mutation
+  dimension: stale_current
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide is currently being updated in 2021.
+  expect: reject
+- id: U105
+  kind: mutation
+  dimension: stale_current
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide is currently being updated in 2020.
+  expect: reject
+- id: U106
+  kind: mutation
+  dimension: stale_current
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide is currently being updated in 2019.
+  expect: reject
+- id: U107
+  kind: mutation
+  dimension: stale_current
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide is currently being updated in 2018.
+  expect: reject
+- id: U108
+  kind: mutation
+  dimension: stale_current
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide is currently being updated in 2016.
+  expect: reject
+- id: U109
+  kind: mutation
+  dimension: stale_current
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide is currently being updated in 2015.
+  expect: reject
+- id: U110
+  kind: mutation
+  dimension: stale_current
+  quote: The preparedness guide was updated in 2024.
+  claim: The preparedness guide is currently being updated in 2010.
+  expect: reject
+- id: U111
+  kind: mutation
+  dimension: unsupported_entity
+  quote: Include water, medication, and copies of important documents.
+  claim: Include water, medication, and a Cedar Ridge household radio.
+  expect: reject
+- id: U112
+  kind: mutation
+  dimension: unsupported_entity
+  quote: Include water, medication, and copies of important documents.
+  claim: Include water, medication, and the Cedar Ridge kit list.
+  expect: reject
+- id: U113
+  kind: mutation
+  dimension: unsupported_entity
+  quote: Include water, medication, and copies of important documents.
+  claim: Include water, medication, and a Northridge household radio.
+  expect: reject
+- id: U114
+  kind: mutation
+  dimension: unsupported_entity
+  quote: Include water, medication, and copies of important documents.
+  claim: Include water, medication, and the Northridge household radio checklist.
+  expect: reject
+- id: U115
+  kind: mutation
+  dimension: unsupported_entity
+  quote: Include water, medication, and copies of important documents.
+  claim: Include water, medication, and a Redwood emergency beacon.
+  expect: reject
+- id: U116
+  kind: mutation
+  dimension: unsupported_entity
+  quote: Include water, medication, and copies of important documents.
+  claim: Include water, medication, and the Redwood emergency beacon list.
+  expect: reject
+- id: U117
+  kind: mutation
+  dimension: unsupported_entity
+  quote: Include water, medication, and copies of important documents.
+  claim: Include water, medication, and a Lakeside siren network token.
+  expect: reject
+- id: U118
+  kind: mutation
+  dimension: unsupported_entity
+  quote: Include water, medication, and copies of important documents.
+  claim: Include water, medication, and the Lakeside siren network card.
+  expect: reject
+- id: U119
+  kind: mutation
+  dimension: unsupported_entity
+  quote: Include water, medication, and copies of important documents.
+  claim: Include water, medication, and Cedar Ridge copies of a radio.
+  expect: reject
+- id: U120
+  kind: mutation
+  dimension: unsupported_entity
+  quote: Include water, medication, and copies of important documents.
+  claim: Include water, medication, and a Cedar Ridge beacon beside water.
+  expect: reject
+- id: U121
+  kind: mutation
+  dimension: leave_stay
+  quote: An evacuation order means leave the area now.
+  claim: An evacuation order means stay at home (1).
+  expect: reject
+- id: U122
+  kind: mutation
+  dimension: leave_stay
+  quote: An evacuation order means leave the area now.
+  claim: An evacuation order means stay at home (2).
+  expect: reject
+- id: U123
+  kind: mutation
+  dimension: leave_stay
+  quote: An evacuation order means leave the area now.
+  claim: An evacuation order means stay at home (3).
+  expect: reject
+- id: U124
+  kind: mutation
+  dimension: leave_stay
+  quote: An evacuation order means leave the area now.
+  claim: An evacuation order means stay at home (4).
+  expect: reject
+- id: U125
+  kind: mutation
+  dimension: leave_stay
+  quote: An evacuation order means leave the area now.
+  claim: An evacuation order means stay at home (5).
+  expect: reject
+- id: U126
+  kind: mutation
+  dimension: leave_stay
+  quote: An evacuation order means leave the area now.
+  claim: An evacuation order means stay at home (6).
+  expect: reject
+- id: U127
+  kind: mutation
+  dimension: leave_stay
+  quote: An evacuation order means leave the area now.
+  claim: An evacuation order means stay at home (7).
+  expect: reject
+- id: U128
+  kind: mutation
+  dimension: leave_stay
+  quote: An evacuation order means leave the area now.
+  claim: An evacuation order means stay at home (8).
+  expect: reject
+- id: U129
+  kind: mutation
+  dimension: leave_stay
+  quote: An evacuation order means leave the area now.
+  claim: An evacuation order means stay at home (9).
+  expect: reject
+- id: U130
+  kind: mutation
+  dimension: leave_stay
+  quote: An evacuation order means leave the area now.
+  claim: An evacuation order means stay at home (10).
+  expect: reject
+- id: U131
+  kind: mutation
+  dimension: polarity
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Go back before the evacuation order is rescinded (1).
+  expect: reject
+- id: U132
+  kind: mutation
+  dimension: polarity
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Go back before the evacuation order is rescinded (2).
+  expect: reject
+- id: U133
+  kind: mutation
+  dimension: polarity
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Go back before the evacuation order is rescinded (3).
+  expect: reject
+- id: U134
+  kind: mutation
+  dimension: polarity
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Go back before the evacuation order is rescinded (4).
+  expect: reject
+- id: U135
+  kind: mutation
+  dimension: polarity
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Go back before the evacuation order is rescinded (5).
+  expect: reject
+- id: U136
+  kind: mutation
+  dimension: polarity
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Go back before the evacuation order is rescinded (6).
+  expect: reject
+- id: U137
+  kind: mutation
+  dimension: polarity
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Go back before the evacuation order is rescinded (7).
+  expect: reject
+- id: U138
+  kind: mutation
+  dimension: polarity
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Go back before the evacuation order is rescinded (8).
+  expect: reject
+- id: U139
+  kind: mutation
+  dimension: polarity
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Go back before the evacuation order is rescinded (9).
+  expect: reject
+- id: U140
+  kind: mutation
+  dimension: polarity
+  quote: Do not return until the evacuation order is rescinded.
+  claim: Go back before the evacuation order is rescinded (10).
+  expect: reject
+- id: U141
+  kind: mutation
+  dimension: unit
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.5 kilometres around the home.
+  expect: reject
+- id: U142
+  kind: mutation
+  dimension: unit
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.5 kilometers around the home.
+  expect: reject
+- id: U143
+  kind: mutation
+  dimension: unit
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.5 km around the home.
+  expect: reject
+- id: U144
+  kind: mutation
+  dimension: unit
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.5 centimetres around the home.
+  expect: reject
+- id: U145
+  kind: mutation
+  dimension: unit
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.5 centimeters around the home.
+  expect: reject
+- id: U146
+  kind: mutation
+  dimension: unit
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.5 cm around the home.
+  expect: reject
+- id: U147
+  kind: mutation
+  dimension: unit
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.5 kilometre around the home.
+  expect: reject
+- id: U148
+  kind: mutation
+  dimension: unit
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.5 centimetre around the home.
+  expect: reject
+- id: U149
+  kind: mutation
+  dimension: unit
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.5 kilometers around the home.
+  expect: reject
+- id: U150
+  kind: mutation
+  dimension: unit
+  quote: Maintain a non-combustible area extending 1.5 metres around the home.
+  claim: Maintain a non-combustible area extending 1.5 kilometres around the home.
+  expect: reject

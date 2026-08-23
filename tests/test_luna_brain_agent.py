@@ -590,6 +590,34 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertFalse(execution.response.live_results)
 
+    async def test_alert_and_go_bag_prefetches_reviewed_guidance(self) -> None:
+        live = CountingMapService(
+            [
+                _fire(
+                    result_id="evacuation:1",
+                    name="Kamloops alert",
+                    kind=LiveResultKind.EVACUATION,
+                    longitude=-120.33,
+                    latitude=50.67,
+                )
+            ]
+        )
+        agent = FireLensAgent(
+            cast(Any, KitStatic()),
+            LiveAnswerCoordinator(cast(Any, live)),
+        )
+        execution = await agent.answer(
+            QueryRequest(
+                question="Is there an alert for Kamloops and what should go in a go-bag?"
+            )
+        )
+
+        self.assertIn(AgentTool.SEARCH_REVIEWED_GUIDANCE, execution.tools)
+        self.assertIn(AgentTool.LIST_OFFICIAL_EVACUATIONS, execution.tools)
+        self.assertEqual(execution.response.response_mode, ResponseMode.MIXED)
+        self.assertTrue(execution.response.live_results)
+        self.assertTrue(execution.response.claims)
+
     async def test_partial_layer_outage_response_survives_contract_revalidation(self) -> None:
         class PartialLive(FixedLiveService):
             async def map_results(self, *args: Any, **kwargs: Any) -> LiveMapResponse:
@@ -1332,7 +1360,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(provider.tools_seen, [None])
         self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
 
-    async def test_guidance_prefetch_single_call_includes_reviewed_answer(self) -> None:
+    async def test_guidance_prefetch_skips_discarded_outer_write(self) -> None:
         provider = CapturingProvider()
 
         class KitStaticWithProvider(KitStatic):
@@ -1347,12 +1375,12 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             QueryRequest(question="What belongs in a grab-and-go bag?")
         )
 
-        self.assertEqual(provider.calls, 1)
-        self.assertEqual(provider.tools_seen, [None])
-        assert provider.messages is not None
-        payload = json.loads(provider.messages[1]["content"])
-        self.assertIn("reviewed_guidance_answer", payload["official_packet"])
+        self.assertEqual(provider.calls, 0)
+        self.assertEqual(provider.tools_seen, [])
+        self.assertEqual(execution.policy.outer_chat_turns, 0)
+        self.assertLessEqual(execution.policy.grounded_generations, 1)
         self.assertEqual(execution.response.response_mode, ResponseMode.GROUNDED)
+        self.assertEqual(execution.response.answer, execution.response.claims[0].text)
 
     async def test_public_ask_seatbelt_does_not_use_legacy_live_composer(self) -> None:
         class ForbiddenCoordinator(LiveAnswerCoordinator):

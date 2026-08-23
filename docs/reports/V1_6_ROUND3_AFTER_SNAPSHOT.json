@@ -1,0 +1,37 @@
+{
+  "schema_version": "firelens_v1_6_round3_after_snapshot.v1",
+  "evidence_class": "EXECUTED",
+  "phase": "round3_freeze",
+  "independent_proof": false,
+  "starting_commit": "40cabcb9a3a42888474d4de1a622ca84a3fd49b3",
+  "starting_tree": "446a802f112da5ce34abe8c398475ee2413d8ed9",
+  "rollback_ref": "examined/v1-6-round2",
+  "documentation_commit": "d29b6c079dcbee63af049ef43f9905d316a2673e",
+  "documentation_tree": "658647a3ab107f55f60c557030025f3c9de6aef3",
+  "branch": "upgrade/v1-6-semantic-round3",
+  "package_version": "1.6.0rc1",
+  "web_version": "1.6.0-rc.1",
+  "python": "3.14.5",
+  "node": "v25.9.0",
+  "note": "Final candidate identity is the freeze commit that adds this file. Recipients must run git rev-parse HEAD and git rev-parse 'HEAD^{tree}'.",
+  "file_hashes": {
+    "standard": "55e16b86960d51fb732970691a0c00850f6c56eb258cd363fd74a418b34d1bef",
+    "claimbench_v1": "bcf885f65345e0b869982113c0890314bca522b8a9a3877eaf90140c6c6362d1",
+    "claimbench_v2": "402b3dca3a53227d823861d2216446148a426174f388e94e8558eebf14ca3557",
+    "hard_probe": "ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035",
+    "corpus": "d5fcd794f9ec0486a256ae511366fde982254342b7d07b9c83a21ea8ead291eb",
+    "corpus_manifest": "2d0d6b9b445f5ab0ef59e7f19bd0dce058a93f3a93b9599338702b95058ed687",
+    "vectors": "fd0b171488809c5a87f3aee5c912b07358231cac6478bb621f6d2fc79d41efb7",
+    "vector_manifest": "437181a2a9aa03498b4bb4de2445d0e0b0bf3fe1c4d4fa76a50019d31f3f1046",
+    "openapi": "9c2b8ec877787fecefbb29e225d25340fb2af359ff2d8d4c92f8716d6ef5d1bb",
+    "typed_claims": "902a953384fa430786289d02a52156e7fc80f6b0b4d2fdd7ec37e4c6abd0e714",
+    "fable_adversary": "caf22e342731ccde8594b7c3d829dfbedfc10aa48404e8d79d199bf974f5c547",
+    "round3_dev_adversary": "01d03bd517cf0d91c38172732dc18dec90b79c81ff68d66a13115bcade6727ec",
+    "allowlist": "48378b379e4aa7057c9e6c8fb0e7e6d1cb28412d68041960f0c1a3557b4797af"
+  },
+  "paid_authorization": {
+    "FIRELENS_PAID_RETRIEVAL_BENCHMARK_AUTHORIZED": false,
+    "status": "BLOCKED"
+  },
+  "final_status": "READY_FOR_INDEPENDENT_SEMANTIC_REEXAMINATION"
+}

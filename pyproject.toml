@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "firelens-bc"
-version = "1.5.3rc1"
+version = "1.6.0rc1"
 description = "Evidence-bound RAG with bounded official British Columbia wildfire information"
 readme = "README.md"
 requires-python = ">=3.12,<3.15"

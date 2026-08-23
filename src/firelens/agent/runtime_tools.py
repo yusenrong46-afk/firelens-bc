@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from firelens.agent.budget import tool_fingerprint
 from firelens.agent.packet import AgentPacket, live_record_fact
 from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
@@ -41,6 +42,11 @@ async def execute_tool(
     """Run one allowlisted tool and merge facts into the packet."""
 
     live_service: LiveDataService = live_coordinator.live_service
+    fingerprint = tool_fingerprint(name, arguments)
+    if fingerprint in packet.tool_fingerprints:
+        packet.policy.repeated_tool_dispatch += 1
+        return json.dumps({"error": "duplicate_tool_dispatch"})
+    packet.tool_fingerprints.append(fingerprint)
     if name == AgentTool.LIST_OFFICIAL_FIRES.value:
         results, resolved, roster_total = await _fetch_layers(
             live_service,
@@ -108,6 +114,8 @@ async def execute_tool(
         )
         packet.static_response = response
         packet.tool_names.append(name)
+        packet.policy.consume_retrieval_cycle()
+        packet.policy.consume_grounded_generation()
         return json.dumps(
             {
                 "status": response.status.value,

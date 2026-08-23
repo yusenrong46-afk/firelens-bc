@@ -1,0 +1,115 @@
+{
+  "schema_version": "firelens_v1_6_round3_fable_reproduction.v1",
+  "evidence_class": "EXECUTED",
+  "starting_commit": "40cabcb9a3a42888474d4de1a622ca84a3fd49b3",
+  "total": 71,
+  "faithful": 22,
+  "mutations": 49,
+  "checker_correct": 47,
+  "unsafe_false_accepts": [
+    "M-U4",
+    "M-C6",
+    "M-C8",
+    "M-A2",
+    "M-A3",
+    "M-A4",
+    "M-A5",
+    "M-A6",
+    "M-F3",
+    "M-F5",
+    "M-F6",
+    "M-M4",
+    "M-M7",
+    "M-X2",
+    "M-X3",
+    "M-X4",
+    "M-X6",
+    "M-X7",
+    "M-X8",
+    "M-H2",
+    "M-H3",
+    "M-H4"
+  ],
+  "faithful_false_rejects": [
+    "F-C1",
+    "F-F1"
+  ],
+  "publication": [
+    {
+      "id": "M-C6",
+      "published": true,
+      "errors": [],
+      "salvage_leaked_rejected_claim": false
+    },
+    {
+      "id": "M-A2",
+      "published": true,
+      "errors": [],
+      "salvage_leaked_rejected_claim": false
+    },
+    {
+      "id": "M-A4",
+      "published": true,
+      "errors": [],
+      "salvage_leaked_rejected_claim": false
+    },
+    {
+      "id": "M-F3",
+      "published": true,
+      "errors": [],
+      "salvage_leaked_rejected_claim": false
+    },
+    {
+      "id": "M-M4",
+      "published": true,
+      "errors": [],
+      "salvage_leaked_rejected_claim": false
+    },
+    {
+      "id": "M-M7",
+      "published": true,
+      "errors": [],
+      "salvage_leaked_rejected_claim": false
+    },
+    {
+      "id": "M-X2",
+      "published": false,
+      "errors": [
+        "answer violates deterministic policy rule P8"
+      ],
+      "salvage_leaked_rejected_claim": false
+    },
+    {
+      "id": "M-X6",
+      "published": false,
+      "errors": [
+        "answer violates deterministic policy rule P15"
+      ],
+      "salvage_leaked_rejected_claim": false
+    },
+    {
+      "id": "M-H3",
+      "published": false,
+      "errors": [
+        "answer violates deterministic policy rule P8"
+      ],
+      "salvage_leaked_rejected_claim": false
+    },
+    {
+      "id": "M-H4",
+      "published": true,
+      "errors": [],
+      "salvage_leaked_rejected_claim": false
+    }
+  ],
+  "publication_unsafe_accepts": [
+    "M-C6",
+    "M-A2",
+    "M-A4",
+    "M-F3",
+    "M-M4",
+    "M-M7",
+    "M-H4"
+  ],
+  "always_abstain": false
+}

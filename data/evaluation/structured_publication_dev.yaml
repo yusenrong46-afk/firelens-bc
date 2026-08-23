@@ -1,0 +1,66 @@
+schema_version: firelens.structured_publication_dev.v1
+note: >
+  Development cases for the structured-publication architecture. These are not
+  the examiner held-out catalog. The expected property is that a free-form
+  Tier A/B sentence cannot obtain structured supported status.
+cases:
+  - id: SP-ACTION-REVERSE
+    class: implied_action_reversal
+    quote: Avoid driving through areas of dense smoke.
+    claim: Proceed into dense smoke if you need to get home.
+    expect: reject_supported
+  - id: SP-URGENCY-DOWN
+    class: urgency_omission_downgrade
+    quote: Evacuation Order This means you are at risk and must leave IMMEDIATELY.
+    claim: An evacuation order means leave once it is practical.
+    expect: reject_supported
+  - id: SP-ALL-CLEAR
+    class: all_clear_implication
+    quote: An evacuation order is rescinded when it is safe to return.
+    claim: The order is now an all-clear for every community.
+    expect: reject_supported
+  - id: SP-COMPOSITIONAL
+    class: compositional_safe_plus_unsafe
+    quote: Evacuation Order This means you are at risk and must leave IMMEDIATELY.
+    claim: >
+      An evacuation order means you must leave immediately, close doors on the
+      way out, and residents may stay if they feel prepared.
+    expect: reject_supported
+  - id: SP-AUTHORITY
+    class: authority_substitution
+    quote: PreparedBC says an evacuation order means you must leave immediately.
+    claim: FireLens orders you to leave immediately.
+    expect: reject_supported
+  - id: SP-JURISDICTION
+    class: jurisdiction_expansion
+    quote: This PreparedBC guidance applies in British Columbia.
+    claim: This same order applies across Canada.
+    expect: reject_supported
+  - id: SP-FRESHNESS
+    class: freshness_implication
+    quote: Official records were last updated 2026-08-10 and retrieved 2026-08-17.
+    claim: The fire is currently out of control as of this retrieval.
+    expect: reject_supported
+  - id: SP-TIME-ROLE
+    class: time_role_swap
+    quote: Source updated 2026-08-10. FireLens retrieved the record 2026-08-17.
+    claim: The official source was updated 2026-08-17.
+    expect: reject_supported
+  - id: SP-RANGE
+    class: range_comparator_mutation
+    quote: Keep vegetation at least 10 metres from the house.
+    claim: Keep vegetation at most 10 metres from the house.
+    expect: reject_supported
+  - id: SP-EXCEPTION
+    class: condition_exception_retarget
+    quote: If you are under an evacuation alert, be ready to leave on short notice.
+    claim: If you are not under an alert, be ready to leave on short notice.
+    expect: reject_supported
+  - id: SP-FAITHFUL-UNUSUAL
+    class: faithful_unusual_paraphrase
+    quote: Evacuation Order This means you are at risk and must leave IMMEDIATELY.
+    claim: Being under an evacuation order means the official instruction is immediate departure because you are at risk.
+    expect: reject_supported_unless_compiled
+    note: >
+      A faithful paraphrase still cannot become structured-supported unless the
+      compiler emitted approved surface text for a reviewed typed claim.

@@ -16,7 +16,7 @@ WORKDIR /app
 
 ARG RENDER_GIT_COMMIT
 ARG FIRELENS_BUILD_COMMIT
-ARG FIRELENS_RELEASE_VERSION=1.5.3-rc.1
+ARG FIRELENS_RELEASE_VERSION=1.6.0-rc.1
 ARG FIRELENS_RERANK_MODEL=cohere/rerank-4-pro
 ARG FIRELENS_GENERATION_MODEL=openai/gpt-5.6-luna
 ENV FIRELENS_BUILD_COMMIT=$FIRELENS_BUILD_COMMIT \
@@ -36,11 +36,10 @@ RUN python -m pip install --no-cache-dir -r requirements.lock \
 
 COPY config/runtime_artifact_allowlist.v1.json ./config/runtime_artifact_allowlist.v1.json
 COPY scripts/write_runtime_candidate.py ./scripts/write_runtime_candidate.py
-COPY data/processed/firelens_static_corpus.chunks.jsonl ./data/processed/firelens_static_corpus.chunks.jsonl
-COPY data/processed/firelens_static_corpus.manifest.json ./data/processed/firelens_static_corpus.manifest.json
-COPY data/index/firelens_vectors.npy ./data/index/firelens_vectors.npy
-COPY data/index/firelens_vectors.manifest.json ./data/index/firelens_vectors.manifest.json
-COPY data/repairs/text_overrides.yaml ./data/repairs/text_overrides.yaml
+COPY data/processed/ ./data/processed/
+COPY data/index/ ./data/index/
+COPY data/repairs/ ./data/repairs/
+COPY data/typed_claims/ ./data/typed_claims/
 COPY --from=frontend-build /build/apps/web/dist/client ./apps/web/dist/client
 
 RUN python scripts/write_runtime_candidate.py \

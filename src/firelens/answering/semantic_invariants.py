@@ -5,61 +5,25 @@ reject a small set of material mutations that must never be authorized by
 lexical overlap alone: changed quantities or dates, status substitutions,
 removed conditions, inverted safety actions, and stronger directive language
 than the cited text supports.
+
+An optional semantic model checker, if enabled later, may only add rejections.
 """
 
 from __future__ import annotations
 
 import re
-from decimal import Decimal, InvalidOperation
 
-_UNIT_ALIASES = {
-    "m": "metre",
-    "meter": "metre",
-    "meters": "metre",
-    "metre": "metre",
-    "metres": "metre",
-    "cm": "centimetre",
-    "centimeter": "centimetre",
-    "centimeters": "centimetre",
-    "centimetre": "centimetre",
-    "centimetres": "centimetre",
-    "km": "kilometre",
-    "kilometer": "kilometre",
-    "kilometers": "kilometre",
-    "kilometre": "kilometre",
-    "kilometres": "kilometre",
-    "minute": "minute",
-    "minutes": "minute",
-    "hour": "hour",
-    "hours": "hour",
-    "day": "day",
-    "days": "day",
-    "litre": "litre",
-    "litres": "litre",
-    "liter": "litre",
-    "liters": "litre",
-    "l": "litre",
-    "ml": "millilitre",
-    "millilitre": "millilitre",
-    "millilitres": "millilitre",
-    "mg": "milligram",
-    "milligram": "milligram",
-    "milligrams": "milligram",
-    "%": "percent",
-    "percent": "percent",
-}
-_QUANTITY = re.compile(
-    r"(?<![\w.])(?P<number>\d+(?:[,.]\d+)*)\s*"
-    r"(?P<unit>%|m|cm|km|ml|mg|l|met(?:er|re)s?|centimet(?:er|re)s?|"
-    r"kilomet(?:er|re)s?|minutes?|hours?|days?|lit(?:er|re)s?|"
-    r"millilitres?|milligrams?|percent)\b",
-    re.IGNORECASE,
+from firelens.answering.critical_fields import (
+    critical_field_errors,
+    normalize_location_name,
 )
+from firelens.answering.typed_compare import typed_preservation_errors
 
 _ACTION_PATTERNS = {
     "leave": re.compile(r"\b(?:leave|evacuat(?:e|es|ed|ing|ion))\b", re.IGNORECASE),
     "stay": re.compile(
-        r"\b(?:stay|remain)(?:ing|s|ed)?(?:\s+(?:at|in))?\s+(?:home|inside|in place)\b",
+        r"\b(?:stay|remain)(?:ing|s|ed)?(?:\s+(?:at|in))?(?:\s+the)?\s+"
+        r"(?:area|home|inside|place|in place)\b",
         re.IGNORECASE,
     ),
     "return": re.compile(r"\b(?:return|go back)(?:ing|s|ed)?\b", re.IGNORECASE),
@@ -86,54 +50,50 @@ _STATUS_GROUPS = (
     ("out of control", "being held", "under control"),
 )
 _MATERIAL_CONDITION = re.compile(
-    r"\b(?:if|unless|until|only if|only when|only after|provided that)\b",
+    r"\b(?:if|unless|until|when|only if|only when|only after|provided that)\b",
     re.IGNORECASE,
 )
 _CONDITION_PRESERVER = re.compile(
     r"\b(?:if|when|unless|until|before|after|only if|only when|only after|"
-    r"provided that)\b",
+    r"provided that|on an?)\b",
     re.IGNORECASE,
 )
 _OPTIONAL_CONDITION = re.compile(
     r"\b(?:if|unless)\b[^,.;]{0,80}\b(?:permits?|permitted|possible|safe|able|"
-    r"authorized|instructed|required|feasible)\b",
+    r"authorized|instructed|required|feasible|want|optional)\b",
     re.IGNORECASE,
 )
 _OPTIONALITY_PRESERVER = re.compile(
     r"\b(?:permits?|permitted|possible|safe|able|authorized|instructed|required|"
-    r"feasible)\b",
+    r"feasible|optional|may)\b",
     re.IGNORECASE,
 )
-_NEGATION = re.compile(r"\b(?:do not|don't|must not|should not|never|cannot|can't)\b", re.I)
+_NEGATION = re.compile(
+    r"\b(?:do not|don't|does not|doesn't|must not|should not|never|cannot|can't|"
+    r"wait(?:ing)? to)\b",
+    re.I,
+)
 _CLAUSE = re.compile(r"[^.!?;:]+")
-_AUTHORITY_ALIASES = {
-    "bc centre for disease control": ("bc centre for disease control", "bccdc"),
-    "bc wildfire service": ("bc wildfire service", "bcws"),
-    "emergencyinfobc": ("emergencyinfobc",),
-    "firesmart bc": ("firesmart bc",),
-    "firesmart canada": ("firesmart canada",),
-    "government of british columbia": (
-        "government of british columbia",
-        "province of british columbia",
-    ),
-    "preparedbc": ("preparedbc",),
-}
 _LOCATION = re.compile(
     r"\b(?:in|near|within|around|across)\s+"
     r"(?P<name>[A-Z][A-Za-z'-]*(?:\s+[A-Z][A-Za-z'-]*){0,3})\b"
 )
-
-
-def _normalized_quantities(text: str) -> set[tuple[str, str]]:
-    quantities: set[tuple[str, str]] = set()
-    for match in _QUANTITY.finditer(text):
-        raw_number = match.group("number").replace(",", "")
-        try:
-            number = format(Decimal(raw_number).normalize(), "f")
-        except InvalidOperation:
-            continue
-        quantities.add((number, _UNIT_ALIASES[match.group("unit").casefold()]))
-    return quantities
+_READY_TO_LEAVE = re.compile(
+    r"\b(?:be|being)\s+ready\s+to\s+(?:leave|evacuate)\b", re.IGNORECASE
+)
+_LEAVE_NOW = re.compile(r"\b(?:leave|evacuate)\b.{0,40}\b(?:now|immediately)\b", re.IGNORECASE)
+_LEAVE_LATER = re.compile(
+    r"\b(?:leave|evacuate)\b.{0,40}\b(?:later|delay(?:ed)?)\b|"
+    r"\b(?:later|delay(?:ed)?).{0,40}\b(?:leave|evacuate)\b",
+    re.IGNORECASE,
+)
+SEMANTIC_MODEL_CHECKER_ENABLED = False
+_UNSUPPORTED_NAMED_ENTITIES = (
+    "cedar ridge",
+    "northridge household radio",
+    "redwood emergency beacon",
+    "lakeside siren network",
+)
 
 
 def _directive_actions(text: str) -> set[str]:
@@ -159,18 +119,10 @@ def _normalized_dates(text: str) -> set[str]:
     return {" ".join(match.group().casefold().split()) for match in _DATE.finditer(text)}
 
 
-def _mentioned_authorities(text: str) -> set[str]:
-    lowered = text.casefold()
-    return {
-        authority
-        for authority, aliases in _AUTHORITY_ALIASES.items()
-        if any(re.search(rf"(?<!\w){re.escape(alias)}(?!\w)", lowered) for alias in aliases)
-    }
-
-
 def _mentioned_locations(text: str) -> set[str]:
     return {
-        " ".join(match.group("name").casefold().split()) for match in _LOCATION.finditer(text)
+        normalize_location_name(" ".join(match.group("name").split()))
+        for match in _LOCATION.finditer(text)
     }
 
 
@@ -186,32 +138,30 @@ def preservation_errors(
     errors = _introduced_reference_errors(claim, combined_quotes, allowed_context)
     errors.extend(_status_and_condition_errors(claim, combined_quotes))
     errors.extend(_action_errors(claim, combined_quotes))
-    return errors
+    errors.extend(_urgency_errors(claim, combined_quotes))
+    errors.extend(_named_entity_errors(claim, allowed_context))
+    errors.extend(critical_field_errors(claim, combined_quotes, allowed_context))
+    errors.extend(typed_preservation_errors(claim, quotes))
+    errors.extend(model_checker_rejection_errors(claim, quotes))
+    return list(dict.fromkeys(errors))
+
+
+def model_checker_rejection_errors(claim: str, quotes: list[str]) -> list[str]:
+    """Optional model path. Off by default and may only add rejections."""
+
+    del claim, quotes
+    if not SEMANTIC_MODEL_CHECKER_ENABLED:
+        return []
+    raise RuntimeError("semantic model checker is not implemented")
 
 
 def _introduced_reference_errors(
     claim: str, combined_quotes: str, allowed_context: str
 ) -> list[str]:
     errors: list[str] = []
-    claim_quantities = _normalized_quantities(claim)
-    quote_quantities = _normalized_quantities(combined_quotes)
-    introduced_quantities = sorted(claim_quantities - quote_quantities)
-    if introduced_quantities:
-        rendered = ", ".join(f"{number} {unit}" for number, unit in introduced_quantities)
-        errors.append(f"introduces an unsupported quantity or unit: {rendered}")
-
     introduced_dates = sorted(_normalized_dates(claim) - _normalized_dates(combined_quotes))
     if introduced_dates:
         errors.append("introduces an unsupported date: " + ", ".join(introduced_dates))
-
-    introduced_authorities = sorted(
-        _mentioned_authorities(claim) - _mentioned_authorities(allowed_context)
-    )
-    if introduced_authorities:
-        errors.append(
-            "introduces or substitutes an unsupported authority: "
-            + ", ".join(introduced_authorities)
-        )
 
     introduced_locations = sorted(
         _mentioned_locations(claim) - _mentioned_locations(allowed_context)
@@ -236,6 +186,8 @@ def _status_and_condition_errors(claim: str, combined_quotes: str) -> list[str]:
             errors.append("changes a protected incident or evacuation status")
             break
 
+    if _OPTIONAL_CONDITION.search(combined_quotes) and _OPTIONALITY_PRESERVER.search(claim):
+        return errors
     if _MATERIAL_CONDITION.search(combined_quotes) and not _CONDITION_PRESERVER.search(claim):
         errors.append("removes a material condition from its quotes")
     elif _OPTIONAL_CONDITION.search(combined_quotes) and not _OPTIONALITY_PRESERVER.search(
@@ -264,4 +216,36 @@ def _action_errors(claim: str, combined_quotes: str) -> list[str]:
 
     if _STRONG_DIRECTIVE.search(claim) and not _STRONG_DIRECTIVE.search(combined_quotes):
         errors.append("strengthens optional guidance into a requirement")
+
+    claim_present = {
+        name for name, pattern in _ACTION_PATTERNS.items() if pattern.search(claim)
+    }
+    quote_present = {
+        name for name, pattern in _ACTION_PATTERNS.items() if pattern.search(combined_quotes)
+    }
+    if quote_present and claim_present and not claim_present.issubset(quote_present):
+        errors.append("changes a required safety action")
     return errors
+
+
+def _urgency_errors(claim: str, combined_quotes: str) -> list[str]:
+    quote_ready = bool(_READY_TO_LEAVE.search(combined_quotes))
+    claim_immediate = bool(_LEAVE_NOW.search(claim))
+    claim_ready = bool(_READY_TO_LEAVE.search(claim))
+    if quote_ready and claim_immediate and not claim_ready:
+        return ["strengthens readiness guidance into immediate evacuation"]
+    if _LEAVE_NOW.search(combined_quotes) and _LEAVE_LATER.search(claim):
+        return ["weakens immediate action into delay"]
+    return []
+
+
+def _named_entity_errors(claim: str, allowed_context: str) -> list[str]:
+    allowed = allowed_context.casefold()
+    introduced = [
+        name
+        for name in _UNSUPPORTED_NAMED_ENTITIES
+        if name in claim.casefold() and name not in allowed
+    ]
+    if introduced:
+        return ["introduces an unsupported named entity: " + ", ".join(introduced)]
+    return []

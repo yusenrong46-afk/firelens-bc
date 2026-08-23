@@ -215,9 +215,9 @@ describe("FireLens Source Lens", () => {
     expect(await screen.findByText("Sources supporting this answer")).toBeInTheDocument();
     expect(screen.getByText("Reviewed sources")).toBeInTheDocument();
     expect(screen.getAllByText("Keep water and food in a grab-and-go bag.").length).toBeGreaterThan(1);
-    expect(screen.getByText("Food & water").tagName).toBe("MARK");
-    expect(screen.getByText("PreparedBC")).toBeInTheDocument();
-    expect(screen.getByText("Human-verified source transcription")).toBeInTheDocument();
+    expect(screen.getAllByText("Food & water").some((node) => node.tagName === "MARK")).toBe(true);
+    expect(screen.getAllByText("PreparedBC").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Human-verified source transcription").length).toBeGreaterThan(0);
   });
 
   it("renders labelled background without an evidence interaction", async () => {
@@ -315,7 +315,7 @@ describe("FireLens Source Lens", () => {
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByText("Related official service")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Current B.C. AQHI/ })).toHaveAttribute(
+    expect(screen.getAllByRole("link", { name: /Current B.C. AQHI/ })[0]).toHaveAttribute(
       "href",
       "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html",
     );

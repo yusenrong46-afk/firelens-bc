@@ -1,0 +1,10 @@
+{
+  "case_count": 332,
+  "catalog_id": "firelens_claimbench_v1_6_2",
+  "faithful": 86,
+  "independent_examiner_cases_still_required": true,
+  "mutations": 246,
+  "parent_catalog_id": "firelens_claimbench_v1_6",
+  "path": "data/evaluation/claimbench_v1_6_2.yaml",
+  "sha256": "402b3dca3a53227d823861d2216446148a426174f388e94e8558eebf14ca3557"
+}

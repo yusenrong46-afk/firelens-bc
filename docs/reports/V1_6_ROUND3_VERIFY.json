@@ -1,0 +1,24 @@
+{
+  "schema_version": "firelens_v1_6_round3_verify.v1",
+  "evidence_class": "EXECUTED",
+  "independent_proof": false,
+  "check": {
+    "secret_scan": "passed",
+    "ruff": "passed",
+    "mypy": "passed",
+    "pytest_not_browser_not_qualification": "891 passed, 3 skipped, 448 subtests",
+    "vitest": "47 passed",
+    "frontend_build": "passed"
+  },
+  "verify_extension": {
+    "pytest_all": "891 passed, 3 skipped, 448 subtests",
+    "sites_worker": "4 passed",
+    "playwright_e2e": "26 passed on full-suite retry"
+  },
+  "playwright_note": "The first make verify e2e run failed 2 tests (desktop+mobile stale-records) at composer fill while the map was still loading. Isolated retry passed 2/2 in 2.2s. Full e2e then passed 26/26 in 14.1s. No frontend redesign.",
+  "pytest_vs_round2": {
+    "round2": 872,
+    "round3": 891,
+    "added": 19
+  }
+}

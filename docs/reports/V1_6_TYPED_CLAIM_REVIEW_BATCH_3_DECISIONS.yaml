@@ -1,0 +1,124 @@
+schema_version: firelens.typed_claim_review_decisions.v1
+batch: 3
+branch: review/v1-6-typed-claims-batch-3
+starting_commit: bb9cb8ec6ff8ea8dd6cbade0c86d33269da668ae
+starting_tree: f5febe953944781cc3d1eb248951043301b947bf
+prepared_candidate_artifact_sha256: d1e085fd7c495e18ee8f9cf6602832e128ec9a3d4a1de4ed6caa62ab9a410dfd
+reviewer: Thomas
+reviewer_identity_provided_at: "2026-08-23T11:28:14-03:00"
+note: >
+  Append-only human review journal. Thomas approved every Batch 3 proposal as
+  proposed in the live review. This journal does not itself integrate a claim
+  into the production inventory.
+
+decisions:
+  - candidate_id: PC2-VULNERABLE-023-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "section:people-at-higher-risk"
+    source_document_sha256: 450b42fe63adfdf8baf17d5c79da78f586da6ec65205ae72fb292a57c383dcb0
+    source_span_sha256: a7a451009c504b948571fec955bd096320167fdffa8140737c41cf6446818b94
+    approved_surface_sha256: af4a20405fe068bae9360cda02bf68d7691111c44ba8e14331dcf01e964d05f0
+    approved_surface: People with pre-existing chronic conditions such as asthma, COPD, heart disease, and diabetes are at higher risk from wildfire smoke.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-VULNERABLE-024-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "section:protect-yourself-from-wildfire-smoke"
+    source_document_sha256: 450b42fe63adfdf8baf17d5c79da78f586da6ec65205ae72fb292a57c383dcb0
+    source_span_sha256: 6b0cc48260a4e6eb84b10f8bca4ae10090392530471e6818937b31584cef9984
+    approved_surface_sha256: 6b0cc48260a4e6eb84b10f8bca4ae10090392530471e6818937b31584cef9984
+    approved_surface: If you have a chronic health condition, work with your health care providers to create a management plan for smoky conditions.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-VULNERABLE-024-02
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "section:protect-yourself-from-wildfire-smoke"
+    source_document_sha256: 450b42fe63adfdf8baf17d5c79da78f586da6ec65205ae72fb292a57c383dcb0
+    source_span_sha256: 942fed3d6d0f2da6f8a228cc8fcd8ad014e606a7a2ceb24946f1466aefd972ee
+    approved_surface_sha256: da9d78416fec47df4bb1ebc4f3c1d94487d7deb9f58eef71bafe4ddc73909c57
+    approved_surface: If you use rescue medications, keep an ample supply at home and carry them with you during wildfire season.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-VULNERABLE-026-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:16"
+    source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_span_sha256: 165cac697fb94522a67c17226a2eb53dde8cc829c95baf55ae4cf1cc94b56a54
+    approved_surface_sha256: 22d397cd12d3a930a84702a1c7749daf2cc6d23e7702445276e15ebe7252a3f0
+    approved_surface: Contact a medical professional or trusted community leader if warning signs of extended anxiety last more than two to four weeks.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-GENERAL-029-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:8"
+    source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_span_sha256: 514e90ba50affd0e99fce4225403639aebd1a62b712951d56cd517df0e5a0578
+    approved_surface_sha256: c075bef418d1c610ae64092fda3a11c13c46480a6c55b5890789811e639c9686
+    approved_surface: In the non-combustible zone, 0 to 1.5 metres from a structure or home, remove combustible material down to mineral soil.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-GENERAL-030-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:9"
+    source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_span_sha256: 53b2c0a353159c1c1662763eb5f8dc7df4cf78a9c4d6e84a2049ddd27d6e85a9
+    approved_surface_sha256: 92c4d6a985ff8d145ffd4c3932f5dbd6e0b81bd19aa063d249613cd448609287
+    approved_surface: Complete the FireSmart home assessment to identify changes that can reduce your home’s risk.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-GENERAL-033-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:11"
+    source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_span_sha256: e240b4341d5152e1a8b5f6122d13863ecc8f741f7255127a64a99ec5f3d0e9c5
+    approved_surface_sha256: fe4cc005d29286598c8b4375b4632ccbcb39962727768ba2175c74007166678c
+    approved_surface: Follow officials’ directions and evacuate using the routes they identify.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-GENERAL-033-02
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:11"
+    source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_span_sha256: dc1b26a14733d64f6025bb9daefbd321668c2b03b381abe8603f8307df5a7903
+    approved_surface_sha256: ef6f80cc7d2702b216f338785262a5ebc013a220024338766122826e27196d6a
+    approved_surface: On your way out, close doors and windows and turn on interior and exterior lights so your home is visible to firefighters in heavy smoke.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-GENERAL-035-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:11"
+    source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_span_sha256: 7884d920cf40db756ae31b4a0eefef904f5047045b307c2f958c69ed478c03dd
+    approved_surface_sha256: 00ba8c0605cf502f3c423a9719f021d5bce4bb2eaf9699c4875054d3dcd42c13
+    approved_surface: Keep your vehicle’s gas tank half full in case you need to evacuate on short notice.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-GENERAL-036-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:12"
+    source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_span_sha256: 04dfc40015bae972b0e8f01dd8a1f66ba781b059e4a412b9d56b041cff86812b
+    approved_surface_sha256: 15505cd2b852ee1ae36e8926df4d315233c4403a0fa35ba1302e78c60236f81e
+    approved_surface: If you suspect a gas leak, turn off the gas valve and leave immediately.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.

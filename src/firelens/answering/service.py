@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from time import perf_counter
 from uuid import uuid4
 
+from firelens.answering.adaptive_retrieval import refine_if_needed
 from firelens.answering.context import (
     EvidenceIndex,
     build_evidence_packet,
@@ -60,6 +61,7 @@ from firelens.answering.scope import (
 from firelens.answering.validate import (
     validate_background_draft,
 )
+from firelens.claim_trust import GROUNDED_PUBLIC_WORDING
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     AskResponse,
@@ -158,6 +160,7 @@ class StaticRAGService:
             bundle.provider_attempts["planning"] = planning.attempts
             bundle.provider_models["planning"] = planning.model
         bundle.timings_ms["planning"] = planning_ms
+        request_queries = tuple(item.query for item in plan.retrieval_requests)
         packet = build_evidence_packet(
             plan.normalized_question,
             bundle.reranked_hits,
@@ -165,15 +168,21 @@ class StaticRAGService:
             corpus_version=self.corpus_version,
             config=self.config,
             evidence_index=self.evidence_index,
-            selection_aspects=tuple(
-                dict.fromkeys(
-                    [
-                        *plan.required_aspects,
-                        *(request.query for request in plan.retrieval_requests),
-                    ]
-                )
-            ),
+            selection_aspects=tuple(dict.fromkeys([*plan.required_aspects, *request_queries])),
         )
+        if self.config.retrieval_strategy == "adaptive_v1":
+            refined = await refine_if_needed(
+                plan=plan,
+                request_queries=request_queries,
+                first_bundle=bundle,
+                first_packet=packet,
+                chunks=self.chunks,
+                corpus_version=self.corpus_version,
+                config=self.config,
+                searcher=self.retrieval,
+                evidence_index=self.evidence_index,
+            )
+            return refined.bundle, refined.packet
         return bundle, packet
 
     @staticmethod
@@ -622,8 +631,8 @@ class StaticRAGService:
                 answer=(
                     f"FireLens can help with {topics}. Its reviewed collection includes "
                     "PreparedBC, FireSmart BC, BC Wildfire Service, and BCCDC guidance. "
-                    "Verified answers pair each claim with reviewed local evidence and an "
-                    "exact supporting quote."
+                    f"{GROUNDED_PUBLIC_WORDING} Grounded answers pair each claim with "
+                    "reviewed local evidence and an exact supporting quote."
                 ),
                 limitations=search.plan.limitations,
                 suggested_questions=list(SUGGESTED_QUESTIONS[:6]),

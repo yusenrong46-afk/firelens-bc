@@ -571,6 +571,69 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .answer-section h2 { margin: 4px 0 0; color: var(--ink); font: 600 20px/1.2 "Newsreader", Georgia, serif; }
 .answer-section p { margin-top: 5px; }
 .answer-lead { margin: 10px 0 0; color: var(--ink); font-size: 16px; line-height: 1.62; }
+.status-banner-kicker {
+  margin: 10px 0 0;
+  color: var(--forest);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.status-banner {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+}
+.status-banner strong { font-size: 16px; }
+.status-banner p, .status-banner a { margin: 0; font-size: 16px; line-height: 1.5; }
+.status-banner__warning { font-weight: 700; }
+.status-banner a { color: var(--forest); font-weight: 600; }
+
+.support-checklist {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+.support-checklist h2 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.support-checklist ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.support-checklist li, .support-checklist p { font-size: 16px; line-height: 1.45; }
+
+.proof-card {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+}
+.proof-card__warnings {
+  padding: 10px 12px;
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-edge);
+  border-radius: 10px;
+  color: var(--amber-ink);
+}
+.proof-card__warnings strong, .proof-card__state { font-size: 16px; font-weight: 700; }
+.proof-card h2 { margin: 0; font-size: 16px; line-height: 1.4; }
+.proof-card dl { display: grid; gap: 6px; margin: 0; }
+.proof-card dl div { display: grid; gap: 2px; }
+.proof-card dt { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.proof-card dd { margin: 0; font-size: 16px; }
+.proof-card blockquote {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--forest-tint);
+  border-left: 4px solid var(--forest);
+}
+.proof-card a { color: var(--forest); font-size: 16px; font-weight: 600; }
 
 .answer-limitations {
   display: grid;

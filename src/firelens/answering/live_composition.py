@@ -17,6 +17,7 @@ from firelens.contracts import (
     ResponseStatus,
     render_claim_texts,
 )
+from firelens.freshness_language import official_information_prefix
 
 
 def _unique_limitations(*groups: list[str]) -> list[str]:
@@ -50,11 +51,9 @@ def supported_static_when_live_missing(
         and static_result.validation.accepted
     ):
         conflict_text = static_result.answer
+        prefix = official_information_prefix(None)
         composed_answer = (
-            "Current official information: "
-            + current_information
-            + "\n\nConflicting reviewed sources: "
-            + conflict_text
+            prefix + current_information + "\n\nConflicting reviewed sources: " + conflict_text
         )
         bound_limitations: list[str] = []
         if len(composed_answer) > PUBLIC_ANSWER_MAX_CHARS:
@@ -63,7 +62,7 @@ def supported_static_when_live_missing(
                 "apparently certain answer. Inspect both reviewed sources before acting."
             )
             composed_answer = (
-                "Current official information: "
+                prefix
                 + current_information
                 + "\n\nConflicting reviewed sources: "
                 + conflict_text
@@ -132,7 +131,7 @@ def supported_static_when_live_missing(
             trace_id=static_result.trace_id,
             response_mode=ResponseMode.BACKGROUND,
             answer=(
-                "Current official information: "
+                official_information_prefix(None)
                 + current_information
                 + "\n\nGeneral background: "
                 + static_text
@@ -182,11 +181,11 @@ def supported_static_when_live_missing(
         trace_id=static_result.trace_id,
         response_mode=ResponseMode.PARTIAL,
         answer=(
-            "Current official information: "
+            official_information_prefix(None)
             + current_information
             + "\n\nPreparedness guidance: "
             + static_text
-            + "\n\nUncertainty: the current-information part was not established."
+            + "\n\nUncertainty: the live-information part was not established."
         ),
         answer_sections=[
             AnswerSection(

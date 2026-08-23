@@ -1,0 +1,221 @@
+{
+  "always_abstain": false,
+  "correct": 265,
+  "critical_field_preservation": 0.7439024390243902,
+  "dimensions_fully_covered": 13,
+  "dimensions_with_mutations": 23,
+  "faithful": 86,
+  "faithful_false_reject_rate": 0.046511627906976744,
+  "incorrect_ids": [
+    "G016",
+    "G018",
+    "G021",
+    "G022",
+    "X002",
+    "X004",
+    "X005",
+    "X007",
+    "X011",
+    "X015",
+    "X017",
+    "X019",
+    "X020",
+    "X021",
+    "X022",
+    "X023",
+    "X024",
+    "X025",
+    "X026",
+    "X027",
+    "X028",
+    "X029",
+    "X030",
+    "X032",
+    "X033",
+    "X039",
+    "X040",
+    "X042",
+    "X044",
+    "X045",
+    "X046",
+    "X047",
+    "X048",
+    "X049",
+    "X050",
+    "X051",
+    "X052",
+    "X053",
+    "X054",
+    "X055",
+    "X056",
+    "X057",
+    "X058",
+    "X061",
+    "X062",
+    "X064",
+    "X065",
+    "X067",
+    "X068",
+    "X069",
+    "X070",
+    "X074",
+    "X075",
+    "X076",
+    "X078",
+    "X079",
+    "X080",
+    "X081",
+    "X082",
+    "X085",
+    "X087",
+    "X089",
+    "X090",
+    "X091",
+    "X092",
+    "X093",
+    "X096"
+  ],
+  "mutations": 246,
+  "risk_coverage_curve": [
+    {
+      "covered": false,
+      "dimension": "action",
+      "mutations": 9,
+      "unsafe_false_accept_rate": 0.6666666666666666
+    },
+    {
+      "covered": true,
+      "dimension": "action_reversal",
+      "mutations": 10,
+      "unsafe_false_accept_rate": 0.0
+    },
+    {
+      "covered": true,
+      "dimension": "alert_order",
+      "mutations": 10,
+      "unsafe_false_accept_rate": 0.0
+    },
+    {
+      "covered": false,
+      "dimension": "authority",
+      "mutations": 22,
+      "unsafe_false_accept_rate": 0.3181818181818182
+    },
+    {
+      "covered": false,
+      "dimension": "comparator",
+      "mutations": 12,
+      "unsafe_false_accept_rate": 1.0
+    },
+    {
+      "covered": false,
+      "dimension": "condition",
+      "mutations": 18,
+      "unsafe_false_accept_rate": 0.2777777777777778
+    },
+    {
+      "covered": true,
+      "dimension": "date",
+      "mutations": 10,
+      "unsafe_false_accept_rate": 0.0
+    },
+    {
+      "covered": true,
+      "dimension": "dimension",
+      "mutations": 1,
+      "unsafe_false_accept_rate": 0.0
+    },
+    {
+      "covered": false,
+      "dimension": "exception",
+      "mutations": 4,
+      "unsafe_false_accept_rate": 0.75
+    },
+    {
+      "covered": false,
+      "dimension": "freshness",
+      "mutations": 13,
+      "unsafe_false_accept_rate": 1.0
+    },
+    {
+      "covered": false,
+      "dimension": "jurisdiction",
+      "mutations": 4,
+      "unsafe_false_accept_rate": 0.25
+    },
+    {
+      "covered": true,
+      "dimension": "leave_stay",
+      "mutations": 10,
+      "unsafe_false_accept_rate": 0.0
+    },
+    {
+      "covered": true,
+      "dimension": "location",
+      "mutations": 10,
+      "unsafe_false_accept_rate": 0.0
+    },
+    {
+      "covered": false,
+      "dimension": "modality",
+      "mutations": 17,
+      "unsafe_false_accept_rate": 0.23529411764705882
+    },
+    {
+      "covered": true,
+      "dimension": "negation",
+      "mutations": 10,
+      "unsafe_false_accept_rate": 0.0
+    },
+    {
+      "covered": false,
+      "dimension": "overlap",
+      "mutations": 7,
+      "unsafe_false_accept_rate": 0.7142857142857143
+    },
+    {
+      "covered": true,
+      "dimension": "polarity",
+      "mutations": 10,
+      "unsafe_false_accept_rate": 0.0
+    },
+    {
+      "covered": true,
+      "dimension": "quantity",
+      "mutations": 15,
+      "unsafe_false_accept_rate": 0.0
+    },
+    {
+      "covered": true,
+      "dimension": "range",
+      "mutations": 2,
+      "unsafe_false_accept_rate": 0.0
+    },
+    {
+      "covered": true,
+      "dimension": "stale_current",
+      "mutations": 10,
+      "unsafe_false_accept_rate": 0.0
+    },
+    {
+      "covered": false,
+      "dimension": "unit",
+      "mutations": 22,
+      "unsafe_false_accept_rate": 0.3181818181818182
+    },
+    {
+      "covered": true,
+      "dimension": "unsupported_entity",
+      "mutations": 10,
+      "unsafe_false_accept_rate": 0.0
+    },
+    {
+      "covered": true,
+      "dimension": "urgency",
+      "mutations": 10,
+      "unsafe_false_accept_rate": 0.0
+    }
+  ],
+  "total": 332,
+  "unsafe_false_accept_rate": 0.25609756097560976
+}

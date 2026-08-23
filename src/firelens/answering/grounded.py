@@ -14,7 +14,10 @@ from firelens.answering.generate import (
     generation_messages,
     repair_generation_messages,
 )
+from firelens.answering.risk_policy import RiskTier
+from firelens.answering.typed_snapshot import classify_text
 from firelens.answering.validate import salvage_valid_grounded_claims, validate_draft
+from firelens.claim_trust import corpus_claim_trust
 from firelens.contracts import (
     RELATED_LINK_DESCRIPTION_MAX_CHARS,
     RELATED_LINK_TITLE_MAX_CHARS,
@@ -36,6 +39,11 @@ from firelens.contracts import (
 )
 from firelens.errors import ProviderError
 from firelens.providers.base import AIProvider
+from firelens.publication.compiler import (
+    compile_high_risk_answer,
+    explanation_authority,
+    packet_requires_structured,
+)
 
 MAX_REPAIR_COUNT = 1
 
@@ -200,6 +208,22 @@ class GroundedAnswerEngine:
         model: str | None = None
         usage: dict[str, Any] = {}
         attempts = 0
+
+        if packet_requires_structured(evidence_packet, question):
+            response = compile_high_risk_answer(question, evidence_packet, trace_id=trace_id)
+            if force_partial and response.response_mode == ResponseMode.GROUNDED:
+                response = response.model_copy(update={"response_mode": ResponseMode.PARTIAL})
+            return self._outcome(
+                response,
+                observations,
+                observer,
+                validation=response.validation,
+                repair_count=0,
+                model=model,
+                usage=usage,
+                attempts=attempts,
+                latency_ms=0.0,
+            )
 
         started = perf_counter()
         try:
@@ -369,15 +393,51 @@ class GroundedAnswerEngine:
         quote_candidates = {
             candidate.quote_id: candidate for candidate in evidence_packet.quote_candidates
         }
-        public_claims = [
-            PublicClaim(
-                claim_id=f"C{claim_index}",
-                text=claim.text,
-                evidence_status=EvidenceStatus.VERIFIED_CORPUS,
-                supports=_unique_claim_supports(claim.evidence_quote_ids, quote_candidates),
+        evidence_by_id = {item.evidence_id: item for item in evidence_packet.items}
+        public_claims = []
+        for claim_index, claim in enumerate(active_draft.claims, start=1):
+            supports = _unique_claim_supports(claim.evidence_quote_ids, quote_candidates)
+            cited = next((evidence_by_id.get(item.evidence_id) for item in supports), None)
+            published_text = claim.text
+            if classify_text(published_text) in {RiskTier.A, RiskTier.B}:
+                continue
+            public_claims.append(
+                PublicClaim(
+                    claim_id=f"C{claim_index}",
+                    text=published_text,
+                    evidence_status=EvidenceStatus.VERIFIED_CORPUS,
+                    supports=supports,
+                    trust=corpus_claim_trust(
+                        authority=(
+                            cited.authority_class.value
+                            if cited is not None
+                            else "recognized_wildfire_preparedness_program"
+                        ),
+                        review_provenance=(
+                            cited.review_provenance if cited is not None else "native_text"
+                        ),
+                        conflicts=bool(evidence_packet.conflicts),
+                    ),
+                    publication=explanation_authority(),
+                )
             )
-            for claim_index, claim in enumerate(active_draft.claims, start=1)
-        ]
+        if not public_claims:
+            response = self._validation_handoff(
+                trace_id,
+                evidence_packet,
+                _validation_failure("high-risk generated claims cannot be published"),
+            )
+            return self._outcome(
+                response,
+                observations,
+                observer,
+                validation=validation,
+                repair_count=repair_count,
+                model=model,
+                usage=usage,
+                attempts=attempts,
+                latency_ms=total_latency_ms,
+            )
         cited_ids = {
             support.evidence_id for claim in public_claims for support in claim.supports
         }

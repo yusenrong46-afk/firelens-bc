@@ -1,0 +1,37 @@
+{
+  "schema_version": "firelens_v1_6_round3_before_snapshot.v1",
+  "evidence_class": "EXECUTED",
+  "phase": "round3_before",
+  "captured_from_commit": "40cabcb9a3a42888474d4de1a622ca84a3fd49b3",
+  "captured_from_tree": "446a802f112da5ce34abe8c398475ee2413d8ed9",
+  "branch": "upgrade/v1-6-semantic-round3",
+  "rollback_ref": "examined/v1-6-round2",
+  "package_version": "1.6.0rc1",
+  "web_version": "1.6.0-rc.1",
+  "fable_round2_verdict": {
+    "local": "ENGINEERING_IMPROVED_LOCALLY",
+    "formal": "NOT_PROVEN",
+    "paid_h4": "NOT_READY_FOR_PAID_H4",
+    "release": "CONDITIONAL_NO_GO"
+  },
+  "file_hashes": {
+    "standard": "55e16b86960d51fb732970691a0c00850f6c56eb258cd363fd74a418b34d1bef",
+    "claimbench_v1": "bcf885f65345e0b869982113c0890314bca522b8a9a3877eaf90140c6c6362d1",
+    "claimbench_v2": "402b3dca3a53227d823861d2216446148a426174f388e94e8558eebf14ca3557",
+    "hard_probe": "ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035",
+    "corpus": "d5fcd794f9ec0486a256ae511366fde982254342b7d07b9c83a21ea8ead291eb",
+    "corpus_manifest": "2d0d6b9b445f5ab0ef59e7f19bd0dce058a93f3a93b9599338702b95058ed687",
+    "vectors": "fd0b171488809c5a87f3aee5c912b07358231cac6478bb621f6d2fc79d41efb7",
+    "vector_manifest": "437181a2a9aa03498b4bb4de2445d0e0b0bf3fe1c4d4fa76a50019d31f3f1046",
+    "openapi": "9c2b8ec877787fecefbb29e225d25340fb2af359ff2d8d4c92f8716d6ef5d1bb",
+    "pyproject": "cfb663c1d5efc978fc8ef95ba982cedb0fa0fd9f8525704afe854642905279a8",
+    "web_package": "a76eaa567fb79dcd961cb6c565abd87f0fbf37f00f737f71406df26c55df232b",
+    "allowlist": "06a38b064ecb1a044aea2b66724498b15bc8ec99b0d6370cd820708606d7c64d",
+    "workload": "972abb2df3bb6821ff87326a788961a3c2631c60a4ab072c0ec5269a4203ce08"
+  },
+  "reproduction_path": "docs/reports/V1_6_ROUND3_FABLE_REPRODUCTION.json",
+  "paid_authorization": {
+    "FIRELENS_PAID_RETRIEVAL_BENCHMARK_AUTHORIZED": false,
+    "status": "BLOCKED"
+  }
+}

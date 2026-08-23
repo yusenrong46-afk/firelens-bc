@@ -1,10 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { CircleMarker, GeoJSON, MapContainer, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import type { LiveResult } from "../../shared/api/api";
 import { MatchingRecordList, ProvinceRecordList } from "./LiveRecordLists";
 import { BC_BOUNDS, FitResults, type MapFocus } from "./MapViewport";
-import { OfficialBasemap } from "./OfficialBasemap";
+import { OfficialBasemap, TileFailureWarning } from "./OfficialBasemap";
 import {
   formatTimestamp,
   isRenderableGeometry,
@@ -73,6 +73,7 @@ export function LiveMap({
     [results],
   );
   const hasMatchingResults = displayedMatchingResults.length > 0;
+  const [tilesFailed, setTilesFailed] = useState(false);
   return (
     <section className="live-map" id="official-map" aria-label="Official wildfire records map" tabIndex={-1}>
       <div className="live-map__heading">
@@ -116,6 +117,7 @@ export function LiveMap({
           The records below do not represent those missing layers.
         </p>
       )}
+      {tilesFailed && <TileFailureWarning failed />}
       <div role="region" aria-label="Interactive map of official wildfire records">
         <MapContainer
           bounds={BC_BOUNDS}
@@ -123,7 +125,7 @@ export function LiveMap({
           keyboard={false}
           attributionControl={true}
         >
-        <OfficialBasemap focus={focus} />
+        <OfficialBasemap focus={focus} onTileError={() => setTilesFailed(true)} />
         <FitResults
           results={results}
           focus={focus}

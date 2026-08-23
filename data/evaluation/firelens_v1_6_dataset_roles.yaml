@@ -1,0 +1,71 @@
+schema_version: firelens_v1_6_dataset_roles.v1
+registry_id: firelens_v1_6
+description: >
+  Dataset-use policy for the FireLens V1.6 upgrade. Existing frozen catalogs
+  are referenced in place. This registry does not rewrite those catalogs.
+  Sealed V3 retrieval and semantic holdout remain planned and EXTERNAL.
+
+datasets:
+  - id: hard_probe_v1
+    role: permanent_regression
+    status: available
+    inputs:
+      - data/evaluation/hard_probe.v1.yaml
+      - data/evaluation/hard_probe.v1.manifest.json
+    allowed_uses: [zero_cost_regression, paired_before_after]
+    prohibited_uses: [sealed_tuning, threshold_mutation]
+
+  - id: benchmark_v1_development_retrieval
+    role: development
+    status: available
+    inputs:
+      - data/evaluation/benchmark_v1.yaml
+      - data/evaluation/benchmark_v1.manifest.json
+      - data/evaluation/benchmark_v1_5_relevance_addendum.yaml
+    allowed_uses: [paired_before_after, retrieval_comparison]
+    prohibited_uses: [sealed_tuning, final_unseen_qualification_claim]
+
+  - id: benchmark_v1_1_conversation
+    role: permanent_regression
+    status: available
+    inputs:
+      - data/evaluation/benchmark_v1_1_conversation.yaml
+      - data/evaluation/benchmark_v1_1_conversation.manifest.json
+    allowed_uses: [zero_cost_regression]
+    prohibited_uses: [sealed_tuning]
+
+  - id: frontend_surface_v1
+    role: development
+    status: available
+    inputs:
+      - data/evaluation/frontend_surface.v1.yaml
+    allowed_uses: [frontend_surface_automation]
+    prohibited_uses: [named_manual_review_substitution]
+
+  - id: claimbench_v1_6
+    role: development
+    status: available
+    inputs:
+      - data/evaluation/claimbench_v1_6.yaml
+      - data/evaluation/claimbench_v1_6.manifest.json
+    allowed_uses: [paired_before_after, safety_mutation]
+    prohibited_uses: [sealed_tuning, threshold_mutation]
+    notes: Frozen in patch group 3. Not a sealed qualification set.
+
+  - id: sealed_retrieval_v3
+    role: planned_sealed_qualification
+    status: planned
+    inputs:
+      - data/evaluation/benchmark_v1_5_2_sealed_retrieval_v3.protocol.yaml
+    allowed_uses: [required_after_only]
+    prohibited_uses: [paired_before_after, tuning, baseline_ranking]
+    notes: Protocol only. Do not author or rank in this campaign.
+
+  - id: semantic_holdout
+    role: planned_sealed_qualification
+    status: planned
+    inputs:
+      - data/evaluation/semantic_holdout_freeze_protocol.v1.json
+    allowed_uses: [required_after_only]
+    prohibited_uses: [paired_before_after, tuning]
+    notes: Protocol only. Payload is not in the repository.

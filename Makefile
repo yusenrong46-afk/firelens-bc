@@ -2,7 +2,7 @@ PYTHON := .venv/bin/python
 FIRELENS := .venv/bin/firelens
 FRONTEND := apps/web
 
-.PHONY: setup check verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review retrieval-review-packet retrieval-review-template qualify-retrieval-review qualify-retrieval-v1-5 qualify-live-v1-5 capture-live-slo verify-live-slo prepare-firewall model-bakeoff canary live-smoke openapi secret-scan
+.PHONY: setup check verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review retrieval-review-packet retrieval-review-template qualify-retrieval-review qualify-retrieval-v1-5 qualify-live-v1-5 capture-live-slo verify-live-slo prepare-firewall model-bakeoff canary live-smoke openapi secret-scan v1-6-baseline v1-6-gate v1-6-report v1-6-package-verify v1-6-round2-baseline claimbench-v2 v1-6-hard-probe v1-6-performance v1-6-pre-release-performance v1-6-retrieval-dry-run v1-6-round2-gate v1-6-round2-report v1-6-round3-eval v1-6-round3-report typed-claim-review-export v1-6-structured-publication-eval
 
 setup:
 	@test -d .venv || python3 -m venv .venv
@@ -110,3 +110,56 @@ model-bakeoff:
 
 live-smoke:
 	FIRELENS_RUN_OPENROUTER_SMOKE=1 $(PYTHON) -m pytest tests/test_openrouter_smoke.py -q
+
+v1-6-baseline:
+	$(PYTHON) scripts/v1_6_upgrade.py baseline --run-tests --seal
+
+v1-6-gate:
+	$(PYTHON) scripts/v1_6_upgrade.py gate
+
+v1-6-report:
+	$(PYTHON) scripts/v1_6_upgrade.py report
+
+v1-6-package-verify:
+	$(PYTHON) scripts/v1_6_upgrade.py package-verify
+
+v1-6-round2-baseline:
+	@test -f docs/reports/V1_6_ROUND2_BEFORE_SNAPSHOT.json
+	@test -f docs/reports/V1_6_ROUND2_FABLE_MUTATION_REPRODUCTION.json
+	$(PYTHON) -c "import json; from pathlib import Path; p=Path('docs/reports/V1_6_ROUND2_BEFORE_SNAPSHOT.json'); json.loads(p.read_text())"
+
+claimbench-v2:
+	$(PYTHON) scripts/claimbench_v2.py evaluate
+
+v1-6-hard-probe:
+	$(PYTHON) scripts/run_hard_probe.py --mode offline --output output/benchmark/v1_6_round2/hard_probe.json
+
+v1-6-performance:
+	$(PYTHON) scripts/v1_6_round2_performance.py
+
+v1-6-pre-release-performance:
+	$(PYTHON) scripts/v1_6_round2_performance.py --measured 100 \
+		--report-output docs/reports/V1_6_PRE_RELEASE_PERFORMANCE.json
+
+v1-6-retrieval-dry-run:
+	$(PYTHON) scripts/v1_6_round2_retrieval.py --dry-run
+
+v1-6-round2-gate:
+	$(PYTHON) scripts/v1_6_round2_gate.py
+
+v1-6-round2-report:
+	@test -f docs/reports/V1_6_ROUND2_ENGINEERING_REPORT.md
+	@echo "docs/reports/V1_6_ROUND2_ENGINEERING_REPORT.md"
+
+v1-6-round3-eval:
+	$(PYTHON) scripts/v1_6_round3_eval.py --output-dir docs/reports
+
+v1-6-round3-report:
+	@test -f docs/reports/V1_6_ROUND3_ENGINEERING_REPORT.md
+	@echo "docs/reports/V1_6_ROUND3_ENGINEERING_REPORT.md"
+
+typed-claim-review-export:
+	$(PYTHON) scripts/typed_claim_review_export.py --output tmp/typed_claim_review_queue.html
+
+v1-6-structured-publication-eval:
+	$(PYTHON) scripts/v1_6_structured_publication_eval.py

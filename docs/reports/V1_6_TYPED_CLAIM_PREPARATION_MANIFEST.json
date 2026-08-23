@@ -1,0 +1,21 @@
+{
+  "artifact_sha256": "d1e085fd7c495e18ee8f9cf6602832e128ec9a3d4a1de4ed6caa62ab9a410dfd",
+  "batch_sizes": [
+    10,
+    10
+  ],
+  "contains_reviewer_identity": false,
+  "disposition_counts": {
+    "duplicate_existing": 3,
+    "needs_source_repair": 9,
+    "not_claim_bearing": 8,
+    "review_ready": 16
+  },
+  "prepared_candidate_count": 20,
+  "raw_candidate_count": 36,
+  "review_state": "pending_review_only",
+  "schema_version": "firelens.typed_claim_preparation_manifest.v1",
+  "source_repair_scope_count": 9,
+  "source_repair_scope_decisions_blank": true,
+  "source_repair_scope_template_sha256": "59330bda03ecec0090b1731820f1a2dd6ed06225f77c57cff51e34093b92f61d"
+}

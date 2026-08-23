@@ -51,6 +51,93 @@
         "title": "AnswerSectionKind",
         "type": "string"
       },
+      "AnswerStatusBanner": {
+        "additionalProperties": false,
+        "properties": {
+          "availability_label": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Availability Label",
+            "type": "string"
+          },
+          "detail": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Detail",
+            "type": "string"
+          },
+          "freshness_label": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Freshness Label",
+            "type": "string"
+          },
+          "headline": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Headline",
+            "type": "string"
+          },
+          "official_escalation_title": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Escalation Title"
+          },
+          "official_escalation_url": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "maxLength": 2083,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Escalation Url"
+          },
+          "retrieval_completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieval Completed At"
+          },
+          "source_updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Updated At"
+          }
+        },
+        "required": [
+          "headline",
+          "detail",
+          "freshness_label",
+          "availability_label"
+        ],
+        "title": "AnswerStatusBanner",
+        "type": "object"
+      },
       "AskResponse": {
         "additionalProperties": false,
         "properties": {
@@ -137,6 +224,14 @@
             "title": "Live Results",
             "type": "array"
           },
+          "proof_cards": {
+            "items": {
+              "$ref": "#/components/schemas/ProofCard"
+            },
+            "maxItems": 12,
+            "title": "Proof Cards",
+            "type": "array"
+          },
           "reason_code": {
             "anyOf": [
               {
@@ -195,12 +290,30 @@
           "status": {
             "$ref": "#/components/schemas/ResponseStatus"
           },
+          "status_banner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnswerStatusBanner"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "suggested_questions": {
             "items": {
               "type": "string"
             },
             "maxItems": 6,
             "title": "Suggested Questions",
+            "type": "array"
+          },
+          "supported_items": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 12,
+            "title": "Supported Items",
             "type": "array"
           },
           "trace_id": {
@@ -212,6 +325,14 @@
               "$ref": "#/components/schemas/LiveResultKind"
             },
             "title": "Unavailable Layers",
+            "type": "array"
+          },
+          "unknown_items": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 12,
+            "title": "Unknown Items",
             "type": "array"
           },
           "validation": {
@@ -252,6 +373,99 @@
           "quote"
         ],
         "title": "ClaimSupport",
+        "type": "object"
+      },
+      "ClaimTrust": {
+        "additionalProperties": false,
+        "properties": {
+          "conflict_or_supersession": {
+            "default": "none",
+            "enum": [
+              "none",
+              "conflict_shown",
+              "superseded"
+            ],
+            "title": "Conflict Or Supersession",
+            "type": "string"
+          },
+          "critical_field_preservation": {
+            "enum": [
+              "preserved",
+              "not_applicable",
+              "failed"
+            ],
+            "title": "Critical Field Preservation",
+            "type": "string"
+          },
+          "extraction_repair_state": {
+            "enum": [
+              "native_text",
+              "human_verified_repair",
+              "unknown"
+            ],
+            "title": "Extraction Repair State",
+            "type": "string"
+          },
+          "freshness": {
+            "default": "stable_guidance",
+            "enum": [
+              "stable_guidance",
+              "fresh",
+              "stale",
+              "mixed",
+              "unknown"
+            ],
+            "title": "Freshness",
+            "type": "string"
+          },
+          "human_review_state": {
+            "enum": [
+              "approved_static",
+              "human_verified_repair",
+              "pending_review",
+              "none"
+            ],
+            "title": "Human Review State",
+            "type": "string"
+          },
+          "jurisdiction": {
+            "default": "british_columbia",
+            "title": "Jurisdiction",
+            "type": "string"
+          },
+          "semantic_support_state": {
+            "enum": [
+              "exact_quote",
+              "insufficient",
+              "background",
+              "none"
+            ],
+            "title": "Semantic Support State",
+            "type": "string"
+          },
+          "source_authority": {
+            "title": "Source Authority",
+            "type": "string"
+          },
+          "source_provenance": {
+            "enum": [
+              "approved_static_corpus",
+              "official_live_record",
+              "none"
+            ],
+            "title": "Source Provenance",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_provenance",
+          "source_authority",
+          "human_review_state",
+          "extraction_repair_state",
+          "critical_field_preservation",
+          "semantic_support_state"
+        ],
+        "title": "ClaimTrust",
         "type": "object"
       },
       "CoarseResolvedLocation": {
@@ -1307,16 +1521,158 @@
         "title": "NearMeResponse",
         "type": "object"
       },
+      "ProofCard": {
+        "additionalProperties": false,
+        "properties": {
+          "authority": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Authority",
+            "type": "string"
+          },
+          "claim_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "claim_text": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Claim Text",
+            "type": "string"
+          },
+          "conflicts_or_unknowns": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Conflicts Or Unknowns",
+            "type": "array"
+          },
+          "critical_fields_checked": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Critical Fields Checked",
+            "type": "string"
+          },
+          "exact_passage": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exact Passage"
+          },
+          "freshness": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Freshness",
+            "type": "string"
+          },
+          "official_url": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "maxLength": 2083,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Url"
+          },
+          "review_state": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Review State",
+            "type": "string"
+          },
+          "source_revision": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Revision"
+          },
+          "source_title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Title"
+          },
+          "support_label": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Support Label",
+            "type": "string"
+          },
+          "support_state": {
+            "enum": [
+              "supported",
+              "structured_reviewed",
+              "official_live_typed",
+              "official_quote_only",
+              "source_linked_explanation",
+              "unknown",
+              "background",
+              "conflict",
+              "live_record"
+            ],
+            "title": "Support State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "claim_id",
+          "claim_text",
+          "support_state",
+          "support_label",
+          "authority",
+          "review_state",
+          "critical_fields_checked",
+          "freshness"
+        ],
+        "title": "ProofCard",
+        "type": "object"
+      },
       "PublicClaim": {
         "additionalProperties": false,
         "properties": {
           "claim_id": {
-            "pattern": "^C[1-9][0-9]*$",
+            "pattern": "^[CL][1-9][0-9]*$",
             "title": "Claim Id",
             "type": "string"
           },
           "evidence_status": {
             "$ref": "#/components/schemas/EvidenceStatus"
+          },
+          "publication": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PublicationAuthority"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "supports": {
             "items": {
@@ -1331,6 +1687,16 @@
             "minLength": 1,
             "title": "Text",
             "type": "string"
+          },
+          "trust": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClaimTrust"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -1410,6 +1776,116 @@
         "title": "PublicEvidence",
         "type": "object"
       },
+      "PublicationAuthority": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/PublicationKind"
+          },
+          "renderer_id": {
+            "default": "none",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Renderer Id",
+            "type": "string"
+          },
+          "review_status": {
+            "default": "none",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Review Status",
+            "type": "string"
+          },
+          "risk_tier": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Tier"
+          },
+          "source_revision_sha256": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Revision Sha256"
+          },
+          "source_span_sha256": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Span Sha256"
+          },
+          "support_provenance": {
+            "default": "none",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Support Provenance",
+            "type": "string"
+          },
+          "typed_claim_id": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Typed Claim Id"
+          },
+          "typed_live_fact_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Typed Live Fact Id"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "PublicationAuthority",
+        "type": "object"
+      },
+      "PublicationKind": {
+        "enum": [
+          "structured_reviewed",
+          "official_live_typed",
+          "official_quote_only",
+          "source_linked_explanation",
+          "general_background",
+          "unsupported"
+        ],
+        "title": "PublicationKind",
+        "type": "string"
+      },
       "QueryRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1465,7 +1941,8 @@
           "generation_unavailable",
           "draft_validation_failed",
           "model_abstained",
-          "conflicting_evidence"
+          "conflicting_evidence",
+          "high_risk_claim_not_structured"
         ],
         "title": "ReasonCode",
         "type": "string"
@@ -1653,7 +2130,7 @@
   "info": {
     "description": "Evidence-bound wildfire guidance plus bounded official incident, perimeter, and evacuation records. Not emergency direction.",
     "title": "FireLens BC",
-    "version": "1.5.3-rc.1"
+    "version": "1.6.0-rc.1"
   },
   "openapi": "3.1.0",
   "paths": {

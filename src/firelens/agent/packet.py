@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from firelens.agent.budget import RequestExecutionPolicy
 from firelens.contracts import (
     AskResponse,
     CoarseResolvedLocation,
@@ -33,6 +34,10 @@ def live_record_fact(result: LiveResult) -> dict[str, Any]:
         "distance_basis": result.distance_basis,
         "geometry_relation": result.geometry_relation.value,
         "source_updated_at": result.source_updated_at.isoformat(),
+        "retrieved_at": result.retrieved_at.isoformat(),
+        "freshness": result.freshness.value
+        if hasattr(result.freshness, "value")
+        else str(result.freshness),
     }
 
 
@@ -48,6 +53,8 @@ class AgentPacket:
     related_links: list[RelatedLink] = field(default_factory=list)
     roster_total: int | None = None
     unavailable_layers: list[LiveResultKind] = field(default_factory=list)
+    policy: RequestExecutionPolicy = field(default_factory=RequestExecutionPolicy)
+    tool_fingerprints: list[tuple[str, str]] = field(default_factory=list)
 
     def mark_unavailable(
         self, layers: tuple[LiveResultKind, ...] | list[LiveResultKind]

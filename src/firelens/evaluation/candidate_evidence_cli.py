@@ -15,6 +15,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
+from firelens.config import DEFAULT_RELEASE_VERSION
+
 SCHEMA_VERSION = "firelens.candidate_evidence.v1"
 SECURITY_SCHEMA_VERSION = "firelens.candidate_security.v1"
 BUILD_TYPE = "https://firelens-bc.local/build-types/candidate-evidence/v1"
@@ -570,7 +572,7 @@ def _parser() -> argparse.ArgumentParser:
     build.add_argument("--project-root", type=Path, default=Path("."))
     build.add_argument("--output-dir", type=Path, required=True)
     build.add_argument("--commit", default=os.environ.get("GITHUB_SHA"), required=False)
-    build.add_argument("--release-version", default="1.5.3-rc.1")
+    build.add_argument("--release-version", default=DEFAULT_RELEASE_VERSION)
     build.add_argument("--generated-at", required=True)
     build.add_argument("--builder-id", required=True)
     build.add_argument("--invocation-id", required=True)

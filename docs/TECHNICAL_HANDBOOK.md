@@ -2,7 +2,14 @@
 
 Date: 2026-07-30 (America/Vancouver)
 
-Status: authoritative V1.5 release-candidate architecture; qualification evidence is separate
+Status: **historical**. This handbook describes the 2026-07-30 V1.5 candidate.
+It is not the V1.6 architecture authority. Current Ask, trust, packaging, and
+proof UX are in `docs/ARCHITECTURE_V1_6.md`, ADR 0011, and ADR 0013.
+Qualification evidence remains separate.
+
+> Historical note: the text below still says V1.5 “excludes … agents” and names
+> `src/firelens/answering/service.py` as the orchestrator. Runtime Ask since
+> ADR 0011 is `src/firelens/agent/coordinator.py` plus `loop.py`.
 
 Product state: `principal-remediation candidate, semantic acceptance pending`
 

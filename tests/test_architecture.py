@@ -1,12 +1,22 @@
 from __future__ import annotations
 
 import ast
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_ROOT = ROOT / "src/firelens"
 WEB_ROOT = ROOT / "apps/web/src"
 SCRIPTS_ROOT = ROOT / "scripts"
+V16_STARTING_COMMIT = "3de745a22ad0801e19563f90ac64f18609ecae03"
+# Documented in docs/ARCHITECTURE_V1_6.md. These files were already large
+# before V1.6; the campaign edited them without a full rewrite.
+V16_MODIFIED_MODULE_EXCEPTIONS = frozenset(
+    {
+        "src/firelens/answering/service.py",
+        "src/firelens/contracts.py",
+    }
+)
 
 
 def _local_imports(path: Path) -> set[str]:
@@ -103,6 +113,72 @@ def test_all_production_python_modules_stay_below_800_lines() -> None:
         if len(path.read_text(encoding="utf-8").splitlines()) > 800
     }
     assert not violations, f"production Python modules exceed 800 lines: {violations}"
+
+
+def test_agent_loop_stays_below_350_lines() -> None:
+    path = PACKAGE_ROOT / "agent/loop.py"
+    lines = len(path.read_text(encoding="utf-8").splitlines())
+    assert lines <= 350, f"src/firelens/agent/loop.py is {lines} lines"
+
+
+def _v16_modified_production_modules() -> frozenset[str]:
+    named = subprocess.run(
+        ["git", "diff", "--name-only", V16_STARTING_COMMIT, "--", "src/firelens"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard", "--", "src/firelens"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    paths = {
+        relative
+        for relative in (*named.stdout.splitlines(), *untracked.stdout.splitlines())
+        if relative.endswith(".py") and (ROOT / relative).is_file()
+    }
+    return frozenset(paths)
+
+
+def test_v1_6_modified_modules_stay_below_650_unless_excepted() -> None:
+    violations: dict[str, int] = {}
+    excepted: dict[str, int] = {}
+    for relative in sorted(_v16_modified_production_modules()):
+        lines = len((ROOT / relative).read_text(encoding="utf-8").splitlines())
+        if relative in V16_MODIFIED_MODULE_EXCEPTIONS:
+            excepted[relative] = lines
+            continue
+        if lines > 650:
+            violations[relative] = lines
+    assert not violations, (
+        "V1.6 modified production modules exceed 650 lines without a written "
+        f"exception in docs/ARCHITECTURE_V1_6.md: {violations}"
+    )
+    missing = V16_MODIFIED_MODULE_EXCEPTIONS - frozenset(excepted)
+    assert not missing, f"documented V1.6 size exceptions are missing from the tree: {missing}"
+    over_cap = {path: count for path, count in excepted.items() if count > 800}
+    assert not over_cap, f"excepted modules still must stay under 800 lines: {over_cap}"
+
+
+def test_upgrade_benchmark_tests_are_split_below_1200_lines() -> None:
+    tests_root = ROOT / "tests"
+    paths = (
+        *sorted(tests_root.glob("test_upgrade_benchmark*.py")),
+        *sorted(tests_root.glob("upgrade_benchmark_support*.py")),
+    )
+    assert (tests_root / "test_upgrade_benchmark.py").is_file()
+    assert (tests_root / "upgrade_benchmark_support.py").is_file()
+    assert len(tuple(tests_root.glob("test_upgrade_benchmark*.py"))) >= 5
+    violations = {
+        str(path.relative_to(ROOT)): len(path.read_text(encoding="utf-8").splitlines())
+        for path in paths
+        if len(path.read_text(encoding="utf-8").splitlines()) > 1200
+    }
+    assert not violations, f"upgrade-benchmark test files exceed 1200 lines: {violations}"
 
 
 def test_executable_scripts_stay_below_300_lines() -> None:

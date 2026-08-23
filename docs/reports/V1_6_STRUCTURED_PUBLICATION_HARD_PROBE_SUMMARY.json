@@ -1,0 +1,33 @@
+{
+  "evidence_class": "EXECUTED",
+  "independent_proof": false,
+  "mode": "offline",
+  "passed": 86,
+  "failed": 19,
+  "gate_floor": 86,
+  "paired_regressions_vs_round3": [],
+  "newly_passing_vs_round3": [],
+  "failed_ids": [
+    "F06",
+    "F07",
+    "F09",
+    "F10",
+    "F11",
+    "G03",
+    "H01",
+    "H02",
+    "H03",
+    "H04",
+    "I04",
+    "I08",
+    "K03",
+    "K09",
+    "L01",
+    "L02",
+    "L05",
+    "M03",
+    "M04"
+  ],
+  "dataset_sha256": "ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035",
+  "full_results": "docs/reports/V1_6_STRUCTURED_PUBLICATION_HARD_PROBE.json"
+}

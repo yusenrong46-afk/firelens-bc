@@ -105,7 +105,7 @@ def create_app(
         trusted_proxy_platform=active_config.trusted_proxy_platform,
     )
     install_middlewares(app, request_guard)
-    install_exception_handlers(app)
+    install_exception_handlers(app, active_config)
     install_health_feedback_routes(app, active_config, current_runtime)
     install_live_routes(app, active_config, current_live_service)
     install_answer_routes(

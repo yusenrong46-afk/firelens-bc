@@ -1,0 +1,143 @@
+schema_version: firelens.typed_claim_review_decisions.v1
+batch: 1
+branch: review/v1-6-typed-claims-batch-1
+starting_commit: 6d62671850d7fb46b0b0f06ada8eb0462f081d18
+starting_tree: e4386ac1ccf75dcc5f0927a928ce1a2c20019622
+reviewer: thomas
+reviewer_identity_provided_at: "2026-08-18T01:15:00+00:00"
+note: >
+  Append-only human review journal. The coding agent is not the reviewer.
+  Production inventory is updated only after a Stage 4-compliant approval.
+
+decisions:
+  - candidate_id: TC-EVAC-ALERT-001
+    decision: approve_as_written_blocked
+    production_supported: false
+    reviewer: thomas
+    decision_time: "2026-08-18T01:20:00+00:00"
+    source_revision: "page:10"
+    source_revision_sha256: 9a02ff42af9a2f7b51373ecc8e093a62602be54090bfd8e8491643cd84e4d1b0
+    source_span_id: preparedbc_wildfire_guide:page:10:chunk:4
+    source_span_sha256: 9d619f59eefc03e3eed151d6d92099495016f2f6a1d0e8fb963809e44f449fc4
+    before_fields:
+      subject: evacuation alert meaning
+      action: leave
+      action_polarity: prepare
+      object: area under alert
+      modality: should
+      urgency: short_notice
+      status_or_stage: evacuation_alert
+      conditions:
+        - if under an evacuation alert
+      exceptions: []
+      applies_to:
+        - people under an evacuation alert
+      canonical_text: An evacuation alert means be ready to leave on short notice.
+    after_fields: same_as_before
+    approved_surface: null
+    reason: missing_condition
+    notes: >
+      Human selected A and sent CONFIRM APPROVAL. Facilitator did not convert
+      pending_review to approved_static because the public sentence omits the
+      sourced condition “If you’re under alert”. compare_snapshots reports
+      “removes a material condition from its quotes”. Claim remained pending
+      until the later edited approval in this journal.
+
+  - candidate_id: TC-EVAC-ALERT-001
+    decision: approve_after_edits
+    production_supported: true
+    reviewer: thomas
+    decision_time: "2026-08-18T01:21:19Z"
+    source_revision: "page:10"
+    source_revision_sha256: 9a02ff42af9a2f7b51373ecc8e093a62602be54090bfd8e8491643cd84e4d1b0
+    source_span_id: preparedbc_wildfire_guide:page:10:chunk:4
+    source_span_sha256: 9d619f59eefc03e3eed151d6d92099495016f2f6a1d0e8fb963809e44f449fc4
+    before_fields:
+      human_review_state: pending_review
+      canonical_text: An evacuation alert means be ready to leave on short notice.
+      conditions:
+        - if under an evacuation alert
+    after_fields:
+      human_review_state: approved_static
+      canonical_text: If you are under an evacuation alert, be ready to leave on short notice.
+      conditions:
+        - if under an evacuation alert
+    approved_surface: If you are under an evacuation alert, be ready to leave on short notice.
+    reason: human_edited_to_preserve_condition
+    notes: >
+      Human chose B with the proposed sentence, then sent CONFIRM EDITED
+      APPROVAL. Source check and typed preservation: match. Other structured
+      fields unchanged. Inventory updated to approved_static.
+
+  - candidate_id: TC-SPRINKLER-001
+    decision: approve_as_written_blocked
+    production_supported: false
+    reviewer: thomas
+    decision_time: "2026-08-19T19:41:43Z"
+    source_revision: "page:3"
+    source_revision_sha256: 4950184b9187487ecdc34a8e3a27e10d0a372e003b72ab7e6bebd184b8bc3330
+    source_span_id: firesmart_sprinkler_water_use:page:3:chunk:1
+    source_span_sha256: 1072546a85ff0d78b698526008f186b9eb9b267ebdf4a94ae6f9a83ddee18394
+    before_fields:
+      subject: sprinkler activation while evacuating
+      action: activate
+      action_polarity: avoid
+      object: structure protection sprinkler system
+      modality: must_not
+      urgency: while_evacuating
+      conditions:
+        - if a structure protection sprinkler system is installed
+        - while evacuating
+      exceptions: []
+      canonical_text: >
+        Do not activate a structure protection sprinkler system as you are
+        evacuating.
+    after_fields: same_as_before
+    approved_surface: null
+    reason: missing_condition
+    notes: >
+      Human selected A and sent CONFIRM APPROVAL. Facilitator did not convert
+      pending_review to approved_static because the public sentence omits the
+      sourced install condition. compare_snapshots reports “removes a material
+      condition from its quotes”. Bound span also states that Structure
+      Protection Specialists will activate systems when the time is right;
+      that sentence is absent from the as-written surface. Claim remains pending.
+
+  - candidate_id: TC-SPRINKLER-001
+    decision: approve_after_edits
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:34:55-03:00"
+    source_revision: "page:3"
+    source_document_sha256: 0ff63733942c4af1febc8145dfc5493556d33c9444668bc74d20679d6e3899a1
+    source_span_id: firesmart_sprinkler_water_use:page:3:chunk:1
+    source_span_sha256: 1072546a85ff0d78b698526008f186b9eb9b267ebdf4a94ae6f9a83ddee18394
+    before_fields:
+      human_review_state: pending_review
+      canonical_text: >
+        Do not activate a structure protection sprinkler system as you are
+        evacuating.
+      conditions:
+        - if a structure protection sprinkler system is installed
+        - while evacuating
+    after_fields:
+      human_review_state: approved_static
+      canonical_text: >
+        If you have installed a structure protection sprinkler system on your
+        property DO NOT activate your system as you are evacuating. Structure
+        Protection Specialists will activate sprinkler systems when the time is
+        right.
+      conditions:
+        - if a structure protection sprinkler system is installed
+        - while evacuating
+    approved_surface_sha256: 1072546a85ff0d78b698526008f186b9eb9b267ebdf4a94ae6f9a83ddee18394
+    approved_surface: >-
+      If you have installed a structure protection sprinkler system on your
+      property DO NOT activate your system as you are evacuating. Structure
+      Protection Specialists will activate sprinkler systems when the time is
+      right.
+    reason: human_edited_to_preserve_complete_bound_source
+    notes: >
+      Thomas confirmed the edited approval. The approved surface is the complete
+      bound source text and passes deterministic typed preservation. Production
+      support remains false until the RC integration commit.

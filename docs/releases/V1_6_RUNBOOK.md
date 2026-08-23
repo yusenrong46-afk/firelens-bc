@@ -1,0 +1,79 @@
+# FireLens BC V1.6.0-rc.1 candidate runbook
+
+This runbook prepares engineering candidate `1.6.0-rc.1`. It does not replace
+independent semantic, accessibility, safety, retrieval, UX, or human review.
+It does not authorize push, deploy, or paid runs.
+
+Round 2 improved engineering but failed fresh semantic adversarial testing.
+Round 3 introduces risk-tiered typed claims and deterministic rendering.
+Visible development benchmarks are not independent proof. Adaptive retrieval
+remains disabled and unqualified. Frontend automation remains strong but
+human AT is external. Coverage-first structured-publication hardening has
+dispositioned the original 36 candidates. Thomas approved all 20 prepared
+proposals and the edited SPRINKLER surface, and deferred all nine extraction
+defects outside V1.6. The integrated RC inventory contains 26 bound claims.
+
+The current continuation report is
+`docs/reports/V1_6_STRUCTURED_PUBLICATION_HARDEN_1_REPORT.md`. Historical
+Round 1, Round 2, Round 3, and structured-publication reports remain snapshots
+of their recorded identities.
+
+## Candidate preflight
+
+1. Confirm the branch and identity named by the current continuation report.
+   The current frozen implementation candidate is
+   `upgrade/v1-6-pre-release-candidate-1` at `a5cd967`.
+2. Confirm `docs/ARCHITECTURE_V1_6.md` is the Ask authority, not
+   `docs/TECHNICAL_HANDBOOK.md`.
+3. Confirm `FIRELENS_RETRIEVAL_STRATEGY` is `baseline` unless an authorized
+   adaptive comparison is in progress.
+4. Run `make secret-scan` before any recovery or snapshot artifact.
+5. Run `make v1-6-package-verify` and `make v1-6-gate` for zero-cost identity.
+6. Do not treat missing H4 sealed 46/47 or H10 evidence as a pass.
+
+## Structured-publication continuation
+
+Before independent examination:
+
+1. Keep the 20 approved proposals bound to
+   `V1_6_TYPED_CLAIM_REVIEW_BATCH_2_DECISIONS.yaml` and
+   `V1_6_TYPED_CLAIM_REVIEW_BATCH_3_DECISIONS.yaml`; do not treat the journals
+   as independent-exam evidence by themselves.
+2. Keep the edited `TC-SPRINKLER-001` surface bound to its final append-only
+   decision.
+3. Keep all nine `defer_out_of_scope` decisions non-compilable.
+4. Preserve Thomas's acceptance of the exact RC1 H8 report through
+   `V1_6_RC1_H8_TRADEOFF_DECISION.yaml`; remeasure and obtain a new decision if
+   the evaluated implementation or report changes.
+5. Run independent examination against the exact implementation commit/tree.
+
+The coding agent may prepare packets and validate bindings. It may not supply
+reviewer identity or approve a claim.
+
+## Local, preview, and production evidence
+
+| Surface | What it proves | What it does not prove |
+| --- | --- | --- |
+| `make check` / `make verify` | Engineering regressions on this worktree | Deployed identity, ZDR roster, or human review |
+| `make v1-6-baseline` | Frozen before snapshot / seal at Stage 0 | After-implementation improvement |
+| `make v1-6-gate` | Standard identity and current inventory | H10 release GO |
+| `make v1-6-package-verify` | Allowlist / Docker / Vercel logical parity helpers | A deployed origin |
+| Preview / production qualify scripts | One HTTPS origin when authorized | UX, VoiceOver, firewall, or sealed retrieval |
+
+Paid comparison, preview Ask probes, firewall publish, rollback proof,
+VoiceOver, participant UX, and sealed V3 47-case retrieval stay `EXTERNAL`
+until explicitly authorized with a cost ceiling.
+
+## Privacy and models
+
+Production still requires fail-closed embedding/generation ZDR, deny
+collection, and no fallbacks. A model swap is a change to
+`FIRELENS_GENERATION_MODEL`. Tools, rails, and RAG stay. Do not enable
+`ANSWER_GENERAL_BACKGROUND` as a live tool.
+
+## After qualification
+
+Any source, corpus, index, prompt, model, threshold, configuration, or code
+change after qualification invalidates the candidate. Push, PR, and merge
+follow `docs/protocols/V1_6_GITHUB_UPDATE_STANDARD.md`; no remote action is
+authorized implicitly by this runbook.

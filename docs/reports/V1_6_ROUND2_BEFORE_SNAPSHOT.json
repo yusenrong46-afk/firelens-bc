@@ -1,0 +1,60 @@
+{
+  "captured_at": "2026-08-17T17:28:38.985919+00:00",
+  "examined_candidate": "6f038b4cacc2204be2da0147240143ecfbde3c96",
+  "identity": {
+    "benchmark_id": "firelens_v1_6",
+    "branch": "upgrade/v1-6-qualification-round2",
+    "commit": "6f038b4cacc2204be2da0147240143ecfbde3c96",
+    "dataset_role_registry": "data/evaluation/firelens_v1_6_dataset_roles.yaml",
+    "dirty": true,
+    "file_hashes": {
+      "claimbench_v1": "bcf885f65345e0b869982113c0890314bca522b8a9a3877eaf90140c6c6362d1",
+      "corpus_manifest": "2d0d6b9b445f5ab0ef59e7f19bd0dce058a93f3a93b9599338702b95058ed687",
+      "hard_probe": "ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035",
+      "index_manifest": "437181a2a9aa03498b4bb4de2445d0e0b0bf3fe1c4d4fa76a50019d31f3f1046",
+      "package_lock": "5de0f31a55529c3769ec34a1d8df838f46f5ea1532796df6f0829be15165754d",
+      "pyproject": "5d34f551ea60246bd3f56165c56d768c59c84fa60b6417831ca6d08bc8cde6fb",
+      "standard": "55e16b86960d51fb732970691a0c00850f6c56eb258cd363fd74a418b34d1bef"
+    },
+    "harness_input_sha256": {
+      ".dockerignore": "b65aa966e293d90dfe394dbad1e0d628d09866833dd28e3ea47652c14ae39a2f",
+      ".vercelignore": "0c08e4d3fcc201d7933c98686b9f90e4aaca15568cf4eadaad95d79240771546",
+      "Dockerfile": "1757a8ee0c35577aa020d428fb6ffef8d39e919efe23007b90c4d92d7e1ba399",
+      "Makefile": "ff767a62c070755bb3729533885e39f6fe65d341f747f095d22d38cc6a9d23c0",
+      "render.yaml": "15b9c5c8d816f9698c5a6c8dd82e30c6138109c96d5e1483e23b4999c19dd9db",
+      "scripts/v1_6_upgrade.py": "ceaf994c1b6762e7364a7f4f0226a38bb3da0b727c7987b3731eae611c2f687c",
+      "src/firelens/evaluation/v1_6_baseline.py": "b5894c7b99c7fad94783915ea0c036d4465c2c84b6531aae4978cd7e09f7605d",
+      "src/firelens/evaluation/v1_6_cli.py": "1625709173b2470fe34eea07039096caf7b60e186acb873f8afea0525f325907",
+      "src/firelens/evaluation/v1_6_standard.py": "b806977166f6cea10eed3924e9c5782f85f8b476c7705645998445cd27520313",
+      "tests/test_v1_6_standard.py": "8af67797799cd6dea997fe37dedf0a0a5d21ad4511ce623789ee43cf4dcf51c8",
+      "vercel.json": "093190ad2512ccbeb8ea7608201883b8c16e4e14dbeb852a31a0386f4c02605f"
+    },
+    "identity_input_sha256": {
+      "config/runtime_artifact_allowlist.v1.json": "06a38b064ecb1a044aea2b66724498b15bc8ec99b0d6370cd820708606d7c64d",
+      "data/evaluation/benchmark_v1.manifest.json": "5f56692847befab25f5a463f022e97730333a5092076fbb7af0509d8abef57fb",
+      "data/evaluation/benchmark_v1.yaml": "c0e8499ff0ce74b1706e5c4b54b8382dae271479329e7f743a802882503e932c",
+      "data/evaluation/benchmark_v1_1_conversation.manifest.json": "9d5b2834cbf9a02da4f95a783775929388d2c96f1cd7fb6043dc6d0ecd378a88",
+      "data/evaluation/benchmark_v1_1_conversation.yaml": "cec624121e9c22e7fd92e209a47ba4d93a3dcb3a4de19190c4125d4cb3d95e5f",
+      "data/evaluation/benchmark_v1_5_relevance_addendum.yaml": "f99e8c1e7fcef629072765f1e6d8dcd284172f9512f71f85b6f7f0b78c1cf4a3",
+      "data/evaluation/firelens_v1_6_dataset_roles.yaml": "7cb448b7f209a52262fe88f593eb57091d1601e7400a184ccf2a334aee4db4c3",
+      "data/evaluation/frontend_surface.v1.yaml": "017049de18e421f91c9aab3032a24c5e97b7aa6b796fae1f738b3fa02a685562",
+      "data/evaluation/hard_probe.v1.manifest.json": "7f051c79169b7a31fae8c6d6e71dd064cbd501280794d62467e114e6635404d5",
+      "data/evaluation/hard_probe.v1.yaml": "ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035"
+    },
+    "package_version": "1.5.3rc1",
+    "python": "3.14.5",
+    "release_version": "1.5.3-rc.1",
+    "spec_path": "data/evaluation/firelens_v1_6_upgrade_standard.yaml",
+    "spec_sha256": "55e16b86960d51fb732970691a0c00850f6c56eb258cd363fd74a418b34d1bef",
+    "standard_id": "FL-V16-S1"
+  },
+  "paid_authorization": {
+    "FIRELENS_PAID_RETRIEVAL_BENCHMARK_AUTHORIZED": false,
+    "status": "BLOCKED"
+  },
+  "phase": "round2_before",
+  "reproduction_path": "docs/reports/V1_6_ROUND2_FABLE_MUTATION_REPRODUCTION.json",
+  "reproduction_sha256": "8295eb4882dfbf61cc014284fa4cacbca7a50753eb82c60f1630124b343626a6",
+  "rollback_ref": "examined/v1-6-round1",
+  "schema_version": "firelens_v1_6_round2_before_snapshot.v1"
+}

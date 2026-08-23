@@ -19,7 +19,7 @@ class OperationalEvent(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    schema_version: Literal["firelens.operational_event.v2"]
+    schema_version: Literal["firelens.operational_event.v3"]
     event: Literal["firelens_request"]
     trace_id: str = Field(min_length=1, max_length=128)
     route: str = Field(min_length=1, max_length=80)
@@ -37,6 +37,13 @@ class OperationalEvent(BaseModel):
     release_version: str = Field(min_length=1, max_length=100)
     build_commit: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
     deployment_environment: Literal["local", "preview", "production"]
+    tool_names: tuple[str, ...] = Field(default=(), max_length=20)
+    tool_attempts: int = Field(default=0, ge=0)
+    retrieval_cycles: int = Field(default=0, ge=0)
+    cache_used: bool | None = None
+    stage_latency_ms: float | None = Field(default=None, ge=0)
+    fallback_category: str | None = Field(default=None, max_length=120)
+    candidate_id: str | None = Field(default=None, max_length=200)
 
 
 class FeedbackEvent(BaseModel):
@@ -73,11 +80,18 @@ def log_operation(
     release_version: str,
     build_commit: str | None = None,
     deployment_environment: Literal["local", "preview", "production"] = "local",
+    tool_names: Sequence[str] = (),
+    tool_attempts: int = 0,
+    retrieval_cycles: int = 0,
+    cache_used: bool | None = None,
+    stage_latency_ms: float | None = None,
+    fallback_category: str | None = None,
+    candidate_id: str | None = None,
 ) -> None:
     """Log only the allowlisted operational fields; never accept request content."""
 
     event = OperationalEvent(
-        schema_version="firelens.operational_event.v2",
+        schema_version="firelens.operational_event.v3",
         event="firelens_request",
         trace_id=trace_id,
         route=route,
@@ -95,6 +109,15 @@ def log_operation(
         release_version=release_version,
         build_commit=build_commit,
         deployment_environment=deployment_environment,
+        tool_names=tuple(name for name in tool_names if name)[:20],
+        tool_attempts=max(tool_attempts, 0),
+        retrieval_cycles=max(retrieval_cycles, 0),
+        cache_used=cache_used,
+        stage_latency_ms=(
+            round(max(stage_latency_ms, 0.0), 1) if stage_latency_ms is not None else None
+        ),
+        fallback_category=fallback_category,
+        candidate_id=candidate_id,
     )
     logging.getLogger(LOGGER_NAME).info(
         json.dumps(

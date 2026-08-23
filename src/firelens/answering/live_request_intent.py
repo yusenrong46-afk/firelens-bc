@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from firelens.answering.live_analysis import official_display_name
 from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import AggregateFreshness, LiveResult, LiveResultKind, QueryRequest
+from firelens.freshness_language import official_information_prefix
 
 _DISTANCE_PATTERN = re.compile(
     r"\b(?:how far|how close|distance|kilomet(?:er|re)s?|miles?)\b", re.IGNORECASE
@@ -172,7 +173,7 @@ def render_live_record_answer(
         display_name = official_display_name(selected)
         return (
             f"Official source for {display_name}: {selected.authority}. "
-            "Open the linked official record for its source data and latest timestamp."
+            "Open the linked official record for its source data and source timestamp."
         )
     if selected_request and _SIZE_PATTERN.search(request.question):
         selected = shown[0]
@@ -187,12 +188,8 @@ def render_live_record_answer(
         incident_count = sum(item.kind == LiveResultKind.INCIDENT for item in shown)
         perimeter_count = sum(item.kind == LiveResultKind.PERIMETER for item in shown)
         return (
-            f"Official layers currently return {incident_count} incident records "
+            f"Official layers return {incident_count} incident records "
             f"and {perimeter_count} perimeter records. This is a record count, not a "
             "distinct-fire count or a safety determination."
         )
-    if aggregate_freshness == AggregateFreshness.STALE:
-        return "Cached official information (refresh failed): " + summary
-    if aggregate_freshness == AggregateFreshness.MIXED:
-        return "Official information (includes stale cached records): " + summary
-    return "Current official information: " + summary
+    return official_information_prefix(aggregate_freshness) + summary

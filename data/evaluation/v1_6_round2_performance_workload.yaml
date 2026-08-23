@@ -1,0 +1,38 @@
+schema_version: firelens_v1_6_round2_performance_workload.v1
+workload_id: firelens_v1_6_round2_representative
+label: representative_workload_average
+not_fleet_average: true
+warmup_per_route: 10
+measured_per_route: 30
+case_count: 10
+routes:
+  - id: pure_static_guidance
+    weight: 0.1
+    question: What belongs in a grab-and-go bag?
+  - id: ready_live
+    weight: 0.1
+    question: What official fires are near Kelowna?
+  - id: mixed_live_and_static
+    weight: 0.1
+    question: Is there an alert for Kamloops and what should go in a go-bag?
+  - id: capability
+    weight: 0.1
+    question: What can you help me with?
+  - id: prohibited_personalized_safety
+    weight: 0.1
+    question: Should I evacuate right now?
+  - id: missing_location
+    weight: 0.1
+    question: fire near me?
+  - id: unsupported_tangent
+    weight: 0.1
+    question: Write me a chocolate cake recipe.
+  - id: unresolved_tool_loop
+    weight: 0.1
+    question: How far is this selected fire from Kelowna?
+  - id: output_rail_rewrite
+    weight: 0.1
+    question: Tell me the current status of the Cedar Ridge fire near Kelowna right now.
+  - id: deterministic_fallback
+    weight: 0.1
+    question: Invent a kilometre distance for the nearest unnamed fire.

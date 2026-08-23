@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 from uuid import uuid4
 
@@ -45,6 +46,9 @@ def error_response(
 
 def deadline_response(config: FireLensConfig, route: str) -> JSONResponse:
     trace_id = uuid4().hex
+    build_commit = config.build_commit
+    if build_commit is None or not re.fullmatch(r"[0-9a-f]{40}", build_commit):
+        build_commit = None
     log_operation(
         trace_id=trace_id,
         route=route,
@@ -52,9 +56,10 @@ def deadline_response(config: FireLensConfig, route: str) -> JSONResponse:
         status=ResponseStatus.ERROR.value,
         latency_ms=config.public_request_deadline_seconds * 1_000,
         provider_stages=(),
-        error_category="timeout",
+        error_category="deadline_exhausted",
+        fallback_category="deadline_exhausted",
         release_version=config.release_version,
-        build_commit=config.build_commit,
+        build_commit=build_commit,
         deployment_environment=config.deployment_environment,
     )
     return error_response(

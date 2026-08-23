@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import re
 
+from firelens.answering.risk_policy import RiskTier
 from firelens.answering.semantic_invariants import preservation_errors
+from firelens.answering.typed_snapshot import classify_text
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
     MAX_GROUNDED_ANSWER_CHARS,
@@ -320,7 +322,13 @@ def salvage_valid_grounded_claims(
     """
 
     accepted_claims = []
+    quote_texts = {candidate.text.strip() for candidate in packet.quote_candidates}
     for claim in draft.claims:
+        if (
+            classify_text(claim.text) in {RiskTier.A, RiskTier.B}
+            and claim.text.strip() not in quote_texts
+        ):
+            continue
         single = draft.model_copy(update={"claims": [claim]})
         if validate_draft(single, packet).accepted:
             accepted_claims.append(claim)

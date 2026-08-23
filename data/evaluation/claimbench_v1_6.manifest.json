@@ -1,0 +1,8 @@
+{
+  "case_count": 200,
+  "catalog_id": "firelens_claimbench_v1_6",
+  "faithful": 50,
+  "mutations": 150,
+  "path": "data/evaluation/claimbench_v1_6.yaml",
+  "sha256": "bcf885f65345e0b869982113c0890314bca522b8a9a3877eaf90140c6c6362d1"
+}
