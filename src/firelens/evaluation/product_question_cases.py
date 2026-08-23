@@ -571,8 +571,7 @@ def build_v1_6_user_end_cases() -> list[ProductQuestionCase]:
     """Load the separate 50-case end-user catalog without rewriting V1."""
 
     catalog_path = (
-        Path(__file__).resolve().parents[3]
-        / "data/evaluation/v1_6_user_end_questions_50.json"
+        Path(__file__).resolve().parents[3] / "data/evaluation/v1_6_user_end_questions_50.json"
     )
     payload = json.loads(catalog_path.read_text(encoding="utf-8"))
     if payload.get("schema_version") != "firelens.v1_6_user_end_questions.v1":
@@ -581,7 +580,7 @@ def build_v1_6_user_end_cases() -> list[ProductQuestionCase]:
     if not isinstance(rows, list) or len(rows) != 50:
         raise ValueError("V1.6 end-user question catalog must contain 50 cases")
 
-    location_map = {
+    location_map: dict[str, LocationExpectation] = {
         "none": "none",
         "coarse_in_question": "inferred",
         "required": "required",
@@ -604,17 +603,27 @@ def build_v1_6_user_end_cases() -> list[ProductQuestionCase]:
         location_expectation = str(row["location_expectation"])
         if location_expectation not in location_map:
             raise ValueError(f"unsupported V1.6 location expectation: {location_expectation}")
+        mapped_location = location_map[location_expectation]
         history = tuple(row.get("history", ()))
         live_kinds = tuple(row.get("live_result_kinds", ()))
         assertions = "; ".join(str(item) for item in row["assertions"])
         forbidden = ", ".join(str(item) for item in row["forbidden_behaviors"])
+        required_capabilities: tuple[Capability, ...] = (
+            ("resolved_location",)
+            if mapped_location == "inferred"
+            else ("required_input",)
+            if mapped_location == "required"
+            else ()
+        )
+        if live_kinds:
+            required_capabilities += ("live_results",)
         cases.append(
             ProductQuestionCase(
                 id=str(row["id"]),
                 bucket=bucket,
                 question=str(row["question"]),
                 expected_modes=tuple(str(item) for item in row["expected_modes"]),
-                location_expectation=location_map[location_expectation],
+                location_expectation=mapped_location,
                 context_fixture=(
                     "first_incident"
                     if row.get("context_fixture") == "first_incident_selected"
@@ -622,14 +631,7 @@ def build_v1_6_user_end_cases() -> list[ProductQuestionCase]:
                 ),
                 history=history,
                 notes=f"Assertions: {assertions}. Forbidden: {forbidden}.",
-                required_capabilities=(
-                    ("resolved_location",)
-                    if location_map[location_expectation] == "inferred"
-                    else ("required_input",)
-                    if location_map[location_expectation] == "required"
-                    else ()
-                )
-                + (("live_results",) if live_kinds else ()),
+                required_capabilities=required_capabilities,
                 required_live_kinds=live_kinds,
                 empty_live_results_allowed=bool(live_kinds),
             )

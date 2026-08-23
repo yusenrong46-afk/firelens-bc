@@ -128,9 +128,7 @@ def test_rc1_h8_acceptance_is_bound_to_the_exact_candidate_report() -> None:
     performance_path = ROOT / "docs/reports/V1_6_RC1_PERFORMANCE.json"
     performance = json.loads(performance_path.read_text(encoding="utf-8"))
     decision = yaml.safe_load(
-        (ROOT / "docs/reports/V1_6_RC1_H8_TRADEOFF_DECISION.yaml").read_text(
-            encoding="utf-8"
-        )
+        (ROOT / "docs/reports/V1_6_RC1_H8_TRADEOFF_DECISION.yaml").read_text(encoding="utf-8")
     )
 
     assert decision["reviewer"] == "Thomas"
@@ -140,15 +138,14 @@ def test_rc1_h8_acceptance_is_bound_to_the_exact_candidate_report() -> None:
         == sha256(performance_path.read_bytes()).hexdigest()
     )
     assert decision["evaluated_identity"] == performance["identity"]
-    assert [row["route_id"] for row in decision["accepted_routes"]] == performance[
-        "h8_review"
-    ]["regressed_routes_over_10pct"]
-    assert decision["representative_generation_call_reduction"] == performance[
-        "compare"
-    ]["generative_call_reduction"]
-    assert decision["pure_static_generation_calls"] == performance[
-        "pure_static_generate_calls"
+    assert [row["route_id"] for row in decision["accepted_routes"]] == performance["h8_review"][
+        "regressed_routes_over_10pct"
     ]
+    assert (
+        decision["representative_generation_call_reduction"]
+        == performance["compare"]["generative_call_reduction"]
+    )
+    assert decision["pure_static_generation_calls"] == performance["pure_static_generate_calls"]
     for accepted in decision["accepted_routes"]:
         measured = performance["current_routes"][accepted["route_id"]]
         assert accepted["p95_ms"] == measured["p95_ms"]
