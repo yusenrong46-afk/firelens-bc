@@ -4,7 +4,6 @@ import {
   ChatsCircle,
   Crosshair,
   Info,
-  PaperPlaneTilt,
   Trash,
   UserCircle,
   WarningCircle,
@@ -14,6 +13,7 @@ import { resultDisplayName } from "../near-me/liveResultPresentation";
 import { AnswerBody } from "./AnswerBody";
 import { getAnswerSections } from "./answerSections";
 import { getClaimSupportLabel, getClaimSupportState } from "./proofPresentation";
+import { QuestionComposer } from "./QuestionComposer";
 import type { Claim } from "./responseModel";
 import { ResponseModeBadge } from "./responseModeBadge";
 import type { FireLensSession } from "./useFireLensSession";
@@ -101,21 +101,33 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
   const selectedRecord = [...mapResults, ...(response?.live_results ?? [])].find(
     (item) => item.result_id === selectedLiveResultId,
   );
+  const suggestionGroup = suggestions.length > 0 && (
+    <div className="suggestion-group" aria-label="Suggested questions">
+      <span className="panel-label">Start with an example</span>
+      <div>
+        {suggestions.map((suggestion) => (
+          <button type="button" key={suggestion} onClick={() => void submitQuestion(suggestion)} disabled={view.kind === "loading"}>
+            {suggestion}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <section className="conversation-panel" id="conversation" aria-label="Question and answer" tabIndex={-1}>
-      <div className="conversation-toolbar">
-        <span
-          title="FireLens keeps your last 3 question-answer pairs in this browser only and re-sends them with your next question. Nothing is stored on a server."
-        >
-          <ChatsCircle size={16} /> {history.length} of 6 turns in context
-        </span>
-        {(history.length > 0 || view.kind !== "idle") && (
+      {(history.length > 0 || view.kind !== "idle") && (
+        <div className="conversation-toolbar">
+          <span
+            title="FireLens keeps your last 3 question-answer pairs in this browser only and re-sends them with your next question. Nothing is stored on a server."
+          >
+            <ChatsCircle size={16} /> {history.length} of 6 turns in context
+          </span>
           <button type="button" onClick={clearHistory} aria-label="Clear conversation history">
             <Trash size={15} /> Clear
           </button>
-        )}
-      </div>
+        </div>
+      )}
       <div className="conversation-scroll" aria-live="polite">
         {earlierTurns.length > 0 && (
           <div className="history-group" aria-label="Earlier conversation">
@@ -138,7 +150,19 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
           </div>
         )}
 
-        <div className={`assistant-message assistant-message--${view.kind}`} ref={(node) => revealAssistantMessage(node, view.kind !== "idle")}>
+        {view.kind === "idle" && (
+          <div className="conversation-intro">
+            <span className="panel-label">British Columbia wildfire information</span>
+            <h1>Ask about a fire, a B.C. place, or preparedness.</h1>
+            <p>FireLens shows what came from official live records, reviewed sources, or clearly labelled general background.</p>
+          </div>
+        )}
+        {view.kind === "idle" && (
+          <QuestionComposer idle loading={false} query={query}
+            onQueryChange={setQuery} onSubmit={submit} />
+        )}
+
+        {view.kind !== "idle" && <div className={`assistant-message assistant-message--${view.kind}`} ref={(node) => revealAssistantMessage(node, true)}>
           <img src="/assets/firelens-mark.png" alt="" />
           <div>
             <span className="assistant-name">FireLens BC</span>
@@ -183,7 +207,7 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
               </button>
             )}
           </div>
-        </div>
+        </div>}
 
         {requiresLocation && (
           <form className="location-request" onSubmit={submitLocation}>
@@ -261,36 +285,13 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
           </div>
         )}
 
-        {suggestions.length > 0 && (
-          <div className="suggestion-group" aria-label="Suggested questions">
-            <span className="panel-label">Try asking</span>
-            <div>
-              {suggestions.map((suggestion) => (
-                <button type="button" key={suggestion} onClick={() => void submitQuestion(suggestion)} disabled={view.kind === "loading"}>
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {suggestionGroup}
       </div>
 
-      <form className="composer" onSubmit={submit}>
-        <div className="composer-input">
-          <input
-            aria-label="Ask FireLens a question"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ask about a mapped fire or anything else…"
-            maxLength={2000}
-            disabled={view.kind === "loading"}
-          />
-          <button type="submit" disabled={!query.trim() || view.kind === "loading"} aria-label="Send question">
-            <PaperPlaneTilt size={20} weight="fill" />
-          </button>
-        </div>
-        <p><Info size={16} /> Official current facts stay tied to their source. General knowledge is labelled separately.</p>
-      </form>
+      {view.kind !== "idle" && (
+        <QuestionComposer idle={false} loading={view.kind === "loading"} query={query}
+          onQueryChange={setQuery} onSubmit={submit} />
+      )}
     </section>
   );
 }

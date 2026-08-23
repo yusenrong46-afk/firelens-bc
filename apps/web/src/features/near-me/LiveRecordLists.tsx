@@ -61,12 +61,26 @@ export function MatchingRecordList({
   selectedResultId?: string | undefined;
   onSelectResult?: ((resultId: string) => void) | undefined;
 }) {
+  const [showAll, setShowAll] = useState(false);
+  const signature = results.map((result) => result.result_id).join("|");
+  useEffect(() => setShowAll(false), [signature]);
+  const visibleResults = useMemo(() => {
+    if (showAll || results.length <= INITIAL_LIST_LIMIT) return results;
+    const initial = results.slice(0, INITIAL_LIST_LIMIT);
+    const selected = selectedResultId
+      ? results.find((result) => result.result_id === selectedResultId)
+      : undefined;
+    if (!selected || initial.some((result) => result.result_id === selected.result_id)) {
+      return initial;
+    }
+    return [selected, ...initial.slice(0, INITIAL_LIST_LIMIT - 1)];
+  }, [results, selectedResultId, showAll]);
   if (results.length === 0) return null;
   return (
     <div className="live-matches">
       <h2 className="live-list-heading">Matching this question</h2>
       <ul className="live-list" aria-label="Matching this question">
-        {results.map((result) => (
+        {visibleResults.map((result) => (
           <RecordRow
             key={result.result_id}
             result={result}
@@ -75,6 +89,18 @@ export function MatchingRecordList({
           />
         ))}
       </ul>
+      {results.length > INITIAL_LIST_LIMIT && (
+        <button
+          type="button"
+          className="live-list-toggle"
+          onClick={() => setShowAll((current) => !current)}
+          aria-expanded={showAll}
+        >
+          {showAll
+            ? "Show fewer matching records"
+            : `Show all ${results.length} matching records`}
+        </button>
+      )}
     </div>
   );
 }

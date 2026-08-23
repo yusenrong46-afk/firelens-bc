@@ -214,7 +214,7 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
   await expect(page.getByText("Answer evidence and support")).toBeVisible();
   await expect(page.getByText("Reviewed sources")).toBeVisible();
   await expect(page.locator("mark")).toHaveText("Food & water");
-  await expect(page.getByRole("complementary").getByText("PreparedBC")).toBeVisible();
+  await expect(page.getByRole("complementary").getByText("PreparedBC").first()).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
 });
@@ -247,7 +247,8 @@ test("sends bounded conversation context and can clear it", async ({ page }) => 
   ]);
 
   await page.getByLabel("Clear conversation history").click();
-  await expect(page.getByText("0 of 6 turns in context")).toBeVisible();
+  await expect(page.getByText("0 of 6 turns in context")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Ask about a fire, a B.C. place, or preparedness." })).toBeVisible();
   await page.getByLabel("Ask FireLens a question").fill("Fresh question");
   await page.getByLabel("Send question").click();
   await expect.poll(() => seenRequests.length).toBe(3);
@@ -284,11 +285,14 @@ test("fails closed for a rejected no-claim response", async ({ page }) => {
   );
 });
 
-test("shows official live records and a map through keyboard submission", async ({ page }, testInfo) => {
+test("keeps a live answer primary and opens its map on demand", async ({ page }, testInfo) => {
   await page.goto("/");
   const question = page.getByLabel("Ask FireLens a question");
   await question.fill("Is there an active wildfire near me right now?");
   await question.press("Enter");
+  await expect(page.getByLabel("Question and answer").getByText("Current official information: Test Fire is Out of Control.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Official wildfire records map" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Map" }).first().click();
   await expect(page.getByText("Current BC wildfire information")).toBeVisible();
   const testFire = page.getByRole("button", { name: /Test Fire Out of Control/ });
   await expect(testFire).toBeVisible();
@@ -326,6 +330,7 @@ test("uses an OSM street basemap with required attribution", async ({ page }) =>
   await question.fill("Is there an active wildfire near me right now?");
   await question.press("Enter");
   await expect(page.getByLabel("Question and answer").getByText("Current official information: Test Fire is Out of Control.")).toBeVisible();
+  await page.getByRole("button", { name: "Map" }).first().click();
   await expect(page.getByRole("button", { name: /Test Fire Out of Control/ })).toBeVisible();
   await expect(page.getByText(/Tile requests go to OpenStreetMap/)).toBeVisible();
   await expect(page.getByRole("link", { name: "OpenStreetMap" })).toBeVisible();
@@ -336,6 +341,7 @@ test("shows stale and partial-layer state without hiding records", async ({ page
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("Show stale official wildfire records");
   await page.getByLabel("Send question").click();
+  await page.getByRole("button", { name: "Map" }).first().click();
   await expect(page.getByText("BC wildfire information — includes stale records")).toBeVisible();
   await expect(page.getByLabel("Question and answer").getByText(/Cached official information \(refresh failed\)/)).toBeVisible();
   await expect(page.getByText("Official cached records", { exact: true })).toHaveCount(3);
@@ -354,6 +360,8 @@ test("keeps the workspace usable at a 320px viewport", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto("/");
   await expect(page.getByLabel("Ask FireLens a question")).toBeVisible();
+  await expect(page.getByLabel("Official wildfire records map")).toHaveCount(0);
+  await page.getByRole("button", { name: "Explore live map" }).click();
   await expect(page.getByLabel("Official wildfire records map")).toBeVisible();
   const overflowX = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -412,6 +420,7 @@ test("opens an official source link with keyboard activation", async ({ page }) 
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("Is there an active wildfire near me right now?");
   await page.getByLabel("Send question").press("Enter");
+  await page.getByRole("button", { name: "Map" }).first().click();
   const source = page
     .getByRole("listitem")
     .filter({ hasText: "Test Fire" })
