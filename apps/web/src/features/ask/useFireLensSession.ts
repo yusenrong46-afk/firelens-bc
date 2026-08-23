@@ -45,6 +45,7 @@ export type FireLensSession = {
   mapMessage: string | undefined;
   mapAggregateFreshness: MapAggregateFreshness;
   mapUnavailableLayers: string[];
+  setMapVisible: (visible: boolean) => void;
   mapFocus: { latitude: number; longitude: number } | undefined;
   mapFocusResults: LiveResult[];
   selectedLiveResultId: string | undefined;
@@ -59,7 +60,8 @@ export type FireLensSession = {
 };
 
 export function useFireLensSession(): FireLensSession {
-  const provinceMap = useProvinceMap();
+  const [mapVisible, setMapVisible] = useState(false);
+  const provinceMap = useProvinceMap(mapVisible);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
   const [view, setView] = useState<ViewState>({ kind: "idle" });
@@ -128,7 +130,9 @@ export function useFireLensSession(): FireLensSession {
     setView({ kind: "loading", question: normalized });
     try {
       const context: MapContext = {
-        visible_live_result_ids: mapView.mapResults.slice(0, 100).map((result) => result.result_id),
+        visible_live_result_ids: mapVisible
+          ? mapView.mapResults.slice(0, 100).map((result) => result.result_id)
+          : [],
       };
       const contextSelected = selectedResultIdForQuestion(
         normalized,
@@ -285,6 +289,7 @@ export function useFireLensSession(): FireLensSession {
     mapMessage: provinceMap.message,
     mapAggregateFreshness: mapView.mapAggregateFreshness,
     mapUnavailableLayers: mapView.mapUnavailableLayers,
+    setMapVisible,
     mapFocus: mapView.mapFocus,
     mapFocusResults: mapView.mapFocusResults,
     selectedLiveResultId,

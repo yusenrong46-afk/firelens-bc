@@ -11,11 +11,18 @@ type ProvinceMapState = {
   message?: string;
 };
 
-export function useProvinceMap(): ProvinceMapState {
-  const [state, setState] = useState<ProvinceMapState>({ loading: true });
+export function useProvinceMap(enabled: boolean): ProvinceMapState {
+  const [state, setState] = useState<ProvinceMapState>({ loading: false });
 
   useEffect(() => {
+    if (!enabled) {
+      setState((current) => current.loading ? { ...current, loading: false } : current);
+      return;
+    }
+    if (state.data) return;
+
     const controller = new AbortController();
+    setState({ loading: true });
     void fetchOfficialMap(controller.signal)
       .then((data) => setState({ data, loading: false }))
       .catch((error: unknown) => {
@@ -29,7 +36,7 @@ export function useProvinceMap(): ProvinceMapState {
         });
       });
     return () => controller.abort();
-  }, []);
+  }, [enabled, state.data]);
 
   return state;
 }

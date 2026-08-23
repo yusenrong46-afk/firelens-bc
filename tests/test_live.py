@@ -22,6 +22,7 @@ from firelens.live import (
     LiveDataUnavailable,
     geometry_relation,
 )
+from firelens.live_support import FIRE_CENTRE_CODE_NAMES, fire_centre_label
 
 
 def _metadata(kind: LiveResultKind, *, updated: int = 1_760_000_000_000) -> dict:
@@ -54,6 +55,27 @@ def _kind_from_url(request: httpx.Request) -> LiveResultKind:
     if "FirePerimeters" in url:
         return LiveResultKind.PERIMETER
     return LiveResultKind.INCIDENT
+
+
+def _locality_feature(
+    name: str,
+    *,
+    score: int = 67,
+    precision: str = "LOCALITY",
+    province: str = "BC",
+    coordinates: list[float] | None = None,
+) -> dict:
+    return {
+        "properties": {
+            "score": score,
+            "matchPrecision": precision,
+            "provinceCode": province,
+            "localityName": name,
+            "fullAddress": f"{name}, {province}",
+            "isOfficial": "true",
+        },
+        "geometry": {"coordinates": coordinates or [-119.4960, 49.8880]},
+    }
 
 
 class LocationContractTests(unittest.TestCase):
@@ -89,6 +111,59 @@ class LocationContractTests(unittest.TestCase):
                 freshness=Freshness.FRESH,
                 matching_result_count=0,
             )
+
+    def test_official_fire_centre_codes_are_human_labels(self) -> None:
+        self.assertEqual(
+            FIRE_CENTRE_CODE_NAMES,
+            {
+                2: "Coastal Fire Centre",
+                3: "Northwest Fire Centre",
+                4: "Prince George Fire Centre",
+                5: "Kamloops Fire Centre",
+                6: "Southeast Fire Centre",
+                7: "Cariboo Fire Centre",
+            },
+        )
+        self.assertEqual(fire_centre_label(5), "Kamloops Fire Centre")
+        self.assertEqual(fire_centre_label("6"), "Southeast Fire Centre")
+        self.assertEqual(fire_centre_label("Coastal Fire Centre"), "Coastal Fire Centre")
+        self.assertIsNone(fire_centre_label(99))
+        self.assertIsNone(fire_centre_label("99"))
+
+
+class OfficialFieldMappingTests(unittest.IsolatedAsyncioTestCase):
+    async def test_active_fire_numeric_centre_is_mapped_before_publication(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            return httpx.Response(
+                200,
+                json={
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "properties": {
+                                "OBJECTID": 1,
+                                "FIRE_STATUS": "Being Held",
+                                "FIRE_NUMBER": "K41245",
+                                "FIRE_CENTRE": 5,
+                            },
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": [-119.4782, 51.1611],
+                            },
+                        }
+                    ],
+                },
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client).map_results(
+                layers=(LiveResultKind.INCIDENT,)
+            )
+
+        self.assertEqual(response.results[0].fire_centre, "Kamloops Fire Centre")
 
 
 class GeometryTests(unittest.TestCase):
@@ -164,11 +239,7 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
                     200,
                     json={
                         "features": [
-                            {
-                                "geometry": {
-                                    "coordinates": [-79.38, 43.65],
-                                }
-                            }
+                            _locality_feature("Vancouver", coordinates=[-79.38, 43.65])
                         ]
                     },
                 ),
@@ -197,7 +268,11 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
         def handler(_request: httpx.Request) -> httpx.Response:
             return httpx.Response(
                 200,
-                json={"features": [{"geometry": {"coordinates": [-123.1207, 49.2827]}}]},
+                json={
+                    "features": [
+                        _locality_feature("Vancouver", coordinates=[-123.1207, 49.2827])
+                    ]
+                },
             )
 
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
@@ -206,30 +281,66 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(location, (49.28, -123.12))
 
-    async def test_geocoder_requests_a_minimum_match_score(self) -> None:
+    async def test_geocoder_requests_locality_candidates_for_exact_validation(self) -> None:
         seen_params: dict[str, str] = {}
 
         def handler(request: httpx.Request) -> httpx.Response:
             seen_params.update(dict(request.url.params))
             return httpx.Response(
                 200,
-                json={"features": [{"geometry": {"coordinates": [-123.1207, 49.2827]}}]},
+                json={
+                    "features": [
+                        _locality_feature("Vancouver", coordinates=[-123.1207, 49.2827])
+                    ]
+                },
             )
 
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
             service = LiveDataService(client=client)
             await service.resolve_location(LocationInput(label="Vancouver"))
 
-        self.assertEqual(seen_params.get("minScore"), "70")
+        self.assertEqual(seen_params.get("minScore"), "60")
+        self.assertEqual(seen_params.get("matchPrecision"), "locality")
+        self.assertEqual(seen_params.get("maxResults"), "5")
 
     async def test_geocoder_rejects_low_confidence_and_imprecise_matches(self) -> None:
         scenarios = (
             # Fuzzy garbage ("hectares") comes back as a low-score guess.
-            {"score": 55, "matchPrecision": "LOCALITY"},
+            {
+                "score": 55,
+                "matchPrecision": "LOCALITY",
+                "provinceCode": "BC",
+                "localityName": "hectares",
+            },
             # "British Columbia" style input matches the whole province.
-            {"score": 100, "matchPrecision": "PROVINCE"},
+            {
+                "score": 100,
+                "matchPrecision": "PROVINCE",
+                "provinceCode": "BC",
+                "localityName": "hectares",
+            },
             # "Calgary" fuzzy-matches a street somewhere in BC.
-            {"score": 82, "matchPrecision": "STREET"},
+            {
+                "score": 82,
+                "matchPrecision": "STREET",
+                "provinceCode": "BC",
+                "localityName": "Terrace",
+            },
+            # A high-quality locality candidate is still not the requested place.
+            {
+                "score": 96,
+                "matchPrecision": "LOCALITY",
+                "provinceCode": "BC",
+                "localityName": "Terrace",
+            },
+            # An exact locality not designated official is not accepted.
+            {
+                "score": 96,
+                "matchPrecision": "LOCALITY",
+                "provinceCode": "BC",
+                "localityName": "hectares",
+                "isOfficial": "false",
+            },
         )
         for properties in scenarios:
             with self.subTest(properties=properties):
@@ -263,8 +374,7 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
                 json={
                     "features": [
                         {
-                            "properties": {"score": 96, "matchPrecision": "LOCALITY"},
-                            "geometry": {"coordinates": [-119.4960, 49.8880]},
+                            **_locality_feature("Kelowna"),
                         }
                     ]
                 },
@@ -275,6 +385,29 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             location = await service.resolve_location(LocationInput(label="Kelowna"))
 
         self.assertEqual(location, (49.89, -119.5))
+
+    async def test_geocoder_selects_exact_normalized_bc_locality_not_first_guess(
+        self,
+    ) -> None:
+        def handler(_request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "features": [
+                        _locality_feature("Vancouver", score=90),
+                        _locality_feature(
+                            "West Kelowna",
+                            coordinates=[-119.6074055, 49.8599834],
+                        ),
+                    ]
+                },
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            service = LiveDataService(client=client)
+            location = await service.resolve_location(LocationInput(label="West Kelowna"))
+
+        self.assertEqual(location, (49.86, -119.61))
 
     async def test_record_ceiling_fails_closed_and_is_visible(self) -> None:
         features = [

@@ -13,10 +13,11 @@ is still separate from architecture.
 
 ## Product boundary
 
-FireLens is a map-first assistant over reviewed British Columbia wildfire
+FireLens is an answer-first assistant over reviewed British Columbia wildfire
 preparedness guidance and three official BC live layers (incidents, perimeters,
-fire-related evacuations). It is not an emergency-warning system, evacuation
-router, medical advisor, or open-web agent.
+fire-related evacuations). The map is offered on demand and opens first only for
+explicit map or geographic-analysis requests. FireLens is not an emergency-warning
+system, evacuation router, medical advisor, or open-web agent.
 
 Models may choose bounded tools and propose wording. Deterministic code and
 authorized humans decide what may be published as supported fact.

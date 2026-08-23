@@ -22,7 +22,8 @@ _ALLOWED_TOOLS = {
     AgentTool.SEARCH_REVIEWED_GUIDANCE.value,
 }
 _FIRE_NAME = re.compile(
-    r"\b([A-Z][A-Za-z0-9'’-]{2,}(?:\s+[A-Z][A-Za-z0-9'’-]{2,}){0,4})\s+Fire\b"
+    r"\b([A-Z][A-Za-z0-9'’-]{2,}(?:\s+[A-Z][A-Za-z0-9'’-]{2,}){0,4})\s+"
+    r"Fire\b(?!\s+Cent(?:er|re)\b)"
 )
 _CIVIC_ADDRESS = re.compile(
     r"\b\d{1,6}\s+[A-Za-z].{0,40}\b(?:street|st|avenue|ave|road|rd|boulevard|blvd)\b",

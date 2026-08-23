@@ -53,7 +53,17 @@ function selectedClaimFooter(state: SupportState): string {
   return footers[state] ?? "Support details are shown above.";
 }
 
-export function EvidencePanel({ session }: { session: FireLensSession }) {
+export function EvidencePanel({
+  session,
+  surface,
+  mapAvailable,
+  onSurfaceChange,
+}: {
+  session: FireLensSession;
+  surface: "evidence" | "map";
+  mapAvailable: boolean;
+  onSurfaceChange: (surface: "evidence" | "map") => void;
+}) {
   const {
     askAboutResult,
     claims,
@@ -94,9 +104,43 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
       .map((support) => ({ support, evidence: evidenceById.get(support.evidence_id) }))
       .filter((item): item is { support: Support; evidence: Evidence } => Boolean(item.evidence));
 
+  const contextTitle = surface === "map"
+    ? "Official map context"
+    : selectedClaim
+      ? "Evidence for the selected claim"
+      : "Answer context";
+
   return (
-    <section className="evidence-panel" aria-label="Selected claim evidence">
-      <div className="evidence-inner evidence-inner--map-first">
+    <aside className={`evidence-panel evidence-panel--${surface}`} aria-label={contextTitle}>
+      <div className="context-toolbar">
+        <div>
+          <span className="selected-kicker">Context</span>
+          <h2>{contextTitle}</h2>
+        </div>
+        {mapAvailable && view.kind !== "idle" && (
+          <div className="context-switcher" role="group" aria-label="Choose answer context">
+            <button
+              type="button"
+              className={surface === "evidence" ? "context-switcher__active" : ""}
+              aria-pressed={surface === "evidence"}
+              onClick={() => onSurfaceChange("evidence")}
+            >
+              Evidence
+            </button>
+            <button
+              type="button"
+              className={surface === "map" ? "context-switcher__active" : ""}
+              aria-pressed={surface === "map"}
+              onClick={() => onSurfaceChange("map")}
+            >
+              Map
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="evidence-inner">
+        {surface === "map" ? (
+          <>
         <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading the official map">Preparing map layers…</EvidencePlaceholder>}>
           <LiveMap
             results={mapResults}
@@ -112,9 +156,10 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
           />
         </Suspense>
         {mapLoading && <p className="map-surface-status" role="status">Loading official wildfire layers…</p>}
-        {mapMessage && <p className="live-map__warning" role="status">{mapMessage} The map remains available for conversation and recovery.</p>}
-
-        <div className="context-lens" aria-label="Answer context">
+        {mapMessage && <p className="live-map__warning" role="status">{mapMessage} Ask a question or use the official BCWS map while this layer recovers.</p>}
+          </>
+        ) : (
+        <div className="context-lens" aria-label="Answer evidence and context">
         {view.kind === "answer" && selectedClaim && selectedState ? (
           <>
             <span className="selected-kicker">Selected claim {selected + 1}</span>
@@ -192,12 +237,13 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
             The failure was returned explicitly. FireLens did not substitute another model or answer from memory.
           </EvidencePlaceholder>
         ) : (
-          <EvidencePlaceholder icon={<Shield size={36} />} title="Select a fire or ask anything">
-            The official province-wide wildfire map stays visible. Select a record to ask about its status or distance, or use the conversation for reviewed guidance and everyday questions.
+          <EvidencePlaceholder icon={<Shield size={36} />} title="Ask a question to inspect its support">
+            FireLens will show reviewed evidence, source boundaries, or an official handoff here when the answer needs one.
           </EvidencePlaceholder>
         )}
         </div>
+        )}
       </div>
-    </section>
+    </aside>
   );
 }

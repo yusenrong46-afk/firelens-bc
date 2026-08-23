@@ -1,11 +1,12 @@
 # FireLens BC
 
-**An evidence-bound, map-first wildfire assistant for British Columbia.** FireLens
-combines official incident records, reviewed preparedness guidance, and explicit
-uncertainty in one conversation. A language model may choose tools and propose
-wording; it is never the authority for what FireLens publishes as fact.
+**An answer-first, evidence-bound wildfire assistant for British Columbia.**
+FireLens combines official incident records, reviewed preparedness guidance,
+explicit uncertainty, and map context when it is useful. A language model may
+choose tools and propose wording; it is never the authority for what FireLens
+publishes as fact.
 
-![FireLens BC showing an authority-labelled answer beside the official-record map](docs/assets/firelens-v1-6-overview.jpg)
+![FireLens BC answer-first workspace for asking about a fire, a B.C. place, or preparedness](docs/assets/firelens-v1-6-overview.jpg)
 
 _Deterministic local demonstration data, not a current wildfire or evacuation report._
 
@@ -105,7 +106,7 @@ flowchart LR
     V --> S["Reviewed structured claim"]
     V --> X["Exact quote only"]
     V --> U["Unknown / partial / official handoff"]
-    S --> UI["Authority-labelled answer + Proof Cards + map"]
+    S --> UI["Authority-labelled answer + Proof Cards + relevant map context"]
     X --> UI
     U --> UI
 ```
@@ -211,7 +212,7 @@ manual assistive-technology quality, deployed identity, or release approval.
 
 ```text
 src/firelens/       Backend, agent loop, retrieval, publication, and evaluation
-apps/web/           React/Vite map and proof-carrying conversation UI
+apps/web/           React/Vite answer workspace, proof UX, and on-demand map
 data/               Governed corpus, vectors, typed claims, and evaluation catalogs
 tests/              Backend, architecture, safety, browser, and qualification tests
 docs/adr/           Immutable architecture decisions
