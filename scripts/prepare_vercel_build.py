@@ -19,6 +19,21 @@ from firelens.runtime_candidate import (
 )
 
 
+def _resolve_build_commit(root: Path) -> str:
+    configured = os.environ.get("VERCEL_GIT_COMMIT_SHA") or os.environ.get(
+        "FIRELENS_BUILD_COMMIT"
+    )
+    if configured:
+        return configured
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
     frontend = root / "apps/web"
@@ -28,15 +43,7 @@ def main() -> None:
     subprocess.run(["npm", "ci"], cwd=frontend, check=True)
     subprocess.run(["npm", "run", "build"], cwd=frontend, check=True)
 
-    commit = os.environ.get("VERCEL_GIT_COMMIT_SHA")
-    if not commit:
-        commit = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=root,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
+    commit = _resolve_build_commit(root)
     candidate = build_runtime_candidate(
         commit=commit,
         benchmark_id=DEFAULT_BENCHMARK_ID,
