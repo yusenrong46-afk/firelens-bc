@@ -198,7 +198,7 @@ and humans decide.
 Write like this:
 
 ```text
-FireLens BC is a map-first wildfire assistant for British Columbia.
+FireLens BC is an answer-first wildfire assistant for British Columbia, with map context when it is relevant.
 Conversational AI fails worst exactly where it sounds best.
 Cached-stale records are never called "current".
 ```
