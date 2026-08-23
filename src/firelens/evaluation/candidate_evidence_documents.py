@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+import tomllib
 import uuid
 from pathlib import Path
 from typing import Any
@@ -95,6 +97,44 @@ def _node_components(root: Path) -> list[dict[str, object]]:
             component["licenses"] = [{"license": {"name": license_name}}]
         components.append(component)
     return components
+
+
+def _normalized_release_version(value: Any, *, label: str) -> str:
+    if not isinstance(value, str) or not value or value != value.strip():
+        raise ValueError(f"{label} is invalid")
+    normalized = re.sub(r"(?<=\d)[.-]?rc[.-]?(?=\d)", "rc", value.casefold())
+    if re.fullmatch(r"\d+\.\d+\.\d+(?:rc\d+)?", normalized) is None:
+        raise ValueError(f"{label} is invalid")
+    return normalized
+
+
+def _validate_release_version(root: Path, release_version: str) -> None:
+    try:
+        pyproject = tomllib.loads(
+            strict_file(root, "pyproject.toml").read_text(encoding="utf-8")
+        )
+    except (UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
+        raise ValueError("pyproject release version cannot be read") from exc
+    package = load_json(strict_file(root, "apps/web/package.json"), "web package manifest")
+    runtime = load_json(strict_file(root, SUBJECT_FILE), "runtime candidate")
+    versions = {
+        "requested release version": release_version,
+        "pyproject project.version": (
+            pyproject.get("project", {}).get("version")
+            if isinstance(pyproject.get("project"), dict)
+            else None
+        ),
+        "web package version": package.get("version") if isinstance(package, dict) else None,
+        "runtime candidate release version": (
+            runtime.get("release_version") if isinstance(runtime, dict) else None
+        ),
+    }
+    normalized = {
+        label: _normalized_release_version(value, label=label)
+        for label, value in versions.items()
+    }
+    if len(set(normalized.values())) != 1:
+        raise ValueError("candidate evidence release version identities do not match")
 
 
 def _python_audit_summary(report: Any) -> dict[str, object]:
@@ -215,8 +255,7 @@ def documents(
     if COMMIT.fullmatch(commit) is None or COMMIT.fullmatch(tree) is None:
         raise ValueError("candidate evidence commit and tree must be full lowercase Git SHAs")
     validate_timestamp(generated_at)
-    if not release_version or release_version != release_version.strip():
-        raise ValueError("candidate evidence release version is invalid")
+    _validate_release_version(root, release_version)
     if not builder_id or not invocation_id:
         raise ValueError("candidate evidence requires builder and invocation identities")
 
@@ -240,6 +279,7 @@ def documents(
         hard_probe_baseline,
         root=root,
         commit=commit,
+        tree=tree,
     )
 
     materials = [file_record(root, name) for name in MATERIAL_PATHS]

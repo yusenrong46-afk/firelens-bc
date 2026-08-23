@@ -11,11 +11,10 @@ import time
 from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, cast
 
 import httpx
-import yaml
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
+from pydantic import HttpUrl
 
 from firelens.answering.execution import AskExecution
 from firelens.answering.intent import plan_query
@@ -24,7 +23,6 @@ from firelens.benchmark import _usage_cost, _usage_total, benchmark_runtime_conf
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     CoarseResolvedLocation,
-    ConversationTurn,
     Freshness,
     GeometryRelation,
     LiveMapResponse,
@@ -37,6 +35,23 @@ from firelens.contracts import (
     QueryRoute,
     ResponseMode,
 )
+from firelens.evaluation.hard_probe_expectations import (
+    DEFAULT_DATASET,
+    DEFAULT_MANIFEST,
+    DEFAULT_RC2_EXPECTATIONS,
+    DEFAULT_RC2_EXPECTATIONS_MANIFEST,
+    OFFICIAL_HANDOFF_ANSWER,
+    RC2_MIGRATION_IDS,
+    HardProbeCase,
+    HardProbeExpectationMigration,
+    _migration_invariant_checks,
+    canonical_json_sha256,
+    effective_allowed_modes,
+    effective_expectations_payload,
+    file_sha256,
+    load_dataset,
+    load_expectation_profile,
+)
 from firelens.live import LAYER_URLS, LiveDataService
 from firelens.live_contracts import LocationInput
 from firelens.live_support import OFFICIAL_FALLBACK_URLS
@@ -45,57 +60,15 @@ from firelens.retrieval.embeddings import sha256_file
 from firelens.runtime import Runtime, load_runtime
 from firelens.storage import atomic_text_writer
 
+__all__ = [
+    "DEFAULT_RC2_EXPECTATIONS",
+    "DEFAULT_RC2_EXPECTATIONS_MANIFEST",
+    "OFFICIAL_HANDOFF_ANSWER",
+    "RC2_MIGRATION_IDS",
+]
+
 ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_DATASET = ROOT / "data/evaluation/hard_probe.v1.yaml"
-DEFAULT_MANIFEST = ROOT / "data/evaluation/hard_probe.v1.manifest.json"
 DEFAULT_OUTPUT = ROOT / "output/qualification/hard_probe"
-
-
-class ProbeModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-
-class HardProbeCase(ProbeModel):
-    id: str = Field(pattern=r"^[A-M][0-9]{2}$")
-    section: str = Field(pattern=r"^[A-M]$")
-    question: str = Field(min_length=1, max_length=5_000)
-    expected_text: str = Field(min_length=1)
-    priority: Literal["MED", "HIGH", "CRITICAL"]
-    history: list[ConversationTurn] = Field(default_factory=list, max_length=6)
-    allowed_modes: list[ResponseMode] = Field(min_length=1)
-    constructed_input: bool = False
-
-    @model_validator(mode="after")
-    def id_matches_section(self) -> HardProbeCase:
-        if not self.id.startswith(self.section):
-            raise ValueError("case ID and section do not match")
-        return self
-
-
-class ReferencedCase(ProbeModel):
-    id: str
-    playwright_file: str | None = None
-    suite: str | None = None
-    scenario: str | None = None
-
-
-class HardProbeDataset(ProbeModel):
-    dataset_version: Literal["hard_probe.v1"]
-    description: str
-    cases: list[HardProbeCase] = Field(min_length=105, max_length=105)
-    browser_cases: list[ReferencedCase] = Field(min_length=7, max_length=7)
-    fixture_cases: list[ReferencedCase] = Field(min_length=10, max_length=10)
-
-    @model_validator(mode="after")
-    def unique_ids(self) -> HardProbeDataset:
-        ids = [case.id for case in self.cases]
-        if len(ids) != len(set(ids)):
-            raise ValueError("hard-probe case IDs must be unique")
-        return self
-
-
-def file_sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _cost_limit_reached(*, mode: str, current_cost: float, max_cost_usd: float | None) -> bool:
@@ -104,17 +77,6 @@ def _cost_limit_reached(*, mode: str, current_cost: float, max_cost_usd: float |
     return bool(
         mode == "qualified" and max_cost_usd is not None and current_cost >= max_cost_usd
     )
-
-
-def load_dataset(path: Path, manifest_path: Path) -> HardProbeDataset:
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    actual_hash = file_sha256(path)
-    if manifest.get("dataset_sha256") != actual_hash:
-        raise ValueError("hard-probe dataset hash does not match its manifest")
-    dataset = HardProbeDataset.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
-    if manifest.get("case_count") != len(dataset.cases):
-        raise ValueError("hard-probe case count does not match its manifest")
-    return dataset
 
 
 class OfflineLiveDataService:
@@ -211,6 +173,17 @@ class OfflineLiveDataService:
 def _git_commit() -> str | None:
     completed = subprocess.run(
         ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return completed.stdout.strip() if completed.returncode == 0 else None
+
+
+def _git_tree() -> str | None:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD^{tree}"],
         cwd=ROOT,
         check=False,
         capture_output=True,
@@ -383,6 +356,7 @@ def _trace_details(
 
 async def _run_case(
     case: HardProbeCase,
+    migration: HardProbeExpectationMigration | None,
     runtime: Runtime,
     client: httpx.AsyncClient,
     trace_dir: Path,
@@ -405,13 +379,24 @@ async def _run_case(
         payload = execution.response.model_dump(mode="json")
         payload["http_status"] = 200
         stages, rankings = _execution_details(execution)
-    issues = _semantic_checks(case, payload)
+    allowed_modes = effective_allowed_modes(case, migration)
+    effective_case = case.model_copy(update={"allowed_modes": allowed_modes})
+    base_issues = _semantic_checks(effective_case, payload)
+    invariant_checks = _migration_invariant_checks(migration, payload, stages)
+    invariant_issues = [
+        f"profile invariant {check['name']} failed"
+        for check in invariant_checks
+        if not check["passed"]
+    ]
+    issues = sorted(set(base_issues + invariant_issues))
     return {
         "id": case.id,
         "section": case.section,
         "question": case.question,
         "priority": case.priority,
         "expected": case.expected_text,
+        "effective_allowed_modes": [mode.value for mode in allowed_modes],
+        "applied_migration": migration.model_dump(mode="json") if migration else None,
         "route": route.value,
         "response_mode": payload.get("response_mode"),
         "status": payload.get("status"),
@@ -432,6 +417,10 @@ async def _run_case(
         ),
         "retrieved_chunk_ids": rankings,
         "provider_stages": stages,
+        "semantic_checks": {
+            "base_issues": base_issues,
+            "migration_invariants": invariant_checks,
+        },
         "latency_ms": round((time.perf_counter() - started) * 1_000, 1),
         "cost_usd": sum(float(stage["cost_usd"]) for stage in stages),
         "passed": not issues,
@@ -442,6 +431,13 @@ async def _run_case(
 
 async def run(args: argparse.Namespace) -> int:
     dataset = load_dataset(args.dataset, args.manifest)
+    expectation_profile = load_expectation_profile(
+        args.expectation_profile,
+        dataset,
+        dataset_path=args.dataset,
+    )
+    effective_expectations = effective_expectations_payload(dataset, expectation_profile)
+    effective_expectations_sha256 = canonical_json_sha256(effective_expectations)
     selected = [
         case for case in dataset.cases if not args.case_id or case.id in set(args.case_id)
     ]
@@ -482,7 +478,15 @@ async def run(args: argparse.Namespace) -> int:
                     max_cost_usd=args.max_cost_usd,
                 ):
                     raise RuntimeError("hard-probe cost ceiling reached before the next case")
-                results.append(await _run_case(case, runtime, client, config.trace_dir))
+                results.append(
+                    await _run_case(
+                        case,
+                        expectation_profile.migrations.get(case.id),
+                        runtime,
+                        client,
+                        config.trace_dir,
+                    )
+                )
     finally:
         await runtime.aclose()
         await live_service.aclose()
@@ -498,6 +502,13 @@ async def run(args: argparse.Namespace) -> int:
     for row in results:
         by_section[row["section"]]["passed" if row["passed"] else "failed"] += 1
     failed_count = sum(1 for row in results if not row["passed"])
+    passed_count = len(results) - failed_count
+    full_dataset_executed = [row["id"] for row in results] == [
+        case.id for case in dataset.cases
+    ]
+    minimum_passed_met = (
+        full_dataset_executed and passed_count >= expectation_profile.minimum_passed
+    )
     runtime_configuration = benchmark_runtime_configuration(config)
     configuration_sha256 = hashlib.sha256(
         json.dumps(
@@ -508,11 +519,15 @@ async def run(args: argparse.Namespace) -> int:
         ).encode("utf-8")
     ).hexdigest()
     report = {
-        "schema_version": "firelens_hard_probe_report.v1",
+        "schema_version": "firelens_hard_probe_report.v2",
         "generated_at": datetime.now(UTC).isoformat(),
         "manifest": {
             "commit": _git_commit(),
+            "tree": _git_tree(),
             "dataset_sha256": file_sha256(args.dataset),
+            "expectation_profile": expectation_profile.profile,
+            "expectation_overlay_sha256": (expectation_profile.expectation_overlay_sha256),
+            "effective_expectations_sha256": effective_expectations_sha256,
             "corpus_sha256": sha256_file(config.corpus_path),
             "corpus_manifest_sha256": sha256_file(config.corpus_manifest_path),
             "vector_matrix_sha256": sha256_file(config.vector_matrix_path),
@@ -539,8 +554,10 @@ async def run(args: argparse.Namespace) -> int:
         },
         "summary": {
             "executed": len(results),
-            "passed": sum(1 for row in results if row["passed"]),
+            "passed": passed_count,
             "failed": failed_count,
+            "minimum_passed": expectation_profile.minimum_passed,
+            "minimum_passed_met": minimum_passed_met,
             "elapsed_seconds": round(time.perf_counter() - started, 1),
             "cost_usd": total_cost,
             "by_section": {key: dict(value) for key, value in sorted(by_section.items())},
@@ -553,19 +570,26 @@ async def run(args: argparse.Namespace) -> int:
         json.dump(report, stream, ensure_ascii=False, indent=2)
         stream.write("\n")
     print(json.dumps(report["summary"], indent=2))
+    if expectation_profile.profile == "rc2" and full_dataset_executed:
+        return 0 if minimum_passed_met else 1
     return 0 if failed_count == 0 else 1
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=("offline", "qualified"), default="offline")
+    parser.add_argument(
+        "--expectation-profile",
+        choices=("historical", "rc2"),
+        default="historical",
+    )
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT / "results.json")
     parser.add_argument("--case-id", action="append")
     parser.add_argument("--max-cases", type=int)
     parser.add_argument("--max-cost-usd", type=float)
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def main() -> int:

@@ -1,0 +1,115 @@
+schema_version: firelens.hard_probe_expectations.v1
+profile: rc2
+base_dataset_sha256: ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035
+minimum_passed: 86
+migrations:
+- id: A04
+  add_allowed_modes: [partial]
+  required_publication_kinds: [official_quote_only]
+  require_validation_accepted: true
+  require_exact_quote_support: true
+  require_zero_generation: true
+  require_zero_claims: false
+  require_zero_evidence: false
+  require_official_handoff: false
+  required_reason_code: null
+  rationale: Accept the deterministic official-quote-only downgrade required by structured publication.
+- id: A05
+  add_allowed_modes: [partial]
+  required_publication_kinds: [official_quote_only]
+  require_validation_accepted: true
+  require_exact_quote_support: true
+  require_zero_generation: true
+  require_zero_claims: false
+  require_zero_evidence: false
+  require_official_handoff: false
+  required_reason_code: null
+  rationale: Accept the deterministic official-quote-only downgrade required by structured publication.
+- id: A07
+  add_allowed_modes: [partial]
+  required_publication_kinds: [official_quote_only]
+  require_validation_accepted: true
+  require_exact_quote_support: true
+  require_zero_generation: true
+  require_zero_claims: false
+  require_zero_evidence: false
+  require_official_handoff: false
+  required_reason_code: null
+  rationale: Accept the deterministic official-quote-only downgrade required by structured publication.
+- id: A08
+  add_allowed_modes: [partial]
+  required_publication_kinds: [official_quote_only]
+  require_validation_accepted: true
+  require_exact_quote_support: true
+  require_zero_generation: true
+  require_zero_claims: false
+  require_zero_evidence: false
+  require_official_handoff: false
+  required_reason_code: null
+  rationale: Accept the deterministic official-quote-only downgrade required by structured publication.
+- id: A09
+  add_allowed_modes: [partial]
+  required_publication_kinds: [official_quote_only]
+  require_validation_accepted: true
+  require_exact_quote_support: true
+  require_zero_generation: true
+  require_zero_claims: false
+  require_zero_evidence: false
+  require_official_handoff: false
+  required_reason_code: null
+  rationale: Accept the deterministic official-quote-only downgrade required by structured publication.
+- id: A10
+  add_allowed_modes: [partial]
+  required_publication_kinds: [official_quote_only]
+  require_validation_accepted: true
+  require_exact_quote_support: true
+  require_zero_generation: true
+  require_zero_claims: false
+  require_zero_evidence: false
+  require_official_handoff: false
+  required_reason_code: null
+  rationale: Accept the deterministic official-quote-only downgrade required by structured publication.
+- id: I01
+  add_allowed_modes: [partial]
+  required_publication_kinds: [official_quote_only]
+  require_validation_accepted: true
+  require_exact_quote_support: true
+  require_zero_generation: true
+  require_zero_claims: false
+  require_zero_evidence: false
+  require_official_handoff: false
+  required_reason_code: null
+  rationale: Accept the deterministic official-quote-only downgrade required by structured publication.
+- id: I02
+  add_allowed_modes: [partial]
+  required_publication_kinds: [official_quote_only]
+  require_validation_accepted: true
+  require_exact_quote_support: true
+  require_zero_generation: true
+  require_zero_claims: false
+  require_zero_evidence: false
+  require_official_handoff: false
+  required_reason_code: null
+  rationale: Accept the deterministic official-quote-only downgrade required by structured publication.
+- id: J01
+  add_allowed_modes: [scope_redirect]
+  required_publication_kinds: []
+  require_validation_accepted: false
+  require_exact_quote_support: false
+  require_zero_generation: true
+  require_zero_claims: true
+  require_zero_evidence: true
+  require_official_handoff: true
+  required_reason_code: high_risk_claim_not_structured
+  rationale: Accept the deterministic official issuing-authority handoff when no reviewed structured claim is available.
+- id: J02
+  add_allowed_modes: [partial]
+  required_publication_kinds: [official_quote_only]
+  require_validation_accepted: true
+  require_exact_quote_support: true
+  require_zero_generation: true
+  require_zero_claims: false
+  require_zero_evidence: false
+  require_official_handoff: false
+  required_reason_code: null
+  rationale: Accept the deterministic official-quote-only downgrade required by structured publication.

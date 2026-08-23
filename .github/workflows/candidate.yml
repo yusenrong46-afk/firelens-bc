@@ -139,7 +139,7 @@ jobs:
             --output config/runtime_candidate.v1.json \
             --commit "$CANDIDATE_SHA" \
             --benchmark-id firelens_v1_6_rc2 \
-            --release-version 1.6.0-rc.2
+            --release-version 1.6.0-rc.1
           runtime_candidate=$?
           npm --prefix apps/web run build
           frontend_build=$?
@@ -147,6 +147,7 @@ jobs:
             --output candidate-inputs/structured-publication-eval.json
           structured_publication_eval=$?
           .venv/bin/python scripts/run_hard_probe.py --mode offline \
+            --expectation-profile rc2 \
             --output candidate-inputs/hard-probe.json
           hard_probe_offline=$?
           .venv/bin/pip-audit -r requirements.lock --format json \
@@ -183,7 +184,7 @@ jobs:
               (
                   "runtime_candidate",
                   "scripts/write_runtime_candidate.py --commit $CANDIDATE_SHA "
-                  "--benchmark-id firelens_v1_6_rc2 --release-version 1.6.0-rc.2",
+                  "--benchmark-id firelens_v1_6_rc2 --release-version 1.6.0-rc.1",
               ),
               ("frontend_build", "npm --prefix apps/web run build"),
               (
@@ -193,7 +194,7 @@ jobs:
               ),
               (
                   "hard_probe_offline",
-                  "scripts/run_hard_probe.py --mode offline --output "
+                  "scripts/run_hard_probe.py --mode offline --expectation-profile rc2 --output "
                   "candidate-inputs/hard-probe.json",
               ),
               ("python_audit", "pip-audit -r requirements.lock --format json"),
@@ -233,7 +234,7 @@ jobs:
             --output-dir candidate-evidence \
             --commit "$CANDIDATE_SHA" \
             --tree "$CANDIDATE_TREE" \
-            --release-version 1.6.0-rc.2 \
+            --release-version 1.6.0-rc.1 \
             --generated-at "$source_date" \
             --builder-id "https://github.com/$GITHUB_REPOSITORY/actions/workflows/candidate.yml" \
             --invocation-id "$GITHUB_RUN_ID:$GITHUB_RUN_ATTEMPT" \

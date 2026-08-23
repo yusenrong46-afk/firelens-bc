@@ -2,13 +2,27 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from firelens.evaluation.candidate_evidence_common import (
+    HARD_PROBE_MIGRATED_IDS,
+    HARD_PROBE_PROFILE,
+    HARD_PROBE_PROFILE_MANIFEST_PATH,
+    HARD_PROBE_PROFILE_PATH,
+    HARD_PROBE_QUOTE_ONLY_MIGRATED_IDS,
     REQUIRED_COMMAND_POLICIES,
     file_record,
+    load_json,
+    strict_file,
+    validate_handoff_migration,
+    validate_quote_only_migration,
+    validate_report_semantic_checks,
 )
 
 
@@ -205,17 +219,220 @@ def validate_structured_eval(value: Any, *, root: Path) -> dict[str, Any]:
     return value
 
 
-def _hard_probe_passed_ids(value: Any, *, label: str) -> tuple[dict[str, Any], set[str]]:
+_PROFILE_FIELDS = {
+    "schema_version",
+    "profile",
+    "base_dataset_sha256",
+    "minimum_passed",
+    "migrations",
+}
+_PROFILE_MANIFEST_FIELDS = {
+    "schema_version",
+    "profile",
+    "expectations_sha256",
+    "base_dataset_sha256",
+    "migration_count",
+    "migration_ids",
+    "minimum_passed",
+}
+_MIGRATION_FIELDS = {
+    "id",
+    "add_allowed_modes",
+    "required_publication_kinds",
+    "require_validation_accepted",
+    "require_exact_quote_support",
+    "require_zero_generation",
+    "require_zero_claims",
+    "require_zero_evidence",
+    "require_official_handoff",
+    "required_reason_code",
+    "rationale",
+}
+
+
+def _profile_case_inputs(root: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    dataset_path = strict_file(root, "data/evaluation/hard_probe.v1.yaml")
+    try:
+        dataset = yaml.safe_load(dataset_path.read_text(encoding="utf-8"))
+    except (UnicodeDecodeError, yaml.YAMLError) as exc:
+        raise ValueError("hard-probe base dataset must be valid UTF-8 YAML") from exc
+    if not isinstance(dataset, dict) or not isinstance(dataset.get("cases"), list):
+        raise ValueError("hard-probe base dataset has no case roster")
+    cases = dataset["cases"]
+    if len(cases) != 105:
+        raise ValueError("hard-probe base dataset must contain all 105 cases")
+    seen: set[str] = set()
+    normalized_cases: list[dict[str, Any]] = []
+    for case in cases:
+        if not isinstance(case, dict):
+            raise ValueError("hard-probe base dataset contains an invalid case")
+        case_id = case.get("id")
+        allowed_modes = case.get("allowed_modes")
+        if (
+            not isinstance(case_id, str)
+            or not case_id
+            or case_id in seen
+            or not isinstance(allowed_modes, list)
+            or not allowed_modes
+            or any(not isinstance(mode, str) or not mode for mode in allowed_modes)
+            or len(set(allowed_modes)) != len(allowed_modes)
+        ):
+            raise ValueError("hard-probe base expectations are invalid")
+        seen.add(case_id)
+        normalized_cases.append({"id": case_id, "allowed_modes": allowed_modes})
+
+    base_hash = hashlib.sha256(dataset_path.read_bytes()).hexdigest()
+    base_manifest = load_json(
+        strict_file(root, "data/evaluation/hard_probe.v1.manifest.json"),
+        "hard-probe base manifest",
+    )
     if (
-        not isinstance(value, dict)
-        or value.get("schema_version") != "firelens_hard_probe_report.v1"
+        not isinstance(base_manifest, dict)
+        or base_manifest.get("dataset_sha256") != base_hash
+        or base_manifest.get("case_count") != 105
     ):
+        raise ValueError("hard-probe base dataset does not match its manifest")
+    return normalized_cases, {"dataset_sha256": base_hash}
+
+
+def _validate_migration(value: Any) -> dict[str, Any]:
+    migration = exact_object(value, _MIGRATION_FIELDS, "hard-probe profile migration")
+    case_id = nonempty_string(migration["id"], "hard-probe profile migration id")
+    nonempty_string(migration["rationale"], f"hard-probe profile migration {case_id} rationale")
+    if case_id in HARD_PROBE_QUOTE_ONLY_MIGRATED_IDS:
+        expected = {
+            "add_allowed_modes": ["partial"],
+            "required_publication_kinds": ["official_quote_only"],
+            "require_validation_accepted": True,
+            "require_exact_quote_support": True,
+            "require_zero_generation": True,
+            "require_zero_claims": False,
+            "require_zero_evidence": False,
+            "require_official_handoff": False,
+            "required_reason_code": None,
+        }
+    elif case_id == "J01":
+        expected = {
+            "add_allowed_modes": ["scope_redirect"],
+            "required_publication_kinds": [],
+            "require_validation_accepted": False,
+            "require_exact_quote_support": False,
+            "require_zero_generation": True,
+            "require_zero_claims": True,
+            "require_zero_evidence": True,
+            "require_official_handoff": True,
+            "required_reason_code": "high_risk_claim_not_structured",
+        }
+    else:
+        raise ValueError(f"hard-probe profile contains an undeclared migration: {case_id}")
+    if any(migration[field] != expected_value for field, expected_value in expected.items()):
+        raise ValueError(f"hard-probe profile migration is invalid: {case_id}")
+    return migration
+
+
+def _load_hard_probe_profile(root: Path) -> dict[str, Any]:
+    cases, base_identity = _profile_case_inputs(root)
+    profile_path = strict_file(root, HARD_PROBE_PROFILE_PATH)
+    try:
+        profile_value = yaml.safe_load(profile_path.read_text(encoding="utf-8"))
+    except (UnicodeDecodeError, yaml.YAMLError) as exc:
+        raise ValueError("hard-probe expectation profile must be valid UTF-8 YAML") from exc
+    profile = exact_object(profile_value, _PROFILE_FIELDS, "hard-probe expectation profile")
+    base_hash = base_identity["dataset_sha256"]
+    if (
+        profile["schema_version"] != "firelens.hard_probe_expectations.v1"
+        or profile["profile"] != HARD_PROBE_PROFILE
+        or profile["base_dataset_sha256"] != base_hash
+        or profile["minimum_passed"] != 86
+        or not isinstance(profile["migrations"], list)
+    ):
+        raise ValueError("hard-probe expectation profile identity or floor is invalid")
+    migrations = [_validate_migration(item) for item in profile["migrations"]]
+    migration_ids = [item["id"] for item in migrations]
+    if len(migration_ids) != len(set(migration_ids)) or set(migration_ids) != set(
+        HARD_PROBE_MIGRATED_IDS
+    ):
+        raise ValueError("hard-probe expectation profile migration roster is invalid")
+    case_ids = {case["id"] for case in cases}
+    if not HARD_PROBE_MIGRATED_IDS.issubset(case_ids):
+        raise ValueError("hard-probe expectation profile references a missing base case")
+
+    profile_hash = hashlib.sha256(profile_path.read_bytes()).hexdigest()
+    manifest = load_json(
+        strict_file(root, HARD_PROBE_PROFILE_MANIFEST_PATH),
+        "hard-probe expectation profile manifest",
+    )
+    manifest = exact_object(
+        manifest,
+        _PROFILE_MANIFEST_FIELDS,
+        "hard-probe expectation profile manifest",
+    )
+    if manifest != {
+        "schema_version": "firelens.hard_probe_expectations_manifest.v1",
+        "profile": HARD_PROBE_PROFILE,
+        "expectations_sha256": profile_hash,
+        "base_dataset_sha256": base_hash,
+        "migration_count": 10,
+        "migration_ids": sorted(HARD_PROBE_MIGRATED_IDS),
+        "minimum_passed": 86,
+    }:
+        raise ValueError("hard-probe expectation profile does not match its manifest")
+
+    migration_by_id = {item["id"]: item for item in migrations}
+    effective_cases = []
+    for case in cases:
+        migration = migration_by_id.get(case["id"])
+        additions = [] if migration is None else migration["add_allowed_modes"]
+        allowed_modes = [*case["allowed_modes"]]
+        allowed_modes.extend(mode for mode in additions if mode not in allowed_modes)
+        effective_cases.append(
+            {
+                "id": case["id"],
+                "allowed_modes": allowed_modes,
+                "migration": migration,
+            }
+        )
+    effective = {
+        "schema_version": "firelens.hard_probe_effective_expectations.v1",
+        "profile": HARD_PROBE_PROFILE,
+        "base_dataset_sha256": base_hash,
+        "minimum_passed": 86,
+        "cases": effective_cases,
+    }
+    effective_bytes = json.dumps(
+        effective,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode()
+    return {
+        "base_dataset_sha256": base_hash,
+        "case_ids": [case["id"] for case in cases],
+        "effective_allowed_modes": {
+            case["id"]: case["allowed_modes"] for case in effective_cases
+        },
+        "migrations": migration_by_id,
+        "expectation_overlay_sha256": profile_hash,
+        "effective_expectations_sha256": hashlib.sha256(effective_bytes).hexdigest(),
+        "minimum_passed": 86,
+    }
+
+
+def _hard_probe_passed_ids(
+    value: Any,
+    *,
+    label: str,
+    schema_version: str,
+    expected_ids: set[str],
+) -> tuple[dict[str, Any], set[str], dict[str, dict[str, Any]]]:
+    if not isinstance(value, dict) or value.get("schema_version") != schema_version:
         raise ValueError(f"{label} schema is invalid")
     results = value.get("results")
     if not isinstance(results, list) or len(results) != 105:
         raise ValueError(f"{label} must contain all 105 cases")
     ids: set[str] = set()
     passed: set[str] = set()
+    rows: dict[str, dict[str, Any]] = {}
     for row in results:
         if not isinstance(row, dict):
             raise ValueError(f"{label} contains an invalid case")
@@ -226,16 +443,31 @@ def _hard_probe_passed_ids(value: Any, *, label: str) -> tuple[dict[str, Any], s
         if not isinstance(did_pass, bool):
             raise ValueError(f"{label} case disposition is invalid")
         ids.add(case_id)
+        rows[case_id] = row
         if did_pass:
             passed.add(case_id)
-    return value, passed
+    if ids != expected_ids:
+        raise ValueError(f"{label} case roster does not match the base dataset")
+    return value, passed, rows
 
 
 def validate_hard_probe(
-    value: Any, baseline: Any, *, root: Path, commit: str
+    value: Any, baseline: Any, *, root: Path, commit: str, tree: str
 ) -> tuple[dict[str, Any], dict[str, object]]:
-    report, passed = _hard_probe_passed_ids(value, label="exact-run hard-probe evidence")
-    _, baseline_passed = _hard_probe_passed_ids(baseline, label="hard-probe baseline")
+    profile = _load_hard_probe_profile(root)
+    expected_ids = set(profile["case_ids"])
+    report, passed, rows = _hard_probe_passed_ids(
+        value,
+        label="exact-run hard-probe evidence",
+        schema_version="firelens_hard_probe_report.v2",
+        expected_ids=expected_ids,
+    )
+    _, baseline_passed, _ = _hard_probe_passed_ids(
+        baseline,
+        label="hard-probe baseline",
+        schema_version="firelens_hard_probe_report.v1",
+        expected_ids=expected_ids,
+    )
     manifest = report.get("manifest")
     summary = report.get("summary")
     expected_hashes = {
@@ -254,8 +486,13 @@ def validate_hard_probe(
     if (
         not isinstance(manifest, dict)
         or manifest.get("commit") != commit
+        or manifest.get("tree") != tree
         or manifest.get("mode") != "offline"
         or manifest.get("provider_boundary") != "offline_double"
+        or manifest.get("expectation_profile") != HARD_PROBE_PROFILE
+        or manifest.get("expectation_overlay_sha256") != profile["expectation_overlay_sha256"]
+        or manifest.get("effective_expectations_sha256")
+        != profile["effective_expectations_sha256"]
         or any(manifest.get(name) != expected for name, expected in expected_hashes.items())
     ):
         raise ValueError("exact-run hard-probe identity or offline boundary is invalid")
@@ -263,11 +500,37 @@ def validate_hard_probe(
         not isinstance(summary, dict)
         or summary.get("executed") != 105
         or summary.get("passed") != len(passed)
-        or len(passed) < 86
+        or summary.get("failed") != 105 - len(passed)
+        or summary.get("minimum_passed") != profile["minimum_passed"]
+        or summary.get("minimum_passed_met") is not True
+        or len(passed) < profile["minimum_passed"]
+        or not isinstance(summary.get("cost_usd"), (int, float))
+        or isinstance(summary.get("cost_usd"), bool)
         or summary.get("cost_usd") != 0
+        or any(
+            not isinstance(row.get("cost_usd"), (int, float))
+            or isinstance(row.get("cost_usd"), bool)
+            or row.get("cost_usd") != 0
+            for row in rows.values()
+        )
     ):
         raise ValueError("exact-run hard-probe did not meet the frozen 86/105 zero-cost floor")
-    regressions = sorted(baseline_passed - passed)
+    migrations = profile["migrations"]
+    for case_id, row in rows.items():
+        if row.get("applied_migration") != migrations.get(case_id):
+            raise ValueError(
+                f"exact-run hard-probe contains an unbound expectation change: {case_id}"
+            )
+        if row.get("effective_allowed_modes") != profile["effective_allowed_modes"][case_id]:
+            raise ValueError(
+                f"exact-run hard-probe effective expectations are invalid: {case_id}"
+            )
+        validate_report_semantic_checks(row, case_id=case_id)
+    for case_id in sorted(HARD_PROBE_QUOTE_ONLY_MIGRATED_IDS):
+        validate_quote_only_migration(rows[case_id], case_id=case_id)
+    validate_handoff_migration(rows["J01"])
+
+    regressions = sorted(baseline_passed - passed - set(HARD_PROBE_MIGRATED_IDS))
     if regressions:
         raise ValueError(
             "exact-run hard-probe regressed previously passing cases: " + ", ".join(regressions)
@@ -275,7 +538,9 @@ def validate_hard_probe(
     return report, {
         "executed": 105,
         "passed": len(passed),
-        "floor": 86,
+        "floor": profile["minimum_passed"],
+        "expectation_profile": HARD_PROBE_PROFILE,
+        "migrated_case_ids": sorted(HARD_PROBE_MIGRATED_IDS),
         "paired_regressions": regressions,
         "provider_calls": 0,
         "cost_usd": 0,
