@@ -366,6 +366,7 @@ class V3DeterministicIntentTests(unittest.TestCase):
         for question in (
             "which perimeter is nearest Kelowna?",
             "which wildfire perimeter is nearest to Kelowna?",
+            "which official wildfire perimeter is nearest to Kelowna?",
             "nearest perimeter to Kelowna",
         ):
             with self.subTest(question=question):

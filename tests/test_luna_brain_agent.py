@@ -880,15 +880,18 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
                 )
             ]
         )
-        execution = await agent.answer(
-            QueryRequest(question="How close is the wildfire perimeter near Vernon today?")
-        )
+        for question in (
+            "How close is the wildfire perimeter near Vernon today?",
+            "Which official wildfire perimeter is nearest to Vernon?",
+        ):
+            with self.subTest(question=question):
+                execution = await agent.answer(QueryRequest(question=question))
 
-        answer = execution.response.answer or ""
-        self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
-        self.assertNotIn("Select a mapped fire", answer)
-        self.assertIn("Vernon Perimeter", answer)
-        self.assertRegex(answer, r"\d+(?:\.\d+)? km")
+                answer = execution.response.answer or ""
+                self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
+                self.assertNotIn("Select a mapped fire", answer)
+                self.assertIn("Vernon Perimeter", answer)
+                self.assertRegex(answer, r"\d+(?:\.\d+)? km")
 
     async def test_deictic_distance_without_selection_still_abstains(self) -> None:
         agent = _agent([_fire(result_id="incident:7", name="Mountain Fire")])
