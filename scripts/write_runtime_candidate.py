@@ -12,7 +12,11 @@ from firelens.privacy_policy import (
     APPROVED_PRODUCTION_PRIVACY,
     resolve_openrouter_privacy_from_env,
 )
-from firelens.runtime_candidate import build_runtime_candidate, write_runtime_candidate
+from firelens.runtime_candidate import (
+    DEFAULT_BENCHMARK_ID,
+    build_runtime_candidate,
+    write_runtime_candidate,
+)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -24,7 +28,7 @@ def _parser() -> argparse.ArgumentParser:
         or os.environ.get("RENDER_GIT_COMMIT")
         or os.environ.get("FIRELENS_BUILD_COMMIT"),
     )
-    parser.add_argument("--benchmark-id", default="firelens_v1_5_2")
+    parser.add_argument("--benchmark-id", default=DEFAULT_BENCHMARK_ID)
     parser.add_argument(
         "--release-version",
         default=os.environ.get("FIRELENS_RELEASE_VERSION") or DEFAULT_RELEASE_VERSION,

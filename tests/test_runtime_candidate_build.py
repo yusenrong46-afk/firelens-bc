@@ -8,6 +8,7 @@ import pytest
 from firelens.config import FireLensConfig
 from firelens.privacy_policy import APPROVED_PRODUCTION_PRIVACY
 from scripts.write_runtime_candidate import (
+    DEFAULT_BENCHMARK_ID,
     build_runtime_candidate,
     main,
     write_runtime_candidate,
@@ -77,6 +78,14 @@ def test_runtime_candidate_cli_fails_closed_without_commit(tmp_path: Path) -> No
     assert main(["--output", str(tmp_path / "candidate.json"), "--commit", ""]) == 2
 
 
+def test_runtime_candidate_cli_defaults_to_current_rc2_identity(tmp_path: Path) -> None:
+    output = tmp_path / "candidate.json"
+    assert main(["--output", str(output), "--commit", COMMIT]) == 0
+    candidate = json.loads(output.read_text(encoding="utf-8"))
+    assert DEFAULT_BENCHMARK_ID == "firelens_v1_6_rc2"
+    assert candidate["candidate_id"] == f"firelens-v1-6-rc2:{COMMIT}"
+
+
 def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> None:
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
     for required in (
@@ -106,6 +115,7 @@ def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> N
     assert "1.5.0-rc.1" not in vercel_prep
     assert "DEFAULT_RELEASE_VERSION" in writer
     assert "DEFAULT_RELEASE_VERSION" in vercel_prep
+    assert "DEFAULT_BENCHMARK_ID" in vercel_prep
     assert FireLensConfig.model_fields["release_version"].default == "1.6.0-rc.1"
     vercel = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
     include = vercel["services"]["firelens"]["functions"]["**/*.py"]["includeFiles"]

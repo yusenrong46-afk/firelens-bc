@@ -29,6 +29,7 @@ COMMIT = re.compile(r"^[0-9a-f]{40}$")
 BENCHMARK_ID = re.compile(r"^[a-z][a-z0-9_]{1,127}$")
 CANDIDATE_ID_PREFIX = re.compile(r"^[a-z][a-z0-9-]{1,127}$")
 LOCAL_UNQUALIFIED = "this environment is not a production-qualified artifact"
+DEFAULT_BENCHMARK_ID = "firelens_v1_6_rc2"
 
 
 def _object(path: Path, label: str) -> dict[str, Any]:

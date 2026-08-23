@@ -12,7 +12,11 @@ from firelens.privacy_policy import (
     APPROVED_PRODUCTION_PRIVACY,
     resolve_openrouter_privacy_from_env,
 )
-from firelens.runtime_candidate import build_runtime_candidate, write_runtime_candidate
+from firelens.runtime_candidate import (
+    DEFAULT_BENCHMARK_ID,
+    build_runtime_candidate,
+    write_runtime_candidate,
+)
 
 
 def main() -> None:
@@ -35,7 +39,7 @@ def main() -> None:
         ).stdout.strip()
     candidate = build_runtime_candidate(
         commit=commit,
-        benchmark_id="firelens_v1_5_2",
+        benchmark_id=DEFAULT_BENCHMARK_ID,
         release_version=os.environ.get("FIRELENS_RELEASE_VERSION") or DEFAULT_RELEASE_VERSION,
         corpus_manifest_path=(root / "data/processed/firelens_static_corpus.manifest.json"),
         vector_manifest_path=root / "data/index/firelens_vectors.manifest.json",
