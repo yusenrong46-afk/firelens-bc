@@ -15,9 +15,11 @@ Product state: `principal-remediation candidate, semantic acceptance pending`
 
 Release state: **not release-qualified**
 
-This handbook describes the code that runs now. Architecture proposals that
-predate V1.1 are historical context; ADRs in `docs/adr/` record why the current
-design was chosen.
+This is an archival V1.5 code-and-design snapshot, not a claim about code that
+runs now. Architecture proposals that predate V1.1 are historical context; ADRs
+in `docs/adr/` record why that historical design was chosen. For current
+runtime, support, and release statements, use `docs/ARCHITECTURE_V1_6.md` and
+exact candidate evidence instead.
 
 ## 1. Product contract
 

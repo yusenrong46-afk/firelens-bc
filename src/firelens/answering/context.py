@@ -6,6 +6,7 @@ import difflib
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from functools import lru_cache
 
 from firelens.config import FireLensConfig
 from firelens.contracts import (
@@ -94,9 +95,11 @@ _ADMINISTRATIVE_STEMS = (
 )
 
 _CONFLICT_CUES = frozenset({"is", "means", "must", "required", "shall", "should", "will"})
+SUPPORT_TOKEN_OVERLAP_FLOOR = 0.4
 
 
-def _support_tokens(text: str) -> set[str]:
+@lru_cache(maxsize=4_096)
+def _support_tokens(text: str) -> frozenset[str]:
     """Normalize a small, domain-stable set of morphological equivalents."""
 
     normalized: set[str] = set()
@@ -117,24 +120,40 @@ def _support_tokens(text: str) -> set[str]:
             normalized.add(token[:-1])
         else:
             normalized.add(token)
-    return normalized
+    return frozenset(normalized)
 
 
-def _aspect_supported(
-    aspect: str, packet: EvidencePacket, *, minimum_ratio: float = 0.4
-) -> bool:
+@lru_cache(maxsize=8_192)
+def support_token_overlap(text: str, target: str, *, minimum_overlap: int = 1) -> float:
+    """Return deterministic normalized target-token coverage for ``text``.
+
+    This is a lexical relevance floor, not a semantic-entailment decision.  The
+    target owns the denominator so adding unrelated source text cannot make an
+    otherwise unsupported request appear better covered.
+    """
+
     required = {
         token
-        for token in _support_tokens(aspect)
+        for token in _support_tokens(target)
         if token not in _ASPECT_STOPWORDS and len(token) > 1
     }
     if not required:
-        return False
-    minimum = 1 if len(required) == 1 else 2
+        return 0.0
+    available = _support_tokens(text)
+    overlap = required & available
+    if len(overlap) < min(minimum_overlap, len(required)):
+        return 0.0
+    return len(overlap) / len(required)
+
+
+def _aspect_supported(
+    aspect: str,
+    packet: EvidencePacket,
+    *,
+    minimum_ratio: float = SUPPORT_TOKEN_OVERLAP_FLOOR,
+) -> bool:
     for item in packet.items:
-        available = _support_tokens(item.primary_text)
-        overlap = required & available
-        if len(overlap) >= minimum and len(overlap) / len(required) >= minimum_ratio:
+        if support_token_overlap(item.primary_text, aspect, minimum_overlap=2) >= minimum_ratio:
             return True
     return False
 
@@ -254,18 +273,6 @@ def _candidate_chunk_ids(
     }
 
 
-def _selection_overlap(text: str, target: str) -> float:
-    required = {
-        token
-        for token in _support_tokens(target)
-        if token not in _ASPECT_STOPWORDS and len(token) > 1
-    }
-    if not required:
-        return 0.0
-    available = _support_tokens(text)
-    return len(required & available) / len(required)
-
-
 def _select_evidence_hits(
     question: str,
     reranked_hits: Sequence[RetrievalHit],
@@ -284,13 +291,13 @@ def _select_evidence_hits(
     for target in targets:
         ranked = sorted(
             (
-                (_selection_overlap(hit.text, target), index)
+                (support_token_overlap(hit.text, target), index)
                 for index, hit in enumerate(pool)
                 if index not in selected
             ),
             key=lambda item: (-item[0], item[1]),
         )
-        if ranked and ranked[0][0] >= 0.4:
+        if ranked and ranked[0][0] >= SUPPORT_TOKEN_OVERLAP_FLOOR:
             selected.add(ranked[0][1])
         if len(selected) == limit:
             break
@@ -301,7 +308,13 @@ def _select_evidence_hits(
             break
         if index in selected or hit.source_id in selected_sources:
             continue
-        if max((_selection_overlap(hit.text, target) for target in targets), default=0.0) < 0.4:
+        if (
+            max(
+                (support_token_overlap(hit.text, target) for target in targets),
+                default=0.0,
+            )
+            < SUPPORT_TOKEN_OVERLAP_FLOOR
+        ):
             continue
         selected.add(index)
         selected_sources.add(hit.source_id)

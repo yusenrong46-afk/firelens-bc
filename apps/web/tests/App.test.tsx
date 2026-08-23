@@ -56,6 +56,7 @@ afterEach(() => {
 describe("FireLens Source Lens", () => {
   it("shows capability suggestions before the first question", () => {
     render(<App />);
+    expect(screen.getByRole("link", { name: "FireLens BC V1.6 RC1" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "What belongs in a grab-and-go bag?" })).toBeInTheDocument();
     expect(screen.getByText("0 of 6 turns in context")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Skip to conversation" })).toHaveAttribute("href", "#conversation");
@@ -161,8 +162,7 @@ describe("FireLens Source Lens", () => {
     expect(screen.getAllByText("General background").length).toBeGreaterThan(0);
     expect(screen.getAllByText("This context is not a live official record.").length).toBeGreaterThan(0);
     expect(screen.getByText("Live records + general background")).toBeInTheDocument();
-    expect(screen.getByText("General background in this answer")).toBeInTheDocument();
-    expect(screen.queryByText("Sources supporting this answer")).not.toBeInTheDocument();
+    expect(screen.getByText("Answer evidence and support")).toBeInTheDocument();
   });
 
   it("keeps reviewed-source conflicts visible beside live records", async () => {
@@ -212,7 +212,7 @@ describe("FireLens Source Lens", () => {
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What goes in a grab-and-go bag?");
     await user.click(screen.getByLabelText("Send question"));
 
-    expect(await screen.findByText("Sources supporting this answer")).toBeInTheDocument();
+    expect(await screen.findByText("Answer evidence and support")).toBeInTheDocument();
     expect(screen.getByText("Reviewed sources")).toBeInTheDocument();
     expect(screen.getAllByText("Keep water and food in a grab-and-go bag.").length).toBeGreaterThan(1);
     expect(screen.getAllByText("Food & water").some((node) => node.tagName === "MARK")).toBe(true);
@@ -244,8 +244,10 @@ describe("FireLens Source Lens", () => {
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Why can embers be dangerous?");
     await user.click(screen.getByLabelText("Send question"));
 
-    expect(await screen.findByText("General background")).toBeInTheDocument();
-    expect(screen.getByText("General background — no corpus evidence attached")).toBeInTheDocument();
+    expect((await screen.findAllByText("General background")).length).toBeGreaterThan(0);
+    expect(screen.getByText(
+      "This is labelled general background and has no reviewed source support attached.",
+    )).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: backgroundClaim })).not.toBeInTheDocument();
     expect(screen.queryByText("Retrieved passage")).not.toBeInTheDocument();
   });
@@ -346,7 +348,7 @@ describe("FireLens Source Lens", () => {
     expect(screen.getAllByText("Current source unavailable").length).toBeGreaterThan(0);
     expect(screen.getByText(/could not establish the requested current status/)).toBeInTheDocument();
     expect(screen.getByText(/live_data_required/)).toBeInTheDocument();
-    expect(screen.queryByText("Sources supporting this answer")).not.toBeInTheDocument();
+    expect(screen.queryByText("Answer evidence and support")).not.toBeInTheDocument();
   });
 
   it("labels a personal-safety abstention and exposes its actual official handoff", async () => {
@@ -1118,7 +1120,7 @@ describe("FireLens Source Lens", () => {
     const { container } = render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What should I pack?");
     await user.click(screen.getByLabelText("Send question"));
-    await screen.findByText("Sources supporting this answer");
+    await screen.findByText("Answer evidence and support");
     const result = await axe(container);
     expect(result.violations).toEqual([]);
   });

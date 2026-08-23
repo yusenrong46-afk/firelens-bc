@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 
 from pydantic import HttpUrl
 
+from firelens.answering.context import (
+    SUPPORT_TOKEN_OVERLAP_FLOOR,
+    support_token_overlap,
+)
 from firelens.answering.risk_policy import RiskTier
 from firelens.answering.typed_records import load_inventory, match_quote
 from firelens.answering.typed_snapshot import classify_text
@@ -27,6 +33,24 @@ from firelens.contracts import (
 )
 from firelens.live_contracts import LiveResult
 from firelens.proof_presentation import ProofCard
+from firelens.publication.compiled_validation import (
+    atomic_quote_overlap as _atomic_quote_overlap,
+)
+from firelens.publication.compiled_validation import (
+    compiled_validation_handoff as _compiled_validation_handoff,
+)
+from firelens.publication.compiled_validation import (
+    compiler_validation_report as _compiler_validation_report,
+)
+from firelens.publication.compiled_validation import (
+    packet_identity_errors as _packet_identity_errors,
+)
+from firelens.publication.compiled_validation import (
+    unique_public_evidence as _unique_public_evidence,
+)
+from firelens.publication.compiled_validation import (
+    validate_compiled_publication as _validate_compiled_publication,
+)
 from firelens.publication.fallback import (
     QUOTE_ONLY_LIMITATION,
     UNCOVERED_LIMITATION,
@@ -167,9 +191,27 @@ def compile_high_risk_answer(
     packet: EvidencePacket,
     *,
     trace_id: str,
+    supported_aspects: Sequence[str] = (),
 ) -> AskResponse:
-    del question
-    selected = select_typed_claim_ids(packet)
+    packet_errors = _packet_identity_errors(packet)
+    if packet_errors:
+        return _compiled_validation_handoff(
+            trace_id,
+            _compiler_validation_report(
+                packet_errors,
+                schema_valid=False,
+                citation_ids_valid=False,
+                quotes_exact=False,
+                claim_support_valid=False,
+                policy_valid=False,
+            ),
+        )
+    targets = _publication_targets(question, supported_aspects)
+    selected = select_typed_claim_ids(
+        packet,
+        question=question,
+        supported_aspects=supported_aspects,
+    )
     claims: list[PublicClaim] = []
     evidence: list[PublicEvidence] = []
     cards: list[ProofCard] = []
@@ -181,10 +223,13 @@ def compile_high_risk_answer(
         claims.append(compiled.claim)
         evidence.extend(compiled.evidence)
         cards.append(compiled.card)
+    uncovered_targets = _uncovered_publication_targets(claims, targets)
     covered_quotes = {support.quote for claim in claims for support in claim.supports}
     quote_index = len(claims)
     for candidate in packet.quote_candidates:
         if classify_text(candidate.text) not in {RiskTier.A, RiskTier.B}:
+            continue
+        if not _matches_publication_target(candidate.text, uncovered_targets):
             continue
         if any(
             candidate.text[:80].casefold() in quote.casefold()
@@ -210,13 +255,45 @@ def compile_high_risk_answer(
         limitations.append(QUOTE_ONLY_LIMITATION)
         limitations.append(UNCOVERED_LIMITATION)
         reason = ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED
+    evidence = _unique_public_evidence(evidence)
+    answer = render_claim_texts(claims)
+    validation = _validate_compiled_publication(
+        packet=packet,
+        claims=claims,
+        evidence=evidence,
+        cards=cards,
+        answer=answer,
+    )
+    if not validation.accepted:
+        return _compiled_validation_handoff(trace_id, validation)
     return _grounded_response(
-        claims, evidence, cards, trace_id=trace_id, limitations=limitations, reason=reason
+        claims,
+        evidence,
+        cards,
+        trace_id=trace_id,
+        limitations=limitations,
+        reason=reason,
+        response_mode=(
+            ResponseMode.PARTIAL
+            if any(
+                claim.publication
+                and claim.publication.kind == PublicationKind.OFFICIAL_QUOTE_ONLY
+                for claim in claims
+            )
+            else ResponseMode.GROUNDED
+        ),
+        validation=validation,
     )
 
 
-def select_typed_claim_ids(packet: EvidencePacket) -> list[str]:
+def select_typed_claim_ids(
+    packet: EvidencePacket,
+    *,
+    question: str | None = None,
+    supported_aspects: Sequence[str] = (),
+) -> list[str]:
     selected: list[str] = []
+    targets = _publication_targets(question or packet.question, supported_aspects)
     evidence_by_id = {item.evidence_id: item for item in packet.items}
     for candidate in packet.quote_candidates:
         evidence = evidence_by_id.get(candidate.evidence_id)
@@ -232,17 +309,68 @@ def select_typed_claim_ids(packet: EvidencePacket) -> list[str]:
         records = [*span_records, *match_quote(candidate.text)]
         for record in records:
             versioned = get_versioned(record.claim_id)
-            if versioned.available_for_structured_support and record.claim_id not in selected:
+            if (
+                versioned.available_for_structured_support
+                and _typed_record_matches_publication_target(
+                    record.claim_id,
+                    versioned.approved_surface_sha256,
+                    versioned.source_span_sha256,
+                    targets,
+                )
+                and record.claim_id not in selected
+            ):
                 selected.append(record.claim_id)
     return selected
 
 
-def _atomic_quote_overlap(candidate_text: str, source_text: str) -> bool:
-    candidate = " ".join(candidate_text.split()).casefold()
-    source = " ".join(source_text.split()).casefold()
-    if min(len(candidate), len(source)) < 24:
+def _publication_targets(question: str, supported_aspects: Sequence[str]) -> tuple[str, ...]:
+    return tuple(
+        dict.fromkeys(
+            target.strip() for target in (question, *supported_aspects) if target.strip()
+        )
+    )
+
+
+def _matches_publication_target(text: str, targets: Sequence[str]) -> bool:
+    return any(
+        support_token_overlap(text, target) >= SUPPORT_TOKEN_OVERLAP_FLOOR for target in targets
+    )
+
+
+def _uncovered_publication_targets(
+    claims: Sequence[PublicClaim], targets: Sequence[str]
+) -> tuple[str, ...]:
+    """Keep quote-only fallback for requested aspects lacking structured coverage."""
+
+    structured_text = "\n".join(
+        text
+        for claim in claims
+        if claim.publication and claim.publication.kind == PublicationKind.STRUCTURED_REVIEWED
+        for text in (claim.text, *(support.quote for support in claim.supports))
+    )
+    return tuple(
+        target
+        for target in targets
+        if support_token_overlap(structured_text, target) < SUPPORT_TOKEN_OVERLAP_FLOOR
+    )
+
+
+@lru_cache(maxsize=1_024)
+def _typed_record_matches_publication_target(
+    claim_id: str,
+    approved_surface_sha256: str,
+    source_span_sha256: str,
+    targets: tuple[str, ...],
+) -> bool:
+    current = get_versioned(claim_id)
+    if (
+        current.approved_surface_sha256 != approved_surface_sha256
+        or current.source_span_sha256 != source_span_sha256
+    ):
         return False
-    return candidate in source or source in candidate
+    return _matches_publication_target(
+        f"{current.canonical_text}\n{current.source_span_text}", targets
+    )
 
 
 def packet_requires_structured(packet: EvidencePacket, question: str = "") -> bool:
@@ -350,31 +478,31 @@ def _grounded_response(
     trace_id: str,
     limitations: list[str] | None = None,
     reason: ReasonCode | None = None,
+    response_mode: ResponseMode = ResponseMode.GROUNDED,
+    validation: ValidationReport | None = None,
 ) -> AskResponse:
-    seen: set[str] = set()
-    unique_evidence: list[PublicEvidence] = []
-    for item in evidence:
-        if item.evidence_id in seen:
-            continue
-        seen.add(item.evidence_id)
-        unique_evidence.append(item)
+    unique_evidence = _unique_public_evidence(evidence)
+    answer = render_claim_texts(claims)
+    executed_validation = validation or _validate_compiled_publication(
+        packet=None,
+        claims=claims,
+        evidence=unique_evidence,
+        cards=cards,
+        answer=answer,
+    )
+    if not executed_validation.accepted:
+        raise ValueError(
+            "compiled publication validation failed: " + "; ".join(executed_validation.errors)
+        )
     return AskResponse(
         status=ResponseStatus.ANSWER,
         trace_id=trace_id,
-        response_mode=ResponseMode.GROUNDED,
-        answer=render_claim_texts(claims),
+        response_mode=response_mode,
+        answer=answer,
         claims=claims,
         evidence=unique_evidence,
         limitations=limitations or ["Grounded in reviewed official sources."],
         reason_code=reason,
-        validation=ValidationReport(
-            accepted=True,
-            schema_valid=True,
-            citation_ids_valid=True,
-            quotes_exact=True,
-            claim_support_valid=True,
-            policy_valid=True,
-            errors=[],
-        ),
+        validation=executed_validation,
         proof_cards=cards,
     )

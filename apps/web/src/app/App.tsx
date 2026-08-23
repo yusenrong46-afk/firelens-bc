@@ -20,7 +20,7 @@ export function App() {
       <header className="topbar">
         <a className="brand" href="#top">
           <img src="/assets/firelens-mark.png" alt="" />
-          <span><strong>FireLens</strong> BC <small>V1.5 V3</small></span>
+          <span><strong>FireLens</strong> BC <small>V1.6 RC1</small></span>
         </a>
         <nav className="workspace-jump" aria-label="Move between conversation and map">
           <a href="#conversation">Conversation</a>

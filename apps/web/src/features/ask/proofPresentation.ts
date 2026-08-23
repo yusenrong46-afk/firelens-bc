@@ -43,6 +43,22 @@ export type ProofCardView = {
   official_url?: string | null;
 };
 
+function unknownProofCard(card: ProofCardView): ProofCardView {
+  return {
+    ...card,
+    support_state: "unknown",
+    support_label: SUPPORT_LABELS.unknown,
+    authority: "Authority not established",
+    exact_passage: null,
+    source_title: null,
+    source_revision: null,
+    review_state: "Review state not established",
+    critical_fields_checked: "Critical-field validation not established",
+    freshness: "Freshness not established",
+    official_url: null,
+  };
+}
+
 const HEADLINES: Record<string, string> = {
   grounded: "Grounded in reviewed official sources",
   partial: "Partially supported by reviewed sources",
@@ -66,13 +82,97 @@ const SUPPORT_LABELS: Record<SupportState, string> = {
   supported: "Supported by an exact reviewed quotation",
   structured_reviewed: "Reviewed structured claim",
   official_live_typed: "Official live record",
-  official_quote_only: "Official wording — not paraphrased",
+  official_quote_only: "Exact source wording — not a structured FireLens claim",
   source_linked_explanation: "Source-linked explanation",
   unknown: "Not established from FireLens sources",
   background: "General background — not a reviewed quotation",
   conflict: "Conflicting reviewed sources; no winner chosen",
   live_record: "Official live record as published",
 };
+
+type Claim = NonNullable<AskResponse["claims"]>[number];
+
+export function getClaimSupportState(response: AskResponse, claim: Claim): SupportState {
+  if (response.validation?.accepted === false) return "unknown";
+  if (claim.trust?.critical_field_preservation === "failed") return "unknown";
+
+  const kind = claim.publication?.kind;
+  if (kind === "structured_reviewed") {
+    return response.response_mode === "conflict" ? "conflict" : "structured_reviewed";
+  }
+  if (kind === "official_live_typed") return "official_live_typed";
+  if (kind === "official_quote_only") return "official_quote_only";
+  if (kind === "source_linked_explanation") return "source_linked_explanation";
+  if (kind === "general_background") return "background";
+  if (kind === "unsupported") return "unknown";
+
+  // Compatibility for older responses that predate publication authority.
+  if (response.response_mode === "conflict") return "conflict";
+  if (claim.evidence_status === "verified_corpus" && (claim.supports?.length ?? 0) > 0) {
+    return "supported";
+  }
+  if (claim.evidence_status === "general_background") return "background";
+  return "unknown";
+}
+
+export function getClaimSupportLabel(response: AskResponse, claim: Claim): string {
+  return SUPPORT_LABELS[getClaimSupportState(response, claim)];
+}
+
+function publicationBanner(response: AskResponse): Pick<
+  StatusBannerView,
+  "headline" | "detail" | "freshness_label"
+> | undefined {
+  const states = (response.claims ?? []).map((claim) => getClaimSupportState(response, claim));
+  if (states.length === 0) return undefined;
+  const hasReviewed = states.some((state) =>
+    state === "structured_reviewed" || state === "official_live_typed" || state === "supported"
+  );
+  const hasQuoteOnly = states.includes("official_quote_only");
+  const hasSourceLinked = states.includes("source_linked_explanation");
+  const hasUnknown = states.includes("unknown");
+
+  if (hasQuoteOnly && hasReviewed) {
+    return {
+      headline: "Reviewed claims plus source wording",
+      detail: "Reviewed structured claims and extraction-only source wording are labelled separately.",
+      freshness_label: "Stable guidance and source wording",
+    };
+  }
+  if (hasQuoteOnly && states.every((state) => state === "official_quote_only")) {
+    return {
+      headline: "Official wording from a source",
+      detail: "FireLens is showing an exact source quotation. It has not been approved as a structured FireLens claim.",
+      freshness_label: "Stable source wording",
+    };
+  }
+  if (hasQuoteOnly) {
+    return {
+      headline: "Source wording with unreviewed content",
+      detail: "Exact source wording and content without structured FireLens approval are labelled separately.",
+      freshness_label: "Source wording and unresolved content",
+    };
+  }
+  if (hasSourceLinked) {
+    return {
+      headline: hasReviewed ? "Reviewed claims plus a source-linked explanation" : "Source-linked explanation",
+      detail: hasReviewed
+        ? "Reviewed structured claims and a source-linked explanation are labelled separately."
+        : "This explanation links to source material but is not a reviewed structured FireLens claim.",
+      freshness_label: hasReviewed ? "Stable guidance and linked source material" : "Linked source material",
+    };
+  }
+  if (hasUnknown) {
+    return {
+      headline: hasReviewed ? "Reviewed claims with unresolved content" : "Support not established",
+      detail: hasReviewed
+        ? "Reviewed claims and content not established from FireLens sources are labelled separately."
+        : "FireLens did not establish this content from its reviewed or official sources.",
+      freshness_label: hasReviewed ? "Stable guidance with unresolved content" : "Freshness unknown",
+    };
+  }
+  return undefined;
+}
 
 function clip(text: string, limit = 200): string {
   const stripped = text.trim();
@@ -144,11 +244,29 @@ function bannerDetail(response: AskResponse): string {
 export function getStatusBanner(response: AskResponse | undefined): StatusBannerView | undefined {
   if (!response) return undefined;
   const api = response.status_banner;
+  if (response.validation?.accepted === false) {
+    const official = api?.official_escalation_title && api.official_escalation_url
+      ? { title: api.official_escalation_title, url: api.official_escalation_url }
+      : escalation(response);
+    const retrieved = response.live_results?.map((item) => item.retrieved_at).filter(Boolean).sort().at(-1);
+    const updated = response.live_results?.map((item) => item.source_updated_at).filter(Boolean).sort().at(-1);
+    return {
+      headline: "Support not established",
+      detail: "FireLens did not establish or validate support for this response.",
+      freshness_label: "Freshness not established",
+      availability_label: "This request did not complete with established sources.",
+      retrieval_completed_at: retrieved ?? null,
+      source_updated_at: updated ?? null,
+      official_escalation_title: official.title ?? null,
+      official_escalation_url: official.url ?? null,
+    };
+  }
+  const authority = publicationBanner(response);
   if (api?.headline && api.detail) {
     return {
-      headline: api.headline,
-      detail: api.detail,
-      freshness_label: api.freshness_label,
+      headline: authority?.headline ?? api.headline,
+      detail: authority?.detail ?? api.detail,
+      freshness_label: authority?.freshness_label ?? api.freshness_label,
       availability_label: api.availability_label,
       retrieval_completed_at: api.retrieval_completed_at ?? null,
       source_updated_at: api.source_updated_at ?? null,
@@ -166,9 +284,9 @@ export function getStatusBanner(response: AskResponse | undefined): StatusBanner
   const retrieved = response.live_results?.map((item) => item.retrieved_at).filter(Boolean).sort().at(-1);
   const updated = response.live_results?.map((item) => item.source_updated_at).filter(Boolean).sort().at(-1);
   return {
-    headline,
-    detail: bannerDetail(response),
-    freshness_label: freshness,
+    headline: authority?.headline ?? headline,
+    detail: authority?.detail ?? bannerDetail(response),
+    freshness_label: authority?.freshness_label ?? freshness,
     availability_label: availabilityLabel(response),
     retrieval_completed_at: retrieved ?? null,
     source_updated_at: updated ?? null,
@@ -182,7 +300,7 @@ export function getSupportChecklist(response: AskResponse | undefined): {
   unknown: string[];
 } {
   if (!response) return { supported: [], unknown: [] };
-  if ((response.supported_items?.length ?? 0) > 0 || (response.unknown_items?.length ?? 0) > 0) {
+  if ((response.claims?.length ?? 0) === 0 && ((response.supported_items?.length ?? 0) > 0 || (response.unknown_items?.length ?? 0) > 0)) {
     return {
       supported: response.supported_items ?? [],
       unknown: response.unknown_items ?? [],
@@ -191,13 +309,14 @@ export function getSupportChecklist(response: AskResponse | undefined): {
   const supported = [
     ...(response.claims ?? [])
       .filter((claim) => {
-        const kind = claim.publication?.kind;
-        return kind === "structured_reviewed" || kind === "official_live_typed";
+        const state = getClaimSupportState(response, claim);
+        return state === "structured_reviewed" || state === "official_live_typed" || state === "supported";
       })
       .map((claim) => clip(claim.text)),
     ...(response.live_results ?? []).map((result) => clip(`${resultName(result)} (${result.kind})`)),
   ];
   const unknown = [
+    ...(response.unknown_items ?? []).map((item) => clip(item)).filter(Boolean),
     ...(response.limitations ?? []).map((item) => clip(item)).filter(Boolean),
     ...(response.unavailable_layers ?? []).map((kind) => `Official ${kind} layer unavailable this turn`),
   ];
@@ -206,27 +325,38 @@ export function getSupportChecklist(response: AskResponse | undefined): {
 
 export function getProofCards(response: AskResponse | undefined): ProofCardView[] {
   if (!response) return [];
+  const projectValidation = (card: ProofCardView) =>
+    response.validation?.accepted === false || card.support_state === "unknown"
+      ? unknownProofCard(card)
+      : card;
   if ((response.proof_cards?.length ?? 0) > 0) {
-    return response.proof_cards ?? [];
+    const claims = response.claims ?? [];
+    const claimsById = new Map(claims.map((claim) => [claim.claim_id, claim]));
+    const validCardIds = new Set(
+      claims.length > 0
+        ? claims.map((claim) => claim.claim_id)
+        : (response.live_results ?? []).map((result) => result.result_id),
+    );
+    return (response.proof_cards ?? []).filter((card) => validCardIds.has(card.claim_id)).map((card) => {
+      const claim = claimsById.get(card.claim_id);
+      if (!claim) return projectValidation(card);
+      const state = getClaimSupportState(response, claim);
+      return projectValidation({
+        ...card,
+        support_state: state,
+        support_label: SUPPORT_LABELS[state],
+        review_state: state === "official_quote_only"
+          ? "Source extraction only; no structured-claim review"
+          : card.review_state,
+        freshness: state === "official_quote_only" ? "Stable source wording" : card.freshness,
+      });
+    });
   }
   const evidenceById = new Map((response.evidence ?? []).map((item) => [item.evidence_id, item]));
   const fromClaims = (response.claims ?? []).map((claim) => {
     const support = claim.supports?.[0];
     const evidence = support ? evidenceById.get(support.evidence_id) : undefined;
-    const kind = claim.publication?.kind;
-    const state: SupportState = response.response_mode === "conflict"
-      ? "conflict"
-      : kind === "structured_reviewed"
-        ? "structured_reviewed"
-        : kind === "official_live_typed"
-          ? "official_live_typed"
-          : kind === "official_quote_only"
-            ? "official_quote_only"
-            : kind === "source_linked_explanation"
-              ? "source_linked_explanation"
-              : claim.evidence_status === "general_background"
-                ? "background"
-                : "unknown";
+    const state = getClaimSupportState(response, claim);
     const trust = claim.trust;
     return {
       claim_id: claim.claim_id,
@@ -237,7 +367,9 @@ export function getProofCards(response: AskResponse | undefined): ProofCardView[
       exact_passage: support?.quote ?? null,
       source_title: evidence?.title ?? null,
       source_revision: evidence?.locator ?? null,
-      review_state: trust?.human_review_state === "human_verified_repair" || evidence?.review_provenance === "human_verified_repair"
+      review_state: state === "official_quote_only"
+        ? "Source extraction only; no structured-claim review"
+        : trust?.human_review_state === "human_verified_repair" || evidence?.review_provenance === "human_verified_repair"
         ? "Human-verified source transcription"
         : evidence
           ? "Native reviewed text"
@@ -247,15 +379,17 @@ export function getProofCards(response: AskResponse | undefined): ProofCardView[
         : trust?.critical_field_preservation === "failed"
           ? "Critical-field check failed"
           : "Not applicable",
-      freshness: trust?.freshness === "stable_guidance" || !trust
+      freshness: state === "official_quote_only"
+        ? "Stable source wording"
+        : trust?.freshness === "stable_guidance" || !trust
         ? freshnessLabel(response)
         : String(trust.freshness),
       conflicts_or_unknowns: (response.limitations ?? []).slice(0, 4),
       official_url: evidence?.canonical_url ?? null,
     } satisfies ProofCardView;
   });
-  if (fromClaims.length > 0) return fromClaims;
-  return (response.live_results ?? []).map((result) => ({
+  if (fromClaims.length > 0) return fromClaims.map(projectValidation);
+  return (response.live_results ?? []).map((result) => projectValidation({
     claim_id: result.result_id,
     claim_text: resultName(result),
     support_state: "live_record" as const,

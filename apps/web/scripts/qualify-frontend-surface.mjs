@@ -1431,7 +1431,7 @@ async function keyboardJourney(browser, protocol, baseUrl) {
     await input.fill("surface:grounded");
     await input.press("Enter");
     checks.question_submitted_with_enter = true;
-    await waitForText(page, "Sources supporting this answer");
+    await waitForText(page, "Answer evidence and support");
     checks.grounded_answer_visible = true;
     const toggle = page.locator("button.source-toggle").first();
     let reached = false;
@@ -1865,10 +1865,13 @@ async function historyJourney(browser, protocol, baseUrl) {
     const input = page.getByLabel("Ask FireLens a question");
     await input.fill("surface:grounded");
     await input.press("Enter");
-    await waitForText(page, "Sources supporting this answer");
+    await waitForText(page, "Answer evidence and support");
     await input.fill("surface:background");
     await input.press("Enter");
-    await waitForText(page, "General background — no corpus evidence attached");
+    await waitForText(
+      page,
+      "This is labelled general background and has no reviewed source support attached.",
+    );
     checks.bounded_history_sent = routes.requestBodies[1]?.history?.length === 2;
     await page.getByLabel("Clear conversation history").click();
     await waitForText(page, "Select a fire or ask anything");

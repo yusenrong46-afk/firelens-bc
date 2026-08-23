@@ -201,6 +201,7 @@ class GroundedAnswerEngine:
         *,
         trace_id: str,
         force_partial: bool = False,
+        supported_aspects: Sequence[str] = (),
     ) -> GroundedOutcome:
         observations: list[GenerationObservation] = []
         repair_count = 0
@@ -210,7 +211,12 @@ class GroundedAnswerEngine:
         attempts = 0
 
         if packet_requires_structured(evidence_packet, question):
-            response = compile_high_risk_answer(question, evidence_packet, trace_id=trace_id)
+            response = compile_high_risk_answer(
+                question,
+                evidence_packet,
+                trace_id=trace_id,
+                supported_aspects=supported_aspects,
+            )
             if force_partial and response.response_mode == ResponseMode.GROUNDED:
                 response = response.model_copy(update={"response_mode": ResponseMode.PARTIAL})
             return self._outcome(

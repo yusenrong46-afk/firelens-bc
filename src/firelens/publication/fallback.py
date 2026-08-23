@@ -29,7 +29,7 @@ from firelens.publication_contracts import (
 OFFICIAL_SOURCE_URL = (
     "https://www2.gov.bc.ca/gov/content/safety/emergency-preparedness-response-recovery"
 )
-QUOTE_ONLY_LIMITATION = "Official wording — not paraphrased by FireLens."
+QUOTE_ONLY_LIMITATION = "Exact source wording — not a structured FireLens claim."
 UNCOVERED_LIMITATION = (
     "Some requested high-risk guidance has no reviewed structured claim. "
     "FireLens is showing official wording or a handoff, not an interpreted claim."
@@ -75,14 +75,14 @@ def quote_only_claim(
         claim_id=claim.claim_id,
         claim_text=claim.text,
         support_state="official_quote_only",
-        support_label="Official wording — not paraphrased",
+        support_label="Exact source wording — not a structured FireLens claim",
         authority=evidence.publisher,
         exact_passage=claim.supports[0].quote,
         source_title=evidence.title,
         source_revision=evidence.locator,
-        review_state="extraction_only",
+        review_state="Source extraction only; no structured-claim review",
         critical_fields_checked="Exact official wording, not a FireLens interpretation",
-        freshness="Stable reviewed guidance",
+        freshness="Stable source wording",
         official_url=evidence.canonical_url,
     )
     return claim, evidence, card

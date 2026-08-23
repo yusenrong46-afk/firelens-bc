@@ -16,6 +16,11 @@ from firelens.answering.intent_patterns import (
     _POLICY_MANIPULATION_PATTERNS,
     _PROHIBITED_PATTERNS,
 )
+from firelens.answering.intent_safety import (
+    TRUST_EXPLANATION_PATTERN,
+    is_empty_map_safety_inference,
+    trust_explanation_limitations,
+)
 from firelens.answering.location_intent import (
     asks_for_personal_location,
     coarse_location_from_question,
@@ -130,7 +135,6 @@ _EVACUATION_DEFINITION = re.compile(
     r"\b(?:mean|meaning|difference|versus|vs\.?)\b",
     re.IGNORECASE,
 )
-
 _STATIC_GUIDANCE_TERMS = (
     "prepare",
     "preparedness",
@@ -181,6 +185,7 @@ _CAPABILITY_PATTERNS = (
     r"\b(?:do you know anything|what do you know) about\b",
     r"\bwhat (?:parts|areas|aspects|kinds).{0,60}\bfirelens (?:explain|cover|answer)\b",
     r"\bhow do (?:your|firelens) citations work\b",
+    TRUST_EXPLANATION_PATTERN,
     r"\bwhat is (?:actually )?inside (?:the )?(?:source )?collection\b",
     r"\b(?:do not|don't) know what is in the collection\b",
     r"\b(?:where|how) should i start\b.{0,40}\b(?:firelens|collection|guidance)\b",
@@ -188,7 +193,6 @@ _CAPABILITY_PATTERNS = (
     # A context-free request this short cannot identify a safe retrieval target.
     r"^(?:what\s+now|then\s+what|help|help\s+me|where\s+do\s+i\s+start)[?!. ]*$",
 )
-
 
 _DEICTIC_FOLLOWUP = re.compile(
     r"\b(?:it|that|this|they|them|there|those|these|the (?:first|second|third|other) one|"
@@ -402,6 +406,17 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
         for fragment in request_fragments(original_question)
     ):
         layers.append(LiveResultKind.EVACUATION)
+    if is_empty_map_safety_inference(original_question):
+        # An empty fire map cannot establish evacuation status or personal safety.
+        # Fetch every owned official layer so the response can expose the whole
+        # bounded lookup and hand off to the issuing authority without an all-clear.
+        layers.extend(
+            (
+                LiveResultKind.INCIDENT,
+                LiveResultKind.PERIMETER,
+                LiveResultKind.EVACUATION,
+            )
+        )
     if (
         not layers
         and re.search(
@@ -548,7 +563,8 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
             original_question=question,
             normalized_question=processing_question,
             route=QueryRoute.CAPABILITY,
-            limitations=[STATIC_LIMITATION],
+            limitations=trust_explanation_limitations(processing_question)
+            or [STATIC_LIMITATION],
         )
     return QueryPlan(
         original_question=question,

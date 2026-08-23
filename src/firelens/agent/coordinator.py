@@ -201,6 +201,8 @@ class FireLensAgent:
             static_service=self.static_service,
             provider=provider if hasattr(provider, "chat_turn") else None,
         )
+        if response.response_mode == ResponseMode.LIVE:
+            route = QueryRoute.LIVE
         if not tools and response.live_results:
             tools = _live_tools(effective_request, response)
         return AgentExecution(response=response, route=route, tools=tools, policy=packet.policy)

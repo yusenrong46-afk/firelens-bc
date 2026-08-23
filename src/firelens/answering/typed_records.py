@@ -16,6 +16,7 @@ from firelens.contract_base import FrozenStrictModel
 RECORDS_RELATIVE = "data/typed_claims/high_risk_v1.yaml"
 ALLOWED_REVIEW_STATES = frozenset({"approved_static", "human_verified_repair"})
 _REPO_ROOT = Path(__file__).resolve().parents[3]
+ATOMIC_QUOTE_MIN_CHARS = 24
 
 
 class TypedClaimRecord(FrozenStrictModel):
@@ -104,14 +105,21 @@ def records_for_span(span_id: str, *, root: Path | None = None) -> list[TypedCla
     ]
 
 
+@lru_cache(maxsize=512)
+def _normalized_quote(text: str) -> str:
+    return " ".join(text.split()).casefold()
+
+
 def match_quote(quote: str, *, root: Path | None = None) -> list[TypedClaimRecord]:
     inventory = load_inventory(str(root) if root else None)
-    lowered = " ".join(quote.split()).casefold()
+    lowered = _normalized_quote(quote)
+    if len(lowered) < ATOMIC_QUOTE_MIN_CHARS:
+        return []
     matched: list[TypedClaimRecord] = []
     for record in inventory.records:
         if not record.production_supported():
             continue
-        span = " ".join(record.source_span_text.split()).casefold()
-        if span and (span in lowered or lowered in span):
+        span = _normalized_quote(record.source_span_text)
+        if len(span) >= ATOMIC_QUOTE_MIN_CHARS and (span in lowered or lowered in span):
             matched.append(record)
     return matched

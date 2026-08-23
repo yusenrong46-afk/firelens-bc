@@ -38,9 +38,27 @@ _CAPABILITY_REFUSAL = re.compile(
     r"i (?:wasn't|was not) trained (?:for|on) that)\b",
     re.IGNORECASE,
 )
-_KILOMETRE = re.compile(r"\b(\d+(?:\.\d+)?)\s*km\b", re.IGNORECASE)
+_DISTANCE_VALUE = r"\d+(?:\.\d+)?"
+_KILOMETRE_UNIT = r"(?:km|kilomet(?:er|re)s?)"
+_KILOMETRE = re.compile(rf"\b(?P<value>{_DISTANCE_VALUE})\s*{_KILOMETRE_UNIT}\b", re.IGNORECASE)
 _RADIUS_KM = re.compile(
-    r"\b\d+(?:\.\d+)?\s*km\s+radius\b|\bradius(?:_km)?(?:\s+(?:of|is|=|:))?\s*\d+(?:\.\d+)?\s*km\b",
+    rf"\b{_DISTANCE_VALUE}\s*{_KILOMETRE_UNIT}\s+radius\b|"
+    rf"\bradius(?:_km)?(?:\s+(?:of|is|=|:))?\s*{_DISTANCE_VALUE}\s*{_KILOMETRE_UNIT}\b",
+    re.IGNORECASE,
+)
+_UNSUPPORTED_DISTANCE_UNIT = re.compile(
+    rf"\b{_DISTANCE_VALUE}\s*(?:miles?|mi|met(?:er|re)s?)\b",
+    re.IGNORECASE,
+)
+_NUMBER_WORD_DISTANCE = re.compile(
+    r"\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|"
+    r"eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|"
+    r"eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|"
+    r"eighty|ninety|hundred|thousand)(?:[ -](?:one|two|three|four|five|"
+    r"six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|"
+    r"sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|"
+    r"sixty|seventy|eighty|ninety|hundred|thousand))*\s+"
+    r"(?:km|kilomet(?:er|re)s?|miles?|mi|met(?:er|re)s?)\b",
     re.IGNORECASE,
 )
 _OFFICIAL_HANDOFF = re.compile(
@@ -81,14 +99,16 @@ def output_rail_errors(answer: str, packet: AgentPacket) -> list[str]:
         errors.append("unfetched_live_feed")
     if _CAPABILITY_REFUSAL.search(answer):
         errors.append("capability_refusal")
-    allowed_km = {
-        round(item.distance_km, 1)
-        for item in packet.live_results
-        if item.distance_km is not None
-    }
     screened_km = _RADIUS_KM.sub(" ", answer)
+    if _NUMBER_WORD_DISTANCE.search(screened_km):
+        errors.append("number_word_distance")
+    if _UNSUPPORTED_DISTANCE_UNIT.search(screened_km):
+        errors.append("unsupported_distance_unit")
+    allowed_km = tuple(
+        item.distance_km for item in packet.live_results if item.distance_km is not None
+    )
     for match in _KILOMETRE.finditer(screened_km):
-        value = round(float(match.group(1)), 1)
+        value = float(match.group("value"))
         if not any(abs(value - allowed) <= 0.1 for allowed in allowed_km):
             errors.append("invented_kilometre")
             break

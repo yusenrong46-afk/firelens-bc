@@ -3,6 +3,10 @@
 Status: current architecture authority for Ask, trust, packaging, and proof UX.
 Date: 2026-08-17
 
+The RC2 label names the current hardening and qualification campaign. The
+public package, runtime, and OpenAPI identity remains `1.6.0-rc.1` until a
+separately authorized version change; evidence must record that actual identity.
+
 This document replaces the V1.5 technical handbook for runtime Ask behaviour.
 `docs/TECHNICAL_HANDBOOK.md` is historical (2026-07-30). Qualification evidence
 is still separate from architecture.
@@ -86,6 +90,15 @@ Visible development benchmarks are not independent proof.
   fields. Models do not own trust, freshness, authority, or time.
 - Remaining corpus coverage is a human-review debt. Most high-risk spans
   are still checker-gated rather than inventory-rendered.
+- High-risk structured publication is deterministic and has zero generation.
+  An eligible lower-risk ready packet may use one bounded generation only after
+  deterministic validation. Uncovered high-risk material remains an exact-source
+  quote-only, partial, or handoff response; it is not a reviewed structured
+  claim.
+- The permanent hard-probe dataset remains immutable. The named, hash-bound
+  `rc2` expectation profile records ten safer response-mode migrations while
+  preserving the historical questions, case count, and `86/105` floor. The
+  effective expectation hash and exact Git identity travel with report v2.
 
 ## Failures, ops, packaging
 
@@ -103,7 +116,12 @@ auto-publishes.
 
 Additive Ask fields: `status_banner`, `supported_items`, `unknown_items`,
 `proof_cards`. Tile failure must not remove official record lists. Trust is
-labelled in text, not colour alone.
+labelled in text, not colour alone. Presentation is a projection of
+`publication.kind`: reviewed structured claims and extraction-only source
+wording are labelled independently, including in mixed answers. Extraction-only
+source wording is never strengthened by a legacy status banner. Rejected
+validation forces an unknown presentation even when an older response supplies
+no claims and carries stale strengthening banner copy.
 
 ## Module sizes and exceptions
 

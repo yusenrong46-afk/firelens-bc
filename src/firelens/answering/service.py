@@ -746,6 +746,7 @@ class StaticRAGService:
             observer,
             trace_id=trace_id,
             force_partial=search.support.status == SupportStatus.PARTIAL,
+            supported_aspects=search.support.supported_aspects,
         )
         return await self._record_ask(
             request,

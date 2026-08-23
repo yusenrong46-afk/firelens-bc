@@ -1,6 +1,26 @@
 # Changelog
 
-## Unreleased — V1.1 conversational RC
+## Unreleased — V1.6 RC2
+
+### Changed
+
+- Hardened evidence identity, relevance selection, distance rails, and the
+  atomic quote floor for structured publication.
+- Made public support presentation a per-item projection of publication kind:
+  reviewed structured claims and extraction-only source wording are labelled
+  independently.
+- Bound candidate evidence and current documentation to the exact candidate
+  commit, tree, and matching CI artifact. RC1 reports remain historical
+  snapshots.
+- Versioned the ten safer RC2 hard-probe response-mode migrations as a named,
+  hash-bound expectation profile without changing the historical dataset or
+  lowering its `86/105` floor.
+- Rebuilt the README as a reader-first explanation of the product, authority
+  boundary, V1.6 work, verification limits, and contributor entry points.
+- Made rejected validation downgrade public presentation even for no-claim
+  responses carrying stale strengthening banner copy.
+
+## Historical — V1.1 conversational RC
 
 ### Added
 

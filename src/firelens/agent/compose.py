@@ -6,12 +6,14 @@ from typing import Any
 from uuid import uuid4
 
 from firelens.agent.packet import AgentPacket
+from firelens.answering.intent import live_layers_for_question
 from firelens.answering.live_composition import supported_static_when_live_missing
 from firelens.answering.live_request_intent import (
     is_distance_request,
     is_selected_live_request,
     is_unsupported_selected_request,
 )
+from firelens.answering.live_response_support import empty_live_response
 from firelens.contracts import (
     AggregateFreshness,
     AnswerSection,
@@ -227,6 +229,13 @@ def _build_ask_response(
             return _unresolved_place_response(request)
         if "out_of_province_place" in packet.unknown_topics:
             return _out_of_province_response(packet)
+        requested_layers = live_layers_for_question(request.question)
+        if requested_layers:
+            return empty_live_response(
+                requested_layers=requested_layers,
+                unavailable_layers=packet.unavailable_layers,
+                resolved_location=packet.resolved_location,
+            )
     if is_unsupported_selected_request(request) and live:
         selected_id = request.context.selected_live_result_id
         selected = next((item for item in live if item.result_id == selected_id), None)
