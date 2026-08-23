@@ -1242,10 +1242,64 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("2026-08-15", execution.response.answer or "")
 
     def test_kilometre_rail_allows_radius_phrasing(self) -> None:
+        for answer in (
+            "Search used a 50 km radius around the community.",
+            "Search used a 50 kilometres radius around the community.",
+            "Search used a 50 kilometer radius around the community.",
+        ):
+            with self.subTest(answer=answer):
+                errors = output_rail_errors(answer, AgentPacket())
+                self.assertNotIn("invented_kilometre", errors)
+
+    def test_distance_rail_accepts_packet_owned_kilometre_aliases(self) -> None:
+        packet = AgentPacket(
+            live_results=[
+                _fire(result_id="incident:7").model_copy(
+                    update={"distance_km": 12.0, "distance_basis": "incident_point"}
+                )
+            ]
+        )
+
+        for answer in (
+            "The official record is 12 km away.",
+            "The official record is 12 kilometre away.",
+            "The official record is 12 kilometres away.",
+            "The official record is 12 kilometer away.",
+            "The official record is 12 kilometers away.",
+        ):
+            with self.subTest(answer=answer):
+                errors = output_rail_errors(answer, packet)
+                self.assertNotIn("invented_kilometre", errors)
+                self.assertNotIn("unsupported_distance_unit", errors)
+
+    def test_distance_rail_rejects_unowned_or_converted_distances(self) -> None:
+        packet = AgentPacket(
+            live_results=[
+                _fire(result_id="incident:7").model_copy(
+                    update={"distance_km": 12.0, "distance_basis": "incident_point"}
+                )
+            ]
+        )
+
+        for answer, error in (
+            ("The official record is 13 kilometres away.", "invented_kilometre"),
+            ("The official record is 7 miles away.", "unsupported_distance_unit"),
+            ("The official record is 7 mi away.", "unsupported_distance_unit"),
+            ("The official record is 700 metres away.", "unsupported_distance_unit"),
+            ("The official record is 700 meters away.", "unsupported_distance_unit"),
+            ("The official record is seven miles away.", "number_word_distance"),
+            ("The official record is twelve kilometres away.", "number_word_distance"),
+        ):
+            with self.subTest(answer=answer):
+                self.assertIn(error, output_rail_errors(answer, packet))
+
+    def test_distance_rail_ignores_unit_mentions_without_distance_assertion(self) -> None:
         errors = output_rail_errors(
-            "Search used a 50 km radius around the community.", AgentPacket()
+            "The source uses kilometre, mile, metre, and meter units.", AgentPacket()
         )
         self.assertNotIn("invented_kilometre", errors)
+        self.assertNotIn("unsupported_distance_unit", errors)
+        self.assertNotIn("number_word_distance", errors)
 
     def test_unfetched_feed_rail_vetoes_aqhi_claims(self) -> None:
         errors = output_rail_errors("The AQHI is 3 in Kelowna.", AgentPacket())

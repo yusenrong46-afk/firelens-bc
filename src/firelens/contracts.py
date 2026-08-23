@@ -17,6 +17,7 @@ from firelens.assistant_history import bounded_assistant_history as bounded_assi
 from firelens.assistant_history import render_assistant_history as render_assistant_history
 from firelens.claim_trust import ClaimTrust
 from firelens.contract_base import FrozenStrictModel, StrictModel
+from firelens.evidence_packet_identity import validate_evidence_packet_identity
 from firelens.live_contracts import (
     AggregateFreshness as AggregateFreshness,
 )
@@ -392,6 +393,11 @@ class EvidencePacket(FrozenStrictModel):
     quote_candidates: list[EvidenceQuoteCandidate] = Field(default_factory=list)
     conflicts: list[EvidenceConflict] = Field(default_factory=list, max_length=3)
     limitations: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_packet_identity(self) -> EvidencePacket:
+        validate_evidence_packet_identity(self)
+        return self
 
 
 class SupportDecision(FrozenStrictModel):
