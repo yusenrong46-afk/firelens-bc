@@ -399,9 +399,11 @@ class CountingMapService(FixedLiveService):
         self.map_calls = 0
         self.nearby_calls = 0
         self.resolve_calls = 0
+        self.map_layer_requests: list[tuple[LiveResultKind, ...] | None] = []
 
     async def map_results(self, *args: Any, **kwargs: Any) -> LiveMapResponse:
         self.map_calls += 1
+        self.map_layer_requests.append(kwargs.get("layers"))
         return await super().map_results(*args, **kwargs)
 
     async def nearby_page(self, location: Any, *args: Any, **kwargs: Any) -> Any:
@@ -510,6 +512,66 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("capability", (execution.response.answer or "").casefold())
         self.assertEqual(execution.response.live_results[0].name, "Mountain Fire")
 
+    async def test_where_is_named_fire_in_kelowna_uses_stated_community(self) -> None:
+        live = FixedLiveService(
+            [
+                _fire(result_id="incident:7", name="Mountain Fire"),
+                _fire(result_id="incident:8", name="Unrelated Ridge Fire"),
+            ]
+        )
+        agent = FireLensAgent(
+            cast(Any, SilentStatic()),
+            LiveAnswerCoordinator(cast(Any, live)),
+        )
+
+        execution = await agent.answer(
+            QueryRequest(question="where is the moutain fire in kelowna ?")
+        )
+
+        self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
+        self.assertEqual(getattr(live.requested_location, "label", None), "kelowna")
+        self.assertIsNotNone(execution.response.resolved_location)
+        self.assertIn("Mountain Fire", execution.response.answer or "")
+        self.assertNotIn("Unrelated Ridge Fire", execution.response.answer or "")
+        self.assertEqual(
+            [item.name for item in execution.response.live_results], ["Mountain Fire"]
+        )
+        self.assertFalse(execution.response.required_input)
+
+    async def test_named_fire_miss_does_not_substitute_an_unrelated_nearby_record(
+        self,
+    ) -> None:
+        agent = _agent([_fire(result_id="incident:8", name="Unrelated Ridge Fire")])
+
+        execution = await agent.answer(
+            QueryRequest(question="where is Mountain Fire in Kelowna?")
+        )
+
+        self.assertFalse(execution.response.live_results)
+        self.assertIn("No fetched official record matched", execution.response.answer or "")
+        self.assertNotIn("Unrelated Ridge Fire", execution.response.answer or "")
+        rebuilt = AskResponse.model_validate(execution.response.model_dump(mode="python"))
+        self.assertIn("No fetched official record matched", rebuilt.history_text or "")
+
+    async def test_contracted_named_fire_question_keeps_no_substitution_boundary(
+        self,
+    ) -> None:
+        agent = _agent(
+            [
+                _fire(result_id="incident:7", name="Mountain Fire"),
+                _fire(result_id="incident:8", name="Unrelated Ridge Fire"),
+            ]
+        )
+
+        execution = await agent.answer(
+            QueryRequest(question="where's Mountain Fire in Kelowna?")
+        )
+
+        self.assertEqual(
+            [item.name for item in execution.response.live_results], ["Mountain Fire"]
+        )
+        self.assertNotIn("Unrelated Ridge Fire", execution.response.answer or "")
+
     async def test_max_hectares_uses_official_size_field(self) -> None:
         agent = _agent(
             [
@@ -562,8 +624,21 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
                 _fire(
                     result_id="incident:2",
                     name="Ridge Fire",
+                    fire_centre="Kamloops",
+                    status="Being Held",
+                ),
+                _fire(
+                    result_id="incident:3",
+                    name="Peak Fire",
                     fire_centre="Southeast",
                     status="Being Held",
+                ),
+                _fire(
+                    result_id="perimeter:1",
+                    name="Lake Fire perimeter",
+                    fire_centre="Phantom",
+                    status="Perimeter-only status",
+                    kind=LiveResultKind.PERIMETER,
                 ),
             ]
         )
@@ -573,9 +648,97 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
         answer = execution.response.answer or ""
         self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
-        self.assertIn("Kamloops", answer)
-        self.assertIn("Southeast", answer)
+        self.assertIn("Kamloops=2", answer)
+        self.assertIn("Southeast=1", answer)
+        self.assertIn("Highest count", answer)
         self.assertNotIn("Phantom", answer)
+        self.assertNotIn("Perimeter-only status", answer)
+
+    async def test_area_ranking_uses_province_wide_official_fire_centres(self) -> None:
+        live = CountingMapService(
+            [
+                _fire(result_id="incident:1", fire_centre="Kamloops"),
+                _fire(result_id="incident:2", fire_centre="Kamloops"),
+                _fire(result_id="incident:3", fire_centre="Coastal"),
+            ]
+        )
+        agent = FireLensAgent(
+            cast(Any, SilentStatic()),
+            LiveAnswerCoordinator(cast(Any, live)),
+        )
+
+        execution = await agent.answer(
+            QueryRequest(question="which areas of BC have the most wildfires?")
+        )
+
+        self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
+        self.assertEqual(live.map_calls, 1)
+        self.assertEqual(live.nearby_calls, 0)
+        self.assertEqual(
+            live.map_layer_requests,
+            [(LiveResultKind.INCIDENT,)],
+        )
+        self.assertIn("Kamloops=2", execution.response.answer or "")
+        self.assertIsNone(execution.response.required_input)
+
+        where_most = await agent.answer(
+            QueryRequest(question="Where are most wildfires in BC?")
+        )
+        self.assertEqual(where_most.response.response_mode, ResponseMode.LIVE)
+        self.assertIn("Kamloops=2", where_most.response.answer or "")
+        self.assertIn("Coastal=1", where_most.response.answer or "")
+
+    async def test_per_centre_counts_and_singular_centre_ranking_share_distribution(
+        self,
+    ) -> None:
+        records = [
+            _fire(result_id="incident:1", fire_centre="Kamloops"),
+            _fire(result_id="incident:2", fire_centre="Kamloops"),
+            _fire(result_id="incident:3", fire_centre="Coastal"),
+        ]
+        execution = await _agent(records).answer(
+            QueryRequest(question="how many wildfires are in each fire centre?")
+        )
+        self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
+        self.assertIn("Kamloops=2", execution.response.answer or "")
+        self.assertIn("Coastal=1", execution.response.answer or "")
+
+        ranking = await _agent(records).answer(
+            QueryRequest(question="which fire centre has the most wildfires?")
+        )
+        self.assertEqual(ranking.response.response_mode, ResponseMode.LIVE)
+        self.assertIn("Kamloops", ranking.response.answer or "")
+        self.assertIn("with 2", ranking.response.answer or "")
+
+        tied = await _agent(
+            [
+                _fire(result_id="incident:4", fire_centre="Coastal"),
+                _fire(result_id="incident:5", fire_centre="Kamloops"),
+            ]
+        ).answer(QueryRequest(question="which fire centre has the most wildfires?"))
+        self.assertIn("Coastal, Kamloops are tied", tied.response.answer or "")
+        self.assertIn("with 1 each", tied.response.answer or "")
+
+    async def test_largest_wildfire_by_hectares_uses_full_bc_map(self) -> None:
+        live = CountingMapService(
+            [
+                _fire(result_id="incident:1", name="Small Fire", size_hectares=12),
+                _fire(result_id="incident:2", name="Large Fire", size_hectares=840),
+            ]
+        )
+        agent = FireLensAgent(
+            cast(Any, SilentStatic()),
+            LiveAnswerCoordinator(cast(Any, live)),
+        )
+
+        execution = await agent.answer(
+            QueryRequest(question="largest wildfire in BC by hectares")
+        )
+
+        self.assertEqual(live.map_calls, 1)
+        self.assertEqual(live.nearby_calls, 0)
+        self.assertIn("Large Fire", execution.response.answer or "")
+        self.assertIn("840", execution.response.answer or "")
 
     async def test_kit_question_uses_reviewed_guidance(self) -> None:
         agent = _agent([], static=KitStatic())
@@ -1312,6 +1475,29 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             AgentPacket(unknown_topics=["air quality"]),
         )
         self.assertNotIn("unfetched_live_feed", errors)
+
+    def test_fire_name_rail_distinguishes_official_centre_labels(self) -> None:
+        packet = AgentPacket(
+            live_results=[
+                _fire(
+                    result_id="incident:7",
+                    name="Mountain Fire",
+                    fire_centre="Coastal Fire Centre",
+                )
+            ]
+        )
+
+        centre_errors = output_rail_errors(
+            "Coastal Fire Centre has the most fetched official records.",
+            packet,
+        )
+        invented_errors = output_rail_errors(
+            "Cedar Ridge Fire has the most fetched official records.",
+            packet,
+        )
+
+        self.assertNotIn("unfetched_fire_name", centre_errors)
+        self.assertIn("unfetched_fire_name", invented_errors)
 
     async def test_out_of_province_live_ask_redirects_without_bc_rows(self) -> None:
         for question in (

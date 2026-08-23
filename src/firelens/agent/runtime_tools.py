@@ -13,7 +13,11 @@ from firelens.answering.intent import (
     static_guidance_fragment,
     unsupported_live_topics,
 )
-from firelens.answering.live_analysis import annotate_live_results
+from firelens.answering.live_analysis import (
+    annotate_live_results,
+    extracted_located_fire_name,
+    filter_requested_named_fire_results,
+)
 from firelens.answering.location_intent import (
     coarse_location_from_question,
     is_national_scope_question,
@@ -48,11 +52,19 @@ async def execute_tool(
         return json.dumps({"error": "duplicate_tool_dispatch"})
     packet.tool_fingerprints.append(fingerprint)
     if name == AgentTool.LIST_OFFICIAL_FIRES.value:
+        requested_layers = live_layers_for_question(request.question)
+        fire_layers = tuple(
+            layer
+            for layer in requested_layers
+            if layer in {LiveResultKind.INCIDENT, LiveResultKind.PERIMETER}
+        )
+        if not fire_layers:
+            fire_layers = (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER)
         results, resolved, roster_total = await _fetch_layers(
             live_service,
             request,
             arguments.get("place_label"),
-            (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER),
+            fire_layers,
             packet,
         )
         _extend_unique(packet, results)
@@ -208,7 +220,15 @@ async def _fetch_layers(
             roster_total = getattr(getattr(page, "pagination", None), "total_results", None)
             if roster_total is None:
                 roster_total = len(page.results)
-            return annotate_live_results(list(page.results), resolved), resolved, roster_total
+            annotated = annotate_live_results(list(page.results), resolved)
+            filtered = filter_requested_named_fire_results(request, annotated)
+            if extracted_located_fire_name(request.question) is not None and not filtered:
+                _note_topic(packet, "named_fire_not_found")
+            return (
+                filtered,
+                resolved,
+                roster_total,
+            )
         mapped = await live_service.map_results(layers=layers)
         resolved_location = _annotation_location(request, None)
         resolved = (
@@ -216,11 +236,11 @@ async def _fetch_layers(
             if resolved_location is not None
             else None
         )
-        return (
-            annotate_live_results(list(mapped.results), resolved),
-            resolved,
-            len(mapped.results),
-        )
+        annotated = annotate_live_results(list(mapped.results), resolved)
+        filtered = filter_requested_named_fire_results(request, annotated)
+        if extracted_located_fire_name(request.question) is not None and not filtered:
+            _note_topic(packet, "named_fire_not_found")
+        return filtered, resolved, len(mapped.results)
     except LiveDataUnavailable as exc:
         if exc.kind == LiveDataErrorKind.NOT_FOUND:
             # The place label did not resolve to a BC community. The layers

@@ -21,6 +21,10 @@ from firelens.answering.intent_safety import (
     is_empty_map_safety_inference,
     trust_explanation_limitations,
 )
+from firelens.answering.live_record_intent import (
+    is_fire_geography_analysis,
+    is_fire_record_analysis,
+)
 from firelens.answering.location_intent import (
     asks_for_personal_location,
     coarse_location_from_question,
@@ -358,7 +362,12 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
     perimeter_requested = bool(re.search(r"\bperimeters?\b", lowered))
     incident_requested = bool(re.search(r"\bincidents?\b", lowered))
     perimeter_only_phrase = bool(re.search(r"\b(?:fire|wildfire)\s+perimeters?\b", lowered))
-    if perimeter_requested and not incident_requested and perimeter_only_phrase:
+    if is_fire_geography_analysis(question):
+        # Fire-centre geography is an incident-layer field. Pulling perimeter
+        # polygons here duplicates fires, inflates status totals, and sends the
+        # browser records that cannot contribute to this analysis.
+        layers.append(LiveResultKind.INCIDENT)
+    elif perimeter_requested and not incident_requested and perimeter_only_phrase:
         layers.append(LiveResultKind.PERIMETER)
     elif perimeter_requested and not fire_status_requested:
         if incident_requested:
@@ -419,10 +428,7 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
         )
     if (
         not layers
-        and re.search(
-            r"\b(?:distribution|geography|hectares?|largest|oldest)\b",
-            lowered,
-        )
+        and (is_fire_geography_analysis(question) or is_fire_record_analysis(question))
         and re.search(
             r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?)\b",
             lowered,
@@ -501,6 +507,8 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
         re.search(pattern, text) for text in safety_texts for pattern in _PROHIBITED_PATTERNS
     )
     live = any(re.search(pattern, text) for text in routing_texts for pattern in _LIVE_PATTERNS)
+    live = live or is_fire_geography_analysis(processing_question)
+    live = live or is_fire_record_analysis(processing_question)
     live = live or bool(unsupported_live_topics(processing_question))
     named_location = coarse_location_from_question(processing_question)
     named_live_command = named_location is not None and bool(

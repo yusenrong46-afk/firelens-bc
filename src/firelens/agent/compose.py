@@ -231,11 +231,38 @@ def _build_ask_response(
             return _out_of_province_response(packet)
         requested_layers = live_layers_for_question(request.question)
         if requested_layers:
-            return empty_live_response(
+            empty = empty_live_response(
                 requested_layers=requested_layers,
                 unavailable_layers=packet.unavailable_layers,
                 resolved_location=packet.resolved_location,
             )
+            if "named_fire_not_found" in packet.unknown_topics:
+                specific = (
+                    answer
+                    + " No unrelated nearby record was substituted. This is not an all-clear."
+                )
+                sections = list(empty.answer_sections)
+                if sections:
+                    sections[0] = sections[0].model_copy(update={"text": specific})
+                handoff = sections[1].text if len(sections) > 1 else ""
+                return AskResponse.model_validate(
+                    empty.model_copy(
+                        update={
+                            "answer": specific
+                            + (
+                                f"\n\nRelated official information: {handoff}"
+                                if handoff
+                                else ""
+                            ),
+                            "answer_sections": sections,
+                            # The contract derives bounded history from the public
+                            # answer. Clear the prior empty-result rendering whenever
+                            # the named-fire wording changes.
+                            "history_text": None,
+                        }
+                    ).model_dump(mode="python")
+                )
+            return empty
     if is_unsupported_selected_request(request) and live:
         selected_id = request.context.selected_live_result_id
         selected = next((item for item in live if item.result_id == selected_id), None)

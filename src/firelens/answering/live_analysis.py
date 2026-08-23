@@ -6,6 +6,7 @@ import re
 from collections import Counter
 from collections.abc import Sequence
 
+from firelens.answering.live_record_intent import is_fire_geography_analysis
 from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import (
     CoarseResolvedLocation,
@@ -55,6 +56,15 @@ _HEDGE = re.compile(
     re.IGNORECASE,
 )
 _PRECISE_COORD = re.compile(r"\b-?\d{1,3}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}\b")
+_LOCATED_NAMED_FIRE = re.compile(
+    r"\bwhere(?:\s+is|['’]s)\s+(?:the\s+)?"
+    r"(?P<name>[A-Za-z0-9'’.-]+(?:\s+[A-Za-z0-9'’.-]+){0,5}?)\s+"
+    r"(?:fire|wildfire)\s+(?:near|around|by|in|within)\b",
+    re.IGNORECASE,
+)
+_GENERIC_LOCATED_NAMES = frozenset(
+    {"a", "active", "any", "closest", "current", "local", "nearest", "the"}
+)
 
 
 def official_information_prefix(records: Sequence[LiveResult]) -> str:
@@ -142,6 +152,83 @@ def record_matches_name(result: LiveResult, queried: str) -> bool:
     return False
 
 
+def extracted_located_fire_name(question: str) -> str | None:
+    """Extract a specifically named fire from a where-in-place question."""
+
+    match = _LOCATED_NAMED_FIRE.search(question)
+    if match is None:
+        return None
+    base = " ".join(match.group("name").split()).strip(" ?.!'\"")
+    if not base or base.casefold().split()[0] in _GENERIC_LOCATED_NAMES:
+        return None
+    return f"{base} Fire"
+
+
+def _normalized_record_name(value: str) -> str:
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", value.casefold()).split())
+
+
+def _is_single_typo(first: str, second: str) -> bool:
+    """Accept one edit or adjacent transposition, never general fuzzy similarity."""
+
+    if first == second or abs(len(first) - len(second)) > 1 or min(len(first), len(second)) < 6:
+        return False
+    if len(first) == len(second):
+        different = [
+            index
+            for index, pair in enumerate(zip(first, second, strict=True))
+            if pair[0] != pair[1]
+        ]
+        if len(different) == 1:
+            return True
+        return bool(
+            len(different) == 2
+            and different[1] == different[0] + 1
+            and first[different[0]] == second[different[1]]
+            and first[different[1]] == second[different[0]]
+        )
+    shorter, longer = (first, second) if len(first) < len(second) else (second, first)
+    for index in range(len(longer)):
+        if longer[:index] + longer[index + 1 :] == shorter:
+            return True
+    return False
+
+
+def filter_requested_named_fire_results(
+    request: QueryRequest, records: Sequence[LiveResult]
+) -> list[LiveResult]:
+    """Keep unrelated nearby records out of a specifically named-fire response."""
+
+    queried = extracted_located_fire_name(request.question)
+    if queried is None:
+        return list(records)
+    normalized_query = _normalized_record_name(queried)
+    query_variants = {
+        normalized_query,
+        normalized_query.removesuffix(" fire").removesuffix(" wildfire"),
+    }
+    exact = [
+        item
+        for item in records
+        if _normalized_record_name(official_display_name(item)) in query_variants
+    ]
+    if exact:
+        return exact
+    typo_matches = [
+        item
+        for item in records
+        if any(
+            _is_single_typo(_normalized_record_name(official_display_name(item)), variant)
+            for variant in query_variants
+            if variant
+        )
+    ]
+    matched_names = {
+        _normalized_record_name(official_display_name(item)) for item in typo_matches
+    }
+    return typo_matches if len(matched_names) == 1 else []
+
+
 def official_analysis_answer(
     request: QueryRequest,
     records: Sequence[LiveResult],
@@ -152,6 +239,21 @@ def official_analysis_answer(
     """Return a thin post-fetch composer, or None when Luna may narrate the list."""
 
     lowered = request.question.casefold()
+    located_name = extracted_located_fire_name(request.question)
+    if located_name is not None:
+        if not records:
+            return f"No fetched official record matched the named fire {located_name}."
+        matched = records[0]
+        distance = (
+            f" It is {matched.distance_km:g} km geodesic from the stated community "
+            f"to the official {matched.distance_basis.replace('_', ' ')}."
+            if matched.distance_km is not None and matched.distance_basis is not None
+            else ""
+        )
+        return (
+            f"The fetched official records match {official_display_name(matched)}, "
+            f"status {matched.status}.{distance}"
+        )
     queried = extracted_existence_name(request.question)
     if queried:
         if any(record_matches_name(item, queried) for item in records):
@@ -180,7 +282,7 @@ def official_analysis_answer(
         return _max_hectares(records)
     if "closest" in lowered or "nearest" in lowered or "how close" in lowered:
         return _closest(request, records)
-    if "distribution" in lowered or "geography" in lowered:
+    if is_fire_geography_analysis(request.question):
         return _geography(records)
     if _COUNT.search(request.question):
         return _count(records, roster_total)
@@ -330,7 +432,19 @@ def _most_fire_centre(records: Sequence[LiveResult]) -> str:
         return (
             "The official records do not report a fire-centre field for the fetched incidents."
         )
-    name, count = Counter(centres).most_common(1)[0]
+    counts = Counter(centres)
+    count = max(counts.values())
+    leaders = sorted(
+        (name for name, candidate_count in counts.items() if candidate_count == count),
+        key=str.casefold,
+    )
+    if len(leaders) > 1:
+        return (
+            f"{', '.join(leaders)} are tied for the most listed incidents among "
+            f"fetched records, with {count} each. This is a record count, not a "
+            "safety determination."
+        )
+    name = leaders[0]
     return (
         f"{name} has the most listed incidents among fetched records, with {count}. "
         "This is a record count, not a safety determination."
@@ -343,16 +457,35 @@ def _geography(records: Sequence[LiveResult]) -> str:
             "The official records available for this request do not report "
             "fire-centre geography."
         )
-    centres = [item.fire_centre for item in records if item.fire_centre]
-    statuses: dict[str, int] = {}
-    for item in records:
-        statuses[item.status] = statuses.get(item.status, 0) + 1
-    status_text = ", ".join(f"{name}={count}" for name, count in statuses.items())
+    incidents = [item for item in records if item.kind == LiveResultKind.INCIDENT]
+    if not incidents:
+        return "The fetched official records do not include incident geography."
+    centres = Counter(
+        item.fire_centre.strip()
+        for item in incidents
+        if item.fire_centre and item.fire_centre.strip()
+    )
+    statuses = Counter(item.status for item in incidents)
+    status_text = ", ".join(
+        f"{name}={count}" for name, count in sorted(statuses.items(), key=lambda row: row[0])
+    )
     if centres:
+        ordered = sorted(centres.items(), key=lambda row: (-row[1], row[0].casefold()))
+        centre_text = ", ".join(f"{name}={count}" for name, count in ordered)
+        highest = ordered[0][1]
+        leaders = ", ".join(name for name, count in ordered if count == highest)
+        missing_centre_count = len(incidents) - sum(centres.values())
+        missing_note = (
+            f" {missing_centre_count} fetched incident records were omitted from the "
+            "fire-centre breakdown because the official centre label was unavailable."
+            if missing_centre_count
+            else ""
+        )
         return (
-            "Official fire-centre labels in the fetched records: "
-            + ", ".join(sorted(set(centres)))
-            + f". Status counts: {status_text}."
+            "Official incident counts by fire-centre label among fetched records: "
+            f"{centre_text}. Highest count in this bounded result: {leaders}={highest}. "
+            f"Status counts across the same incident records: {status_text}."
+            f"{missing_note}"
         )
     return (
         "The official layer did not provide a fire-centre field. "

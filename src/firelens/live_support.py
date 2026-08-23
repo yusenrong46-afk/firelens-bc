@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import math
+import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Any
 
 import httpx
@@ -34,6 +36,22 @@ BC_GEOCODER_URL = "https://geocoder.api.gov.bc.ca/addresses.geojson"
 OFFICIAL_FALLBACK_URLS: tuple[HttpUrl, ...] = (
     HttpUrl("https://wildfiresituation.nrs.gov.bc.ca/map"),
     HttpUrl("https://www.emergencyinfobc.gov.bc.ca/"),
+)
+
+# The public ActiveFires view exposes FIRE_CENTRE as an integer without a
+# coded-value domain. BCWS fire numbers expose the corresponding centre prefix,
+# and the official Fire Zone Boundaries layer supplies the human-readable
+# centre names for those prefixes. Keep the public response label-only: an
+# unknown numeric code is omitted rather than rendered as if it were a place.
+FIRE_CENTRE_CODE_NAMES = MappingProxyType(
+    {
+        2: "Coastal Fire Centre",
+        3: "Northwest Fire Centre",
+        4: "Prince George Fire Centre",
+        5: "Kamloops Fire Centre",
+        6: "Southeast Fire Centre",
+        7: "Cariboo Fire Centre",
+    }
 )
 
 WGS84_GEOD = Geod(ellps="WGS84")
@@ -110,7 +128,33 @@ def property_value(properties: dict[str, Any], *names: str) -> Any:
     for name in names:
         value = folded.get(name.casefold())
         if value not in (None, ""):
+            if name.casefold() in {"fire_centre", "fire_center"}:
+                label = fire_centre_label(value)
+                if label is not None:
+                    return label
+                continue
             return value
+    return None
+
+
+def fire_centre_label(value: Any) -> str | None:
+    """Return an official human label, never an unexplained numeric code."""
+
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, int):
+        return FIRE_CENTRE_CODE_NAMES.get(value)
+    if isinstance(value, float):
+        if not math.isfinite(value) or not value.is_integer():
+            return None
+        return FIRE_CENTRE_CODE_NAMES.get(int(value))
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return None
+        if stripped.isdecimal():
+            return FIRE_CENTRE_CODE_NAMES.get(int(stripped))
+        return stripped
     return None
 
 
@@ -137,17 +181,60 @@ def authority(kind: LiveResultKind) -> str:
     )
 
 
-# BC Geocoder match-quality gate. Scores below this are fuzzy guesses, and
-# PROVINCE/STREET-precision matches mean the label was not a specific BC
-# community (e.g. "Calgary" fuzzy-matching a street, or "hectares" matching
-# the province centroid). Test doubles may omit these fields; absent fields
-# are accepted so only a present-but-poor match fails closed.
-GEOCODER_MIN_SCORE = 70
-GEOCODER_ACCEPTED_PRECISIONS = frozenset(
-    {"LOCALITY", "CIVIC_NUMBER", "BLOCK", "SITE", "UNIT", "INTERSECTION", "OCCUPANT"}
-)
+# A bare official locality currently scores 67 in the BC Address Geocoder. A
+# server-side floor of 70 therefore removes valid communities before FireLens
+# can inspect them. Ask only for locality candidates at a modest candidate
+# floor, then require an exact normalized BC locality identity below.
+GEOCODER_MIN_SCORE = 60
+GEOCODER_ACCEPTED_PRECISIONS = frozenset({"LOCALITY"})
+GEOCODER_MAX_CANDIDATES = 5
 
 _HttpGet = Callable[..., Awaitable[httpx.Response]]
+
+
+def _normalized_locality_name(value: str) -> str:
+    normalized = " ".join(value.split()).casefold().strip(" .,?")
+    normalized = re.sub(
+        r"(?:,?\s+(?:bc|b\.c\.|british columbia|canada))+$",
+        "",
+        normalized,
+    )
+    return " ".join(re.sub(r"[^\w]+", " ", normalized).split())
+
+
+def _exact_bc_locality(features: list[object], label: str) -> dict[str, Any] | None:
+    requested = _normalized_locality_name(label)
+    if not requested:
+        return None
+    for candidate in features:
+        if not isinstance(candidate, dict):
+            continue
+        properties = candidate.get("properties")
+        if not isinstance(properties, dict):
+            continue
+        score = properties.get("score")
+        precision = properties.get("matchPrecision")
+        province = properties.get("provinceCode")
+        locality = properties.get("localityName")
+        is_official = properties.get("isOfficial")
+        if (
+            not isinstance(score, (int, float))
+            or score < GEOCODER_MIN_SCORE
+            or not isinstance(precision, str)
+            or precision.strip().upper() not in GEOCODER_ACCEPTED_PRECISIONS
+            or not isinstance(province, str)
+            or province.strip().upper() != "BC"
+            or not isinstance(locality, str)
+            or not (
+                is_official is True
+                or (isinstance(is_official, str) and is_official.strip().casefold() == "true")
+            )
+        ):
+            continue
+        official = _normalized_locality_name(locality)
+        if official == requested or official.startswith(f"{requested} in "):
+            return candidate
+    return None
 
 
 async def resolve_bc_location(get: _HttpGet, location: LocationInput) -> tuple[float, float]:
@@ -162,10 +249,11 @@ async def resolve_bc_location(get: _HttpGet, location: LocationInput) -> tuple[f
             BC_GEOCODER_URL,
             params={
                 "addressString": location.label,
-                "maxResults": 1,
+                "maxResults": GEOCODER_MAX_CANDIDATES,
                 "outputSRS": 4326,
                 "echo": "false",
                 "minScore": GEOCODER_MIN_SCORE,
+                "matchPrecision": "locality",
             },
         )
         response.raise_for_status()
@@ -197,25 +285,12 @@ async def resolve_bc_location(get: _HttpGet, location: LocationInput) -> tuple[f
             "the place label could not be resolved",
             kind=LiveDataErrorKind.NOT_FOUND,
         )
-    first = features[0]
-    properties = first.get("properties") if isinstance(first, dict) else None
-    if isinstance(properties, dict):
-        score = properties.get("score")
-        if isinstance(score, (int, float)) and score < GEOCODER_MIN_SCORE:
-            raise LiveDataUnavailable(
-                "the place label did not confidently match a British Columbia place",
-                kind=LiveDataErrorKind.NOT_FOUND,
-            )
-        precision = properties.get("matchPrecision")
-        if (
-            isinstance(precision, str)
-            and precision.strip()
-            and precision.strip().upper() not in GEOCODER_ACCEPTED_PRECISIONS
-        ):
-            raise LiveDataUnavailable(
-                "the place label did not match a specific British Columbia community",
-                kind=LiveDataErrorKind.NOT_FOUND,
-            )
+    first = _exact_bc_locality(features, location.label)
+    if first is None:
+        raise LiveDataUnavailable(
+            "the place label did not exactly match a British Columbia community",
+            kind=LiveDataErrorKind.NOT_FOUND,
+        )
     geometry = first.get("geometry") if isinstance(first, dict) else None
     coordinates = geometry.get("coordinates") if isinstance(geometry, dict) else None
     if not isinstance(coordinates, list) or len(coordinates) < 2:

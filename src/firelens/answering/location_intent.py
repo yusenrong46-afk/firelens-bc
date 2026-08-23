@@ -89,6 +89,19 @@ _PLACE_PATTERNS = (
         r"(?=\s+(?:and|but|then)\b|[?!.,]*$)",
         re.IGNORECASE,
     ),
+    re.compile(
+        r"\b(?:which|what)\s+(?:wildfire\s+|fire\s+)?perimeter\s+is\s+"
+        r"(?:the\s+)?(?:nearest|closest)(?:\s+(?:to|from))?\s+"
+        r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?=\s+(?:and|but|then)\b|[?!.,]*$)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:nearest|closest)\s+(?:wildfire\s+|fire\s+)?perimeter\s+"
+        r"(?:to|from|near)\s+(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?=\s+(?:and|but|then)\b|[?!.,]*$)",
+        re.IGNORECASE,
+    ),
 )
 
 _CONTEXTUAL_PLACE_PATTERNS = (
@@ -143,6 +156,22 @@ _TRAILING_SELECTED_REFERENCE = re.compile(
     r"\s+(?:to|from)\s+(?:(?:(?:this|that)(?:\s+selected)?|the\s+selected)\s+"
     r"(?:fire|wildfire|incident|perimeter)|it)\b.*$",
     re.IGNORECASE,
+)
+_TRAILING_ANALYSIS = re.compile(
+    r"\s+by\s+(?:hectares?|size|status|fire[- ]?centres?|geography|distribution)$",
+    re.IGNORECASE,
+)
+_NON_PLACE_ANALYSIS_WORDS = frozenset(
+    {
+        "concentrated",
+        "concentration",
+        "distribution",
+        "geographic",
+        "geographically",
+        "geography",
+        "centre",
+        "centres",
+    }
 )
 _REJECTED_PLACES = {
     "a wildfire",
@@ -266,15 +295,18 @@ def _clean_place(candidate: str) -> str | None:
     place = _TRAILING_TIME.sub("", place)
     place = _TRAILING_SELECTED_REFERENCE.sub("", place)
     place = _TRAILING_LIVE_NOUNS.sub("", place)
+    place = _TRAILING_ANALYSIS.sub("", place)
     place = place.strip(" .?!'\"")
     if place.casefold().startswith(("on ", "to ", "at ", "near ", "around ", "by ")):
         place = place.split(maxsplit=1)[1].strip()
     if place.casefold().startswith("the "):
         place = place[4:].strip()
     lowered = place.casefold()
+    words = frozenset(re.findall(r"[a-z]+", lowered))
     if (
         len(place) < 2
         or lowered in _REJECTED_PLACES
+        or bool(words & _NON_PLACE_ANALYSIS_WORDS)
         or lowered.startswith(
             (
                 "a ",

@@ -335,6 +335,68 @@ class V3DeterministicIntentTests(unittest.TestCase):
                 )
                 self.assertEqual(live_layers_for_question(question), expected_layers)
 
+    def test_fire_geography_analysis_is_province_wide_live_not_a_place(self) -> None:
+        expected_layers = (LiveResultKind.INCIDENT,)
+        for question in (
+            "wildfire by geography distribution",
+            "which areas of BC have the most wildfires?",
+            "show wildfire distribution across BC",
+            "where are wildfires concentrated in BC?",
+            "wildfires by fire centre",
+            "how many wildfires are in each fire centre?",
+            "which fire centre has the most wildfires?",
+            "Where are most wildfires in BC?",
+        ):
+            with self.subTest(question=question):
+                self.assertIsNone(coarse_location_from_question(question))
+                self.assertEqual(
+                    plan_query(QueryRequest(question=question)).route,
+                    QueryRoute.LIVE,
+                )
+                self.assertEqual(live_layers_for_question(question), expected_layers)
+
+        explanatory = "How does geography affect wildfire behaviour?"
+        self.assertIsNone(coarse_location_from_question(explanatory))
+        self.assertEqual(
+            plan_query(QueryRequest(question=explanatory)).route, QueryRoute.RELATED
+        )
+        self.assertEqual(live_layers_for_question(explanatory), ())
+
+    def test_nearest_perimeter_word_orders_keep_the_named_origin(self) -> None:
+        for question in (
+            "which perimeter is nearest Kelowna?",
+            "which wildfire perimeter is nearest to Kelowna?",
+            "nearest perimeter to Kelowna",
+        ):
+            with self.subTest(question=question):
+                location = coarse_location_from_question(question)
+                self.assertIsNotNone(location)
+                assert location is not None
+                self.assertEqual(location.label, "Kelowna")
+                self.assertEqual(
+                    plan_query(QueryRequest(question=question)).route, QueryRoute.LIVE
+                )
+                self.assertEqual(
+                    live_layers_for_question(question),
+                    (LiveResultKind.PERIMETER,),
+                )
+
+    def test_largest_wildfire_analysis_does_not_geocode_the_unit_clause(self) -> None:
+        for question in (
+            "largest wildfire in BC by hectares",
+            "which is the largest wildfire in BC by hectares?",
+        ):
+            with self.subTest(question=question):
+                location = coarse_location_from_question(question)
+                self.assertIsNone(location)
+                self.assertEqual(
+                    plan_query(QueryRequest(question=question)).route, QueryRoute.LIVE
+                )
+                self.assertEqual(
+                    live_layers_for_question(question),
+                    (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER),
+                )
+
     def test_precaution_near_a_mountain_fire_is_guidance_not_a_place(self) -> None:
         for question in (
             "what precaution should I take if I am near moutain fire",
