@@ -1,0 +1,18 @@
+{
+  "schema_version": "firelens.v1_6_user_end_questions_manifest.v1",
+  "catalog_id": "firelens_v1_6_user_end_questions_50",
+  "catalog_path": "data/evaluation/v1_6_user_end_questions_50.json",
+  "catalog_sha256": "3cb3964f329071b5f805af4d360fbc59cd834e903ba33796e628cff059c7d85d",
+  "case_count": 50,
+  "base_main_commit": "58e729911bf0e0dcaca2ccc228997e30e13688d8",
+  "status": "development_unsealed",
+  "qualification_role": "not_sealed_not_release_proof",
+  "provider_calls_in_catalog_build": 0,
+  "human_review_required_for": [
+    "semantic_entailment",
+    "live-source correctness",
+    "accessibility",
+    "participant UX",
+    "release qualification"
+  ]
+}

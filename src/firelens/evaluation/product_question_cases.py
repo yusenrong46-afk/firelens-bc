@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Literal
 
 LocationExpectation = Literal["inferred", "required", "none"]
@@ -560,6 +562,76 @@ def build_product_question_cases() -> list[ProductQuestionCase]:
                 if "Kelowna" in question or "Kamloops" in question
                 else "none",
                 notes="Answer should explain the source boundary without a dead-end rejection.",
+            )
+        )
+    return cases
+
+
+def build_v1_6_user_end_cases() -> list[ProductQuestionCase]:
+    """Load the separate 50-case end-user catalog without rewriting V1."""
+
+    catalog_path = (
+        Path(__file__).resolve().parents[3]
+        / "data/evaluation/v1_6_user_end_questions_50.json"
+    )
+    payload = json.loads(catalog_path.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != "firelens.v1_6_user_end_questions.v1":
+        raise ValueError("unexpected V1.6 end-user question catalog schema")
+    rows = payload.get("cases")
+    if not isinstance(rows, list) or len(rows) != 50:
+        raise ValueError("V1.6 end-user question catalog must contain 50 cases")
+
+    location_map = {
+        "none": "none",
+        "coarse_in_question": "inferred",
+        "required": "required",
+        "selected_result": "none",
+        "selected_or_required": "required",
+        "history_correction": "inferred",
+        "context_required": "required",
+    }
+    cases: list[ProductQuestionCase] = []
+    for row in rows:
+        family = str(row["family"])
+        if family == "named_place_evacuation":
+            bucket = "named_place_evacuation"
+        elif family.startswith("mixed_"):
+            bucket = "mixed_live_and_guidance"
+        elif family.startswith("unsupported_"):
+            bucket = "unsupported_live_source"
+        else:
+            bucket = family
+        location_expectation = str(row["location_expectation"])
+        if location_expectation not in location_map:
+            raise ValueError(f"unsupported V1.6 location expectation: {location_expectation}")
+        history = tuple(row.get("history", ()))
+        live_kinds = tuple(row.get("live_result_kinds", ()))
+        assertions = "; ".join(str(item) for item in row["assertions"])
+        forbidden = ", ".join(str(item) for item in row["forbidden_behaviors"])
+        cases.append(
+            ProductQuestionCase(
+                id=str(row["id"]),
+                bucket=bucket,
+                question=str(row["question"]),
+                expected_modes=tuple(str(item) for item in row["expected_modes"]),
+                location_expectation=location_map[location_expectation],
+                context_fixture=(
+                    "first_incident"
+                    if row.get("context_fixture") == "first_incident_selected"
+                    else "none"
+                ),
+                history=history,
+                notes=f"Assertions: {assertions}. Forbidden: {forbidden}.",
+                required_capabilities=(
+                    ("resolved_location",)
+                    if location_map[location_expectation] == "inferred"
+                    else ("required_input",)
+                    if location_map[location_expectation] == "required"
+                    else ()
+                )
+                + (("live_results",) if live_kinds else ()),
+                required_live_kinds=live_kinds,
+                empty_live_results_allowed=bool(live_kinds),
             )
         )
     return cases

@@ -22,6 +22,7 @@ from firelens.evaluation.product_question_cases import (
     ProductQuestionCase,
     build_product_question_cases,
     build_product_question_regression_cases,
+    build_v1_6_user_end_cases,
 )
 from firelens.live import LiveDataService
 from firelens.runtime import load_runtime
@@ -437,9 +438,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-cost-usd", type=float, default=0.75)
     parser.add_argument(
         "--suite",
-        choices=("v1", "v3-regression", "combined"),
+        choices=("v1", "v3-regression", "v1-6-user-end", "combined"),
         default="v1",
-        help="Select the frozen exploratory catalog, V3 structural regressions, or both.",
+        help="Select the frozen exploratory catalog, V3 structural regressions, the 50-case V1.6 end-user catalog, or both legacy suites.",
     )
     parser.add_argument("--dump-only", action="store_true")
     args = parser.parse_args(argv)
@@ -454,12 +455,16 @@ def main(argv: list[str] | None = None) -> int:
         print(f"wrote {CATALOG_PATH} cases={len(v1_cases)}")
         return 0
     regression_cases = build_product_question_regression_cases()
+    user_end_cases = build_v1_6_user_end_cases()
     if args.suite == "v1":
         suite_cases = v1_cases
         dataset_version = "product_question_probe.v1"
     elif args.suite == "v3-regression":
         suite_cases = regression_cases
         dataset_version = "product_question_regression.v3"
+    elif args.suite == "v1-6-user-end":
+        suite_cases = user_end_cases
+        dataset_version = "firelens_v1_6_user_end_questions.v1"
     else:
         suite_cases = [*v1_cases, *regression_cases]
         dataset_version = "product_question_probe.v1+regression.v3"
