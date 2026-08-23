@@ -2,21 +2,54 @@ name: Build candidate evidence
 
 on:
   workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
 
 concurrency:
-  group: candidate-${{ github.ref }}
+  group: candidate-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: false
 
 jobs:
   candidate-evidence:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 45
+    env:
+      CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
-      - name: Check out exact candidate
+      - name: Check out exact PR head candidate
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Capture exact clean starting identity
+        run: |
+          observed_commit="$(git rev-parse HEAD)"
+          test "$observed_commit" = "$CANDIDATE_SHA"
+          candidate_tree="$(git rev-parse "${CANDIDATE_SHA}^{tree}")"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          export CANDIDATE_TREE="$candidate_tree"
+          echo "CANDIDATE_TREE=$candidate_tree" >> "$GITHUB_ENV"
+          mkdir -p candidate-inputs
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload = {
+              "schema_version": "firelens.checkout_state.v1",
+              "commit": os.environ["CANDIDATE_SHA"],
+              "tree": os.environ["CANDIDATE_TREE"],
+              "clean": True,
+              "status_porcelain": "",
+          }
+          Path("candidate-inputs/checkout-state.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
@@ -37,51 +70,209 @@ jobs:
           .venv/bin/python -m pip install --disable-pip-version-check pip-audit==2.9.0
           npm --prefix apps/web ci
           npx --prefix apps/web playwright install --with-deps chromium
-      - name: Verify locks, action pins, and candidate tests
+      - name: Capture versions, workflow identity, and credential absence
         run: |
+          .venv/bin/python - <<'PY'
+          import json
+          import os
+          import platform
+          import subprocess
+          from pathlib import Path
+
+          def version(*command: str) -> str:
+              return subprocess.check_output(command, text=True).strip()
+
+          inputs = Path("candidate-inputs")
+          environment = {
+              "schema_version": "firelens.build_environment.v1",
+              "python": platform.python_version(),
+              "pip": version(".venv/bin/python", "-m", "pip", "--version"),
+              "node": version("node", "--version"),
+              "npm": version("npm", "--version"),
+              "runner_os": platform.platform(),
+          }
+          workflow = {
+              "schema_version": "firelens.workflow_identity.v1",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "workflow": ".github/workflows/candidate.yml",
+              "event": os.environ["GITHUB_EVENT_NAME"],
+              "ref": os.environ["GITHUB_REF"],
+              "commit": os.environ["CANDIDATE_SHA"],
+              "tree": os.environ["CANDIDATE_TREE"],
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+          }
+          checked = [
+              "OPENROUTER_API_KEY",
+              "OPENAI_API_KEY",
+              "COHERE_API_KEY",
+              "FIRELENS_RUN_OPENROUTER_SMOKE",
+          ]
+          credentials = {
+              "schema_version": "firelens.credential_absence.v1",
+              "checked_names": checked,
+              "present_names": [name for name in checked if os.environ.get(name)],
+              "provider_calls": 0,
+              "paid_cost_usd": 0.0,
+              "sealed_labels_accessed": False,
+          }
+          for name, payload in (
+              ("build-environment.json", environment),
+              ("workflow-identity.json", workflow),
+              ("credential-absence.json", credentials),
+          ):
+              (inputs / name).write_text(
+                  json.dumps(payload, indent=2, sort_keys=True) + "\n",
+                  encoding="utf-8",
+              )
+          PY
+      - name: Execute exact-head zero-cost qualification and capture outcomes
+        run: |
+          set +e
           .venv/bin/python scripts/check_lockfiles.py
+          lockfiles=$?
           .venv/bin/python scripts/check_actions_pinned.py
+          action_pins=$?
           make verify
-      - name: Write the commit-bound runtime candidate
-        run: |
+          make_verify=$?
           .venv/bin/python scripts/write_runtime_candidate.py \
             --output config/runtime_candidate.v1.json \
-            --commit "$GITHUB_SHA"
-      - name: Capture raw dependency and license evidence
-        run: |
-          mkdir -p candidate-inputs
+            --commit "$CANDIDATE_SHA" \
+            --benchmark-id firelens_v1_6_rc2 \
+            --release-version 1.6.0-rc.2
+          runtime_candidate=$?
+          npm --prefix apps/web run build
+          frontend_build=$?
+          .venv/bin/python scripts/v1_6_structured_publication_eval.py \
+            --output candidate-inputs/structured-publication-eval.json
+          structured_publication_eval=$?
+          .venv/bin/python scripts/run_hard_probe.py --mode offline \
+            --output candidate-inputs/hard-probe.json
+          hard_probe_offline=$?
           .venv/bin/pip-audit -r requirements.lock --format json \
-            --output candidate-inputs/python-audit.json || true
-          npm --prefix apps/web audit --json \
-            > candidate-inputs/npm-audit.json || true
+            --output candidate-inputs/python-audit.json
+          python_audit=$?
+          npm --prefix apps/web audit --json > candidate-inputs/npm-audit.json
+          npm_audit=$?
           .venv/bin/python scripts/report_dependency_licenses.py \
-            --output candidate-inputs/dependency-licenses.json || true
-      - name: Build and verify candidate evidence
+            --output candidate-inputs/dependency-licenses.json
+          dependency_licenses=$?
+          unexpected_changes="$(git diff --name-only -- . \
+            ':(exclude)config/runtime_candidate.v1.json' \
+            ':(exclude)apps/web/dist/**')"
+          if [ -n "$unexpected_changes" ]; then
+            echo "Unexpected tracked changes after qualification:"
+            echo "$unexpected_changes"
+            candidate_artifact_scope=1
+          else
+            candidate_artifact_scope=0
+          fi
+          set -e
+          export lockfiles action_pins make_verify runtime_candidate frontend_build
+          export structured_publication_eval hard_probe_offline python_audit npm_audit
+          export dependency_licenses candidate_artifact_scope
+          .venv/bin/python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          commands = [
+              ("lockfiles", "scripts/check_lockfiles.py"),
+              ("action_pins", "scripts/check_actions_pinned.py"),
+              ("make_verify", "make verify"),
+              (
+                  "runtime_candidate",
+                  "scripts/write_runtime_candidate.py --commit $CANDIDATE_SHA "
+                  "--benchmark-id firelens_v1_6_rc2 --release-version 1.6.0-rc.2",
+              ),
+              ("frontend_build", "npm --prefix apps/web run build"),
+              (
+                  "structured_publication_eval",
+                  "scripts/v1_6_structured_publication_eval.py --output "
+                  "candidate-inputs/structured-publication-eval.json",
+              ),
+              (
+                  "hard_probe_offline",
+                  "scripts/run_hard_probe.py --mode offline --output "
+                  "candidate-inputs/hard-probe.json",
+              ),
+              ("python_audit", "pip-audit -r requirements.lock --format json"),
+              ("npm_audit", "npm --prefix apps/web audit --json"),
+              (
+                  "dependency_licenses",
+                  "scripts/report_dependency_licenses.py --output "
+                  "candidate-inputs/dependency-licenses.json",
+              ),
+              (
+                  "candidate_artifact_scope",
+                  "git diff allows only config/runtime_candidate.v1.json and apps/web/dist/**",
+              ),
+          ]
+          payload = {
+              "schema_version": "firelens.command_outcomes.v1",
+              "commands": [
+                  {
+                      "id": command_id,
+                      "command": command,
+                      "exit_code": int(os.environ[command_id]),
+                  }
+                  for command_id, command in commands
+              ],
+          }
+          Path("candidate-inputs/command-outcomes.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+      - name: Build and recompute candidate-evidence v2
         id: candidate
         continue-on-error: true
         run: |
-          source_date="$(git show -s --format=%cI "$GITHUB_SHA")"
+          source_date="$(git show -s --format=%cI "$CANDIDATE_SHA")"
           .venv/bin/python scripts/candidate_evidence.py build \
             --output-dir candidate-evidence \
-            --commit "$GITHUB_SHA" \
+            --commit "$CANDIDATE_SHA" \
+            --tree "$CANDIDATE_TREE" \
+            --release-version 1.6.0-rc.2 \
             --generated-at "$source_date" \
             --builder-id "https://github.com/$GITHUB_REPOSITORY/actions/workflows/candidate.yml" \
             --invocation-id "$GITHUB_RUN_ID:$GITHUB_RUN_ATTEMPT" \
             --python-audit candidate-inputs/python-audit.json \
             --npm-audit candidate-inputs/npm-audit.json \
-            --licenses candidate-inputs/dependency-licenses.json
+            --licenses candidate-inputs/dependency-licenses.json \
+            --checkout-state candidate-inputs/checkout-state.json \
+            --build-environment candidate-inputs/build-environment.json \
+            --command-outcomes candidate-inputs/command-outcomes.json \
+            --credential-absence candidate-inputs/credential-absence.json \
+            --workflow-identity candidate-inputs/workflow-identity.json \
+            --structured-eval candidate-inputs/structured-publication-eval.json \
+            --hard-probe candidate-inputs/hard-probe.json \
+            --limitation "Exact-main qualification remains a separate human-authorized gate." \
+            --limitation "Paid H4/H8 evidence is not part of this zero-cost candidate bundle." \
+            --limitation "Preview, accessibility, participant review, and release GO remain separate gates."
           .venv/bin/python scripts/candidate_evidence.py verify \
             --bundle candidate-evidence \
-            --expected-commit "$GITHUB_SHA"
-      - name: Upload candidate evidence
+            --expected-commit "$CANDIDATE_SHA" \
+            --expected-tree "$CANDIDATE_TREE"
+          .venv/bin/python - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(
+              Path("candidate-evidence/candidate-evidence-manifest.json").read_text()
+          )
+          if manifest.get("schema_version") != "firelens.candidate_evidence.v2":
+              raise SystemExit("candidate evidence v2 schema was not produced")
+          PY
+      - name: Upload exact-current candidate evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: candidate-evidence-${{ github.sha }}
+          name: candidate-evidence-v2-${{ env.CANDIDATE_SHA }}
           path: candidate-evidence
           if-no-files-found: error
           retention-days: 90
-      - name: Enforce candidate security disposition
+      - name: Enforce candidate disposition
         if: always()
         env:
           EVIDENCE_OUTCOME: ${{ steps.candidate.outcome }}

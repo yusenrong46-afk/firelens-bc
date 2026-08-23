@@ -1,6 +1,6 @@
-# FireLens BC V1.6.0-rc.1 candidate runbook
+# FireLens BC V1.6 RC2 candidate runbook
 
-This runbook prepares engineering candidate `1.6.0-rc.1`. It does not replace
+This runbook prepares the V1.6 RC2 engineering candidate. It does not replace
 independent semantic, accessibility, safety, retrieval, UX, or human review.
 It does not authorize push, deploy, or paid runs.
 
@@ -20,9 +20,10 @@ of their recorded identities.
 
 ## Candidate preflight
 
-1. Confirm the branch and identity named by the current continuation report.
-   The current frozen implementation candidate is
-   `upgrade/v1-6-pre-release-candidate-1` at `a5cd967`.
+1. Freeze the candidate only after RC2 integration. Record its exact Git commit
+   and Git tree, then produce the matching CI candidate-evidence artifact. Do
+   not name `a5cd967` or an RC1 branch as the current candidate; RC1 reports
+   remain snapshots of their recorded identities.
 2. Confirm `docs/ARCHITECTURE_V1_6.md` is the Ask authority, not
    `docs/TECHNICAL_HANDBOOK.md`.
 3. Confirm `FIRELENS_RETRIEVAL_STRATEGY` is `baseline` unless an authorized
@@ -59,6 +60,11 @@ reviewer identity or approve a claim.
 | `make v1-6-gate` | Standard identity and current inventory | H10 release GO |
 | `make v1-6-package-verify` | Allowlist / Docker / Vercel logical parity helpers | A deployed origin |
 | Preview / production qualify scripts | One HTTPS origin when authorized | UX, VoiceOver, firewall, or sealed retrieval |
+
+Archive limitation: a local report, an archived report, or a CI result from a
+different commit/tree cannot qualify this candidate. Qualification requires the
+exact candidate commit and tree, the matching CI artifact, and the required
+human-authorized external gates.
 
 Paid comparison, preview Ask probes, firewall publish, rollback proof,
 VoiceOver, participant UX, and sealed V3 47-case retrieval stay `EXTERNAL`

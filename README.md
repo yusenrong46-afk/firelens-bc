@@ -9,16 +9,14 @@ definitions), and ordinary questions that deserve a plainly labelled general
 answer. A language model chooses tools and writes prose. It is never the
 authority for what is true.
 
-**Repository status:** V1.6.0-rc.1 engineering candidate. All 20 prepared
-atomic claims and one edited sprinkler claim have named human decisions and
-were integrated through corpus-bound deterministic publication; nine defective
-source extractions were explicitly deferred. The exact RC1 H8
-representative-workload tradeoff is accepted, and the candidate is ready for
-independent examination. It is not paid-qualified, release-approved, or
-deployment proof. The existing site at
+**Repository status:** V1.6 RC2 repair worktree. RC1 reports are historical
+snapshots of their recorded commits and trees; they are not evidence for this
+checkout. A release candidate is qualified only from its exact Git commit and
+tree plus the matching CI evidence artifact. It is not paid-qualified,
+release-approved, or deployment proof. The existing site at
 [firelens-bc.vercel.app](https://firelens-bc.vercel.app) must not be assumed to
 match this checkout until a commit-bound deployment is separately verified.
-Current evidence and open gates are recorded in
+Archived RC1 evidence remains available in
 [`docs/reports/V1_6_RC1_LOCAL_QUALIFICATION.md`](docs/reports/V1_6_RC1_LOCAL_QUALIFICATION.md).
 
 ## Why this design matters
@@ -99,7 +97,7 @@ for bounded grounded repair.
 
 ## Quick start
 
-Python 3.11–3.14 and Node/npm are supported. Dependencies are locked in
+Python 3.12–3.14 and Node/npm are supported. Dependencies are locked in
 `requirements.lock` and `package-lock.json`.
 
 ```bash
@@ -219,7 +217,11 @@ repair remain quarantined until that replacement text receives human approval.
 Runtime startup verifies the repair registry, chunk provenance, corpus hash,
 vector row order, and matrix hash together. High-risk structured publication
 adds a separate 26-record, hash-bound typed-claim inventory; it does not make
-quarantined corpus material compilable.
+quarantined corpus material compilable. High-risk structured publication is
+deterministic and uses zero generation. Eligible lower-risk ready packets may
+use one generation only after deterministic validation. Uncovered high-risk
+material falls back to an exact-source quote-only, partial, or handoff response;
+it is never presented as a reviewed structured claim.
 
 ## Historical V1.1 checkpoint
 
@@ -253,8 +255,8 @@ Further reading:
   candidate gates and independent-examination handoff.
 - [`docs/reports/V1_5_PRINCIPAL_REMEDIATION.md`](docs/reports/V1_5_PRINCIPAL_REMEDIATION.md):
   historical V1.5 finding ledger, fixes, evidence, and release blockers.
-- [`docs/TECHNICAL_HANDBOOK.md`](docs/TECHNICAL_HANDBOOK.md): authoritative
-  architecture, contracts, operations, and code-reading guide.
+- [`docs/TECHNICAL_HANDBOOK.md`](docs/TECHNICAL_HANDBOOK.md): historical V1.5
+  architecture and code-reading snapshot; it is not current runtime authority.
 - [`docs/reports/FIRELENS_V1_1_TECHNICAL_REPORT.md`](docs/reports/FIRELENS_V1_1_TECHNICAL_REPORT.md):
   detailed layer-by-layer report and result visualizations.
 - [`docs/adr/`](docs/adr/): immutable architecture decisions.

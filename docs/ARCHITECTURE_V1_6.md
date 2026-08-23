@@ -86,6 +86,11 @@ Visible development benchmarks are not independent proof.
   fields. Models do not own trust, freshness, authority, or time.
 - Remaining corpus coverage is a human-review debt. Most high-risk spans
   are still checker-gated rather than inventory-rendered.
+- High-risk structured publication is deterministic and has zero generation.
+  An eligible lower-risk ready packet may use one bounded generation only after
+  deterministic validation. Uncovered high-risk material remains an exact-source
+  quote-only, partial, or handoff response; it is not a reviewed structured
+  claim.
 
 ## Failures, ops, packaging
 
@@ -103,7 +108,10 @@ auto-publishes.
 
 Additive Ask fields: `status_banner`, `supported_items`, `unknown_items`,
 `proof_cards`. Tile failure must not remove official record lists. Trust is
-labelled in text, not colour alone.
+labelled in text, not colour alone. Presentation is a projection of
+`publication.kind`: reviewed structured claims and extraction-only source
+wording are labelled independently, including in mixed answers. Extraction-only
+source wording is never strengthened by a legacy status banner.
 
 ## Module sizes and exceptions
 

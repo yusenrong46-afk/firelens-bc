@@ -1,6 +1,19 @@
 # Changelog
 
-## Unreleased — V1.1 conversational RC
+## Unreleased — V1.6 RC2
+
+### Changed
+
+- Hardened evidence identity, relevance selection, distance rails, and the
+  atomic quote floor for structured publication.
+- Made public support presentation a per-item projection of publication kind:
+  reviewed structured claims and extraction-only source wording are labelled
+  independently.
+- Bound candidate evidence and current documentation to the exact candidate
+  commit, tree, and matching CI artifact. RC1 reports remain historical
+  snapshots.
+
+## Historical — V1.1 conversational RC
 
 ### Added
 
