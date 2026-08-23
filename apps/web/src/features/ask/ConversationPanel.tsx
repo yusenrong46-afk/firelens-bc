@@ -13,6 +13,7 @@ import { FeedbackControls } from "../feedback/FeedbackControls";
 import { resultDisplayName } from "../near-me/liveResultPresentation";
 import { AnswerBody } from "./AnswerBody";
 import { getAnswerSections } from "./answerSections";
+import { getClaimSupportLabel, getClaimSupportState } from "./proofPresentation";
 import type { Claim } from "./responseModel";
 import { ResponseModeBadge } from "./responseModeBadge";
 import type { FireLensSession } from "./useFireLensSession";
@@ -29,11 +30,13 @@ function ClaimButton({
   claim,
   index,
   selected,
+  supportLabel,
   onSelect,
 }: {
   claim: Claim;
   index: number;
   selected: boolean;
+  supportLabel: string;
   onSelect: () => void;
 }) {
   return (
@@ -45,16 +48,18 @@ function ClaimButton({
     >
       <span className="claim-number">{index + 1}</span>
       <span>{claim.text}</span>
+      <small>{supportLabel}</small>
       <span className="claim-check">{selected && <Check size={15} weight="bold" />}</span>
     </button>
   );
 }
 
-function BackgroundClaim({ claim, index }: { claim: Claim; index: number }) {
+function NonSelectableClaim({ claim, index, supportLabel }: { claim: Claim; index: number; supportLabel: string }) {
   return (
     <div className="claim-card claim-card--background">
       <span className="claim-number">{index + 1}</span>
       <span>{claim.text}</span>
+      <small>{supportLabel}</small>
       <Info size={18} aria-hidden="true" />
     </div>
   );
@@ -63,7 +68,6 @@ function BackgroundClaim({ claim, index }: { claim: Claim; index: number }) {
 export function ConversationPanel({ session }: { session: FireLensSession }) {
   const {
     assistantText,
-    citedMode,
     claims,
     clearHistory,
     clearManualLocation,
@@ -211,15 +215,37 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
 
         {view.kind === "answer" && claims.length > 0 && (
           <div className="claim-group">
-            <span className="panel-label">
-              {citedMode ? "Sources supporting this answer" : "General background in this answer"}
-            </span>
+            <span className="panel-label">Answer evidence and support</span>
             <div className="claim-list">
-              {claims.map((claim, index) => citedMode ? (
-                <ClaimButton key={claim.claim_id} claim={claim} index={index} selected={selected === index} onSelect={() => setSelected(index)} />
-              ) : (
-                <BackgroundClaim key={claim.claim_id} claim={claim} index={index} />
-              ))}
+              {claims.map((claim, index) => {
+                const state = getClaimSupportState(view.response, claim);
+                const supportLabel = getClaimSupportLabel(view.response, claim);
+                const selectable = [
+                  "supported",
+                  "structured_reviewed",
+                  "official_live_typed",
+                  "official_quote_only",
+                  "source_linked_explanation",
+                  "conflict",
+                ].includes(state);
+                return selectable ? (
+                  <ClaimButton
+                    key={claim.claim_id}
+                    claim={claim}
+                    index={index}
+                    selected={selected === index}
+                    supportLabel={supportLabel}
+                    onSelect={() => setSelected(index)}
+                  />
+                ) : (
+                  <NonSelectableClaim
+                    key={claim.claim_id}
+                    claim={claim}
+                    index={index}
+                    supportLabel={supportLabel}
+                  />
+                );
+              })}
             </div>
           </div>
         )}

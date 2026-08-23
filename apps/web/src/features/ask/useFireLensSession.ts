@@ -35,7 +35,6 @@ export type FireLensSession = {
   response: AskResponse | undefined;
   mode: ResponseMode | undefined;
   claims: Claim[];
-  citedMode: boolean;
   suggestions: string[];
   visibleQuestion: string | undefined;
   assistantText: string;
@@ -87,7 +86,6 @@ export function useFireLensSession(): FireLensSession {
   const response = view.kind === "answer" || view.kind === "abstention" ? view.response : undefined;
   const mode = response ? getResponseMode(response) : undefined;
   const claims = view.kind === "answer" ? (view.response.claims ?? []) : [];
-  const citedMode = claims.some((claim) => claim.evidence_status === "verified_corpus");
   const currentPairIsStored =
     (view.kind === "answer" || view.kind === "abstention") &&
     history.length >= 2 &&
@@ -277,7 +275,6 @@ export function useFireLensSession(): FireLensSession {
     response,
     mode,
     claims,
-    citedMode,
     suggestions,
     visibleQuestion,
     assistantText,

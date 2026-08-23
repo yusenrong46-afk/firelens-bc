@@ -1,148 +1,61 @@
-import { lazy, type ReactNode, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import {
   ArrowSquareOut,
-  CaretDown,
-  CaretUp,
   ChatsCircle,
   Info,
   Shield,
   WarningCircle,
 } from "@phosphor-icons/react";
-import type { AskResponse, LiveResult } from "../../shared/api/api";
 import { abstentionPresentation } from "../ask/abstentionPresentation";
 import { ProofCard } from "../ask/StatusBanner";
-import { getProofCards } from "../ask/proofPresentation";
+import {
+  getClaimSupportState,
+  getProofCards,
+  type SupportState,
+} from "../ask/proofPresentation";
 import type { Evidence, Support } from "../ask/responseModel";
 import { resultDisplayName } from "../near-me/liveResultPresentation";
 import type { FireLensSession } from "../ask/useFireLensSession";
+import {
+  EvidencePlaceholder,
+  mapResultLinkText,
+  SourcePanel,
+} from "./evidencePresentation";
 
 const LiveMap = lazy(() => import("../near-me/LiveMap").then((module) => ({ default: module.LiveMap })));
 
-function mapResultLinkText(item: LiveResult): string {
-  const fallback = item.name || item.incident_number || "Official wildfire record";
-  return /(?:featureserver|mapserver|arcgis)/i.test(item.source_url)
-    ? `GIS dataset — ${fallback}`
-    : fallback;
+
+function selectedClaimHeading(state: SupportState): string {
+  const headings: Partial<Record<SupportState, string>> = {
+    supported: "Source-supported claim",
+    structured_reviewed: "Reviewed structured claim",
+    official_live_typed: "Official typed fact",
+    official_quote_only: "Exact source quotation",
+    source_linked_explanation: "Source-linked explanation",
+    unknown: "Content not established",
+    background: "General background",
+    conflict: "Conflicting reviewed claim",
+  };
+  return headings[state] ?? "Answer support";
 }
 
-function HighlightedPassage({ text, quote }: { text: string; quote: string }) {
-  const start = text.indexOf(quote);
-  if (start < 0) return <p>{text}</p>;
-  return (
-    <p>
-      {text.slice(0, start)}
-      <mark>{quote}</mark>
-      {text.slice(start + quote.length)}
-    </p>
-  );
-}
-
-function SourcePanel({
-  evidence,
-  support,
-  index,
-  initiallyOpen,
-}: {
-  evidence: Evidence;
-  support: Support;
-  index: number;
-  initiallyOpen: boolean;
-}) {
-  const [open, setOpen] = useState(initiallyOpen);
-  return (
-    <article className="source-panel">
-      <div className="source-panel__head">
-        <button type="button" className="source-toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
-          <span className="source-number">{index + 1}</span>
-          <span className="source-name">
-            <strong>{evidence.title}</strong>
-            <small>{evidence.locator || "Reviewed source passage"}</small>
-          </span>
-        </button>
-        <span className="stable-chip">Stable guidance</span>
-        <a href={evidence.canonical_url} target="_blank" rel="noreferrer">
-          View source <ArrowSquareOut size={15} />
-        </a>
-        <button
-          type="button"
-          className="caret-button"
-          onClick={() => setOpen(!open)}
-          aria-label={open ? `Collapse source ${index + 1}` : `Expand source ${index + 1}`}
-        >
-          {open ? <CaretUp /> : <CaretDown />}
-        </button>
-      </div>
-      {open && (
-        <div className="source-panel__body">
-          <aside className="source-details">
-            <dl>
-              <div><dt>Publisher</dt><dd>{evidence.publisher}</dd></div>
-              <div><dt>Document</dt><dd>{evidence.title}</dd></div>
-              <div><dt>Locator</dt><dd>{evidence.locator || "Source passage"}</dd></div>
-              <div><dt>Guidance type</dt><dd>Stable preparedness guidance</dd></div>
-              {evidence.review_provenance === "human_verified_repair" && (
-                <div><dt>Text review</dt><dd>Human-verified source transcription</dd></div>
-              )}
-            </dl>
-            <div className="canonical">
-              <strong>Canonical source</strong>
-              <a href={evidence.canonical_url} target="_blank" rel="noreferrer">
-                Open official page <ArrowSquareOut size={13} />
-              </a>
-            </div>
-          </aside>
-          <div className="passage">
-            <h2>Source passage</h2>
-            <HighlightedPassage text={evidence.context_text} quote={support.quote} />
-          </div>
-        </div>
-      )}
-    </article>
-  );
-}
-
-type RelatedLink = NonNullable<AskResponse["related_links"]>[number];
-
-function EvidencePlaceholder({
-  icon,
-  title,
-  children,
-  links = [],
-}: {
-  icon: ReactNode;
-  title: string;
-  children: ReactNode;
-  links?: RelatedLink[] | undefined;
-}) {
-  return (
-    <div className="evidence-placeholder">
-      <span>{icon}</span>
-      <h2>{title}</h2>
-      <p>{children}</p>
-      {links.length > 0 && (
-        <div className="related-service-links evidence-placeholder__links" aria-label="Related official sources for this boundary">
-          {links.map((item) => (
-            <a
-              key={item.url}
-              href={item.url}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={`Open ${item.title} from the answer context`}
-            >
-              <span><strong>{item.title}</strong><small>{item.description}</small></span>
-              <ArrowSquareOut size={18} aria-hidden="true" />
-            </a>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+function selectedClaimFooter(state: SupportState): string {
+  const footers: Partial<Record<SupportState, string>> = {
+    supported: "This claim is linked to an exact passage in the reviewed source collection.",
+    structured_reviewed: "This structured claim has reviewed source support.",
+    official_live_typed: "This fact is projected from an official typed record.",
+    official_quote_only: "This is exact source wording, not a structured FireLens claim.",
+    source_linked_explanation: "This explanation is source-linked but is not a reviewed structured claim.",
+    unknown: "FireLens did not establish this content from its reviewed or official sources.",
+    background: "This is labelled general background and has no reviewed source support attached.",
+    conflict: "Reviewed sources conflict; FireLens has not chosen a winner.",
+  };
+  return footers[state] ?? "Support details are shown above.";
 }
 
 export function EvidencePanel({ session }: { session: FireLensSession }) {
   const {
     askAboutResult,
-    citedMode,
     claims,
     mapAggregateFreshness,
     mapFocus,
@@ -159,8 +72,12 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
     setSelectedLiveResultId,
     view,
   } = session;
-  const selectedClaim = citedMode ? claims[selected] : undefined;
-  const proofCards = getProofCards(view.kind === "answer" ? view.response : undefined);
+  const answerResponse = view.kind === "answer" ? view.response : undefined;
+  const selectedClaim = answerResponse ? claims[selected] : undefined;
+  const selectedState = answerResponse && selectedClaim
+    ? getClaimSupportState(answerResponse, selectedClaim)
+    : undefined;
+  const proofCards = getProofCards(answerResponse);
   const selectedProof = selectedClaim
     ? proofCards.find((card) => card.claim_id === selectedClaim.claim_id) ?? proofCards[0]
     : proofCards[0];
@@ -196,13 +113,13 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
         {mapMessage && <p className="live-map__warning" role="status">{mapMessage} The map remains available for conversation and recovery.</p>}
 
         <div className="context-lens" aria-label="Answer context">
-        {view.kind === "answer" && citedMode && selectedClaim ? (
+        {view.kind === "answer" && selectedClaim && selectedState ? (
           <>
             <span className="selected-kicker">Selected claim {selected + 1}</span>
             <h2>{selectedClaim.text}</h2>
             {selectedProof && <ProofCard card={selectedProof} />}
             <div className="answer-claim">
-              <Shield size={18} /><strong>Answer claim</strong><span>{selectedClaim.text}</span>
+              <Shield size={18} /><strong>{selectedClaimHeading(selectedState)}</strong><span>{selectedClaim.text}</span>
             </div>
             {supportedEvidence.map(({ evidence, support }, index) => (
               <SourcePanel
@@ -211,6 +128,7 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
                 support={support}
                 index={index}
                 initiallyOpen={index === 0}
+                supportState={selectedState}
               />
             ))}
             {mode === "mixed" && (view.response.evidence ?? []).length > 0 && (
@@ -221,7 +139,7 @@ export function EvidencePanel({ session }: { session: FireLensSession }) {
                 ))}
               </div>
             )}
-            <div className="access-date"><Shield size={17} weight="fill" /> Sources come from the reviewed local corpus.</div>
+            <div className="access-date"><Shield size={17} weight="fill" /> {selectedClaimFooter(selectedState)}</div>
           </>
         ) : view.kind === "answer" && (mode === "live" || mode === "mixed") ? (
           <div className="map-answer-summary">

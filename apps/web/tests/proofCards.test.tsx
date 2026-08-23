@@ -3,9 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import { App } from "../src/app/App";
+import { getStatusBanner } from "../src/features/ask/proofPresentation";
 import { TileFailureWarning } from "../src/features/near-me/OfficialBasemap";
 import { MatchingRecordList } from "../src/features/near-me/LiveRecordLists";
-import type { LiveResult } from "../src/shared/api/api";
+import type { AskResponse, LiveResult } from "../src/shared/api/api";
 
 const grounded = {
   status: "answer",
@@ -107,7 +108,7 @@ describe("proof-carrying answer surface", () => {
     expect(screen.getByRole("heading", { name: "Established from FireLens sources" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Not established" })).toBeInTheDocument();
     expect(screen.getAllByText("Stable guidance only.").length).toBeGreaterThan(0);
-    expect(screen.getByText("Source-linked explanation")).toBeInTheDocument();
+    expect(screen.getAllByText("Supported by an exact reviewed quotation").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Human-verified source transcription").length).toBeGreaterThan(0);
     expect(screen.getByText("Critical fields checked and preserved")).toBeInTheDocument();
     expect(screen.getAllByText("Food & water").length).toBeGreaterThan(0);
@@ -115,6 +116,115 @@ describe("proof-carrying answer surface", () => {
       "href",
       "https://example.test/guide.pdf",
     );
+  });
+
+  it("projects quote-only publication wording over an older strengthening banner", async () => {
+    const quoteOnly = {
+      ...grounded,
+      status_banner: {
+        headline: "Grounded in reviewed official sources",
+        detail: "All content is a reviewed FireLens claim.",
+        freshness_label: "Stable reviewed guidance",
+        availability_label: "Sources required for this request were available.",
+      },
+      claims: grounded.claims.map((claim) => ({
+        ...claim,
+        publication: {
+          kind: "official_quote_only",
+          review_status: "extraction_only",
+          renderer_id: "firelens.quote_only_renderer.v1",
+          support_provenance: "exact_official_quote",
+        },
+      })),
+      proof_cards: grounded.proof_cards.map((card) => ({
+        ...card,
+        support_state: "structured_reviewed",
+        support_label: "Reviewed structured claim",
+        review_state: "Approved static corpus",
+      })),
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(quoteOnly), { status: 200 })));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "What does the source say?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText("Official wording from a source")).toBeInTheDocument();
+    expect(screen.getByText(
+      "FireLens is showing an exact source quotation. It has not been approved as a structured FireLens claim.",
+    )).toBeInTheDocument();
+    expect(screen.getAllByText("Exact source wording — not a structured FireLens claim").length).toBeGreaterThan(0);
+    expect(screen.getByText("Source extraction only; no structured-claim review")).toBeInTheDocument();
+    expect(screen.getAllByText("Stable source wording").length).toBeGreaterThan(0);
+    expect(screen.getByText("Answer evidence and support")).toBeInTheDocument();
+    expect(screen.queryByText("Reviewed structured claim")).not.toBeInTheDocument();
+  });
+
+  it("downgrades rejected validation to unknown even when older proof fields strengthen it", async () => {
+    const rejected = {
+      ...grounded,
+      validation: { ...grounded.validation, accepted: false, errors: ["rejected"] },
+      claims: grounded.claims.map((claim) => ({
+        ...claim,
+        publication: {
+          kind: "structured_reviewed",
+          typed_claim_id: "TC-1",
+          review_status: "approved",
+          source_revision_sha256: "a".repeat(64),
+          renderer_id: "firelens.structured_renderer.v1",
+          support_provenance: "typed_inventory",
+        },
+      })),
+      proof_cards: grounded.proof_cards.map((card) => ({
+        ...card,
+        support_state: "structured_reviewed",
+        support_label: "Reviewed structured claim",
+      })),
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(rejected), { status: 200 })));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Can this be trusted?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText("Support not established")).toBeInTheDocument();
+    expect(screen.getAllByText("Not established from FireLens sources").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Reviewed structured claim")).not.toBeInTheDocument();
+  });
+
+  it("uses the frozen mixed wording for reviewed and quote-only claims", () => {
+    const response = {
+      ...grounded,
+      claims: [
+        {
+          ...grounded.claims[0],
+          publication: {
+            kind: "structured_reviewed",
+            typed_claim_id: "TC-1",
+            review_status: "approved",
+            source_revision_sha256: "a".repeat(64),
+            renderer_id: "firelens.structured_renderer.v1",
+            support_provenance: "typed_inventory",
+          },
+        },
+        {
+          ...grounded.claims[0],
+          claim_id: "C2",
+          publication: {
+            kind: "official_quote_only",
+            review_status: "extraction_only",
+            renderer_id: "firelens.quote_only_renderer.v1",
+            support_provenance: "exact_official_quote",
+          },
+        },
+      ],
+    } as unknown as AskResponse;
+
+    expect(getStatusBanner(response)).toMatchObject({
+      headline: "Reviewed claims plus source wording",
+      detail: "Reviewed structured claims and extraction-only source wording are labelled separately.",
+      freshness_label: "Stable guidance and source wording",
+    });
   });
 
   it("keeps official records listed when map tiles fail", () => {

@@ -182,7 +182,7 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("What belongs in a grab-and-go bag?");
   await page.getByLabel("Send question").click();
-  await expect(page.getByText("Sources supporting this answer")).toBeVisible();
+  await expect(page.getByText("Answer evidence and support")).toBeVisible();
   await expect(page.getByText("Reviewed sources")).toBeVisible();
   await expect(page.locator("mark")).toHaveText("Food & water");
   await expect(page.getByRole("complementary").getByText("PreparedBC")).toBeVisible();
@@ -194,8 +194,12 @@ test("labels general background and exposes no evidence control", async ({ page 
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("Why can embers be dangerous?");
   await page.getByLabel("Send question").click();
-  await expect(page.getByText("General background", { exact: true })).toBeVisible();
-  await expect(page.getByText("General background — no corpus evidence attached")).toBeVisible();
+  await expect(
+    page.getByLabel("Question and answer").getByText("General background", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(
+    "This is labelled general background and has no reviewed source support attached.",
+  )).toBeVisible();
   await expect(page.getByText("Source passage")).toHaveCount(0);
 });
 
@@ -258,7 +262,7 @@ test("shows official live records and a map through keyboard submission", async 
     page.getByRole("region", { name: "Official wildfire records map" })
       .getByText(/The map is not a safety determination/),
   ).toBeVisible();
-  await expect(page.getByText("Sources supporting this answer")).toHaveCount(0);
+  await expect(page.getByText("Answer evidence and support")).toHaveCount(0);
 });
 
 test("uses an OSM street basemap with required attribution", async ({ page }) => {
