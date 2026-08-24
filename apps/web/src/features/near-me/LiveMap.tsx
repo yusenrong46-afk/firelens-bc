@@ -123,6 +123,7 @@ export function LiveMap({
           bounds={BC_BOUNDS}
           scrollWheelZoom={false}
           keyboard={false}
+          zoomAnimation={false}
           attributionControl={true}
         >
         <OfficialBasemap focus={focus} onTileError={() => setTilesFailed(true)} />

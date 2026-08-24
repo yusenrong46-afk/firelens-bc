@@ -320,6 +320,30 @@ test("keeps a live answer primary and opens its map on demand", async ({ page },
   await expect(page.getByText("Answer evidence and support")).toHaveCount(0);
 });
 
+test("closes an open map popup cleanly while repeatedly changing answer context", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "Popup lifecycle requires the desktop marker interaction.");
+  const pageErrors: Error[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error));
+
+  await page.goto("/");
+  const question = page.getByLabel("Ask FireLens a question");
+  await question.fill("Is there an active wildfire near me right now?");
+  await question.press("Enter");
+  await expect(page.getByRole("button", { name: "Map" }).first()).toBeVisible();
+
+  for (let cycle = 0; cycle < 8; cycle += 1) {
+    await page.getByRole("button", { name: "Map" }).first().click();
+    const marker = page.locator(".live-map__record-geometry").first();
+    await expect(marker).toBeVisible();
+    await marker.dispatchEvent("click");
+    await expect(page.locator(".leaflet-popup").getByText("Test Fire", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Evidence" }).click();
+    await expect(page.getByText("Official map context")).toHaveCount(0);
+  }
+
+  expect(pageErrors.map((error) => error.stack ?? error.message)).toEqual([]);
+});
+
 test("uses an OSM street basemap with required attribution", async ({ page }) => {
   const osmTileRequests: string[] = [];
   page.on("request", (request) => {
