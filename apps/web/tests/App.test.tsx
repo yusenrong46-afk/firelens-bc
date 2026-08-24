@@ -1139,7 +1139,59 @@ describe("FireLens Source Lens", () => {
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "How should I prepare for wildfire?");
     await user.click(screen.getByLabelText("Send question"));
+    expect(await screen.findByText(/You can retry this question\./)).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "Retry this question" })).toBeInTheDocument();
+  });
+
+  it("explains when retrying an unchanged structured request is unlikely to help", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      trace_id: "trace-not-retryable",
+      error_kind: "invalid_request",
+      message: "This request could not be processed as written.",
+      retryable: false,
+    }), { status: 400 })));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "invalid request");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText(/Retrying this unchanged question is unlikely to help\./)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry this question" })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      label: "transport",
+      fetchResult: () => Promise.reject(new TypeError("fetch failed")),
+      message: "FireLens could not reach the service. Check your connection, then retry this question.",
+    },
+    {
+      label: "body read",
+      fetchResult: () => {
+        const response = new Response("unused", { status: 200 });
+        vi.spyOn(response, "text").mockRejectedValueOnce(new TypeError("stream closed"));
+        return Promise.resolve(response);
+      },
+      message: "FireLens reached the service but could not finish reading its response. Retry this question; if the problem continues, use the official BC Wildfire Service.",
+    },
+    {
+      label: "invalid JSON",
+      fetchResult: () => Promise.resolve(new Response("<html>bad gateway</html>", { status: 502 })),
+      message: "FireLens received an invalid service response. Retry this question; if the problem continues, use the official BC Wildfire Service.",
+    },
+  ])("shows truthful retry guidance for a $label failure without retrying automatically", async ({ fetchResult, message }) => {
+    const fetchMock = vi.fn().mockImplementation(fetchResult);
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Are there evacuation orders near Kelowna?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry this question" })).toBeInTheDocument();
+    expect(askCallOptions(fetchMock)).toHaveLength(1);
   });
 
   it("has no automated accessibility violations in the idle state", async () => {

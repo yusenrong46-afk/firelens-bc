@@ -72,6 +72,24 @@ OFFICIAL_SOURCE_URL = (
     "https://www2.gov.bc.ca/gov/content/safety/emergency-preparedness-response-recovery"
 )
 
+_APPLICABILITY_QUALIFIERS = (
+    re.compile(
+        r"\bif\s+(?:i|we|you|someone|a person|people)\s+"
+        r"(?:am|are|is|have|has)\s+(?P<scope>[^?.,;]+)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:for|about)\s+(?:a\s+)?(?:person|people|someone|residents?|individuals?)\s+"
+        r"(?:who\s+(?:is|are|have|has)|with)\s+(?P<scope>[^?.,;]+)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\bas\s+(?:a|an)\s+(?P<scope>[^?.,;]{1,60}?)\s+"
+        r"(?:person|resident|individual)\b",
+        re.IGNORECASE,
+    ),
+)
+
 
 @dataclass(frozen=True)
 class CompiledClaim:
@@ -350,6 +368,11 @@ def _matches_publication_target(text: str, targets: Sequence[str]) -> bool:
 def _quote_candidate_covers_target(text: str, target: str) -> bool:
     if support_token_overlap(text, target) < SUPPORT_TOKEN_OVERLAP_FLOOR:
         return False
+    if any(
+        support_token_overlap(text, qualifier) < 1.0
+        for qualifier in _applicability_qualifiers(target)
+    ):
+        return False
     return not requests_contents(target) or _supplies_contents(text)
 
 
@@ -408,8 +431,50 @@ def _typed_record_matches_publication_target(
         or current.source_span_sha256 != source_span_sha256
     ):
         return False
+    scope_text = "\n".join(
+        value
+        for value in (
+            current.record.subject,
+            current.record.status_stage,
+            *current.record.conditions,
+            *current.record.applies_to,
+        )
+        if value
+    )
+    if any(
+        qualifier and support_token_overlap(scope_text, qualifier) < 1.0
+        for target in targets
+        for qualifier in _applicability_qualifiers(target)
+    ):
+        return False
     return _matches_publication_target(
         f"{current.canonical_text}\n{current.source_span_text}", targets
+    )
+
+
+@lru_cache(maxsize=2_048)
+def _applicability_qualifiers(target: str) -> tuple[str, ...]:
+    """Extract user-stated applicability constraints without a domain phrase list.
+
+    A broad topic overlap must not let a reviewed claim about one population
+    answer a question explicitly scoped to another. The qualifier is compared
+    only with the claim's reviewed typed scope fields, and every qualifier token
+    must be represented there before structured publication is allowed.
+    """
+
+    action_boundary = re.compile(
+        r"\b(?:do not|don't|should|must|can|could|may|will|would)\b",
+        re.IGNORECASE,
+    )
+    return tuple(
+        qualifier
+        for pattern in _APPLICABILITY_QUALIFIERS
+        if (match := pattern.search(target)) is not None
+        if (
+            qualifier := " ".join(
+                action_boundary.split(match.group("scope"), maxsplit=1)[0].split()
+            )
+        )
     )
 
 

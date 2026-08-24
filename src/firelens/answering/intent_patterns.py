@@ -42,6 +42,22 @@ _PROHIBITED_PATTERNS = (
     r"\bwhich one\s+am i\s+under\b",
 )
 
+_REVIEWED_RETURN_CONDITION_PATTERNS = (
+    r"^\s*(?:can|could|may)\s+(?:i|we)\s+(?:return|go back)\s+home\s+"
+    r"after\s+an?\s+evacuation[?!.]*\s*$",
+    r"^\s*when\s+(?:can|could|may|should)\s+an?\s+evacuated\s+"
+    r"(?:resident|person|household|family)\s+(?:return|go back)\s+home\s+"
+    r"after\s+an?\s+(?:wildfire|evacuation)[?!.]*\s*$",
+)
+
+_RETURN_DECISION_CUE_PATTERNS = (
+    r"\b(?:yet|right now|now|today|tonight|currently|active|in effect)\b",
+    r"\b(?:this|that|the)\s+(?:evacuation|alert|order)\b",
+    r"\b(?:this|that|those|these|there)\b",
+    r"\b(?:my|our)\s+(?:address|street|property)\b",
+    r"\b\d{1,6}\s+[a-z].{0,40}\b(?:street|st|avenue|ave|road|rd|boulevard|blvd)\b",
+)
+
 _PERSONALIZED_MEDICAL_PATTERNS = (
     r"\bdiagnos(?:e|is)\b.{0,80}\b(?:me|my|our|whether|cough|symptoms?)\b",
     r"\bprescribe\b.{0,80}\b(?:me|my|for|smoke|headache|cough|medicine|medication)\b",

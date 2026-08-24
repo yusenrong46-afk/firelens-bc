@@ -30,6 +30,7 @@ from firelens.answering.location_intent import (
     asks_for_personal_location,
     coarse_location_from_question,
 )
+from firelens.answering.return_intent import reviewed_return_condition_intent
 from firelens.contracts import (
     AuthorityClass,
     LiveResultKind,
@@ -456,6 +457,7 @@ def static_guidance_fragment(question: str) -> str | None:
                 re.search(pattern, fragment.casefold())
                 for pattern in _REVIEWED_GUIDANCE_PATTERNS
             )
+            or reviewed_return_condition_intent(fragment)
             or _EVACUATION_DEFINITION.search(fragment)
         )
         and plan_query(QueryRequest(question=fragment)).route == QueryRoute.RELATED
@@ -469,7 +471,9 @@ def reviewed_guidance_intent(question: str) -> bool:
     """Recognize only topics represented by the reviewed static collection."""
 
     lowered = question.casefold()
-    return any(re.search(pattern, lowered) for pattern in _REVIEWED_GUIDANCE_PATTERNS)
+    return reviewed_return_condition_intent(question) or any(
+        re.search(pattern, lowered) for pattern in _REVIEWED_GUIDANCE_PATTERNS
+    )
 
 
 def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
@@ -494,6 +498,8 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
         for text in personalized_safety_texts
         for pattern in _PROHIBITED_PATTERNS
     )
+    if reviewed_return_condition_intent(processing_question):
+        personalized = False
     live = any(re.search(pattern, text) for text in routing_texts for pattern in _LIVE_PATTERNS)
     live = live or is_fire_geography_analysis(processing_question)
     live = live or is_fire_record_analysis(processing_question)

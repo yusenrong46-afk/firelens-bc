@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from typing import Any, Protocol
+from uuid import uuid4
 
 from firelens.agent.chat import ChatTurn
 from firelens.agent.compose import (
@@ -43,6 +44,7 @@ from firelens.answering.live_distance import distance_answer, location_request
 from firelens.answering.live_handoffs import related_live_links
 from firelens.answering.live_request_intent import (
     is_distance_request,
+    is_prescriptive_evacuation_distance_request,
     is_unbound_distance_request,
     is_unsupported_selected_request,
 )
@@ -51,6 +53,7 @@ from firelens.contracts import AskResponse, QueryRequest, QueryRoute
 from firelens.errors import ProviderError
 from firelens.live_answering import LiveAnswerCoordinator
 from firelens.publication.compiler import compiled_static_text
+from firelens.publication.fallback import official_handoff_response
 
 MAX_TOOL_ROUNDS = 2
 
@@ -91,6 +94,14 @@ async def run_agent_loop(
         packet.unknown_topics.append("out_of_province_place")
     if is_unsupported_selected_request(request):
         packet.unknown_topics.append("prediction")
+    if is_prescriptive_evacuation_distance_request(request):
+        packet.policy.route = "deterministic_redirect"
+        return (
+            official_handoff_response(uuid4().hex),
+            QueryRoute.RELATED,
+            (),
+            packet,
+        )
     if (
         unsupported
         and not live_layers_for_question(request.question)

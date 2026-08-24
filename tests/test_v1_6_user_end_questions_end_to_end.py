@@ -460,3 +460,28 @@ def test_trust_explanation_uses_only_the_catalogued_capability_or_grounded_lane(
         assert provider.generate_calls <= 1
 
     asyncio.run(run())
+
+
+def test_population_specific_smoke_question_never_substitutes_another_group() -> None:
+    async def run() -> None:
+        provider = FakeProvider(dimensions=1536)
+        runtime = load_runtime(FireLensConfig.from_env(ROOT), provider=provider)
+        assert runtime.service is not None
+        try:
+            response = await runtime.service.ask(
+                QueryRequest(question="What should I do about wildfire smoke if I am pregnant?")
+            )
+        finally:
+            await runtime.aclose()
+
+        answer = (response.answer or "").casefold()
+        assert "asthma" not in answer
+        assert "copd" not in answer
+        assert all(
+            claim.publication is None
+            or claim.publication.typed_claim_id != "TC-VULNERABLE-023-01"
+            for claim in response.claims
+        )
+        assert response.response_mode in {ResponseMode.PARTIAL, ResponseMode.SCOPE_REDIRECT}
+
+    asyncio.run(run())

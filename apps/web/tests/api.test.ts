@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   askFireLens,
+  FireLensClientError,
   fetchNearbyOfficialRecords,
   fetchOfficialMap,
   submitFeedback,
@@ -77,6 +78,65 @@ describe("V3 agent context", () => {
   });
 });
 
+describe("API failure classification", () => {
+  it("distinguishes a fetch transport failure and preserves aborts", async () => {
+    const networkFailure = new TypeError("fetch failed");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(networkFailure));
+
+    await expect(askFireLens("Where is the nearest fire?")).rejects.toMatchObject({
+      name: "FireLensClientError",
+      failureKind: "transport",
+      endpoint: "/api/v1/ask",
+      responseStatus: undefined,
+      cause: networkFailure,
+    } satisfies Partial<FireLensClientError>);
+
+    const abort = new DOMException("The operation was aborted", "AbortError");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(abort));
+    await expect(askFireLens("Where is the nearest fire?")).rejects.toBe(abort);
+  });
+
+  it("distinguishes a response body read failure with response identifiers", async () => {
+    const response = new Response("unused", {
+      status: 200,
+      headers: {
+        "content-type": "application/json",
+        "x-request-id": "request-read-failure",
+      },
+    });
+    vi.spyOn(response, "text").mockRejectedValueOnce(new TypeError("stream closed"));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(response));
+
+    await expect(askFireLens("Where is the nearest fire?")).rejects.toMatchObject({
+      name: "FireLensClientError",
+      failureKind: "response_read",
+      endpoint: "/api/v1/ask",
+      responseStatus: 200,
+      requestId: "request-read-failure",
+      contentType: "application/json",
+    } satisfies Partial<FireLensClientError>);
+  });
+
+  it("distinguishes invalid JSON with response identifiers", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(new Response("<html>bad gateway</html>", {
+      status: 502,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "x-request-id": "request-invalid-json",
+      },
+    })));
+
+    await expect(askFireLens("Where is the nearest fire?")).rejects.toMatchObject({
+      name: "FireLensClientError",
+      failureKind: "invalid_json",
+      endpoint: "/api/v1/ask",
+      responseStatus: 502,
+      requestId: "request-invalid-json",
+      contentType: "text/html; charset=utf-8",
+    } satisfies Partial<FireLensClientError>);
+  });
+});
+
 describe("fetchNearbyOfficialRecords", () => {
   it("posts the bounded typed request and returns the official record page", async () => {
     const payload = {
@@ -132,7 +192,13 @@ describe("fetchNearbyOfficialRecords", () => {
         error_kind: "live_not_found",
         message: "The place label could not be resolved.",
         retryable: false,
-      }), { status: 404 }),
+      }), {
+        status: 404,
+        headers: {
+          "content-type": "application/json",
+          "x-request-id": "request-nearby",
+        },
+      }),
     ));
 
     await expect(fetchNearbyOfficialRecords({
@@ -143,6 +209,9 @@ describe("fetchNearbyOfficialRecords", () => {
     })).rejects.toMatchObject({
       name: "FireLensApiError",
       message: "The place label could not be resolved.",
+      responseStatus: 404,
+      requestId: "request-nearby",
+      contentType: "application/json",
     });
   });
 });

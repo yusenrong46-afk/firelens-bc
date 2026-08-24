@@ -13,6 +13,19 @@ from firelens.freshness_language import official_information_prefix
 _DISTANCE_PATTERN = re.compile(
     r"\b(?:how far|how close|distance|kilomet(?:er|re)s?|miles?)\b", re.IGNORECASE
 )
+_EXPLICIT_FIRE_PATTERN = re.compile(r"\b(?:fire|wildfire|incident|perimeter)\b", re.IGNORECASE)
+_UNIVERSAL_DISTANCE_SCOPE = re.compile(
+    r"\b(?:everyone|everybody|every\s+resident|all\s+(?:people|residents?|"
+    r"famil(?:y|ies)|households?|communities))\b|"
+    r"\b(?:universal|fixed|single|same)\s+(?:evacuation\s+)?(?:distance|radius)\b|"
+    r"\bevery\s+(?:fire|wildfire)\b",
+    re.IGNORECASE,
+)
+_PRESCRIPTIVE_EVACUATION_ACTION = re.compile(
+    r"\b(?:should|must|need(?:s)?\s+to|ought\s+to)\s+"
+    r"(?:evacuat(?:e|ing)|leave)\b",
+    re.IGNORECASE,
+)
 _SELECTED_ENTITY_PATTERN = re.compile(
     r"\b(?:this|that|selected)\s+(?:fire|wildfire|incident|perimeter|record)\b",
     re.IGNORECASE,
@@ -82,9 +95,23 @@ _DEICTIC_DISTANCE = re.compile(
 )
 
 
+def is_prescriptive_evacuation_distance_request(request: QueryRequest) -> bool:
+    """Separate a universal evacuation threshold from live geometry measurement."""
+
+    question = request.question
+    return bool(
+        _DISTANCE_PATTERN.search(question)
+        and _EXPLICIT_FIRE_PATTERN.search(question)
+        and _UNIVERSAL_DISTANCE_SCOPE.search(question)
+        and _PRESCRIPTIVE_EVACUATION_ACTION.search(question)
+    )
+
+
 def is_unbound_distance_request(request: QueryRequest) -> bool:
     """Deictic distance without a selected record. Named-place how-close proceeds."""
 
+    if is_prescriptive_evacuation_distance_request(request):
+        return False
     if request.context.selected_live_result_id:
         return False
     if _DEICTIC_DISTANCE.search(request.question):
@@ -103,15 +130,12 @@ def is_unbound_distance_request(request: QueryRequest) -> bool:
 def is_distance_request(request: QueryRequest) -> bool:
     """Recognize distance requests with an explicit or selected wildfire target."""
 
+    if is_prescriptive_evacuation_distance_request(request):
+        return False
     if not _DISTANCE_PATTERN.search(request.question):
         return False
-    explicit_fire = re.search(
-        r"\b(?:fire|wildfire|incident|perimeter)\b",
-        request.question,
-        re.IGNORECASE,
-    )
     return bool(
-        explicit_fire
+        _EXPLICIT_FIRE_PATTERN.search(request.question)
         or (
             request.context.selected_live_result_id
             and _SELECTED_DISTANCE_ELLIPTICAL.match(request.question)

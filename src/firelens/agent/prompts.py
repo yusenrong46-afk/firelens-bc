@@ -18,9 +18,11 @@ contain the fact, say the official records or reviewed guidance do not report
 it. Do not invent fires, hectare totals, addresses, or other jurisdictions.
 
 Use distance_km from the official packet when the user asks how far or how
-close. Do not estimate a different kilometre. If distance_km is missing, say
-the official records do not include locatable geometry. Compare, rank, and
-summarize geography only from fetched fields. Omit place_label for
+close. Do not estimate a different kilometre. geometry_relation is the
+authoritative coarse inside/nearby/outside classification when it is present.
+Missing distance_km alone does not mean geometry is absent, especially for
+official evacuation polygons. Compare, rank, and summarize geography only
+from fetched fields. Omit place_label for
 province-wide questions. Never pass BC, British Columbia, or the province as
 a place; that is not a community geocode. Call search_reviewed_guidance
 for preparedness, precautions, kits, FireSmart, smoke, or
@@ -30,10 +32,11 @@ guidance, not a live fire list. Do not give personalized evacuate,
 safe-to-return, or medical advice. Do not claim air quality, roads, or
 weather feeds. Do not name a fire that is not in the tool results.
 
-Do not publish raw coordinates. Use distance_km from the packet, or say
-geometry is not locatable. When you are done calling tools, write a concise
-lead sentence. If nothing was found, say you do not know from the official
-sources."""
+Do not publish raw coordinates. Use distance_km when it is present; otherwise
+use a non-unknown geometry_relation without inventing a kilometre. Say geometry
+is not locatable only when the packet has neither a distance nor a usable
+geometry relation. When you are done calling tools, write a concise lead
+sentence. If nothing was found, say you do not know from the official sources."""
 
 OPENROUTER_TOOLS: list[dict[str, Any]] = [
     {

@@ -14,7 +14,10 @@ from firelens.agent.chat import ChatToolCall, ChatTurn
 from firelens.agent.compose import compose_response
 from firelens.agent.packet import AgentPacket, live_record_fact
 from firelens.agent.rails import output_rail_errors
-from firelens.answering.live_analysis import compose_official_answer
+from firelens.answering.live_analysis import (
+    compose_official_answer,
+    filter_requested_named_fire_results,
+)
 from firelens.contracts import (
     AskResponse,
     ClaimSupport,
@@ -40,6 +43,7 @@ from firelens.contracts import (
 )
 from firelens.live import LiveDataErrorKind, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
+from firelens.publication.compiler import compile_structured_claim
 
 
 def _timestamp() -> datetime:
@@ -60,6 +64,7 @@ def _fire(
     geometry: dict[str, object] | None = None,
     geometry_relation: GeometryRelation = GeometryRelation.UNKNOWN,
     freshness: Freshness = Freshness.FRESH,
+    issuer: str | None = None,
 ) -> LiveResult:
     stamp = _timestamp()
     return LiveResult(
@@ -74,6 +79,7 @@ def _fire(
         incident_number=incident_number,
         size_hectares=size_hectares,
         fire_centre=fire_centre,
+        issuer=issuer,
         geometry_relation=geometry_relation,
         geometry=geometry or {"type": "Point", "coordinates": [longitude, latitude]},
     )
@@ -180,6 +186,21 @@ class KitStatic:
     async def ask(self, request: QueryRequest, *args: Any, **kwargs: Any) -> AskResponse:
         del request, args, kwargs
         return _kit_response(mode=ResponseMode.GROUNDED)
+
+
+class ApprovedReturnStatic:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, dict[str, Any]]] = []
+
+    async def ask(self, request: QueryRequest, *args: Any, **kwargs: Any) -> AskResponse:
+        del args
+        self.calls.append((request.question, dict(kwargs)))
+        compiled = compile_structured_claim(
+            typed_claim_id="TC-EVAC-003-01",
+            public_claim_id="C1",
+        )
+        assert compiled.response is not None
+        return compiled.response
 
 
 class AdjacentKitStatic:
@@ -575,6 +596,111 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertNotIn("Unrelated Ridge Fire", execution.response.answer or "")
 
+    async def test_exact_incident_number_prefers_incident_point_over_shared_perimeter(
+        self,
+    ) -> None:
+        incident = _fire(
+            result_id="incident:1068",
+            name="Quilpituk Creek",
+            incident_number="K51402",
+            status="Under Control",
+        )
+        perimeter = _fire(
+            result_id="perimeter:138",
+            name=None,
+            incident_number="K51402",
+            status="Under Control",
+            kind=LiveResultKind.PERIMETER,
+            geometry={
+                "type": "Polygon",
+                "coordinates": [[[-119.52, 50.06], [-119.51, 50.06], [-119.52, 50.06]]],
+            },
+        )
+        agent = _agent(
+            [incident, perimeter, _fire(result_id="incident:9", name="Unrelated Ridge Fire")]
+        )
+
+        execution = await agent.answer(
+            QueryRequest(question="Where is wildfire K51402 right now?")
+        )
+
+        self.assertEqual(
+            [item.result_id for item in execution.response.live_results],
+            ["incident:1068"],
+        )
+        self.assertEqual(
+            execution.response.selected_live_result_id,
+            "incident:1068",
+        )
+        answer = execution.response.answer or ""
+        self.assertIn("Quilpituk Creek", answer)
+        self.assertIn("K51402", answer)
+        self.assertIn("Point", answer)
+        self.assertNotIn("-119.5", answer)
+        self.assertNotIn("locatable geometry", answer.casefold())
+
+    def test_exact_incident_identity_survives_supported_history_follow_up(self) -> None:
+        incident = _fire(
+            result_id="incident:1068",
+            name="Quilpituk Creek",
+            incident_number="K51402",
+        )
+        perimeter = _fire(
+            result_id="perimeter:138",
+            incident_number="K51402",
+            kind=LiveResultKind.PERIMETER,
+        )
+        request = QueryRequest(
+            question="How large is it?",
+            history=[
+                ConversationTurn(role="user", content="Where is wildfire K51402 right now?"),
+                ConversationTurn(
+                    role="assistant",
+                    content=(
+                        "The official incident record maps Quilpituk Creek (K51402) as a Point."
+                    ),
+                ),
+            ],
+        )
+
+        filtered = filter_requested_named_fire_results(request, [incident, perimeter])
+
+        self.assertEqual([item.result_id for item in filtered], ["incident:1068"])
+
+    async def test_exact_incident_selection_supports_distance_follow_up(self) -> None:
+        incident = _fire(
+            result_id="incident:1068",
+            name="Quilpituk Creek",
+            incident_number="K51402",
+            longitude=-120.2,
+            latitude=50.1,
+        )
+        agent = _agent([incident])
+        first_question = "Where is wildfire K51402 right now?"
+
+        first = await agent.answer(QueryRequest(question=first_question))
+        selected_id = first.response.selected_live_result_id
+        self.assertEqual(selected_id, "incident:1068")
+
+        follow_up = await agent.answer(
+            QueryRequest(
+                question="How far is it from Kelowna?",
+                history=[
+                    ConversationTurn(role="user", content=first_question),
+                    ConversationTurn(
+                        role="assistant",
+                        content=first.response.answer or "",
+                    ),
+                ],
+                context=MapContext(selected_live_result_id=selected_id),
+            )
+        )
+
+        self.assertEqual(follow_up.response.response_mode, ResponseMode.LIVE)
+        self.assertEqual(follow_up.response.selected_live_result_id, "incident:1068")
+        self.assertIn("Quilpituk Creek", follow_up.response.answer or "")
+        self.assertRegex(follow_up.response.answer or "", r"\d+(?:\.\d+)? km")
+
     async def test_max_hectares_uses_official_size_field(self) -> None:
         agent = _agent(
             [
@@ -922,6 +1048,74 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(execution.response.response_mode, ResponseMode.ABSTENTION)
         self.assertEqual(provider.turns, 0)
         self.assertIn("cannot provide", (execution.response.answer or "").casefold())
+
+    async def test_generic_return_condition_compiles_the_reviewed_claim(self) -> None:
+        static = ApprovedReturnStatic()
+        live = CountingMapService([])
+        agent = FireLensAgent(
+            cast(Any, static),
+            LiveAnswerCoordinator(cast(Any, live)),
+        )
+
+        execution = await agent.answer(
+            QueryRequest(question="Can I return home after an evacuation?")
+        )
+
+        response = execution.response
+        self.assertEqual(execution.route, QueryRoute.RELATED)
+        self.assertEqual(execution.tools, (AgentTool.SEARCH_REVIEWED_GUIDANCE,))
+        self.assertEqual(response.response_mode, ResponseMode.GROUNDED)
+        self.assertEqual(len(response.claims), 1)
+        publication = response.claims[0].publication
+        self.assertIsNotNone(publication)
+        assert publication is not None
+        self.assertEqual(publication.typed_claim_id, "TC-EVAC-003-01")
+        self.assertEqual(publication.kind.value, "structured_reviewed")
+        self.assertIn("only return home when officials say it is safe", response.answer or "")
+        self.assertEqual(
+            static.calls,
+            [
+                (
+                    "Can I return home after an evacuation?",
+                    {"allow_live": False, "prefer_reviewed_quotes": True},
+                )
+            ],
+        )
+        self.assertEqual((live.map_calls, live.nearby_calls, live.resolve_calls), (0, 0, 0))
+
+    async def test_universal_evacuation_distance_uses_uncovered_high_risk_handoff(
+        self,
+    ) -> None:
+        live = CountingMapService([])
+        agent = FireLensAgent(
+            cast(Any, SilentStatic()),
+            LiveAnswerCoordinator(cast(Any, live)),
+        )
+
+        execution = await agent.answer(
+            QueryRequest(
+                question=(
+                    "Tell me the universal distance everyone should evacuate "
+                    "from every wildfire."
+                )
+            )
+        )
+
+        response = execution.response
+        self.assertEqual(execution.route, QueryRoute.RELATED)
+        self.assertEqual(execution.tools, ())
+        self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
+        self.assertEqual(response.reason_code, ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED)
+        self.assertEqual(
+            response.answer,
+            "FireLens does not have a reviewed structured claim for this high-risk "
+            "question. Use the issuing authority for official wording.",
+        )
+        self.assertFalse(response.claims)
+        self.assertFalse(response.evidence)
+        self.assertFalse(response.live_results)
+        self.assertNotRegex(response.answer or "", r"\b\d+(?:\.\d+)?\b")
+        self.assertEqual((live.map_calls, live.nearby_calls, live.resolve_calls), (0, 0, 0))
 
     async def test_named_place_how_close_is_not_unbound(self) -> None:
         agent = _agent(
@@ -1367,6 +1561,105 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         answer = execution.response.answer or ""
         self.assertTrue(answer.startswith("Yes."))
         self.assertIn("Kelowna Order", answer)
+
+    async def test_named_place_evacuation_order_uses_relation_without_distance(self) -> None:
+        records = [
+            _fire(
+                result_id=f"evacuation:{index}",
+                name="Bald Range Wildfire",
+                kind=LiveResultKind.EVACUATION,
+                status="Order",
+                issuer="Regional District of Okanagan-Similkameen",
+                geometry_relation=GeometryRelation.NEARBY,
+                geometry={
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [-119.8, 49.85],
+                            [-119.7, 49.85],
+                            [-119.7, 49.95],
+                            [-119.8, 49.95],
+                            [-119.8, 49.85],
+                        ]
+                    ],
+                },
+            )
+            for index in range(2)
+        ]
+        records.append(
+            _fire(
+                result_id="evacuation:alert",
+                name="Bradley Creek Wildfire",
+                kind=LiveResultKind.EVACUATION,
+                status="Alert",
+                issuer="Okanagan Indian Band",
+                geometry_relation=GeometryRelation.NEARBY,
+            )
+        )
+        agent = _agent(records)
+
+        execution = await agent.answer(
+            QueryRequest(question="Are there evacuation orders near West Kelowna right now?")
+        )
+
+        self.assertEqual(len(execution.response.live_results), 3)
+        answer = execution.response.answer or ""
+        self.assertTrue(answer.startswith("Yes."))
+        self.assertIn("West Kelowna", answer)
+        self.assertIn("Bald Range Wildfire", answer)
+        self.assertIn("Order", answer)
+        self.assertIn("nearby", answer.casefold())
+        self.assertEqual(answer.count("Bald Range Wildfire"), 1)
+        self.assertNotIn("Bradley Creek Wildfire", answer)
+        self.assertNotIn("geometry is not locatable", answer.casefold())
+        self.assertNotIn("do not include locatable geometry", answer.casefold())
+
+    async def test_province_evacuation_text_groups_without_changing_raw_records(self) -> None:
+        records = [
+            _fire(
+                result_id=f"evacuation:bald:{index}",
+                name="Bald Range Wildfire",
+                kind=LiveResultKind.EVACUATION,
+                status="Order",
+                issuer="Regional District of Okanagan-Similkameen",
+            )
+            for index in range(3)
+        ]
+        records.extend(
+            [
+                _fire(
+                    result_id="evacuation:bald:alert",
+                    name="Bald Range Wildfire",
+                    kind=LiveResultKind.EVACUATION,
+                    status="Alert",
+                    issuer="District of Summerland",
+                ),
+                _fire(
+                    result_id="evacuation:brunswick:order",
+                    name="Brunswick Wildfire",
+                    kind=LiveResultKind.EVACUATION,
+                    status="Order",
+                    issuer="Boston Bar First Nation",
+                ),
+            ]
+        )
+        agent = _agent(records)
+
+        execution = await agent.answer(
+            QueryRequest(
+                question="What evacuation alerts and orders are active across BC right now?"
+            )
+        )
+
+        self.assertEqual(
+            [item.result_id for item in execution.response.live_results],
+            [item.result_id for item in records],
+        )
+        answer = execution.response.answer or ""
+        self.assertEqual(answer.count("Regional District of Okanagan-Similkameen"), 1)
+        self.assertIn("3 area records", answer)
+        self.assertIn("District of Summerland", answer)
+        self.assertIn("Boston Bar First Nation", answer)
 
     async def test_province_wide_evac_fetch_annotates_asked_place(self) -> None:
         live = FixedLiveService(

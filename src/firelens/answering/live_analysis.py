@@ -7,11 +7,13 @@ from collections import Counter
 from collections.abc import Sequence
 
 from firelens.answering.intent_safety import is_empty_map_safety_inference
+from firelens.answering.live_evacuation import (
+    evacuation_answer,
+    is_evacuation_record_question,
+)
 from firelens.answering.live_record_intent import is_fire_geography_analysis
-from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import (
     CoarseResolvedLocation,
-    GeometryRelation,
     LiveResult,
     LiveResultKind,
     QueryRequest,
@@ -30,10 +32,6 @@ _PLACEHOLDER_NAME = "unnamed official record"
 _EXISTENCE = re.compile(
     r"\b(?:is there|are there|does there exist)\b.{0,80}\b(?:called|named)\s+"
     r"[\"']?(?P<name>[A-Za-z][A-Za-z0-9'’.-]*(?:\s+[A-Za-z0-9'’.-]*){0,6})[\"']?",
-    re.IGNORECASE,
-)
-_EVAC_YES_NO = re.compile(
-    r"\b(?:is|are)\b.+\bunder\b.+\b(?:order|alert|evacuat)",
     re.IGNORECASE,
 )
 _TWO_LARGEST = re.compile(
@@ -76,6 +74,20 @@ _LOCATED_NAMED_FIRE = re.compile(
     r"\bwhere(?:\s+is|['’]s)\s+(?:the\s+)?"
     r"(?P<name>[A-Za-z0-9'’.-]+(?:\s+[A-Za-z0-9'’.-]+){0,5}?)\s+"
     r"(?:fire|wildfire)\s+(?:near|around|by|in|within)\b",
+    re.IGNORECASE,
+)
+_PREFIXED_NAMED_FIRE = re.compile(
+    r"\bwhere(?:\s+is|['’]s)\s+(?:the\s+)?(?:fire|wildfire|incident)\s+"
+    r"(?P<name>[A-Za-z0-9'’.-]+(?:\s+[A-Za-z0-9'’.-]+){0,5}?)"
+    r"(?=\s+(?:right\s+now|today|tonight|currently|now)\b|[?!.]|$)",
+    re.IGNORECASE,
+)
+_BCWS_INCIDENT_NUMBER = re.compile(
+    r"(?<![A-Za-z0-9])(?P<number>[A-Za-z]\d{4,6})(?![A-Za-z0-9])"
+)
+_FIRE_FOLLOW_UP = re.compile(
+    r"\b(?:it|its|that\s+(?:fire|wildfire|incident)|this\s+(?:fire|wildfire|incident)|"
+    r"the\s+(?:fire|wildfire|incident)|same\s+(?:fire|wildfire|incident))\b",
     re.IGNORECASE,
 )
 _GENERIC_LOCATED_NAMES = frozenset(
@@ -171,6 +183,15 @@ def record_matches_name(result: LiveResult, queried: str) -> bool:
 def extracted_located_fire_name(question: str) -> str | None:
     """Extract a specifically named fire from a where-in-place question."""
 
+    incident_number = _BCWS_INCIDENT_NUMBER.search(question)
+    if incident_number is not None and re.search(
+        r"\b(?:fire|wildfire|incident)\b", question, re.IGNORECASE
+    ):
+        return incident_number.group("number").upper()
+    prefixed = _PREFIXED_NAMED_FIRE.search(question)
+    if prefixed is not None:
+        name = " ".join(prefixed.group("name").split()).strip(" ?.!'\"")
+        return name or None
     match = _LOCATED_NAMED_FIRE.search(question)
     if match is None:
         return None
@@ -178,6 +199,22 @@ def extracted_located_fire_name(question: str) -> str | None:
     if not base or base.casefold().split()[0] in _GENERIC_LOCATED_NAMES:
         return None
     return f"{base} Fire"
+
+
+def _requested_fire_identity(request: QueryRequest) -> str | None:
+    direct = extracted_located_fire_name(request.question)
+    if direct is not None:
+        return direct
+    if not _FIRE_FOLLOW_UP.search(request.question):
+        return None
+    for turn in reversed(request.history):
+        incident_number = _BCWS_INCIDENT_NUMBER.search(turn.content)
+        if incident_number is not None:
+            return incident_number.group("number").upper()
+        prior = extracted_located_fire_name(turn.content)
+        if prior is not None:
+            return prior
+    return None
 
 
 def _normalized_record_name(value: str) -> str:
@@ -215,7 +252,7 @@ def filter_requested_named_fire_results(
 ) -> list[LiveResult]:
     """Keep unrelated nearby records out of a specifically named-fire response."""
 
-    queried = extracted_located_fire_name(request.question)
+    queried = _requested_fire_identity(request)
     if queried is None:
         return list(records)
     normalized_query = _normalized_record_name(queried)
@@ -223,18 +260,24 @@ def filter_requested_named_fire_results(
         normalized_query,
         normalized_query.removesuffix(" fire").removesuffix(" wildfire"),
     }
-    exact = [
-        item
-        for item in records
-        if _normalized_record_name(official_display_name(item)) in query_variants
-    ]
+
+    def normalized_identities(item: LiveResult) -> set[str]:
+        values = (official_display_name(item), item.name or "", item.incident_number or "")
+        return {_normalized_record_name(value) for value in values if value}
+
+    exact = [item for item in records if normalized_identities(item) & query_variants]
     if exact:
+        if "perimeter" not in request.question.casefold():
+            incidents = [item for item in exact if item.kind == LiveResultKind.INCIDENT]
+            if incidents:
+                return incidents
         return exact
     typo_matches = [
         item
         for item in records
         if any(
-            _is_single_typo(_normalized_record_name(official_display_name(item)), variant)
+            _is_single_typo(identity, variant)
+            for identity in normalized_identities(item)
             for variant in query_variants
             if variant
         )
@@ -273,6 +316,18 @@ def official_analysis_answer(
         if not records:
             return f"No fetched official record matched the named fire {located_name}."
         matched = records[0]
+        identity = official_display_name(matched)
+        if (
+            matched.incident_number
+            and matched.incident_number.casefold() not in identity.casefold()
+        ):
+            identity = f"{identity} ({matched.incident_number})"
+        geometry_type = str(matched.geometry.get("type") or "").strip()
+        mapped_geometry = (
+            f" Its official mapped geometry is a {geometry_type}."
+            if geometry_type in {"Point", "Polygon", "MultiPolygon"}
+            else ""
+        )
         distance = (
             f" It is {matched.distance_km:g} km geodesic from the stated community "
             f"to the official {matched.distance_basis.replace('_', ' ')}."
@@ -280,8 +335,8 @@ def official_analysis_answer(
             else ""
         )
         return (
-            f"The fetched official records match {official_display_name(matched)}, "
-            f"status {matched.status}.{distance}"
+            f"The fetched official {matched.kind.value} record matches {identity}, "
+            f"status {matched.status}.{mapped_geometry}{distance}"
         )
     queried = extracted_existence_name(request.question)
     if queried:
@@ -292,8 +347,13 @@ def official_analysis_answer(
                 f"{official_display_name(matched)}, status {matched.status}."
             )
         return f"No fetched official record is named {queried}."
-    if _EVAC_YES_NO.search(request.question):
-        return _evac_yes_no(request, records)
+    if is_evacuation_record_question(request.question):
+        return evacuation_answer(
+            request,
+            records,
+            display_name=official_display_name,
+            nearby_radius_km=_NEARBY_RADIUS_KM,
+        )
     if _OLDEST.search(request.question):
         return (
             "The official records available for this request do not report a "
@@ -570,30 +630,6 @@ def _count(records: Sequence[LiveResult], roster_total: int | None) -> str:
         f"Official layers return {incident_count} incident records "
         f"and {perimeter_count} perimeter records. This is a record count, not "
         "a distinct-fire count or a safety determination."
-    )
-
-
-def _evac_yes_no(request: QueryRequest, records: Sequence[LiveResult]) -> str:
-    location = request.location or coarse_location_from_question(request.question)
-    place = location.label if location is not None and location.label else "the requested place"
-    covering = [
-        item
-        for item in records
-        if item.kind == LiveResultKind.EVACUATION
-        and (
-            item.geometry_relation in {GeometryRelation.INSIDE, GeometryRelation.NEARBY}
-            or (item.distance_km is not None and item.distance_km <= _NEARBY_RADIUS_KM)
-        )
-    ]
-    if covering:
-        names = ", ".join(official_display_name(item) for item in covering[:8])
-        return (
-            f"Yes. Official fire-related evacuation records near {place} include "
-            f"{names}. This is not a stay-or-leave instruction."
-        )
-    return (
-        f"No fetched official fire-related evacuation order or alert covers "
-        f"{place} in this bounded response. That is not an all-clear."
     )
 
 

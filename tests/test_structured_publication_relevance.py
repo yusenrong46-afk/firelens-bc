@@ -189,6 +189,48 @@ def test_quote_only_high_risk_response_is_partial() -> None:
     assert response.claims[0].publication.kind.value == "official_quote_only"
 
 
+def test_population_specific_request_does_not_publish_a_different_group_claim() -> None:
+    question = "What should I do about wildfire smoke if I am pregnant?"
+    quote = (
+        "People at higher risk\n"
+        "People with pre-existing chronic conditions such as asthma, chronic \u200b"
+        "obstructive pulmonary disease (COPD), heart disease, and diabetes\n"
+        "People who are pregnant\n"
+        "Infants and small children\n"
+        "Elderly"
+    )
+    base = _bound_packet(question, "TC-VULNERABLE-023-01")
+    packet = base.model_copy(
+        update={
+            "items": [
+                base.items[0].model_copy(update={"primary_text": quote, "context_text": quote})
+            ],
+            "quote_candidates": [
+                EvidenceQuoteCandidate(quote_id="E1Q1", evidence_id="E1", text=quote)
+            ],
+        }
+    )
+
+    response = compile_high_risk_answer(question, packet, trace_id="pregnancy-scope")
+
+    assert response.response_mode == ResponseMode.SCOPE_REDIRECT
+    assert response.reason_code == ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED
+    assert response.claims == []
+    assert "reviewed structured claim" in response.answer.casefold()
+
+
+def test_population_specific_request_keeps_matching_reviewed_scope() -> None:
+    question = "What should I do about wildfire smoke if I have a chronic health condition?"
+    packet = _bound_packet(question, "TC-VULNERABLE-024-01")
+
+    response = compile_high_risk_answer(question, packet, trace_id="chronic-scope")
+
+    assert response.response_mode == ResponseMode.GROUNDED
+    assert response.validation is not None and response.validation.accepted
+    assert response.claims[0].publication is not None
+    assert response.claims[0].publication.typed_claim_id == "TC-VULNERABLE-024-01"
+
+
 def test_contents_request_keeps_build_claim_and_adds_first_content_bearing_quote() -> None:
     question = "What basic items should I put in a wildfire grab-and-go bag?"
     checklist = (

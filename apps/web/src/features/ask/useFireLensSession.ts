@@ -4,6 +4,7 @@ import {
   type AskResponse,
   type ConversationTurn,
   FireLensApiError,
+  FireLensClientError,
   type LocationInput,
   type LiveResult,
   type MapContext,
@@ -161,17 +162,33 @@ export function useFireLensSession(): FireLensSession {
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       if (error instanceof FireLensApiError) {
+        const message = error.detail.retryable
+          ? `${error.detail.message} You can retry this question.`
+          : `${error.detail.message} Retrying this unchanged question is unlikely to help.`;
         setView({
           kind: error.detail.retryable ? "unavailable" : "error",
           question: normalized,
-          message: error.detail.message,
+          message,
           retryable: error.detail.retryable,
+        });
+      } else if (error instanceof FireLensClientError) {
+        const message = error.failureKind === "transport"
+          ? "FireLens could not reach the service. Check your connection, then retry this question."
+          : error.failureKind === "response_read"
+            ? "FireLens reached the service but could not finish reading its response. Retry this question; if the problem continues, use the official BC Wildfire Service."
+            : "FireLens received an invalid service response. Retry this question; if the problem continues, use the official BC Wildfire Service.";
+        setView({
+          kind: error.failureKind === "transport" ? "unavailable" : "error",
+          question: normalized,
+          message,
+          retryable: true,
         });
       } else {
         setView({
           kind: "error",
           question: normalized,
-          message: "FireLens could not read the local service response.",
+          message: "FireLens encountered an unexpected response error. Retrying this unchanged question may not help.",
+          retryable: false,
         });
       }
     } finally {

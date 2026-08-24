@@ -8,7 +8,10 @@ from uuid import uuid4
 from firelens.agent.packet import AgentPacket
 from firelens.answering.intent import live_layers_for_question
 from firelens.answering.intent_safety import is_empty_map_safety_inference
-from firelens.answering.live_analysis import compose_official_answer
+from firelens.answering.live_analysis import (
+    compose_official_answer,
+    extracted_located_fire_name,
+)
 from firelens.answering.live_composition import supported_static_when_live_missing
 from firelens.answering.live_request_intent import (
     is_distance_request,
@@ -131,6 +134,12 @@ def _with_packet_fields(
             updates["history_text"] = None
     if request.context.selected_live_result_id and not response.selected_live_result_id:
         updates["selected_live_result_id"] = request.context.selected_live_result_id
+    elif (
+        not response.selected_live_result_id
+        and len(packet.live_results) == 1
+        and extracted_located_fire_name(request.question) is not None
+    ):
+        updates["selected_live_result_id"] = packet.live_results[0].result_id
     if packet.resolved_location is not None and response.resolved_location is None:
         updates["resolved_location"] = packet.resolved_location
     if not updates:

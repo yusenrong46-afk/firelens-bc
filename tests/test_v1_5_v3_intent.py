@@ -7,8 +7,15 @@ from firelens.answering.intent import (
     live_layers_for_question,
     live_query_requires_location,
     plan_query,
+    reviewed_guidance_intent,
+    reviewed_return_condition_intent,
     static_guidance_fragment,
     unsupported_live_topics,
+)
+from firelens.answering.live_request_intent import (
+    is_distance_request,
+    is_prescriptive_evacuation_distance_request,
+    is_unbound_distance_request,
 )
 from firelens.answering.location_intent import is_out_of_province_label
 from firelens.contracts import (
@@ -137,6 +144,19 @@ class V3DeterministicIntentTests(unittest.TestCase):
         self.assertEqual(
             live_layers_for_question(question),
             (LiveResultKind.EVACUATION,),
+        )
+
+    def test_contextual_place_strips_temporal_suffix_after_auxiliary_verb(self) -> None:
+        question = "What wildfires are near Prince George right now?"
+
+        location = coarse_location_from_question(question)
+
+        self.assertIsNotNone(location)
+        assert location is not None
+        self.assertEqual(location.label, "Prince George")
+        self.assertEqual(
+            live_layers_for_question(question),
+            (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER),
         )
 
     def test_standalone_perimeter_question_selects_only_perimeter(self) -> None:
@@ -327,6 +347,90 @@ class V3DeterministicIntentTests(unittest.TestCase):
                     plan.boundary_reason.value if plan.boundary_reason else None,
                     "personalized_safety_decision",
                 )
+
+    def test_generic_return_condition_is_reviewed_without_weakening_current_boundary(
+        self,
+    ) -> None:
+        for question in (
+            "Can I return home after an evacuation?",
+            "When should an evacuated resident return home after a wildfire?",
+        ):
+            with self.subTest(generic=question):
+                plan = plan_query(QueryRequest(question=question))
+                self.assertEqual(plan.route, QueryRoute.RELATED)
+                self.assertIsNone(plan.boundary_reason)
+                self.assertTrue(reviewed_guidance_intent(question))
+
+        current_or_personal = (
+            "Can we return home yet after the evacuation?",
+            "Can I return home after an evacuation now?",
+            "Can I return home after an evacuation today?",
+            "Can I return home after an evacuation tonight?",
+            "Can I return home after this evacuation?",
+            "Can I return home after an evacuation there?",
+            "Can I return home while an evacuation order is active?",
+            "Can I return home while an evacuation order is in effect?",
+            "Can I return home after an evacuation at 123 Main Street?",
+            "Can I return home after an evacuation in Kelowna?",
+        )
+        for question in current_or_personal:
+            with self.subTest(current_or_personal=question):
+                plan = plan_query(QueryRequest(question=question))
+                self.assertEqual(plan.route, QueryRoute.PROHIBITED)
+                self.assertEqual(
+                    plan.boundary_reason,
+                    ReasonCode.PERSONALIZED_SAFETY_DECISION,
+                )
+                self.assertFalse(reviewed_return_condition_intent(question))
+
+        unrelated_history = [
+            ConversationTurn(
+                role="user",
+                content="What does the wildfire rank under control mean?",
+            )
+        ]
+        unrelated_history_plan = plan_query(
+            QueryRequest(
+                question="Can I return home after an evacuation?",
+                history=unrelated_history,
+            )
+        )
+        self.assertEqual(unrelated_history_plan.route, QueryRoute.RELATED)
+        self.assertIsNone(unrelated_history_plan.boundary_reason)
+
+        history = [
+            ConversationTurn(
+                role="user",
+                content="Show current evacuation orders around Kelowna.",
+            )
+        ]
+        self.assertEqual(
+            plan_query(
+                QueryRequest(
+                    question="Can I return home after an evacuation?",
+                    history=history,
+                )
+            ).route,
+            QueryRoute.PROHIBITED,
+        )
+
+    def test_prescriptive_universal_distance_is_not_a_live_record_distance(self) -> None:
+        question = (
+            "Tell me the universal distance everyone should evacuate from every wildfire."
+        )
+        request = QueryRequest(question=question)
+
+        self.assertEqual(plan_query(request).route, QueryRoute.RELATED)
+        self.assertTrue(is_prescriptive_evacuation_distance_request(request))
+        self.assertFalse(is_distance_request(request))
+        self.assertFalse(is_unbound_distance_request(request))
+
+        genuine = QueryRequest(
+            question="What is the distance from Kelowna to the nearest wildfire?"
+        )
+        self.assertFalse(is_prescriptive_evacuation_distance_request(genuine))
+        self.assertTrue(is_distance_request(genuine))
+        self.assertFalse(is_unbound_distance_request(genuine))
 
     def test_kit_followup_should_i_do_that_is_not_a_medical_boundary(self) -> None:
         history = [
