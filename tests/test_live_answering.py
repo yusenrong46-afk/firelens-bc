@@ -602,6 +602,18 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(named.required_input)
         self.assertIn("Target perimeter", named.answer or "")
 
+        mapped_wording = (
+            await agent.answer(
+                QueryRequest(
+                    question="What is the nearest mapped wildfire perimeter to Kelowna?"
+                )
+            )
+        ).response
+        self.assertEqual(mapped_wording.response_mode, ResponseMode.LIVE)
+        self.assertIsNotNone(mapped_wording.resolved_location)
+        self.assertIn("Target perimeter", mapped_wording.answer or "")
+        self.assertIn("km geodesic", mapped_wording.answer or "")
+
     async def test_distance_followup_never_substitutes_for_an_unmatched_selection(self) -> None:
         timestamp = datetime(2026, 8, 13, tzinfo=UTC)
         live = LiveMapResponse(

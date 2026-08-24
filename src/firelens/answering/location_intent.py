@@ -130,7 +130,7 @@ _PLACE_PATTERNS = (
     ),
     re.compile(
         r"\b(?:what|which)\s+is\s+(?:the\s+)?(?:nearest|closest)\s+"
-        r"(?:official\s+)?(?:wildfire\s+|fire\s+)?perimeter\s+"
+        r"(?:(?:official|mapped)\s+){0,2}(?:wildfire\s+|fire\s+)?perimeter\s+"
         r"(?:to|from|near)\s+(?P<place>[a-z][a-z .'-]{1,80}?)"
         r"(?=,|\s+(?:and|but|then)\b|[?!.,]*$)",
         re.IGNORECASE,

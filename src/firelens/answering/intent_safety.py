@@ -10,7 +10,8 @@ TRUST_EXPLANATION_PATTERN = (
     r"(?:\bhow can i tell whether information in your answer is "
     r"current or just preparedness guidance\b|"
     r"\bhow (?:do|can) i know\b.{0,100}\b(?:answer|information)\b"
-    r".{0,100}\b(?:trustworthy|reliable|grounded|sourced)\b|"
+    r".{0,100}\b(?:trustworthy|reliable|grounded|sourced|reviewed)\b|"
+    r"\bwhich parts? of (?:a |the )?firelens answer (?:are|were) reviewed\b|"
     r"\bwhere did (?:this|the|your)(?: firelens)? "
     r"(?:answer|information) come from\b)"
 )

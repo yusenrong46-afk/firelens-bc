@@ -26,6 +26,8 @@ class V3DeterministicIntentTests(unittest.TestCase):
             "What can FireLens do for me?",
             "What does FireLens cover?",
             "How do I know this FireLens answer is trustworthy, and where did it come from?",
+            "How do I know which parts of a FireLens answer are reviewed?",
+            "Which parts of a FireLens answer are reviewed?",
             "Where did this answer come from?",
         ):
             with self.subTest(question=question):
@@ -431,6 +433,8 @@ class V3DeterministicIntentTests(unittest.TestCase):
             "What is the nearest official wildfire perimeter to Kelowna?",
             "Which official perimeter is nearest to Kelowna, BC?",
             "What is nearest official wildfire perimeter to Kelowna?",
+            "What is the nearest mapped wildfire perimeter to Kelowna?",
+            "What is the nearest official mapped wildfire perimeter to Kelowna?",
             "nearest perimeter to Kelowna",
         ):
             with self.subTest(question=question):
