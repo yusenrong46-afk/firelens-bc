@@ -9,30 +9,27 @@ function formatClock(value: string | null | undefined): string | undefined {
 
 export function StatusBanner({
   banner,
-  hideHeadline = false,
 }: {
   banner: StatusBannerView;
-  hideHeadline?: boolean;
 }) {
   const retrieved = formatClock(banner.retrieval_completed_at);
   const updated = formatClock(banner.source_updated_at);
-  const warnings = [
-    banner.availability_label.toLowerCase().includes("unavailable") ? banner.availability_label : "",
-    banner.freshness_label.toLowerCase().includes("stale") || banner.freshness_label.toLowerCase().includes("mixed")
-      ? banner.freshness_label
-      : "",
-  ].filter(Boolean);
+  const availabilityWarning = banner.availability_label.toLowerCase().includes("unavailable");
+  const freshness = banner.freshness_label.toLowerCase();
+  const freshnessWarning = freshness.includes("stale") || freshness.includes("mixed");
+
   return (
     <div className="status-banner" role="status" aria-label="Answer status">
-      {!hideHeadline && <strong>{banner.headline}</strong>}
-      {warnings.map((item) => (
-        <p className="status-banner__warning" key={item}>{item}</p>
-      ))}
+      <strong>{banner.headline}</strong>
       <p>{banner.detail}</p>
       <p>
-        <span>Freshness: {banner.freshness_label}</span>
+        <span className={freshnessWarning ? "status-banner__warning" : undefined}>
+          Freshness: {banner.freshness_label}
+        </span>
         {" · "}
-        <span>Availability: {banner.availability_label}</span>
+        <span className={availabilityWarning ? "status-banner__warning" : undefined}>
+          Availability: {banner.availability_label}
+        </span>
       </p>
       {(updated || retrieved) && (
         <p>
@@ -46,36 +43,6 @@ export function StatusBanner({
           {banner.official_escalation_title ?? "Open official source"}
         </a>
       )}
-    </div>
-  );
-}
-
-export function SupportChecklist({
-  supported,
-  unknown,
-}: {
-  supported: string[];
-  unknown: string[];
-}) {
-  if (supported.length === 0 && unknown.length === 0) return null;
-  return (
-    <div className="support-checklist" aria-label="What FireLens established">
-      <section>
-        <h2>Established from FireLens sources</h2>
-        {supported.length > 0 ? (
-          <ul>{supported.map((item) => <li key={item}>{item}</li>)}</ul>
-        ) : (
-          <p>Nothing in this answer is established from a reviewed quotation or official live record.</p>
-        )}
-      </section>
-      <section>
-        <h2>Not established</h2>
-        {unknown.length > 0 ? (
-          <ul>{unknown.map((item) => <li key={item}>{item}</li>)}</ul>
-        ) : (
-          <p>No additional unknowns were recorded for this answer.</p>
-        )}
-      </section>
     </div>
   );
 }

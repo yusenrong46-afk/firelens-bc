@@ -22,6 +22,13 @@
   boundary, V1.6 work, verification limits, and contributor entry points.
 - Made rejected validation downgrade public presentation even for no-claim
   responses carrying stale strengthening banner copy.
+- Made unsupported current AQHI, smoke-forecast, road-condition, and aircraft
+  requests return deterministic official handoffs before any provider or
+  unrelated wildfire-record tool can run; mixed supported requests keep their
+  supported records or reviewed guidance.
+- Removed repeated combined-answer, support-checklist, and limitation blocks
+  from the answer surface. Authority-labelled sections now render once as the
+  primary content while proof and source controls remain available.
 
 ## Historical — V1.1 conversational RC
 

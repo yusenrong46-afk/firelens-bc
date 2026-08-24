@@ -94,7 +94,7 @@ afterEach(() => {
 });
 
 describe("proof-carrying answer surface", () => {
-  it("shows a status banner, known/unknown checklist, and a proof card", async () => {
+  it("shows one status banner, one limitation, and the claim/source controls", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(grounded), { status: 200 })));
     const user = userEvent.setup();
     render(<App />);
@@ -105,9 +105,11 @@ describe("proof-carrying answer surface", () => {
       "Grounded in reviewed official sources",
     );
     expect(screen.getByText(/exact supporting quotations/)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Established from FireLens sources" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Not established" })).toBeInTheDocument();
-    expect(screen.getAllByText("Stable guidance only.").length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText("What FireLens established")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Established from FireLens sources" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Not established" })).not.toBeInTheDocument();
+    expect(screen.getAllByText("Stable guidance only.")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: /Keep water and food in a grab-and-go bag\./ })).toBeInTheDocument();
     expect(screen.getAllByText("Supported by an exact reviewed quotation").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Human-verified source transcription").length).toBeGreaterThan(0);
     expect(screen.getByText("Critical fields checked and preserved")).toBeInTheDocument();

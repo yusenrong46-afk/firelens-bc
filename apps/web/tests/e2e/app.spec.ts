@@ -310,7 +310,7 @@ test("keeps a live answer primary and opens its map on demand", async ({ page },
     await expect(testFire.locator("..")).toHaveClass(/live-list__selected/);
   }
   await expect(
-    page.getByRole("status", { name: "Answer limitations" })
+    page.getByLabel("Answer limitations")
       .getByText("No matching record is not a safety determination.", { exact: true }),
   ).toBeVisible();
   await expect(
@@ -388,7 +388,7 @@ test("keeps the assistant answer in view on a short mobile overlay", async ({ pa
   const answer = page.locator("#conversation .assistant-message .answer-lead");
   await expect(answer).toHaveText("Prepare water, food, and medication.");
   await expect(answer).toBeInViewport();
-  await expect(page.getByRole("status", { name: "Answer limitations" })).toBeInViewport();
+  await expect(page.getByLabel("Answer limitations")).toBeInViewport();
 });
 
 test("places skip links first and limitations after the answer", async ({ page }) => {
@@ -400,7 +400,7 @@ test("places skip links first and limitations after the answer", async ({ page }
   await expect(page.locator("#conversation")).toBeInViewport();
   await page.getByLabel("Ask FireLens a question").fill("What belongs in a grab-and-go bag?");
   await page.getByLabel("Send question").click();
-  const limitations = page.getByRole("status", { name: "Answer limitations" });
+  const limitations = page.getByLabel("Answer limitations");
   await expect(limitations).toBeVisible();
   await expect(page.locator("#conversation .assistant-message .answer-lead")).toHaveText(
     "Prepare water, food, and medication.",

@@ -295,34 +295,6 @@ export function getStatusBanner(response: AskResponse | undefined): StatusBanner
   };
 }
 
-export function getSupportChecklist(response: AskResponse | undefined): {
-  supported: string[];
-  unknown: string[];
-} {
-  if (!response) return { supported: [], unknown: [] };
-  if ((response.claims?.length ?? 0) === 0 && ((response.supported_items?.length ?? 0) > 0 || (response.unknown_items?.length ?? 0) > 0)) {
-    return {
-      supported: response.supported_items ?? [],
-      unknown: response.unknown_items ?? [],
-    };
-  }
-  const supported = [
-    ...(response.claims ?? [])
-      .filter((claim) => {
-        const state = getClaimSupportState(response, claim);
-        return state === "structured_reviewed" || state === "official_live_typed" || state === "supported";
-      })
-      .map((claim) => clip(claim.text)),
-    ...(response.live_results ?? []).map((result) => clip(`${resultName(result)} (${result.kind})`)),
-  ];
-  const unknown = [
-    ...(response.unknown_items ?? []).map((item) => clip(item)).filter(Boolean),
-    ...(response.limitations ?? []).map((item) => clip(item)).filter(Boolean),
-    ...(response.unavailable_layers ?? []).map((kind) => `Official ${kind} layer unavailable this turn`),
-  ];
-  return { supported: supported.slice(0, 12), unknown: [...new Set(unknown)].slice(0, 12) };
-}
-
 export function getProofCards(response: AskResponse | undefined): ProofCardView[] {
   if (!response) return [];
   const projectValidation = (card: ProofCardView) =>

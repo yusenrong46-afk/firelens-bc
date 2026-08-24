@@ -604,13 +604,6 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .answer-markdown td { padding: 9px 11px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--hairline-soft); }
 .answer-markdown th { color: var(--forest-deep); background: var(--forest-tint); font-weight: 700; }
 .answer-markdown tbody tr:last-child td { border-bottom: 0; }
-.status-banner-kicker {
-  margin: 10px 0 0;
-  color: var(--forest);
-  font-size: 14px;
-  line-height: 1.4;
-}
-
 .status-banner {
   display: grid;
   gap: 8px;
@@ -624,19 +617,6 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .status-banner p, .status-banner a { margin: 0; font-size: 16px; line-height: 1.5; }
 .status-banner__warning { font-weight: 700; }
 .status-banner a { color: var(--forest); font-weight: 600; }
-
-.support-checklist {
-  display: grid;
-  gap: 12px;
-  margin-top: 14px;
-}
-.support-checklist h2 {
-  margin: 0 0 6px;
-  font-size: 16px;
-  font-weight: 700;
-}
-.support-checklist ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
-.support-checklist li, .support-checklist p { font-size: 16px; line-height: 1.45; }
 
 .proof-card {
   display: grid;

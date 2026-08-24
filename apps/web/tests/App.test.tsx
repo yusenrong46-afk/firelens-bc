@@ -178,7 +178,10 @@ describe("FireLens Source Lens", () => {
     expect((await screen.findAllByText("Official current records")).length).toBeGreaterThan(0);
     expect(screen.getAllByText("Current official records").length).toBeGreaterThan(0);
     expect(screen.getAllByText("General background").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("This context is not a live official record.").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Current records are available; general context follows.")).not.toBeInTheDocument();
+    const labelledAnswer = screen.getByLabelText("Authority-labelled answer");
+    expect(within(labelledAnswer).getAllByText("The official record is available.")).toHaveLength(1);
+    expect(within(labelledAnswer).getAllByText("This context is not a live official record.")).toHaveLength(1);
     expect(screen.getByText("Live records + general background")).toBeInTheDocument();
     expect(screen.getByText("Answer evidence and support")).toBeInTheDocument();
   });
@@ -303,9 +306,11 @@ describe("FireLens Source Lens", () => {
       await user.type(screen.getByLabelText("Ask FireLens a question"), `Test ${responseMode} limitations`);
       await user.click(screen.getByLabelText("Send question"));
 
-      const limitations = await screen.findByRole("status", { name: "Answer limitations" });
+      const limitations = await screen.findByLabelText("Answer limitations");
       expect(within(limitations).getAllByText(limitation)).toHaveLength(1);
       expect(within(limitations).getAllByRole("listitem")).toHaveLength(1);
+      expect(screen.queryByLabelText("What FireLens established")).not.toBeInTheDocument();
+      expect(screen.getAllByText(limitation)).toHaveLength(1);
       const conversation = screen.getByRole("region", { name: "Question and answer" });
       const answerText = within(conversation).getByText(`Answer in ${responseMode} mode.`);
       expect(limitations.compareDocumentPosition(answerText) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();

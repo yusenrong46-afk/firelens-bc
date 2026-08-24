@@ -24,6 +24,37 @@ describe("answer Markdown", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
   });
 
+  it("uses authority-labelled sections instead of repeating the combined answer", () => {
+    const response = {
+      status: "answer",
+      response_mode: "mixed",
+      trace_id: "trace-section-authority",
+      answer: "Combined answer that should not be repeated.",
+      answer_sections: [
+        {
+          kind: "current_records",
+          heading: "Current official records",
+          text: "Exact official section text.",
+        },
+        {
+          kind: "general_background",
+          heading: "General background",
+          text: "Exact background section text.",
+        },
+      ],
+      claims: [],
+      evidence: [],
+      limitations: [],
+    } as AskResponse;
+
+    render(<AnswerBody response={response} assistantText="Fallback text that should not be repeated." />);
+
+    expect(screen.queryByText("Combined answer that should not be repeated.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Fallback text that should not be repeated.")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Exact official section text.")).toHaveLength(1);
+    expect(screen.getAllByText("Exact background section text.")).toHaveLength(1);
+  });
+
   it("renders emphasis and list syntax as semantic content", () => {
     render(
       <AnswerMarkdown>{"**Current official records**\n\n- First fire\n- Second fire"}</AnswerMarkdown>,
