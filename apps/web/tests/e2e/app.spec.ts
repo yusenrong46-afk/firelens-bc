@@ -214,7 +214,7 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
   await expect(page.getByText("Answer evidence and support")).toBeVisible();
   await expect(page.getByText("Reviewed sources")).toBeVisible();
   await expect(page.locator("mark")).toHaveText("Food & water");
-  await expect(page.getByRole("complementary").getByText("PreparedBC").first()).toBeVisible();
+  await expect(page.getByText("PreparedBC", { exact: true }).first()).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
 });

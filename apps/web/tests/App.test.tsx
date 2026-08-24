@@ -54,6 +54,57 @@ afterEach(() => {
 });
 
 describe("FireLens Source Lens", () => {
+  it("explains the publication boundary in a focused project dialog", async () => {
+    render(<App />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "How FireLens works" }));
+    expect(screen.getByRole("dialog", { name: "How FireLens earns the right to publish" })).toBeInTheDocument();
+    expect(screen.getByText("Acquire governed evidence")).toBeInTheDocument();
+    expect(screen.getByText(/not emergency advice/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Close how FireLens works" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("switches multi-record analytical questions into summary and records views", async () => {
+    const liveResults = [
+      { result_id: "incident:1", fire_centre: "Kamloops Fire Centre", status: "Out of Control" },
+      { result_id: "incident:2", fire_centre: "Kamloops Fire Centre", status: "Being Held" },
+      { result_id: "incident:3", fire_centre: "Coastal Fire Centre", status: "Under Control" },
+    ].map((item) => ({
+      ...item,
+      kind: "incident",
+      authority: "BC Wildfire Service",
+      source_url: `https://example.test/${item.result_id}`,
+      source_updated_at: "2026-08-23T12:00:00Z",
+      retrieved_at: "2026-08-23T12:01:00Z",
+      freshness: "fresh",
+      geometry: { type: "Point", coordinates: [-119.5, 49.9] },
+    }));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: "answer",
+      response_mode: "live",
+      trace_id: "trace-analysis",
+      answer: "Three official incident records are in this bounded result.",
+      suggested_questions: [],
+      claims: [],
+      evidence: [],
+      limitations: [],
+      live_results: liveResults,
+      aggregate_freshness: "fresh",
+      validation: { accepted: true },
+    }), { status: 200 })));
+    render(<App />);
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Show wildfire distribution by status across B.C.");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByRole("region", { name: "Analysis view" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Wildfires by fire centre" })).toHaveTextContent("Kamloops Fire Centre2");
+    expect(screen.queryByRole("region", { name: "Official wildfire records map" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Records/ }));
+    expect(screen.getByRole("region", { name: "Official incident records" })).toHaveTextContent("3 records in this answer");
+  });
+
   it("starts with a task-first question workspace and keeps the map optional", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       generated_at: "2026-08-23T12:00:00Z",

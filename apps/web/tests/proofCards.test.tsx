@@ -109,7 +109,9 @@ describe("proof-carrying answer surface", () => {
     expect(screen.queryByRole("heading", { name: "Established from FireLens sources" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Not established" })).not.toBeInTheDocument();
     expect(screen.getAllByText("Stable guidance only.")).toHaveLength(1);
-    expect(screen.getByRole("button", { name: /Keep water and food in a grab-and-go bag\./ })).toBeInTheDocument();
+    const evidenceButton = screen.getByRole("button", { name: /Keep water and food in a grab-and-go bag\./ });
+    expect(evidenceButton).toBeInTheDocument();
+    await user.click(evidenceButton);
     expect(screen.getAllByText("Supported by an exact reviewed quotation").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Human-verified source transcription").length).toBeGreaterThan(0);
     expect(screen.getByText("Critical fields checked and preserved")).toBeInTheDocument();
@@ -156,7 +158,8 @@ describe("proof-carrying answer surface", () => {
       "FireLens is showing an exact source quotation. It has not been approved as a structured FireLens claim.",
     )).toBeInTheDocument();
     expect(screen.getAllByText("Exact source wording — not a structured FireLens claim").length).toBeGreaterThan(0);
-    expect(screen.getByText("Source extraction only; no structured-claim review")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Keep water and food in a grab-and-go bag\./ }));
+    expect(screen.getAllByText("Source extraction only; no structured-claim review").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Stable source wording").length).toBeGreaterThan(0);
     expect(screen.getByText("Answer evidence and support")).toBeInTheDocument();
     expect(screen.queryByText("Reviewed structured claim")).not.toBeInTheDocument();
@@ -192,6 +195,7 @@ describe("proof-carrying answer surface", () => {
     expect(await screen.findByText("Support not established")).toBeInTheDocument();
     expect(screen.getAllByText("Not established from FireLens sources").length).toBeGreaterThan(0);
     expect(screen.queryByText("Reviewed structured claim")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Keep water and food in a grab-and-go bag\./ }));
     const proofCard = screen.getByRole("article", {
       name: "Proof card for Keep water and food in a grab-and-go bag.",
     });
@@ -227,6 +231,8 @@ describe("proof-carrying answer surface", () => {
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Did critical fields pass?");
     await user.click(screen.getByLabelText("Send question"));
+
+    await user.click(await screen.findByRole("button", { name: /Keep water and food in a grab-and-go bag\./ }));
 
     const proofCard = await screen.findByRole("article", {
       name: "Proof card for Keep water and food in a grab-and-go bag.",
@@ -267,6 +273,7 @@ describe("proof-carrying answer surface", () => {
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Can an orphan card be reused?");
     await user.click(screen.getByLabelText("Send question"));
 
+    await user.click(await screen.findByRole("button", { name: /Keep water and food in a grab-and-go bag\./ }));
     expect(await screen.findByText("Content not established")).toBeInTheDocument();
     expect(screen.queryByRole("article", { name: "Proof card for Stale structured orphan" })).not.toBeInTheDocument();
     expect(screen.queryByText("Stale structured orphan")).not.toBeInTheDocument();

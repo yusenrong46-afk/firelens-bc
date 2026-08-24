@@ -1,5 +1,5 @@
-import { ArrowSquareOut, MapTrifold, Shield } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { ArrowSquareOut, Info, MapTrifold, Shield } from "@phosphor-icons/react";
+import { useCallback, useEffect, useState } from "react";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
@@ -9,55 +9,63 @@ import { ConnectionStatus } from "../features/ask/ConnectionStatus";
 import { ConversationPanel } from "../features/ask/ConversationPanel";
 import { useFireLensSession } from "../features/ask/useFireLensSession";
 import { EvidencePanel } from "../features/evidence/EvidencePanel";
-import { preferredContextSurface, shouldOfferContextMap } from "./workspacePresentation";
+import { LiveAnalysisWorkspace } from "../features/near-me/LiveAnalysisWorkspace";
+import { HowFireLensWorks } from "./HowFireLensWorks";
+import { preferredContextSurface, shouldOfferContextMap, shouldUseAnalyticalWorkspace } from "./workspacePresentation";
 import "./styles.css";
 
 export function App() {
   const session = useFireLensSession();
   const [contextSurface, setContextSurface] = useState<"evidence" | "map">("evidence");
   const [idleMapOpen, setIdleMapOpen] = useState(false);
+  const [contextOpen, setContextOpen] = useState(false);
+  const [projectOpen, setProjectOpen] = useState(false);
+  const closeProject = useCallback(() => setProjectOpen(false), []);
   const mapAvailable = shouldOfferContextMap({
     mode: session.mode,
     question: session.visibleQuestion,
     response: session.response,
   });
-  const hasResponseContext = Boolean(
-    session.response
-    && (
-      session.claims.length > 0
-      || (session.response.evidence ?? []).length > 0
-      || (session.response.live_results ?? []).length > 0
-    ),
-  );
+  const analyticalWorkspace = shouldUseAnalyticalWorkspace({
+    mode: session.mode,
+    question: session.visibleQuestion,
+    response: session.response,
+  });
   const showMap = (session.view.kind === "idle" && idleMapOpen)
-    || (mapAvailable && contextSurface === "map");
-  const showContext = hasResponseContext || showMap;
+    || (!analyticalWorkspace && contextOpen && mapAvailable && contextSurface === "map");
+  const evidenceOpen = !analyticalWorkspace && contextOpen && contextSurface === "evidence";
+  const showContext = showMap || evidenceOpen;
 
   useEffect(() => {
     if (session.view.kind === "idle") {
       setIdleMapOpen(false);
+      setContextOpen(false);
       setContextSurface("evidence");
       return;
     }
     setIdleMapOpen(false);
-    setContextSurface(preferredContextSurface({
+    const preferred = preferredContextSurface({
       mode: session.mode,
       question: session.visibleQuestion,
-    }));
+    });
+    setContextSurface(preferred);
+    setContextOpen(false);
   }, [session.mode, session.response?.trace_id, session.view.kind, session.visibleQuestion]);
 
   useEffect(() => {
-    session.setMapVisible(showMap);
-  }, [session.setMapVisible, showMap]);
+    if (!analyticalWorkspace) session.setMapVisible(showMap);
+  }, [analyticalWorkspace, session.setMapVisible, showMap]);
 
   function showEvidence() {
     setIdleMapOpen(false);
     setContextSurface("evidence");
+    setContextOpen(true);
   }
 
   function showOfficialMap() {
     if (session.view.kind === "idle") setIdleMapOpen(true);
     setContextSurface("map");
+    setContextOpen(true);
   }
 
   return (
@@ -70,7 +78,12 @@ export function App() {
           <span><strong>FireLens</strong> BC <small>V1.6</small></span>
         </a>
         <div className="topbar-actions">
-          {(session.view.kind === "idle" || (mapAvailable && !showContext)) && (
+          <a className="topbar-anchor" href="#conversation">Ask</a>
+          <button className="topbar-project" type="button" aria-label="How FireLens works" onClick={() => setProjectOpen(true)}>
+            <Info size={18} />
+            <span><strong>How FireLens works</strong><small>For employers &amp; evaluators</small></span>
+          </button>
+          {(session.view.kind === "idle" || (mapAvailable && !showContext && !analyticalWorkspace)) && (
             <nav className="workspace-jump" aria-label="Choose workspace context">
               <button
                 type="button"
@@ -93,7 +106,13 @@ export function App() {
         <span>Official live records, reviewed guidance, and general background stay visibly separate.</span>
       </div>
       <main className={`workspace ${showContext ? "workspace--split" : "workspace--solo"} ${showMap ? "workspace--map" : "workspace--evidence"}`}>
-        <ConversationPanel session={session} />
+        <ConversationPanel
+          session={session}
+          analytical={analyticalWorkspace}
+          analysisSlot={analyticalWorkspace ? <LiveAnalysisWorkspace session={session} embedded /> : undefined}
+          onOpenEvidence={showEvidence}
+          onOpenMap={showOfficialMap}
+        />
         {showContext && (
           <EvidencePanel
             session={session}
@@ -106,6 +125,7 @@ export function App() {
           />
         )}
       </main>
+      <HowFireLensWorks open={projectOpen} onClose={closeProject} />
     </div>
   );
 }
