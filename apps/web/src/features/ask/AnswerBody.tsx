@@ -1,5 +1,6 @@
 import { WarningCircle } from "@phosphor-icons/react";
 import type { AskResponse } from "../../shared/api/api";
+import { AnswerMarkdown } from "./AnswerMarkdown";
 import { answerSectionAuthority, getAnswerSections } from "./answerSections";
 import { getStatusBanner, getSupportChecklist } from "./proofPresentation";
 import { StatusBanner, SupportChecklist } from "./StatusBanner";
@@ -26,7 +27,7 @@ export function AnswerBody({
           <strong>{banner.headline}</strong>
         </p>
       )}
-      {lead && <p className="answer-lead">{lead}</p>}
+      {lead && <AnswerMarkdown className="answer-lead">{lead}</AnswerMarkdown>}
       {visibleLimitations.length > 0 && (
         <div className="answer-limitations" aria-label="Answer limitations" role="status">
           <WarningCircle size={19} aria-hidden="true" />
@@ -46,7 +47,7 @@ export function AnswerBody({
             <section className="answer-section" key={section.kind}>
               <span className="answer-section__authority">{answerSectionAuthority(section.kind)}</span>
               <h2>{section.heading}</h2>
-              <p>{section.text}</p>
+              <AnswerMarkdown headingContext="section">{section.text}</AnswerMarkdown>
             </section>
           ))}
         </div>
