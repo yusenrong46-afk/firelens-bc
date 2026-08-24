@@ -21,6 +21,47 @@ from firelens.contracts import (
 
 
 class V3DeterministicIntentTests(unittest.TestCase):
+    def test_natural_capability_and_trust_questions_route_without_live_tools(self) -> None:
+        for question in (
+            "What can FireLens do for me?",
+            "What does FireLens cover?",
+            "How do I know this FireLens answer is trustworthy, and where did it come from?",
+            "Where did this answer come from?",
+        ):
+            with self.subTest(question=question):
+                self.assertEqual(
+                    plan_query(QueryRequest(question=question)).route,
+                    QueryRoute.CAPABILITY,
+                )
+                self.assertEqual(live_layers_for_question(question), ())
+
+    def test_empty_map_false_inference_routes_live_and_extracts_place(self) -> None:
+        question = "The wildfire map is empty near Kelowna. Does that mean everything is safe?"
+        location = coarse_location_from_question(question)
+        self.assertIsNotNone(location)
+        assert location is not None
+        self.assertEqual(location.label, "Kelowna")
+        self.assertEqual(plan_query(QueryRequest(question=question)).route, QueryRoute.LIVE)
+        self.assertEqual(
+            live_layers_for_question(question),
+            (
+                LiveResultKind.INCIDENT,
+                LiveResultKind.PERIMETER,
+                LiveResultKind.EVACUATION,
+            ),
+        )
+
+    def test_empty_map_does_not_bypass_personalized_action_boundary(self) -> None:
+        question = "The wildfire map is empty near Kelowna. Is it safe for me to return home?"
+
+        plan = plan_query(QueryRequest(question=question))
+
+        self.assertEqual(plan.route, QueryRoute.PROHIBITED)
+        self.assertEqual(
+            plan.boundary_reason,
+            ReasonCode.PERSONALIZED_SAFETY_DECISION,
+        )
+
     def test_out_of_province_labels_are_never_geocoded_as_bc(self) -> None:
         for label in (
             "Alberta",
@@ -341,11 +382,19 @@ class V3DeterministicIntentTests(unittest.TestCase):
             "wildfire by geography distribution",
             "which areas of BC have the most wildfires?",
             "show wildfire distribution across BC",
+            "How are wildfires distributed across BC?",
+            "Are wildfire incidents evenly distributed across BC?",
+            "What is wildfire density in BC?",
             "where are wildfires concentrated in BC?",
             "wildfires by fire centre",
             "how many wildfires are in each fire centre?",
             "which fire centre has the most wildfires?",
             "Where are most wildfires in BC?",
+            "Break down the current wildfire count by region in BC.",
+            "Are active wildfires more concentrated in northern or southern BC?",
+            "Show current wildfire density by latitude bands across BC.",
+            "Compare current wildfires in the Okanagan vs Kootenays.",
+            "Compare current wildfire counts in the Okanagan and the Kootenays.",
         ):
             with self.subTest(question=question):
                 self.assertIsNone(coarse_location_from_question(question))
@@ -355,18 +404,33 @@ class V3DeterministicIntentTests(unittest.TestCase):
                 )
                 self.assertEqual(live_layers_for_question(question), expected_layers)
 
-        explanatory = "How does geography affect wildfire behaviour?"
-        self.assertIsNone(coarse_location_from_question(explanatory))
+        for explanatory in (
+            "How does geography affect wildfire behaviour?",
+            "How does geography change wildfire risk?",
+        ):
+            with self.subTest(explanatory=explanatory):
+                self.assertIsNone(coarse_location_from_question(explanatory))
+                self.assertEqual(
+                    plan_query(QueryRequest(question=explanatory)).route,
+                    QueryRoute.RELATED,
+                )
+                self.assertEqual(live_layers_for_question(explanatory), ())
+
+        smoke_density = "What is wildfire smoke density in BC?"
+        self.assertIsNone(coarse_location_from_question(smoke_density))
         self.assertEqual(
-            plan_query(QueryRequest(question=explanatory)).route, QueryRoute.RELATED
+            plan_query(QueryRequest(question=smoke_density)).route,
+            QueryRoute.RELATED,
         )
-        self.assertEqual(live_layers_for_question(explanatory), ())
 
     def test_nearest_perimeter_word_orders_keep_the_named_origin(self) -> None:
         for question in (
             "which perimeter is nearest Kelowna?",
             "which wildfire perimeter is nearest to Kelowna?",
             "which official wildfire perimeter is nearest to Kelowna?",
+            "What is the nearest official wildfire perimeter to Kelowna?",
+            "Which official perimeter is nearest to Kelowna, BC?",
+            "What is nearest official wildfire perimeter to Kelowna?",
             "nearest perimeter to Kelowna",
         ):
             with self.subTest(question=question):
@@ -381,6 +445,67 @@ class V3DeterministicIntentTests(unittest.TestCase):
                     live_layers_for_question(question),
                     (LiveResultKind.PERIMETER,),
                 )
+
+    def test_empty_map_location_variants_stop_at_the_named_place(self) -> None:
+        cases = (
+            (
+                "The map is empty near Kelowna. Does that mean everything is safe?",
+                QueryRoute.LIVE,
+            ),
+            (
+                "The map has zero wildfires near Kelowna. Is it safe?",
+                QueryRoute.PROHIBITED,
+            ),
+            (
+                (
+                    "There is nothing on the wildfire map in Kelowna; "
+                    "does that mean everything is okay?"
+                ),
+                QueryRoute.LIVE,
+            ),
+            (
+                "There are no results on the map around Kelowna. Is it all clear?",
+                QueryRoute.LIVE,
+            ),
+        )
+        for question, expected_route in cases:
+            with self.subTest(question=question):
+                location = coarse_location_from_question(question)
+                self.assertIsNotNone(location)
+                assert location is not None
+                self.assertEqual(location.label, "Kelowna")
+                self.assertEqual(
+                    plan_query(QueryRequest(question=question)).route,
+                    expected_route,
+                )
+
+    def test_region_choice_comparison_is_never_a_combined_place_label(self) -> None:
+        for question in (
+            "Are there more fires in Okanagan or Kootenays?",
+            "Compare fires in Okanagan and Kootenays.",
+            "Wildfires in Okanagan versus Kootenays?",
+            "Wildfires in Okanagan vs Kootenays?",
+        ):
+            with self.subTest(question=question):
+                self.assertIsNone(coarse_location_from_question(question))
+
+    def test_compound_layer_comparison_keeps_its_single_named_place(self) -> None:
+        location = coarse_location_from_question(
+            "Compare current fires and evacuation orders in Kelowna."
+        )
+
+        self.assertIsNotNone(location)
+        assert location is not None
+        self.assertEqual(location.label, "Kelowna")
+
+    def test_multi_city_live_comparison_never_silently_uses_only_one_city(self) -> None:
+        for question in (
+            "Compare current fires and evacuation orders in Kelowna and Vernon.",
+            "Compare current fires near Kelowna and Vernon.",
+            "Are there current wildfires in Kelowna or Vernon?",
+        ):
+            with self.subTest(question=question):
+                self.assertIsNone(coarse_location_from_question(question))
 
     def test_largest_wildfire_analysis_does_not_geocode_the_unit_clause(self) -> None:
         for question in (

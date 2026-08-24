@@ -16,7 +16,46 @@ _PERSONAL_LOCATION = re.compile(
     re.IGNORECASE,
 )
 
+_MULTI_PLACE_FIRE_COMPARISONS = (
+    re.compile(
+        r"\b(?:fires?|wildfires?|(?:fire|wildfire)\s+counts?|"
+        r"evacuation\s+(?:alerts?|orders?)|perimeters?|official\s+records?)\b"
+        r".{0,100}\b(?:in|near|around|within|for)\s+"
+        r"(?:the\s+)?[a-z][a-z .'-]{1,60}?\s+"
+        r"(?:versus|vs\.?)\s+(?:the\s+)?[a-z][a-z .'-]{1,60}?"
+        r"(?=[?.,;]|$)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"(?i:\b(?:fires?|wildfires?|(?:fire|wildfire)\s+counts?|"
+        r"evacuation\s+(?:alerts?|orders?)|perimeters?|official\s+records?)\b"
+        r".{0,100}\b(?:in|near|around|within|for)\s+(?:the\s+)?"
+        r"[a-z][a-z .'-]{1,60}?\s+(?:and|or)\s+(?:the\s+)?)"
+        r"[A-Z][A-Za-z.'-]*(?:\s+[A-Z][A-Za-z.'-]*){0,3}"
+        r"(?=[?.,;]|$)",
+    ),
+)
+
 _PLACE_PATTERNS = (
+    re.compile(
+        r"\b(?:nothing|no\s+(?:matching\s+)?"
+        r"(?:results?|fires?|wildfires?|records?)|zero\s+(?:matching\s+)?"
+        r"(?:results?|fires?|wildfires?|records?))\b"
+        r".{0,50}\b(?:on|in)\s+(?:the\s+)?(?:fire|wildfire)?\s*map\b"
+        r".{0,50}\b(?:near|around|in)\s+"
+        r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?=[,;:.?!]|\s+(?:and|but|so)\b|$)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:fire|wildfire)?\s*map\b.{0,80}"
+        r"\b(?:empty|blank|nothing|no\s+(?:results?|fires?|wildfires?|records?)|"
+        r"zero\s+(?:results?|fires?|wildfires?|records?))\b"
+        r".{0,50}\b(?:near|around|in)\s+"
+        r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?=[,;:.?!]|\s+(?:and|but|so)\b|$)",
+        re.IGNORECASE,
+    ),
     re.compile(
         r"^\s*map\s+(?P<place>[a-z][a-z .'-]{1,80}?)(?=\s+(?:right\s+now|rn|today|"
         r"tonight|currently|now)\b|[?!.,]*$)",
@@ -90,11 +129,18 @@ _PLACE_PATTERNS = (
         re.IGNORECASE,
     ),
     re.compile(
+        r"\b(?:what|which)\s+is\s+(?:the\s+)?(?:nearest|closest)\s+"
+        r"(?:official\s+)?(?:wildfire\s+|fire\s+)?perimeter\s+"
+        r"(?:to|from|near)\s+(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?=,|\s+(?:and|but|then)\b|[?!.,]*$)",
+        re.IGNORECASE,
+    ),
+    re.compile(
         r"\b(?:which|what)\s+(?:official\s+)?"
         r"(?:wildfire\s+|fire\s+)?perimeter\s+is\s+"
         r"(?:the\s+)?(?:nearest|closest)(?:\s+(?:to|from))?\s+"
         r"(?P<place>[a-z][a-z .'-]{1,80}?)"
-        r"(?=\s+(?:and|but|then)\b|[?!.,]*$)",
+        r"(?=,|\s+(?:and|but|then)\b|[?!.,]*$)",
         re.IGNORECASE,
     ),
     re.compile(
@@ -306,6 +352,10 @@ def _clean_place(candidate: str) -> str | None:
     words = frozenset(re.findall(r"[a-z]+", lowered))
     if (
         len(place) < 2
+        # A parser match containing a conjunction names alternatives, not one
+        # geocodable community. Reject the captured label itself rather than
+        # suppressing an entire compound request that may still name one place.
+        or bool(re.search(r"\b(?:and|or|versus|vs\.?)\b", place, re.IGNORECASE))
         or lowered in _REJECTED_PLACES
         or bool(words & _NON_PLACE_ANALYSIS_WORDS)
         or lowered.startswith(
@@ -389,6 +439,8 @@ def coarse_location_from_question(question: str) -> LocationInput | None:
     """Return only a user-stated place label; never infer personal coordinates."""
 
     if _PERSONAL_LOCATION.search(question):
+        return None
+    if any(pattern.search(question) for pattern in _MULTI_PLACE_FIRE_COMPARISONS):
         return None
     for pattern in _PLACE_PATTERNS:
         match = pattern.search(question)

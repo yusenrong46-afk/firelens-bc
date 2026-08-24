@@ -18,6 +18,7 @@ from rag_helpers import make_chunk, make_runtime, write_test_corpus
 from firelens.agent import AgentTool, FireLensAgent
 from firelens.answering.context import build_evidence_packet
 from firelens.answering.grounded import GroundedAnswerEngine
+from firelens.config import FireLensConfig
 from firelens.contracts import (
     CoarseResolvedLocation,
     Freshness,
@@ -31,12 +32,15 @@ from firelens.contracts import (
 from firelens.live_answering import LiveAnswerCoordinator
 from firelens.providers.fake import FakeProvider
 from firelens.publication.compiler import compile_structured_claim
+from firelens.retrieval.bm25 import load_chunk_records
 from firelens.retrieval.vector import retrieval_hit_from_chunk
+from firelens.runtime import load_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "data/evaluation/v1_6_user_end_questions_50.json"
 TARGET_IDS = frozenset(
     {
+        "UQ-E03",
         "UQ-E04",
         "UQ-E06",
         "UQ-E12",
@@ -152,7 +156,7 @@ class _StructuredKitStatic:
         ).response
 
 
-def test_selected_catalog_cases_remain_the_twelve_explicit_structural_fixtures() -> None:
+def test_selected_catalog_cases_remain_the_thirteen_explicit_structural_fixtures() -> None:
     cases = _catalog_cases()
 
     assert TARGET_IDS <= cases.keys()
@@ -163,6 +167,118 @@ def test_selected_catalog_cases_remain_the_twelve_explicit_structural_fixtures()
         "confirm_safety_from_empty_results",
         "hide_unavailable_layer",
     ]
+
+
+def test_uq_e03_returns_reviewed_build_claim_plus_first_exact_contents_checklist() -> None:
+    question = _question("UQ-E03")
+    chunks = load_chunk_records(ROOT / "data/processed/firelens_static_corpus.chunks.jsonl")
+    by_id = {chunk.chunk_id: chunk for chunk in chunks}
+    retrieval_order = (
+        "preparedbc_wildfire_guide:page:4:chunk:3",
+        "preparedbc_wildfire_guide:page:5:chunk:1",
+        "preparedbc_wildfire_guide:page:6:chunk:1",
+        "preparedbc_wildfire_guide:page:6:chunk:2",
+        "preparedbc_wildfire_guide:page:6:chunk:3",
+    )
+    hits = [
+        retrieval_hit_from_chunk(by_id[chunk_id], rerank_rank=rank)
+        for rank, chunk_id in enumerate(retrieval_order, start=1)
+    ]
+    packet = build_evidence_packet(
+        question,
+        hits,
+        chunks,
+        corpus_version="v1-6-uq-e03-fixture.v1",
+        config=FireLensConfig.from_env(ROOT),
+    )
+    provider = FakeProvider()
+
+    outcome = asyncio.run(
+        GroundedAnswerEngine(provider).answer(
+            question,
+            packet,
+            trace_id="fixture-UQ-E03",
+        )
+    )
+    response = outcome.response
+    quote_only = [
+        claim
+        for claim in response.claims
+        if claim.publication is not None
+        and claim.publication.kind.value == "official_quote_only"
+    ]
+
+    assert response.response_mode == ResponseMode.PARTIAL
+    assert response.validation is not None and response.validation.accepted
+    assert _publication_kinds(response) == {
+        "structured_reviewed",
+        "official_quote_only",
+    }
+    assert any(
+        claim.publication is not None
+        and claim.publication.typed_claim_id == "TC-FIRESMART-021-01"
+        for claim in response.claims
+    )
+    assert len(quote_only) == 1
+    assert quote_only[0].supports[0].quote == by_id[retrieval_order[1]].text
+    assert "personal medications" not in (response.answer or "").casefold()
+    assert "at work" not in (response.answer or "").casefold()
+    assert "pets are part of the family" not in (response.answer or "").casefold()
+    assert outcome.attempts == 0
+    assert _provider_calls(provider) == (0, 0, 0, 0)
+
+
+def test_uq_e03_actual_corpus_retrieval_selects_repaired_checklist_before_pets() -> None:
+    async def run() -> None:
+        provider = FakeProvider(dimensions=1536)
+        runtime = load_runtime(FireLensConfig.from_env(ROOT), provider=provider)
+        assert runtime.service is not None
+        try:
+            execution = await runtime.service.execute_ask(
+                QueryRequest(question=_question("UQ-E03"))
+            )
+        finally:
+            await runtime.aclose()
+
+        packet = execution.search.evidence_packet
+        assert packet is not None
+        assert execution.plan.normalized_question == (
+            "wildfire grab-and-go bag contents checklist"
+        )
+        assert [request.query for request in execution.plan.retrieval_requests] == [
+            "wildfire grab-and-go bag contents checklist"
+        ]
+        assert execution.plan.required_aspects == [_question("UQ-E03")]
+        assert execution.retrieval.reranked_hits[0].chunk_id == (
+            "preparedbc_wildfire_guide:page:5:chunk:1"
+        )
+        assert packet.items[0].primary_chunk_ids == ["preparedbc_wildfire_guide:page:5:chunk:1"]
+
+        response = execution.response
+        quote_only = [
+            claim
+            for claim in response.claims
+            if claim.publication is not None
+            and claim.publication.kind.value == "official_quote_only"
+        ]
+        assert response.response_mode == ResponseMode.PARTIAL
+        assert response.validation is not None and response.validation.accepted
+        assert _publication_kinds(response) == {
+            "structured_reviewed",
+            "official_quote_only",
+        }
+        assert any(
+            claim.publication is not None
+            and claim.publication.typed_claim_id == "TC-FIRESMART-021-01"
+            for claim in response.claims
+        )
+        assert len(quote_only) == 1
+        assert quote_only[0].supports[0].quote == packet.items[0].primary_text
+        assert "pets are part of the family" not in (response.answer or "").casefold()
+        assert execution.generations == ()
+        assert provider.generate_calls == 0
+
+    asyncio.run(run())
 
 
 def test_static_packet_fixtures_preserve_quote_only_conditions_and_supported_bounds(

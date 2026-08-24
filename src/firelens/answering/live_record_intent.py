@@ -6,7 +6,16 @@ import re
 
 _FIRE_WORD = re.compile(r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?)\b", re.IGNORECASE)
 _GEOGRAPHY_ANALYSIS_WORD = re.compile(
-    r"\b(?:distribution|geograph(?:y|ic|ically)|concentrat(?:e|ed|ion))\b",
+    r"\b(?:distribut(?:ion|ed)|geograph(?:y|ic|ically)|concentrat(?:e|ed|ion))\b",
+    re.IGNORECASE,
+)
+_DENSITY = re.compile(r"\bdensity\b", re.IGNORECASE)
+_SMOKE_OR_AIR_QUALITY = re.compile(r"\b(?:smoke|air\s+quality|aqhi)\b", re.IGNORECASE)
+_DENSITY_AGGREGATION = re.compile(
+    r"\bdensity\b.{0,80}\b(?:latitude\s+bands?|regions?|areas?|"
+    r"fire[- ]?centres?|distribution)\b|"
+    r"\b(?:latitude\s+bands?|regions?|areas?|fire[- ]?centres?|distribution)\b"
+    r".{0,80}\bdensity\b",
     re.IGNORECASE,
 )
 _AREA_RANKING = re.compile(
@@ -25,14 +34,19 @@ _WHERE_FIRE_RANKING = re.compile(
 )
 _PER_AREA_COUNTS = re.compile(
     r"\b(?:how\s+many|count|number\s+of|fires?|wildfires?)\b.{0,80}"
-    r"\b(?:each|per|by)\s+(?:fire[- ]?)?centres?\b|"
-    r"\b(?:each|per|by)\s+(?:fire[- ]?)?centres?\b.{0,80}"
+    r"\b(?:each|per|by)\s+(?:(?:fire[- ]?)?centres?|areas?|regions?)\b|"
+    r"\b(?:each|per|by)\s+(?:(?:fire[- ]?)?centres?|areas?|regions?)\b.{0,80}"
     r"\b(?:count|number|fires?|wildfires?)\b",
+    re.IGNORECASE,
+)
+_UNVALIDATED_REGION_COMPARISON = re.compile(
+    r"\bokanagan\b.{0,100}\bkootenays?\b|"
+    r"\bkootenays?\b.{0,100}\bokanagan\b",
     re.IGNORECASE,
 )
 _EXPLANATORY_GEOGRAPHY = re.compile(
     r"\b(?:how|why)\s+does\b.{0,60}\bgeograph(?:y|ic)\b.{0,40}"
-    r"\b(?:affect|influence|shape)\b",
+    r"\b(?:affect|change|influence|shape)\b",
     re.IGNORECASE,
 )
 _FIRE_RECORD_ANALYSIS = re.compile(
@@ -47,13 +61,22 @@ _FIRE_RECORD_ANALYSIS = re.compile(
 def is_fire_geography_analysis(question: str) -> bool:
     """Recognize bounded distribution analysis over official BC fire records."""
 
-    if not _FIRE_WORD.search(question) or _EXPLANATORY_GEOGRAPHY.search(question):
+    if (
+        not _FIRE_WORD.search(question)
+        or _EXPLANATORY_GEOGRAPHY.search(question)
+        # A wildfire adjective does not make smoke density an incident-geography
+        # request. Air-quality layers remain outside this official fire-record path.
+        or (_DENSITY.search(question) and _SMOKE_OR_AIR_QUALITY.search(question))
+    ):
         return False
     return bool(
         _GEOGRAPHY_ANALYSIS_WORD.search(question)
+        or _DENSITY.search(question)
+        or _DENSITY_AGGREGATION.search(question)
         or _AREA_RANKING.search(question)
         or _WHERE_FIRE_RANKING.search(question)
         or _PER_AREA_COUNTS.search(question)
+        or _UNVALIDATED_REGION_COMPARISON.search(question)
     )
 
 

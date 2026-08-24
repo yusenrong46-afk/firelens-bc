@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 
+from firelens.answering.capability_intent import is_capability_question
 from firelens.answering.intent_patterns import (
     _CORPUS_REFERENCE_PATTERNS,
     _LIVE_PATTERNS,
@@ -17,7 +18,7 @@ from firelens.answering.intent_patterns import (
     _PROHIBITED_PATTERNS,
 )
 from firelens.answering.intent_safety import (
-    TRUST_EXPLANATION_PATTERN,
+    empty_map_safety_routing,
     is_empty_map_safety_inference,
     trust_explanation_limitations,
 )
@@ -178,24 +179,6 @@ _REVIEWED_GUIDANCE_PATTERNS = (
     r"\b(?:wildfire rank|stage of control|stages of control)\b",
     r"\b(?:out(?:ta| of) control|being held|under control)\b.{0,30}\b(?:fire|wildfire|mean)\b",
     r"\b(?:structure[- ]protection sprinklers?|home ignition)\b",
-)
-
-_CAPABILITY_PATTERNS = (
-    r"^(?:hi|hello|hey|good (?:morning|afternoon|evening))[!., ]*$",
-    r"\bwhat (?:can|could) you (?:do|help(?: me)? with)\b",
-    r"\b(?:what|which) (?:documents|sources|topics).{0,80}\b(?:collection|know|use|cover)\b",
-    r"\b(?:show|give) me (?:a few )?(?:example|sample|suggested) questions\b",
-    r"\bhelp me (?:use|understand) firelens\b",
-    r"\b(?:do you know anything|what do you know) about\b",
-    r"\bwhat (?:parts|areas|aspects|kinds).{0,60}\bfirelens (?:explain|cover|answer)\b",
-    r"\bhow do (?:your|firelens) citations work\b",
-    TRUST_EXPLANATION_PATTERN,
-    r"\bwhat is (?:actually )?inside (?:the )?(?:source )?collection\b",
-    r"\b(?:do not|don't) know what is in the collection\b",
-    r"\b(?:where|how) should i start\b.{0,40}\b(?:firelens|collection|guidance)\b",
-    r"\b(?:kinds|types) of firelens questions\b",
-    # A context-free request this short cannot identify a safe retrieval target.
-    r"^(?:what\s+now|then\s+what|help|help\s+me|where\s+do\s+i\s+start)[?!. ]*$",
 )
 
 _DEICTIC_FOLLOWUP = re.compile(
@@ -496,7 +479,10 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     processing_question = focused_question(question)
     lowered = processing_question.lower()
     routing_texts = _routing_texts(request)
-    safety_texts = (question.lower(),)
+    safety_texts: tuple[str, ...] = (question.lower(),)
+    personalized_safety_texts, empty_map_plan = empty_map_safety_routing(
+        question, processing_question, allow_live=allow_live
+    )
     deictic_boundary = _deictic_action_boundary(request)
     medical = any(
         re.search(pattern, text)
@@ -504,7 +490,9 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
         for pattern in _PERSONALIZED_MEDICAL_PATTERNS
     )
     personalized = any(
-        re.search(pattern, text) for text in safety_texts for pattern in _PROHIBITED_PATTERNS
+        re.search(pattern, text)
+        for text in personalized_safety_texts
+        for pattern in _PROHIBITED_PATTERNS
     )
     live = any(re.search(pattern, text) for text in routing_texts for pattern in _LIVE_PATTERNS)
     live = live or is_fire_geography_analysis(processing_question)
@@ -558,6 +546,8 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
                 "FireLens cannot provide personalized safety advice or evacuation decisions."
             ],
         )
+    if empty_map_plan is not None:
+        return empty_map_plan
     if live and allow_live:
         return QueryPlan(
             original_question=question,
@@ -566,7 +556,7 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
             boundary_reason=ReasonCode.LIVE_DATA_REQUIRED,
             limitations=["The static corpus cannot establish current wildfire conditions."],
         )
-    if any(re.search(pattern, lowered) for pattern in _CAPABILITY_PATTERNS):
+    if is_capability_question(lowered):
         return QueryPlan(
             original_question=question,
             normalized_question=processing_question,

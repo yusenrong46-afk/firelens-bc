@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
@@ -12,6 +13,7 @@ from firelens.answering.context import (
     SUPPORT_TOKEN_OVERLAP_FLOOR,
     support_token_overlap,
 )
+from firelens.answering.request_facets import requests_contents
 from firelens.answering.risk_policy import RiskTier
 from firelens.answering.typed_records import load_inventory, match_quote
 from firelens.answering.typed_snapshot import classify_text
@@ -223,13 +225,18 @@ def compile_high_risk_answer(
         claims.append(compiled.claim)
         evidence.extend(compiled.evidence)
         cards.append(compiled.card)
-    uncovered_targets = _uncovered_publication_targets(claims, targets)
+    uncovered_targets = list(_uncovered_publication_targets(claims, targets))
     covered_quotes = {support.quote for claim in claims for support in claim.supports}
     quote_index = len(claims)
     for candidate in packet.quote_candidates:
         if classify_text(candidate.text) not in {RiskTier.A, RiskTier.B}:
             continue
-        if not _matches_publication_target(candidate.text, uncovered_targets):
+        matched_targets = tuple(
+            target
+            for target in uncovered_targets
+            if _quote_candidate_covers_target(candidate.text, target)
+        )
+        if not matched_targets:
             continue
         if any(
             candidate.text[:80].casefold() in quote.casefold()
@@ -244,6 +251,9 @@ def compile_high_risk_answer(
         claims.append(claim)
         evidence.append(item)
         cards.append(card)
+        uncovered_targets = [
+            target for target in uncovered_targets if target not in matched_targets
+        ]
     if not claims:
         return official_handoff_response(trace_id)
     limitations = list(packet.limitations)
@@ -337,6 +347,35 @@ def _matches_publication_target(text: str, targets: Sequence[str]) -> bool:
     )
 
 
+def _quote_candidate_covers_target(text: str, target: str) -> bool:
+    if support_token_overlap(text, target) < SUPPORT_TOKEN_OVERLAP_FLOOR:
+        return False
+    return not requests_contents(target) or _supplies_contents(text)
+
+
+def _supplies_contents(text: str) -> bool:
+    """Return whether source wording supplies actual contents, not just a container."""
+
+    item_lines = [
+        line for line in text.splitlines() if re.match(r"^\s*(?:[•¢*\-]|\d+[.)])\s*\S", line)
+    ]
+    if len(item_lines) >= 2:
+        return True
+
+    normalized = " ".join(text.casefold().split())
+    relation = re.search(
+        r"\b(?:include(?:s|d|ing)?|contain(?:s|ed|ing)?|consist(?:s|ed|ing)?\s+of|"
+        r"pack(?:s|ed|ing)?\b.{0,20}\bwith|items?\s+such\s+as|such\s+as)\b"
+        r"(?P<contents>.{0,300})",
+        normalized,
+    )
+    if relation is None:
+        return False
+    contents = relation.group("contents")
+    separators = len(re.findall(r",|;|\b(?:and|or)\b|&", contents))
+    return separators >= 2
+
+
 def _uncovered_publication_targets(
     claims: Sequence[PublicClaim], targets: Sequence[str]
 ) -> tuple[str, ...]:
@@ -352,6 +391,7 @@ def _uncovered_publication_targets(
         target
         for target in targets
         if support_token_overlap(structured_text, target) < SUPPORT_TOKEN_OVERLAP_FLOOR
+        or (requests_contents(target) and not _supplies_contents(structured_text))
     )
 
 

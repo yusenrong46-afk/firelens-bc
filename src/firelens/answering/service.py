@@ -34,6 +34,7 @@ from firelens.answering.intent import (
     reviewed_guidance_intent,
 )
 from firelens.answering.planner import planning_messages, planning_schema
+from firelens.answering.request_facets import contents_request_facet
 from firelens.answering.responses import (
     conflict_response as _conflict_response,
 )
@@ -187,12 +188,37 @@ class StaticRAGService:
 
     @staticmethod
     def _reviewed_guidance_plan(plan: QueryPlan) -> QueryPlan:
+        contents_facet = contents_request_facet(plan.original_question)
+        retrieval_query = (
+            contents_facet.retrieval_query
+            if contents_facet is not None
+            else plan.normalized_question
+        )
+        if len(plan.original_question) <= 160:
+            required_aspect = plan.original_question
+        elif contents_facet is not None:
+            # Keep the same syntactically derived container target used for
+            # retrieval. PlanningDecision deliberately caps an aspect at 160
+            # characters, so a long preamble must not make this fail closed
+            # before retrieval starts.
+            required_aspect = contents_facet.retrieval_query
+        else:
+            # focused_question() has already reduced constructed long-preamble
+            # inputs to their final explicit question. Preserve that earlier
+            # deterministic behavior for every non-contents guidance request.
+            required_aspect = plan.normalized_question
+        if len(required_aspect) > 160:
+            # QueryPlan accepts a wider normalized question than the planning
+            # contract. This final bound prevents a 161--500 character stable-
+            # guidance request from raising a schema exception. It is used only
+            # after the semantic targets above have been selected.
+            required_aspect = required_aspect[:160].rstrip()
         return apply_planning_decision(
             plan,
             PlanningDecision(
                 relation=QueryRelation.GROUNDED_CANDIDATE,
-                retrieval_queries=[plan.normalized_question],
-                required_aspects=[plan.normalized_question],
+                retrieval_queries=[retrieval_query],
+                required_aspects=[required_aspect],
                 explanation=(
                     "A deterministic reviewed-guidance intent used bounded corpus retrieval."
                 ),

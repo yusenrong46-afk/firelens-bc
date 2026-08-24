@@ -7,6 +7,8 @@ from uuid import uuid4
 
 from firelens.agent.packet import AgentPacket
 from firelens.answering.intent import live_layers_for_question
+from firelens.answering.intent_safety import is_empty_map_safety_inference
+from firelens.answering.live_analysis import compose_official_answer
 from firelens.answering.live_composition import supported_static_when_live_missing
 from firelens.answering.live_request_intent import (
     is_distance_request,
@@ -222,6 +224,15 @@ def _build_ask_response(
     static = packet.static_response
     live = packet.live_results
     links = packet.related_links
+    if live and is_empty_map_safety_inference(request.question):
+        # The false-inference correction is application-owned. A model may not
+        # soften it or turn returned records into a personalized safety claim.
+        answer = compose_official_answer(
+            request,
+            live,
+            roster_total=packet.roster_total,
+            static_answer=static.answer if static is not None else None,
+        )
     if _missing_selected(request, packet):
         return no_substitute_response(request)
     if not live and static is None and not links:

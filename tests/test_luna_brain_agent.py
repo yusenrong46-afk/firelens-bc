@@ -688,6 +688,56 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Kamloops=2", where_most.response.answer or "")
         self.assertIn("Coastal=1", where_most.response.answer or "")
 
+    async def test_requested_unsupported_geographies_remain_explicitly_unknown(
+        self,
+    ) -> None:
+        records = [
+            _fire(result_id="incident:1", fire_centre="Kamloops"),
+            _fire(result_id="incident:2", fire_centre="Kamloops"),
+            _fire(result_id="incident:3", fire_centre="Southeast"),
+        ]
+        cases = (
+            (
+                "Break down the current wildfire count by region in BC.",
+                "The only validated regional grouping",
+                (),
+            ),
+            (
+                "Are active wildfires more concentrated in northern or southern BC?",
+                "The official records do not provide a validated north/south classification",
+                ("north-versus-south",),
+            ),
+            (
+                "Show current wildfire density by latitude bands across BC.",
+                "FireLens has no validated latitude-band or density aggregation",
+                ("area denominators are not defined",),
+            ),
+            (
+                "What is wildfire density in BC?",
+                "FireLens has no validated wildfire-density measure or area denominator",
+                ("does not calculate a density",),
+            ),
+            (
+                "Compare current wildfires in the Okanagan vs Kootenays.",
+                "The official records do not provide a validated "
+                "Okanagan-versus-Kootenays classification",
+                ("does not make that regional comparison",),
+            ),
+        )
+
+        for question, lead, extra_phrases in cases:
+            with self.subTest(question=question):
+                execution = await _agent(records).answer(QueryRequest(question=question))
+                answer = execution.response.answer or ""
+                self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
+                self.assertTrue(answer.startswith(lead), answer)
+                for phrase in extra_phrases:
+                    self.assertIn(phrase, answer)
+                self.assertIn("Kamloops=2", answer)
+                self.assertIn("Southeast=1", answer)
+                self.assertNotIn("records do not include incident geography", answer)
+                self.assertNotIn("records do not include geometry", answer)
+
     async def test_per_centre_counts_and_singular_centre_ranking_share_distribution(
         self,
     ) -> None:
