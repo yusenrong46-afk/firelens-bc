@@ -24,7 +24,10 @@ _MAP_ABSENCE = re.compile(
     re.IGNORECASE,
 )
 _SAFETY_INFERENCE = re.compile(
-    r"\b(?:safe|all[- ]clear|everything\s+is\s+(?:okay|ok|fine))\b",
+    r"\b(?:safe|all[- ]clear|everything\s+is\s+(?:okay|ok|fine)|"
+    r"(?:no|zero)\s+(?:(?:wild)?fire\s+risk|risk\s+(?:from|of)\s+(?:wild)?fire)|"
+    r"(?:(?:wild)?fire\s+risk|risk\s+(?:from|of)\s+(?:wild)?fire)\s+"
+    r"(?:is\s+)?(?:no|zero))\b",
     re.IGNORECASE,
 )
 _TRUST_EXPLANATION = re.compile(TRUST_EXPLANATION_PATTERN, re.IGNORECASE)

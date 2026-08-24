@@ -19,8 +19,9 @@ _EVACUATION_RECORD_QUERY = re.compile(
     re.IGNORECASE,
 )
 _PROVINCE_SCOPE = re.compile(
-    r"\b(?:across|throughout|all\s+of|in)\s+(?:bc|b\.c\.|british\s+columbia|the\s+province)\b|"
-    r"\b(?:bc|b\.c\.|british\s+columbia)[- ]wide\b|\bprovince[- ]wide\b",
+    r"\b(?:across|throughout|all\s+of|in)\s+"
+    r"(?:bc|b\.c\.?|british\s+columbia|the\s+province)(?=\W|$)|"
+    r"\b(?:bc|b\.c\.?|british\s+columbia)[- ]wide\b|\bprovince[- ]wide\b",
     re.IGNORECASE,
 )
 

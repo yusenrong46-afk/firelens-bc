@@ -12,6 +12,7 @@ from firelens.answering.intent import (
     static_guidance_fragment,
     unsupported_live_topics,
 )
+from firelens.answering.intent_safety import is_empty_map_safety_inference
 from firelens.answering.live_request_intent import (
     is_distance_request,
     is_prescriptive_evacuation_distance_request,
@@ -45,20 +46,47 @@ class V3DeterministicIntentTests(unittest.TestCase):
                 self.assertEqual(live_layers_for_question(question), ())
 
     def test_empty_map_false_inference_routes_live_and_extracts_place(self) -> None:
-        question = "The wildfire map is empty near Kelowna. Does that mean everything is safe?"
-        location = coarse_location_from_question(question)
-        self.assertIsNotNone(location)
-        assert location is not None
-        self.assertEqual(location.label, "Kelowna")
-        self.assertEqual(plan_query(QueryRequest(question=question)).route, QueryRoute.LIVE)
-        self.assertEqual(
-            live_layers_for_question(question),
+        for question in (
+            "The wildfire map is empty near Kelowna. Does that mean everything is safe?",
             (
-                LiveResultKind.INCIDENT,
-                LiveResultKind.PERIMETER,
-                LiveResultKind.EVACUATION,
+                "The wildfire map is blank near Kelowna. Does that mean there is no "
+                "wildfire risk?"
             ),
-        )
+            "The fire map is blank near Kelowna. Does that mean zero fire risk?",
+            "The wildfire map is blank near Kelowna. Does that mean wildfire risk is zero?",
+            "The wildfire map is blank near Kelowna. Does that mean risk from wildfire is zero?",
+        ):
+            with self.subTest(question=question):
+                self.assertTrue(is_empty_map_safety_inference(question))
+                location = coarse_location_from_question(question)
+                self.assertIsNotNone(location)
+                assert location is not None
+                self.assertEqual(location.label, "Kelowna")
+                self.assertEqual(
+                    plan_query(QueryRequest(question=question)).route,
+                    QueryRoute.LIVE,
+                )
+                self.assertEqual(
+                    live_layers_for_question(question),
+                    (
+                        LiveResultKind.INCIDENT,
+                        LiveResultKind.PERIMETER,
+                        LiveResultKind.EVACUATION,
+                    ),
+                )
+
+    def test_wildfire_risk_questions_without_map_absence_are_not_empty_map_inferences(
+        self,
+    ) -> None:
+        for question in (
+            "What is the current wildfire risk near Kelowna?",
+            "Does Kelowna have wildfire risk today?",
+            "Show wildfire risk on the map near Kelowna.",
+            "The wildfire map is useful for understanding wildfire risk.",
+            "The wildfire map is blank near Kelowna. Does that mean zero risk of data errors?",
+        ):
+            with self.subTest(question=question):
+                self.assertFalse(is_empty_map_safety_inference(question))
 
     def test_empty_map_does_not_bypass_personalized_action_boundary(self) -> None:
         question = "The wildfire map is empty near Kelowna. Is it safe for me to return home?"

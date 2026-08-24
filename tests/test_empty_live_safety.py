@@ -112,7 +112,8 @@ def test_nonempty_lookup_corrects_the_empty_map_inference_without_a_safety_claim
         ).answer(
             QueryRequest(
                 question=(
-                    "The wildfire map is empty near Kelowna. Does that mean everything is safe?"
+                    "The wildfire map is blank near Kelowna. Does that mean there is no "
+                    "wildfire risk?"
                 )
             )
         )

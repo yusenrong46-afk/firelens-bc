@@ -15,6 +15,11 @@ _PERSONAL_LOCATION = re.compile(
     r"\b(?:how far|what distance)\s+(?:am i|are we)\b",
     re.IGNORECASE,
 )
+_DIRECTIONAL_BC_REGION = re.compile(
+    r"(?<!\w)(?P<direction>north(?:ern)?|south(?:ern)?)\s+"
+    r"(?:b\s*\.?\s*c(?:\.)?|british\s+columbia)(?!\w)",
+    re.IGNORECASE,
+)
 
 _MULTI_PLACE_FIRE_COMPARISONS = (
     re.compile(
@@ -337,6 +342,21 @@ _NATIONAL_SCOPE = re.compile(
 )
 
 
+def directional_bc_region_label(question: str) -> str | None:
+    """Return a broad directional BC label that must never be geocoded.
+
+    The pattern is intentionally limited to a direction directly attached to BC
+    or British Columbia. Named places such as North Vancouver and Northern
+    Rockies therefore remain eligible community labels.
+    """
+
+    match = _DIRECTIONAL_BC_REGION.search(question)
+    if match is None:
+        return None
+    direction = match.group("direction").casefold()
+    return "northern B.C." if direction.startswith("north") else "southern B.C."
+
+
 def _clean_place(candidate: str) -> str | None:
     place = candidate.split(",", maxsplit=1)[0]
     place = _TRAILING_CLAUSE.sub("", place)
@@ -440,6 +460,8 @@ def coarse_location_from_question(question: str) -> LocationInput | None:
     """Return only a user-stated place label; never infer personal coordinates."""
 
     if _PERSONAL_LOCATION.search(question):
+        return None
+    if directional_bc_region_label(question) is not None:
         return None
     if any(pattern.search(question) for pattern in _MULTI_PLACE_FIRE_COMPARISONS):
         return None

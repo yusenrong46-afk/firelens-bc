@@ -6,23 +6,19 @@ import re
 from collections import Counter
 from collections.abc import Sequence
 
+from firelens import freshness_language
 from firelens.answering.intent_safety import is_empty_map_safety_inference
 from firelens.answering.live_evacuation import (
     evacuation_answer,
     is_evacuation_record_question,
 )
 from firelens.answering.live_record_intent import is_fire_geography_analysis
+from firelens.answering.location_intent import directional_bc_region_label
 from firelens.contracts import (
     CoarseResolvedLocation,
     LiveResult,
     LiveResultKind,
     QueryRequest,
-)
-from firelens.freshness_language import (
-    aggregate_freshness_from_records,
-)
-from firelens.freshness_language import (
-    official_information_prefix as freshness_prefix,
 )
 from firelens.live_support import distance_to_geometry_km, geometry_relation
 
@@ -98,7 +94,9 @@ _GENERIC_LOCATED_NAMES = frozenset(
 def official_information_prefix(records: Sequence[LiveResult]) -> str:
     """Honest lead-in: cached-stale records are never called current."""
 
-    return freshness_prefix(aggregate_freshness_from_records(list(records)))
+    return freshness_language.official_information_prefix(
+        freshness_language.aggregate_freshness_from_records(list(records))
+    )
 
 
 def official_display_name(result: LiveResult) -> str:
@@ -589,11 +587,11 @@ def _geography(question: str, records: Sequence[LiveResult]) -> str:
 
 
 def _geography_limitation(question: str) -> str:
-    if _NORTH_SOUTH_COMPARISON.search(question):
+    if _NORTH_SOUTH_COMPARISON.search(question) or directional_bc_region_label(question):
         return (
-            "The official records do not provide a validated north/south "
-            "classification, so FireLens does not make a north-versus-south "
-            "concentration comparison."
+            "The official records do not provide a validated north/south classification "
+            "for the requested directional B.C. region, so FireLens cannot determine "
+            "which fetched incidents belong there or make a north-versus-south comparison."
         )
     if _LATITUDE_DENSITY.search(question):
         return (
