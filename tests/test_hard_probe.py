@@ -9,9 +9,12 @@ from pathlib import Path
 import yaml
 
 from scripts.run_hard_probe import (
+    DEFAULT_RC2_1_EXPECTATIONS,
+    DEFAULT_RC2_1_EXPECTATIONS_MANIFEST,
     DEFAULT_RC2_EXPECTATIONS,
     DEFAULT_RC2_EXPECTATIONS_MANIFEST,
     OFFICIAL_HANDOFF_ANSWER,
+    RC2_1_MIGRATION_IDS,
     RC2_MIGRATION_IDS,
     _cost_limit_reached,
     _migration_invariant_checks,
@@ -90,6 +93,40 @@ class HardProbeDatasetTests(unittest.TestCase):
             by_id["J01"]["allowed_modes"], ["background", "grounded", "scope_redirect"]
         )
 
+    def test_named_rc2_1_profile_is_hash_bound_and_adds_only_a01(self) -> None:
+        dataset = load_dataset(self.dataset_path, self.manifest_path)
+        rc2 = load_expectation_profile("rc2", dataset, dataset_path=self.dataset_path)
+        rc2_1 = load_expectation_profile("rc2.1", dataset, dataset_path=self.dataset_path)
+
+        self.assertEqual(
+            rc2_1.expectation_overlay_sha256,
+            file_sha256(DEFAULT_RC2_1_EXPECTATIONS),
+        )
+        self.assertEqual(tuple(rc2_1.migrations), RC2_1_MIGRATION_IDS)
+        self.assertEqual(tuple(rc2_1.migrations)[:-1], tuple(rc2.migrations))
+        self.assertEqual(tuple(rc2_1.migrations)[-1], "A01")
+        effective = effective_expectations_payload(dataset, rc2_1)
+        self.assertEqual(
+            canonical_json_sha256(effective),
+            "717cbfbf09482af9ed0baf615c8e306622d57eb9a35d86cc9882d9cdc9380d49",
+        )
+        by_id = {case["id"]: case for case in effective["cases"]}
+        self.assertEqual(by_id["A01"]["allowed_modes"], ["grounded", "partial"])
+        self.assertEqual(
+            by_id["A01"]["migration"]["required_publication_kinds"],
+            ["structured_reviewed", "official_quote_only"],
+        )
+        self.assertEqual(
+            by_id["A01"]["migration"]["required_reason_code"],
+            "high_risk_claim_not_structured",
+        )
+
+        manifest = json.loads(DEFAULT_RC2_1_EXPECTATIONS_MANIFEST.read_text())
+        self.assertEqual(
+            manifest["expectations_sha256"], file_sha256(DEFAULT_RC2_1_EXPECTATIONS)
+        )
+        self.assertEqual(manifest["migration_count"], 11)
+
     def test_rc2_profile_fails_closed_on_contract_drift(self) -> None:
         dataset = load_dataset(self.dataset_path, self.manifest_path)
         source_overlay = yaml.safe_load(DEFAULT_RC2_EXPECTATIONS.read_text(encoding="utf-8"))
@@ -146,6 +183,26 @@ class HardProbeDatasetTests(unittest.TestCase):
                     rc2_manifest_path=DEFAULT_RC2_EXPECTATIONS_MANIFEST,
                 )
 
+    def test_rc2_1_profile_fails_closed_on_a01_contract_drift(self) -> None:
+        dataset = load_dataset(self.dataset_path, self.manifest_path)
+        overlay = yaml.safe_load(DEFAULT_RC2_1_EXPECTATIONS.read_text(encoding="utf-8"))
+        manifest = json.loads(DEFAULT_RC2_1_EXPECTATIONS_MANIFEST.read_text(encoding="utf-8"))
+        overlay["migrations"][-1]["required_publication_kinds"] = ["structured_reviewed"]
+        with tempfile.TemporaryDirectory() as directory:
+            overlay_path = Path(directory) / "expectations.yaml"
+            manifest_path = Path(directory) / "manifest.json"
+            overlay_path.write_text(yaml.safe_dump(overlay, sort_keys=False), encoding="utf-8")
+            manifest["expectations_sha256"] = file_sha256(overlay_path)
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "not frozen"):
+                load_expectation_profile(
+                    "rc2.1",
+                    dataset,
+                    dataset_path=self.dataset_path,
+                    rc2_1_expectations_path=overlay_path,
+                    rc2_1_manifest_path=manifest_path,
+                )
+
     def test_rc2_migration_invariants_are_independently_reported(self) -> None:
         dataset = load_dataset(self.dataset_path, self.manifest_path)
         profile = load_expectation_profile("rc2", dataset, dataset_path=self.dataset_path)
@@ -194,10 +251,51 @@ class HardProbeDatasetTests(unittest.TestCase):
         )
         self.assertTrue(all(check["passed"] for check in handoff_checks))
 
+        mixed_profile = load_expectation_profile(
+            "rc2.1", dataset, dataset_path=self.dataset_path
+        )
+        mixed_response = {
+            "claims": [
+                {
+                    "publication": {"kind": "structured_reviewed"},
+                    "supports": [{"evidence_id": "E1", "quote": "reviewed quote"}],
+                },
+                {
+                    "publication": {"kind": "official_quote_only"},
+                    "supports": [{"evidence_id": "E2", "quote": "official quote"}],
+                },
+            ],
+            "evidence": [
+                {"evidence_id": "E1", "primary_text": "A reviewed quote."},
+                {"evidence_id": "E2", "primary_text": "An official quote."},
+            ],
+            "validation": {"accepted": True},
+            "reason_code": "high_risk_claim_not_structured",
+        }
+        mixed_checks = _migration_invariant_checks(
+            mixed_profile.migrations["A01"], mixed_response, []
+        )
+        self.assertTrue(all(check["passed"] for check in mixed_checks))
+        mixed_response["claims"] = mixed_response["claims"][:1]
+        missing_kind_checks = _migration_invariant_checks(
+            mixed_profile.migrations["A01"], mixed_response, []
+        )
+        self.assertFalse(
+            next(
+                check
+                for check in missing_kind_checks
+                if check["name"] == "required_publication_kinds"
+            )["passed"]
+        )
+
     def test_cli_exposes_only_named_expectation_profiles(self) -> None:
         self.assertEqual(parse_args([]).expectation_profile, "historical")
         self.assertEqual(
             parse_args(["--expectation-profile", "rc2"]).expectation_profile, "rc2"
+        )
+        self.assertEqual(
+            parse_args(["--expectation-profile", "rc2.1"]).expectation_profile,
+            "rc2.1",
         )
         with self.assertRaises(SystemExit):
             parse_args(["--expectation-profile", "./custom.yaml"])
@@ -237,4 +335,50 @@ class HardProbeDatasetTests(unittest.TestCase):
                 invariant["passed"]
                 for invariant in row["semantic_checks"]["migration_invariants"]
             )
+        )
+
+    def test_a01_remains_failed_under_rc2_and_passes_strongly_under_rc2_1(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            rc2_output = Path(directory) / "rc2.json"
+            rc2_args = parse_args(
+                [
+                    "--mode",
+                    "offline",
+                    "--expectation-profile",
+                    "rc2",
+                    "--case-id",
+                    "A01",
+                    "--output",
+                    str(rc2_output),
+                ]
+            )
+            self.assertEqual(asyncio.run(run_probe(rc2_args)), 1)
+            rc2_report = json.loads(rc2_output.read_text(encoding="utf-8"))
+
+            rc2_1_output = Path(directory) / "rc2-1.json"
+            rc2_1_args = parse_args(
+                [
+                    "--mode",
+                    "offline",
+                    "--expectation-profile",
+                    "rc2.1",
+                    "--case-id",
+                    "A01",
+                    "--output",
+                    str(rc2_1_output),
+                ]
+            )
+            self.assertEqual(asyncio.run(run_probe(rc2_1_args)), 0)
+            rc2_1_report = json.loads(rc2_1_output.read_text(encoding="utf-8"))
+
+        self.assertFalse(rc2_report["results"][0]["passed"])
+        row = rc2_1_report["results"][0]
+        self.assertTrue(row["passed"])
+        self.assertEqual(row["response_mode"], "partial")
+        self.assertEqual(
+            {claim["publication"]["kind"] for claim in row["response"]["claims"]},
+            {"structured_reviewed", "official_quote_only"},
+        )
+        self.assertTrue(
+            all(check["passed"] for check in row["semantic_checks"]["migration_invariants"])
         )

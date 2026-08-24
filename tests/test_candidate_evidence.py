@@ -20,9 +20,21 @@ from scripts.candidate_evidence import (
 COMMIT = "a" * 40
 TREE = "b" * 40
 GENERATED_AT = "2026-08-23T20:00:00+00:00"
-MIGRATED_IDS = {"A04", "A05", "A07", "A08", "A09", "A10", "I01", "I02", "J01", "J02"}
-QUOTE_ONLY_IDS = MIGRATED_IDS - {"J01"}
-CASE_IDS = [*sorted(MIGRATED_IDS), *(f"HP-{index:03d}" for index in range(95))]
+RC2_MIGRATED_IDS = (
+    "A04",
+    "A05",
+    "A07",
+    "A08",
+    "A09",
+    "A10",
+    "I01",
+    "I02",
+    "J01",
+    "J02",
+)
+MIGRATED_IDS = (*RC2_MIGRATED_IDS, "A01")
+QUOTE_ONLY_IDS = set(RC2_MIGRATED_IDS) - {"J01"}
+CASE_IDS = [*MIGRATED_IDS, *(f"HP-{index:03d}" for index in range(94))]
 OFFICIAL_HANDOFF_ANSWER = (
     "FireLens does not have a reviewed structured claim for this high-risk question. "
     "Use the issuing authority for official wording."
@@ -51,23 +63,41 @@ def _fixture_material_sha(relative: str) -> str:
 
 
 def _migration(case_id: str) -> dict[str, object]:
-    quote_only = case_id != "J01"
+    quote_only = case_id in QUOTE_ONLY_IDS
+    mixed = case_id == "A01"
+    rationale = (
+        "Accept the deterministic official-quote-only downgrade required by structured "
+        "publication."
+        if quote_only
+        else "Accept the deterministic mixed reviewed-claim and exact-official-quote "
+        "response for the requested grab-and-go contents."
+        if mixed
+        else "Accept the deterministic official issuing-authority handoff when no reviewed "
+        "structured claim is available."
+    )
     return {
         "id": case_id,
-        "add_allowed_modes": ["partial" if quote_only else "scope_redirect"],
-        "required_publication_kinds": ["official_quote_only"] if quote_only else [],
-        "require_validation_accepted": quote_only,
-        "require_exact_quote_support": quote_only,
+        "add_allowed_modes": ["partial" if quote_only or mixed else "scope_redirect"],
+        "required_publication_kinds": (
+            ["official_quote_only"]
+            if quote_only
+            else ["structured_reviewed", "official_quote_only"]
+            if mixed
+            else []
+        ),
+        "require_validation_accepted": quote_only or mixed,
+        "require_exact_quote_support": quote_only or mixed,
         "require_zero_generation": True,
-        "require_zero_claims": not quote_only,
-        "require_zero_evidence": not quote_only,
-        "require_official_handoff": not quote_only,
-        "required_reason_code": None if quote_only else "high_risk_claim_not_structured",
-        "rationale": f"Frozen RC2 expectation migration for {case_id}.",
+        "require_zero_claims": not quote_only and not mixed,
+        "require_zero_evidence": not quote_only and not mixed,
+        "require_official_handoff": not quote_only and not mixed,
+        "required_reason_code": (None if quote_only else "high_risk_claim_not_structured"),
+        "rationale": rationale,
     }
 
 
-MIGRATIONS = [_migration(case_id) for case_id in sorted(MIGRATED_IDS)]
+RC2_MIGRATIONS = [_migration(case_id) for case_id in RC2_MIGRATED_IDS]
+MIGRATIONS = [_migration(case_id) for case_id in MIGRATED_IDS]
 MIGRATION_BY_ID = {str(item["id"]): item for item in MIGRATIONS}
 BASE_DATASET = {
     "dataset_version": "hard_probe.v1",
@@ -91,16 +121,25 @@ BASE_DATASET_BYTES = yaml.safe_dump(BASE_DATASET, sort_keys=False).encode()
 BASE_DATASET_SHA256 = hashlib.sha256(BASE_DATASET_BYTES).hexdigest()
 PROFILE = {
     "schema_version": "firelens.hard_probe_expectations.v1",
-    "profile": "rc2",
+    "profile": "rc2.1",
     "base_dataset_sha256": BASE_DATASET_SHA256,
     "minimum_passed": 86,
     "migrations": MIGRATIONS,
 }
 PROFILE_BYTES = yaml.safe_dump(PROFILE, sort_keys=False).encode()
 PROFILE_SHA256 = hashlib.sha256(PROFILE_BYTES).hexdigest()
+RC2_PROFILE = {
+    "schema_version": "firelens.hard_probe_expectations.v1",
+    "profile": "rc2",
+    "base_dataset_sha256": BASE_DATASET_SHA256,
+    "minimum_passed": 86,
+    "migrations": RC2_MIGRATIONS,
+}
+RC2_PROFILE_BYTES = yaml.safe_dump(RC2_PROFILE, sort_keys=False).encode()
+RC2_PROFILE_SHA256 = hashlib.sha256(RC2_PROFILE_BYTES).hexdigest()
 EFFECTIVE_EXPECTATIONS = {
     "schema_version": "firelens.hard_probe_effective_expectations.v1",
-    "profile": "rc2",
+    "profile": "rc2.1",
     "base_dataset_sha256": BASE_DATASET_SHA256,
     "minimum_passed": 86,
     "cases": [
@@ -176,6 +215,57 @@ def _quote_only_result(case_id: str) -> dict[str, object]:
     }
 
 
+def _mixed_result() -> dict[str, object]:
+    return {
+        "id": "A01",
+        "passed": True,
+        "cost_usd": 0.0,
+        "response_mode": "partial",
+        "validation_status": "accepted",
+        "provider_stages": [],
+        "effective_allowed_modes": ["grounded", "partial"],
+        "applied_migration": MIGRATION_BY_ID["A01"],
+        "semantic_checks": {
+            "base_issues": [],
+            "migration_invariants": _passing_invariants(
+                [
+                    "at_least_one_claim",
+                    "at_least_one_evidence",
+                    "required_publication_kinds",
+                    "validation_accepted",
+                    "exact_quote_support",
+                    "zero_generation_attempts",
+                    "zero_generation_cost_usd",
+                    "required_reason_code",
+                ]
+            ),
+        },
+        "response": {
+            "status": "answer",
+            "response_mode": "partial",
+            "answer": "Reviewed preparation plus exact official contents.",
+            "reason_code": "high_risk_claim_not_structured",
+            "validation": {"accepted": True},
+            "claims": [
+                {
+                    "claim_id": "C1",
+                    "supports": [{"evidence_id": "E1", "quote": "Reviewed wording."}],
+                    "publication": {"kind": "structured_reviewed"},
+                },
+                {
+                    "claim_id": "C2",
+                    "supports": [{"evidence_id": "E2", "quote": "Official wording."}],
+                    "publication": {"kind": "official_quote_only"},
+                },
+            ],
+            "evidence": [
+                {"evidence_id": "E1", "primary_text": "Reviewed wording."},
+                {"evidence_id": "E2", "primary_text": "Official wording."},
+            ],
+        },
+    }
+
+
 def _handoff_result() -> dict[str, object]:
     return {
         "id": "J01",
@@ -218,6 +308,8 @@ def _hard_probe(
     for case_id in CASE_IDS:
         if case_id in QUOTE_ONLY_IDS:
             row = _quote_only_result(case_id)
+        elif case_id == "A01":
+            row = _mixed_result()
         elif case_id == "J01":
             row = _handoff_result()
         else:
@@ -243,7 +335,7 @@ def _hard_probe(
             "mode": "offline",
             "provider_boundary": "offline_double",
             "dataset_sha256": BASE_DATASET_SHA256,
-            "expectation_profile": "rc2",
+            "expectation_profile": "rc2.1",
             "expectation_overlay_sha256": PROFILE_SHA256,
             "effective_expectations_sha256": EFFECTIVE_EXPECTATIONS_SHA256,
             "corpus_sha256": _fixture_material_sha(
@@ -293,15 +385,31 @@ def _fixture_root(tmp_path: Path) -> Path:
         root / "data/evaluation/hard_probe.v1.manifest.json",
         {"dataset_sha256": BASE_DATASET_SHA256, "case_count": 105},
     )
-    _write(root / "data/evaluation/hard_probe_rc2_expectations.v1.yaml", PROFILE_BYTES)
+    _write(
+        root / "data/evaluation/hard_probe_rc2_expectations.v1.yaml",
+        RC2_PROFILE_BYTES,
+    )
     _json(
         root / "data/evaluation/hard_probe_rc2_expectations.v1.manifest.json",
         {
             "schema_version": "firelens.hard_probe_expectations_manifest.v1",
             "profile": "rc2",
-            "expectations_sha256": PROFILE_SHA256,
+            "expectations_sha256": RC2_PROFILE_SHA256,
             "base_dataset_sha256": BASE_DATASET_SHA256,
             "migration_count": 10,
+            "migration_ids": sorted(RC2_MIGRATED_IDS),
+            "minimum_passed": 86,
+        },
+    )
+    _write(root / "data/evaluation/hard_probe_rc2_1_expectations.v1.yaml", PROFILE_BYTES)
+    _json(
+        root / "data/evaluation/hard_probe_rc2_1_expectations.v1.manifest.json",
+        {
+            "schema_version": "firelens.hard_probe_expectations_manifest.v1",
+            "profile": "rc2.1",
+            "expectations_sha256": PROFILE_SHA256,
+            "base_dataset_sha256": BASE_DATASET_SHA256,
+            "migration_count": 11,
             "migration_ids": sorted(MIGRATED_IDS),
             "minimum_passed": 86,
         },
@@ -509,6 +617,8 @@ def test_v2_bundle_binds_complete_candidate_and_recomputes(tmp_path: Path) -> No
         "data/evaluation/hard_probe.v1.yaml",
         "data/evaluation/hard_probe_rc2_expectations.v1.yaml",
         "data/evaluation/hard_probe_rc2_expectations.v1.manifest.json",
+        "data/evaluation/hard_probe_rc2_1_expectations.v1.yaml",
+        "data/evaluation/hard_probe_rc2_1_expectations.v1.manifest.json",
         "data/evaluation/v1_6_user_end_questions_50.json",
         ".github/workflows/candidate.yml",
     }.issubset(material_names)
@@ -517,7 +627,7 @@ def test_v2_bundle_binds_complete_candidate_and_recomputes(tmp_path: Path) -> No
     qualification = json.loads((bundle / "candidate-qualification-summary.json").read_text())
     assert qualification["hard_probe"]["passed"] == 86
     assert qualification["hard_probe"]["paired_regressions"] == []
-    assert qualification["hard_probe"]["expectation_profile"] == "rc2"
+    assert qualification["hard_probe"]["expectation_profile"] == "rc2.1"
     assert qualification["hard_probe"]["migrated_case_ids"] == sorted(MIGRATED_IDS)
     assert qualification["credentials"]["provider_calls"] == 0
     assert not (bundle / "CURRENT_EVIDENCE.json").exists()
@@ -620,7 +730,7 @@ def test_unclean_start_and_hard_probe_regression_are_rejected(tmp_path: Path) ->
         )
 
     baseline_ids = set(CASE_IDS[:86])
-    regressed_ids = (baseline_ids - {"HP-000"}) | {"HP-094"}
+    regressed_ids = (baseline_ids - {"HP-000"}) | {"HP-093"}
     with pytest.raises(ValueError, match="regressed previously passing cases: HP-000"):
         _build(
             root,
@@ -643,7 +753,7 @@ def test_unclean_start_and_hard_probe_regression_are_rejected(tmp_path: Path) ->
         ("below_floor", "frozen 86/105"),
     ],
 )
-def test_current_report_requires_v2_rc2_tree_hashes_and_floor(
+def test_current_report_requires_v2_rc2_1_tree_hashes_and_floor(
     tmp_path: Path, mutation: str, message: str
 ) -> None:
     root = _fixture_root(tmp_path)
@@ -682,7 +792,7 @@ def test_profile_missing_mutated_floor_base_and_roster_are_rejected(
     tmp_path: Path, mutation: str, message: str
 ) -> None:
     root = _fixture_root(tmp_path)
-    profile_path = root / "data/evaluation/hard_probe_rc2_expectations.v1.yaml"
+    profile_path = root / "data/evaluation/hard_probe_rc2_1_expectations.v1.yaml"
     if mutation == "missing":
         profile_path.unlink()
     elif mutation == "overlay_hash":
@@ -697,6 +807,15 @@ def test_profile_missing_mutated_floor_base_and_roster_are_rejected(
             profile["migrations"][-1]["id"] = "Z99"
         _write(profile_path, yaml.safe_dump(profile, sort_keys=False))
     with pytest.raises(ValueError, match=message):
+        _build(root, tmp_path / "candidate", _evidence_inputs(tmp_path / "inputs"))
+
+
+def test_frozen_rc2_profile_pair_remains_required_and_validated(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path)
+    frozen_rc2 = root / "data/evaluation/hard_probe_rc2_expectations.v1.yaml"
+    _write(frozen_rc2, frozen_rc2.read_bytes() + b"\n")
+
+    with pytest.raises(ValueError, match="does not match its manifest"):
         _build(root, tmp_path / "candidate", _evidence_inputs(tmp_path / "inputs"))
 
 
@@ -748,6 +867,26 @@ def test_unlisted_expectation_change_and_migrated_semantic_drift_are_rejected(
             _evidence_inputs(tmp_path / "handoff-inputs", hard_probe=report),
         )
 
+    report = _hard_probe()
+    mixed = next(row for row in report["results"] if row["id"] == "A01")  # type: ignore[index]
+    mixed["response"]["claims"] = [mixed["response"]["claims"][0]]  # type: ignore[index]
+    with pytest.raises(ValueError, match="exact publication kinds"):
+        _build(
+            root,
+            tmp_path / "mixed-kind-drift",
+            _evidence_inputs(tmp_path / "mixed-kind-inputs", hard_probe=report),
+        )
+
+    report = _hard_probe()
+    mixed = next(row for row in report["results"] if row["id"] == "A01")  # type: ignore[index]
+    mixed["response"]["reason_code"] = None  # type: ignore[index]
+    with pytest.raises(ValueError, match="safe response contract"):
+        _build(
+            root,
+            tmp_path / "mixed-reason-drift",
+            _evidence_inputs(tmp_path / "mixed-reason-inputs", hard_probe=report),
+        )
+
 
 def test_release_version_must_match_python_web_and_runtime_subject(tmp_path: Path) -> None:
     root = _fixture_root(tmp_path)
@@ -762,7 +901,7 @@ def test_candidate_workflow_is_exact_head_zero_cost_v2_artifact() -> None:
     assert isinstance(yaml.safe_load(workflow_text), dict)
     assert "github.event.pull_request.head.sha || github.sha" in workflow_text
     assert "scripts/run_hard_probe.py --mode offline" in workflow_text
-    assert "--expectation-profile rc2" in workflow_text
+    assert "--expectation-profile rc2.1" in workflow_text
     assert "--release-version 1.6.0-rc.1" in workflow_text
     assert "--release-version 1.6.0-rc.2" not in workflow_text
     assert "firelens.candidate_evidence.v2" in workflow_text

@@ -15,6 +15,9 @@
 - Versioned the ten safer RC2 hard-probe response-mode migrations as a named,
   hash-bound expectation profile without changing the historical dataset or
   lowering its `86/105` floor.
+- Added the independently hash-bound RC2.1 profile: it retains the ten frozen
+  RC2 migrations and appends A01's exact reviewed-plus-quote-only contract as
+  the eleventh migration without changing the dataset, schema, or floor.
 - Rebuilt the README as a reader-first explanation of the product, authority
   boundary, V1.6 work, verification limits, and contributor entry points.
 - Made rejected validation downgrade public presentation even for no-claim

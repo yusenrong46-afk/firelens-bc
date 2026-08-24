@@ -38,9 +38,12 @@ from firelens.contracts import (
 from firelens.evaluation.hard_probe_expectations import (
     DEFAULT_DATASET,
     DEFAULT_MANIFEST,
+    DEFAULT_RC2_1_EXPECTATIONS,
+    DEFAULT_RC2_1_EXPECTATIONS_MANIFEST,
     DEFAULT_RC2_EXPECTATIONS,
     DEFAULT_RC2_EXPECTATIONS_MANIFEST,
     OFFICIAL_HANDOFF_ANSWER,
+    RC2_1_MIGRATION_IDS,
     RC2_MIGRATION_IDS,
     HardProbeCase,
     HardProbeExpectationMigration,
@@ -61,10 +64,13 @@ from firelens.runtime import Runtime, load_runtime
 from firelens.storage import atomic_text_writer
 
 __all__ = [
+    "DEFAULT_RC2_1_EXPECTATIONS",
+    "DEFAULT_RC2_1_EXPECTATIONS_MANIFEST",
     "DEFAULT_RC2_EXPECTATIONS",
     "DEFAULT_RC2_EXPECTATIONS_MANIFEST",
     "OFFICIAL_HANDOFF_ANSWER",
     "RC2_MIGRATION_IDS",
+    "RC2_1_MIGRATION_IDS",
 ]
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -570,7 +576,7 @@ async def run(args: argparse.Namespace) -> int:
         json.dump(report, stream, ensure_ascii=False, indent=2)
         stream.write("\n")
     print(json.dumps(report["summary"], indent=2))
-    if expectation_profile.profile == "rc2" and full_dataset_executed:
+    if expectation_profile.profile in {"rc2", "rc2.1"} and full_dataset_executed:
         return 0 if minimum_passed_met else 1
     return 0 if failed_count == 0 else 1
 
@@ -580,7 +586,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--mode", choices=("offline", "qualified"), default="offline")
     parser.add_argument(
         "--expectation-profile",
-        choices=("historical", "rc2"),
+        choices=("historical", "rc2", "rc2.1"),
         default="historical",
     )
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)

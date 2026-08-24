@@ -19,6 +19,10 @@ DEFAULT_RC2_EXPECTATIONS = ROOT / "data/evaluation/hard_probe_rc2_expectations.v
 DEFAULT_RC2_EXPECTATIONS_MANIFEST = (
     ROOT / "data/evaluation/hard_probe_rc2_expectations.v1.manifest.json"
 )
+DEFAULT_RC2_1_EXPECTATIONS = ROOT / "data/evaluation/hard_probe_rc2_1_expectations.v1.yaml"
+DEFAULT_RC2_1_EXPECTATIONS_MANIFEST = (
+    ROOT / "data/evaluation/hard_probe_rc2_1_expectations.v1.manifest.json"
+)
 HARD_PROBE_MINIMUM_PASSED = 86
 RC2_MIGRATION_IDS = (
     "A04",
@@ -33,6 +37,7 @@ RC2_MIGRATION_IDS = (
     "J02",
 )
 RC2_QUOTE_ONLY_IDS = frozenset(RC2_MIGRATION_IDS) - {"J01"}
+RC2_1_MIGRATION_IDS = (*RC2_MIGRATION_IDS, "A01")
 OFFICIAL_HANDOFF_ANSWER = (
     "FireLens does not have a reviewed structured claim for this high-risk question. "
     "Use the issuing authority for official wording."
@@ -43,6 +48,10 @@ RC2_QUOTE_ONLY_RATIONALE = (
 RC2_HANDOFF_RATIONALE = (
     "Accept the deterministic official issuing-authority handoff when no reviewed "
     "structured claim is available."
+)
+RC2_1_MIXED_RATIONALE = (
+    "Accept the deterministic mixed reviewed-claim and exact-official-quote response "
+    "for the requested grab-and-go contents."
 )
 
 
@@ -92,7 +101,9 @@ class HardProbeDataset(ProbeModel):
 class HardProbeExpectationMigration(ProbeModel):
     id: str = Field(pattern=r"^[A-M][0-9]{2}$")
     add_allowed_modes: list[ResponseMode] = Field(min_length=1, max_length=1)
-    required_publication_kinds: list[Literal["official_quote_only"]] = Field(max_length=1)
+    required_publication_kinds: list[Literal["structured_reviewed", "official_quote_only"]] = (
+        Field(max_length=2)
+    )
     require_validation_accepted: bool
     require_exact_quote_support: bool
     require_zero_generation: bool
@@ -105,31 +116,34 @@ class HardProbeExpectationMigration(ProbeModel):
 
 class HardProbeExpectationOverlay(ProbeModel):
     schema_version: Literal["firelens.hard_probe_expectations.v1"]
-    profile: Literal["rc2"]
+    profile: Literal["rc2", "rc2.1"]
     base_dataset_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     minimum_passed: int
-    migrations: list[HardProbeExpectationMigration] = Field(min_length=10, max_length=10)
+    migrations: list[HardProbeExpectationMigration] = Field(min_length=10, max_length=11)
 
     @model_validator(mode="after")
-    def frozen_rc2_contract(self) -> HardProbeExpectationOverlay:
+    def frozen_profile_contract(self) -> HardProbeExpectationOverlay:
         if self.minimum_passed != HARD_PROBE_MINIMUM_PASSED:
-            raise ValueError("RC2 expectation profile has the wrong pass floor")
+            raise ValueError(f"{self.profile} expectation profile has the wrong pass floor")
+        expected_ids = RC2_MIGRATION_IDS if self.profile == "rc2" else RC2_1_MIGRATION_IDS
         ids = [migration.id for migration in self.migrations]
-        if ids != list(RC2_MIGRATION_IDS):
-            raise ValueError("RC2 expectation profile has the wrong migration IDs or order")
+        if ids != list(expected_ids):
+            raise ValueError(
+                f"{self.profile} expectation profile has the wrong migration IDs or order"
+            )
         for migration in self.migrations:
             actual = migration.model_dump(mode="json")
-            expected = _expected_rc2_migration(migration.id)
+            expected = _expected_profile_migration(self.profile, migration.id)
             if actual != expected:
                 raise ValueError(
-                    f"RC2 expectation profile migration {migration.id} is not frozen"
+                    f"{self.profile} expectation profile migration {migration.id} is not frozen"
                 )
         return self
 
 
 class HardProbeExpectationManifest(ProbeModel):
     schema_version: Literal["firelens.hard_probe_expectations_manifest.v1"]
-    profile: Literal["rc2"]
+    profile: Literal["rc2", "rc2.1"]
     expectations_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     base_dataset_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     migration_count: int
@@ -137,25 +151,30 @@ class HardProbeExpectationManifest(ProbeModel):
     minimum_passed: int
 
     @model_validator(mode="after")
-    def frozen_rc2_contract(self) -> HardProbeExpectationManifest:
-        if self.migration_count != len(RC2_MIGRATION_IDS):
-            raise ValueError("RC2 expectation manifest has the wrong migration count")
-        if self.migration_ids != sorted(RC2_MIGRATION_IDS):
-            raise ValueError("RC2 expectation manifest has the wrong migration IDs")
+    def frozen_profile_contract(self) -> HardProbeExpectationManifest:
+        expected_ids = RC2_MIGRATION_IDS if self.profile == "rc2" else RC2_1_MIGRATION_IDS
+        if self.migration_count != len(expected_ids):
+            raise ValueError(
+                f"{self.profile} expectation manifest has the wrong migration count"
+            )
+        if self.migration_ids != sorted(expected_ids):
+            raise ValueError(f"{self.profile} expectation manifest has the wrong migration IDs")
         if self.minimum_passed != HARD_PROBE_MINIMUM_PASSED:
-            raise ValueError("RC2 expectation manifest has the wrong pass floor")
+            raise ValueError(f"{self.profile} expectation manifest has the wrong pass floor")
         return self
 
 
 class LoadedExpectationProfile(ProbeModel):
-    profile: Literal["historical", "rc2"]
+    profile: Literal["historical", "rc2", "rc2.1"]
     base_dataset_sha256: str
     minimum_passed: int
     expectation_overlay_sha256: str | None
     migrations: dict[str, HardProbeExpectationMigration]
 
 
-def _expected_rc2_migration(case_id: str) -> dict[str, Any]:
+def _expected_profile_migration(
+    profile: Literal["rc2", "rc2.1"], case_id: str
+) -> dict[str, Any]:
     if case_id in RC2_QUOTE_ONLY_IDS:
         return {
             "id": case_id,
@@ -184,7 +203,24 @@ def _expected_rc2_migration(case_id: str) -> dict[str, Any]:
             "required_reason_code": "high_risk_claim_not_structured",
             "rationale": RC2_HANDOFF_RATIONALE,
         }
-    raise ValueError(f"unknown RC2 hard-probe migration ID: {case_id}")
+    if profile == "rc2.1" and case_id == "A01":
+        return {
+            "id": case_id,
+            "add_allowed_modes": ["partial"],
+            "required_publication_kinds": [
+                "structured_reviewed",
+                "official_quote_only",
+            ],
+            "require_validation_accepted": True,
+            "require_exact_quote_support": True,
+            "require_zero_generation": True,
+            "require_zero_claims": False,
+            "require_zero_evidence": False,
+            "require_official_handoff": False,
+            "required_reason_code": "high_risk_claim_not_structured",
+            "rationale": RC2_1_MIXED_RATIONALE,
+        }
+    raise ValueError(f"unknown {profile} hard-probe migration ID: {case_id}")
 
 
 def file_sha256(path: Path) -> str:
@@ -215,14 +251,16 @@ def load_dataset(path: Path, manifest_path: Path) -> HardProbeDataset:
 
 
 def load_expectation_profile(
-    profile: Literal["historical", "rc2"],
+    profile: Literal["historical", "rc2", "rc2.1"],
     dataset: HardProbeDataset,
     *,
     dataset_path: Path = DEFAULT_DATASET,
     rc2_expectations_path: Path = DEFAULT_RC2_EXPECTATIONS,
     rc2_manifest_path: Path = DEFAULT_RC2_EXPECTATIONS_MANIFEST,
+    rc2_1_expectations_path: Path = DEFAULT_RC2_1_EXPECTATIONS,
+    rc2_1_manifest_path: Path = DEFAULT_RC2_1_EXPECTATIONS_MANIFEST,
 ) -> LoadedExpectationProfile:
-    """Load the one named overlay, failing closed on every frozen binding."""
+    """Load a repository-owned named overlay, failing closed on every binding."""
 
     base_dataset_sha256 = file_sha256(dataset_path)
     if profile == "historical":
@@ -233,37 +271,42 @@ def load_expectation_profile(
             expectation_overlay_sha256=None,
             migrations={},
         )
-    if profile != "rc2":
+    if profile not in {"rc2", "rc2.1"}:
         raise ValueError(f"unknown hard-probe expectation profile: {profile}")
 
-    expectations_sha256 = file_sha256(rc2_expectations_path)
+    expectations_path = rc2_expectations_path if profile == "rc2" else rc2_1_expectations_path
+    manifest_path = rc2_manifest_path if profile == "rc2" else rc2_1_manifest_path
+    expectations_sha256 = file_sha256(expectations_path)
     manifest = HardProbeExpectationManifest.model_validate(
-        json.loads(rc2_manifest_path.read_text(encoding="utf-8"))
+        json.loads(manifest_path.read_text(encoding="utf-8"))
     )
     overlay = HardProbeExpectationOverlay.model_validate(
-        yaml.safe_load(rc2_expectations_path.read_text(encoding="utf-8"))
+        yaml.safe_load(expectations_path.read_text(encoding="utf-8"))
     )
+    if overlay.profile != profile or manifest.profile != profile:
+        raise ValueError(f"{profile} expectation profile identity is invalid")
     if manifest.expectations_sha256 != expectations_sha256:
-        raise ValueError("RC2 expectation overlay hash does not match its manifest")
+        raise ValueError(f"{profile} expectation overlay hash does not match its manifest")
     if manifest.base_dataset_sha256 != base_dataset_sha256:
-        raise ValueError("RC2 expectation manifest is bound to the wrong base dataset")
+        raise ValueError(f"{profile} expectation manifest is bound to the wrong base dataset")
     if overlay.base_dataset_sha256 != base_dataset_sha256:
-        raise ValueError("RC2 expectation overlay is bound to the wrong base dataset")
+        raise ValueError(f"{profile} expectation overlay is bound to the wrong base dataset")
     if overlay.minimum_passed != manifest.minimum_passed:
-        raise ValueError("RC2 expectation overlay and manifest pass floors differ")
+        raise ValueError(f"{profile} expectation overlay and manifest pass floors differ")
     migration_ids = [migration.id for migration in overlay.migrations]
     if sorted(migration_ids) != manifest.migration_ids:
-        raise ValueError("RC2 expectation overlay and manifest migration IDs differ")
+        raise ValueError(f"{profile} expectation overlay and manifest migration IDs differ")
     if len(overlay.migrations) != manifest.migration_count:
-        raise ValueError("RC2 expectation overlay and manifest migration counts differ")
+        raise ValueError(f"{profile} expectation overlay and manifest migration counts differ")
     dataset_ids = {case.id for case in dataset.cases}
     unknown_ids = sorted(set(migration_ids) - dataset_ids)
     if unknown_ids:
         raise ValueError(
-            "RC2 expectation overlay references unknown base cases: " + ", ".join(unknown_ids)
+            f"{profile} expectation overlay references unknown base cases: "
+            + ", ".join(unknown_ids)
         )
     return LoadedExpectationProfile(
-        profile="rc2",
+        profile=profile,
         base_dataset_sha256=base_dataset_sha256,
         minimum_passed=overlay.minimum_passed,
         expectation_overlay_sha256=expectations_sha256,
@@ -365,9 +408,7 @@ def _migration_invariant_checks(
                     expected=migration.model_dump(mode="json")["required_publication_kinds"],
                     actual=actual_kinds,
                     passed=bool(claims)
-                    and all(
-                        kind in migration.required_publication_kinds for kind in actual_kinds
-                    ),
+                    and set(actual_kinds) == set(migration.required_publication_kinds),
                 ),
             ]
         )

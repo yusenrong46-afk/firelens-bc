@@ -97,9 +97,11 @@ Visible development benchmarks are not independent proof.
   quote-only, partial, or handoff response; it is not a reviewed structured
   claim.
 - The permanent hard-probe dataset remains immutable. The named, hash-bound
-  `rc2` expectation profile records ten safer response-mode migrations while
-  preserving the historical questions, case count, and `86/105` floor. The
-  effective expectation hash and exact Git identity travel with report v2.
+  `rc2` profile preserves ten safer response-mode migrations. The active
+  `rc2.1` profile copies those ten unchanged and appends A01's exact
+  `{structured_reviewed, official_quote_only}` mixed-publication contract while
+  preserving the historical questions, 105-case roster, and `86/105` floor.
+  The effective expectation hash and exact Git identity travel with report v2.
 
 ## Failures, ops, packaging
 

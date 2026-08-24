@@ -147,7 +147,7 @@ jobs:
             --output candidate-inputs/structured-publication-eval.json
           structured_publication_eval=$?
           .venv/bin/python scripts/run_hard_probe.py --mode offline \
-            --expectation-profile rc2 \
+            --expectation-profile rc2.1 \
             --output candidate-inputs/hard-probe.json
           hard_probe_offline=$?
           .venv/bin/pip-audit -r requirements.lock --format json \
@@ -194,7 +194,7 @@ jobs:
               ),
               (
                   "hard_probe_offline",
-                  "scripts/run_hard_probe.py --mode offline --expectation-profile rc2 --output "
+                  "scripts/run_hard_probe.py --mode offline --expectation-profile rc2.1 --output "
                   "candidate-inputs/hard-probe.json",
               ),
               ("python_audit", "pip-audit -r requirements.lock --format json"),
