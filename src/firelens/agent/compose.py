@@ -395,7 +395,7 @@ def _build_ask_response(
         )
         if merged is not None:
             return merged
-    if static is not None:
+    if static is not None and not links:
         if (
             not live
             and "out_of_province_place" in packet.unknown_topics

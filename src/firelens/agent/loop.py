@@ -14,7 +14,11 @@ from firelens.agent.compose import (
     safety_response,
 )
 from firelens.agent.failures import EXPECTED_TOOL_FAILURES, record_expected_failure
-from firelens.agent.fallback_brain import fallback_write, heuristic_tool_calls
+from firelens.agent.fallback_brain import (
+    fallback_write,
+    heuristic_tool_calls,
+    should_prefetch_reviewed_guidance,
+)
 from firelens.agent.loop_support import (
     assign_route,
     assistant_tool_request,
@@ -29,7 +33,7 @@ from firelens.agent.prompts import OPENROUTER_TOOLS, SYSTEM_PROMPT
 from firelens.agent.rails import execution_allowed, output_rail_errors
 from firelens.agent.runtime_tools import execute_tool
 from firelens.agent.tools import AgentTool
-from firelens.answering.intent import unsupported_live_topics
+from firelens.answering.intent import live_layers_for_question, unsupported_live_topics
 from firelens.answering.live_analysis import (
     official_analysis_answer,
     replace_ungrounded_live_hedge,
@@ -87,6 +91,24 @@ async def run_agent_loop(
         packet.unknown_topics.append("out_of_province_place")
     if is_unsupported_selected_request(request):
         packet.unknown_topics.append("prediction")
+    if (
+        unsupported
+        and not live_layers_for_question(request.question)
+        and not should_prefetch_reviewed_guidance(request.question)
+    ):
+        # An unsupported current-data request is already fully classified by
+        # deterministic code. Do not let a provider choose an adjacent tool,
+        # substitute unrelated wildfire records, or turn a failed draft into
+        # the public answer. Resolve a named BC place only for continuity, then
+        # return the owned official handoff with zero model/tool calls.
+        await resolve_place(live_coordinator, request, packet)
+        packet.policy.route = "deterministic_redirect"
+        return (
+            compose_response(request, packet, handoff_answer(packet)),
+            QueryRoute.LIVE,
+            (),
+            packet,
+        )
     if needs_location(request):
         packet.policy.route = "missing_location"
         tool = (

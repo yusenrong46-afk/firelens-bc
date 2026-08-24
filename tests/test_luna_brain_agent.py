@@ -11,6 +11,7 @@ from pydantic import HttpUrl
 
 from firelens.agent import AgentTool, FireLensAgent
 from firelens.agent.chat import ChatToolCall, ChatTurn
+from firelens.agent.compose import compose_response
 from firelens.agent.packet import AgentPacket, live_record_fact
 from firelens.agent.rails import output_rail_errors
 from firelens.answering.live_analysis import compose_official_answer
@@ -30,6 +31,8 @@ from firelens.contracts import (
     PublicEvidence,
     QueryRequest,
     QueryRoute,
+    ReasonCode,
+    RelatedLink,
     ResponseMode,
     ResponseStatus,
     TemporalClass,
@@ -1636,6 +1639,93 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(execution.response.response_mode, ResponseMode.SCOPE_REDIRECT)
         self.assertNotIn("Dragons", answer)
         self.assertIn("outside the grounded sources", answer)
+
+    async def test_unsupported_live_only_redirects_without_provider_or_substitution(
+        self,
+    ) -> None:
+        cases = (
+            (
+                "What is the AQHI in Kelowna right now?",
+                "Current B.C. AQHI",
+                "air quality",
+            ),
+            (
+                "What is the current smoke forecast for Kelowna?",
+                "Environment Canada weather",
+                "weather or smoke forecast",
+            ),
+            (
+                "Where are the firefighting aircraft right now?",
+                "BC Wildfire Service",
+                "firefighting aircraft",
+            ),
+            (
+                "Are roads closed because of wildfire near Kelowna right now?",
+                "DriveBC road conditions",
+                "road conditions",
+            ),
+            (
+                "What is the AQHI in Kelowna right now and tell me a dragon story?",
+                "Current B.C. AQHI",
+                "air quality",
+            ),
+        )
+        for question, link_title, topic in cases:
+            with self.subTest(question=question):
+                provider = CapturingProvider()
+                live = CountingMapService(
+                    [_fire(result_id="incident:9", name="Unrelated Ridge Fire")]
+                )
+                agent = FireLensAgent(
+                    cast(Any, _ProviderStatic(provider)),
+                    LiveAnswerCoordinator(cast(Any, live)),
+                )
+
+                execution = await agent.answer(QueryRequest(question=question))
+
+                response = execution.response
+                self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
+                self.assertEqual(response.live_results, [])
+                self.assertEqual(provider.calls, 0)
+                self.assertEqual(live.map_calls, 0)
+                self.assertEqual(live.nearby_calls, 0)
+                self.assertIn(topic, (response.answer or "").casefold())
+                self.assertEqual(response.related_links[0].title, link_title)
+                self.assertNotIn("draft validation", (response.answer or "").casefold())
+                self.assertNotIn("Unrelated Ridge Fire", response.answer or "")
+
+    def test_rejected_static_draft_cannot_displace_unsupported_live_handoff(self) -> None:
+        packet = AgentPacket(
+            static_response=AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id="d" * 32,
+                response_mode=ResponseMode.SCOPE_REDIRECT,
+                answer="The generated background answer did not pass FireLens validation.",
+                reason_code=ReasonCode.DRAFT_VALIDATION_FAILED,
+                limitations=["Current AQHI requires live air-quality data."],
+            ),
+            unknown_topics=["air quality"],
+            related_links=[
+                RelatedLink(
+                    title="Current B.C. AQHI",
+                    url=HttpUrl(
+                        "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html"
+                    ),
+                    description="Current official AQHI observations and forecasts.",
+                )
+            ],
+        )
+
+        response = compose_response(
+            QueryRequest(question="What is the current AQHI in Kelowna?"),
+            packet,
+            "The generated background answer did not pass FireLens validation.",
+        )
+
+        self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
+        self.assertEqual(response.related_links[0].title, "Current B.C. AQHI")
+        self.assertNotIn("draft", (response.answer or "").casefold())
+        self.assertIn("not connected", (response.answer or "").casefold())
 
     async def test_prefetched_packet_gets_single_write_call_without_tools(self) -> None:
         provider = CapturingProvider()
