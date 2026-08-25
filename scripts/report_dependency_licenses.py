@@ -24,20 +24,36 @@ def is_prohibited_license_expression(value: str) -> bool:
     return bool(_PROHIBITED_SPDX.search(value))
 
 
+def is_prohibited_license_metadata(value: str, *, field: str) -> bool:
+    """Apply the license policy without treating bundled license prose as a package license.
+
+    ``License-Expression`` is structured SPDX metadata, so it remains eligible for
+    SPDX matching even if a producer happens to wrap it across lines.  The legacy
+    ``License`` field is less reliable: package distributions can put a complete
+    bundled-notices document there.  Only compact legacy values are package-level
+    license expressions for this report.
+    """
+
+    if field != "License":
+        return is_prohibited_license_expression(value)
+    return "\n" not in value and "\r" not in value and is_prohibited_license_expression(value)
+
+
 def python_licenses() -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for distribution in importlib.metadata.distributions():
         name = distribution.metadata.get("Name")
         if not name:
             continue
-        license_value = distribution.metadata.get(
-            "License-Expression"
-        ) or distribution.metadata.get("License")
+        expression = distribution.metadata.get("License-Expression")
+        field = "License-Expression" if expression else "License"
+        license_value = expression or distribution.metadata.get("License")
         rows.append(
             {
                 "name": name,
                 "version": distribution.version,
                 "license": (license_value or "UNKNOWN").strip(),
+                "_license_field": field,
             }
         )
     return sorted(rows, key=lambda row: row["name"].casefold())
@@ -54,9 +70,18 @@ def node_licenses(lock_path: Path) -> list[dict[str, str]]:
                 "name": package_path.removeprefix("node_modules/"),
                 "version": str(metadata.get("version") or "UNKNOWN"),
                 "license": str(metadata.get("license") or "UNKNOWN"),
+                "_license_field": "package.json license",
             }
         )
     return sorted(rows, key=lambda row: row["name"].casefold())
+
+
+def _report_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    """Remove collection-only metadata before writing the stable report schema."""
+
+    return [
+        {key: value for key, value in row.items() if not key.startswith("_")} for row in rows
+    ]
 
 
 def main() -> None:
@@ -66,14 +91,14 @@ def main() -> None:
     python_rows = python_licenses()
     node_rows = node_licenses(ROOT / "apps/web/package-lock.json")
     report: dict[str, list[dict[str, str]] | list[str]] = {
-        "python": python_rows,
-        "node": node_rows,
+        "python": _report_rows(python_rows),
+        "node": _report_rows(node_rows),
     }
     prohibited = [
         f"{ecosystem}:{row['name']}:{row['license']}"
         for ecosystem, rows in (("python", python_rows), ("node", node_rows))
         for row in rows
-        if is_prohibited_license_expression(row["license"])
+        if is_prohibited_license_metadata(row["license"], field=row["_license_field"])
     ]
     report["prohibited"] = prohibited
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

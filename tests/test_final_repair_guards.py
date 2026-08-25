@@ -49,6 +49,47 @@ def test_license_expression_matching_does_not_treat_lgpl_as_gpl() -> None:
     assert not license_report.is_prohibited_license_expression("LGPL-3.0-only")
 
 
+def test_multiline_legacy_license_metadata_does_not_inherit_a_bundled_gpl_license(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bundled_notice = """Copyright (c) SciPy Developers.
+
+This binary distribution of SciPy can also bundle the following software:
+
+Name: GCC runtime library
+License: GPL-3.0-or-later WITH GCC-exception-3.1
+"""
+
+    class Distribution:
+        metadata = {"Name": "scipy", "License": bundled_notice}
+        version = "1.16.0"
+
+    monkeypatch.setattr(
+        license_report.importlib.metadata, "distributions", lambda: [Distribution()]
+    )
+
+    rows = license_report.python_licenses()
+
+    assert rows[0]["license"] == bundled_notice.strip()
+    assert not license_report.is_prohibited_license_metadata(
+        rows[0]["license"], field=rows[0]["_license_field"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("License", "GPL-3.0-or-later WITH GCC-exception-3.1"),
+        ("License", "MIT OR AGPL-3.0-only"),
+        ("License-Expression", "SSPL-1.0"),
+    ],
+)
+def test_compact_legacy_and_spdx_license_metadata_remain_prohibited(
+    field: str, value: str
+) -> None:
+    assert license_report.is_prohibited_license_metadata(value, field=field)
+
+
 @pytest.mark.parametrize("field", ["fail", "blocked"])
 def test_preview_probe_returns_nonzero_for_failed_or_blocked_rows(
     monkeypatch: pytest.MonkeyPatch, field: str
