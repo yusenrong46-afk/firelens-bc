@@ -6,7 +6,7 @@ export default defineConfig({
   webServer: {
     command: "npm run dev -- --host 127.0.0.1 --port 4174",
     port: 4174,
-    reuseExistingServer: true,
+    reuseExistingServer: false,
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },

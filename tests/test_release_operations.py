@@ -10,6 +10,7 @@ from pathlib import Path
 import httpx
 import pytest
 
+from firelens.api.middleware import _GUARDED_ROUTES
 from scripts.prepare_vercel_firewall import load_plan, render_command
 from scripts.qualify_preview import (
     _assert_no_sensitive_retained_fields,
@@ -25,8 +26,11 @@ def test_firewall_plan_is_enforced_method_scoped_and_not_auto_published() -> Non
 
     assert {(rule["path"], rule["method"]) for rule in plan["rules"]} == {
         ("/api/v1/ask", "POST"),
+        ("/api/v1/feedback", "POST"),
         ("/api/v1/live/map", "GET"),
+        ("/api/v1/live/nearby", "POST"),
     }
+    assert {rule["path"] for rule in plan["rules"]} == _GUARDED_ROUTES
     for rule in plan["rules"]:
         command = render_command(rule)
         assert command[-2:] == ["--rate-limit-action", "deny"]
@@ -57,7 +61,20 @@ def test_firewall_plan_rejects_log_only_rules() -> None:
             load_plan(path)
 
 
-def test_preview_qualification_requires_identity_evidence_and_exact_support() -> None:
+def test_firewall_plan_rejects_missing_guarded_routes(tmp_path: Path) -> None:
+    root = Path(__file__).resolve().parents[1]
+    payload = json.loads((root / "config/vercel_firewall.v1.json").read_text())
+    payload["rules"] = payload["rules"][:-1]
+    path = tmp_path / "incomplete-plan.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="every guarded public route"):
+        load_plan(path)
+
+
+def test_preview_qualification_requires_identity_evidence_and_exact_support(
+    tmp_path: Path,
+) -> None:
     commit = "a" * 40
     answer_canary = "CANARY_ANSWER_PLAINTEXT_MUST_NOT_SURVIVE_7F91"
     source_canary = "CANARY_SOURCE_PASSAGE_MUST_NOT_SURVIVE_4C22"
@@ -173,12 +190,14 @@ def test_preview_qualification_requires_identity_evidence_and_exact_support() ->
             },
         )
 
+    raw_artifact = tmp_path / "preview-raw.json"
     report = asyncio.run(
         qualify_preview(
             base_url="https://preview.example.test",
             expected_version="1.5.0-rc.1",
             expected_commit=commit,
             p95_target_ms=4_000,
+            raw_response_artifact_path=raw_artifact,
             transport=httpx.MockTransport(handler),
         )
     )
@@ -261,7 +280,8 @@ def test_preview_qualification_requires_identity_evidence_and_exact_support() ->
         '"headers":',
     ):
         assert forbidden_key not in serialized
-    assert _preview(report)["qualified"] is True
+    assert raw_artifact.stat().st_mode & 0o777 == 0o600
+    assert _preview(report, raw_response_artifact=raw_artifact)["qualified"] is True
 
     mutated = copy.deepcopy(report)
     mutated["requests"][3]["response"]["answer"] = answer_canary

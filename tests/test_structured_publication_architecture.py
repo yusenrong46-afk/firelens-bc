@@ -37,6 +37,7 @@ from firelens.contracts import (
     QueryRequest,
     ResponseMode,
 )
+from firelens.live_contracts import bind_distance_derivation
 from firelens.proof_presentation import build_proof_cards
 from firelens.providers.fake import FakeProvider
 from firelens.retrieval.vector import retrieval_hit_from_chunk
@@ -379,6 +380,14 @@ def test_k_live_typed_facts_are_rendered_from_records_not_model_prose() -> None:
         geometry={"type": "Point", "coordinates": [-119.5, 49.89]},
         distance_km=12.5,
         distance_basis="incident_point",
+        distance_derivation=bind_distance_derivation(
+            result_id="incident:9",
+            distance_km=12.5,
+            distance_basis="incident_point",
+            calculated_at=retrieved,
+            extra_input_ids=("place:49.89,-119.50",),
+            input_freshness=Freshness.STALE,
+        ),
     )
     block = compiler.compile_live_fact(record, public_claim_id="L1")
     assert _publication_kind(block.claim) in {"official_live_typed", "OFFICIAL_LIVE_TYPED"}
@@ -389,6 +398,10 @@ def test_k_live_typed_facts_are_rendered_from_records_not_model_prose() -> None:
     assert "all-clear" not in text.casefold()
     assert block.claim.publication is not None
     assert block.claim.publication.typed_live_fact_id == "incident:9"
+    assert block.card.derivation is not None
+    assert block.card.derivation.validation_status.value == "valid"
+    assert block.card.derivation.publication_state.value == "review"
+    assert block.card.publication_state.value == "review"
 
 
 def test_l_only_compiler_may_create_structured_reviewed_claims() -> None:

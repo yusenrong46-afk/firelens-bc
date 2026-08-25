@@ -33,6 +33,28 @@ _FAKE_FEED = re.compile(
     r"\b(?:aqhi|air quality index|highway\s+\d+\s+is\s+(?:open|closed))\b",
     re.IGNORECASE,
 )
+_FLAME_FRONT = re.compile(
+    r"\b(?:this|the)\s+(?:mapped\s+)?perimeter\b.{0,80}\b(?:current\s+|active\s+)?flame\s+front\b|"
+    r"\b(?:current\s+|active\s+)?flame\s+front\b.{0,80}\b(?:this|the)\s+(?:mapped\s+)?perimeter\b",
+    re.IGNORECASE,
+)
+_PUBLICATION_STATE_MANIPULATION = re.compile(
+    r"\bpublication state\s+(?:is|to|=)\s+verified\b",
+    re.IGNORECASE,
+)
+_SECRET_EXTRACTION = re.compile(
+    r"\b(?:reveal|print|output|return)\s+(?:the\s+)?"
+    r"(?:api[_-]?key|openrouter[_-]?api[_-]?key|system prompt)\b",
+    re.IGNORECASE,
+)
+_POLICY_BYPASS = re.compile(
+    r"\bignore (?:the )?(?:source allowlist|freshness|geometry)\b",
+    re.IGNORECASE,
+)
+_UNAUTHORIZED_TOOL_DEMAND = re.compile(
+    r"\binvoke unauthorized tools?\b",
+    re.IGNORECASE,
+)
 _CAPABILITY_REFUSAL = re.compile(
     r"\b(?:i (?:don't|do not) have (?:that )?(?:capability|capabilities)|"
     r"we (?:don't|do not) support that (?:question )?type|"
@@ -94,10 +116,20 @@ def output_rail_errors(answer: str, packet: AgentPacket) -> list[str]:
     screened = _policy_text(answer)
     if any(re.search(pattern, screened, re.IGNORECASE) for pattern in _FORBIDDEN):
         errors.append("safety_or_medical_language")
+    if _PUBLICATION_STATE_MANIPULATION.search(screened):
+        errors.append("publication_state_manipulation")
+    if _SECRET_EXTRACTION.search(screened):
+        errors.append("secret_extraction")
+    if _POLICY_BYPASS.search(screened):
+        errors.append("allowlist_freshness_geometry_bypass")
+    if _UNAUTHORIZED_TOOL_DEMAND.search(screened):
+        errors.append("unauthorized_tool_demand")
     if _CIVIC_ADDRESS.search(answer):
         errors.append("civic_address")
     if _FAKE_FEED.search(answer) and not _OFFICIAL_HANDOFF.search(answer):
         errors.append("unfetched_live_feed")
+    if _FLAME_FRONT.search(answer):
+        errors.append("perimeter_as_flame_front")
     if _CAPABILITY_REFUSAL.search(answer):
         errors.append("capability_refusal")
     screened_km = _RADIUS_KM.sub(" ", answer)
@@ -114,19 +146,13 @@ def output_rail_errors(answer: str, packet: AgentPacket) -> list[str]:
             errors.append("invented_kilometre")
             break
     allowed_names = packet.allowed_names()
-    if allowed_names and "no fetched official record is named" not in answer.casefold():
-        for match in _FIRE_NAME.finditer(answer):
-            candidate = f"{match.group(1)} fire".casefold()
-            if (
-                candidate not in allowed_names
-                and match.group(0).casefold() not in allowed_names
-            ):
-                packet_hit = any(
-                    name in candidate or candidate in name for name in allowed_names
-                )
-                if not packet_hit:
-                    errors.append("unfetched_fire_name")
-                    break
+    for match in _FIRE_NAME.finditer(answer):
+        candidate = f"{match.group(1)} fire".casefold()
+        if candidate not in allowed_names and match.group(0).casefold() not in allowed_names:
+            packet_hit = any(name in candidate or candidate in name for name in allowed_names)
+            if not packet_hit:
+                errors.append("unfetched_fire_name")
+                break
     errors.extend(
         current_language_errors(
             answer, aggregate_freshness_from_records(list(packet.live_results))

@@ -119,6 +119,7 @@ from development material, require double review, and match the candidate report
   --session-id semantic-holdout-v1-5-2-001 \
   --private-payload /absolute/private/semantic-holdout.json \
   --manifest "$PWD/data/evaluation/benchmark_v1_5_2_semantic_holdout.manifest.json" \
+  --development-registry "$PWD/data/evaluation/benchmark_v1_5_2_semantic_development_registry.json" \
   --candidate-report /absolute/private/exact-candidate-holdout-report.json \
   --reviewer-a-name "REAL PERSON A" \
   --reviewer-b-name "REAL PERSON B" \

@@ -7,13 +7,16 @@ import json
 import os
 import re
 import stat
+from collections.abc import Hashable
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+import yaml
+
 CONTRACT_SCHEMA = "firelens.runtime_artifact_allowlist.v1"
-CANDIDATE_SCHEMA = "firelens.runtime_candidate.v3"
+CANDIDATE_SCHEMA = "firelens.runtime_candidate.v4"
 INVENTORY_SCHEMA = "firelens.runtime_artifact_inventory.v3"
 COMPARISON_SCHEMA = "firelens.runtime_artifact_comparison.v1"
 CANDIDATE_REQUIRED_FIELDS = frozenset(
@@ -23,6 +26,10 @@ CANDIDATE_REQUIRED_FIELDS = frozenset(
         "release_version",
         "build_commit",
         "corpus_version",
+        "corpus_sha256",
+        "corpus_manifest_sha256",
+        "vector_matrix_sha256",
+        "vector_manifest_sha256",
         "embedding_model",
         "retrieval_text_strategy",
         "rerank_model",
@@ -40,6 +47,10 @@ RUNTIME_CONFIGURATION_FIELDS = frozenset(
         "logical_path",
         "sha256",
         "corpus_version",
+        "corpus_sha256",
+        "corpus_manifest_sha256",
+        "vector_matrix_sha256",
+        "vector_manifest_sha256",
         "embedding_model",
         "retrieval_text_strategy",
         "rerank_model",
@@ -102,6 +113,33 @@ CHUNK_KEYS = {
 
 class RuntimeArtifactError(ValueError):
     """Raised when an artifact or inventory violates the frozen contract."""
+
+
+class _UniqueKeySafeLoader(yaml.SafeLoader):
+    """Safe YAML loader that refuses ambiguous mapping keys at every depth."""
+
+
+def _construct_unique_mapping(
+    loader: _UniqueKeySafeLoader,
+    node: yaml.nodes.MappingNode,
+    deep: bool = False,
+) -> dict[Any, Any]:
+    loader.flatten_mapping(node)
+    mapping: dict[Any, Any] = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if not isinstance(key, Hashable):
+            raise RuntimeArtifactError("governed YAML contains an unhashable mapping key")
+        if key in mapping:
+            raise RuntimeArtifactError(f"governed YAML contains duplicate key: {key}")
+        mapping[key] = loader.construct_object(value_node, deep=deep)
+    return mapping
+
+
+_UniqueKeySafeLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    _construct_unique_mapping,
+)
 
 
 @dataclass(frozen=True)
@@ -197,6 +235,34 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def strict_json_loads(payload: str, *, context: str) -> Any:
+    """Parse governed JSON while refusing duplicate keys at every depth."""
+
+    def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in result:
+                raise RuntimeArtifactError(f"{context} contains duplicate JSON key: {key}")
+            result[key] = value
+        return result
+
+    try:
+        return json.loads(payload, object_pairs_hook=unique_object)
+    except json.JSONDecodeError as exc:
+        raise RuntimeArtifactError(f"{context} is not valid JSON") from exc
+
+
+def strict_yaml_load(payload: str, *, context: str) -> Any:
+    """Parse governed YAML while refusing duplicate keys at every depth."""
+
+    try:
+        return yaml.load(payload, Loader=_UniqueKeySafeLoader)
+    except RuntimeArtifactError:
+        raise
+    except yaml.YAMLError as exc:
+        raise RuntimeArtifactError(f"{context} is not valid YAML") from exc
+
+
 def file_metadata(files: dict[str, Path]) -> dict[str, tuple[int, int, int, int]]:
     """Capture identities used to reject mutation during verification."""
 
@@ -216,8 +282,8 @@ def read_json(path: Path, *, context: str) -> dict[str, Any]:
     """Read a UTF-8 JSON object with a stable domain error."""
 
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        payload = strict_json_loads(path.read_text(encoding="utf-8"), context=context)
+    except (OSError, UnicodeDecodeError) as exc:
         raise RuntimeArtifactError(f"{context} is not readable JSON: {path}") from exc
     if not isinstance(payload, dict):
         raise RuntimeArtifactError(f"{context} must be a JSON object")

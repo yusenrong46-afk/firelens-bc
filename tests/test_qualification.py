@@ -4,6 +4,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import yaml
 
@@ -22,15 +23,19 @@ class FrozenQualificationTests(unittest.IsolatedAsyncioTestCase):
         dimensions = 1536
         runtime = load_runtime(config, provider=FakeProvider(dimensions=dimensions))
         with tempfile.TemporaryDirectory() as directory:
-            report = await run_frozen_retrieval_qualification(
-                runtime,
-                dataset_path=project_root / "data/evaluation/benchmark_v1.yaml",
-                dataset_manifest_path=(
-                    project_root / "data/evaluation/benchmark_v1.manifest.json"
-                ),
-                output_path=Path(directory) / "qualification.json",
-                repetitions=2,
-            )
+            with patch(
+                "firelens.benchmark_support.clean_checkout_commit",
+                return_value="a" * 40,
+            ):
+                report = await run_frozen_retrieval_qualification(
+                    runtime,
+                    dataset_path=project_root / "data/evaluation/benchmark_v1.yaml",
+                    dataset_manifest_path=(
+                        project_root / "data/evaluation/benchmark_v1.manifest.json"
+                    ),
+                    output_path=Path(directory) / "qualification.json",
+                    repetitions=2,
+                )
         await runtime.aclose()
 
         self.assertEqual(report["split"], "holdout")
@@ -144,18 +149,22 @@ class FrozenQualificationTests(unittest.IsolatedAsyncioTestCase):
         provider = FakeProvider(dimensions=1536)
         runtime = load_runtime(config, provider=provider)
         with tempfile.TemporaryDirectory() as directory:
-            report = await run_frozen_retrieval_qualification(
-                runtime,
-                dataset_path=(
-                    project_root / "data/evaluation/benchmark_v1_5_sealed_retrieval.yaml"
-                ),
-                dataset_manifest_path=(
-                    project_root
-                    / "data/evaluation/benchmark_v1_5_sealed_retrieval.manifest.json"
-                ),
-                output_path=Path(directory) / "v2-regression.json",
-                repetitions=1,
-            )
+            with patch(
+                "firelens.benchmark_support.clean_checkout_commit",
+                return_value="a" * 40,
+            ):
+                report = await run_frozen_retrieval_qualification(
+                    runtime,
+                    dataset_path=(
+                        project_root / "data/evaluation/benchmark_v1_5_sealed_retrieval.yaml"
+                    ),
+                    dataset_manifest_path=(
+                        project_root
+                        / "data/evaluation/benchmark_v1_5_sealed_retrieval.manifest.json"
+                    ),
+                    output_path=Path(directory) / "v2-regression.json",
+                    repetitions=1,
+                )
         await runtime.aclose()
 
         self.assertFalse(report["sealed_qualification_eligible"])

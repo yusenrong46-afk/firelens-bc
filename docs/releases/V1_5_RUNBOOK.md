@@ -53,12 +53,16 @@ that deployment rather than rebuilding production. Run the executable anonymous 
 .venv/bin/python scripts/qualify_preview.py \
   --base-url https://PREVIEW_URL \
   --expected-version 1.5.0-rc.1 \
-  --expected-commit FULL_RELEASE_COMMIT
+  --expected-commit FULL_RELEASE_COMMIT \
+  --raw-evidence-output /absolute/private/v1_5_preview_raw.json
 ```
 
 This writes a compact machine-readable report to
-`output/qualification/v1_5_preview.json`. It does not claim browser accessibility, forced source
-failure, or firewall enforcement; those remain separately recorded gates.
+`output/qualification/v1_5_preview.json` and a non-overwriting 0600 private raw-response artifact
+at the supplied path. The compact report hash-binds that private artifact so response-body digests
+can be recomputed without retaining response bodies in the report. It does not claim browser
+accessibility, forced source failure, or firewall enforcement; those remain separately recorded
+gates.
 
 ## Anonymous verification
 

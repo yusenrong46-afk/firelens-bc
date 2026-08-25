@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -32,17 +33,86 @@ def _candidate(**overrides):
 
 def test_runtime_candidate_is_exactly_bound_to_commit_and_shipped_manifests() -> None:
     assert _candidate() == {
-        "schema_version": "firelens.runtime_candidate.v3",
+        "schema_version": "firelens.runtime_candidate.v4",
         "candidate_id": f"firelens-v1-5-2:{COMMIT}",
         "release_version": FireLensConfig.model_fields["release_version"].default,
         "build_commit": COMMIT,
         "corpus_version": "firelens_static_corpus.v1",
+        "corpus_sha256": hashlib.sha256(
+            (ROOT / "data/processed/firelens_static_corpus.chunks.jsonl").read_bytes()
+        ).hexdigest(),
+        "corpus_manifest_sha256": hashlib.sha256(
+            (ROOT / "data/processed/firelens_static_corpus.manifest.json").read_bytes()
+        ).hexdigest(),
+        "vector_matrix_sha256": hashlib.sha256(
+            (ROOT / "data/index/firelens_vectors.npy").read_bytes()
+        ).hexdigest(),
+        "vector_manifest_sha256": hashlib.sha256(
+            (ROOT / "data/index/firelens_vectors.manifest.json").read_bytes()
+        ).hexdigest(),
         "embedding_model": "openai/text-embedding-3-small",
         "retrieval_text_strategy": "metadata_context_v1",
         "rerank_model": "cohere/rerank-4-pro",
         "generation_model": "openai/gpt-5.6-luna",
         **APPROVED_PRODUCTION_PRIVACY.candidate_fields(),
     }
+
+
+def test_runtime_candidate_identity_changes_with_exact_retrieval_artifact_bytes(
+    tmp_path: Path,
+) -> None:
+    candidates = []
+    for label in ("a", "b"):
+        root = tmp_path / label
+        processed = root / "data/processed"
+        index = root / "data/index"
+        processed.mkdir(parents=True)
+        index.mkdir(parents=True)
+        corpus = processed / "firelens_static_corpus.chunks.jsonl"
+        matrix = index / "firelens_vectors.npy"
+        corpus.write_text(f"different corpus bytes {label}\n", encoding="utf-8")
+        matrix.write_bytes(f"different vector bytes {label}".encode())
+        corpus_manifest = processed / "firelens_static_corpus.manifest.json"
+        corpus_manifest.write_text(
+            json.dumps(
+                {
+                    "corpus_version": "same.v1",
+                    "fixture_label": label,
+                    "combined_chunk_file": (
+                        "data/processed/firelens_static_corpus.chunks.jsonl"
+                    ),
+                }
+            ),
+            encoding="utf-8",
+        )
+        vector_manifest = index / "firelens_vectors.manifest.json"
+        vector_manifest.write_text(
+            json.dumps(
+                {
+                    "corpus_version": "same.v1",
+                    "corpus_sha256": hashlib.sha256(corpus.read_bytes()).hexdigest(),
+                    "embedding_model": "openai/text-embedding-3-small",
+                    "retrieval_text_strategy": "metadata_context_v1",
+                    "matrix_sha256": hashlib.sha256(matrix.read_bytes()).hexdigest(),
+                }
+            ),
+            encoding="utf-8",
+        )
+        candidates.append(
+            build_runtime_candidate(
+                commit=COMMIT,
+                benchmark_id="artifact_identity_probe",
+                corpus_manifest_path=corpus_manifest,
+                vector_manifest_path=vector_manifest,
+            )
+        )
+
+    assert candidates[0]["candidate_id"] == candidates[1]["candidate_id"]
+    assert candidates[0]["corpus_version"] == candidates[1]["corpus_version"]
+    assert candidates[0]["corpus_sha256"] != candidates[1]["corpus_sha256"]
+    assert candidates[0]["corpus_manifest_sha256"] != candidates[1]["corpus_manifest_sha256"]
+    assert candidates[0]["vector_matrix_sha256"] != candidates[1]["vector_matrix_sha256"]
+    assert candidates[0]["vector_manifest_sha256"] != candidates[1]["vector_manifest_sha256"]
 
 
 def test_runtime_candidate_refuses_invalid_commit_and_manifest_mismatch(

@@ -170,7 +170,12 @@ async def run_agent_loop(
     if not packet.live_results and packet.related_links and packet.resolved_location is None:
         await resolve_place(live_coordinator, request, packet)
     errors = output_rail_errors(answer, packet)
-    if errors and provider is not None and packet.policy.consume_rewrite():
+    if (
+        errors
+        and set(errors) != {"unfetched_fire_name"}
+        and provider is not None
+        and packet.policy.consume_rewrite()
+    ):
         try:
             answer = await _rewrite(provider, request, packet, answer, errors)
         except ProviderError:

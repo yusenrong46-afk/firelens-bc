@@ -15,6 +15,7 @@ from firelens.errors import (
 )
 from firelens.live import LiveDataUnavailable
 from firelens.live_support import LiveDataErrorKind
+from firelens.runtime_artifact_common import RuntimeArtifactError
 from firelens.runtime_packaging import verify_packaging_parity
 from firelens.source_radar import inspect_source_changes
 
@@ -79,6 +80,64 @@ def test_source_change_radar_quarantines_without_publishing(tmp_path: Path) -> N
     assert report["quarantine_recommended"] is True
     assert report["changes"][0]["publication"] == "blocked"
     assert report["changes"][0]["affected_chunk_ids"] == ["chunk-a"]
+
+
+def test_source_change_radar_marks_missing_included_acquisitions_incomplete(
+    tmp_path: Path,
+) -> None:
+    chunk = make_chunk("chunk-a", "Reviewed source text.")
+    chunks_path = tmp_path / "chunks.jsonl"
+    chunks_path.write_text(json.dumps(asdict(chunk), sort_keys=True) + "\n", encoding="utf-8")
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "sources": [
+                    {
+                        "source_id": "source-a",
+                        "corpus_action": "include",
+                        "document_sha256": "a" * 64,
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = inspect_source_changes(
+        tmp_path,
+        {},
+        manifest_path=manifest_path,
+        chunks_path=chunks_path,
+    )
+
+    assert report["scan_complete"] is False
+    assert report["missing_source_ids"] == ["source-a"]
+    assert report["quarantine_recommended"] is True
+
+
+def test_source_change_radar_rejects_duplicate_manifest_keys(tmp_path: Path) -> None:
+    chunks_path = tmp_path / "chunks.jsonl"
+    chunks_path.write_text("", encoding="utf-8")
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        '{"sources":[{"source_id":"source-a","corpus_action":"include",'
+        '"document_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}],'
+        '"sources":[]}',
+        encoding="utf-8",
+    )
+
+    try:
+        inspect_source_changes(
+            tmp_path,
+            {},
+            manifest_path=manifest_path,
+            chunks_path=chunks_path,
+        )
+    except RuntimeArtifactError as exc:
+        assert "duplicate JSON key: sources" in str(exc)
+    else:
+        raise AssertionError("duplicate manifest keys must fail closed")
 
 
 def test_vercel_and_docker_share_one_logical_allowlist() -> None:

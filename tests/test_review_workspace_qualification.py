@@ -247,6 +247,37 @@ def test_independent_attestation_builds_closed_qualification_package(
     )
 
 
+def test_qualification_verifier_requires_private_attestation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, report, coordinator, launch = _workspace(tmp_path)
+    monkeypatch.setattr(
+        qualification,
+        "resume_prepared_review",
+        lambda _workspace: (coordinator, launch, {}),
+    )
+    attestation = tmp_path / "storage-attestation.yaml"
+    attestation.write_text(
+        yaml.safe_dump(
+            _approved_attestation(qualification.storage_attestation_template(workspace)),
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+    attestation.chmod(0o600)
+    output = tmp_path / "qualification"
+    qualification.build_review_qualification(workspace, attestation, output)
+
+    with pytest.raises(ValueError, match="attestation.*required"):
+        qualification.verify_review_qualification_package(
+            output / "review-qualification.json",
+            source_path=report,
+            sidecar_path=output / "review-sidecar.yaml",
+            summary_path=output / "review-summary.json",
+        )
+
+
 def test_session_actor_cannot_supply_independent_storage_attestation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -259,6 +290,31 @@ def test_session_actor_cannot_supply_independent_storage_attestation(
     )
     payload = _approved_attestation(qualification.storage_attestation_template(workspace))
     payload["reviewer_name"] = "Alice Rivers"
+    attestation = tmp_path / "storage-attestation.yaml"
+    attestation.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    attestation.chmod(0o600)
+
+    with pytest.raises(ValueError, match="independent"):
+        qualification.build_review_qualification(
+            workspace,
+            attestation,
+            tmp_path / "qualification",
+        )
+
+
+def test_session_actor_id_cannot_be_reused_by_storage_reviewer(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, _report_path, coordinator, launch = _workspace(tmp_path)
+    monkeypatch.setattr(
+        qualification,
+        "resume_prepared_review",
+        lambda _workspace: (coordinator, launch, {}),
+    )
+    payload = _approved_attestation(qualification.storage_attestation_template(workspace))
+    payload["reviewer_id"] = "REVIEWER-A"
+    payload["reviewer_name"] = "Dana Cedar"
     attestation = tmp_path / "storage-attestation.yaml"
     attestation.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     attestation.chmod(0o600)
@@ -301,6 +357,7 @@ def test_qualification_manifest_rejects_sidecar_tampering(
             source_path=report,
             sidecar_path=sidecar,
             summary_path=output / "review-summary.json",
+            attestation_path=attestation,
         )
 
 
@@ -341,6 +398,7 @@ def test_qualification_verifier_recomputes_hash_consistent_summary(
             source_path=report,
             sidecar_path=output / "review-sidecar.yaml",
             summary_path=summary_path,
+            attestation_path=attestation,
         )
 
 

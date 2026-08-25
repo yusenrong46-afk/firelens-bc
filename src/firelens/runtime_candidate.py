@@ -15,6 +15,7 @@ from firelens.runtime_artifact_common import (
     CANDIDATE_RELATIVE_PATH,
     CANDIDATE_REQUIRED_FIELDS,
     CANDIDATE_SCHEMA,
+    SHA256_PATTERN,
     SUPPORTED_RETRIEVAL_STRATEGIES,
     RuntimeArtifactError,
     assert_candidate_has_no_secrets,
@@ -23,6 +24,7 @@ from firelens.runtime_artifact_common import (
     read_json,
     require_candidate_privacy,
     require_model_id,
+    sha256_file,
 )
 
 COMMIT = re.compile(r"^[0-9a-f]{40}$")
@@ -36,12 +38,43 @@ def _object(path: Path, label: str) -> dict[str, Any]:
     if path.is_symlink() or not path.is_file():
         raise ValueError(f"{label} must be a regular file")
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        value = read_json(path, context=label)
+    except RuntimeArtifactError as exc:
         raise ValueError(f"{label} must be UTF-8 JSON") from exc
-    if not isinstance(value, dict):
-        raise ValueError(f"{label} must contain a JSON object")
     return value
+
+
+def _resolve_manifest_artifact(
+    manifest_path: Path,
+    *,
+    explicit_path: Path | None,
+    logical_path: Any = None,
+    sibling_name: str | None = None,
+    label: str,
+) -> Path:
+    """Resolve a manifest-bound artifact without assuming one checkout root."""
+
+    if explicit_path is not None:
+        path: Path = explicit_path
+    else:
+        candidates: list[Path] = []
+        if isinstance(logical_path, str) and logical_path:
+            logical = Path(logical_path)
+            if logical.is_absolute():
+                candidates.append(logical)
+            else:
+                resolved_manifest = manifest_path.resolve()
+                candidates.extend(ancestor / logical for ancestor in resolved_manifest.parents)
+                candidates.append(manifest_path.parent / logical.name)
+        if sibling_name is not None:
+            candidates.append(manifest_path.with_name(sibling_name))
+        selected = next((candidate for candidate in candidates if candidate.is_file()), None)
+        if selected is None:
+            raise ValueError(f"{label} cannot be resolved from its manifest")
+        path = selected
+    if path.is_symlink() or not path.is_file():
+        raise ValueError(f"{label} must be a regular file")
+    return path
 
 
 def require_candidate_identity(payload: dict[str, Any]) -> None:
@@ -76,6 +109,8 @@ def build_runtime_candidate(
     release_version: str | None = None,
     corpus_manifest_path: Path,
     vector_manifest_path: Path,
+    corpus_path: Path | None = None,
+    vector_matrix_path: Path | None = None,
     rerank_model: str | None = None,
     generation_model: str | None = None,
     privacy: OpenRouterPrivacyPolicy | None = None,
@@ -98,6 +133,29 @@ def build_runtime_candidate(
         raise ValueError("corpus manifest has no corpus version")
     if vector.get("corpus_version") != corpus_version:
         raise ValueError("vector and corpus manifests use different corpus versions")
+    resolved_corpus = _resolve_manifest_artifact(
+        corpus_manifest_path,
+        explicit_path=corpus_path,
+        logical_path=corpus.get("combined_chunk_file"),
+        label="corpus",
+    )
+    matrix_name = vector_manifest_path.name
+    if matrix_name.endswith(".manifest.json"):
+        matrix_name = matrix_name[: -len(".manifest.json")] + ".npy"
+    else:
+        matrix_name = "firelens_vectors.npy"
+    resolved_matrix = _resolve_manifest_artifact(
+        vector_manifest_path,
+        explicit_path=vector_matrix_path,
+        sibling_name=matrix_name,
+        label="vector matrix",
+    )
+    corpus_sha256 = sha256_file(resolved_corpus)
+    vector_matrix_sha256 = sha256_file(resolved_matrix)
+    if vector.get("corpus_sha256") != corpus_sha256:
+        raise ValueError("vector manifest corpus_sha256 does not match the corpus")
+    if vector.get("matrix_sha256") != vector_matrix_sha256:
+        raise ValueError("vector manifest matrix_sha256 does not match the matrix")
     if not isinstance(embedding_model, str) or not embedding_model:
         raise ValueError("vector manifest has no embedding model")
     embedding = _model_id(embedding_model, field="embedding_model")
@@ -118,6 +176,10 @@ def build_runtime_candidate(
         "release_version": version,
         "build_commit": commit,
         "corpus_version": corpus_version,
+        "corpus_sha256": corpus_sha256,
+        "corpus_manifest_sha256": sha256_file(corpus_manifest_path),
+        "vector_matrix_sha256": vector_matrix_sha256,
+        "vector_manifest_sha256": sha256_file(vector_manifest_path),
         "embedding_model": embedding,
         "retrieval_text_strategy": str(retrieval_text_strategy),
         "rerank_model": rerank,
@@ -192,6 +254,15 @@ def load_runtime_candidate_document(path: Path) -> dict[str, str]:
             raise RuntimeArtifactError(f"runtime candidate {field} must be a string")
         nonempty_identity(value, field=f"runtime candidate {field}")
     require_candidate_identity(payload)
+    for field in (
+        "corpus_sha256",
+        "corpus_manifest_sha256",
+        "vector_matrix_sha256",
+        "vector_manifest_sha256",
+    ):
+        value = payload.get(field)
+        if not isinstance(value, str) or SHA256_PATTERN.fullmatch(value) is None:
+            raise RuntimeArtifactError(f"runtime candidate {field} must be lowercase SHA-256")
     for field in ("embedding_model", "rerank_model", "generation_model"):
         require_model_id(payload.get(field), field=f"runtime candidate {field}")
     return {key: str(payload[key]) for key in sorted(CANDIDATE_REQUIRED_FIELDS)}
@@ -213,6 +284,17 @@ def candidate_mismatches(
         **config.privacy.candidate_fields(),
         "release_version": config.release_version,
     }
+    artifact_paths = {
+        "corpus_sha256": config.corpus_path,
+        "corpus_manifest_sha256": config.corpus_manifest_path,
+        "vector_matrix_sha256": config.vector_matrix_path,
+        "vector_manifest_sha256": config.vector_manifest_path,
+    }
+    for field, path in artifact_paths.items():
+        try:
+            expected[field] = sha256_file(path)
+        except RuntimeArtifactError:
+            expected[field] = "<unreadable>"
     mismatched = [field for field, value in expected.items() if document.get(field) != value]
     if config.build_commit is not None:
         if document.get("build_commit") != config.build_commit:

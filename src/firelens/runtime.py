@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -28,8 +27,12 @@ from firelens.retrieval.pipeline import RetrievalPipeline
 from firelens.retrieval.vector import VectorIndex
 from firelens.runtime_artifact_common import (
     CANDIDATE_RELATIVE_PATH,
+    RuntimeArtifactError,
     canonical_json,
+    read_json,
     sha256_bytes,
+    strict_json_loads,
+    strict_yaml_load,
 )
 from firelens.runtime_candidate import (
     apply_runtime_candidate_binding,
@@ -190,6 +193,7 @@ def load_corpus_resources(
     if not config.corpus_path.is_file() or not config.corpus_manifest_path.is_file():
         raise CorpusValidationError("Static corpus or manifest is missing.")
     manifest = _load_corpus_manifest(config.corpus_manifest_path)
+    _validate_governed_corpus_json(config.corpus_path)
     chunks = tuple(load_chunk_records(config.corpus_path))
     corpus_version = _validate_corpus_manifest(manifest, chunks)
     _validate_corpus_repairs(config, chunks)
@@ -199,12 +203,22 @@ def load_corpus_resources(
 
 def _load_corpus_manifest(path: Path) -> dict[str, Any]:
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
+        payload = read_json(path, context="static corpus manifest")
+    except RuntimeArtifactError as exc:
         raise CorpusValidationError("Static corpus manifest is invalid JSON.") from exc
-    if not isinstance(payload, dict):
-        raise CorpusValidationError("Static corpus manifest must be an object.")
     return payload
+
+
+def _validate_governed_corpus_json(path: Path) -> None:
+    try:
+        with path.open(encoding="utf-8") as stream:
+            for line_number, line in enumerate(stream, start=1):
+                if line.strip():
+                    strict_json_loads(line, context=f"static corpus line {line_number}")
+    except (OSError, UnicodeDecodeError, RuntimeArtifactError) as exc:
+        raise CorpusValidationError(
+            "Static corpus contains invalid or ambiguous JSON."
+        ) from exc
 
 
 def _validate_corpus_manifest(manifest: dict[str, Any], chunks: tuple[ChunkRecord, ...]) -> str:
@@ -238,9 +252,11 @@ def _validate_corpus_manifest(manifest: dict[str, Any], chunks: tuple[ChunkRecor
 
 def _validate_corpus_repairs(config: FireLensConfig, chunks: tuple[ChunkRecord, ...]) -> None:
     try:
-        repairs = load_text_repairs(config.project_root / "data/repairs/text_overrides.yaml")
+        path = config.project_root / "data/repairs/text_overrides.yaml"
+        strict_yaml_load(path.read_text(encoding="utf-8"), context="text repair registry")
+        repairs = load_text_repairs(path)
         validate_chunk_repair_provenance(chunks, repairs)
-    except (IngestionError, OSError, ValueError) as exc:
+    except (IngestionError, OSError, UnicodeDecodeError, ValueError) as exc:
         raise CorpusValidationError(str(exc)) from exc
 
 

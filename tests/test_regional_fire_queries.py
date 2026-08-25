@@ -20,6 +20,7 @@ from firelens.contracts import (
     QueryRequest,
     QueryRoute,
     ResponseMode,
+    aggregate_live_freshness,
 )
 from firelens.live_answering import LiveAnswerCoordinator
 
@@ -49,13 +50,15 @@ class _RosterService:
     async def map_results(self, *, layers: tuple[LiveResultKind, ...]) -> LiveMapResponse:
         self.map_calls += 1
         assert layers == (LiveResultKind.INCIDENT,)
+        results = [
+            _incident("incident:1", "Prince George Fire Centre"),
+            _incident("incident:2", "Prince George Fire Centre"),
+            _incident("incident:3", "Coastal Fire Centre"),
+        ]
         return LiveMapResponse(
             generated_at=datetime(2026, 8, 24, tzinfo=UTC),
-            results=[
-                _incident("incident:1", "Prince George Fire Centre"),
-                _incident("incident:2", "Prince George Fire Centre"),
-                _incident("incident:3", "Coastal Fire Centre"),
-            ],
+            results=results,
+            aggregate_freshness=aggregate_live_freshness(results),
         )
 
     async def nearby_page(self, *args: Any, **kwargs: Any) -> Any:

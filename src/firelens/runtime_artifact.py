@@ -14,8 +14,14 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 import numpy as np
-import yaml
 
+from firelens.document_context import CONTEXT_MODEL_ID, PROMPT_VERSION, prompt_sha256
+from firelens.runtime_artifact_candidate import (
+    load_candidate as _load_candidate,
+)
+from firelens.runtime_artifact_candidate import (
+    validate_candidate_artifact_hashes as _validate_candidate_artifact_hashes,
+)
 from firelens.runtime_artifact_closure import allowed_files as _allowed_files
 from firelens.runtime_artifact_common import (
     CANDIDATE_REQUIRED_FIELDS,
@@ -25,16 +31,12 @@ from firelens.runtime_artifact_common import (
     INVENTORY_SCHEMA,
     SHA256_PATTERN,
     SUPPORTED_PLATFORMS,
-    SUPPORTED_RETRIEVAL_STRATEGIES,
 )
 from firelens.runtime_artifact_common import (
     ArtifactIdentity as ArtifactIdentity,
 )
 from firelens.runtime_artifact_common import (
     RuntimeArtifactError as RuntimeArtifactError,
-)
-from firelens.runtime_artifact_common import (
-    assert_candidate_has_no_secrets as _assert_candidate_has_no_secrets,
 )
 from firelens.runtime_artifact_common import (
     assert_not_symlink as _assert_not_symlink,
@@ -58,16 +60,16 @@ from firelens.runtime_artifact_common import (
     read_json as _read_json,
 )
 from firelens.runtime_artifact_common import (
-    require_candidate_privacy as _require_candidate_privacy,
-)
-from firelens.runtime_artifact_common import (
-    require_model_id as _require_model_id,
-)
-from firelens.runtime_artifact_common import (
     sha256_bytes as _sha256_bytes,
 )
 from firelens.runtime_artifact_common import (
     sha256_file as _sha256_file,
+)
+from firelens.runtime_artifact_common import (
+    strict_json_loads as _strict_json_loads,
+)
+from firelens.runtime_artifact_common import (
+    strict_yaml_load as _strict_yaml_load,
 )
 from firelens.runtime_artifact_common import (
     validate_identity as _validate_identity,
@@ -285,36 +287,6 @@ def _validate_contract_relationships(
         )
 
 
-def _load_candidate(
-    files: dict[str, Path], contract: dict[str, Any], identity: ArtifactIdentity
-) -> dict[str, Any]:
-    candidate_contract = contract["candidate_configuration"]
-    path = candidate_contract["logical_path"]
-    candidate = _read_json(files[path], context="runtime candidate configuration")
-    if candidate.get("schema_version") != candidate_contract["schema_version"]:
-        raise RuntimeArtifactError("runtime candidate configuration has an unsupported schema")
-    expected_fields = set(candidate_contract["required_fields"])
-    _exact_keys(candidate, expected_fields, context="runtime candidate configuration")
-    for field, expected in (
-        ("candidate_id", identity.candidate_id),
-        ("release_version", identity.release_version),
-        ("build_commit", identity.build_commit),
-    ):
-        if candidate.get(field) != expected:
-            raise RuntimeArtifactError(f"runtime candidate {field} differs from build identity")
-    corpus_version = candidate.get("corpus_version")
-    if not isinstance(corpus_version, str):
-        raise RuntimeArtifactError("runtime candidate corpus_version must be a string")
-    _nonempty_identity(corpus_version, field="runtime candidate corpus_version")
-    for field in ("embedding_model", "rerank_model", "generation_model"):
-        _require_model_id(candidate.get(field), field=f"runtime candidate {field}")
-    if candidate.get("retrieval_text_strategy") not in SUPPORTED_RETRIEVAL_STRATEGIES:
-        raise RuntimeArtifactError("runtime candidate retrieval_text_strategy is unsupported")
-    _require_candidate_privacy(candidate, context="runtime candidate")
-    _assert_candidate_has_no_secrets(candidate)
-    return candidate
-
-
 def _load_corpus(
     files: dict[str, Path], contract: dict[str, Any]
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
@@ -348,10 +320,7 @@ def _load_corpus(
 
 
 def _validated_corpus_chunk(line: str, line_number: int) -> dict[str, Any]:
-    try:
-        chunk = json.loads(line)
-    except json.JSONDecodeError as exc:
-        raise RuntimeArtifactError(f"corpus line {line_number} is invalid JSON") from exc
+    chunk = _strict_json_loads(line, context=f"corpus line {line_number}")
     if not isinstance(chunk, dict):
         raise RuntimeArtifactError(f"corpus line {line_number} is not an object")
     context = f"corpus line {line_number}"
@@ -384,8 +353,11 @@ def _validate_repairs(
 ) -> None:
     repair_path = files[contract["runtime_data"]["repair_registry"]]
     try:
-        payload = yaml.safe_load(repair_path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:
+        payload = _strict_yaml_load(
+            repair_path.read_text(encoding="utf-8"),
+            context="runtime repair registry",
+        )
+    except (OSError, UnicodeDecodeError) as exc:
         raise RuntimeArtifactError("runtime repair registry is not readable YAML") from exc
     if not isinstance(payload, dict):
         raise RuntimeArtifactError("runtime repair registry must be an object")
@@ -547,6 +519,9 @@ def _validate_vector_matrix(
         raise RuntimeArtifactError("vector matrix shape differs from its manifest")
     if not np.issubdtype(matrix.dtype, np.number) or not np.isfinite(matrix).all():
         raise RuntimeArtifactError("vector matrix must contain only finite numeric values")
+    norms = np.linalg.norm(matrix, axis=1)
+    if not np.allclose(norms, 1.0, rtol=1e-5, atol=1e-6):
+        raise RuntimeArtifactError("vector matrix rows must be unit normalized")
 
 
 def _context_requirement(
@@ -573,12 +548,10 @@ def _load_context_records(path: Path) -> dict[str, dict[str, Any]]:
             for line_number, line in enumerate(stream, start=1):
                 if not line.strip():
                     continue
-                try:
-                    record = json.loads(line)
-                except json.JSONDecodeError as exc:
-                    raise RuntimeArtifactError(
-                        f"document context line {line_number} is invalid JSON"
-                    ) from exc
+                record = _strict_json_loads(
+                    line,
+                    context=f"document context line {line_number}",
+                )
                 if not isinstance(record, dict):
                     raise RuntimeArtifactError(
                         f"document context line {line_number} is not an object"
@@ -612,16 +585,14 @@ def _validate_context_records(
     if set(context_records) != set(chunks_by_id):
         raise RuntimeArtifactError("document context does not cover the corpus exactly")
     for chunk_id, record in context_records.items():
-        if record["schema_version"] != "firelens_document_context.v2":
+        if record["schema_version"] != PROMPT_VERSION:
             raise RuntimeArtifactError("document context has an unsupported schema")
         if record["document_sha256"] != chunks_by_id[chunk_id]["document_sha256"]:
             raise RuntimeArtifactError("document context is stale for its corpus chunk")
-        if not isinstance(record["model_id"], str) or not record["model_id"]:
-            raise RuntimeArtifactError("document context has no model identity")
-        if not isinstance(record["prompt_sha256"], str) or not SHA256_PATTERN.fullmatch(
-            record["prompt_sha256"]
-        ):
-            raise RuntimeArtifactError("document context has an invalid prompt identity")
+        if record["model_id"] != CONTEXT_MODEL_ID:
+            raise RuntimeArtifactError("document context model identity is not current")
+        if record["prompt_sha256"] != prompt_sha256():
+            raise RuntimeArtifactError("document context prompt identity is not current")
         if not isinstance(record["context"], str) or not record["context"].strip():
             raise RuntimeArtifactError("document context has empty context text")
 
@@ -655,6 +626,7 @@ def build_runtime_inventory(
     chunks, corpus_manifest = _load_corpus(files, contract)
     _validate_repairs(files, contract, chunks, corpus_manifest)
     _validate_vector_and_context(files, contract, candidate, chunks, corpus_manifest)
+    _validate_candidate_artifact_hashes(files, contract, candidate)
     if _file_metadata(files) != initial_metadata:
         raise RuntimeArtifactError("artifact changed while it was being validated")
 
@@ -697,6 +669,10 @@ def build_runtime_inventory(
             "logical_path": contract["candidate_configuration"]["logical_path"],
             "sha256": _sha256_file(files[contract["candidate_configuration"]["logical_path"]]),
             "corpus_version": candidate["corpus_version"],
+            "corpus_sha256": candidate["corpus_sha256"],
+            "corpus_manifest_sha256": candidate["corpus_manifest_sha256"],
+            "vector_matrix_sha256": candidate["vector_matrix_sha256"],
+            "vector_manifest_sha256": candidate["vector_manifest_sha256"],
             "embedding_model": candidate["embedding_model"],
             "retrieval_text_strategy": candidate["retrieval_text_strategy"],
             "rerank_model": candidate["rerank_model"],

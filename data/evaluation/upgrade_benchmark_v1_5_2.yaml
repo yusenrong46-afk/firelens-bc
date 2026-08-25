@@ -102,6 +102,7 @@ harness_inputs:
   - scripts/run_retrieval_qualification.py
   - scripts/qualify_preview.py
   - src/firelens/evaluation/preview_qualification_cli.py
+  - src/firelens/evaluation/preview_raw_evidence.py
   - scripts/owner_semantic_review.py
   - scripts/retrieval_owner_review.py
   - scripts/human_review_workspace.py
@@ -121,6 +122,7 @@ harness_inputs:
   - src/firelens/review_workspace/exports.py
   - src/firelens/review_workspace/inputs.py
   - src/firelens/review_workspace/input_common.py
+  - src/firelens/review_workspace/input_semantic.py
   - src/firelens/review_workspace/journal.py
   - src/firelens/review_workspace/models.py
   - src/firelens/review_workspace/preparation.py
@@ -133,7 +135,10 @@ harness_inputs:
   - src/firelens/review_workspace/web/review.html
   - src/firelens/review_workspace/web/review.js
   - src/firelens/qualification.py
+  - src/firelens/git_identity.py
+  - src/firelens/document_context.py
   - src/firelens/runtime_artifact.py
+  - src/firelens/runtime_artifact_candidate.py
   - src/firelens/runtime_artifact_closure.py
   - src/firelens/runtime_artifact_common.py
   - src/firelens/runtime_artifact_comparison.py

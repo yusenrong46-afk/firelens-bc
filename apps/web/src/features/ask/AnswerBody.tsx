@@ -8,9 +8,11 @@ import { StatusBanner } from "./StatusBanner";
 export function AnswerBody({
   response,
   assistantText,
+  analytical = false,
 }: {
   response: AskResponse | undefined;
   assistantText: string;
+  analytical?: boolean;
 }) {
   const answerSections = getAnswerSections(response);
   const visibleLimitations = Array.from(
@@ -22,7 +24,8 @@ export function AnswerBody({
 
   return (
     <>
-      {banner && <StatusBanner banner={banner} />}
+      {analytical && <span className="panel-label analytical-short-answer">Short answer</span>}
+      {!analytical && banner && <StatusBanner banner={banner} />}
       {!hasAnswerSections && lead && <AnswerMarkdown className="answer-lead">{lead}</AnswerMarkdown>}
       {hasAnswerSections && (
         <div className="answer-sections" aria-label="Authority-labelled answer">
@@ -35,7 +38,8 @@ export function AnswerBody({
           ))}
         </div>
       )}
-      {visibleLimitations.length > 0 && (
+      {analytical && banner && <StatusBanner banner={banner} />}
+      {!analytical && visibleLimitations.length > 0 && (
         <aside className="answer-limitations" aria-label="Answer limitations">
           <WarningCircle size={19} aria-hidden="true" />
           <div>

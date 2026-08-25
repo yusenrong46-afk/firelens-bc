@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import tempfile
 import unittest
 from pathlib import Path
@@ -58,7 +59,6 @@ class ProductQuestionScoringTests(unittest.TestCase):
         )
 
         self.assertTrue(passed)
-        self.assertEqual(issues, [])
         self.assertEqual(issues, [])
 
 
@@ -298,8 +298,61 @@ class ProductQuestionStructuralScoringTests(unittest.TestCase):
             "evidence": [{"evidence_id": "E1"}],
         }
         passed, issues = _score(case, status_code=200, response=mixed, selected_result_id=None)
+        self.assertFalse(passed)
+        self.assertIn("mixed_invalid_live_half", issues)
+        self.assertIn("mixed_invalid_static_half", issues)
+
+        linked_mixed = {
+            "status": "answer",
+            "response_mode": "mixed",
+            "answer": "Current official information and reviewed kit guidance.",
+            "resolved_location": {"latitude": 49.89, "longitude": -119.5},
+            "live_results": [
+                {
+                    "result_id": "incident:1",
+                    "kind": "incident",
+                    "authority": "BC Wildfire Service",
+                    "source_url": "https://example.test/incidents",
+                    "source_updated_at": "2026-08-25T00:00:00Z",
+                    "retrieved_at": "2026-08-25T00:01:00Z",
+                    "freshness": "fresh",
+                    "status": "active",
+                }
+            ],
+            "claims": [
+                {
+                    "claim_id": "C1",
+                    "text": "Keep water in an emergency kit.",
+                    "evidence_status": "verified_corpus",
+                    "supports": [{"evidence_id": "E1", "quote": "Keep water."}],
+                }
+            ],
+            "evidence": [
+                {
+                    "evidence_id": "E1",
+                    "title": "Preparedness Guide",
+                    "publisher": "Government of British Columbia",
+                    "canonical_url": "https://example.test/preparedness",
+                    "primary_text": "Keep water.",
+                }
+            ],
+        }
+        passed, issues = _score(
+            case, status_code=200, response=linked_mixed, selected_result_id=None
+        )
         self.assertTrue(passed)
         self.assertEqual(issues, [])
+
+        malformed_links = copy.deepcopy(linked_mixed)
+        malformed_links["live_results"][0]["source_url"] = "not a link"
+        malformed_links["live_results"][0]["source_updated_at"] = "not a timestamp"
+        malformed_links["evidence"][0]["canonical_url"] = "not a link"
+        passed, issues = _score(
+            case, status_code=200, response=malformed_links, selected_result_id=None
+        )
+        self.assertFalse(passed)
+        self.assertIn("mixed_invalid_live_half", issues)
+        self.assertIn("mixed_invalid_static_half", issues)
 
     def test_named_evacuation_requires_evacuation_record(self) -> None:
         case = ProductQuestionCase(

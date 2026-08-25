@@ -26,6 +26,16 @@ _GUARDED_ROUTES = frozenset(
     }
 )
 
+_UNEXPECTED_ROUTE_LABELS = {
+    "/api/v1/ask": "ask",
+    "/api/v1/live/map": "live_map",
+    "/api/v1/live/nearby": "live_nearby",
+    "/api/v1/feedback": "feedback",
+    "/api/v1/health/live": "health_live",
+    "/api/v1/health/ready": "health_ready",
+    "/": "frontend",
+}
+
 
 def _apply_security_headers(request: Request, response: Response) -> Response:
     response.headers["Content-Security-Policy"] = (
@@ -141,7 +151,7 @@ def install_exception_handlers(app: FastAPI, config: FireLensConfig) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def unexpected_error_handler(_request: Request, exc: Exception) -> JSONResponse:
+    async def unexpected_error_handler(request: Request, exc: Exception) -> JSONResponse:
         classified = shout_unexpected(exc, environment=config.deployment_environment)
         trace_id = uuid4().hex
         build_commit = config.build_commit
@@ -149,7 +159,7 @@ def install_exception_handlers(app: FastAPI, config: FireLensConfig) -> None:
             build_commit = None
         log_operation(
             trace_id=trace_id,
-            route="ask",
+            route=_UNEXPECTED_ROUTE_LABELS.get(request.url.path, "unmatched_route"),
             response_mode="abstention",
             status="error",
             latency_ms=0,

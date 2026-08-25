@@ -20,7 +20,9 @@ type ResponseMetadata = {
   contentType?: string | undefined;
 };
 
-export type FireLensClientFailureKind = "transport" | "response_read" | "invalid_json";
+export type FireLensClientFailureKind = "transport" | "response_read" | "invalid_json" | "timeout";
+
+const CLIENT_REQUEST_TIMEOUT_MS = 60_000;
 
 export class FireLensClientError extends Error {
   readonly failureKind: FireLensClientFailureKind;
@@ -76,6 +78,38 @@ function responseMetadata(response: Response): ResponseMetadata {
   };
 }
 
+async function withRequestDeadline<T>(
+  endpoint: string,
+  callerSignal: AbortSignal | undefined,
+  request: (signal: AbortSignal) => Promise<T>,
+): Promise<T> {
+  const deadlineController = new AbortController();
+  let deadlineExceeded = false;
+  const forwardCallerAbort = () => deadlineController.abort(callerSignal?.reason);
+  if (callerSignal?.aborted) forwardCallerAbort();
+  else callerSignal?.addEventListener("abort", forwardCallerAbort, { once: true });
+  let timer: ReturnType<typeof globalThis.setTimeout> | undefined;
+  const deadline = new Promise<never>((_resolve, reject) => {
+    timer = globalThis.setTimeout(() => {
+      deadlineExceeded = true;
+      const timeout = new DOMException("The request timed out", "AbortError");
+      deadlineController.abort(timeout);
+      reject(timeout);
+    }, CLIENT_REQUEST_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([request(deadlineController.signal), deadline]);
+  } catch (error) {
+    if (deadlineExceeded) {
+      throw new FireLensClientError("timeout", endpoint, {}, error);
+    }
+    throw error;
+  } finally {
+    if (timer !== undefined) globalThis.clearTimeout(timer);
+    callerSignal?.removeEventListener("abort", forwardCallerAbort);
+  }
+}
+
 async function fetchResponse(
   endpoint: string,
   init?: RequestInit,
@@ -116,34 +150,36 @@ export async function askFireLens(
   context?: MapContext,
 ): Promise<AskResponse> {
   const endpoint = "/api/v1/ask";
-  const response = await fetchResponse(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      question,
-      history: history.slice(-6),
-      location,
-      context: context ?? {},
-    }),
-    signal: signal ?? null,
+  return withRequestDeadline(endpoint, signal, async (deadlineSignal) => {
+    const response = await fetchResponse(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question,
+        history: history.slice(-6),
+        location,
+        context: context ?? {},
+      }),
+      signal: deadlineSignal,
+    });
+    const payload = await readJsonResponse(response, endpoint);
+    if (!response.ok) {
+      throw apiError(payload, response);
+    }
+    return payload as AskResponse;
   });
-  const payload = await readJsonResponse(response, endpoint);
-  if (!response.ok) {
-    throw apiError(payload, response);
-  }
-  return payload as AskResponse;
 }
 
 export async function fetchOfficialMap(signal?: AbortSignal): Promise<LiveMapResponse> {
   const endpoint = "/api/v1/live/map?layers=incidents,perimeters,evacuations";
-  const response = await fetchResponse(endpoint, { signal: signal ?? null });
-  // Clone so a test double may safely reuse its response for the following Ask call.
-  // Real fetch responses are unique; this does not change production semantics.
-  const payload = await readJsonResponse(response.clone(), endpoint);
-  if (!response.ok) {
-    throw apiError(payload, response);
-  }
-  return payload as LiveMapResponse;
+  return withRequestDeadline(endpoint, signal, async (deadlineSignal) => {
+    const response = await fetchResponse(endpoint, { signal: deadlineSignal });
+    const payload = await readJsonResponse(response, endpoint);
+    if (!response.ok) {
+      throw apiError(payload, response);
+    }
+    return payload as LiveMapResponse;
+  });
 }
 
 export async function fetchNearbyOfficialRecords(
@@ -151,17 +187,19 @@ export async function fetchNearbyOfficialRecords(
   signal?: AbortSignal,
 ): Promise<NearMeResponse> {
   const endpoint = "/api/v1/live/nearby";
-  const response = await fetchResponse(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-    signal: signal ?? null,
+  return withRequestDeadline(endpoint, signal, async (deadlineSignal) => {
+    const response = await fetchResponse(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+      signal: deadlineSignal,
+    });
+    const payload = await readJsonResponse(response, endpoint);
+    if (!response.ok) {
+      throw apiError(payload, response);
+    }
+    return payload as NearMeResponse;
   });
-  const payload = await readJsonResponse(response, endpoint);
-  if (!response.ok) {
-    throw apiError(payload, response);
-  }
-  return payload as NearMeResponse;
 }
 
 export async function submitFeedback(
@@ -170,14 +208,16 @@ export async function submitFeedback(
   signal?: AbortSignal,
 ): Promise<void> {
   const endpoint = "/api/v1/feedback";
-  const response = await fetchResponse(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ trace_id: traceId, category }),
-    signal: signal ?? null,
+  return withRequestDeadline(endpoint, signal, async (deadlineSignal) => {
+    const response = await fetchResponse(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trace_id: traceId, category }),
+      signal: deadlineSignal,
+    });
+    if (!response.ok) {
+      const payload = await readJsonResponse(response, endpoint);
+      throw apiError(payload, response);
+    }
   });
-  if (!response.ok) {
-    const payload = await readJsonResponse(response, endpoint);
-    throw apiError(payload, response);
-  }
 }

@@ -74,6 +74,13 @@ _FORBIDDEN = (
     r"[a-z0-9-]*\b.{0,40}\b(?:evacuate|escape|leave)\b",
     r"\b(?:highway|road|route)\s*[a-z0-9-]*\b.{0,30}\b(?:is|would be)\s+"
     r"(?:the\s+)?(?:best|safest|recommended|preferred)\s+(?:route|way|option)?\b",
+    r"\b(?:this|the)\s+(?:mapped\s+)?perimeter\b.{0,80}\b(?:current\s+|active\s+)?flame\s+front\b",
+    r"\b(?:current\s+|active\s+)?flame\s+front\b.{0,80}\b(?:this|the)\s+(?:mapped\s+)?perimeter\b",
+    r"\b(?:mark|set|promote|publish)\s+(?:this|the(?:se)?)\s+(?:claim|answer|record)s?\s+(?:as|to)\s+verified\b",
+    r"\bpublication state\s+(?:is|to|=)\s+verified\b",
+    r"\b(?:reveal|print|output|return)\s+(?:the\s+)?(?:api[_-]?key|openrouter[_-]?api[_-]?key|system prompt)\b",
+    r"\bignore (?:the )?(?:source allowlist|freshness|geometry) (?:rules?|validation)\b",
+    r"\binvoke unauthorized tools?\b",
 )
 
 _LIVE_CLAIMS = (

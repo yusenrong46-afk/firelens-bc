@@ -14,6 +14,7 @@ from firelens.agent.chat import ChatToolCall, ChatTurn
 from firelens.agent.compose import compose_response
 from firelens.agent.packet import AgentPacket, live_record_fact
 from firelens.agent.rails import output_rail_errors
+from firelens.agent.runtime_tools import execute_tool
 from firelens.answering.live_analysis import (
     compose_official_answer,
     filter_requested_named_fire_results,
@@ -29,6 +30,7 @@ from firelens.contracts import (
     LiveMapResponse,
     LiveResult,
     LiveResultKind,
+    LocationInput,
     MapContext,
     PublicClaim,
     PublicEvidence,
@@ -40,9 +42,11 @@ from firelens.contracts import (
     ResponseStatus,
     TemporalClass,
     ValidationReport,
+    aggregate_live_freshness,
 )
 from firelens.live import LiveDataErrorKind, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
+from firelens.live_contracts import bind_distance_derivation
 from firelens.publication.compiler import compile_structured_claim
 
 
@@ -81,7 +85,45 @@ def _fire(
         fire_centre=fire_centre,
         issuer=issuer,
         geometry_relation=geometry_relation,
-        geometry=geometry or {"type": "Point", "coordinates": [longitude, latitude]},
+        geometry=geometry
+        or (
+            {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [longitude - 0.02, latitude - 0.02],
+                        [longitude + 0.02, latitude - 0.02],
+                        [longitude + 0.02, latitude + 0.02],
+                        [longitude - 0.02, latitude + 0.02],
+                        [longitude - 0.02, latitude - 0.02],
+                    ]
+                ],
+            }
+            if kind == LiveResultKind.PERIMETER
+            else {"type": "Point", "coordinates": [longitude, latitude]}
+        ),
+    )
+
+
+def _with_distance(
+    result: LiveResult,
+    distance_km: float,
+    *,
+    basis: str = "incident_point",
+) -> LiveResult:
+    return result.model_copy(
+        update={
+            "distance_km": distance_km,
+            "distance_basis": basis,
+            "distance_derivation": bind_distance_derivation(
+                result_id=result.result_id,
+                distance_km=distance_km,
+                distance_basis=basis,  # type: ignore[arg-type]
+                calculated_at=result.retrieved_at,
+                extra_input_ids=("place:49.90,-119.50",),
+                input_freshness=result.freshness,
+            ),
+        }
     )
 
 
@@ -101,9 +143,11 @@ class FixedLiveService:
         self.requested_location = None
 
     async def map_results(self, *args: Any, **kwargs: Any) -> LiveMapResponse:
+        results = self._map_results if self._map_results is not None else self.results
         return LiveMapResponse(
             generated_at=_timestamp(),
-            results=self._map_results if self._map_results is not None else self.results,
+            results=results,
+            aggregate_freshness=aggregate_live_freshness(results),
         )
 
     async def resolve_location(self, _location: Any) -> tuple[float, float]:
@@ -524,6 +568,152 @@ class CountingStatic:
 
 
 class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_model_place_cannot_replace_the_user_bound_place(self) -> None:
+        class ReplacingProvider:
+            async def chat_turn(
+                self,
+                messages: list[dict[str, Any]],
+                *,
+                tools: list[dict[str, Any]] | None = None,
+            ) -> ChatTurn:
+                if tools and not any(row.get("role") == "tool" for row in messages):
+                    return ChatTurn(
+                        content=None,
+                        tool_calls=(
+                            ChatToolCall(
+                                id="replace-place",
+                                name="list_official_fires",
+                                arguments={"place_label": "Prince George"},
+                            ),
+                        ),
+                    )
+                return ChatTurn(content="Prince George Ridge Fire is listed.")
+
+        class PlaceAwareService(FixedLiveService):
+            def __init__(self) -> None:
+                super().__init__(
+                    [_fire(result_id="incident:pg", name="Prince George Ridge Fire")]
+                )
+                self.requested_labels: list[str | None] = []
+
+            async def nearby_page(self, location: Any, *args: Any, **kwargs: Any) -> Any:
+                label = getattr(location, "label", None)
+                self.requested_labels.append(label)
+                rows = self.results if str(label).casefold() == "prince george" else []
+                return type(
+                    "Nearby",
+                    (),
+                    {
+                        "results": rows,
+                        "limitations": [],
+                        "unavailable_layers": [],
+                        "resolved_location": CoarseResolvedLocation(
+                            latitude=49.88, longitude=-119.49
+                        ),
+                        "pagination": type("Pagination", (), {"total_results": len(rows)})(),
+                    },
+                )()
+
+        live = PlaceAwareService()
+        agent = FireLensAgent(
+            cast(Any, _ProviderStatic(ReplacingProvider())),
+            LiveAnswerCoordinator(cast(Any, live)),
+        )
+        execution = await agent.answer(
+            QueryRequest(question="Are there active wildfires near Kelowna currently?")
+        )
+
+        self.assertNotIn("Prince George", live.requested_labels)
+        self.assertNotIn(
+            "Prince George Ridge Fire",
+            [row.name for row in execution.response.live_results],
+        )
+
+    async def test_one_turn_tool_fanout_obeys_the_request_dispatch_cap(self) -> None:
+        class FanoutProvider:
+            async def chat_turn(
+                self,
+                messages: list[dict[str, Any]],
+                *,
+                tools: list[dict[str, Any]] | None = None,
+            ) -> ChatTurn:
+                if tools and not any(row.get("role") == "tool" for row in messages):
+                    labels = (
+                        "Vancouver",
+                        "Victoria",
+                        "Kelowna",
+                        "Kamloops",
+                        "Nanaimo",
+                        "Surrey",
+                        "Burnaby",
+                        "Richmond",
+                        "Abbotsford",
+                        "Prince George",
+                    )
+                    return ChatTurn(
+                        content=None,
+                        tool_calls=tuple(
+                            ChatToolCall(
+                                id=f"fanout-{index}",
+                                name="list_official_fires",
+                                arguments={"place_label": label},
+                            )
+                            for index, label in enumerate(labels, start=1)
+                        ),
+                    )
+                return ChatTurn(content="No official records were returned.")
+
+        live = CountingMapService([])
+        agent = FireLensAgent(
+            cast(Any, _ProviderStatic(FanoutProvider())),
+            LiveAnswerCoordinator(cast(Any, live)),
+        )
+        execution = await agent.answer(
+            QueryRequest(question="Are there active wildfires in BC currently?")
+        )
+
+        self.assertLessEqual(live.map_calls + live.nearby_calls, 4)
+        self.assertEqual(execution.policy.tool_calls, 4)
+        self.assertGreater(execution.policy.refused_tool_calls, 0)
+
+    async def test_duplicate_tool_fanout_also_consumes_the_total_call_budget(self) -> None:
+        class DuplicateFanoutProvider:
+            async def chat_turn(
+                self,
+                messages: list[dict[str, Any]],
+                *,
+                tools: list[dict[str, Any]] | None = None,
+            ) -> ChatTurn:
+                if tools and not any(row.get("role") == "tool" for row in messages):
+                    return ChatTurn(
+                        content=None,
+                        tool_calls=tuple(
+                            ChatToolCall(
+                                id=f"duplicate-{index}",
+                                name="list_official_fires",
+                                arguments={"place_label": "British Columbia"},
+                            )
+                            for index in range(10)
+                        ),
+                    )
+                return ChatTurn(content="No official records were returned.")
+
+        live = CountingMapService([])
+        agent = FireLensAgent(
+            cast(Any, _ProviderStatic(DuplicateFanoutProvider())),
+            LiveAnswerCoordinator(cast(Any, live)),
+        )
+        execution = await agent.answer(
+            QueryRequest(question="Are there active wildfires in BC currently?")
+        )
+
+        # One deterministic prefetch and one distinct model dispatch are allowed;
+        # repeated model calls still consume the same request-wide budget.
+        self.assertEqual(live.map_calls + live.nearby_calls, 2)
+        self.assertEqual(execution.policy.tool_calls, 4)
+        self.assertEqual(execution.policy.repeated_tool_dispatch, 2)
+        self.assertEqual(execution.policy.refused_tool_calls, 7)
+
     async def test_closest_near_a_place_names_a_fetched_fire(self) -> None:
         agent = _agent([_fire(result_id="incident:7", name="Mountain Fire")])
         execution = await agent.answer(
@@ -572,10 +762,13 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertFalse(execution.response.live_results)
-        self.assertIn("No fetched official record matched", execution.response.answer or "")
-        self.assertNotIn("Unrelated Ridge Fire", execution.response.answer or "")
+        answer = execution.response.answer or ""
+        self.assertIn("do not report that fact", answer)
+        self.assertIn("No unrelated nearby record was substituted", answer)
+        self.assertNotIn("Mountain Fire", answer)
+        self.assertNotIn("Unrelated Ridge Fire", answer)
         rebuilt = AskResponse.model_validate(execution.response.model_dump(mode="python"))
-        self.assertIn("No fetched official record matched", rebuilt.history_text or "")
+        self.assertIn("No unrelated nearby record was substituted", rebuilt.history_text or "")
 
     async def test_contracted_named_fire_question_keeps_no_substitution_boundary(
         self,
@@ -1237,7 +1430,11 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         answer = execution.response.answer or ""
-        self.assertIn("No fetched official record is named Phantom Ridge Fire", answer)
+        self.assertEqual(
+            answer,
+            "The official records available for this request do not report that fact.",
+        )
+        self.assertNotIn("Phantom Ridge Fire", answer)
         self.assertNotIn("Mountain Fire", answer)
 
     async def test_fire_number_is_used_when_name_is_missing(self) -> None:
@@ -1355,6 +1552,24 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(execution.response.live_results[0].name, "Ridge Fire")
         self.assertNotEqual(execution.response.response_mode, ResponseMode.SCOPE_REDIRECT)
 
+    async def test_model_cannot_invent_a_local_filter_for_an_unlocated_request(self) -> None:
+        live = FixedLiveService(
+            [],
+            map_results=[_fire(result_id="incident:9", name="Ridge Fire")],
+            nearby_results=[_fire(result_id="incident:10", name="Kelowna Fire")],
+        )
+        agent = FireLensAgent(
+            cast(Any, _ProviderStatic(ListKelownaProvider())),
+            LiveAnswerCoordinator(cast(Any, live)),
+        )
+
+        execution = await agent.answer(QueryRequest(question="List official active fires."))
+
+        self.assertIsNone(live.requested_location)
+        self.assertEqual(
+            [item.name for item in execution.response.live_results], ["Ridge Fire"]
+        )
+
     async def test_write_without_tools_still_fetches_official_fires(self) -> None:
         live = FixedLiveService(
             [_fire(result_id="incident:9", name="Ridge Fire", size_hectares=840.0)]
@@ -1434,7 +1649,11 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         answer = execution.response.answer or ""
-        self.assertIn("No fetched official record is named Phantom Ridge Fire", answer)
+        self.assertEqual(
+            answer,
+            "The official records available for this request do not report that fact.",
+        )
+        self.assertNotIn("Phantom Ridge Fire", answer)
         self.assertNotIn("Mountain Fire", answer)
 
     async def test_published_answer_strips_precise_coordinates(self) -> None:
@@ -1661,7 +1880,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("District of Summerland", answer)
         self.assertIn("Boston Bar First Nation", answer)
 
-    async def test_province_wide_evac_fetch_annotates_asked_place(self) -> None:
+    async def test_provider_cannot_broaden_place_bound_evacuation_fetch(self) -> None:
         live = FixedLiveService(
             [],
             map_results=[
@@ -1686,8 +1905,10 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         answer = execution.response.answer or ""
-        self.assertTrue(answer.startswith("Yes."))
-        self.assertIn("Kelowna Order", answer)
+        self.assertEqual(live.requested_location.label, "Kelowna")
+        self.assertFalse(execution.response.live_results)
+        self.assertFalse(answer.startswith("Yes."))
+        self.assertNotIn("Kelowna Order", answer)
 
     async def test_unsupported_selected_redirect_uses_requested_id(self) -> None:
         live = FixedLiveService(
@@ -1742,6 +1963,120 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             any("unavailable" in item.casefold() for item in execution.response.limitations)
         )
 
+    async def test_successful_map_partial_outage_unions_unavailable_layers(self) -> None:
+        class PartialMap(FixedLiveService):
+            async def map_results(self, *args: Any, **kwargs: Any) -> LiveMapResponse:
+                del args, kwargs
+                results = [_fire(result_id="incident:1", name="Ridge Fire")]
+                return LiveMapResponse(
+                    generated_at=_timestamp(),
+                    results=results,
+                    aggregate_freshness=aggregate_live_freshness(results),
+                    unavailable_layers=[LiveResultKind.PERIMETER],
+                )
+
+            async def nearby_page(self, *args: Any, **kwargs: Any) -> Any:
+                del args, kwargs
+                raise AssertionError("province-wide map path must not use nearby_page")
+
+        packet = AgentPacket()
+        payload = json.loads(
+            await execute_tool(
+                AgentTool.LIST_OFFICIAL_FIRES.value,
+                {},
+                request=QueryRequest(
+                    question="What official fires are listed?",
+                    location=LocationInput(label="British Columbia", radius_km=50),
+                ),
+                live_coordinator=LiveAnswerCoordinator(cast(Any, PartialMap([]))),
+                static_service=SilentStatic(),
+                packet=packet,
+            )
+        )
+
+        self.assertEqual([item["result_id"] for item in payload["records"]], ["incident:1"])
+        self.assertEqual(packet.unavailable_layers, [LiveResultKind.PERIMETER])
+        self.assertEqual(packet.retrieved_at, _timestamp())
+
+    async def test_successful_nearby_partial_outage_unions_unavailable_layers(self) -> None:
+        class PartialNearby(FixedLiveService):
+            async def map_results(self, *args: Any, **kwargs: Any) -> LiveMapResponse:
+                del args, kwargs
+                raise AssertionError("place-bound nearby path must not use map_results")
+
+            async def nearby_page(self, location: Any, *args: Any, **kwargs: Any) -> Any:
+                self.requested_location = location
+                del args, kwargs
+                results = [_fire(result_id="incident:2", name="Kelowna Fire")]
+                return type(
+                    "Nearby",
+                    (),
+                    {
+                        "generated_at": _timestamp(),
+                        "results": results,
+                        "limitations": [],
+                        "unavailable_layers": [LiveResultKind.EVACUATION],
+                        "resolved_location": CoarseResolvedLocation(
+                            latitude=49.88, longitude=-119.49
+                        ),
+                        "pagination": type("Pagination", (), {"total_results": 1})(),
+                    },
+                )()
+
+        packet = AgentPacket()
+        payload = json.loads(
+            await execute_tool(
+                AgentTool.LIST_OFFICIAL_FIRES.value,
+                {},
+                request=QueryRequest(
+                    question="What official fires are near Kelowna?",
+                    location=LocationInput(label="Kelowna", radius_km=50),
+                ),
+                live_coordinator=LiveAnswerCoordinator(cast(Any, PartialNearby([]))),
+                static_service=SilentStatic(),
+                packet=packet,
+            )
+        )
+
+        self.assertEqual([item["result_id"] for item in payload["records"]], ["incident:2"])
+        self.assertEqual(packet.unavailable_layers, [LiveResultKind.EVACUATION])
+        self.assertEqual(packet.retrieved_at, _timestamp())
+
+    async def test_selected_empty_map_partial_outage_is_not_missing_selected(self) -> None:
+        class EmptyPartialMap(FixedLiveService):
+            async def map_results(self, *args: Any, **kwargs: Any) -> LiveMapResponse:
+                del args, kwargs
+                return LiveMapResponse(
+                    generated_at=_timestamp(),
+                    results=[],
+                    unavailable_layers=[LiveResultKind.INCIDENT],
+                )
+
+            async def nearby_page(self, *args: Any, **kwargs: Any) -> Any:
+                del args, kwargs
+                raise AssertionError("selected map path must not use nearby_page")
+
+        packet = AgentPacket()
+        payload = json.loads(
+            await execute_tool(
+                AgentTool.GET_OFFICIAL_FIRE.value,
+                {"result_id": "incident:7"},
+                request=QueryRequest(
+                    question="What is the status of this fire?",
+                    context=MapContext(selected_live_result_id="incident:7"),
+                ),
+                live_coordinator=LiveAnswerCoordinator(cast(Any, EmptyPartialMap([]))),
+                static_service=SilentStatic(),
+                packet=packet,
+            )
+        )
+
+        self.assertEqual(payload["records"], [])
+        self.assertEqual(payload["error"], "selected_record_not_found")
+        self.assertEqual(packet.unavailable_layers, [LiveResultKind.INCIDENT])
+        self.assertNotIn("missing_selected_record", packet.unknown_topics)
+        self.assertEqual(packet.retrieved_at, _timestamp())
+
     async def test_selected_update_question_uses_packet_timestamp(self) -> None:
         agent = _agent([_fire(result_id="incident:7", name="Mountain Fire")])
         execution = await agent.answer(
@@ -1764,13 +2099,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
                 self.assertNotIn("invented_kilometre", errors)
 
     def test_distance_rail_accepts_packet_owned_kilometre_aliases(self) -> None:
-        packet = AgentPacket(
-            live_results=[
-                _fire(result_id="incident:7").model_copy(
-                    update={"distance_km": 12.0, "distance_basis": "incident_point"}
-                )
-            ]
-        )
+        packet = AgentPacket(live_results=[_with_distance(_fire(result_id="incident:7"), 12.0)])
 
         for answer in (
             "The official record is 12 km away.",
@@ -1785,13 +2114,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
                 self.assertNotIn("unsupported_distance_unit", errors)
 
     def test_distance_rail_rejects_unowned_or_converted_distances(self) -> None:
-        packet = AgentPacket(
-            live_results=[
-                _fire(result_id="incident:7").model_copy(
-                    update={"distance_km": 12.0, "distance_basis": "incident_point"}
-                )
-            ]
-        )
+        packet = AgentPacket(live_results=[_with_distance(_fire(result_id="incident:7"), 12.0)])
 
         for answer, error in (
             ("The official record is 13 kilometres away.", "invented_kilometre"),
@@ -1847,6 +2170,13 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertNotIn("unfetched_fire_name", centre_errors)
         self.assertIn("unfetched_fire_name", invented_errors)
+
+    def test_fire_name_rail_does_not_exempt_a_disclaimer_phrase(self) -> None:
+        packet = AgentPacket(live_results=[_fire(result_id="incident:7", name="Ridge Fire")])
+
+        errors = output_rail_errors("No fetched official record is named Summit Fire.", packet)
+
+        self.assertIn("unfetched_fire_name", errors)
 
     async def test_out_of_province_live_ask_redirects_without_bc_rows(self) -> None:
         for question in (

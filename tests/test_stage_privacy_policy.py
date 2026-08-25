@@ -30,7 +30,11 @@ from firelens.privacy_policy import (
 from firelens.providers.fake import FakeProvider
 from firelens.providers.openrouter import OpenRouterProvider
 from firelens.runtime import Runtime
-from firelens.runtime_artifact_common import CANDIDATE_SCHEMA, RuntimeArtifactError
+from firelens.runtime_artifact_common import (
+    CANDIDATE_SCHEMA,
+    RuntimeArtifactError,
+    sha256_file,
+)
 from firelens.runtime_candidate import load_runtime_candidate_document
 
 COMMIT = "b00544c1927ffa12d98689f6a4b0b44b6c7de7e1"
@@ -395,6 +399,16 @@ class StageAwareProviderWireTests(unittest.IsolatedAsyncioTestCase):
 
 class ProductionLifespanAndReadinessTests(unittest.IsolatedAsyncioTestCase):
     def _candidate(self, config: FireLensConfig) -> None:
+        placeholders = {
+            config.corpus_path: b"{}\n",
+            config.corpus_manifest_path: b"{}\n",
+            config.vector_matrix_path: b"synthetic-vector-matrix",
+            config.vector_manifest_path: b"{}\n",
+        }
+        for artifact, content in placeholders.items():
+            if not artifact.is_file():
+                artifact.parent.mkdir(parents=True, exist_ok=True)
+                artifact.write_bytes(content)
         path = config.project_root / "config/runtime_candidate.v1.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         document = {
@@ -403,6 +417,10 @@ class ProductionLifespanAndReadinessTests(unittest.IsolatedAsyncioTestCase):
             "release_version": config.release_version,
             "build_commit": config.build_commit or COMMIT,
             "corpus_version": "test-corpus.v1",
+            "corpus_sha256": sha256_file(config.corpus_path),
+            "corpus_manifest_sha256": sha256_file(config.corpus_manifest_path),
+            "vector_matrix_sha256": sha256_file(config.vector_matrix_path),
+            "vector_manifest_sha256": sha256_file(config.vector_manifest_path),
             "embedding_model": config.embedding_model,
             "retrieval_text_strategy": config.retrieval_text_strategy.value,
             "rerank_model": config.rerank_model,

@@ -19,6 +19,24 @@
       "requests": 300,
       "keys": ["ip"],
       "rate_limit_action": "deny"
+    },
+    {
+      "name": "FireLens nearby distributed rate enforcement",
+      "path": "/api/v1/live/nearby",
+      "method": "POST",
+      "window_seconds": 60,
+      "requests": 150,
+      "keys": ["ip"],
+      "rate_limit_action": "deny"
+    },
+    {
+      "name": "FireLens feedback distributed rate enforcement",
+      "path": "/api/v1/feedback",
+      "method": "POST",
+      "window_seconds": 60,
+      "requests": 150,
+      "keys": ["ip"],
+      "rate_limit_action": "deny"
     }
   ]
 }

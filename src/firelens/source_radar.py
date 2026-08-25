@@ -13,6 +13,7 @@ from typing import Any
 from firelens.corpus_admission import audit_corpus_admission, blocking_findings
 from firelens.ingestion.pdf import sha256_file
 from firelens.retrieval.bm25 import load_chunk_records
+from firelens.runtime_artifact_common import strict_json_loads
 
 MANIFEST_RELATIVE = "data/processed/firelens_static_corpus.manifest.json"
 CHUNKS_RELATIVE = "data/processed/firelens_static_corpus.chunks.jsonl"
@@ -27,8 +28,10 @@ def inspect_source_changes(
 ) -> dict[str, Any]:
     """Compare acquired files to the approved corpus hashes. Do not publish."""
 
-    manifest = json.loads(
-        (manifest_path or repository_root / MANIFEST_RELATIVE).read_text(encoding="utf-8")
+    resolved_manifest = manifest_path or repository_root / MANIFEST_RELATIVE
+    manifest = strict_json_loads(
+        resolved_manifest.read_text(encoding="utf-8"),
+        context=f"source radar manifest {resolved_manifest}",
     )
     chunks = load_chunk_records(chunks_path or repository_root / CHUNKS_RELATIVE)
     chunks_by_source: dict[str, list[Any]] = {}
@@ -36,12 +39,14 @@ def inspect_source_changes(
         chunks_by_source.setdefault(chunk.source_id, []).append(chunk)
 
     changes: list[dict[str, Any]] = []
+    missing_source_ids: list[str] = []
     for source in manifest.get("sources", []):
         if source.get("corpus_action") != "include":
             continue
         source_id = str(source["source_id"])
         acquired = acquired_files.get(source_id)
         if acquired is None:
+            missing_source_ids.append(source_id)
             continue
         current_hash = sha256_file(acquired)
         approved_hash = str(source["document_sha256"])
@@ -69,7 +74,9 @@ def inspect_source_changes(
         "auto_publish": False,
         "changed_source_count": len(changes),
         "changes": changes,
-        "quarantine_recommended": bool(changes),
+        "missing_source_ids": missing_source_ids,
+        "scan_complete": not missing_source_ids,
+        "quarantine_recommended": bool(changes or missing_source_ids),
     }
 
 

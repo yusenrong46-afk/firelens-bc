@@ -514,7 +514,9 @@ def test_frontend_surface_accepts_bounded_full_page_screenshot(tmp_path: Path) -
     report_path, report, environment, bundle, client = _write_frontend_surface_fixture(tmp_path)
     screenshot = report["surface_rows"][0]["screenshot"]
     screenshot_path = report_path.parent / screenshot["path"]
-    Image.new("RGB", (390, 1688), (0, 0, 0)).save(screenshot_path, format="PNG")
+    image = Image.new("RGB", (390, 1688), (0, 0, 0))
+    image.putpixel((0, 0), (255, 255, 255))
+    image.save(screenshot_path, format="PNG")
     screenshot["bytes"] = screenshot_path.stat().st_size
     screenshot["sha256"] = hashlib.sha256(screenshot_path.read_bytes()).hexdigest()
     screenshot["height_px"] = 1688
@@ -530,6 +532,26 @@ def test_frontend_surface_accepts_bounded_full_page_screenshot(tmp_path: Path) -
     )
 
     assert result["visual_matrix_pass_rate"] == 1.0
+
+
+def test_frontend_surface_rejects_visually_uniform_screenshot(tmp_path: Path) -> None:
+    report_path, report, environment, bundle, client = _write_frontend_surface_fixture(tmp_path)
+    screenshot = report["surface_rows"][0]["screenshot"]
+    screenshot_path = report_path.parent / screenshot["path"]
+    Image.new("RGB", (390, 844), (0, 0, 0)).save(screenshot_path, format="PNG")
+    screenshot["bytes"] = screenshot_path.stat().st_size
+    screenshot["sha256"] = hashlib.sha256(screenshot_path.read_bytes()).hexdigest()
+    report_path.write_text(json.dumps(report), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="visually uniform"):
+        _frontend_surface(
+            report_path,
+            protocol_path=ROOT / "data/evaluation/frontend_surface.v1.yaml",
+            expected_commit=report["build"]["commit"],
+            expected_environment=environment,
+            frontend_bundle=bundle,
+            client_root=client,
+        )
 
 
 @pytest.mark.parametrize(

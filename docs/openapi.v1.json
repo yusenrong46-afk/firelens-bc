@@ -516,6 +516,102 @@
         "title": "ConversationTurn",
         "type": "object"
       },
+      "DerivationValidationStatus": {
+        "enum": [
+          "valid",
+          "invalid"
+        ],
+        "title": "DerivationValidationStatus",
+        "type": "string"
+      },
+      "DistanceDerivation": {
+        "additionalProperties": false,
+        "description": "Deterministic geodesic binding. Models cannot assign or elevate these fields.",
+        "properties": {
+          "algorithm": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Algorithm",
+            "type": "string"
+          },
+          "calculated_at": {
+            "format": "date-time",
+            "title": "Calculated At",
+            "type": "string"
+          },
+          "coordinate_order": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Coordinate Order",
+            "type": "string"
+          },
+          "crs": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Crs",
+            "type": "string"
+          },
+          "distance_basis": {
+            "enum": [
+              "incident_point",
+              "perimeter_boundary"
+            ],
+            "title": "Distance Basis",
+            "type": "string"
+          },
+          "distance_km": {
+            "minimum": 0.0,
+            "title": "Distance Km",
+            "type": "number"
+          },
+          "input_freshness": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Input Freshness",
+            "type": "string"
+          },
+          "input_source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Input Source Ids",
+            "type": "array"
+          },
+          "publication_state": {
+            "$ref": "#/components/schemas/PublicationState"
+          },
+          "truth_class": {
+            "$ref": "#/components/schemas/TruthClass"
+          },
+          "units": {
+            "maxLength": 16,
+            "minLength": 1,
+            "title": "Units",
+            "type": "string"
+          },
+          "validation_status": {
+            "$ref": "#/components/schemas/DerivationValidationStatus"
+          }
+        },
+        "required": [
+          "truth_class",
+          "publication_state",
+          "input_source_ids",
+          "algorithm",
+          "crs",
+          "coordinate_order",
+          "units",
+          "calculated_at",
+          "validation_status",
+          "input_freshness",
+          "distance_km",
+          "distance_basis"
+        ],
+        "title": "DistanceDerivation",
+        "type": "object"
+      },
       "ErrorEnvelope": {
         "additionalProperties": false,
         "properties": {
@@ -1092,6 +1188,16 @@
             ],
             "title": "Distance Basis"
           },
+          "distance_derivation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DistanceDerivation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "distance_km": {
             "anyOf": [
               {
@@ -1556,6 +1662,16 @@
             "title": "Critical Fields Checked",
             "type": "string"
           },
+          "derivation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DistanceDerivation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "exact_passage": {
             "anyOf": [
               {
@@ -1587,6 +1703,9 @@
               }
             ],
             "title": "Official Url"
+          },
+          "publication_state": {
+            "$ref": "#/components/schemas/PublicationState"
           },
           "review_state": {
             "maxLength": 120,
@@ -1638,6 +1757,9 @@
             ],
             "title": "Support State",
             "type": "string"
+          },
+          "truth_class": {
+            "$ref": "#/components/schemas/TruthClass"
           }
         },
         "required": [
@@ -1648,7 +1770,9 @@
           "authority",
           "review_state",
           "critical_fields_checked",
-          "freshness"
+          "freshness",
+          "truth_class",
+          "publication_state"
         ],
         "title": "ProofCard",
         "type": "object"
@@ -1886,6 +2010,15 @@
         "title": "PublicationKind",
         "type": "string"
       },
+      "PublicationState": {
+        "enum": [
+          "verified",
+          "review",
+          "rejected"
+        ],
+        "title": "PublicationState",
+        "type": "string"
+      },
       "QueryRequest": {
         "additionalProperties": false,
         "properties": {
@@ -2037,6 +2170,16 @@
           "error"
         ],
         "title": "ResponseStatus",
+        "type": "string"
+      },
+      "TruthClass": {
+        "enum": [
+          "source_fact",
+          "deterministic_derivation",
+          "model_summary",
+          "unknown"
+        ],
+        "title": "TruthClass",
         "type": "string"
       },
       "ValidationError": {

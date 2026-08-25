@@ -20,7 +20,10 @@ from firelens.contracts import (
     LiveResultKind,
     QueryRequest,
 )
-from firelens.live_support import distance_to_geometry_km, geometry_relation
+from firelens.live_support import (
+    annotated_distance_fields,
+    geometry_relation,
+)
 
 _NEARBY_RADIUS_KM = 50.0
 
@@ -130,19 +133,16 @@ def annotate_live_results(
         updates: dict[str, object] = {}
         if relation != item.geometry_relation:
             updates["geometry_relation"] = relation
-        if item.kind in {LiveResultKind.INCIDENT, LiveResultKind.PERIMETER}:
-            distance = distance_to_geometry_km(
-                item.geometry,
+        updates.update(
+            annotated_distance_fields(
+                result_id=item.result_id,
+                kind=item.kind,
+                geometry=item.geometry,
                 latitude=resolved.latitude,
                 longitude=resolved.longitude,
+                freshness=item.freshness,
             )
-            if distance is not None:
-                updates["distance_km"] = round(float(distance), 1)
-                updates["distance_basis"] = (
-                    "incident_point"
-                    if item.kind == LiveResultKind.INCIDENT
-                    else "perimeter_boundary"
-                )
+        )
         annotated.append(item.model_copy(update=updates) if updates else item)
     return annotated
 

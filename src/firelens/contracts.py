@@ -17,12 +17,22 @@ from firelens.assistant_history import bounded_assistant_history as bounded_assi
 from firelens.assistant_history import render_assistant_history as render_assistant_history
 from firelens.claim_trust import ClaimTrust
 from firelens.contract_base import FrozenStrictModel, StrictModel
+from firelens.contract_composition import (
+    BOUNDED_CONFLICT_TEXT as BOUNDED_CONFLICT_TEXT,
+)
+from firelens.contract_composition import (
+    DETERMINISTIC_CONFLICT_TEXT as DETERMINISTIC_CONFLICT_TEXT,
+)
+from firelens.contract_composition import is_canonical_conflict_answer
 from firelens.evidence_packet_identity import validate_evidence_packet_identity
 from firelens.live_contracts import (
     AggregateFreshness as AggregateFreshness,
 )
 from firelens.live_contracts import (
     CoarseResolvedLocation as CoarseResolvedLocation,
+)
+from firelens.live_contracts import (
+    DistanceDerivation as DistanceDerivation,
 )
 from firelens.live_contracts import (
     Freshness as Freshness,
@@ -59,6 +69,12 @@ from firelens.live_contracts import (
 )
 from firelens.live_contracts import (
     aggregate_live_freshness as aggregate_live_freshness,
+)
+from firelens.live_contracts import (
+    bind_distance_derivation as bind_distance_derivation,
+)
+from firelens.live_contracts import (
+    freshness_for_observation as freshness_for_observation,
 )
 from firelens.proof_presentation import AnswerStatusBanner, ProofCard, attach_proof_presentation
 from firelens.publication_contracts import PublicationAuthority
@@ -606,7 +622,11 @@ class AskResponse(StrictModel):
                 "answer sections require matching typed response data: "
                 + ", ".join(unsupported)
             )
-        if self.response_mode == ResponseMode.CONFLICT:
+        if (
+            self.response_mode == ResponseMode.CONFLICT
+            or AnswerSectionKind.CONFLICTING_GUIDANCE in kinds
+        ):
+            self._validate_conflict_rendering()
             return
         canonical_text = {
             AnswerSectionKind.REVIEWED_GUIDANCE: render_claim_texts(
@@ -640,6 +660,9 @@ class AskResponse(StrictModel):
             response_mode=self.response_mode.value,
             reason_code=(self.reason_code.value if self.reason_code is not None else None),
             section_kinds=[section.kind.value for section in self.answer_sections],
+            aggregate_freshness=(
+                self.aggregate_freshness.value if self.aggregate_freshness is not None else None
+            ),
         )
         expected_history = render_assistant_history(
             authority_prefix=history_prefix,
@@ -671,6 +694,7 @@ class AskResponse(StrictModel):
         if self.response_mode == ResponseMode.CONFLICT:
             if self.validation is None or not self.validation.accepted:
                 raise ValueError("conflict responses require deterministic validation")
+            self._validate_conflict_rendering()
             return
         canonical_answer = render_claim_texts(self.claims)
         if len(canonical_answer) > MAX_GROUNDED_ANSWER_CHARS:
@@ -679,6 +703,11 @@ class AskResponse(StrictModel):
             self.response_mode == ResponseMode.GROUNDED or not self.answer_sections
         ) and self.answer != canonical_answer:
             raise ValueError("grounded answer must be rendered from its public claims")
+
+    def _validate_conflict_rendering(self) -> None:
+        sections = [(section.kind.value, section.text) for section in self.answer_sections]
+        if not is_canonical_conflict_answer(self.answer, sections):
+            raise ValueError("conflict response must use the deterministic conflict renderer")
 
     def _validate_background(self, _evidence_ids: list[str]) -> None:
         if self.status != ResponseStatus.ANSWER or not self.claims:

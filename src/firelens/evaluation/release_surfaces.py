@@ -46,6 +46,9 @@ from firelens.evaluation.common import (
 from firelens.evaluation.common import (
     strict_number as _strict_number,
 )
+from firelens.evaluation.preview_raw_evidence import (
+    _validate_preview_raw_response_artifact,
+)
 from firelens.evaluation.qualification_reports import _validated_public_live_rows
 from firelens.evaluation.spec_models import BenchmarkSpec
 
@@ -177,8 +180,14 @@ def _preview_exact_support(
     return bool(claims) and bool(evidence)
 
 
-def _preview(report: dict[str, Any] | None) -> dict[str, Any]:
+def _preview(
+    report: dict[str, Any] | None,
+    *,
+    raw_response_artifact: Path | None = None,
+) -> dict[str, Any]:
     if report is None:
+        if raw_response_artifact is not None:
+            raise ValueError("preview raw response artifact requires a preview report")
         return {"status": "not_run", "qualified": None}
     _require_exact_keys(
         report,
@@ -196,6 +205,7 @@ def _preview(report: dict[str, Any] | None) -> dict[str, Any]:
             "qualified",
             "elapsed_seconds",
             "not_executed",
+            "raw_response_artifact_sha256",
         },
         context="preview report",
     )
@@ -502,6 +512,7 @@ def _preview(report: dict[str, Any] | None) -> dict[str, Any]:
     ]
     if report.get("not_executed") != expected_not_executed:
         raise ValueError("preview not-executed roster differs from the canonical protocol")
+    _validate_preview_raw_response_artifact(report, requests, raw_response_artifact)
     return {
         "status": "complete",
         "commit": expected_commit,
@@ -573,6 +584,7 @@ def _deployment(
         regions: set[str] = set()
         ordinals: set[int] = set()
         status_codes: set[int] = set()
+        status_by_ordinal: dict[int, int] = {}
         for observation in observations:
             if not isinstance(observation, dict):
                 raise ValueError("rate-limit observation must be an object")
@@ -589,15 +601,15 @@ def _deployment(
             if ordinal in ordinals:
                 raise ValueError("rate-limit observation ordinals must be unique")
             ordinals.add(ordinal)
-            status_codes.add(
-                _strict_int(
-                    observation,
-                    "status_code",
-                    "rate-limit observation",
-                    minimum=100,
-                    maximum=599,
-                )
+            status_code = _strict_int(
+                observation,
+                "status_code",
+                "rate-limit observation",
+                minimum=100,
+                maximum=599,
             )
+            status_codes.add(status_code)
+            status_by_ordinal[ordinal] = status_code
         if (
             len(clients) < 2
             or len(regions) < 2
@@ -605,6 +617,13 @@ def _deployment(
             or not any(200 <= status < 300 for status in status_codes)
         ):
             raise ValueError("distributed rate-limit proof is incomplete")
+        rejected_ordinals = sorted(
+            ordinal for ordinal, status in status_by_ordinal.items() if status == 429
+        )
+        if first_rejection != rejected_ordinals[0]:
+            raise ValueError(
+                "distributed rate-limit proof first rejected ordinal is inconsistent"
+            )
     elif (
         rate_limit_artifact is not None or report.get("rate_limit_artifact_sha256") is not None
     ):

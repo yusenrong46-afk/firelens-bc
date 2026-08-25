@@ -69,6 +69,23 @@ class CaptureDependencies:
     validate_frontend_manual_review: Callable[..., dict[str, Any]]
 
 
+def _cache_verified_artifact(
+    path: Path | None,
+    *,
+    expected_sha256: str,
+    artifact_name: str,
+    digest_mismatch_context: str,
+) -> dict[str, Any]:
+    """Hash a just-verified artifact once and bind it to its validated digest."""
+
+    artifact = _artifact(path)
+    if artifact is None:
+        raise ValueError(f"{artifact_name} artifact is missing after verification")
+    if artifact["sha256"] != expected_sha256:
+        raise ValueError(digest_mismatch_context)
+    return artifact
+
+
 def capture_benchmark(args: argparse.Namespace, dependencies: CaptureDependencies) -> int:
     spec_path = args.spec.resolve()
     spec = dependencies.load_spec(spec_path)
@@ -79,6 +96,9 @@ def capture_benchmark(args: argparse.Namespace, dependencies: CaptureDependencie
     semantic_holdout_review_bundle_path = getattr(args, "semantic_holdout_review_bundle", None)
     semantic_holdout_summary_path = getattr(args, "semantic_holdout_summary", None)
     frontend_manual_review_bundle_path = getattr(args, "frontend_manual_review_bundle", None)
+    semantic_review_attestation = getattr(args, "semantic_review_attestation", None)
+    retrieval_review_attestation = getattr(args, "retrieval_review_attestation", None)
+    preview_raw_evidence = getattr(args, "preview_raw_evidence", None)
     runtime_artifact_args = {
         "vercel_artifact_root": getattr(args, "vercel_artifact_root", None),
         "vercel_artifact_id": getattr(args, "vercel_artifact_id", None),
@@ -130,7 +150,9 @@ def capture_benchmark(args: argparse.Namespace, dependencies: CaptureDependencie
         )
     ):
         raise ValueError("semantic holdout qualification is required-after-only")
-    if args.label == "before" and args.preview_report is not None:
+    if args.label == "before" and any(
+        path is not None for path in (args.preview_report, preview_raw_evidence)
+    ):
         raise ValueError("preview qualification is required-after-only")
     if args.label == "before" and any(
         path is not None
@@ -150,13 +172,14 @@ def capture_benchmark(args: argparse.Namespace, dependencies: CaptureDependencie
         args.semantic_review_sidecar,
         args.semantic_review_summary,
         args.semantic_review_qualification,
+        semantic_review_attestation,
     )
     if any(path is not None for path in semantic_artifacts) and not all(
         path is not None for path in semantic_artifacts
     ):
         raise ValueError(
             "semantic review evidence requires the source report, review sidecar, summary, "
-            "and blind-review qualification manifest"
+            "blind-review qualification manifest, and private storage attestation"
         )
     if (semantic_holdout_report_path is None) != (semantic_holdout_review_bundle_path is None):
         raise ValueError(
@@ -167,6 +190,9 @@ def capture_benchmark(args: argparse.Namespace, dependencies: CaptureDependencie
             "semantic holdout summary requires its raw candidate report and review bundle"
         )
     semantic_holdout_prevalidated: dict[str, Any] | None = None
+    semantic_review_attestation_artifact: dict[str, Any] | None = None
+    retrieval_review_attestation_artifact: dict[str, Any] | None = None
+    preview_raw_evidence_artifact: dict[str, Any] | None = None
     if semantic_holdout_report_path is not None:
         if not isinstance(semantic_holdout_report_path, Path) or not isinstance(
             semantic_holdout_review_bundle_path, Path
@@ -183,13 +209,19 @@ def capture_benchmark(args: argparse.Namespace, dependencies: CaptureDependencie
         args.retrieval_review_sidecar,
         args.retrieval_review_summary,
         args.retrieval_review_qualification,
+        retrieval_review_attestation,
     )
     if any(path is not None for path in retrieval_review_artifacts) and not all(
         path is not None for path in retrieval_review_artifacts
     ):
         raise ValueError(
             "retrieval review evidence requires its sidecar, summary, and blind-review "
-            "qualification manifest"
+            "qualification manifest and private storage attestation"
+        )
+    if (args.preview_report is None) != (preview_raw_evidence is None):
+        raise ValueError(
+            "preview qualification requires both the retained report and private raw "
+            "response evidence"
         )
     if args.label == "after":
         if frontend_manual_review_bundle_path is None:
@@ -334,9 +366,19 @@ def capture_benchmark(args: argparse.Namespace, dependencies: CaptureDependencie
             source_path=args.semantic_report,
             sidecar_path=args.semantic_review_sidecar,
             summary_path=args.semantic_review_summary,
+            attestation_path=semantic_review_attestation,
             expected_suite_kind="conversation",
             expected_case_count=50,
         ).model_dump(mode="json")
+        semantic_review_attestation_artifact = _cache_verified_artifact(
+            semantic_review_attestation,
+            expected_sha256=semantic_review_qualification["storage_attestation_sha256"],
+            artifact_name="semantic review storage attestation",
+            digest_mismatch_context=(
+                "semantic review storage attestation SHA-256 does not match qualification "
+                "manifest storage_attestation_sha256"
+            ),
+        )
     else:
         semantic = _review(
             None,
@@ -381,9 +423,19 @@ def capture_benchmark(args: argparse.Namespace, dependencies: CaptureDependencie
             / "data/evaluation/benchmark_v1_5_sealed_retrieval.yaml",
             sidecar_path=args.retrieval_review_sidecar,
             summary_path=args.retrieval_review_summary,
+            attestation_path=retrieval_review_attestation,
             expected_suite_kind="retrieval",
             expected_case_count=47,
         ).model_dump(mode="json")
+        retrieval_review_attestation_artifact = _cache_verified_artifact(
+            retrieval_review_attestation,
+            expected_sha256=retrieval_review_qualification["storage_attestation_sha256"],
+            artifact_name="retrieval review storage attestation",
+            digest_mismatch_context=(
+                "retrieval review storage attestation SHA-256 does not match qualification "
+                "manifest storage_attestation_sha256"
+            ),
+        )
     else:
         retrieval_review = _review(
             None,
@@ -391,7 +443,18 @@ def capture_benchmark(args: argparse.Namespace, dependencies: CaptureDependencie
             expected_summary_version="firelens_retrieval_owner_review_summary.v1",
         )
         retrieval_review_qualification = None
-    preview = _preview(dependencies.read_report(args.preview_report))
+    preview_report = dependencies.read_report(args.preview_report)
+    preview = _preview(preview_report, raw_response_artifact=preview_raw_evidence)
+    if preview_report is not None:
+        preview_raw_evidence_artifact = _cache_verified_artifact(
+            preview_raw_evidence,
+            expected_sha256=str(preview_report["raw_response_artifact_sha256"]),
+            artifact_name="preview raw response evidence",
+            digest_mismatch_context=(
+                "preview raw response evidence SHA-256 does not match preview report "
+                "raw_response_artifact_sha256"
+            ),
+        )
     ux = _ux(dependencies.read_report(args.ux_report), spec)
     deployment = _deployment(
         dependencies.read_report(args.deployment_report),
@@ -657,6 +720,7 @@ def capture_benchmark(args: argparse.Namespace, dependencies: CaptureDependencie
             "semantic_report": _artifact(args.semantic_report),
             "semantic_review_sidecar": _artifact(args.semantic_review_sidecar),
             "semantic_review_qualification": _artifact(args.semantic_review_qualification),
+            "semantic_review_attestation": semantic_review_attestation_artifact,
             "semantic_holdout_report": _artifact(semantic_holdout_report_path),
             "semantic_holdout_review_bundle": _artifact(semantic_holdout_review_bundle_path),
             "semantic_holdout_summary": _artifact(semantic_holdout_summary_path),
@@ -673,8 +737,10 @@ def capture_benchmark(args: argparse.Namespace, dependencies: CaptureDependencie
             "retrieval_review_summary": _artifact(args.retrieval_review_summary),
             "retrieval_review_sidecar": _artifact(args.retrieval_review_sidecar),
             "retrieval_review_qualification": _artifact(args.retrieval_review_qualification),
+            "retrieval_review_attestation": retrieval_review_attestation_artifact,
             "ux_report": _artifact(args.ux_report),
             "preview_report": _artifact(args.preview_report),
+            "preview_raw_evidence": preview_raw_evidence_artifact,
             "deployment_report": _artifact(args.deployment_report),
             "rate_limit_evidence": _artifact(rate_limit_evidence),
             "rollback_evidence": _artifact(rollback_evidence),

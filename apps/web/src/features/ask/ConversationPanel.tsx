@@ -1,71 +1,41 @@
 import {
   ArrowSquareOut,
-  Check,
-  ChatsCircle,
   Crosshair,
   Info,
-  Trash,
   UserCircle,
   WarningCircle,
 } from "@phosphor-icons/react";
+import type { ReactNode } from "react";
 import { FeedbackControls } from "../feedback/FeedbackControls";
 import { resultDisplayName } from "../near-me/liveResultPresentation";
 import { AnswerBody } from "./AnswerBody";
 import { getAnswerSections } from "./answerSections";
+import {
+  ClaimEvidence,
+  ConversationToolbar,
+  NonSelectableClaim,
+  PreparednessSources,
+  revealAssistantMessage,
+  ServiceFailureState,
+} from "./ConversationPresentation";
 import { getClaimSupportLabel, getClaimSupportState } from "./proofPresentation";
 import { QuestionComposer } from "./QuestionComposer";
-import type { Claim } from "./responseModel";
 import { ResponseModeBadge } from "./responseModeBadge";
 import type { FireLensSession } from "./useFireLensSession";
 
-function revealAssistantMessage(node: HTMLElement | null, active: boolean) {
-  if (!node || !active) return;
-  node.scrollIntoView?.({ block: "start", inline: "nearest" });
-  const scroller = node.closest(".conversation-scroll");
-  if (!(scroller instanceof HTMLElement)) return;
-  scroller.scrollTop += node.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
-}
-
-function ClaimButton({
-  claim,
-  index,
-  selected,
-  supportLabel,
-  onSelect,
+export function ConversationPanel({
+  session,
+  analytical = false,
+  analysisSlot,
+  onOpenEvidence,
+  onOpenMap,
 }: {
-  claim: Claim;
-  index: number;
-  selected: boolean;
-  supportLabel: string;
-  onSelect: () => void;
+  session: FireLensSession;
+  analytical?: boolean;
+  analysisSlot?: ReactNode;
+  onOpenEvidence?: () => void;
+  onOpenMap?: () => void;
 }) {
-  return (
-    <button
-      className={`claim-card ${selected ? "claim-card--selected" : ""}`}
-      type="button"
-      onClick={onSelect}
-      aria-pressed={selected}
-    >
-      <span className="claim-number">{index + 1}</span>
-      <span>{claim.text}</span>
-      <small>{supportLabel}</small>
-      <span className="claim-check">{selected && <Check size={15} weight="bold" />}</span>
-    </button>
-  );
-}
-
-function NonSelectableClaim({ claim, index, supportLabel }: { claim: Claim; index: number; supportLabel: string }) {
-  return (
-    <div className="claim-card claim-card--background">
-      <span className="claim-number">{index + 1}</span>
-      <span>{claim.text}</span>
-      <small>{supportLabel}</small>
-      <Info size={18} aria-hidden="true" />
-    </div>
-  );
-}
-
-export function ConversationPanel({ session }: { session: FireLensSession }) {
   const {
     assistantText,
     claims,
@@ -79,7 +49,6 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
     query,
     response,
     requiresLocation,
-    selected,
     setLocationLabel,
     setQuery,
     setSelected,
@@ -95,6 +64,16 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
     mapResults,
   } = session;
   const answerSections = getAnswerSections(response);
+  const evidenceById = new Map((response?.evidence ?? []).map((item) => [item.evidence_id, item]));
+  const presentableEvidence = !response ? [] : (response.evidence ?? []).flatMap((item) => {
+    const linkedClaim = claims.find((claim) => claim.supports?.some((support) => support.evidence_id === item.evidence_id));
+    if (!linkedClaim) return [];
+    const state = getClaimSupportState(response, linkedClaim);
+    if (!["supported", "structured_reviewed", "official_quote_only", "source_linked_explanation", "conflict"].includes(state)) {
+      return [];
+    }
+    return [{ item, state }];
+  });
   const visibleLimitations = Array.from(
     new Set((response?.limitations ?? []).map((item) => item.trim()).filter(Boolean)),
   );
@@ -115,18 +94,9 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
   );
 
   return (
-    <section className="conversation-panel" id="conversation" aria-label="Question and answer" tabIndex={-1}>
-      {(history.length > 0 || view.kind !== "idle") && (
-        <div className="conversation-toolbar">
-          <span
-            title="FireLens keeps your last 3 question-answer pairs in this browser only and re-sends them with your next question. Nothing is stored on a server."
-          >
-            <ChatsCircle size={16} /> {history.length} of 6 turns in context
-          </span>
-          <button type="button" onClick={clearHistory} aria-label="Clear conversation history">
-            <Trash size={15} /> Clear
-          </button>
-        </div>
+    <section className={`conversation-panel ${analytical ? "conversation-panel--analytical" : ""}`} id="conversation" aria-label="Question and answer" tabIndex={-1}>
+      {!analytical && (history.length > 0 || view.kind !== "idle") && (
+        <ConversationToolbar priorTurnCount={earlierTurns.length} onClear={clearHistory} />
       )}
       <div className="conversation-scroll" aria-live="polite">
         {earlierTurns.length > 0 && (
@@ -186,9 +156,21 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
               <AnswerBody
                 response={response}
                 assistantText={assistantText}
+                analytical={analytical}
+              />
+            ) : view.kind === "unavailable" || view.kind === "error" ? (
+              <ServiceFailureState
+                message={assistantText}
+                retryable={view.kind === "unavailable" || view.retryable === true}
+                onRetry={() => void submitQuestion(visibleQuestion ?? "")}
               />
             ) : (
               <p>{assistantText}</p>
+            )}
+            {!analytical && (mode === "live" || mode === "mixed") && onOpenMap && (
+              <div className="answer-context-actions">
+                <button type="button" onClick={onOpenMap}>View official map context</button>
+              </div>
             )}
             {(response?.related_links ?? []).length > 0 && (
               <div className="related-service-links" aria-label="Related official services">
@@ -200,14 +182,17 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
                 ))}
               </div>
             )}
-            {response?.trace_id && <FeedbackControls traceId={response.trace_id} />}
-            {(view.kind === "unavailable" || (view.kind === "error" && view.retryable)) && (
-              <button className="retry-button" type="button" onClick={() => void submitQuestion(visibleQuestion ?? "")}>
-                Retry this question
-              </button>
-            )}
+            {!analytical && response?.trace_id && <FeedbackControls traceId={response.trace_id} />}
           </div>
         </div>}
+
+        {analytical && analysisSlot}
+        {analytical && visibleLimitations.length > 0 && (
+          <aside className="analysis-limitations" aria-label="Analysis limitations">
+            <Info size={18} aria-hidden="true" />
+            <span>{visibleLimitations.join(" ")}</span>
+          </aside>
+        )}
 
         {requiresLocation && (
           <form className="location-request" onSubmit={submitLocation}>
@@ -244,22 +229,27 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
               {claims.map((claim, index) => {
                 const state = getClaimSupportState(view.response, claim);
                 const supportLabel = getClaimSupportLabel(view.response, claim);
-                const selectable = [
+                const showSource = [
                   "supported",
                   "structured_reviewed",
-                  "official_live_typed",
                   "official_quote_only",
                   "source_linked_explanation",
                   "conflict",
                 ].includes(state);
-                return selectable ? (
-                  <ClaimButton
+                const hasLinkedEvidence = claim.supports?.some((support) => evidenceById.has(support.evidence_id)) ?? false;
+                const canReview = showSource || hasLinkedEvidence || state === "official_live_typed";
+                return canReview ? (
+                  <ClaimEvidence
                     key={claim.claim_id}
                     claim={claim}
                     index={index}
-                    selected={selected === index}
                     supportLabel={supportLabel}
-                    onSelect={() => setSelected(index)}
+                    evidence={showSource && claim.supports?.[0] ? evidenceById.get(claim.supports[0].evidence_id) : undefined}
+                    showSource={showSource}
+                    onReviewEvidence={() => {
+                      setSelected(index);
+                      onOpenEvidence?.();
+                    }}
                   />
                 ) : (
                   <NonSelectableClaim
@@ -273,6 +263,8 @@ export function ConversationPanel({ session }: { session: FireLensSession }) {
             </div>
           </div>
         )}
+
+        {view.kind === "answer" && <PreparednessSources evidence={presentableEvidence} />}
 
         {view.kind === "abstention" && (
           <div className="abstention-card">

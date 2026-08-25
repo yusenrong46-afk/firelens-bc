@@ -22,6 +22,7 @@ from firelens.contracts import (
     ResponseStatus,
 )
 from firelens.live_answering import LiveAnswerCoordinator
+from firelens.live_contracts import bind_distance_derivation
 from firelens.live_support import distance_to_geometry_km
 
 
@@ -133,6 +134,14 @@ class V3DistanceTests(unittest.TestCase):
             geometry={"type": "Point", "coordinates": [-123.0, 50.0]},
             distance_km=17.4,
             distance_basis="incident_point",
+            distance_derivation=bind_distance_derivation(
+                result_id="incident:7",
+                distance_km=17.4,
+                distance_basis="incident_point",
+                calculated_at=timestamp,
+                extra_input_ids=("place:50.00,-123.00",),
+                input_freshness=Freshness.FRESH,
+            ),
         )
 
         self.assertEqual(result.distance_km, 17.4)

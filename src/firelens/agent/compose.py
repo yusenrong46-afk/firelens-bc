@@ -255,6 +255,7 @@ def _build_ask_response(
                 requested_layers=requested_layers,
                 unavailable_layers=packet.unavailable_layers,
                 resolved_location=packet.resolved_location,
+                retrieved_at=packet.retrieved_at,
             )
             if "named_fire_not_found" in packet.unknown_topics:
                 specific = (

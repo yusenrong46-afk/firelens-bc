@@ -26,6 +26,13 @@ DEFAULT_GENERATION_CANDIDATES = (
     "google/gemini-2.5-flash-lite",
 )
 
+# OpenRouter reports exact cost only after a request completes. Reserve these
+# bounded per-operation envelopes before dispatch so a bake-off cannot knowingly
+# start a call with insufficient budget. An observed charge above its envelope is
+# still recorded as a failed budget, never reported as a complete bake-off.
+RETRIEVAL_CASE_COST_RESERVE_USD = 0.05
+GENERATION_CALL_COST_RESERVE_USD = 0.05
+
 
 def _balanced_cases(dataset_path: Path, limit: int) -> list[Any]:
     dataset = load_benchmark(dataset_path)
@@ -51,7 +58,13 @@ async def run_model_bakeoff(
     models: tuple[str, ...] = DEFAULT_GENERATION_CANDIDATES,
     case_limit: int = 12,
     max_cost_usd: float = 0.50,
+    retrieval_case_cost_reserve_usd: float = RETRIEVAL_CASE_COST_RESERVE_USD,
+    generation_call_cost_reserve_usd: float = GENERATION_CALL_COST_RESERVE_USD,
 ) -> dict[str, Any]:
+    if max_cost_usd <= 0:
+        raise ValueError("model bake-off cost budget must be positive")
+    if retrieval_case_cost_reserve_usd < 0 or generation_call_cost_reserve_usd < 0:
+        raise ValueError("model bake-off cost reservations cannot be negative")
     runtime = load_runtime(config)
     providers: dict[str, OpenRouterProvider] = {}
     try:
@@ -60,11 +73,24 @@ async def run_model_bakeoff(
         cases = _balanced_cases(dataset_path, case_limit)
         packets: list[tuple[Any, Any]] = []
         retrieval_cost = 0.0
+        budget_reservation_exhausted = False
+        cost_budget_exceeded = False
         for case in cases:
+            if (
+                retrieval_cost
+                + generation_call_cost_reserve_usd
+                + retrieval_case_cost_reserve_usd
+                > max_cost_usd
+            ):
+                budget_reservation_exhausted = True
+                break
             search = await runtime.service.search(QueryRequest(question=case.question))
             if search.support.status != SupportStatus.ANSWERABLE:
                 continue
             retrieval_cost += _usage_cost(search.retrieval.provider_usage)
+            if retrieval_cost > max_cost_usd:
+                cost_budget_exceeded = True
+                break
             packets.append(
                 (
                     case,
@@ -84,7 +110,11 @@ async def run_model_bakeoff(
             provider = OpenRouterProvider(config.model_copy(update={"generation_model": model}))
             providers[model] = provider
             for case, packet in packets:
-                if retrieval_cost + generation_cost >= max_cost_usd:
+                if (
+                    retrieval_cost + generation_cost + generation_call_cost_reserve_usd
+                    > max_cost_usd
+                ):
+                    budget_reservation_exhausted = True
                     break
                 started = perf_counter()
                 try:
@@ -98,6 +128,8 @@ async def run_model_bakeoff(
                     validation = validate_draft(generated.draft, packet)
                     cost = _usage_cost(generated.usage)
                     generation_cost += cost
+                    if retrieval_cost + generation_cost > max_cost_usd:
+                        cost_budget_exceeded = True
                     rows.append(
                         {
                             "case_id": case.id,
@@ -118,6 +150,8 @@ async def run_model_bakeoff(
                             "semantic_adjudication": "pending_owner_review",
                         }
                     )
+                    if cost_budget_exceeded:
+                        break
                 except ProviderError as exc:
                     rows.append(
                         {
@@ -161,7 +195,12 @@ async def run_model_bakeoff(
                 "semantic_quality_scored": False,
             }
 
-        complete = all(summary["case_count"] == len(packets) for summary in summaries.values())
+        complete = (
+            bool(packets)
+            and bool(models)
+            and not (budget_reservation_exhausted or cost_budget_exceeded)
+            and all(summary["case_count"] == len(packets) for summary in summaries.values())
+        )
         report = {
             "report_version": "firelens_generation_bakeoff.v1",
             "generated_at": datetime.now(UTC).isoformat(),
@@ -173,6 +212,11 @@ async def run_model_bakeoff(
             "models": list(models),
             "complete": complete,
             "reported_cost_usd": retrieval_cost + generation_cost,
+            "cost_budget_usd": max_cost_usd,
+            "retrieval_case_cost_reserve_usd": retrieval_case_cost_reserve_usd,
+            "generation_call_cost_reserve_usd": generation_call_cost_reserve_usd,
+            "cost_budget_exceeded": cost_budget_exceeded,
+            "budget_reservation_exhausted": budget_reservation_exhausted,
             "retrieval_cost_usd": retrieval_cost,
             "generation_cost_usd": generation_cost,
             "summaries": summaries,

@@ -16,10 +16,23 @@ from firelens.contracts import (
     ValidationReport,
     render_claim_texts,
 )
+from firelens.derivation_policy import as_distance_derivation, derivation_policy_errors
+from firelens.live_contracts import (
+    COORDINATE_ORDER,
+    DISTANCE_ALGORITHM,
+    DISTANCE_UNIT,
+    GEODESIC_CRS,
+)
 from firelens.proof_presentation import ProofCard
 from firelens.publication.fallback import UNCOVERED_LIMITATION
 from firelens.publication.records import get_versioned
 from firelens.publication_contracts import PublicationKind
+from firelens.safety_profile import (
+    PublicationState,
+    TruthClass,
+    bind_proof_profile,
+    verified_critical_metadata_present,
+)
 
 
 def atomic_quote_overlap(candidate_text: str, source_text: str) -> bool:
@@ -150,6 +163,11 @@ def validate_compiled_publication(
         {item.evidence_id: item for item in packet.items} if packet is not None else {}
     )
 
+    for proof_card in cards:
+        for error in _proof_card_policy_errors(proof_card):
+            policy_valid = False
+            errors.append(error)
+
     for claim in claims:
         card = card_by_id.get(claim.claim_id)
         if card is None or card.claim_text != claim.text:
@@ -253,6 +271,45 @@ def validate_compiled_publication(
         claim_support_valid=claim_support_valid,
         policy_valid=policy_valid,
     )
+
+
+def _proof_card_policy_errors(card: ProofCard) -> list[str]:
+    """Defense-in-depth profile and derivation checks, including model_construct cards."""
+
+    errors: list[str] = []
+    expected_truth, expected_state = bind_proof_profile(
+        card.support_state, freshness=card.freshness
+    )
+    if card.truth_class != expected_truth or card.publication_state != expected_state:
+        errors.append(
+            f"claim {card.claim_id} proof card has non-deterministic profile metadata"
+        )
+    if expected_state == PublicationState.VERIFIED and not verified_critical_metadata_present(
+        card
+    ):
+        errors.append(f"claim {card.claim_id} verified critical metadata is incomplete")
+    if "km geodesic" in card.claim_text.casefold() and card.derivation is None:
+        errors.append(f"claim {card.claim_id} conceals a distance derivation")
+    if card.derivation is not None:
+        derivation = as_distance_derivation(card.derivation)
+        if derivation.truth_class is not TruthClass.DETERMINISTIC_DERIVATION:
+            errors.append(f"claim {card.claim_id} derivation truth class is not deterministic")
+        if (
+            derivation.units != DISTANCE_UNIT
+            or derivation.crs != GEODESIC_CRS
+            or derivation.algorithm != DISTANCE_ALGORITHM
+            or derivation.coordinate_order != COORDINATE_ORDER
+        ):
+            errors.append(f"claim {card.claim_id} emits unsupported distance units or CRS")
+        errors.extend(
+            derivation_policy_errors(
+                claim_id=card.claim_id,
+                claim_text=card.claim_text,
+                freshness=card.freshness,
+                derivation=derivation,
+            )
+        )
+    return errors
 
 
 def compiled_validation_handoff(trace_id: str, validation: ValidationReport) -> AskResponse:

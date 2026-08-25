@@ -19,6 +19,7 @@ from firelens.contracts import (
     RequiredInputKind,
     ResponseMode,
     ResponseStatus,
+    aggregate_live_freshness,
 )
 from firelens.live_answering import LiveAnswerCoordinator
 
@@ -64,6 +65,17 @@ def _live_agent(service: Any) -> FireLensAgent:
     return FireLensAgent(
         cast(Any, UnexpectedStaticService()),
         LiveAnswerCoordinator(cast(Any, service)),
+    )
+
+
+def _live_map_response(
+    *, generated_at: datetime, results: list[LiveResult], **kwargs: Any
+) -> LiveMapResponse:
+    return LiveMapResponse(
+        generated_at=generated_at,
+        results=results,
+        aggregate_freshness=aggregate_live_freshness(results),
+        **kwargs,
     )
 
 
@@ -119,7 +131,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         coordinator = LiveAnswerCoordinator(
             cast(
                 Any,
-                FixedLiveService(LiveMapResponse(generated_at=timestamp, results=[result])),
+                FixedLiveService(_live_map_response(generated_at=timestamp, results=[result])),
             )
         )
 
@@ -169,7 +181,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         coordinator = LiveAnswerCoordinator(
             cast(
                 Any,
-                FixedLiveService(LiveMapResponse(generated_at=timestamp, results=[result])),
+                FixedLiveService(_live_map_response(generated_at=timestamp, results=[result])),
             )
         )
 
@@ -217,7 +229,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         coordinator = LiveAnswerCoordinator(
             cast(
                 Any,
-                FixedLiveService(LiveMapResponse(generated_at=timestamp, results=[result])),
+                FixedLiveService(_live_map_response(generated_at=timestamp, results=[result])),
             )
         )
 
@@ -300,7 +312,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_stale_records_are_never_described_as_current(self) -> None:
         timestamp = datetime(2026, 7, 28, tzinfo=UTC)
-        live = LiveMapResponse(
+        live = _live_map_response(
             generated_at=timestamp,
             results=[
                 LiveResult(
@@ -333,7 +345,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_mixed_freshness_has_typed_state_and_no_current_wording(self) -> None:
         timestamp = datetime(2026, 7, 28, tzinfo=UTC)
-        live = LiveMapResponse(
+        live = _live_map_response(
             generated_at=timestamp,
             results=[
                 LiveResult(
@@ -379,7 +391,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_distance_followup_uses_selected_map_result(self) -> None:
         timestamp = datetime(2026, 7, 28, tzinfo=UTC)
-        live = LiveMapResponse(
+        live = _live_map_response(
             generated_at=timestamp,
             results=[
                 LiveResult(
@@ -436,7 +448,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         self,
     ) -> None:
         timestamp = datetime(2026, 8, 13, tzinfo=UTC)
-        live = LiveMapResponse(
+        live = _live_map_response(
             generated_at=timestamp,
             results=[
                 LiveResult(
@@ -476,7 +488,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
             name="Mountain Fire",
             geometry={"type": "Point", "coordinates": [-123.0, 50.0]},
         )
-        service = FixedLiveService(LiveMapResponse(generated_at=timestamp, results=[result]))
+        service = FixedLiveService(_live_map_response(generated_at=timestamp, results=[result]))
         coordinator = LiveAnswerCoordinator(cast(Any, service))
         agent = _live_agent(service)
 
@@ -526,7 +538,8 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         )
         coordinator = LiveAnswerCoordinator(
             cast(
-                Any, FixedLiveService(LiveMapResponse(generated_at=timestamp, results=results))
+                Any,
+                FixedLiveService(_live_map_response(generated_at=timestamp, results=results)),
             )
         )
 
@@ -543,7 +556,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_nearest_perimeter_distance_does_not_substitute_an_incident(self) -> None:
         timestamp = datetime(2026, 8, 13, tzinfo=UTC)
-        live = LiveMapResponse(
+        live = _live_map_response(
             generated_at=timestamp,
             results=[
                 LiveResult(
@@ -566,7 +579,18 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
                     freshness=Freshness.FRESH,
                     status="Mapped perimeter",
                     name="Target perimeter",
-                    geometry={"type": "Point", "coordinates": [-123.0, 50.0]},
+                    geometry={
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [-123.05, 49.95],
+                                [-122.95, 49.95],
+                                [-122.95, 50.05],
+                                [-123.05, 50.05],
+                                [-123.05, 49.95],
+                            ]
+                        ],
+                    },
                 ),
             ],
         )
@@ -616,7 +640,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_distance_followup_never_substitutes_for_an_unmatched_selection(self) -> None:
         timestamp = datetime(2026, 8, 13, tzinfo=UTC)
-        live = LiveMapResponse(
+        live = _live_map_response(
             generated_at=timestamp,
             results=[
                 LiveResult(
@@ -656,7 +680,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_status_followup_returns_only_the_selected_map_result(self) -> None:
         timestamp = datetime(2026, 7, 28, tzinfo=UTC)
-        live = LiveMapResponse(
+        live = _live_map_response(
             generated_at=timestamp,
             results=[
                 LiveResult(

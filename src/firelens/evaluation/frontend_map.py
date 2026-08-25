@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from PIL import Image, UnidentifiedImageError
 
@@ -517,7 +517,13 @@ def _frontend_surface_row(
             if screenshot_image.format != "PNG":
                 raise ValueError(f"{context} screenshot is not a PNG")
             screenshot_size = screenshot_image.size
-            screenshot_image.verify()
+            screenshot_image.load()
+            extrema = cast(
+                tuple[tuple[int, int], tuple[int, int], tuple[int, int]],
+                screenshot_image.convert("RGB").getextrema(),
+            )
+            if all(minimum == maximum for minimum, maximum in extrema):
+                raise ValueError(f"{context} screenshot is visually uniform")
     except (OSError, UnidentifiedImageError) as error:
         raise ValueError(f"{context} screenshot is not a valid decoded PNG") from error
     expected_pixel_width = viewport["width"] * viewport["device_scale_factor"]

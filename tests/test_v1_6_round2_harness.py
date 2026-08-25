@@ -5,12 +5,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from firelens.agent.budget import RequestExecutionPolicy
 from firelens.config import FireLensConfig
 from firelens.evaluation.pre_release_performance import build_pre_release_report
 from firelens.evaluation.round2_workload import load_performance_workload, workload_identity
-
-ROOT = Path(__file__).resolve().parents[1]
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -62,7 +62,18 @@ def test_request_policy_exposes_content_free_call_counters() -> None:
         assert key in counters
 
 
-def test_pre_release_report_requires_acceptance_for_route_regression() -> None:
+def test_pre_release_report_requires_acceptance_for_route_regression(tmp_path: Path) -> None:
+    tracked = tmp_path / "tracked-source.py"
+    tracked.write_text("VALUE = 1\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "repoproof@example.invalid"],
+        cwd=tmp_path,
+        check=True,
+    )
+    subprocess.run(["git", "config", "user.name", "RepoProof"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "fixture"], cwd=tmp_path, check=True)
     current = {
         "representative_average_generate_calls": 0.5,
         "pure_static_generate_calls": 0.0,
@@ -81,7 +92,7 @@ def test_pre_release_report_requires_acceptance_for_route_regression() -> None:
     }
 
     report = build_pre_release_report(
-        root=ROOT,
+        root=tmp_path,
         current=current,
         comparison=comparison,
         warmup=10,
@@ -93,6 +104,36 @@ def test_pre_release_report_requires_acceptance_for_route_regression() -> None:
         "requires_accepted_evidence": True,
         "status": "NEEDS_HUMAN_TRADEOFF_ACCEPTANCE",
     }
+
+
+def test_pre_release_report_refuses_a_dirty_checkout(tmp_path: Path) -> None:
+    tracked = tmp_path / "tracked-source.py"
+    tracked.write_text("VALUE = 1\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "repoproof@example.invalid"],
+        cwd=tmp_path,
+        check=True,
+    )
+    subprocess.run(["git", "config", "user.name", "RepoProof"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "fixture"], cwd=tmp_path, check=True)
+    tracked.write_text("VALUE = 2\n", encoding="utf-8")
+    current = {
+        "representative_average_generate_calls": 0.0,
+        "pure_static_generate_calls": 0.0,
+        "routes": {},
+    }
+    comparison = {"compare": {"route_p95": {}}, "v1_5_status": "EXECUTED"}
+
+    with pytest.raises(ValueError, match="clean working tree"):
+        build_pre_release_report(
+            root=tmp_path,
+            current=current,
+            comparison=comparison,
+            warmup=1,
+            measured=1,
+        )
 
 
 def test_retrieval_dry_run_is_blocked_and_does_not_inspect_sealed_labels(

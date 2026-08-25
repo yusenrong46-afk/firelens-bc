@@ -8,6 +8,7 @@ from firelens.answering.intent_safety import TRUST_EXPLANATION_PATTERN
 
 _CAPABILITY_PATTERNS = (
     r"^(?:hi|hello|hey|good (?:morning|afternoon|evening))[!., ]*$",
+    r"\bwhat (?:can|could) i ask (?:you|firelens)(?: about)?\b",
     r"\bwhat (?:can|could) (?:you|firelens) (?:do|help(?: me)? with)\b",
     r"\bwhat does firelens (?:do|cover|offer)\b",
     r"\b(?:what|which) (?:documents|sources|topics).{0,80}\b(?:collection|know|use|cover)\b",

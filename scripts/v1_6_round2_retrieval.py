@@ -87,7 +87,10 @@ def dry_run(root: Path) -> dict[str, object]:
     return {
         "schema_version": "firelens_v1_6_round2_retrieval.v1",
         "mode": "dry_run" if not paid or would_exceed else "authorized_not_executed_here",
-        "evidence_class": "EXECUTED" if paid and not would_exceed else "BLOCKED",
+        # This function only estimates a paid run; it never opens a provider
+        # session. Authorization and budget headroom therefore cannot upgrade
+        # the evidence class beyond BLOCKED.
+        "evidence_class": "BLOCKED",
         "default_strategy": config.retrieval_strategy,
         "adaptive_default": False,
         "sealed_labels_inspected": False,

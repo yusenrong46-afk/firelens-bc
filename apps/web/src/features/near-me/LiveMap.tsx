@@ -3,14 +3,13 @@ import { CircleMarker, GeoJSON, MapContainer, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import type { LiveResult } from "../../shared/api/api";
 import { MatchingRecordList, ProvinceRecordList } from "./LiveRecordLists";
+import { MapRecordPopup } from "./MapRecordPopup";
 import { BC_BOUNDS, FitResults, type MapFocus } from "./MapViewport";
 import { OfficialBasemap, TileFailureWarning } from "./OfficialBasemap";
 import {
-  formatTimestamp,
   isRenderableGeometry,
+  MAP_GEOMETRY_LEGEND,
   resultColour,
-  resultDisplayName,
-  resultStatus,
 } from "./liveResultPresentation";
 
 export function LiveMap({
@@ -151,17 +150,7 @@ export function LiveMap({
             eventHandlers={{ click: () => onSelectResult?.(result.result_id) }}
           >
             <Popup>
-              <strong>{resultDisplayName(result)}</strong><br />
-              {resultStatus(result)}<br />
-              Updated {formatTimestamp(result.source_updated_at)}
-              {onAskAboutResult && (
-                <div className="map-popup-actions">
-                  {result.kind !== "evacuation" && (
-                    <button type="button" onClick={() => onAskAboutResult(result.result_id, "How far is this fire from me?")}>How far?</button>
-                  )}
-                  <button type="button" onClick={() => onAskAboutResult(result.result_id, "What is the current status of this fire?")}>Ask status</button>
-                </div>
-              )}
+              <MapRecordPopup result={result} onAskAboutResult={onAskAboutResult} />
             </Popup>
           </GeoJSON>
         ))}
@@ -186,15 +175,7 @@ export function LiveMap({
               }}
             >
               <Popup>
-                <strong>{resultDisplayName(result)}</strong><br />
-                {resultStatus(result)}<br />
-                Updated {formatTimestamp(result.source_updated_at)}
-                {onAskAboutResult && (
-                  <div className="map-popup-actions">
-                    <button type="button" onClick={() => onAskAboutResult(result.result_id, "How far is this fire from me?")}>How far?</button>
-                    <button type="button" onClick={() => onAskAboutResult(result.result_id, "What is the current status of this fire?")}>Ask status</button>
-                  </div>
-                )}
+                <MapRecordPopup result={result} onAskAboutResult={onAskAboutResult} />
               </Popup>
             </CircleMarker>
           );
@@ -217,6 +198,10 @@ export function LiveMap({
         {" "}under the <a href="https://www2.gov.bc.ca/gov/content/data/open-data/open-government-licence-bc" target="_blank" rel="noreferrer">Open Government Licence – BC</a>.
         Tile requests go to OpenStreetMap. Use the official BCWS map for operational context.
       </p>
+      <div className="live-map__legend" aria-label="Map legend">
+        <span>{MAP_GEOMETRY_LEGEND.points}</span>
+        <span>{MAP_GEOMETRY_LEGEND.polygons}</span>
+      </div>
       {results.length > 0 && (
         <div className="live-roster-summary" aria-label="Official record totals">
           <strong>{results.length} official map records</strong>

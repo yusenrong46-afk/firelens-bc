@@ -25,16 +25,50 @@ from firelens.contracts import (
     LiveResult,
     LiveResultKind,
     PlanningDecision,
+    aggregate_live_freshness,
 )
 from firelens.errors import ProviderError
-from firelens.live import LiveDataService
+from firelens.live import LiveDataErrorKind, LiveDataService, LiveDataUnavailable
 from firelens.privacy_policy import APPROVED_PRODUCTION_PRIVACY
 from firelens.providers.fake import FakeProvider
 from firelens.providers.openrouter import OpenRouterProvider
+from firelens.providers.openrouter_support import parse_chat_turn
 from firelens.runtime import Runtime
 
 
 class OpenRouterProviderTests(unittest.IsolatedAsyncioTestCase):
+    def test_chat_tool_arguments_reject_malformed_or_non_object_json(self) -> None:
+        def body(arguments: object) -> dict[str, object]:
+            return {
+                "model": "openai/gpt-5.6-luna",
+                "choices": [
+                    {
+                        "message": {
+                            "content": None,
+                            "tool_calls": [
+                                {
+                                    "id": "call-1",
+                                    "function": {
+                                        "name": "list_official_fires",
+                                        "arguments": arguments,
+                                    },
+                                }
+                            ],
+                        }
+                    }
+                ],
+            }
+
+        for arguments in ("{", "[]", "null", 7):
+            with (
+                self.subTest(arguments=arguments),
+                self.assertRaisesRegex(ValueError, "tool arguments"),
+            ):
+                parse_chat_turn(body(arguments), "openai/gpt-5.6-luna")
+
+        parsed = parse_chat_turn(body("{}"), "openai/gpt-5.6-luna")
+        self.assertEqual(parsed.tool_calls[0].arguments, {})
+
     async def test_luna_planning_omits_unsupported_temperature_parameter(self) -> None:
         observed_body: dict[str, object] = {}
 
@@ -1030,6 +1064,47 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.json()["error_kind"], "timeout")
         self.assertTrue(live_service.cancelled)
 
+    async def test_live_map_upstream_failure_is_typed_and_retryable(self) -> None:
+        class BrokenMapService:
+            async def map_results(self, *args, **kwargs):
+                del args, kwargs
+                raise LiveDataUnavailable(
+                    "incident source returned 503",
+                    kind=LiveDataErrorKind.UPSTREAM_HTTP,
+                )
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            app = create_app(config, runtime=runtime, live_service=BrokenMapService())
+            transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                response = await client.get("/api/v1/live/map?layers=incidents")
+            await runtime.aclose()
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["error_kind"], "live_upstream_http")
+        self.assertTrue(response.json()["retryable"])
+
+    async def test_unexpected_error_telemetry_uses_actual_route(self) -> None:
+        class BrokenMapService:
+            async def map_results(self, *args, **kwargs):
+                del args, kwargs
+                raise RuntimeError("synthetic map failure")
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, config = await make_runtime(Path(directory))
+            app = create_app(config, runtime=runtime, live_service=BrokenMapService())
+            transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
+            with patch("firelens.api.middleware.log_operation") as logged:
+                async with httpx.AsyncClient(
+                    transport=transport, base_url="http://test"
+                ) as client:
+                    response = await client.get("/api/v1/live/map?layers=incidents")
+            await runtime.aclose()
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(logged.call_args.kwargs["route"], "live_map")
+
     async def test_public_deadline_cancels_slow_nearby_work(self) -> None:
         class SlowNearbyService:
             def __init__(self) -> None:
@@ -1443,7 +1518,11 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                 return 49.89, -119.5
 
             async def map_results(self, *args, **kwargs):
-                return LiveMapResponse(generated_at=timestamp, results=[contract_result])
+                return LiveMapResponse(
+                    generated_at=timestamp,
+                    results=[contract_result],
+                    aggregate_freshness=aggregate_live_freshness([contract_result]),
+                )
 
             async def nearby_page(self, *args, **kwargs):
                 return SimpleNamespace(

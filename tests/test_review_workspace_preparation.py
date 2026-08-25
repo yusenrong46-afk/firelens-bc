@@ -76,6 +76,7 @@ def _recipe(tmp_path: Path) -> ReviewInputRecipe:
         private_holdout_payload=str((tmp_path / "private.json").absolute()),
         holdout_manifest=str((tmp_path / "manifest.json").absolute()),
         holdout_candidate_report=str((tmp_path / "candidate.json").absolute()),
+        holdout_development_registry=str((tmp_path / "registry.json").absolute()),
     )
 
 
@@ -156,6 +157,18 @@ def test_recipe_refuses_cross_kind_and_relative_paths(tmp_path: Path) -> None:
         ReviewInputRecipe(
             suite_kind="conversation",
             conversation_report="relative-report.json",
+        )
+
+
+def test_semantic_holdout_recipe_requires_the_bound_development_registry(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ValueError, match="paths"):
+        ReviewInputRecipe(
+            suite_kind="semantic_holdout",
+            private_holdout_payload=str((tmp_path / "private.json").absolute()),
+            holdout_manifest=str((tmp_path / "manifest.json").absolute()),
+            holdout_candidate_report=str((tmp_path / "candidate.json").absolute()),
         )
 
 

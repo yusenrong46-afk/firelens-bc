@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -51,6 +52,29 @@ def _visible_limitations(payload: dict[str, Any]) -> list[str]:
     if not isinstance(limitations, list):
         return []
     return [item for item in limitations if isinstance(item, str) and item.strip()]
+
+
+def _limitations_name_unavailable_layers(payload: dict[str, Any]) -> bool:
+    unavailable = payload.get("unavailable_layers")
+    if not isinstance(unavailable, list) or not unavailable:
+        return True
+    limitations = [item.casefold() for item in _visible_limitations(payload)]
+    markers = {
+        "incident": "incident",
+        "incidents": "incident",
+        "perimeter": "perimeter",
+        "perimeters": "perimeter",
+        "evacuation": "evacuation",
+        "evacuations": "evacuation",
+    }
+    for layer in unavailable:
+        if not isinstance(layer, str) or not layer.strip():
+            return False
+        marker = markers.get(layer.strip().casefold(), layer.strip().casefold())
+        marker_pattern = re.compile(rf"(?<![a-z0-9]){re.escape(marker)}(?![a-z0-9])")
+        if not any(marker_pattern.search(limitation) for limitation in limitations):
+            return False
+    return True
 
 
 def _false_safety_present(payload: dict[str, Any]) -> bool:
@@ -140,7 +164,7 @@ async def qualify_deployment_gates(
         and document["allow_fallbacks"] == "false"
     )
     reranking_policy_bound = ready.get("reranking_zdr") == document["reranking_zdr"]
-    partial_visible = not unavailable_layers or bool(_visible_limitations(map_payload))
+    partial_visible = _limitations_name_unavailable_layers(map_payload)
     safety_ok = (not include_ask_probes) or (
         ask_status_code == 200
         and ask_status == "abstention"

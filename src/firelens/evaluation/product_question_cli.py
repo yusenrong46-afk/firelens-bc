@@ -13,6 +13,7 @@ from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
@@ -60,6 +61,106 @@ def _live_result_kinds(response: dict[str, Any]) -> set[str]:
         for item in results
         if isinstance(item, dict) and isinstance(item.get("kind"), str)
     }
+
+
+def _nonempty_string(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _valid_web_url(value: object) -> bool:
+    if not isinstance(value, str) or not value.strip():
+        return False
+    parsed = urlparse(value)
+    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+
+def _valid_timestamp(value: object) -> bool:
+    if not isinstance(value, str) or not value.strip():
+        return False
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return True
+
+
+def _valid_mixed_live_half(response: dict[str, Any]) -> bool:
+    """Require observable official-record identity, not a kind-only placeholder."""
+
+    results = response.get("live_results")
+    if not isinstance(results, list) or not results:
+        return False
+    required = {
+        "result_id",
+        "kind",
+        "authority",
+        "source_url",
+        "source_updated_at",
+        "retrieved_at",
+        "freshness",
+        "status",
+    }
+    for result in results:
+        if not isinstance(result, dict) or not required.issubset(result):
+            return False
+        if not all(
+            _nonempty_string(result[field])
+            for field in required - {"source_url", "source_updated_at", "retrieved_at"}
+        ):
+            return False
+        if not _valid_web_url(result["source_url"]):
+            return False
+        if not _valid_timestamp(result["source_updated_at"]) or not _valid_timestamp(
+            result["retrieved_at"]
+        ):
+            return False
+    return True
+
+
+def _valid_mixed_static_half(response: dict[str, Any]) -> bool:
+    """Require claims to link to observable reviewed-evidence metadata."""
+
+    claims = response.get("claims")
+    evidence = response.get("evidence")
+    if (
+        not isinstance(claims, list)
+        or not claims
+        or not isinstance(evidence, list)
+        or not evidence
+    ):
+        return False
+    evidence_ids: set[str] = set()
+    for item in evidence:
+        if not isinstance(item, dict):
+            return False
+        required = {"evidence_id", "title", "publisher", "canonical_url", "primary_text"}
+        if not required.issubset(item) or not all(
+            _nonempty_string(item[field]) for field in required - {"canonical_url"}
+        ):
+            return False
+        if not _valid_web_url(item["canonical_url"]):
+            return False
+        evidence_ids.add(item["evidence_id"])
+    if len(evidence_ids) != len(evidence):
+        return False
+    for claim in claims:
+        if not isinstance(claim, dict) or not all(
+            _nonempty_string(claim.get(field))
+            for field in ("claim_id", "text", "evidence_status")
+        ):
+            return False
+        supports = claim.get("supports")
+        if not isinstance(supports, list) or not supports:
+            return False
+        if any(
+            not isinstance(support, dict)
+            or not _nonempty_string(support.get("evidence_id"))
+            or not _nonempty_string(support.get("quote"))
+            or support["evidence_id"] not in evidence_ids
+            for support in supports
+        ):
+            return False
+    return True
 
 
 def _git_commit() -> str | None:
@@ -246,13 +347,18 @@ def _score(
 
     if case.bucket in {"mixed_live_and_guidance", "regression_mixed_halves"}:
         # A live-only answer is not a successful mixed answer. Both halves must be
-        # visible in typed fields; prose cannot stand in for claims/evidence.
+        # observable and linked in typed fields; prose or placeholders cannot stand
+        # in for official records or reviewed evidence.
         if mode != "mixed" and not empty_live_results_are_valid:
             issues.append("mixed_mode_required")
         if not _nonempty_list(response, "live_results") and not empty_live_results_are_valid:
             issues.append("mixed_missing_live_half")
+        elif not empty_live_results_are_valid and not _valid_mixed_live_half(response):
+            issues.append("mixed_invalid_live_half")
         if not _nonempty_list(response, "claims") or not _nonempty_list(response, "evidence"):
             issues.append("mixed_missing_static_half")
+        elif not _valid_mixed_static_half(response):
+            issues.append("mixed_invalid_static_half")
     if (
         case.bucket == "named_place_evacuation"
         and "evacuation" not in result_kinds

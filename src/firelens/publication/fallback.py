@@ -19,7 +19,7 @@ from firelens.contracts import (
     ResponseStatus,
     TemporalClass,
 )
-from firelens.proof_presentation import ProofCard
+from firelens.proof_presentation import ProofCard, make_proof_card
 from firelens.publication_contracts import (
     QUOTE_RENDERER_ID,
     PublicationAuthority,
@@ -71,7 +71,7 @@ def quote_only_claim(
         ),
         publication=authority,
     )
-    card = ProofCard(
+    card = make_proof_card(
         claim_id=claim.claim_id,
         claim_text=claim.text,
         support_state="official_quote_only",

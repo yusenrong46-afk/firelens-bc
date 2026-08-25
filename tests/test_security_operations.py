@@ -20,6 +20,26 @@ from firelens.operational_logging import LOGGER_NAME
 from firelens.privacy_policy import APPROVED_PRODUCTION_PRIVACY
 from firelens.providers.openrouter import OpenRouterProvider
 from firelens.runtime import Runtime
+from firelens.runtime_artifact_common import CANDIDATE_SCHEMA, sha256_file
+
+
+def _candidate_artifact_hashes(config: FireLensConfig) -> dict[str, str]:
+    placeholders = {
+        config.corpus_path: b"{}\n",
+        config.corpus_manifest_path: b"{}\n",
+        config.vector_matrix_path: b"synthetic-vector-matrix",
+        config.vector_manifest_path: b"{}\n",
+    }
+    for artifact, content in placeholders.items():
+        if not artifact.is_file():
+            artifact.parent.mkdir(parents=True, exist_ok=True)
+            artifact.write_bytes(content)
+    return {
+        "corpus_sha256": sha256_file(config.corpus_path),
+        "corpus_manifest_sha256": sha256_file(config.corpus_manifest_path),
+        "vector_matrix_sha256": sha256_file(config.vector_matrix_path),
+        "vector_manifest_sha256": sha256_file(config.vector_manifest_path),
+    }
 
 
 class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
@@ -50,11 +70,12 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
             candidate_path.write_text(
                 json.dumps(
                     {
-                        "schema_version": "firelens.runtime_candidate.v3",
+                        "schema_version": CANDIDATE_SCHEMA,
                         "candidate_id": "firelens-v1-5-2:" + "b" * 40,
                         "release_version": config.release_version,
                         "build_commit": "b" * 40,
                         "corpus_version": "test-corpus.v1",
+                        **_candidate_artifact_hashes(config),
                         "embedding_model": config.embedding_model,
                         "retrieval_text_strategy": config.retrieval_text_strategy.value,
                         "rerank_model": config.rerank_model,
@@ -242,11 +263,12 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
             candidate_path.write_text(
                 json.dumps(
                     {
-                        "schema_version": "firelens.runtime_candidate.v3",
+                        "schema_version": CANDIDATE_SCHEMA,
                         "candidate_id": "test-candidate",
                         "release_version": config.release_version,
                         "build_commit": "b" * 40,
                         "corpus_version": "test-corpus.v1",
+                        **_candidate_artifact_hashes(config),
                         "embedding_model": config.embedding_model,
                         "retrieval_text_strategy": config.retrieval_text_strategy.value,
                         "rerank_model": config.rerank_model,
@@ -393,3 +415,41 @@ class ProductionImportBoundaryTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(json.loads(completed.stdout), [])
+
+    def test_vercel_entrypoint_reexports_canonical_api_app(self) -> None:
+        code = (
+            "import json;"
+            "from firelens import api as api_mod;"
+            "import app as vercel_mod;"
+            "paths=sorted({getattr(route,'path',None) for route in vercel_mod.app.routes"
+            " if getattr(route,'path',None)});"
+            "print(json.dumps({"
+            "'same_app': vercel_mod.app is api_mod.app,"
+            "'same_live_service': vercel_mod.app.state.live_service is "
+            "api_mod.app.state.live_service,"
+            "'same_lifespan': vercel_mod.app.router.lifespan_context is "
+            "api_mod.app.router.lifespan_context,"
+            "'paths': paths"
+            "}))"
+        )
+        completed = subprocess.run(
+            [sys.executable, "-c", code],
+            cwd=Path(__file__).resolve().parents[1],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        payload = json.loads(completed.stdout)
+        self.assertTrue(payload["same_app"])
+        self.assertTrue(payload["same_live_service"])
+        self.assertTrue(payload["same_lifespan"])
+        self.assertTrue(
+            {
+                "/api/v1/ask",
+                "/api/v1/live/map",
+                "/api/v1/live/nearby",
+                "/api/v1/feedback",
+                "/api/v1/health/live",
+                "/api/v1/health/ready",
+            }.issubset(payload["paths"])
+        )

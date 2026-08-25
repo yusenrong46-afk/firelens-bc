@@ -219,7 +219,6 @@ _OPPOSITE = {
     Comparator.MORE_THAN: {Comparator.LESS_THAN, Comparator.AT_MOST, Comparator.WITHIN},
     Comparator.LESS_THAN: {Comparator.MORE_THAN, Comparator.AT_LEAST},
     Comparator.WITHIN: {Comparator.BEYOND, Comparator.OUTSIDE, Comparator.MORE_THAN},
-    Comparator.BEYOND: {Comparator.WITHIN, Comparator.AT_MOST},
     Comparator.BETWEEN: {Comparator.OUTSIDE, Comparator.BEYOND},
     Comparator.BEYOND: {Comparator.WITHIN, Comparator.AT_MOST, Comparator.BETWEEN},
     Comparator.OUTSIDE: {Comparator.BETWEEN, Comparator.WITHIN},

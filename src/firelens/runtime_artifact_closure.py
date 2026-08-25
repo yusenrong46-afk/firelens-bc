@@ -60,7 +60,7 @@ def _python_closure(files: dict[str, Path], contract: dict[str, Any]) -> set[str
                 if dependency not in closure:
                     closure.add(dependency)
                     queue.append(dependency)
-    _validate_entry_tree(entry_tree, closure, source_root, package)
+    _validate_entry_tree(entry_tree, closure, files, source_root, package)
     return closure
 
 
@@ -89,13 +89,17 @@ def _python_import_modules(
     return modules
 
 
-def _validate_entry_tree(
-    entry_tree: ast.AST | None, closure: set[str], source_root: str, package: str
-) -> None:
-    if entry_tree is None:
-        raise RuntimeArtifactError("runtime Python entrypoint was not inspected")
+def _is_create_app_call(value: ast.expr | None) -> bool:
+    return (
+        isinstance(value, ast.Call)
+        and isinstance(value.func, ast.Name)
+        and value.func.id == "create_app"
+    )
+
+
+def _app_assignment_values(tree: ast.AST) -> list[ast.expr | None]:
     app_values: list[ast.expr | None] = []
-    for node in ast.walk(entry_tree):
+    for node in ast.walk(tree):
         if isinstance(node, ast.Assign) and any(
             isinstance(target, ast.Name) and target.id == "app" for target in node.targets
         ):
@@ -106,14 +110,104 @@ def _validate_entry_tree(
             and node.target.id == "app"
         ):
             app_values.append(node.value)
-    if not app_values:
-        raise RuntimeArtifactError("runtime Python entrypoint does not export app")
-    if not any(
-        isinstance(value, ast.Call)
-        and isinstance(value.func, ast.Name)
-        and value.func.id == "create_app"
-        for value in app_values
+    return app_values
+
+
+def _local_alias_name(alias: ast.alias) -> str | None:
+    if alias.name == "*":
+        return None
+    return alias.asname if alias.asname is not None else alias.name
+
+
+def _top_level_app_imports(tree: ast.AST) -> tuple[list[ast.stmt], bool]:
+    bindings: list[ast.stmt] = []
+    star_import = False
+    for node in getattr(tree, "body", ()):
+        if isinstance(node, ast.Import):
+            if any(
+                (alias.asname if alias.asname is not None else alias.name) == "app"
+                for alias in node.names
+            ):
+                bindings.append(node)
+        elif isinstance(node, ast.ImportFrom):
+            if any(alias.name == "*" for alias in node.names):
+                star_import = True
+            if any(_local_alias_name(alias) == "app" for alias in node.names):
+                bindings.append(node)
+    return bindings, star_import
+
+
+def _is_canonical_api_app_reexport(node: ast.stmt, package: str) -> bool:
+    return (
+        isinstance(node, ast.ImportFrom)
+        and node.level == 0
+        and node.module == f"{package}.api"
+        and len(node.names) == 1
+        and node.names[0].name == "app"
+        and node.names[0].asname in (None, "app")
+    )
+
+
+def _module_implementation_path(module: str, files: dict[str, Path], source_root: str) -> str:
+    base = PurePosixPath(source_root, *module.split("."))
+    resolved = [
+        candidate
+        for candidate in (f"{base.as_posix()}.py", (base / "__init__.py").as_posix())
+        if candidate in files
+    ]
+    if not resolved:
+        raise RuntimeArtifactError(
+            f"runtime Python import is missing from the artifact: {module}"
+        )
+    if len(resolved) != 1:
+        raise RuntimeArtifactError(f"runtime Python module path is not unique: {module}")
+    return resolved[0]
+
+
+def _require_create_app_construction(
+    files: dict[str, Path], module: str, source_root: str
+) -> None:
+    logical = _module_implementation_path(module, files, source_root)
+    try:
+        tree = ast.parse(files[logical].read_text(encoding="utf-8"), filename=logical)
+    except (OSError, UnicodeDecodeError, SyntaxError) as exc:
+        raise RuntimeArtifactError(f"runtime Python file cannot be parsed: {logical}") from exc
+    if not any(_is_create_app_call(value) for value in _app_assignment_values(tree)):
+        raise RuntimeArtifactError(
+            "runtime Python entrypoint app is not constructed by create_app"
+        )
+
+
+def _validate_entry_tree(
+    entry_tree: ast.AST | None,
+    closure: set[str],
+    files: dict[str, Path],
+    source_root: str,
+    package: str,
+) -> None:
+    if entry_tree is None:
+        raise RuntimeArtifactError("runtime Python entrypoint was not inspected")
+    app_values = _app_assignment_values(entry_tree)
+    constructed_locally = any(_is_create_app_call(value) for value in app_values)
+    app_imports, star_import = _top_level_app_imports(entry_tree)
+    if constructed_locally:
+        if app_imports:
+            raise RuntimeArtifactError("runtime Python entrypoint app binding is ambiguous")
+    elif (
+        len(app_imports) == 1
+        and not star_import
+        and _is_canonical_api_app_reexport(app_imports[0], package)
     ):
+        _require_create_app_construction(files, f"{package}.api", source_root)
+    elif star_import or len(app_imports) > 1:
+        raise RuntimeArtifactError("runtime Python entrypoint app binding is ambiguous")
+    elif app_imports:
+        raise RuntimeArtifactError(
+            "runtime Python entrypoint app is not a canonical firelens.api re-export"
+        )
+    elif not app_values:
+        raise RuntimeArtifactError("runtime Python entrypoint does not export app")
+    else:
         raise RuntimeArtifactError(
             "runtime Python entrypoint app is not constructed by create_app"
         )

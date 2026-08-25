@@ -885,6 +885,7 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             )
             capability_questions = (
                 "How do your citations work?",
+                "What can I ask FireLens?",
                 "What can FireLens do for me?",
                 "How do I know this FireLens answer is trustworthy, and where did it come from?",
             )

@@ -147,6 +147,7 @@ def _parser() -> argparse.ArgumentParser:
     holdout.add_argument("--private-payload", type=_absolute, required=True)
     holdout.add_argument("--manifest", type=_absolute, required=True)
     holdout.add_argument("--candidate-report", type=_absolute, required=True)
+    holdout.add_argument("--development-registry", type=_absolute, required=True)
 
     frontend = commands.add_parser("prepare-frontend-manual")
     frontend.add_argument("--workspace", type=_new_workspace, required=True)
@@ -241,6 +242,7 @@ def _recipe(
             private_holdout_payload=str(args.private_payload),
             holdout_manifest=str(args.manifest),
             holdout_candidate_report=str(args.candidate_report),
+            holdout_development_registry=str(args.development_registry),
         )
     raise ValueError("command does not prepare a review")
 

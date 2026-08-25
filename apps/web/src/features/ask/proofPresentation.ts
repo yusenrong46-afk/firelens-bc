@@ -27,6 +27,109 @@ export type StatusBannerView = {
   official_escalation_url?: string | null;
 };
 
+export type TruthClass = "source_fact" | "deterministic_derivation" | "model_summary" | "unknown";
+export type PublicationState = "verified" | "review" | "rejected";
+
+export type DistanceDerivationView = {
+  truth_class: TruthClass;
+  publication_state: PublicationState;
+  input_source_ids: string[];
+  algorithm: string;
+  crs: string;
+  coordinate_order: string;
+  units: string;
+  calculated_at: string;
+  validation_status: "valid" | "invalid";
+  input_freshness?: string;
+  distance_km: number;
+  distance_basis: "incident_point" | "perimeter_boundary";
+};
+
+export const CANONICAL_DISTANCE_DERIVATION = {
+  algorithm: "pyproj.Geod.inv WGS84 after shapely nearest_points",
+  crs: "EPSG:4326",
+  coordinate_order: "longitude_latitude",
+  units: "km",
+} as const;
+
+const ALLOWED_FRESHNESS = new Set(["fresh", "stale"]);
+const DERIVATION_CLOCK_SKEW_MS = 5 * 60 * 1000;
+const KM_GEODESIC = /(\d+(?:\.\d+)?)\s*km\s+geodesic/gi;
+const BASIS_LABELS: Record<DistanceDerivationView["distance_basis"], string> = {
+  incident_point: "incident point",
+  perimeter_boundary: "perimeter boundary",
+};
+
+export function freshnessToken(freshness?: string | null): string | null {
+  if (freshness == null) return null;
+  const token = String(freshness).trim().toLowerCase();
+  return ALLOWED_FRESHNESS.has(token) ? token : null;
+}
+
+export function distanceWordingMatches(
+  claimText: string,
+  derivation: DistanceDerivationView | null | undefined,
+): boolean {
+  if (!/km geodesic/i.test(claimText)) return true;
+  if (!derivation) return false;
+  const quantities = [...claimText.matchAll(KM_GEODESIC)].map((match) => Number(match[1]));
+  if (quantities.length === 0) return false;
+  if (!quantities.some((value) => Math.abs(value - derivation.distance_km) <= 0.05)) {
+    return false;
+  }
+  const text = claimText.toLowerCase();
+  const mentionsBasis = text.includes("incident point") || text.includes("perimeter boundary");
+  if (!mentionsBasis) return true;
+  return text.includes(BASIS_LABELS[derivation.distance_basis]);
+}
+
+export function derivationCitesRecordAndPlace(ids: string[] | undefined): boolean {
+  if (!ids?.length) return false;
+  return ids.some((id) => id.startsWith("place:"))
+    && ids.some((id) => !id.startsWith("place:"));
+}
+
+export function derivationPublicationState(options: {
+  validationStatus: "valid" | "invalid";
+  freshness?: string | null;
+  inputSourceIds?: string[];
+}): PublicationState {
+  if (options.validationStatus !== "valid") return "rejected";
+  if (freshnessToken(options.freshness) !== "fresh") return "review";
+  if (options.inputSourceIds && !derivationCitesRecordAndPlace(options.inputSourceIds)) {
+    return "review";
+  }
+  return "verified";
+}
+
+export function bindDistanceDerivation(
+  derivation: DistanceDerivationView | null | undefined,
+  input: { freshness?: string | null } = {},
+): DistanceDerivationView | null {
+  if (!derivation) return null;
+  const canonical = derivation.crs === CANONICAL_DISTANCE_DERIVATION.crs
+    && derivation.units === CANONICAL_DISTANCE_DERIVATION.units
+    && derivation.coordinate_order === CANONICAL_DISTANCE_DERIVATION.coordinate_order
+    && derivation.algorithm === CANONICAL_DISTANCE_DERIVATION.algorithm
+    && derivation.input_source_ids.length > 0;
+  const calculated = Date.parse(derivation.calculated_at);
+  const future = Number.isFinite(calculated) && calculated > Date.now() + DERIVATION_CLOCK_SKEW_MS;
+  const valid = derivation.validation_status === "valid" && canonical && !future;
+  const freshness = "freshness" in input ? input.freshness : (derivation.input_freshness ?? null);
+  const validation_status = valid ? "valid" as const : "invalid" as const;
+  return {
+    ...derivation,
+    truth_class: "deterministic_derivation",
+    input_freshness: freshnessToken(freshness) ?? "unknown",
+    validation_status,
+    publication_state: derivationPublicationState({
+      validationStatus: validation_status,
+      freshness,
+      inputSourceIds: derivation.input_source_ids,
+    }),
+  };
+}
+
 export type ProofCardView = {
   claim_id: string;
   claim_text: string;
@@ -41,10 +144,56 @@ export type ProofCardView = {
   freshness: string;
   conflicts_or_unknowns?: string[];
   official_url?: string | null;
+  truth_class?: TruthClass;
+  publication_state?: PublicationState;
+  derivation?: DistanceDerivationView | null;
 };
 
-function unknownProofCard(card: ProofCardView): ProofCardView {
+export function bindProofProfile(
+  supportState: SupportState,
+  options: { rejected?: boolean; freshness?: string | null } = {},
+): { truth_class: TruthClass; publication_state: PublicationState } {
+  const token = freshnessToken(options.freshness);
+  if (options.rejected || supportState === "unknown") {
+    return { truth_class: "unknown", publication_state: "rejected" };
+  }
+  if (supportState === "structured_reviewed" || supportState === "supported") {
+    return { truth_class: "source_fact", publication_state: "verified" };
+  }
+  if (supportState === "official_live_typed" || supportState === "live_record") {
+    if (token === "fresh") {
+      return { truth_class: "source_fact", publication_state: "verified" };
+    }
+    return { truth_class: "source_fact", publication_state: "review" };
+  }
+  if (supportState === "official_quote_only") {
+    return { truth_class: "source_fact", publication_state: "review" };
+  }
+  if (supportState === "source_linked_explanation" || supportState === "background") {
+    return { truth_class: "model_summary", publication_state: "review" };
+  }
+  if (supportState === "conflict") {
+    return { truth_class: "source_fact", publication_state: "review" };
+  }
+  return { truth_class: "unknown", publication_state: "rejected" };
+}
+
+function withProfile(card: ProofCardView, rejected = false): ProofCardView {
+  const derivation = rejected
+    ? null
+    : bindDistanceDerivation(card.derivation, { freshness: card.freshness });
+  if (!rejected && !distanceWordingMatches(card.claim_text, derivation)) {
+    return unknownProofCard(card);
+  }
   return {
+    ...card,
+    ...bindProofProfile(card.support_state, { rejected, freshness: card.freshness }),
+    derivation,
+  };
+}
+
+function unknownProofCard(card: ProofCardView): ProofCardView {
+  return withProfile({
     ...card,
     support_state: "unknown",
     support_label: SUPPORT_LABELS.unknown,
@@ -56,7 +205,8 @@ function unknownProofCard(card: ProofCardView): ProofCardView {
     critical_fields_checked: "Critical-field validation not established",
     freshness: "Freshness not established",
     official_url: null,
-  };
+    derivation: null,
+  }, true);
 }
 
 const HEADLINES: Record<string, string> = {
@@ -295,12 +445,36 @@ export function getStatusBanner(response: AskResponse | undefined): StatusBanner
   };
 }
 
+function rebindLiveProofCard(
+  card: ProofCardView,
+  liveResults: NonNullable<AskResponse["live_results"]>,
+): ProofCardView {
+  if (card.support_state !== "live_record" && card.support_state !== "official_live_typed") {
+    return card;
+  }
+  const byId = liveResults.find((result) => result.result_id === card.claim_id);
+  const byDerivation = liveResults.find((result) =>
+    card.derivation?.input_source_ids.includes(result.result_id),
+  );
+  const live = byId ?? byDerivation;
+  if (!live) return card;
+  return {
+    ...card,
+    freshness: live.freshness,
+    official_url: live.source_url,
+    exact_passage: live.status ?? card.exact_passage ?? null,
+    authority: live.authority,
+    derivation: live.distance_derivation ?? card.derivation ?? null,
+  };
+}
+
 export function getProofCards(response: AskResponse | undefined): ProofCardView[] {
   if (!response) return [];
+  const liveResults = response.live_results ?? [];
   const projectValidation = (card: ProofCardView) =>
     response.validation?.accepted === false || card.support_state === "unknown"
       ? unknownProofCard(card)
-      : card;
+      : withProfile(rebindLiveProofCard(card, liveResults));
   if ((response.proof_cards?.length ?? 0) > 0) {
     const claims = response.claims ?? [];
     const claimsById = new Map(claims.map((claim) => [claim.claim_id, claim]));
@@ -375,5 +549,6 @@ export function getProofCards(response: AskResponse | undefined): ProofCardView[
     freshness: result.freshness,
     conflicts_or_unknowns: [],
     official_url: result.source_url,
+    derivation: result.distance_derivation ?? null,
   }));
 }

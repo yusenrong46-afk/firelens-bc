@@ -166,6 +166,9 @@ class ReviewQualificationManifest(_FrozenModel):
         names.append(self.independent_storage_reviewer_name.casefold())
         if len(names) != len(set(names)):
             raise ValueError("storage reviewer must be independent from all session actors")
+        actor_ids = [actor.actor_id.casefold() for actor in self.actors]
+        if self.independent_storage_reviewer_id.casefold() in actor_ids:
+            raise ValueError("storage reviewer must be independent from all session actors")
         return self
 
 
@@ -334,9 +337,12 @@ def build_review_qualification(
     for key, value in expected.items():
         if getattr(attestation, key) != value:
             raise ValueError(f"storage attestation disagrees with {key}")
-    if attestation.reviewer_name.casefold() in {
-        actor.actor.display_name.casefold() for actor in evidence.actors
-    }:
+    actor_names = {actor.actor.display_name.casefold() for actor in evidence.actors}
+    actor_ids = {actor.actor.actor_id.casefold() for actor in evidence.actors}
+    if (
+        attestation.reviewer_name.casefold() in actor_names
+        or attestation.reviewer_id.casefold() in actor_ids
+    ):
         raise ValueError("storage reviewer must be independent from session actors")
     if attestation.reviewed_at < analysis.generated_at:
         raise ValueError("storage attestation predates the verified review analysis")
@@ -513,8 +519,9 @@ def verify_review_qualification_package(
         raise ValueError("review qualification summary differs from validated evidence")
     if recomputed_summary.get("qualified") is not True:
         raise ValueError("review qualification evidence does not satisfy the release contract")
-    if attestation_path is not None:
-        _validate_manifest_attestation(manifest, attestation_path)
+    if attestation_path is None:
+        raise ValueError("private storage attestation is required to verify qualification")
+    _validate_manifest_attestation(manifest, attestation_path)
     return manifest
 
 

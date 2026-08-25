@@ -320,11 +320,21 @@ def _runtime_artifact_metric_values(
     benchmark_id = snapshot.get("benchmark_id")
     if not isinstance(commit, str) or not isinstance(benchmark_id, str):
         raise ValueError("runtime artifact evidence has incomplete candidate identity")
+    artifact_identity_paths = {
+        "corpus_sha256": "data/processed/firelens_static_corpus.chunks.jsonl",
+        "corpus_manifest_sha256": "data/processed/firelens_static_corpus.manifest.json",
+        "vector_matrix_sha256": "data/index/firelens_vectors.npy",
+        "vector_manifest_sha256": "data/index/firelens_vectors.manifest.json",
+    }
     expected_candidate = {
         "candidate_id": identity.get("candidate_id"),
         "release_version": identity.get("release_version"),
         "build_commit": commit,
         "corpus_version": identity.get("corpus_version"),
+        **{
+            field: _inventory_file_entry(inventories["vercel"], logical_path)["sha256"]
+            for field, logical_path in artifact_identity_paths.items()
+        },
         "embedding_model": (identity.get("configuration") or {}).get("embedding_model"),
         "retrieval_text_strategy": (identity.get("configuration") or {}).get(
             "retrieval_text_strategy"
@@ -419,6 +429,10 @@ def _runtime_artifact_metric_values(
             == expected_candidate["reranking_zdr"]
             and inventory["runtime_configuration"]["generation_zdr"]
             == expected_candidate["generation_zdr"]
+            and all(
+                inventory["runtime_configuration"][field] == expected_candidate[field]
+                for field in artifact_identity_paths
+            )
             for platform_name, inventory in inventories.items()
         )
     )
