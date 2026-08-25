@@ -13,14 +13,15 @@ export type LiveAnalysis = {
   highestFireCentre?: AnalysisCount | undefined;
 };
 
+const NOT_REPORTED = "Not reported";
+
 function countBy(
   results: LiveResult[],
   valueFor: (result: LiveResult) => string | null | undefined,
 ): AnalysisCount[] {
   const counts = new Map<string, number>();
   for (const result of results) {
-    const value = valueFor(result)?.trim();
-    if (!value) continue;
+    const value = valueFor(result)?.trim() || NOT_REPORTED;
     counts.set(value, (counts.get(value) ?? 0) + 1);
   }
   const total = results.length;
@@ -39,6 +40,6 @@ export function buildLiveAnalysis(results: LiveResult[]): LiveAnalysis {
     total: incidents.length,
     byFireCentre,
     byStatus,
-    highestFireCentre: byFireCentre[0],
+    highestFireCentre: byFireCentre.find((row) => row.label !== NOT_REPORTED),
   };
 }

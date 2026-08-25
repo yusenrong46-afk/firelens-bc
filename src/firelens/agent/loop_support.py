@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from firelens.agent.budget import tool_fingerprint
 from firelens.agent.chat import ChatToolCall
 from firelens.agent.failures import EXPECTED_TOOL_FAILURES, record_expected_failure
 from firelens.agent.packet import AgentPacket
@@ -36,10 +35,6 @@ async def safe_execute(
 ) -> str:
     if not execution_allowed(call.name):
         return json.dumps({"error": "tool_not_allowlisted"})
-    fingerprint = tool_fingerprint(call.name, call.arguments)
-    if fingerprint in packet.tool_fingerprints:
-        packet.policy.repeated_tool_dispatch += 1
-        return json.dumps({"error": "duplicate_tool_dispatch"})
     try:
         return await execute_tool(
             call.name,

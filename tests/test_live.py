@@ -9,12 +9,18 @@ from pydantic import ValidationError
 
 import firelens.live as live_module
 from firelens.contracts import (
+    AggregateFreshness,
+    CoarseResolvedLocation,
     Freshness,
     GeometryRelation,
     LiveLayerStatus,
+    LiveMapResponse,
     LivePagination,
+    LiveResult,
     LiveResultKind,
     LocationInput,
+    MapViewport,
+    NearMeResponse,
 )
 from firelens.live import (
     LiveDataErrorKind,
@@ -22,7 +28,11 @@ from firelens.live import (
     LiveDataUnavailable,
     geometry_relation,
 )
-from firelens.live_support import FIRE_CENTRE_CODE_NAMES, fire_centre_label
+from firelens.live_support import (
+    FIRE_CENTRE_CODE_NAMES,
+    fire_centre_label,
+    geojson_crs_is_wgs84,
+)
 
 
 def _metadata(kind: LiveResultKind, *, updated: int = 1_760_000_000_000) -> dict:
@@ -79,6 +89,69 @@ def _locality_feature(
 
 
 class LocationContractTests(unittest.TestCase):
+    def test_live_collections_require_exact_aggregate_freshness(self) -> None:
+        timestamp = datetime(2026, 8, 25, tzinfo=UTC)
+        stale = LiveResult(
+            result_id="incident:cached",
+            kind=LiveResultKind.INCIDENT,
+            source_url="https://example.test/live/cached",
+            source_updated_at=timestamp,
+            retrieved_at=timestamp,
+            freshness=Freshness.STALE,
+            status="Being Held",
+            name="Cached Fire",
+            geometry={"type": "Point", "coordinates": [-119.5, 49.9]},
+        )
+
+        with self.assertRaisesRegex(ValidationError, "aggregate freshness"):
+            LiveMapResponse(generated_at=timestamp, results=[stale])
+        with self.assertRaisesRegex(ValidationError, "aggregate freshness"):
+            LiveMapResponse(
+                generated_at=timestamp,
+                results=[stale],
+                aggregate_freshness=AggregateFreshness.FRESH,
+            )
+        mapped = LiveMapResponse(
+            generated_at=timestamp,
+            results=[stale],
+            aggregate_freshness=AggregateFreshness.STALE,
+        )
+        self.assertEqual(mapped.aggregate_freshness, AggregateFreshness.STALE)
+        self.assertIsNone(
+            LiveMapResponse(generated_at=timestamp, results=[]).aggregate_freshness
+        )
+
+        near_me = {
+            "generated_at": timestamp,
+            "requested_radius_km": 50,
+            "requested_layers": [LiveResultKind.INCIDENT],
+            "resolved_location": CoarseResolvedLocation(latitude=49.88, longitude=-119.49),
+            "viewport": MapViewport(west=-120, south=49, east=-119, north=50),
+            "results": [stale],
+            "pagination": LivePagination(
+                page=1,
+                page_size=100,
+                total_results=1,
+                total_pages=1,
+                returned_results=1,
+                has_previous=False,
+                has_next=False,
+            ),
+            "official_fallback_urls": ["https://example.test/map"],
+        }
+        with self.assertRaisesRegex(ValidationError, "aggregate freshness"):
+            NearMeResponse(**near_me)
+        with self.assertRaisesRegex(ValidationError, "aggregate freshness"):
+            NearMeResponse(
+                **near_me,
+                aggregate_freshness=AggregateFreshness.FRESH,
+            )
+        nearby = NearMeResponse(
+            **near_me,
+            aggregate_freshness=AggregateFreshness.STALE,
+        )
+        self.assertEqual(nearby.aggregate_freshness, AggregateFreshness.STALE)
+
     def test_coordinates_are_coarsened(self) -> None:
         location = LocationInput(latitude=49.2827, longitude=-123.1207)
         self.assertEqual((location.latitude, location.longitude), (49.28, -123.12))
@@ -435,6 +508,22 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.results, [])
         self.assertEqual(response.unavailable_layers, [LiveResultKind.INCIDENT])
         self.assertTrue(any("bounded retrieval" in item for item in response.limitations))
+
+    async def test_upstream_response_bytes_are_bounded_before_json_parsing(self) -> None:
+        def handler(_request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, content=b"{" + b" " * 700 + b"}")
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            service = LiveDataService(
+                client=client,
+                max_feature_geometry_bytes=64,
+                max_response_geometry_bytes=128,
+                max_upstream_response_bytes=512,
+            )
+            with self.assertRaises(LiveDataUnavailable) as raised:
+                await service._get("https://example.test/query", params={})
+
+        self.assertEqual(raised.exception.kind, LiveDataErrorKind.BOUNDED_LIMIT)
 
     async def test_geometry_byte_limits_fail_closed_and_are_visible(self) -> None:
         oversized_feature = {
@@ -1089,3 +1178,104 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             )
         self.assertEqual(response.results, [])
         self.assertEqual(response.unavailable_layers, [LiveResultKind.INCIDENT])
+
+
+def _incident_feature() -> dict[str, object]:
+    return {
+        "type": "Feature",
+        "properties": {"OBJECTID": 1, "FIRE_STATUS": "Out of Control"},
+        "geometry": {"type": "Point", "coordinates": [-119.5, 49.89]},
+    }
+
+
+class EmittedWgs84CrsTests(unittest.IsolatedAsyncioTestCase):
+    def test_omitted_crs_is_accepted_only_because_the_query_pins_outsr_4326(self) -> None:
+        """ArcGIS GeoJSON normally omits CRS after outSR=4326; that is the emitted path."""
+
+        self.assertTrue(geojson_crs_is_wgs84({"type": "FeatureCollection", "features": []}))
+        self.assertTrue(
+            geojson_crs_is_wgs84({"spatialReference": {"wkid": 4326}, "features": []})
+        )
+        self.assertTrue(
+            geojson_crs_is_wgs84(
+                {
+                    "crs": {
+                        "type": "name",
+                        "properties": {"name": "urn:ogc:def:crs:EPSG::4326"},
+                    },
+                    "features": [],
+                }
+            )
+        )
+        self.assertFalse(
+            geojson_crs_is_wgs84({"spatialReference": {"wkid": 3857}, "features": []})
+        )
+        self.assertFalse(
+            geojson_crs_is_wgs84({"spatialReference": {"latestWkid": 3857, "wkid": 4326}})
+        )
+        self.assertFalse(geojson_crs_is_wgs84({"spatialReference": {"wkid": "not-a-wkid"}}))
+        self.assertFalse(geojson_crs_is_wgs84({"spatialReference": "4326"}))
+        self.assertFalse(
+            geojson_crs_is_wgs84(
+                {
+                    "crs": {"type": "name", "properties": {"name": "EPSG:3857"}},
+                    "features": [],
+                }
+            )
+        )
+        self.assertFalse(geojson_crs_is_wgs84({"crs": {"type": "name", "properties": {}}}))
+
+    async def test_query_requests_outsr_4326_and_accepts_omitted_response_crs(self) -> None:
+        requested_out_sr: str | None = None
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal requested_out_sr
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            requested_out_sr = request.url.params.get("outSR")
+            return httpx.Response(
+                200,
+                json={"type": "FeatureCollection", "features": [_incident_feature()]},
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client).map_results(
+                layers=(LiveResultKind.INCIDENT,)
+            )
+        self.assertEqual(requested_out_sr, "4326")
+        self.assertEqual(len(response.results), 1)
+        self.assertEqual(response.unavailable_layers, [])
+
+    async def test_declared_projected_or_unknown_response_crs_quarantines_the_layer(
+        self,
+    ) -> None:
+        payloads = (
+            {"type": "FeatureCollection", "spatialReference": {"wkid": 3857}, "features": []},
+            {
+                "type": "FeatureCollection",
+                "crs": {"type": "name", "properties": {"name": "EPSG:3857"}},
+                "features": [_incident_feature()],
+            },
+            {
+                "type": "FeatureCollection",
+                "spatialReference": {"wkid": "EPSG:4326"},
+                "features": [],
+            },
+        )
+        for payload in payloads:
+            with self.subTest(payload=payload.get("spatialReference") or payload.get("crs")):
+
+                def handler(
+                    request: httpx.Request,
+                    body: dict[str, object] = payload,
+                ) -> httpx.Response:
+                    if not request.url.path.endswith("/query"):
+                        return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+                    return httpx.Response(200, json=body)
+
+                async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                    response = await LiveDataService(client=client).map_results(
+                        layers=(LiveResultKind.INCIDENT,)
+                    )
+                self.assertEqual(response.results, [])
+                self.assertEqual(response.unavailable_layers, [LiveResultKind.INCIDENT])

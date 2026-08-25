@@ -284,6 +284,15 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   color: #14538a;
   font-weight: 600;
 }
+.live-map__legend {
+  display: grid;
+  gap: 4px;
+  max-width: 900px;
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1.45;
+}
 .map-surface-status { color: var(--ink-soft); font-size: 16px; }
 .map-answer-summary > h1, .map-answer-summary > h2 { max-width: 900px; }
 .map-answer-summary > a {
@@ -955,6 +964,39 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 .abstention-card strong { font: 600 17px/1.25 "Newsreader", Georgia, serif; }
 .abstention-card p { margin: 6px 0 0; font-size: 16px; line-height: 1.5; }
+
+.service-failure {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 10px;
+  margin-top: 10px;
+  color: var(--ink);
+}
+.service-failure strong { font: 600 17px/1.25 "Newsreader", Georgia, serif; }
+.assistant-message .service-failure p { margin: 6px 0 0; font-size: 16px; line-height: 1.5; }
+.service-failure__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.service-failure .retry-button { margin-top: 0; }
+.service-failure__actions a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  color: var(--forest);
+  background: #fff;
+  border: 1px solid rgba(28, 70, 54, 0.3);
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 600;
+}
+.service-failure__actions a:hover { color: #fff; background: var(--forest); }
 
 /* ---------- Evidence: context lens, sources, claims ---------- */
 
@@ -1684,7 +1726,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   font-size: 14px;
 }
 .status-banner__metadata span { font-size: 16px; white-space: nowrap; }
-.status-banner__retrieved { display: none; }
+.status-banner__retrieved { white-space: normal; }
 .status-banner > a { grid-column: 1 / -1; width: max-content; }
 
 .answer-context-actions { margin-top: 18px; }

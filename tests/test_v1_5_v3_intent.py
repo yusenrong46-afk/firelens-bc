@@ -31,6 +31,7 @@ from firelens.contracts import (
 class V3DeterministicIntentTests(unittest.TestCase):
     def test_natural_capability_and_trust_questions_route_without_live_tools(self) -> None:
         for question in (
+            "What can I ask FireLens?",
             "What can FireLens do for me?",
             "What does FireLens cover?",
             "How do I know this FireLens answer is trustworthy, and where did it come from?",

@@ -1,7 +1,46 @@
 from __future__ import annotations
 
-# ruff: noqa: F403, F405
 from upgrade_benchmark_support import *
+
+# ruff: noqa: F403, F405
+from firelens.evaluation.capture import _cache_verified_artifact
+
+
+@pytest.mark.parametrize(
+    ("artifact_name", "digest_mismatch_context"),
+    [
+        (
+            "preview raw response evidence",
+            "preview raw response evidence SHA-256 does not match preview report "
+            "raw_response_artifact_sha256",
+        ),
+        (
+            "semantic review storage attestation",
+            "semantic review storage attestation SHA-256 does not match qualification "
+            "manifest storage_attestation_sha256",
+        ),
+        (
+            "retrieval review storage attestation",
+            "retrieval review storage attestation SHA-256 does not match qualification "
+            "manifest storage_attestation_sha256",
+        ),
+    ],
+)
+def test_capture_rejects_artifact_swapped_after_verification(
+    tmp_path: Path, artifact_name: str, digest_mismatch_context: str
+) -> None:
+    artifact = tmp_path / "verified-artifact.json"
+    artifact.write_text('{"verified":true}\n', encoding="utf-8")
+    verified_digest = upgrade_benchmark.file_sha256(artifact)
+    artifact.write_text('{"swapped":true}\n', encoding="utf-8")
+
+    with pytest.raises(ValueError, match=digest_mismatch_context):
+        _cache_verified_artifact(
+            artifact,
+            expected_sha256=verified_digest,
+            artifact_name=artifact_name,
+            digest_mismatch_context=digest_mismatch_context,
+        )
 
 
 def test_prerequisites_do_not_require_before_measurement_but_gate_after() -> None:
@@ -439,6 +478,7 @@ def test_after_capture_rejects_invalid_seal_ancestry_before_commands(
         "semantic_holdout_summary",
         "frontend_manual_review_bundle",
         "preview_report",
+        "preview_raw_evidence",
         "deployment_report",
         "rate_limit_evidence",
         "rollback_evidence",
@@ -466,6 +506,7 @@ def test_before_capture_rejects_required_after_only_evidence(
         "semantic_holdout_summary": None,
         "frontend_manual_review_bundle": None,
         "preview_report": None,
+        "preview_raw_evidence": None,
         "deployment_report": None,
         "rate_limit_evidence": None,
         "rollback_evidence": None,
@@ -531,6 +572,51 @@ def test_after_capture_requires_frontend_manual_review_before_commands(
         capture(args)
 
 
+def test_after_capture_requires_private_raw_preview_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    frozen = load_spec(SPEC_PATH).model_copy(update={"frozen_before_upgrade": True})
+    monkeypatch.setattr(upgrade_benchmark, "load_spec", lambda path: frozen)
+    monkeypatch.setattr(upgrade_benchmark, "_tracked_dirty", lambda: False)
+    monkeypatch.setattr(upgrade_benchmark, "_relevant_untracked_paths", lambda: [])
+    monkeypatch.setattr(
+        upgrade_benchmark, "_verify_tracked_before_snapshot_seal", lambda **kwargs: {}
+    )
+    monkeypatch.setattr(upgrade_benchmark, "_current_git_commit", lambda **kwargs: "a" * 40)
+    monkeypatch.setattr(
+        upgrade_benchmark,
+        "_resolve_before_snapshot_ancestry",
+        lambda **kwargs: {"seal_introducing_commit": "b" * 40},
+    )
+    args = SimpleNamespace(
+        spec=SPEC_PATH,
+        label="after",
+        before_snapshot=Path("before.json"),
+        retrieval_qualification=None,
+        semantic_holdout_report=None,
+        semantic_holdout_review_bundle=None,
+        semantic_holdout_summary=None,
+        frontend_manual_review_bundle=None,
+        preview_report=Path("preview.json"),
+        preview_raw_evidence=None,
+        deployment_report=None,
+        rate_limit_evidence=None,
+        rollback_evidence=None,
+        semantic_report=None,
+        semantic_review_sidecar=None,
+        semantic_review_qualification=None,
+        semantic_review_summary=None,
+        semantic_review_attestation=None,
+        retrieval_review_sidecar=None,
+        retrieval_review_qualification=None,
+        retrieval_review_summary=None,
+        retrieval_review_attestation=None,
+    )
+
+    with pytest.raises(ValueError, match="private raw response evidence"):
+        capture(args)
+
+
 @pytest.mark.parametrize(
     ("review_kind", "message"),
     [
@@ -578,6 +664,52 @@ def test_capture_refuses_legacy_human_review_without_blind_qualification_manifes
     )
 
     with pytest.raises(ValueError, match=message):
+        capture(args)
+
+
+@pytest.mark.parametrize("review_kind", ["semantic", "retrieval"])
+def test_capture_refuses_human_review_without_private_storage_attestation(
+    review_kind: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    frozen = load_spec(SPEC_PATH).model_copy(update={"frozen_before_upgrade": True})
+    monkeypatch.setattr(upgrade_benchmark, "load_spec", lambda path: frozen)
+    monkeypatch.setattr(upgrade_benchmark, "_tracked_dirty", lambda: False)
+    monkeypatch.setattr(upgrade_benchmark, "_relevant_untracked_paths", lambda: [])
+    semantic = review_kind == "semantic"
+    retrieval = review_kind == "retrieval"
+    args = SimpleNamespace(
+        spec=SPEC_PATH,
+        label="before",
+        before_snapshot=None,
+        retrieval_qualification=None,
+        semantic_holdout_report=None,
+        semantic_holdout_review_bundle=None,
+        semantic_holdout_summary=None,
+        frontend_manual_review_bundle=None,
+        preview_report=None,
+        preview_raw_evidence=None,
+        deployment_report=None,
+        rate_limit_evidence=None,
+        rollback_evidence=None,
+        vercel_artifact_root=None,
+        vercel_artifact_id=None,
+        vercel_platform_root=None,
+        docker_artifact_root=None,
+        docker_artifact_id=None,
+        docker_platform_root=None,
+        semantic_report=Path("report.json") if semantic else None,
+        semantic_review_sidecar=Path("review.yaml") if semantic else None,
+        semantic_review_summary=Path("summary.json") if semantic else None,
+        semantic_review_qualification=Path("qualification.json") if semantic else None,
+        semantic_review_attestation=None,
+        retrieval_review_sidecar=Path("review.yaml") if retrieval else None,
+        retrieval_review_summary=Path("summary.json") if retrieval else None,
+        retrieval_review_qualification=(Path("qualification.json") if retrieval else None),
+        retrieval_review_attestation=None,
+    )
+
+    with pytest.raises(ValueError, match="private storage attestation"):
         capture(args)
 
 

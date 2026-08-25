@@ -10,10 +10,12 @@ from firelens.answering.grounded import GroundedAnswerEngine
 from firelens.answering.live_handoffs import merge_related_links
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
+    DETERMINISTIC_CONFLICT_TEXT,
     MAX_RELATED_LINKS,
     PUBLIC_ANSWER_MAX_CHARS,
     RELATED_LINK_DESCRIPTION_MAX_CHARS,
     RELATED_LINK_TITLE_MAX_CHARS,
+    AggregateFreshness,
     AnswerSection,
     AnswerSectionKind,
     AskResponse,
@@ -36,6 +38,7 @@ from firelens.contracts import (
     ResponseStatus,
     TemporalClass,
     ValidationReport,
+    aggregate_live_freshness,
     render_claim_texts,
 )
 from firelens.live_answering import LiveAnswerCoordinator
@@ -101,6 +104,7 @@ class FixedLiveService:
         self.response = LiveMapResponse(
             generated_at=datetime(2026, 8, 14, tzinfo=UTC),
             results=results,
+            aggregate_freshness=aggregate_live_freshness(results),
         )
 
     async def map_results(self, *args: Any, **kwargs: Any) -> LiveMapResponse:
@@ -187,18 +191,166 @@ class PublicContractBoundTests(unittest.TestCase):
                 evidence=[_public_evidence()],
             )
 
-    def test_conflict_summary_is_not_forced_to_equal_claim_text(self) -> None:
+    def test_conflict_prose_requires_the_deterministic_renderer(self) -> None:
+        claim = _grounded_claim(1, "One source contains a conflicting requirement.")
+        with self.assertRaisesRegex(ValidationError, "deterministic conflict"):
+            AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id="1" * 32,
+                response_mode=ResponseMode.CONFLICT,
+                answer="Completely unrelated conflict summary.",
+                answer_sections=[
+                    AnswerSection(
+                        kind=AnswerSectionKind.CONFLICTING_GUIDANCE,
+                        heading="Conflicting reviewed sources",
+                        text="Arbitrary prose not present in the validated conflict renderer.",
+                    )
+                ],
+                claims=[claim],
+                evidence=[_public_evidence()],
+                reason_code=ReasonCode.CONFLICTING_EVIDENCE,
+                validation=_accepted_validation(),
+            )
+
+        canonical = DETERMINISTIC_CONFLICT_TEXT
         response = AskResponse(
             status=ResponseStatus.ANSWER,
-            trace_id="1" * 32,
+            trace_id="2" * 32,
             response_mode=ResponseMode.CONFLICT,
-            answer="The approved sources conflict; check the issuing authority.",
-            claims=[_grounded_claim(1, "One source contains a conflicting requirement.")],
+            answer=canonical,
+            claims=[claim],
             evidence=[_public_evidence()],
+            reason_code=ReasonCode.CONFLICTING_EVIDENCE,
             validation=_accepted_validation(),
         )
+        self.assertEqual(response.answer, canonical)
 
-        self.assertNotEqual(response.answer, render_claim_texts(response.claims))
+        with self.assertRaisesRegex(ValidationError, "deterministic conflict"):
+            AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id="5" * 32,
+                response_mode=ResponseMode.CONFLICT,
+                answer="Unsupported direction. " + canonical,
+                answer_sections=[
+                    AnswerSection(
+                        kind=AnswerSectionKind.CONFLICTING_GUIDANCE,
+                        heading="Conflicting reviewed sources",
+                        text=canonical,
+                    )
+                ],
+                claims=[claim],
+                evidence=[_public_evidence()],
+                reason_code=ReasonCode.CONFLICTING_EVIDENCE,
+                validation=_accepted_validation(),
+            )
+
+    def test_mixed_conflict_rejects_arbitrary_answer_edges_and_section_text(self) -> None:
+        claim = _grounded_claim(1, "One source contains a conflicting requirement.")
+        live_result = _incident(1)
+        live_text = "Test Fire 1 is being held."
+        canonical_answer = (
+            live_text + "\n\nConflicting reviewed sources: " + DETERMINISTIC_CONFLICT_TEXT
+        )
+        sections = [
+            AnswerSection(
+                kind=AnswerSectionKind.CURRENT_RECORDS,
+                heading="Current official records",
+                text=live_text,
+            ),
+            AnswerSection(
+                kind=AnswerSectionKind.CONFLICTING_GUIDANCE,
+                heading="Conflicting reviewed sources",
+                text=DETERMINISTIC_CONFLICT_TEXT,
+            ),
+        ]
+        common = {
+            "status": ResponseStatus.ANSWER,
+            "trace_id": "a" * 32,
+            "response_mode": ResponseMode.MIXED,
+            "claims": [claim],
+            "evidence": [_public_evidence()],
+            "reason_code": ReasonCode.CONFLICTING_EVIDENCE,
+            "validation": _accepted_validation(),
+            "live_results": [live_result],
+            "aggregate_freshness": AggregateFreshness.FRESH,
+        }
+
+        accepted = AskResponse(answer=canonical_answer, answer_sections=sections, **common)
+        self.assertEqual(accepted.answer, canonical_answer)
+
+        for answer in (
+            "Unsupported direction. " + canonical_answer,
+            canonical_answer + " Unsupported direction.",
+        ):
+            with (
+                self.subTest(answer=answer),
+                self.assertRaisesRegex(ValidationError, "deterministic conflict"),
+            ):
+                AskResponse(answer=answer, answer_sections=sections, **common)
+
+        arbitrary_conflict = "Arbitrary prose not emitted by the conflict renderer."
+        with self.assertRaisesRegex(ValidationError, "deterministic conflict"):
+            AskResponse(
+                answer=(live_text + "\n\nConflicting reviewed sources: " + arbitrary_conflict),
+                answer_sections=[
+                    sections[0],
+                    AnswerSection(
+                        kind=AnswerSectionKind.CONFLICTING_GUIDANCE,
+                        heading="Conflicting reviewed sources",
+                        text=arbitrary_conflict,
+                    ),
+                ],
+                **common,
+            )
+
+    def test_live_history_labels_validated_record_freshness(self) -> None:
+        stale = _incident(1).model_copy(update={"freshness": Freshness.STALE})
+        live = AskResponse(
+            status=ResponseStatus.ANSWER,
+            trace_id="3" * 32,
+            response_mode=ResponseMode.LIVE,
+            answer="Cached Fire is listed.",
+            answer_sections=[
+                AnswerSection(
+                    kind=AnswerSectionKind.CURRENT_RECORDS,
+                    heading="Official records (cached; refresh failed)",
+                    text="Cached Fire is listed.",
+                )
+            ],
+            live_results=[stale],
+            aggregate_freshness=AggregateFreshness.STALE,
+        )
+        self.assertTrue(
+            (live.history_text or "").startswith("Authority: Official cached records")
+        )
+
+        claim = _grounded_claim(1, "Keep water in an emergency kit.")
+        mixed = AskResponse(
+            status=ResponseStatus.ANSWER,
+            trace_id="4" * 32,
+            response_mode=ResponseMode.MIXED,
+            answer="Cached Fire is listed. Keep water in an emergency kit.",
+            answer_sections=[
+                AnswerSection(
+                    kind=AnswerSectionKind.CURRENT_RECORDS,
+                    heading="Official records (cached; refresh failed)",
+                    text="Cached Fire is listed.",
+                ),
+                AnswerSection(
+                    kind=AnswerSectionKind.REVIEWED_GUIDANCE,
+                    heading="Reviewed guidance",
+                    text=claim.text,
+                ),
+            ],
+            claims=[claim],
+            evidence=[_public_evidence()],
+            validation=_accepted_validation(),
+            live_results=[stale],
+            aggregate_freshness=AggregateFreshness.STALE,
+        )
+        history = mixed.history_text or ""
+        self.assertIn("Official cached records", history)
+        self.assertNotIn("Official current records", history)
 
     def test_history_keeps_authority_and_deduplicated_limitations(self) -> None:
         claim = PublicClaim(

@@ -30,7 +30,9 @@ from firelens.contracts import (
     MapViewport,
     NearMeResponse,
     aggregate_live_freshness,
+    freshness_for_observation,
 )
+from firelens.live_contracts import stale_observation_limitations
 from firelens.live_support import (
     DEFAULT_LAYER_DEFINITIONS,
     OFFICIAL_FALLBACK_URLS,
@@ -60,6 +62,7 @@ from firelens.live_support import (
 from firelens.live_support import (
     authority as _authority,
 )
+from firelens.live_support import geojson_crs_is_wgs84 as _geojson_crs_is_wgs84
 from firelens.live_support import (
     geometry_relation as geometry_relation,
 )
@@ -92,6 +95,7 @@ class LiveDataService:
         max_records: int = 20_000,
         max_feature_geometry_bytes: int = 512_000,
         max_response_geometry_bytes: int = 8_000_000,
+        max_upstream_response_bytes: int = 16_000_000,
         max_cache_entries: int = 32,
         max_cached_features: int = 60_000,
         bbox_grid_degrees: float = 0.1,
@@ -104,6 +108,8 @@ class LiveDataService:
             raise ValueError("live feature geometry limit must be positive")
         if max_response_geometry_bytes < max_feature_geometry_bytes:
             raise ValueError("live response geometry limit must cover one bounded feature")
+        if max_upstream_response_bytes < max_response_geometry_bytes:
+            raise ValueError("live upstream response limit must cover bounded geometry")
         if max_cache_entries < 1:
             raise ValueError("live cache entry limit must be positive")
         if max_cached_features < max_records:
@@ -120,6 +126,7 @@ class LiveDataService:
         self.max_records = max_records
         self.max_feature_geometry_bytes = max_feature_geometry_bytes
         self.max_response_geometry_bytes = max_response_geometry_bytes
+        self.max_upstream_response_bytes = max_upstream_response_bytes
         self.max_cache_entries = max_cache_entries
         self.max_cached_features = max_cached_features
         self.bbox_grid_degrees = bbox_grid_degrees
@@ -136,7 +143,30 @@ class LiveDataService:
 
     async def _get(self, url: str, *, params: dict[str, Any]) -> httpx.Response:
         async with self._upstream_semaphore:
-            return await self.client.get(url, params=params)
+            async with self.client.stream("GET", url, params=params) as response:
+                declared_length = response.headers.get("content-length")
+                if declared_length is not None and declared_length.isdecimal():
+                    if int(declared_length) > self.max_upstream_response_bytes:
+                        raise LiveDataUnavailable(
+                            "official live source exceeded the upstream response limit",
+                            kind=LiveDataErrorKind.BOUNDED_LIMIT,
+                        )
+                chunks: list[bytes] = []
+                total = 0
+                async for chunk in response.aiter_bytes():
+                    total += len(chunk)
+                    if total > self.max_upstream_response_bytes:
+                        raise LiveDataUnavailable(
+                            "official live source exceeded the upstream response limit",
+                            kind=LiveDataErrorKind.BOUNDED_LIMIT,
+                        )
+                    chunks.append(chunk)
+                return httpx.Response(
+                    response.status_code,
+                    headers=response.headers,
+                    content=b"".join(chunks),
+                    request=response.request,
+                )
 
     async def resolve_location(self, location: LocationInput) -> tuple[float, float]:
         return await _resolve_bc_location(self._get, location)
@@ -233,6 +263,8 @@ class LiveDataService:
         payload = response.json()
         if not isinstance(payload, dict) or not isinstance(payload.get("features"), list):
             raise LiveDataUnavailable(f"{kind.value} source returned an invalid schema")
+        if not _geojson_crs_is_wgs84(payload):
+            raise LiveDataUnavailable(f"{kind.value} source declared an unsupported output CRS")
         features = payload["features"]
         if any(
             not isinstance(feature, dict)
@@ -416,6 +448,9 @@ class LiveDataService:
         record_updated = _timestamp(_property(properties, "DATE_MODIFIED"))
         updated = record_updated or source_updated_at
         size = _property(properties, "FIRE_SIZE_HECTARES", "CURRENT_SIZE", "SIZE_HA")
+        observed_freshness = freshness_for_observation(
+            freshness, source_updated_at=updated, retrieved_at=retrieved_at
+        )
         return LiveResult(
             result_id=f"{kind.value}:{object_id}",
             kind=kind,
@@ -423,7 +458,7 @@ class LiveDataService:
             source_url=HttpUrl(self._layer(kind).url),
             source_updated_at=updated,
             retrieved_at=retrieved_at,
-            freshness=freshness,
+            freshness=observed_freshness,
             status=str(
                 _property(
                     properties,
@@ -552,7 +587,11 @@ class LiveDataService:
                 available=True,
                 source_updated_at=entry.source_updated_at,
                 retrieved_at=entry.retrieved_at,
-                freshness=freshness,
+                freshness=freshness_for_observation(
+                    freshness,
+                    source_updated_at=entry.source_updated_at,
+                    retrieved_at=entry.retrieved_at,
+                ),
                 matching_result_count=len(results),
             ),
             None,
@@ -593,10 +632,7 @@ class LiveDataService:
                 "Some official layers were unavailable or exceeded bounded retrieval limits: "
                 + "; ".join(unavailable_reasons)
             )
-        if any(result.freshness == Freshness.STALE for result in results):
-            limitations.append(
-                "A refresh failed; cached records are stale and are not current conditions."
-            )
+        limitations.extend(stale_observation_limitations(layer_statuses, results))
         if skipped_invalid:
             limitations.append(
                 "Some official records could not be located spatially; check them directly with the issuing authority."
@@ -731,7 +767,7 @@ class LiveDataService:
                 has_previous=page > 1,
                 has_next=page < total_pages,
             ),
-            aggregate_freshness=response.aggregate_freshness,
+            aggregate_freshness=aggregate_live_freshness(page_results),
             unavailable_layers=response.unavailable_layers,
             layer_statuses=response.layer_statuses,
             limitations=limitations,

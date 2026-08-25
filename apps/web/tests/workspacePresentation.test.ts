@@ -90,4 +90,53 @@ describe("task-first workspace presentation", () => {
       response: { ...multiRecordResponse, response_mode: "grounded" },
     })).toBe(false);
   });
+
+  it("locks named, analytical, and reviewed experiences without changing routing", () => {
+    const namedQuestion = "Where is Mountain Fire near Kelowna?";
+    expect(preferredContextSurface({ mode: "live", question: namedQuestion })).toBe("evidence");
+    expect(shouldOfferContextMap({
+      mode: "live",
+      question: namedQuestion,
+      response: spatialResponse,
+    })).toBe(true);
+    expect(shouldUseAnalyticalWorkspace({
+      mode: "live",
+      question: namedQuestion,
+      response: spatialResponse,
+    })).toBe(false);
+
+    const firstResult = spatialResponse.live_results[0]!;
+    const distributionResponse = {
+      ...spatialResponse,
+      live_results: [
+        firstResult,
+        { ...firstResult, result_id: "incident:2", status: "Out of Control" },
+        { ...firstResult, result_id: "incident:3", status: "Under Control" },
+      ],
+    };
+    expect(shouldUseAnalyticalWorkspace({
+      mode: "live",
+      question: "Show wildfire distribution by status across B.C.",
+      response: distributionResponse,
+    })).toBe(true);
+    expect(preferredContextSurface({
+      mode: "live",
+      question: "Show wildfire distribution by status across B.C.",
+    })).toBe("map");
+
+    expect(shouldOfferContextMap({
+      mode: "grounded",
+      question: "What belongs in a grab-and-go bag?",
+      response: { ...spatialResponse, response_mode: "grounded", live_results: [] },
+    })).toBe(false);
+    expect(shouldUseAnalyticalWorkspace({
+      mode: "grounded",
+      question: "What belongs in a grab-and-go bag?",
+      response: { ...spatialResponse, response_mode: "grounded", live_results: [] },
+    })).toBe(false);
+    expect(preferredContextSurface({
+      mode: "grounded",
+      question: "What belongs in a grab-and-go bag?",
+    })).toBe("evidence");
+  });
 });

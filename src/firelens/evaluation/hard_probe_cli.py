@@ -34,6 +34,7 @@ from firelens.contracts import (
     QueryRequest,
     QueryRoute,
     ResponseMode,
+    aggregate_live_freshness,
 )
 from firelens.evaluation.hard_probe_expectations import (
     DEFAULT_DATASET,
@@ -119,7 +120,11 @@ class OfflineLiveDataService:
             )
             for kind in layers
         ]
-        return LiveMapResponse(generated_at=now, results=results)
+        return LiveMapResponse(
+            generated_at=now,
+            results=results,
+            aggregate_freshness=aggregate_live_freshness(results),
+        )
 
     async def nearby_results(
         self,

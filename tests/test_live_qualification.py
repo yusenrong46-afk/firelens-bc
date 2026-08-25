@@ -1,17 +1,22 @@
 from __future__ import annotations
 
 import asyncio
+import subprocess
 from datetime import UTC, datetime
+from pathlib import Path
 
 import httpx
+import pytest
 from fastapi import FastAPI
 
+import firelens.evaluation.live_qualification_cli as live_cli
 import scripts.run_live_qualification as live_qualification
 from firelens.contracts import (
     Freshness,
     LiveMapResponse,
     LiveResult,
     LiveResultKind,
+    aggregate_live_freshness,
 )
 from scripts.run_live_qualification import (
     _cached_api_evidence,
@@ -25,6 +30,27 @@ from scripts.upgrade_benchmark import _live
 
 def test_live_p95_uses_the_nearest_rank_definition() -> None:
     assert _p95([float(value) for value in range(1, 27)]) == 25.0
+
+
+def test_live_qualification_identity_refuses_a_dirty_checkout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tracked = tmp_path / "tracked-source.py"
+    tracked.write_text("VALUE = 1\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "repoproof@example.invalid"],
+        cwd=tmp_path,
+        check=True,
+    )
+    subprocess.run(["git", "config", "user.name", "RepoProof"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "fixture"], cwd=tmp_path, check=True)
+    tracked.write_text("VALUE = 2\n", encoding="utf-8")
+    monkeypatch.setattr(live_cli, "ROOT", tmp_path)
+
+    with pytest.raises(ValueError, match="clean working tree"):
+        live_cli._commit()
 
 
 def test_cached_api_evidence_retains_the_exact_26_request_roster() -> None:
@@ -135,7 +161,11 @@ def test_live_qualification_report_emits_all_raw_evidence(monkeypatch) -> None:
         status="Out of Control",
         geometry={"type": "Point", "coordinates": [-123.1, 49.2]},
     )
-    live_response = LiveMapResponse(generated_at=timestamp, results=[record])
+    live_response = LiveMapResponse(
+        generated_at=timestamp,
+        results=[record],
+        aggregate_freshness=aggregate_live_freshness([record]),
+    )
 
     class FakeLiveService:
         async def map_results(self, *, layers):

@@ -50,6 +50,7 @@ from firelens.contracts import (
     ResponseStatus,
     TemporalClass,
     ValidationReport,
+    aggregate_live_freshness,
 )
 from firelens.evaluation.product_question_cases import build_product_question_cases
 from firelens.evaluation.v3_exploratory_roster import (
@@ -95,9 +96,11 @@ class FixedLiveService:
     def __init__(self, *, empty: bool = False, fail: bool = False) -> None:
         self.fail = fail
         timestamp = datetime(2026, 8, 15, tzinfo=UTC)
+        results = [] if empty else [_incident()]
         self.response = LiveMapResponse(
             generated_at=timestamp,
-            results=[] if empty else [_incident()],
+            results=results,
+            aggregate_freshness=aggregate_live_freshness(results),
         )
         self.requested_location = None
 

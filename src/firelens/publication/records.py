@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from functools import lru_cache
 from hashlib import sha256
 from pathlib import Path
@@ -11,10 +10,14 @@ from firelens.answering.risk_policy import RiskTier
 from firelens.answering.typed_records import TypedClaimRecord, load_inventory
 from firelens.contract_base import FrozenStrictModel
 from firelens.publication_contracts import RENDERER_ID
+from firelens.runtime_artifact_common import RuntimeArtifactError, strict_json_loads
 
 _INVALID_BINDINGS: dict[str, dict[str, str]] = {}
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _CORPUS_RELATIVE = "data/processed/firelens_static_corpus.chunks.jsonl"
+_INTERNAL_STATIC_SOURCE_URLS = {
+    "firelens.freshness_language.stale": "https://firelens-bc.vercel.app",
+}
 
 
 def normalized_sha256(text: str) -> str:
@@ -35,6 +38,7 @@ class VersionedStaticClaim(FrozenStrictModel):
     source_span_sha256: str
     approved_surface_sha256: str
     renderer_id: str = RENDERER_ID
+    canonical_url: str | None
     available_for_structured_support: bool
     record: TypedClaimRecord
 
@@ -52,6 +56,7 @@ class VersionedStaticClaim(FrozenStrictModel):
             "source_span_sha256", normalized_sha256(record.source_span_text)
         )
         surface_sha = normalized_sha256(record.canonical_text)
+        source_bound, canonical_url = _source_binding(record, root=root)
         bound = bool(
             expected_revision
             and record.source_span_sha256
@@ -59,7 +64,8 @@ class VersionedStaticClaim(FrozenStrictModel):
             and revision_sha == expected_revision
             and span_sha == record.source_span_sha256
             and surface_sha == record.approved_surface_sha256
-            and _source_binding_matches(record, root=root)
+            and source_bound
+            and canonical_url
         )
         return cls(
             claim_id=record.claim_id,
@@ -74,6 +80,7 @@ class VersionedStaticClaim(FrozenStrictModel):
             source_revision_sha256=revision_sha,
             source_span_sha256=span_sha,
             approved_surface_sha256=surface_sha,
+            canonical_url=canonical_url,
             available_for_structured_support=bool(record.production_supported() and bound),
             record=record,
         )
@@ -138,36 +145,51 @@ def _load_corpus_chunks(root: str | None = None) -> dict[str, dict[str, str]]:
     chunks: dict[str, dict[str, str]] = {}
     for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         try:
-            row = json.loads(line)
+            row = strict_json_loads(line, context=f"corpus authority row {line_number}")
+            if not isinstance(row, dict):
+                raise ValueError("corpus authority row is not an object")
             chunk_id = str(row["chunk_id"])
             text = str(row["text"])
             document_sha256 = str(row["document_sha256"])
-        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            canonical_url = str(row["canonical_url"])
+        except (KeyError, TypeError, ValueError, RuntimeArtifactError) as exc:
             raise ValueError(f"invalid corpus authority row {line_number}") from exc
         if chunk_id in chunks:
             raise ValueError(f"duplicate corpus chunk ID {chunk_id}")
         chunks[chunk_id] = {
             "text": text,
             "document_sha256": document_sha256,
+            "canonical_url": canonical_url,
         }
     return chunks
 
 
-def _source_binding_matches(record: TypedClaimRecord, *, root: str | None) -> bool:
+def _source_binding(
+    record: TypedClaimRecord,
+    *,
+    root: str | None,
+) -> tuple[bool, str | None]:
     if record.binding_kind == "internal_static":
-        return all(span_id.startswith("firelens.") for span_id in record.source_span_ids)
+        urls = {_INTERNAL_STATIC_SOURCE_URLS.get(span_id) for span_id in record.source_span_ids}
+        return len(urls) == 1 and None not in urls, next(iter(urls), None)
     if not record.source_document_sha256:
-        return False
+        return False, None
     chunks = _load_corpus_chunks(root)
     bound_chunks = [chunks.get(span_id) for span_id in record.source_span_ids]
     if not bound_chunks or any(chunk is None for chunk in bound_chunks):
-        return False
+        return False, None
     present_chunks = [chunk for chunk in bound_chunks if chunk is not None]
     if any(
         chunk["document_sha256"] != record.source_document_sha256 for chunk in present_chunks
     ):
-        return False
+        return False, None
+    canonical_urls = {chunk["canonical_url"] for chunk in present_chunks}
+    if len(canonical_urls) != 1 or not next(iter(canonical_urls)).startswith(
+        ("http://", "https://")
+    ):
+        return False, None
     source_text = " ".join(record.source_span_text.split()).casefold()
-    return any(
+    matches = any(
         source_text in " ".join(chunk["text"].split()).casefold() for chunk in present_chunks
     )
+    return matches, next(iter(canonical_urls)) if matches else None

@@ -266,6 +266,44 @@ export interface components {
              */
             role: "user" | "assistant";
         };
+        /**
+         * DerivationValidationStatus
+         * @enum {string}
+         */
+        DerivationValidationStatus: "valid" | "invalid";
+        /**
+         * DistanceDerivation
+         * @description Deterministic geodesic binding. Models cannot assign or elevate these fields.
+         */
+        DistanceDerivation: {
+            /** Algorithm */
+            algorithm: string;
+            /**
+             * Calculated At
+             * Format: date-time
+             */
+            calculated_at: string;
+            /** Coordinate Order */
+            coordinate_order: string;
+            /** Crs */
+            crs: string;
+            /**
+             * Distance Basis
+             * @enum {string}
+             */
+            distance_basis: "incident_point" | "perimeter_boundary";
+            /** Distance Km */
+            distance_km: number;
+            /** Input Freshness */
+            input_freshness: string;
+            /** Input Source Ids */
+            input_source_ids: string[];
+            publication_state: components["schemas"]["PublicationState"];
+            truth_class: components["schemas"]["TruthClass"];
+            /** Units */
+            units: string;
+            validation_status: components["schemas"]["DerivationValidationStatus"];
+        };
         /** ErrorEnvelope */
         ErrorEnvelope: {
             /** Error Kind */
@@ -478,6 +516,7 @@ export interface components {
             authority: string;
             /** Distance Basis */
             distance_basis?: ("incident_point" | "perimeter_boundary") | null;
+            distance_derivation?: components["schemas"]["DistanceDerivation"] | null;
             /** Distance Km */
             distance_km?: number | null;
             /** Fire Centre */
@@ -627,12 +666,14 @@ export interface components {
             conflicts_or_unknowns?: string[];
             /** Critical Fields Checked */
             critical_fields_checked: string;
+            derivation?: components["schemas"]["DistanceDerivation"] | null;
             /** Exact Passage */
             exact_passage?: string | null;
             /** Freshness */
             freshness: string;
             /** Official Url */
             official_url?: string | null;
+            publication_state: components["schemas"]["PublicationState"];
             /** Review State */
             review_state: string;
             /** Source Revision */
@@ -646,6 +687,7 @@ export interface components {
              * @enum {string}
              */
             support_state: "supported" | "structured_reviewed" | "official_live_typed" | "official_quote_only" | "source_linked_explanation" | "unknown" | "background" | "conflict" | "live_record";
+            truth_class: components["schemas"]["TruthClass"];
         };
         /** PublicClaim */
         PublicClaim: {
@@ -724,6 +766,11 @@ export interface components {
          * @enum {string}
          */
         PublicationKind: "structured_reviewed" | "official_live_typed" | "official_quote_only" | "source_linked_explanation" | "general_background" | "unsupported";
+        /**
+         * PublicationState
+         * @enum {string}
+         */
+        PublicationState: "verified" | "review" | "rejected";
         /** QueryRequest */
         QueryRequest: {
             context?: components["schemas"]["MapContext"];
@@ -779,6 +826,11 @@ export interface components {
          * @enum {string}
          */
         ResponseStatus: "answer" | "abstention" | "error";
+        /**
+         * TruthClass
+         * @enum {string}
+         */
+        TruthClass: "source_fact" | "deterministic_derivation" | "model_summary" | "unknown";
         /** ValidationError */
         ValidationError: {
             /** Context */

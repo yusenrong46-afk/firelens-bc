@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import tempfile
 import unittest
@@ -19,6 +20,7 @@ from firelens.runtime_artifact_common import (
     CANDIDATE_REQUIRED_FIELDS,
     CANDIDATE_SCHEMA,
     RuntimeArtifactError,
+    read_json,
 )
 from firelens.runtime_candidate import (
     apply_runtime_candidate_binding,
@@ -33,6 +35,16 @@ COMMIT = "b00544c1927ffa12d98689f6a4b0b44b6c7de7e1"
 
 
 def _write_bound_candidate(config: FireLensConfig, **overrides: str) -> Path:
+    placeholders = {
+        config.corpus_path: b"{}\n",
+        config.corpus_manifest_path: b"{}\n",
+        config.vector_matrix_path: b"synthetic-vector-matrix",
+        config.vector_manifest_path: b"{}\n",
+    }
+    for artifact, content in placeholders.items():
+        if not artifact.is_file():
+            artifact.parent.mkdir(parents=True, exist_ok=True)
+            artifact.write_bytes(content)
     path = config.project_root / "config/runtime_candidate.v1.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     document = {
@@ -41,6 +53,16 @@ def _write_bound_candidate(config: FireLensConfig, **overrides: str) -> Path:
         "release_version": config.release_version,
         "build_commit": config.build_commit or COMMIT,
         "corpus_version": "test-corpus.v1",
+        "corpus_sha256": hashlib.sha256(config.corpus_path.read_bytes()).hexdigest(),
+        "corpus_manifest_sha256": hashlib.sha256(
+            config.corpus_manifest_path.read_bytes()
+        ).hexdigest(),
+        "vector_matrix_sha256": hashlib.sha256(
+            config.vector_matrix_path.read_bytes()
+        ).hexdigest(),
+        "vector_manifest_sha256": hashlib.sha256(
+            config.vector_manifest_path.read_bytes()
+        ).hexdigest(),
         "embedding_model": config.embedding_model,
         "retrieval_text_strategy": config.retrieval_text_strategy.value,
         "rerank_model": config.rerank_model,
@@ -52,7 +74,7 @@ def _write_bound_candidate(config: FireLensConfig, **overrides: str) -> Path:
     return path
 
 
-def test_runtime_candidate_schema_v3_binds_stage_privacy_policy() -> None:
+def test_runtime_candidate_schema_v4_binds_stage_privacy_and_artifact_identity() -> None:
     document = build_runtime_candidate(
         commit=COMMIT,
         benchmark_id="firelens_v1_5_2",
@@ -64,7 +86,7 @@ def test_runtime_candidate_schema_v3_binds_stage_privacy_policy() -> None:
         privacy=APPROVED_PRODUCTION_PRIVACY,
     )
 
-    assert document["schema_version"] == "firelens.runtime_candidate.v3"
+    assert document["schema_version"] == "firelens.runtime_candidate.v4"
     assert set(document) == CANDIDATE_REQUIRED_FIELDS
     assert document["rerank_model"] == "cohere/rerank-4-pro"
     assert document["generation_model"] == "openai/gpt-5.6-luna"
@@ -75,6 +97,43 @@ def test_runtime_candidate_schema_v3_binds_stage_privacy_policy() -> None:
     assert document["reranking_zdr"] == "optional"
     assert document["generation_zdr"] == "required"
     assert script_builder is build_runtime_candidate
+
+
+def test_governed_json_rejects_duplicate_top_level_and_nested_keys(
+    tmp_path: Path,
+) -> None:
+    config = FireLensConfig.from_env(tmp_path)
+    path = _write_bound_candidate(config)
+    raw = path.read_text(encoding="utf-8")
+    path.write_text(
+        raw.replace("{\n", '{\n  "release_version": "ambiguous-first",\n', 1),
+        encoding="utf-8",
+    )
+    with pytest.raises(RuntimeArtifactError, match="duplicate.*release_version"):
+        load_runtime_candidate_document(path)
+
+    nested = tmp_path / "nested.json"
+    nested.write_text('{"outer":{"key":"first","key":"second"}}', encoding="utf-8")
+    with pytest.raises(RuntimeArtifactError, match="duplicate.*key"):
+        read_json(nested, context="nested governed probe")
+
+
+def test_candidate_binding_compares_active_artifact_bytes_and_preserves_local_mode(
+    tmp_path: Path,
+) -> None:
+    config = FireLensConfig.from_env(tmp_path).model_copy(
+        update={"deployment_environment": "local", "build_commit": COMMIT}
+    )
+    _write_bound_candidate(config)
+    config.corpus_path.write_bytes(config.corpus_path.read_bytes() + b"mutated")
+
+    problems = apply_runtime_candidate_binding(config, corpus_version="test-corpus.v1")
+    assert any("corpus_sha256" in problem for problem in problems)
+    assert any("not a production-qualified artifact" in problem for problem in problems)
+
+    deployed = config.model_copy(update={"deployment_environment": "preview"})
+    with pytest.raises(RuntimeError, match="corpus_sha256"):
+        apply_runtime_candidate_binding(deployed, corpus_version="test-corpus.v1")
 
 
 def test_runtime_candidate_refuses_secrets_and_invalid_zdr_policy(tmp_path: Path) -> None:
@@ -134,6 +193,10 @@ def test_loader_rejects_arbitrary_candidate_id_and_unbound_commit(tmp_path: Path
         "release_version": "1.5.3-rc.1",
         "build_commit": COMMIT,
         "corpus_version": "firelens_static_corpus.v1",
+        "corpus_sha256": "0" * 64,
+        "corpus_manifest_sha256": "1" * 64,
+        "vector_matrix_sha256": "2" * 64,
+        "vector_manifest_sha256": "3" * 64,
         "embedding_model": "openai/text-embedding-3-small",
         "retrieval_text_strategy": "metadata_context_v1",
         "rerank_model": "cohere/rerank-4-pro",

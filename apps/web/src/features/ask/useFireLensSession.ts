@@ -172,13 +172,15 @@ export function useFireLensSession(): FireLensSession {
           retryable: error.detail.retryable,
         });
       } else if (error instanceof FireLensClientError) {
-        const message = error.failureKind === "transport"
-          ? "FireLens could not reach the service. Check your connection, then retry this question."
-          : error.failureKind === "response_read"
+        const message = error.failureKind === "timeout"
+          ? "FireLens did not receive a complete response before the request deadline. Retry this question; if the problem continues, use the official BC Wildfire Service."
+          : error.failureKind === "transport"
+            ? "FireLens could not reach the service. Check your connection, then retry this question."
+            : error.failureKind === "response_read"
             ? "FireLens reached the service but could not finish reading its response. Retry this question; if the problem continues, use the official BC Wildfire Service."
-            : "FireLens received an invalid service response. Retry this question; if the problem continues, use the official BC Wildfire Service.";
+            : "The service reply could not be used as an answer. Retry this question; if the problem continues, use the official BC Wildfire Service.";
         setView({
-          kind: error.failureKind === "transport" ? "unavailable" : "error",
+          kind: error.failureKind === "transport" || error.failureKind === "timeout" ? "unavailable" : "error",
           question: normalized,
           message,
           retryable: true,

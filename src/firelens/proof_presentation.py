@@ -9,11 +9,24 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import Field, HttpUrl
+from pydantic import Field, HttpUrl, model_validator
 
 from firelens.claim_trust import GROUNDED_PUBLIC_WORDING
 from firelens.contract_base import FrozenStrictModel
+from firelens.derivation_policy import derivation_policy_errors
 from firelens.freshness_language import official_records_headline
+from firelens.live_contracts import (
+    DISTANCE_ALGORITHM,
+    DISTANCE_UNIT,
+    GEODESIC_CRS,
+    DistanceDerivation,
+)
+from firelens.safety_profile import (
+    PublicationState,
+    TruthClass,
+    bind_proof_profile,
+    verified_critical_metadata_present,
+)
 
 BCWS_MAP_URL = "https://wildfiresituation.nrs.gov.bc.ca/map"
 
@@ -79,6 +92,91 @@ class ProofCard(FrozenStrictModel):
     freshness: str = Field(min_length=1, max_length=80)
     conflicts_or_unknowns: list[str] = Field(default_factory=list, max_length=8)
     official_url: HttpUrl | None = None
+    truth_class: TruthClass
+    publication_state: PublicationState
+    derivation: DistanceDerivation | None = None
+
+    @model_validator(mode="after")
+    def profile_metadata_matches_support_state(self) -> ProofCard:
+        expected_truth, expected_state = bind_proof_profile(
+            self.support_state, freshness=self.freshness
+        )
+        if self.truth_class != expected_truth or self.publication_state != expected_state:
+            raise ValueError(
+                "proof card profile metadata must match support state and freshness"
+            )
+        if (
+            expected_state is PublicationState.VERIFIED
+            and not verified_critical_metadata_present(self)
+        ):
+            raise ValueError("verified proof cards require complete critical metadata")
+        if self.derivation is not None:
+            if self.derivation.truth_class is not TruthClass.DETERMINISTIC_DERIVATION:
+                raise ValueError(
+                    "distance derivation cannot conceal a non-derivation truth class"
+                )
+            if (
+                self.derivation.crs != GEODESIC_CRS
+                or self.derivation.units != DISTANCE_UNIT
+                or self.derivation.algorithm != DISTANCE_ALGORITHM
+            ):
+                raise ValueError("unsupported CRS or units cannot be emitted as supported")
+            policy_errors = derivation_policy_errors(
+                claim_id=self.claim_id,
+                claim_text=self.claim_text,
+                freshness=self.freshness,
+                derivation=self.derivation,
+            )
+            if policy_errors:
+                raise ValueError(policy_errors[0])
+        elif "km geodesic" in self.claim_text.casefold():
+            raise ValueError("distance-bearing claims require derivation binding")
+        return self
+
+
+def make_proof_card(
+    *,
+    claim_id: str,
+    claim_text: str,
+    support_state: SupportState,
+    support_label: str,
+    authority: str,
+    review_state: str,
+    critical_fields_checked: str,
+    freshness: str,
+    exact_passage: str | None = None,
+    source_title: str | None = None,
+    source_revision: str | None = None,
+    conflicts_or_unknowns: list[str] | None = None,
+    official_url: HttpUrl | None = None,
+    rejected: bool = False,
+    derivation: DistanceDerivation | None = None,
+) -> ProofCard:
+    """Construct a proof card with deterministic Safety Profile metadata."""
+
+    if rejected:
+        support_state = "unknown"
+    truth_class, publication_state = bind_proof_profile(
+        support_state, rejected=rejected, freshness=freshness
+    )
+    return ProofCard(
+        claim_id=claim_id,
+        claim_text=claim_text,
+        support_state=support_state,
+        support_label=support_label,
+        authority=authority,
+        exact_passage=exact_passage,
+        source_title=source_title,
+        source_revision=source_revision,
+        review_state=review_state,
+        critical_fields_checked=critical_fields_checked,
+        freshness=freshness,
+        conflicts_or_unknowns=list(conflicts_or_unknowns or []),
+        official_url=official_url,
+        truth_class=truth_class,
+        publication_state=publication_state,
+        derivation=derivation,
+    )
 
 
 def attach_proof_presentation(response: Any) -> None:
@@ -97,17 +195,12 @@ def attach_proof_presentation(response: Any) -> None:
         response.proof_cards = build_proof_cards(response)
     else:
         claims_by_id = {claim.claim_id: claim for claim in response.claims}
-        valid_card_ids = set(claims_by_id) or {
-            result.result_id for result in response.live_results
+        results_by_id = {
+            result.result_id: result for result in getattr(response, "live_results", None) or []
         }
+        valid_card_ids = set(claims_by_id) or set(results_by_id)
         response.proof_cards = [
-            _unknown_card(card)
-            if card.support_state == "unknown"
-            or (
-                card.claim_id in claims_by_id
-                and _support_state(response, claims_by_id[card.claim_id]) == "unknown"
-            )
-            else card
+            _preserve_existing_card(card, response, claims_by_id, results_by_id)
             for card in existing_cards
             if card.claim_id in valid_card_ids
         ]
@@ -208,7 +301,7 @@ def _claim_card(response: Any, claim: Any, evidence_by_id: dict[str, Any]) -> Pr
     unknowns = list(response.limitations[:4])
     if trust is not None and trust.conflict_or_supersession != "none":
         unknowns.insert(0, f"Conflict or supersession: {trust.conflict_or_supersession}")
-    card = ProofCard(
+    card = make_proof_card(
         claim_id=claim.claim_id,
         claim_text=claim.text,
         support_state=state,
@@ -234,13 +327,72 @@ def _claim_card(response: Any, claim: Any, evidence_by_id: dict[str, Any]) -> Pr
         official_url=(
             evidence.canonical_url if evidence is not None else _escalation(response)[1]
         ),
+        rejected=state == "unknown" or _validation_rejected(response),
     )
     return _unknown_card(card) if state == "unknown" else card
 
 
+def _preserve_existing_card(
+    card: Any,
+    response: Any,
+    claims_by_id: dict[str, Any],
+    results_by_id: dict[str, Any],
+) -> ProofCard:
+    claim = claims_by_id.get(card.claim_id)
+    expected = _support_state(response, claim) if claim is not None else None
+    if card.support_state == "unknown" or expected == "unknown":
+        return _unknown_card(card)
+    if claim is not None:
+        if card.support_state != expected:
+            return _claim_card(
+                response,
+                claim,
+                {item.evidence_id: item for item in response.evidence},
+            )
+        return card if isinstance(card, ProofCard) else ProofCard.model_validate(card)
+    result = results_by_id.get(card.claim_id)
+    if result is None:
+        derivation = getattr(card, "derivation", None)
+        for source_id in getattr(derivation, "input_source_ids", None) or []:
+            result = results_by_id.get(source_id)
+            if result is not None:
+                break
+    if result is not None and card.support_state in {"live_record", "official_live_typed"}:
+        if (
+            "km geodesic" in str(card.claim_text).casefold()
+            and getattr(result, "distance_derivation", None) is None
+        ):
+            return _unknown_card(card)
+        return _rebind_live_card(card, response, result)
+    return card if isinstance(card, ProofCard) else ProofCard.model_validate(card)
+
+
+def _rebind_live_card(card: Any, response: Any, result: Any) -> ProofCard:
+    rebound = make_proof_card(
+        claim_id=card.claim_id,
+        claim_text=card.claim_text,
+        support_state=card.support_state,
+        support_label=card.support_label,
+        authority=result.authority,
+        exact_passage=result.status,
+        source_title=card.source_title or result.name or result.result_id,
+        source_revision=result.source_updated_at.isoformat(),
+        review_state=card.review_state,
+        critical_fields_checked=card.critical_fields_checked,
+        freshness=str(
+            result.freshness.value if hasattr(result.freshness, "value") else result.freshness
+        ),
+        conflicts_or_unknowns=list(card.conflicts_or_unknowns),
+        official_url=result.source_url,
+        rejected=_validation_rejected(response),
+        derivation=getattr(result, "distance_derivation", None),
+    )
+    return _unknown_card(rebound) if _validation_rejected(response) else rebound
+
+
 def _live_card(response: Any, result: Any) -> ProofCard:
     name = result.name or result.incident_number or result.result_id
-    card = ProofCard(
+    card = make_proof_card(
         claim_id=result.result_id,
         claim_text=name,
         support_state="live_record",
@@ -252,27 +404,25 @@ def _live_card(response: Any, result: Any) -> ProofCard:
         review_state="Official live feed as published",
         critical_fields_checked="Not applicable — live record, not a reviewed claim",
         freshness=str(result.freshness),
-        conflicts_or_unknowns=[],
         official_url=result.source_url,
+        rejected=_validation_rejected(response),
+        derivation=getattr(result, "distance_derivation", None),
     )
     return _unknown_card(card) if _validation_rejected(response) else card
 
 
 def _unknown_card(card: Any) -> ProofCard:
-    return ProofCard(
+    return make_proof_card(
         claim_id=card.claim_id,
         claim_text=card.claim_text,
         support_state="unknown",
         support_label=_SUPPORT_LABELS["unknown"],
         authority="Authority not established",
-        exact_passage=None,
-        source_title=None,
-        source_revision=None,
         review_state="Review state not established",
         critical_fields_checked="Critical-field validation not established",
         freshness="Freshness not established",
         conflicts_or_unknowns=list(card.conflicts_or_unknowns),
-        official_url=None,
+        rejected=True,
     )
 
 

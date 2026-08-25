@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Literal
 
 import httpx
 from pydantic import HttpUrl
@@ -19,6 +19,47 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import nearest_points
 
 from firelens.contracts import GeometryRelation, LiveResultKind, LocationInput
+from firelens.live_contracts import COORDINATE_ORDER as COORDINATE_ORDER
+from firelens.live_contracts import DISTANCE_ALGORITHM as DISTANCE_ALGORITHM
+from firelens.live_contracts import DISTANCE_UNIT as DISTANCE_UNIT
+from firelens.live_contracts import GEODESIC_CRS as GEODESIC_CRS
+from firelens.live_contracts import Freshness, bind_distance_derivation
+
+
+def geojson_crs_is_wgs84(payload: dict[str, Any]) -> bool:
+    """Reject a response that explicitly declares a non-WGS84 output CRS.
+
+    ArcGIS GeoJSON normally omits CRS because the query requests ``outSR=4326``.
+    When a server does declare one, accepting a projected or unknown declaration
+    would make the downstream longitude/latitude geodesic contract false.
+    """
+
+    spatial_reference = payload.get("spatialReference")
+    if spatial_reference is not None:
+        if not isinstance(spatial_reference, dict):
+            return False
+        wkid = spatial_reference.get("latestWkid", spatial_reference.get("wkid"))
+        if not isinstance(wkid, (int, str)):
+            return False
+        try:
+            return int(wkid) == 4326
+        except (TypeError, ValueError):
+            return False
+
+    crs = payload.get("crs")
+    if crs is None:
+        return True
+    if not isinstance(crs, dict):
+        return False
+    properties = crs.get("properties")
+    if not isinstance(properties, dict):
+        return False
+    name = properties.get("name")
+    if not isinstance(name, str):
+        return False
+    normalized = name.strip().casefold().replace("::", ":")
+    return normalized.endswith("epsg:4326") or normalized.endswith("crs84")
+
 
 ACTIVE_FIRES_URL = (
     "https://services6.arcgis.com/ubm4tcTYICKBpist/arcgis/rest/services/"
@@ -167,10 +208,106 @@ def timestamp(value: Any) -> datetime | None:
             return None
     if isinstance(value, str) and value.strip():
         try:
-            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
         except ValueError:
             return None
+        if parsed.tzinfo is None or parsed.utcoffset() is None:
+            return None
+        return parsed.astimezone(UTC)
     return None
+
+
+def _positions(coords: Any) -> list[tuple[float, float]]:
+    if not isinstance(coords, (list, tuple)) or not coords:
+        return []
+    first = coords[0]
+    if isinstance(first, (int, float)):
+        if len(coords) < 2:
+            return []
+        return [(float(coords[0]), float(coords[1]))]
+    positions: list[tuple[float, float]] = []
+    for item in coords:
+        positions.extend(_positions(item))
+    return positions
+
+
+def geometry_integrity_errors(geometry: dict[str, Any] | None) -> list[str]:
+    """Return deterministic reasons a geometry cannot be used for measurement."""
+
+    if not isinstance(geometry, dict):
+        return ["null_geometry"]
+    if geometry.get("coordinates") is None and geometry.get("type") != "GeometryCollection":
+        return ["null_geometry"]
+    errors: list[str] = []
+    for longitude, latitude in _positions(geometry.get("coordinates")):
+        if not math.isfinite(longitude) or not math.isfinite(latitude):
+            errors.append("non_finite_coordinate")
+            break
+        if 48.0 <= longitude <= 61.0 and -140.0 <= latitude <= -113.0:
+            errors.append("latitude_longitude_reversal")
+            break
+        if abs(latitude) > 90.0 or abs(longitude) > 180.0:
+            errors.append("out_of_range_coordinate")
+            break
+    try:
+        target = shape(geometry)
+    except (TypeError, ValueError, AttributeError):
+        errors.append("malformed_geometry")
+        return list(dict.fromkeys(errors))
+    if target.is_empty:
+        errors.append("empty_geometry")
+    elif not target.is_valid:
+        errors.append("invalid_geometry")
+    return list(dict.fromkeys(errors))
+
+
+def distance_basis_for(
+    kind: LiveResultKind, geometry: dict[str, Any]
+) -> Literal["incident_point", "perimeter_boundary"] | None:
+    """Bind a distance label to both record kind and actual geometry type."""
+
+    if geometry_integrity_errors(geometry):
+        return None
+    geom_type = geometry.get("type") if isinstance(geometry, dict) else None
+    if kind == LiveResultKind.INCIDENT and geom_type == "Point":
+        return "incident_point"
+    if kind == LiveResultKind.PERIMETER and geom_type in {"Polygon", "MultiPolygon"}:
+        return "perimeter_boundary"
+    return None
+
+
+def annotated_distance_fields(
+    *,
+    result_id: str,
+    kind: LiveResultKind,
+    geometry: dict[str, Any],
+    latitude: float,
+    longitude: float,
+    freshness: Freshness,
+) -> dict[str, object]:
+    """Return canonical distance fields, or empty when measurement is not allowed."""
+
+    if kind not in {LiveResultKind.INCIDENT, LiveResultKind.PERIMETER}:
+        return {}
+    basis = distance_basis_for(kind, geometry)
+    if basis is None:
+        return {}
+    distance = distance_to_geometry_km(geometry, latitude=latitude, longitude=longitude)
+    if distance is None:
+        return {}
+    rounded = round(float(distance), 1)
+    return {
+        "distance_km": rounded,
+        "distance_basis": basis,
+        "distance_derivation": bind_distance_derivation(
+            result_id=result_id,
+            distance_km=rounded,
+            distance_basis=basis,
+            calculated_at=datetime.now(UTC),
+            extra_input_ids=(f"place:{latitude:.2f},{longitude:.2f}",),
+            input_freshness=freshness,
+        ),
+    }
 
 
 def authority(kind: LiveResultKind) -> str:
@@ -329,10 +466,10 @@ def distance_to_geometry_km(
 ) -> float | None:
     """Return geodesic distance to a point or nearest valid geometry boundary."""
 
+    if geometry_integrity_errors(geometry):
+        return None
     try:
         target = shape(geometry)
-        if target.is_empty or not target.is_valid:
-            return None
         point = Point(longitude, latitude)
         if isinstance(target, Point):
             distance = _geodesic_km((longitude, latitude), (float(target.x), float(target.y)))
@@ -351,10 +488,10 @@ def geometry_relation(
 ) -> GeometryRelation:
     """Compute a conservative relation with boundary points treated as inside."""
 
+    if geometry_integrity_errors(geometry):
+        return GeometryRelation.UNKNOWN
     try:
         target = shape(geometry)
-        if target.is_empty or not target.is_valid:
-            return GeometryRelation.UNKNOWN
         point = Point(longitude, latitude)
         if not isinstance(target, Point) and (target.contains(point) or target.touches(point)):
             return GeometryRelation.INSIDE
@@ -369,12 +506,10 @@ def geometry_relation(
 def map_geometry_state(geometry: dict[str, Any] | None, bounds: BaseGeometry | None) -> str:
     """Classify a feature as ok, spatially invalid, or outside the requested bbox."""
 
-    if not isinstance(geometry, dict):
+    if geometry is None or geometry_integrity_errors(geometry):
         return "invalid"
     try:
         candidate = shape(geometry)
-        if candidate.is_empty or not candidate.is_valid:
-            return "invalid"
         if bounds is not None and not candidate.intersects(bounds):
             return "outside"
         return "ok"

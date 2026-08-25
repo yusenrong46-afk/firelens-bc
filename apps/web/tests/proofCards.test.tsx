@@ -3,7 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import { App } from "../src/app/App";
-import { getProofCards, getStatusBanner } from "../src/features/ask/proofPresentation";
+import { getProofCards, getStatusBanner, bindProofProfile, bindDistanceDerivation, CANONICAL_DISTANCE_DERIVATION, freshnessToken } from "../src/features/ask/proofPresentation";
+import { StatusBanner } from "../src/features/ask/StatusBanner";
 import { TileFailureWarning } from "../src/features/near-me/OfficialBasemap";
 import { MatchingRecordList } from "../src/features/near-me/LiveRecordLists";
 import type { AskResponse, LiveResult } from "../src/shared/api/api";
@@ -62,6 +63,8 @@ const grounded = {
       critical_fields_checked: "Critical fields checked and preserved",
       freshness: "Stable reviewed guidance",
       official_url: "https://example.test/guide.pdf",
+      truth_class: "model_summary",
+      publication_state: "review",
     },
   ],
   validation: {
@@ -309,6 +312,8 @@ describe("proof-carrying answer surface", () => {
         critical_fields_checked: "Not applicable — live record, not a reviewed claim",
         freshness: record.freshness,
         official_url: record.source_url,
+        truth_class: "source_fact",
+        publication_state: "verified",
       }],
       validation: { accepted: true },
     } as unknown as AskResponse;
@@ -319,7 +324,411 @@ describe("proof-carrying answer surface", () => {
       authority: "BC Wildfire Service",
       exact_passage: "Out of Control",
       official_url: "https://example.test/incidents/7",
+      truth_class: "source_fact",
+      publication_state: "verified",
     }]);
+  });
+
+  it("does not keep API-elevated verified metadata on a model-summary card", () => {
+    const response = {
+      ...grounded,
+      claims: grounded.claims.map((claim) => ({
+        ...claim,
+        publication: {
+          kind: "source_linked_explanation",
+          review_status: "extraction_only",
+          renderer_id: "firelens.source_linked_renderer.v1",
+          support_provenance: "source_linked",
+        },
+      })),
+      proof_cards: grounded.proof_cards.map((card) => ({
+        ...card,
+        support_state: "source_linked_explanation",
+        truth_class: "source_fact",
+        publication_state: "verified",
+      })),
+    } as unknown as AskResponse;
+
+    expect(getProofCards(response)[0]).toMatchObject({
+      support_state: "source_linked_explanation",
+      truth_class: "model_summary",
+      publication_state: "review",
+    });
+  });
+
+  it("does not mark live records verified unless freshness is explicitly fresh", () => {
+    expect(bindProofProfile("live_record")).toEqual({
+      truth_class: "source_fact",
+      publication_state: "review",
+    });
+    for (const freshness of [null, "Freshness not established", "banana", "stale", "", "stale.fresh", "Freshness.FRESH", "fresh.stale"]) {
+      expect(bindProofProfile("live_record", { freshness })).toEqual({
+        truth_class: "source_fact",
+        publication_state: "review",
+      });
+      expect(bindProofProfile("official_live_typed", { freshness })).toEqual({
+        truth_class: "source_fact",
+        publication_state: "review",
+      });
+    }
+    expect(freshnessToken("stale.fresh")).toBeNull();
+    expect(freshnessToken("fresh")).toBe("fresh");
+    expect(bindProofProfile("live_record", { freshness: "fresh" })).toEqual({
+      truth_class: "source_fact",
+      publication_state: "verified",
+    });
+    const response = {
+      status: "answer",
+      response_mode: "live",
+      trace_id: "trace-unrecognized-freshness",
+      answer: "Listed Fire is Out of Control.",
+      claims: [],
+      evidence: [],
+      limitations: [],
+      live_results: [{ ...record, freshness: "Freshness not established" }],
+      proof_cards: [{
+        claim_id: record.result_id,
+        claim_text: "Listed Fire",
+        support_state: "live_record",
+        support_label: "Official live record as published",
+        authority: record.authority,
+        exact_passage: record.status,
+        source_title: "Listed Fire",
+        source_revision: record.source_updated_at,
+        review_state: "Official live feed as published",
+        critical_fields_checked: "Not applicable — live record, not a reviewed claim",
+        freshness: "Freshness not established",
+        official_url: record.source_url,
+        truth_class: "source_fact",
+        publication_state: "verified",
+      }],
+      validation: { accepted: true },
+    } as unknown as AskResponse;
+    expect(getProofCards(response)[0]).toMatchObject({
+      publication_state: "review",
+      truth_class: "source_fact",
+    });
+  });
+
+  it("binds distance derivation without rewriting unsupported units or CRS as supported", () => {
+    const canonical = bindDistanceDerivation({
+      truth_class: "source_fact",
+      publication_state: "verified",
+      input_source_ids: ["incident:7", "place:49.90,-119.50"],
+      algorithm: CANONICAL_DISTANCE_DERIVATION.algorithm,
+      crs: CANONICAL_DISTANCE_DERIVATION.crs,
+      coordinate_order: CANONICAL_DISTANCE_DERIVATION.coordinate_order,
+      units: CANONICAL_DISTANCE_DERIVATION.units,
+      calculated_at: "2026-08-25T12:00:00+00:00",
+      validation_status: "valid",
+      distance_km: 12.5,
+      distance_basis: "incident_point",
+    }, { freshness: "fresh" });
+    expect(canonical).toMatchObject({
+      truth_class: "deterministic_derivation",
+      publication_state: "verified",
+      units: "km",
+      crs: "EPSG:4326",
+      validation_status: "valid",
+      input_freshness: "fresh",
+    });
+    if (canonical == null) {
+      throw new Error("expected canonical derivation");
+    }
+    expect(bindDistanceDerivation({
+      ...canonical,
+      input_source_ids: ["incident:7"],
+    }, { freshness: "fresh" })).toMatchObject({
+      validation_status: "valid",
+      publication_state: "review",
+    });
+    expect(bindDistanceDerivation(canonical, { freshness: "stale.fresh" })).toMatchObject({
+      validation_status: "valid",
+      publication_state: "review",
+    });
+    expect(bindDistanceDerivation({
+      ...canonical,
+      calculated_at: "2100-01-01T00:00:00+00:00",
+    }, { freshness: "fresh" })).toMatchObject({
+      validation_status: "invalid",
+      publication_state: "rejected",
+    });
+    expect(bindDistanceDerivation(canonical, { freshness: "stale" })).toMatchObject({
+      validation_status: "valid",
+      publication_state: "review",
+      input_freshness: "stale",
+    });
+    expect(bindDistanceDerivation(canonical, { freshness: "Freshness not established" })).toMatchObject({
+      validation_status: "valid",
+      publication_state: "review",
+    });
+    expect(bindDistanceDerivation({
+      truth_class: "deterministic_derivation",
+      publication_state: "verified",
+      input_source_ids: ["incident:7", "place:49.90,-119.50"],
+      algorithm: CANONICAL_DISTANCE_DERIVATION.algorithm,
+      crs: CANONICAL_DISTANCE_DERIVATION.crs,
+      coordinate_order: CANONICAL_DISTANCE_DERIVATION.coordinate_order,
+      units: CANONICAL_DISTANCE_DERIVATION.units,
+      calculated_at: "2026-08-25T12:00:00+00:00",
+      validation_status: "valid",
+      distance_km: 12.5,
+      distance_basis: "incident_point",
+    })).toMatchObject({
+      validation_status: "valid",
+      publication_state: "review",
+      input_freshness: "unknown",
+    });
+    const miles = bindDistanceDerivation({
+      truth_class: "deterministic_derivation",
+      publication_state: "verified",
+      input_source_ids: ["incident:7", "place:49.90,-119.50"],
+      algorithm: CANONICAL_DISTANCE_DERIVATION.algorithm,
+      crs: "EPSG:4326",
+      coordinate_order: "longitude_latitude",
+      units: "miles",
+      calculated_at: "2026-08-25T12:00:00+00:00",
+      validation_status: "valid",
+      distance_km: 7.8,
+      distance_basis: "incident_point",
+    }, { freshness: "fresh" });
+    expect(miles).toMatchObject({
+      units: "miles",
+      crs: "EPSG:4326",
+      publication_state: "rejected",
+      validation_status: "invalid",
+      truth_class: "deterministic_derivation",
+    });
+    const projected = bindDistanceDerivation({
+      truth_class: "deterministic_derivation",
+      publication_state: "verified",
+      input_source_ids: ["incident:7", "place:49.90,-119.50"],
+      algorithm: CANONICAL_DISTANCE_DERIVATION.algorithm,
+      crs: "EPSG:3857",
+      coordinate_order: "longitude_latitude",
+      units: "km",
+      calculated_at: "2026-08-25T12:00:00+00:00",
+      validation_status: "valid",
+      distance_km: 12.5,
+      distance_basis: "incident_point",
+    });
+    expect(projected).toMatchObject({
+      crs: "EPSG:3857",
+      units: "km",
+      publication_state: "rejected",
+      validation_status: "invalid",
+    });
+  });
+
+  it("does not keep a verified nested derivation when the live input is stale", () => {
+    const elevated = {
+      truth_class: "deterministic_derivation",
+      publication_state: "verified",
+      input_source_ids: ["incident:7", "place:49.90,-119.50"],
+      algorithm: CANONICAL_DISTANCE_DERIVATION.algorithm,
+      crs: CANONICAL_DISTANCE_DERIVATION.crs,
+      coordinate_order: CANONICAL_DISTANCE_DERIVATION.coordinate_order,
+      units: CANONICAL_DISTANCE_DERIVATION.units,
+      calculated_at: "2026-08-25T12:00:00+00:00",
+      validation_status: "valid",
+      input_freshness: "fresh",
+      distance_km: 12.5,
+      distance_basis: "incident_point",
+    };
+    const response = {
+      status: "answer",
+      response_mode: "live",
+      trace_id: "trace-stale-derivation",
+      answer: "Listed Fire is Out of Control.",
+      claims: [],
+      evidence: [],
+      limitations: [],
+      live_results: [{
+        ...record,
+        freshness: "stale",
+        distance_km: 12.5,
+        distance_basis: "incident_point",
+        distance_derivation: elevated,
+      }],
+      proof_cards: [{
+        claim_id: record.result_id,
+        claim_text: "Distance 12.5 km geodesic to the official incident point.",
+        support_state: "official_live_typed",
+        support_label: "Official live record",
+        authority: record.authority,
+        exact_passage: record.status,
+        source_title: "Listed Fire",
+        source_revision: record.source_updated_at,
+        review_state: "Official live record as published",
+        critical_fields_checked: "Rendered from typed live fields",
+        freshness: "stale",
+        official_url: record.source_url,
+        truth_class: "source_fact",
+        publication_state: "review",
+        derivation: elevated,
+      }],
+      validation: { accepted: true },
+    } as unknown as AskResponse;
+    expect(getProofCards(response)[0]).toMatchObject({
+      publication_state: "review",
+      derivation: {
+        validation_status: "valid",
+        publication_state: "review",
+        input_freshness: "stale",
+      },
+    });
+    const fromLiveResults = {
+      ...response,
+      proof_cards: [],
+    } as unknown as AskResponse;
+    expect(getProofCards(fromLiveResults)[0]).toMatchObject({
+      publication_state: "review",
+      derivation: {
+        validation_status: "valid",
+        publication_state: "review",
+        input_freshness: "stale",
+      },
+    });
+  });
+
+  it("does not keep distance-bearing wording that disagrees with the bound derivation", () => {
+    const response = {
+      status: "answer",
+      response_mode: "live",
+      trace_id: "trace-mismatched-distance-wording",
+      answer: "Listed Fire is Out of Control.",
+      claims: [],
+      evidence: [],
+      limitations: [],
+      live_results: [record],
+      proof_cards: [{
+        claim_id: record.result_id,
+        claim_text: "Distance 999.9 km geodesic to the official incident point.",
+        support_state: "official_live_typed",
+        support_label: "Official live record",
+        authority: record.authority,
+        exact_passage: record.status,
+        source_title: "Listed Fire",
+        source_revision: record.source_updated_at,
+        review_state: "Official live record as published",
+        critical_fields_checked: "Rendered from typed live fields",
+        freshness: "fresh",
+        official_url: record.source_url,
+        truth_class: "source_fact",
+        publication_state: "verified",
+        derivation: {
+          truth_class: "deterministic_derivation",
+          publication_state: "verified",
+          input_source_ids: ["incident:7", "place:49.90,-119.50"],
+          algorithm: CANONICAL_DISTANCE_DERIVATION.algorithm,
+          crs: CANONICAL_DISTANCE_DERIVATION.crs,
+          coordinate_order: CANONICAL_DISTANCE_DERIVATION.coordinate_order,
+          units: CANONICAL_DISTANCE_DERIVATION.units,
+          calculated_at: "2026-08-25T12:00:00+00:00",
+          validation_status: "valid",
+          input_freshness: "fresh",
+          distance_km: 2.3,
+          distance_basis: "incident_point",
+        },
+      }],
+      validation: { accepted: true },
+    } as unknown as AskResponse;
+    expect(getProofCards(response)[0]).toMatchObject({
+      support_state: "unknown",
+      publication_state: "rejected",
+      derivation: null,
+    });
+  });
+
+  it("rebinds a preserved live card to the current live result freshness", () => {
+    const response = {
+      status: "answer",
+      response_mode: "live",
+      trace_id: "trace-preserved-fresh-card",
+      answer: "Listed Fire is Out of Control.",
+      claims: [],
+      evidence: [],
+      limitations: [],
+      live_results: [{ ...record, freshness: "stale", source_url: "https://example.test/incidents/stale" }],
+      proof_cards: [{
+        claim_id: record.result_id,
+        claim_text: "Listed Fire",
+        support_state: "live_record",
+        support_label: "Official live record as published",
+        authority: record.authority,
+        exact_passage: record.status,
+        source_title: "Listed Fire",
+        source_revision: record.source_updated_at,
+        review_state: "Official live feed as published",
+        critical_fields_checked: "Not applicable — live record, not a reviewed claim",
+        freshness: "fresh",
+        official_url: record.source_url,
+        truth_class: "source_fact",
+        publication_state: "verified",
+      }],
+      validation: { accepted: true },
+    } as unknown as AskResponse;
+    expect(getProofCards(response)[0]).toMatchObject({
+      freshness: "stale",
+      publication_state: "review",
+      official_url: "https://example.test/incidents/stale",
+    });
+  });
+
+  it("keeps a valid nested derivation verified only when the live input is fresh", () => {
+    const bound = bindDistanceDerivation({
+      truth_class: "deterministic_derivation",
+      publication_state: "review",
+      input_source_ids: ["incident:7", "place:49.90,-119.50"],
+      algorithm: CANONICAL_DISTANCE_DERIVATION.algorithm,
+      crs: CANONICAL_DISTANCE_DERIVATION.crs,
+      coordinate_order: CANONICAL_DISTANCE_DERIVATION.coordinate_order,
+      units: CANONICAL_DISTANCE_DERIVATION.units,
+      calculated_at: "2026-08-25T12:00:00+00:00",
+      validation_status: "valid",
+      distance_km: 12.5,
+      distance_basis: "incident_point",
+    }, { freshness: "fresh" });
+    expect(bound).toMatchObject({
+      publication_state: "verified",
+      input_freshness: "fresh",
+    });
+    const response = {
+      status: "answer",
+      response_mode: "live",
+      trace_id: "trace-fresh-derivation",
+      answer: "Listed Fire is Out of Control.",
+      claims: [],
+      evidence: [],
+      limitations: [],
+      live_results: [record],
+      proof_cards: [{
+        claim_id: record.result_id,
+        claim_text: "Distance 12.5 km geodesic to the official incident point.",
+        support_state: "official_live_typed",
+        support_label: "Official live record",
+        authority: record.authority,
+        exact_passage: record.status,
+        source_title: "Listed Fire",
+        source_revision: record.source_updated_at,
+        review_state: "Official live record as published",
+        critical_fields_checked: "Rendered from typed live fields",
+        freshness: "fresh",
+        official_url: record.source_url,
+        truth_class: "source_fact",
+        publication_state: "verified",
+        derivation: bound,
+      }],
+      validation: { accepted: true },
+    } as unknown as AskResponse;
+    expect(getProofCards(response)[0]).toMatchObject({
+      publication_state: "verified",
+      derivation: {
+        validation_status: "valid",
+        publication_state: "verified",
+        input_freshness: "fresh",
+      },
+    });
   });
 
   it("forces a conservative banner for rejected no-claim responses", () => {
@@ -411,5 +820,20 @@ describe("proof-carrying answer surface", () => {
     );
     expect(screen.getByRole("status")).toHaveTextContent("Official records remain listed below");
     expect(screen.getByRole("list", { name: "Matching this question" })).toHaveTextContent("Listed Fire");
+  });
+
+  it("shows fetch time instead of hiding it", () => {
+    render(
+      <StatusBanner
+        banner={{
+          headline: "No matching official records",
+          detail: "No matching official wildfire records were returned.",
+          freshness_label: "No matching records to classify as current or stale",
+          availability_label: "Checked BC Wildfire Service incidents as of 2026-08-23T15:30:00+00:00.",
+          retrieval_completed_at: "2026-08-23T15:30:00+00:00",
+        }}
+      />,
+    );
+    expect(screen.getByText(/Fetched:/)).toBeInTheDocument();
   });
 });

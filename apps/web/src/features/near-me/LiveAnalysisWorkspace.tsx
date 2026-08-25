@@ -90,7 +90,7 @@ export function LiveAnalysisWorkspace({ session, embedded = false }: { session: 
       <div className="analysis-workspace__heading">
         <div>
           <span className="panel-label">Analysis view</span>
-          {!embedded && <h2>Current records, summarized</h2>}
+          <h2>{embedded ? "Current official records, summarized" : "Current records, summarized"}</h2>
         </div>
         <div className="analysis-tabs" role="group" aria-label="Choose analysis view">
           <button type="button" className={surface === "summary" ? "analysis-tabs__active" : ""} aria-pressed={surface === "summary"} onClick={() => setSurface("summary")}>

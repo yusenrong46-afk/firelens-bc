@@ -121,10 +121,13 @@ Additive Ask fields: `status_banner`, `supported_items`, `unknown_items`,
 `proof_cards`. Tile failure must not remove official record lists. Trust is
 labelled in text, not colour alone. Presentation is a projection of
 `publication.kind`: reviewed structured claims and extraction-only source
-wording are labelled independently, including in mixed answers. Extraction-only
-source wording is never strengthened by a legacy status banner. Rejected
-validation forces an unknown presentation even when an older response supplies
-no claims and carries stale strengthening banner copy.
+wording are labelled independently, including in mixed answers. Publication
+kind owns that authority; a Proof Card profile is a projection of the owning
+claim, not an independent `verified` source of truth. A stored card that
+disagrees with `publication.kind` is rebuilt from the claim or fails closed.
+Extraction-only source wording is never strengthened by a legacy status banner.
+Rejected validation forces an unknown presentation even when an older response
+supplies no claims and carries stale strengthening banner copy.
 
 ## Module sizes and exceptions
 
@@ -144,7 +147,19 @@ Targets from `FL-V16-S1`:
   `proof_presentation.py` and history helpers in `assistant_history.py`, but
   the remaining response contract stays one owner.
 
-Untouched `live.py` / `live_answering.py` remain under the 800-line cap only.
+The repair also had to touch the following modules that were already above the
+650-line modified-module target at `V16_STARTING_COMMIT` (`3de745a2`). Counts
+use the same `splitlines()` measure as `tests/test_architecture.py`. These are
+exceptions only to the 650-line target: the hard 800-line cap still applies.
+
+| Module | Baseline | Current | Bounded repair and deferred split |
+| --- | ---: | ---: | --- |
+| `src/firelens/evaluation/capture.py` | 734 | 754 | Added paired private-attestation and preview-raw-evidence capture guards. The immutable before/after artifact roster remains one owner; splitting it during this repair would add serializer and evidence-schema churn. |
+| `src/firelens/evaluation/release_surfaces.py` | 778 | 797 | Extracted raw preview-response validation to `preview_raw_evidence.py`. The remaining preview/deployment qualification surface is deferred because a wider split would change governed report validation during an active qualification campaign. |
+| `src/firelens/live.py` | 739 | 739 | Corrected paginated aggregate freshness in place. A full adapter split is deferred because the one-line safety fix does not justify moving the fail-closed fetch and normalization boundary. |
+| `src/firelens/review_workspace/cli.py` | 746 | 748 | Plumbed the required development-registry path through the existing semantic-holdout command. Parser/recipe decomposition is deferred rather than broadening a two-line CLI contract repair. |
+| `src/firelens/review_workspace/inputs.py` | 792 | 762 | Extracted private semantic-payload validation to `input_semantic.py`. The stable importer facade and commitment assembly remain together so this repair does not migrate the blinded review contract. |
+| `src/firelens/runtime_artifact.py` | 780 | 756 | Extracted candidate identity and active-artifact hash binding to `runtime_artifact_candidate.py`. Inventory sequencing and its CLI remain together to avoid changing the staged-artifact verification boundary. |
 
 ## Golden traces
 

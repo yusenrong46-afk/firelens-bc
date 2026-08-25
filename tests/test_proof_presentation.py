@@ -6,6 +6,7 @@ import pytest
 
 from firelens.claim_trust import GROUNDED_PUBLIC_WORDING, corpus_claim_trust
 from firelens.contracts import (
+    BACKGROUND_LIMITATION,
     AskResponse,
     ClaimSupport,
     EvidenceStatus,
@@ -18,8 +19,9 @@ from firelens.contracts import (
     ResponseStatus,
     ValidationReport,
 )
-from firelens.proof_presentation import AnswerStatusBanner, ProofCard
+from firelens.proof_presentation import AnswerStatusBanner, ProofCard, make_proof_card
 from firelens.publication_contracts import PublicationAuthority, PublicationKind
+from firelens.safety_profile import PublicationState, TruthClass
 
 _VALIDATION = ValidationReport(
     accepted=True,
@@ -172,8 +174,64 @@ def test_stale_live_banner_escalates_to_official_map() -> None:
     assert revalidated.proof_cards[0].authority == "BC Wildfire Service"
 
 
+def test_preserved_live_card_rebinds_current_result_freshness_and_url() -> None:
+    timestamp = datetime(2026, 8, 13, 19, 0, tzinfo=UTC)
+    fresh = LiveResult(
+        result_id="incident:7",
+        kind=LiveResultKind.INCIDENT,
+        authority="BC Wildfire Service",
+        source_url="https://example.test/incidents/fresh",
+        source_updated_at=timestamp,
+        retrieved_at=timestamp,
+        freshness=Freshness.FRESH,
+        status="Out of Control",
+        name="Test Fire",
+        geometry={"type": "Point", "coordinates": [-119.5, 49.89]},
+    )
+    original = AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id="trace-live-rebind",
+        response_mode=ResponseMode.LIVE,
+        answer="Test Fire is Out of Control.",
+        live_results=[fresh],
+        limitations=["This uses official records and is not a safety determination."],
+        aggregate_freshness="fresh",
+    )
+    assert original.proof_cards[0].publication_state is PublicationState.VERIFIED
+    assert original.proof_cards[0].freshness == "fresh"
+    stale = LiveResult.model_validate(
+        {
+            **fresh.model_dump(mode="python"),
+            "freshness": Freshness.STALE,
+            "source_url": "https://example.test/incidents/stale",
+            "status": "Being Held",
+        }
+    )
+    rebound = AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id="trace-live-rebind-stale",
+        response_mode=ResponseMode.LIVE,
+        answer="Test Fire is Out of Control.",
+        live_results=[stale],
+        limitations=["This uses official records and is not a safety determination."],
+        aggregate_freshness="stale",
+        proof_cards=[original.proof_cards[0]],
+    )
+    card = rebound.proof_cards[0]
+    assert card.freshness == "stale"
+    assert card.publication_state is PublicationState.REVIEW
+    assert str(card.official_url) == "https://example.test/incidents/stale"
+    assert card.exact_passage == "Being Held"
+
+
 def _published_claim(
-    *, claim_id: str, evidence_id: str, text: str, quote: str, kind: PublicationKind
+    *,
+    claim_id: str,
+    evidence_id: str,
+    text: str,
+    quote: str,
+    kind: PublicationKind,
+    evidence_status: EvidenceStatus = EvidenceStatus.VERIFIED_CORPUS,
 ) -> PublicClaim:
     publication = PublicationAuthority(
         kind=kind,
@@ -187,13 +245,35 @@ def _published_claim(
         renderer_id="firelens.test_renderer.v1",
         support_provenance="exact_official_quote",
     )
+    supports = (
+        []
+        if evidence_status == EvidenceStatus.GENERAL_BACKGROUND
+        else [ClaimSupport(evidence_id=evidence_id, quote=quote)]
+    )
     return PublicClaim(
         claim_id=claim_id,
         text=text,
-        evidence_status=EvidenceStatus.VERIFIED_CORPUS,
-        supports=[ClaimSupport(evidence_id=evidence_id, quote=quote)],
+        evidence_status=evidence_status,
+        supports=supports,
         trust=corpus_claim_trust(authority="PreparedBC", review_provenance="native_text"),
         publication=publication,
+    )
+
+
+def _forged_structured_reviewed_card(claim_id: str, text: str) -> ProofCard:
+    return make_proof_card(
+        claim_id=claim_id,
+        claim_text=text,
+        support_state="structured_reviewed",
+        support_label="Reviewed structured claim",
+        authority="PreparedBC",
+        exact_passage=text,
+        source_title="Official emergency guidance",
+        source_revision="Emergency guidance",
+        review_state="Human-verified source transcription",
+        critical_fields_checked="Critical fields checked and preserved",
+        freshness="Stable reviewed guidance",
+        official_url="https://example.test/e1",
     )
 
 
@@ -304,7 +384,7 @@ def test_rejected_publication_is_not_strengthened_by_additive_proof_fields(
         evidence=[_published_evidence("E1", text)],
         validation=_REJECTED_VALIDATION,
         proof_cards=[
-            ProofCard(
+            make_proof_card(
                 claim_id="C1",
                 claim_text=text,
                 support_state="structured_reviewed",
@@ -451,3 +531,135 @@ def test_failed_critical_field_preservation_is_not_listed_as_supported() -> None
     assert card.source_title is None
     assert card.source_revision is None
     assert card.official_url is None
+
+
+def test_matching_structured_reviewed_card_is_preserved() -> None:
+    text = "Keep an emergency kit ready."
+    original = AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id="trace-matching-structured",
+        response_mode=ResponseMode.PARTIAL,
+        answer=text,
+        claims=[
+            _published_claim(
+                claim_id="C1",
+                evidence_id="E1",
+                text=text,
+                quote=text,
+                kind=PublicationKind.STRUCTURED_REVIEWED,
+            )
+        ],
+        evidence=[_published_evidence("E1", text)],
+        validation=_VALIDATION,
+    )
+    matching = original.proof_cards[0]
+    assert matching.support_state == "structured_reviewed"
+    assert matching.truth_class is TruthClass.SOURCE_FACT
+    assert matching.publication_state is PublicationState.VERIFIED
+
+    rebound = AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id="trace-matching-structured-rebind",
+        response_mode=ResponseMode.PARTIAL,
+        answer=text,
+        claims=original.claims,
+        evidence=original.evidence,
+        validation=_VALIDATION,
+        proof_cards=[matching],
+    )
+    card = rebound.proof_cards[0]
+    assert card.support_state == "structured_reviewed"
+    assert card.truth_class is TruthClass.SOURCE_FACT
+    assert card.publication_state is PublicationState.VERIFIED
+    assert card.exact_passage == text
+
+
+@pytest.mark.parametrize(
+    ("kind", "mode", "evidence_status", "expect_state", "expect_truth", "expect_pub"),
+    [
+        (
+            PublicationKind.SOURCE_LINKED_EXPLANATION,
+            ResponseMode.PARTIAL,
+            EvidenceStatus.VERIFIED_CORPUS,
+            "source_linked_explanation",
+            TruthClass.MODEL_SUMMARY,
+            PublicationState.REVIEW,
+        ),
+        (
+            PublicationKind.GENERAL_BACKGROUND,
+            ResponseMode.BACKGROUND,
+            EvidenceStatus.GENERAL_BACKGROUND,
+            "background",
+            TruthClass.MODEL_SUMMARY,
+            PublicationState.REVIEW,
+        ),
+        (
+            PublicationKind.UNSUPPORTED,
+            ResponseMode.PARTIAL,
+            EvidenceStatus.VERIFIED_CORPUS,
+            "unknown",
+            TruthClass.UNKNOWN,
+            PublicationState.REJECTED,
+        ),
+    ],
+)
+def test_forged_structured_review_card_defers_to_publication_kind(
+    kind: PublicationKind,
+    mode: ResponseMode,
+    evidence_status: EvidenceStatus,
+    expect_state: str,
+    expect_truth: TruthClass,
+    expect_pub: PublicationState,
+) -> None:
+    text = "Keep an emergency kit ready."
+    claims = [
+        _published_claim(
+            claim_id="C1",
+            evidence_id="E1",
+            text=text,
+            quote=text,
+            kind=kind,
+            evidence_status=evidence_status,
+        )
+    ]
+    evidence = (
+        []
+        if evidence_status == EvidenceStatus.GENERAL_BACKGROUND
+        else [_published_evidence("E1", text)]
+    )
+    limitations = [BACKGROUND_LIMITATION] if mode == ResponseMode.BACKGROUND else []
+    generated = AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id=f"trace-generated-{kind.value}",
+        response_mode=mode,
+        answer=text,
+        claims=claims,
+        evidence=evidence,
+        limitations=limitations,
+        validation=_VALIDATION,
+    )
+    generated_card = generated.proof_cards[0]
+    assert generated_card.support_state == expect_state
+    assert generated_card.truth_class is expect_truth
+    assert generated_card.publication_state is expect_pub
+
+    forged = AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id=f"trace-forged-{kind.value}",
+        response_mode=mode,
+        answer=text,
+        claims=claims,
+        evidence=evidence,
+        limitations=limitations,
+        validation=_VALIDATION,
+        proof_cards=[_forged_structured_reviewed_card("C1", text)],
+    )
+    card = forged.proof_cards[0]
+    assert card.support_state == expect_state
+    assert card.truth_class is expect_truth
+    assert card.publication_state is expect_pub
+    assert card.publication_state is not PublicationState.VERIFIED
+    if expect_state == "unknown":
+        assert card.authority == "Authority not established"
+        assert card.exact_passage is None
+        assert card.official_url is None

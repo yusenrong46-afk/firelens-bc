@@ -6,6 +6,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
+MAX_TOOL_CALLS_PER_REQUEST = 4
+
 
 def tool_fingerprint(name: str, arguments: dict[str, Any] | None) -> tuple[str, str]:
     """Normalize one tool call so identical dispatches can be rejected."""
@@ -24,6 +26,7 @@ class RequestExecutionPolicy:
     route: str | None = None
     deadline: float | None = None
     tool_rounds_remaining: int = 2
+    tool_calls_remaining: int = MAX_TOOL_CALLS_PER_REQUEST
     retrieval_cycles_remaining: int = 2
     planner_call_budget: int = 1
     embedding_budget: int = 6
@@ -39,6 +42,8 @@ class RequestExecutionPolicy:
     embedding_calls: int = 0
     rerank_calls: int = 0
     tool_rounds: int = 0
+    tool_calls: int = 0
+    refused_tool_calls: int = 0
     repeated_tool_dispatch: int = 0
     retrieval_cycles: int = 0
     cache_used: bool | None = None
@@ -76,6 +81,16 @@ class RequestExecutionPolicy:
         self.tool_rounds += 1
         return True
 
+    def consume_tool_call(self) -> bool:
+        if self.tool_calls_remaining <= 0:
+            self.refused_tool_calls += 1
+            if self.fallback_reason is None:
+                self.fallback_reason = "tool_call_budget_exhausted"
+            return False
+        self.tool_calls_remaining -= 1
+        self.tool_calls += 1
+        return True
+
     def consume_retrieval_cycle(self) -> None:
         self.retrieval_cycles += 1
         if self.retrieval_cycles_remaining > 0:
@@ -90,6 +105,8 @@ class RequestExecutionPolicy:
             "embedding_calls": self.embedding_calls,
             "rerank_calls": self.rerank_calls,
             "tool_rounds": self.tool_rounds,
+            "tool_calls": self.tool_calls,
+            "refused_tool_calls": self.refused_tool_calls,
             "repeated_tool_dispatch": self.repeated_tool_dispatch,
             "retrieval_cycles": self.retrieval_cycles,
             "rewrites": int("outer_rewrite" in self.provider_stages),

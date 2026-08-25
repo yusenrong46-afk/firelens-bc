@@ -67,7 +67,7 @@ _PLACE_PATTERNS = (
         re.IGNORECASE,
     ),
     re.compile(
-        r"^\s*(?!(?:i|we|you|give|show|which|what|where|how|is|are|can|could|"
+        r"^\s*(?!(?:i|we|you|give|show|list|which|what|where|how|is|are|can|could|"
         r"please|tell|there)\b)"
         r"(?P<place>[a-z][a-z.'-]*(?:\s+[a-z][a-z.'-]*){0,3}?)\s+"
         r"(?:any\s+)?(?:wild)?fires?(?:\s+(?:right\s+now|rn|today|tonight|"

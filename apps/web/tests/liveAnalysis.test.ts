@@ -41,15 +41,49 @@ describe("live analytical summaries", () => {
       "Under Control",
     ]);
     expect(analysis.highestFireCentre?.label).toBe("Kamloops Fire Centre");
+    expect(analysis.byStatus.reduce((total, row) => total + row.count, 0)).toBe(analysis.total);
   });
 
-  it("excludes non-incident records and does not invent missing group values", () => {
+  it("excludes non-incident records and labels missing group values", () => {
     const analysis = buildLiveAnalysis([
       incident({ result_id: "incident:1", fire_centre: null }),
       { ...incident({ result_id: "evacuation:1" }), kind: "evacuation" },
     ]);
     expect(analysis.total).toBe(1);
-    expect(analysis.byFireCentre).toEqual([]);
+    expect(analysis.byFireCentre).toEqual([{ label: "Not reported", count: 1, share: 1 }]);
     expect(analysis.byStatus).toEqual([{ label: "Being Held", count: 1, share: 1 }]);
+  });
+
+  it("keeps partially missing official grouping fields visible and reconciled", () => {
+    const analysis = buildLiveAnalysis([
+      incident({ result_id: "incident:1", fire_centre: "Kamloops Fire Centre" }),
+      incident({ result_id: "incident:2", fire_centre: null }),
+    ]);
+
+    expect(analysis.byFireCentre).toEqual([
+      { label: "Kamloops Fire Centre", count: 1, share: 0.5 },
+      { label: "Not reported", count: 1, share: 0.5 },
+    ]);
+    expect(analysis.byFireCentre.reduce((total, row) => total + row.count, 0)).toBe(
+      analysis.total,
+    );
+  });
+
+  it("never presents the missing-value bucket as a fire centre", () => {
+    const analysis = buildLiveAnalysis([
+      incident({ result_id: "incident:1", fire_centre: null }),
+      incident({ result_id: "incident:2", fire_centre: " " }),
+      incident({ result_id: "incident:3", fire_centre: "Coastal Fire Centre" }),
+    ]);
+
+    expect(analysis.byFireCentre[0]).toEqual({
+      label: "Not reported",
+      count: 2,
+      share: 2 / 3,
+    });
+    expect(analysis.highestFireCentre?.label).toBe("Coastal Fire Centre");
+    expect(buildLiveAnalysis([
+      incident({ result_id: "incident:4", fire_centre: null }),
+    ]).highestFireCentre).toBeUndefined();
   });
 });

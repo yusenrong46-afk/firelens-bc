@@ -34,7 +34,7 @@ from firelens.contracts import (
     render_claim_texts,
 )
 from firelens.live_contracts import LiveResult
-from firelens.proof_presentation import ProofCard
+from firelens.proof_presentation import ProofCard, make_proof_card
 from firelens.publication.compiled_validation import (
     atomic_quote_overlap as _atomic_quote_overlap,
 )
@@ -66,10 +66,6 @@ from firelens.publication_contracts import (
     PublicationAuthority,
     PublicationKind,
     StructuredReviewedClaimBlock,
-)
-
-OFFICIAL_SOURCE_URL = (
-    "https://www2.gov.bc.ca/gov/content/safety/emergency-preparedness-response-recovery"
 )
 
 _APPLICABILITY_QUALIFIERS = (
@@ -111,6 +107,8 @@ def compile_structured_claim(
         raise ValueError("source revision mismatch invalidates structured support")
     if not record.available_for_structured_support:
         raise ValueError(f"{typed_claim_id} is not available for structured support")
+    if record.canonical_url is None:
+        raise ValueError(f"{typed_claim_id} has no exact structured source URL")
     block = StructuredReviewedClaimBlock(
         public_claim_id=public_claim_id,
         typed_claim_id=record.claim_id,
@@ -124,7 +122,7 @@ def compile_structured_claim(
         evidence_id=f"S-{record.claim_id}",
         title=f"{record.authority} reviewed guidance",
         publisher=record.authority,
-        canonical_url=HttpUrl(OFFICIAL_SOURCE_URL),
+        canonical_url=HttpUrl(record.canonical_url),
         locator=record.source_revision,
         temporal_class=TemporalClass.STABLE_GUIDANCE,
         review_provenance="native_text",
@@ -176,7 +174,7 @@ def compile_live_fact(result: LiveResult, public_claim_id: str) -> CompiledClaim
         trust=None,
         publication=authority,
     )
-    card = ProofCard(
+    card = make_proof_card(
         claim_id=claim.claim_id,
         claim_text=claim.text,
         support_state="official_live_typed",
@@ -191,6 +189,7 @@ def compile_live_fact(result: LiveResult, public_claim_id: str) -> CompiledClaim
             result.freshness.value if hasattr(result.freshness, "value") else result.freshness
         ),
         official_url=result.source_url,
+        derivation=result.distance_derivation,
     )
     response = AskResponse(
         status=ResponseStatus.ANSWER,
@@ -542,8 +541,9 @@ def _live_text(result: LiveResult) -> str:
         f"FireLens retrieved this record {result.retrieved_at.isoformat()}.",
         f"Freshness is {freshness}.",
     ]
-    if result.distance_km is not None:
-        parts.append(f"Distance {result.distance_km} km.")
+    if result.distance_km is not None and result.distance_basis is not None:
+        basis = result.distance_basis.replace("_", " ")
+        parts.append(f"Distance {result.distance_km:g} km geodesic to the official {basis}.")
     parts.append("This is not a safety determination.")
     return " ".join(parts)
 
@@ -555,7 +555,7 @@ def _card_from_claim(
     support_label: str,
 ) -> ProofCard:
     authority = claim.publication
-    return ProofCard(
+    return make_proof_card(
         claim_id=claim.claim_id,
         claim_text=claim.text,
         support_state=support_state,  # type: ignore[arg-type]

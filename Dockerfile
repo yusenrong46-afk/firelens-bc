@@ -1,4 +1,4 @@
-FROM node:22-alpine AS frontend-build
+FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS frontend-build
 
 WORKDIR /build/apps/web
 COPY apps/web/package.json apps/web/package-lock.json ./
@@ -6,7 +6,7 @@ RUN npm ci
 COPY apps/web/ ./
 RUN npm run build
 
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim@sha256:dd29372629eeba2dd003fd9e9d35a5b8236c44727875a0364254b5127af88e65 AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

@@ -4,13 +4,26 @@ from __future__ import annotations
 
 import math
 from collections import Counter
-from datetime import datetime
+from collections.abc import Sequence
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any, Literal, Self
 
 from pydantic import Field, HttpUrl, field_validator, model_validator
 
 from firelens.contract_base import FrozenStrictModel
+from firelens.safety_profile import (
+    PublicationState,
+    TruthClass,
+    freshness_token,
+    live_freshness_is_explicitly_fresh,
+)
+
+GEODESIC_CRS = "EPSG:4326"
+COORDINATE_ORDER = "longitude_latitude"
+DISTANCE_UNIT = "km"
+DISTANCE_ALGORITHM = "pyproj.Geod.inv WGS84 after shapely nearest_points"
+SOURCE_CLOCK_SKEW_ALLOWANCE = timedelta(minutes=5)
 
 
 class LocationInput(FrozenStrictModel):
@@ -83,6 +96,182 @@ class AggregateFreshness(StrEnum):
     MIXED = "mixed"
 
 
+class DerivationValidationStatus(StrEnum):
+    VALID = "valid"
+    INVALID = "invalid"
+
+
+_UNKNOWN_INPUT_FRESHNESS = "unknown"
+_PLACE_INPUT_PREFIX = "place:"
+
+
+def stored_input_freshness(value: Any) -> str:
+    """Canonicalize observed input freshness for derivation binding."""
+
+    return freshness_token(value) or _UNKNOWN_INPUT_FRESHNESS
+
+
+def canonical_validation_status(value: Any) -> DerivationValidationStatus:
+    token = str(getattr(value, "value", value)).strip().casefold()
+    if token == DerivationValidationStatus.VALID.value:
+        return DerivationValidationStatus.VALID
+    return DerivationValidationStatus.INVALID
+
+
+def derivation_cites_record_and_place(input_source_ids: Sequence[str]) -> bool:
+    """Point-to-record distance needs both the official record and a place input."""
+
+    has_place = False
+    has_record = False
+    for item in input_source_ids:
+        if not isinstance(item, str) or not item.strip():
+            continue
+        if item.startswith(_PLACE_INPUT_PREFIX):
+            has_place = True
+        else:
+            has_record = True
+    return has_place and has_record
+
+
+def derivation_publication_state(
+    *,
+    validation_status: DerivationValidationStatus | Any,
+    input_freshness: Any = None,
+    input_source_ids: Sequence[str] | None = None,
+) -> PublicationState:
+    """VERIFIED requires valid calculation, exact fresh input, and record+place ids."""
+
+    if canonical_validation_status(validation_status) != DerivationValidationStatus.VALID:
+        return PublicationState.REJECTED
+    if not live_freshness_is_explicitly_fresh(input_freshness):
+        return PublicationState.REVIEW
+    if input_source_ids is not None and not derivation_cites_record_and_place(input_source_ids):
+        return PublicationState.REVIEW
+    return PublicationState.VERIFIED
+
+
+def require_aware_utc(value: datetime, *, label: str = "timestamp") -> datetime:
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError(f"{label} must be timezone-aware")
+    return value.astimezone(UTC)
+
+
+def source_observation_is_future(source_updated_at: datetime, retrieved_at: datetime) -> bool:
+    """True when the source clock is later than retrieval beyond allowed skew."""
+
+    return source_updated_at > retrieved_at + SOURCE_CLOCK_SKEW_ALLOWANCE
+
+
+def derivation_calculated_at_is_future(
+    calculated_at: datetime, *, reference: datetime | None = None
+) -> bool:
+    """True when derivation time is materially later than generation/reference."""
+
+    compared = reference or datetime.now(UTC)
+    return require_aware_utc(calculated_at, label="derivation calculated_at") > (
+        require_aware_utc(compared, label="derivation reference time")
+        + SOURCE_CLOCK_SKEW_ALLOWANCE
+    )
+
+
+def freshness_for_observation(
+    freshness: Freshness,
+    *,
+    source_updated_at: datetime,
+    retrieved_at: datetime,
+) -> Freshness:
+    """Quarantine far-future source clocks so they cannot remain FRESH."""
+
+    if source_observation_is_future(source_updated_at, retrieved_at):
+        return Freshness.STALE
+    return freshness
+
+
+class DistanceDerivation(FrozenStrictModel):
+    """Deterministic geodesic binding. Models cannot assign or elevate these fields."""
+
+    truth_class: TruthClass
+    publication_state: PublicationState
+    input_source_ids: list[str] = Field(min_length=1, max_length=8)
+    algorithm: str = Field(min_length=1, max_length=160)
+    crs: str = Field(min_length=1, max_length=32)
+    coordinate_order: str = Field(min_length=1, max_length=32)
+    units: str = Field(min_length=1, max_length=16)
+    calculated_at: datetime
+    validation_status: DerivationValidationStatus
+    input_freshness: str = Field(min_length=1, max_length=80)
+    distance_km: float = Field(ge=0)
+    distance_basis: Literal["incident_point", "perimeter_boundary"]
+
+    @field_validator("calculated_at")
+    @classmethod
+    def calculated_at_is_aware(cls, value: datetime) -> datetime:
+        return require_aware_utc(value, label="derivation calculated_at")
+
+    @model_validator(mode="after")
+    def derivation_is_canonical(self) -> Self:
+        if self.truth_class is not TruthClass.DETERMINISTIC_DERIVATION:
+            raise ValueError("distance derivation truth class must be deterministic_derivation")
+        if self.crs != GEODESIC_CRS:
+            raise ValueError("unsupported CRS cannot be emitted as supported")
+        if self.units != DISTANCE_UNIT:
+            raise ValueError("unsupported distance unit cannot be emitted as supported")
+        if self.algorithm != DISTANCE_ALGORITHM:
+            raise ValueError("distance algorithm must be the canonical geodesic binding")
+        if self.coordinate_order != COORDINATE_ORDER:
+            raise ValueError("coordinate order must be longitude_latitude")
+        expected = derivation_publication_state(
+            validation_status=self.validation_status,
+            input_freshness=self.input_freshness,
+            input_source_ids=self.input_source_ids,
+        )
+        if self.publication_state != expected:
+            raise ValueError("distance derivation publication must match input freshness")
+        if derivation_calculated_at_is_future(self.calculated_at) and (
+            self.validation_status == DerivationValidationStatus.VALID
+            or self.publication_state == PublicationState.VERIFIED
+        ):
+            raise ValueError("derivation calculated_at cannot be materially in the future")
+        return self
+
+
+def bind_distance_derivation(
+    *,
+    result_id: str,
+    distance_km: float,
+    distance_basis: Literal["incident_point", "perimeter_boundary"],
+    calculated_at: datetime,
+    extra_input_ids: tuple[str, ...] = (),
+    validation_status: DerivationValidationStatus = DerivationValidationStatus.VALID,
+    input_freshness: Any = None,
+) -> DistanceDerivation:
+    """Construct canonical derivation metadata. Callers cannot choose CRS or units."""
+
+    stored_freshness = stored_input_freshness(input_freshness)
+    status = canonical_validation_status(validation_status)
+    if derivation_calculated_at_is_future(calculated_at):
+        status = DerivationValidationStatus.INVALID
+    input_source_ids = [result_id, *extra_input_ids]
+    return DistanceDerivation(
+        truth_class=TruthClass.DETERMINISTIC_DERIVATION,
+        publication_state=derivation_publication_state(
+            validation_status=status,
+            input_freshness=stored_freshness,
+            input_source_ids=input_source_ids,
+        ),
+        input_source_ids=input_source_ids,
+        algorithm=DISTANCE_ALGORITHM,
+        crs=GEODESIC_CRS,
+        coordinate_order=COORDINATE_ORDER,
+        units=DISTANCE_UNIT,
+        calculated_at=calculated_at,
+        validation_status=status,
+        input_freshness=stored_freshness,
+        distance_km=distance_km,
+        distance_basis=distance_basis,
+    )
+
+
 class LiveResult(FrozenStrictModel):
     result_id: str = Field(min_length=1, max_length=200)
     kind: LiveResultKind
@@ -102,6 +291,7 @@ class LiveResult(FrozenStrictModel):
     geometry: dict[str, Any]
     distance_km: float | None = Field(default=None, ge=0)
     distance_basis: Literal["incident_point", "perimeter_boundary"] | None = None
+    distance_derivation: DistanceDerivation | None = None
 
     @model_validator(mode="after")
     def distance_fields_are_consistent(self) -> Self:
@@ -109,6 +299,8 @@ class LiveResult(FrozenStrictModel):
             raise ValueError(
                 "live distance and its measurement basis must be provided together"
             )
+        if (self.distance_km is None) != (self.distance_derivation is None):
+            raise ValueError("live distance and derivation binding must be provided together")
         if self.distance_basis == "incident_point" and self.kind != LiveResultKind.INCIDENT:
             raise ValueError("incident-point distance requires an incident result")
         if (
@@ -116,6 +308,48 @@ class LiveResult(FrozenStrictModel):
             and self.kind != LiveResultKind.PERIMETER
         ):
             raise ValueError("perimeter-boundary distance requires a perimeter result")
+        geom_type = self.geometry.get("type") if isinstance(self.geometry, dict) else None
+        if self.distance_basis == "incident_point" and geom_type != "Point":
+            raise ValueError("incident-point distance requires point geometry")
+        if self.distance_basis == "perimeter_boundary" and geom_type not in {
+            "Polygon",
+            "MultiPolygon",
+        }:
+            raise ValueError("perimeter-boundary distance requires perimeter geometry")
+        if self.distance_derivation is not None:
+            if (
+                self.distance_derivation.distance_km != self.distance_km
+                or self.distance_derivation.distance_basis != self.distance_basis
+            ):
+                raise ValueError("distance derivation must match the published measurement")
+            if self.result_id not in self.distance_derivation.input_source_ids:
+                raise ValueError("distance derivation must cite the live record as an input")
+            expected = derivation_publication_state(
+                validation_status=self.distance_derivation.validation_status,
+                input_freshness=self.freshness,
+                input_source_ids=self.distance_derivation.input_source_ids,
+            )
+            if self.distance_derivation.publication_state != expected:
+                raise ValueError("distance derivation publication must match input freshness")
+            stored = stored_input_freshness(self.distance_derivation.input_freshness)
+            if stored != stored_input_freshness(self.freshness):
+                raise ValueError(
+                    "distance derivation input freshness must match the live record"
+                )
+        return self
+
+    @field_validator("source_updated_at", "retrieved_at")
+    @classmethod
+    def require_timezone(cls, value: datetime) -> datetime:
+        return require_aware_utc(value, label="live timestamps")
+
+    @model_validator(mode="after")
+    def future_source_clock_cannot_be_fresh(self) -> Self:
+        if (
+            source_observation_is_future(self.source_updated_at, self.retrieved_at)
+            and self.freshness is Freshness.FRESH
+        ):
+            raise ValueError("future source observation cannot be classified fresh")
         return self
 
 
@@ -131,6 +365,13 @@ class LiveLayerStatus(FrozenStrictModel):
     freshness: Freshness | None = None
     matching_result_count: int = Field(ge=0)
 
+    @field_validator("source_updated_at", "retrieved_at")
+    @classmethod
+    def layer_timestamps_are_aware(cls, value: datetime | None) -> datetime | None:
+        if value is None:
+            return None
+        return require_aware_utc(value, label="live layer timestamps")
+
     @model_validator(mode="after")
     def availability_fields_are_consistent(self) -> Self:
         observations = (self.source_updated_at, self.retrieved_at, self.freshness)
@@ -140,7 +381,52 @@ class LiveLayerStatus(FrozenStrictModel):
             any(value is not None for value in observations) or self.matching_result_count != 0
         ):
             raise ValueError("unavailable live layers cannot claim observations or results")
+        if (
+            self.available
+            and self.source_updated_at is not None
+            and self.retrieved_at is not None
+            and source_observation_is_future(self.source_updated_at, self.retrieved_at)
+            and self.freshness is Freshness.FRESH
+        ):
+            raise ValueError("future source observation cannot be classified fresh")
         return self
+
+
+def stale_observation_limitations(
+    layer_statuses: list[LiveLayerStatus],
+    results: list[LiveResult],
+) -> list[str]:
+    """Distinguish cache-stale refresh failure from quarantined future source clocks."""
+
+    refresh_stale = False
+    clock_quarantine = False
+    for status in layer_statuses:
+        if not status.available:
+            continue
+        future = (
+            status.source_updated_at is not None
+            and status.retrieved_at is not None
+            and source_observation_is_future(status.source_updated_at, status.retrieved_at)
+        )
+        if future:
+            clock_quarantine = True
+        elif status.freshness is Freshness.STALE:
+            refresh_stale = True
+    for result in results:
+        if source_observation_is_future(result.source_updated_at, result.retrieved_at):
+            clock_quarantine = True
+        elif result.freshness is Freshness.STALE:
+            refresh_stale = True
+    notes: list[str] = []
+    if refresh_stale:
+        notes.append(
+            "A refresh failed; cached records are stale and are not current conditions."
+        )
+    if clock_quarantine:
+        notes.append(
+            "An official source timestamp was later than retrieval and is not treated as current."
+        )
+    return notes
 
 
 def aggregate_live_freshness(results: list[LiveResult]) -> AggregateFreshness | None:
@@ -162,10 +448,15 @@ class LiveMapResponse(FrozenStrictModel):
     layer_statuses: list[LiveLayerStatus] = Field(default_factory=list, max_length=3)
     limitations: list[str] = Field(default_factory=list)
 
+    @field_validator("generated_at")
+    @classmethod
+    def generated_at_is_aware(cls, value: datetime) -> datetime:
+        return require_aware_utc(value, label="map generated_at")
+
     @model_validator(mode="after")
     def validate_aggregate_freshness(self) -> Self:
         expected = aggregate_live_freshness(self.results)
-        if self.aggregate_freshness is not None and self.aggregate_freshness != expected:
+        if self.aggregate_freshness != expected:
             raise ValueError("aggregate freshness must match the returned live records")
         if self.layer_statuses:
             kinds = [status.kind for status in self.layer_statuses]
@@ -266,6 +557,11 @@ class NearMeResponse(FrozenStrictModel):
     limitations: list[str] = Field(default_factory=list)
     official_fallback_urls: list[HttpUrl] = Field(min_length=1, max_length=10)
 
+    @field_validator("generated_at")
+    @classmethod
+    def generated_at_is_aware(cls, value: datetime) -> datetime:
+        return require_aware_utc(value, label="near-me generated_at")
+
     @model_validator(mode="after")
     def page_contract_is_consistent(self) -> Self:
         if len(self.results) != self.pagination.returned_results:
@@ -276,6 +572,8 @@ class NearMeResponse(FrozenStrictModel):
             raise ValueError("near-me unavailable layers must be unique")
         if any(layer not in self.requested_layers for layer in self.unavailable_layers):
             raise ValueError("near-me unavailable layers must have been requested")
+        if self.aggregate_freshness != aggregate_live_freshness(self.results):
+            raise ValueError("aggregate freshness must match the returned live records")
         if self.layer_statuses:
             status_kinds = [status.kind for status in self.layer_statuses]
             if status_kinds != self.requested_layers:

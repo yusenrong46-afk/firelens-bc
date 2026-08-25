@@ -61,6 +61,7 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         "src/firelens/evaluation/limitation_cli.py",
         "src/firelens/evaluation/limitation_runtime.py",
         "src/firelens/evaluation/preview_qualification_cli.py",
+        "src/firelens/evaluation/preview_raw_evidence.py",
         "src/firelens/evaluation/qualification_reports.py",
         "src/firelens/evaluation/release_surfaces.py",
         "src/firelens/evaluation/retrieval.py",
@@ -83,6 +84,9 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         "src/firelens/benchmark_support.py",
     }.issubset(spec.harness_inputs)
     assert "src/firelens/review_workspace/input_common.py" in spec.harness_inputs
+    assert "src/firelens/review_workspace/input_semantic.py" in spec.harness_inputs
+    assert "src/firelens/git_identity.py" in spec.harness_inputs
+    assert "src/firelens/document_context.py" in spec.harness_inputs
     assert {
         "src/firelens/review_workspace/cli.py",
         "src/firelens/review_workspace/session.py",
@@ -96,6 +100,7 @@ def test_spec_is_v2_provisional_and_registry_roles_are_valid() -> None:
         "src/firelens/runtime_artifact_common.py",
         "src/firelens/runtime_artifact_comparison.py",
         "src/firelens/runtime_artifact_files.py",
+        "src/firelens/runtime_artifact_candidate.py",
     }.issubset(spec.harness_inputs)
     assert "tests/test_runtime_artifact.py" in spec.harness_inputs
     assert "tests/test_limitation_probe.py" in spec.harness_inputs

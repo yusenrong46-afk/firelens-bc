@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import subprocess
 from collections.abc import Mapping
 from typing import Any, cast
 
@@ -19,6 +18,7 @@ from firelens.benchmark_contracts import (
 )
 from firelens.config import FireLensConfig
 from firelens.contracts import QueryRoute
+from firelens.git_identity import clean_checkout_commit
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.runtime import Runtime
 
@@ -61,21 +61,13 @@ def benchmark_runtime_configuration(config: FireLensConfig) -> dict[str, Any]:
 
 
 def _current_commit(config: FireLensConfig) -> str | None:
-    """Prefer the measured checkout commit, falling back to deployment metadata."""
+    """Prefer a clean measured checkout, falling back outside Git only."""
 
-    try:
-        completed = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=config.project_root,
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        return config.build_commit
-    commit = completed.stdout.strip()
-    return commit or config.build_commit
+    return clean_checkout_commit(
+        config.project_root,
+        context="benchmark runtime identity",
+        fallback=config.build_commit,
+    )
 
 
 def benchmark_runtime_identity(runtime: Runtime) -> dict[str, Any]:

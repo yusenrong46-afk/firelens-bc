@@ -36,6 +36,7 @@ class ReviewInputRecipe(_FrozenModel):
     private_holdout_payload: str | None = None
     holdout_manifest: str | None = None
     holdout_candidate_report: str | None = None
+    holdout_development_registry: str | None = None
     nonqualifying_dry_run: bool = False
 
     @model_validator(mode="after")
@@ -52,6 +53,7 @@ class ReviewInputRecipe(_FrozenModel):
                 "private_holdout_payload",
                 "holdout_manifest",
                 "holdout_candidate_report",
+                "holdout_development_registry",
             },
         }[self.suite_kind]
         if supplied != expected:
@@ -135,10 +137,12 @@ def import_review_suite(recipe: ReviewInputRecipe) -> ImportedReviewSuite:
     assert recipe.private_holdout_payload is not None
     assert recipe.holdout_manifest is not None
     assert recipe.holdout_candidate_report is not None
+    assert recipe.holdout_development_registry is not None
     return import_semantic_holdout_suite(
         Path(recipe.private_holdout_payload),
         Path(recipe.holdout_manifest),
         Path(recipe.holdout_candidate_report),
+        Path(recipe.holdout_development_registry),
     )
 
 

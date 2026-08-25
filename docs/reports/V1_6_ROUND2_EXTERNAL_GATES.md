@@ -24,7 +24,9 @@ Status for each: READY_FOR_EXTERNAL_EXECUTION, not EXECUTED.
 Preview:
 
 ```text
-.venv/bin/python scripts/qualify_preview.py --base-url https://<preview-host>
+.venv/bin/python scripts/qualify_preview.py --base-url https://<preview-host> \
+  --expected-version 1.6.0-rc.1 --expected-commit <full-release-commit> \
+  --raw-evidence-output /absolute/private/v1_6_preview_raw.json
 .venv/bin/python scripts/qualify_deployment_gates.py --base-url https://<preview-host>
 .venv/bin/python scripts/probe_preview_ask_hard_v2.py --base-url https://<preview-host>
 ```

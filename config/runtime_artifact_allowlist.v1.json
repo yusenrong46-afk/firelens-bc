@@ -3,13 +3,17 @@
   "contract_id": "firelens-v1.5-2-runtime-artifact",
   "candidate_configuration": {
     "logical_path": "config/runtime_candidate.v1.json",
-    "schema_version": "firelens.runtime_candidate.v3",
+    "schema_version": "firelens.runtime_candidate.v4",
     "required_fields": [
       "schema_version",
       "candidate_id",
       "release_version",
       "build_commit",
       "corpus_version",
+      "corpus_sha256",
+      "corpus_manifest_sha256",
+      "vector_matrix_sha256",
+      "vector_manifest_sha256",
       "embedding_model",
       "retrieval_text_strategy",
       "rerank_model",

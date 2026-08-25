@@ -33,6 +33,11 @@ _HISTORY_MODE_LABELS = {
     "requires_input": "FireLens task-continuation request",
     "abstention": "FireLens abstention",
 }
+_HISTORY_FRESHNESS_LABELS = {
+    "fresh": "Official current records",
+    "stale": "Official cached records (refresh failed)",
+    "mixed": "Official records with mixed freshness",
+}
 _SAFETY_HISTORY_PREFIXES = {
     "personalized_safety_decision": (
         "Safety boundary: FireLens cannot make a personal safety or evacuation decision."
@@ -47,16 +52,32 @@ _SAFETY_HISTORY_PREFIXES = {
 
 
 def response_history_prefix(
-    *, response_mode: str, reason_code: str | None, section_kinds: Sequence[str]
+    *,
+    response_mode: str,
+    reason_code: str | None,
+    section_kinds: Sequence[str],
+    aggregate_freshness: str | None = None,
 ) -> str:
     """Return a deterministic, user-facing authority label for later turns."""
 
     safety_prefix = _SAFETY_HISTORY_PREFIXES.get(reason_code or "")
     if safety_prefix is not None:
         return safety_prefix
+    records_label = _HISTORY_FRESHNESS_LABELS.get(
+        aggregate_freshness or "", _HISTORY_SECTION_LABELS["current_records"]
+    )
     if section_kinds:
-        labels = list(dict.fromkeys(_HISTORY_SECTION_LABELS[kind] for kind in section_kinds))
+        labels = list(
+            dict.fromkeys(
+                records_label if kind == "current_records" else _HISTORY_SECTION_LABELS[kind]
+                for kind in section_kinds
+            )
+        )
         return "Authority: " + " + ".join(labels) + "."
+    if response_mode == "live":
+        return "Authority: " + records_label + "."
+    if response_mode == "mixed" and aggregate_freshness is not None:
+        return "Authority: " + records_label + " + Reviewed or labelled non-live information."
     return "Authority: " + _HISTORY_MODE_LABELS[response_mode] + "."
 
 

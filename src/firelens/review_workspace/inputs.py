@@ -18,6 +18,10 @@ from pathlib import Path
 from typing import Any
 
 from firelens.benchmark import BenchmarkDataset
+from firelens.evaluation.semantic_inputs import (
+    _semantic_development_registry_payload,
+    _semantic_holdout_manifest_payload,
+)
 from firelens.review_workspace.input_common import (
     CHUNK_KEYS,
     HOLDOUT_MANIFEST_KEYS,
@@ -51,6 +55,9 @@ from firelens.review_workspace.input_common import (
     _timestamp,
     canonical_sha256 as _canonical_sha256,
     input_file_roster_sha256 as _input_file_roster_sha256,
+)
+from firelens.review_workspace.input_semantic import (
+    validate_private_input as _validate_private_input,
 )
 
 BlindCasePayload = _BlindCasePayload
@@ -494,71 +501,20 @@ def import_retrieval_suite(
     )
 
 
-def _validate_private_input(value: Any, context: str) -> dict[str, Any]:
-    review_input = _exact_keys(
-        value,
-        {"input_version", "question", "history", "rubric", "source_context"},
-        context,
-    )
-    if review_input.get("input_version") != "firelens_semantic_holdout_review_input.v1":
-        raise ReviewInputError("semantic holdout private-review-input version is unsupported")
-    _content(review_input.get("question"), f"{context} question")
-    history = review_input.get("history")
-    if not isinstance(history, list):
-        raise ReviewInputError(f"{context} history must be an array")
-    for index, message in enumerate(history):
-        row = _exact_keys(message, {"role", "content"}, f"{context} history {index}")
-        if row.get("role") not in {"user", "assistant"}:
-            raise ReviewInputError(f"{context} history role is unsupported")
-        _content(row.get("content"), f"{context} history content")
-    rubric = _exact_keys(
-        review_input.get("rubric"),
-        {
-            "expected_route",
-            "expected_status",
-            "required_concepts",
-            "forbidden_claims",
-            "required_limitations",
-        },
-        f"{context} rubric",
-    )
-    _nonempty(rubric.get("expected_route"), f"{context} expected route")
-    _nonempty(rubric.get("expected_status"), f"{context} expected status")
-    rubric_lists = [
-        _string_tuple(rubric.get(key), f"{context} {key}", sorted_unique=True)
-        for key in ("required_concepts", "forbidden_claims", "required_limitations")
-    ]
-    if not any(rubric_lists):
-        raise ReviewInputError(f"{context} rubric must contain semantic criteria")
-    source_context = review_input.get("source_context")
-    if not isinstance(source_context, list) or not source_context:
-        raise ReviewInputError(f"{context} source context is missing")
-    context_ids: list[str] = []
-    for index, source in enumerate(source_context):
-        row = _exact_keys(
-            source,
-            {"context_id", "source_id_sha256", "locator", "text"},
-            f"{context} source context {index}",
-        )
-        context_ids.append(_nonempty(row.get("context_id"), f"{context} context ID"))
-        _digest(row.get("source_id_sha256"), f"{context} source commitment")
-        _content(row.get("locator"), f"{context} locator")
-        _content(row.get("text"), f"{context} source text")
-    if context_ids != sorted(set(context_ids)):
-        raise ReviewInputError(f"{context} source context must be sorted and unique")
-    return review_input
-
-
 def import_semantic_holdout_suite(
     private_payload_path: Path,
     manifest_path: Path,
     candidate_report_path: Path,
+    development_registry_path: Path,
 ) -> ImportedReviewSuite:
     """Import exact private inputs and a candidate report after commitment checks."""
 
     private, private_identity = _read_json(private_payload_path, "private_holdout_payload")
     manifest, manifest_identity = _read_json(manifest_path, "holdout_manifest")
     report, report_identity = _read_json(candidate_report_path, "holdout_candidate_report")
+    development_registry, development_registry_identity = _read_json(
+        development_registry_path, "semantic_development_registry"
+    )
     _exact_keys(private, {"payload_version", "dataset_id", "cases"}, "private holdout payload")
     if private.get("payload_version") != "firelens_semantic_holdout_private_payload.v1":
         raise ReviewInputError("private holdout payload version is unsupported")
@@ -653,6 +609,15 @@ def import_semantic_holdout_suite(
     _nonempty(manifest.get("development_registry_id"), "development registry ID")
     if not isinstance(manifest.get("disjointness_audit"), dict):
         raise ReviewInputError("semantic holdout manifest disjointness audit is missing")
+    try:
+        validated_registry = _semantic_development_registry_payload(development_registry)
+        _semantic_holdout_manifest_payload(
+            manifest,
+            development_registry=validated_registry,
+            development_registry_sha256=development_registry_identity.sha256,
+        )
+    except ValueError as exc:
+        raise ReviewInputError(str(exc)) from exc
 
     _exact_keys(report, HOLDOUT_REPORT_KEYS, "semantic holdout candidate report")
     if report.get("report_version") != "firelens_semantic_holdout_report.v1":
@@ -787,6 +752,11 @@ def import_semantic_holdout_suite(
         nonqualifying_reasons=[],
         nonqualifying_dry_run=False,
         dataset_sha256=manifest["dataset_sha256"],
-        input_files=(private_identity, manifest_identity, report_identity),
+        input_files=(
+            private_identity,
+            manifest_identity,
+            report_identity,
+            development_registry_identity,
+        ),
         cases=tuple(imported_cases),
     )

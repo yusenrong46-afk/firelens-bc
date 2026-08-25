@@ -441,7 +441,7 @@ def _fixture_root(tmp_path: Path) -> Path:
     _json(
         root / SUBJECT_FILE,
         {
-            "schema_version": "firelens.runtime_candidate.v3",
+            "schema_version": "firelens.runtime_candidate.v4",
             "release_version": "1.6.0-rc.1",
         },
     )

@@ -40,6 +40,12 @@ _PERSIST = re.compile(r"\b(?:saved (?:this|your) question|email you tomorrow|I s
 _SUBSTITUTE_OK = re.compile(r"will not substitute|select a mapped fire", re.I)
 
 
+def _exit_code(report: dict[str, Any]) -> int:
+    """Fail the CLI when any retained case failed or was blocked."""
+
+    return 0 if report["fail"] == 0 and report["blocked"] == 0 else 2
+
+
 def _text(response: dict[str, Any]) -> str:
     return str(response.get("answer") or "")
 
@@ -368,7 +374,7 @@ async def run(args: argparse.Namespace) -> int:
             {key: report[key] for key in ("pass", "fail", "blocked", "build_commit")}, indent=2
         )
     )
-    return 0
+    return _exit_code(report)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

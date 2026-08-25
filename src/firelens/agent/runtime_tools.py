@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from typing import Any
 
 from firelens.agent.budget import tool_fingerprint
@@ -47,6 +48,8 @@ async def execute_tool(
 
     live_service: LiveDataService = live_coordinator.live_service
     fingerprint = tool_fingerprint(name, arguments)
+    if not packet.policy.consume_tool_call():
+        return json.dumps({"error": "tool_call_budget_exhausted"})
     if fingerprint in packet.tool_fingerprints:
         packet.policy.repeated_tool_dispatch += 1
         return json.dumps({"error": "duplicate_tool_dispatch"})
@@ -163,8 +166,10 @@ async def _fetch_selected(
     try:
         mapped = await live_service.map_results(layers=layers)
     except LiveDataUnavailable:
+        _remember_retrieval(packet, datetime.now(UTC))
         packet.mark_unavailable(layers)
         return [], None
+    _record_successful_live_response(packet, mapped)
     shown = [item for item in mapped.results if item.result_id == selected]
     location = request.location or coarse_location_from_question(request.question)
     resolved = await _resolve(live_service, location) if location is not None else None
@@ -190,22 +195,18 @@ async def _fetch_layers(
     if is_national_scope_question(request.question):
         _note_topic(packet, "out_of_province_place")
         return [], None, None
-    label = (
+    proposed_label = (
         str(place_label).strip()
         if isinstance(place_label, str) and place_label.strip()
         else None
     )
-    province_wide = is_province_wide_label(label)
-    if province_wide:
-        label = None
-    location = None if province_wide else request.location
-    if label:
-        try:
-            location = LocationInput(label=label)
-        except ValueError:
-            location = coarse_location_from_question(f"near {label}")
-    if location is None and not province_wide:
-        location = coarse_location_from_question(request.question)
+    bound_location = request.location or coarse_location_from_question(request.question)
+    province_wide = bool(
+        bound_location is not None and is_province_wide_label(bound_location.label)
+    )
+    location = None if province_wide else bound_location
+    if bound_location is None and is_province_wide_label(proposed_label):
+        province_wide = True
     if location is not None and is_out_of_province_label(location.label):
         _note_topic(packet, "out_of_province_place")
         return [], None, None
@@ -224,6 +225,7 @@ async def _fetch_layers(
             filtered = filter_requested_named_fire_results(request, annotated)
             if extracted_located_fire_name(request.question) is not None and not filtered:
                 _note_topic(packet, "named_fire_not_found")
+            _record_successful_live_response(packet, page)
             return (
                 filtered,
                 resolved,
@@ -240,8 +242,10 @@ async def _fetch_layers(
         filtered = filter_requested_named_fire_results(request, annotated)
         if extracted_located_fire_name(request.question) is not None and not filtered:
             _note_topic(packet, "named_fire_not_found")
+        _record_successful_live_response(packet, mapped)
         return filtered, resolved, len(mapped.results)
     except LiveDataUnavailable as exc:
+        _remember_retrieval(packet, datetime.now(UTC))
         if exc.kind == LiveDataErrorKind.NOT_FOUND:
             # The place label did not resolve to a BC community. The layers
             # themselves are healthy, so ask for a usable place instead of
@@ -250,6 +254,20 @@ async def _fetch_layers(
             return [], None, None
         packet.mark_unavailable(layers)
         return [], None, None
+
+
+def _record_successful_live_response(packet: AgentPacket, response: Any) -> None:
+    _remember_retrieval(packet, getattr(response, "generated_at", None))
+    unavailable = getattr(response, "unavailable_layers", None)
+    if unavailable:
+        packet.mark_unavailable(unavailable)
+
+
+def _remember_retrieval(packet: AgentPacket, generated_at: datetime | None) -> None:
+    if generated_at is None:
+        return
+    if packet.retrieved_at is None or generated_at > packet.retrieved_at:
+        packet.retrieved_at = generated_at
 
 
 def _note_topic(packet: AgentPacket, topic: str) -> None:

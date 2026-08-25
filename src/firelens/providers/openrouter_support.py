@@ -129,14 +129,16 @@ def parse_chat_turn(body: dict[str, Any], requested_model: str) -> ChatTurn:
         if not isinstance(raw, dict):
             continue
         function = raw.get("function") or {}
-        arguments = function.get("arguments") or "{}"
+        arguments = function.get("arguments", "{}")
         if isinstance(arguments, str):
             try:
                 parsed = json.loads(arguments)
-            except json.JSONDecodeError:
-                parsed = {}
+            except json.JSONDecodeError as exc:
+                raise ValueError("chat tool arguments are not valid JSON") from exc
         else:
-            parsed = arguments if isinstance(arguments, dict) else {}
+            parsed = arguments
+        if not isinstance(parsed, dict):
+            raise ValueError("chat tool arguments must be a JSON object")
         calls.append(
             ChatToolCall(
                 id=str(raw.get("id") or f"call_{index}"),

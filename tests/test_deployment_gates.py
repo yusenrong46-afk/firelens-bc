@@ -21,6 +21,10 @@ def _candidate() -> dict[str, str]:
         "release_version": "1.5.3-rc.1",
         "build_commit": COMMIT,
         "corpus_version": "firelens_static_corpus.v1",
+        "corpus_sha256": "1" * 64,
+        "corpus_manifest_sha256": "2" * 64,
+        "vector_matrix_sha256": "3" * 64,
+        "vector_manifest_sha256": "4" * 64,
         "embedding_model": "openai/text-embedding-3-small",
         "retrieval_text_strategy": "metadata_context_v1",
         "rerank_model": "cohere/rerank-4-pro",
@@ -166,6 +170,92 @@ class DeploymentGateTests(unittest.IsolatedAsyncioTestCase):
                         "results": [],
                         "unavailable_layers": ["evacuations"],
                         "limitations": [],
+                    },
+                )
+            )
+            async with httpx.AsyncClient(
+                transport=transport, base_url="http://127.0.0.1"
+            ) as client:
+                report = await qualify_deployment_gates(
+                    client,
+                    base_url="http://127.0.0.1",
+                    candidate_path=candidate_path,
+                    expect_production=True,
+                )
+        self.assertFalse(report["qualified"])
+        self.assertFalse(report["checks"]["partial_layers_are_visible"])
+
+    async def test_deployment_gates_require_each_unavailable_layer_to_be_named(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            candidate_path = Path(directory) / "candidate.json"
+            candidate_path.write_text(
+                json.dumps(_candidate(), sort_keys=True), encoding="utf-8"
+            )
+            transport = httpx.MockTransport(
+                _handler(
+                    _ready(),
+                    map_payload={
+                        "results": [],
+                        "unavailable_layers": ["evacuation"],
+                        "limitations": [
+                            "Official records can change quickly; confirm emergency directions."
+                        ],
+                    },
+                )
+            )
+            async with httpx.AsyncClient(
+                transport=transport, base_url="http://127.0.0.1"
+            ) as client:
+                report = await qualify_deployment_gates(
+                    client,
+                    base_url="http://127.0.0.1",
+                    candidate_path=candidate_path,
+                    expect_production=True,
+                )
+        self.assertFalse(report["qualified"])
+        self.assertFalse(report["checks"]["partial_layers_are_visible"])
+
+    async def test_deployment_gates_accept_explicit_unavailable_layer_disclosure(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            candidate_path = Path(directory) / "candidate.json"
+            candidate_path.write_text(
+                json.dumps(_candidate(), sort_keys=True), encoding="utf-8"
+            )
+            transport = httpx.MockTransport(
+                _handler(
+                    _ready(),
+                    map_payload={
+                        "results": [],
+                        "unavailable_layers": ["evacuation"],
+                        "limitations": ["The official evacuation layer was unavailable."],
+                    },
+                )
+            )
+            async with httpx.AsyncClient(
+                transport=transport, base_url="http://127.0.0.1"
+            ) as client:
+                report = await qualify_deployment_gates(
+                    client,
+                    base_url="http://127.0.0.1",
+                    candidate_path=candidate_path,
+                    expect_production=True,
+                )
+        self.assertTrue(report["qualified"])
+        self.assertTrue(report["checks"]["partial_layers_are_visible"])
+
+    async def test_deployment_gates_reject_layer_name_hidden_inside_another_word(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            candidate_path = Path(directory) / "candidate.json"
+            candidate_path.write_text(
+                json.dumps(_candidate(), sort_keys=True), encoding="utf-8"
+            )
+            transport = httpx.MockTransport(
+                _handler(
+                    _ready(),
+                    map_payload={
+                        "results": [],
+                        "unavailable_layers": ["incident"],
+                        "limitations": ["A coincidental service notice is currently visible."],
                     },
                 )
             )

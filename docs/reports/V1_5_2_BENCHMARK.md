@@ -302,8 +302,12 @@ Capture the before snapshot with paired inputs only:
   --semantic-report output/benchmark/v1_1_conversation_live_report.json \
   --semantic-review-sidecar output/benchmark/v1_5_owner_semantic_review.yaml \
   --semantic-review-summary output/benchmark/v1_5_owner_semantic_review_summary.json \
+  --semantic-review-qualification /absolute/private/semantic-qualification/review-qualification.json \
+  --semantic-review-attestation /absolute/private/semantic-storage-attestation.yaml \
   --retrieval-review-sidecar output/benchmark/v1_5_2_retrieval_owner_review.yaml \
   --retrieval-review-summary output/benchmark/v1_5_2_retrieval_owner_review_summary.json \
+  --retrieval-review-qualification /absolute/private/retrieval-qualification/review-qualification.json \
+  --retrieval-review-attestation /absolute/private/retrieval-storage-attestation.yaml \
   --ux-report output/benchmark/v1_5_2/before/ux_tasks.completed.yaml
 ```
 
@@ -348,6 +352,7 @@ Never pass any of these options to a before capture:
 --semantic-holdout-summary
 --frontend-manual-review-bundle
 --preview-report
+--preview-raw-evidence
 --deployment-report
 --rate-limit-evidence
 --rollback-evidence
@@ -396,14 +401,19 @@ Capture all paired and after-only reports on that same commit:
   --semantic-report output/benchmark/v1_1_conversation_live_report.json \
   --semantic-review-sidecar output/benchmark/v1_5_owner_semantic_review.yaml \
   --semantic-review-summary output/benchmark/v1_5_owner_semantic_review_summary.json \
+  --semantic-review-qualification /absolute/private/semantic-qualification/review-qualification.json \
+  --semantic-review-attestation /absolute/private/semantic-storage-attestation.yaml \
   --semantic-holdout-report output/benchmark/v1_5_2_semantic_holdout_report.json \
   --semantic-holdout-review-bundle output/benchmark/v1_5_2_semantic_holdout_review_bundle.json \
   --semantic-holdout-summary output/benchmark/v1_5_2_semantic_holdout_summary.json \
   --frontend-manual-review-bundle output/benchmark/v1_5_2/frontend_manual_review.json \
   --retrieval-review-sidecar output/benchmark/v1_5_2_retrieval_owner_review.yaml \
   --retrieval-review-summary output/benchmark/v1_5_2_retrieval_owner_review_summary.json \
+  --retrieval-review-qualification /absolute/private/retrieval-qualification/review-qualification.json \
+  --retrieval-review-attestation /absolute/private/retrieval-storage-attestation.yaml \
   --ux-report output/benchmark/v1_5_2/after/ux_tasks.completed.yaml \
   --preview-report output/qualification/v1_5_preview.json \
+  --preview-raw-evidence /absolute/private/v1_5_preview_raw.json \
   --deployment-report output/benchmark/v1_5_2/after/deployment.completed.yaml \
   --rate-limit-evidence output/benchmark/v1_5_2/after/rate_limit.raw.json \
   --rollback-evidence output/benchmark/v1_5_2/after/rollback.raw.json \

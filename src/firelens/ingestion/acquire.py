@@ -8,6 +8,7 @@ import mimetypes
 import urllib.request
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import yaml
 
@@ -15,6 +16,15 @@ from firelens.ingestion.pdf import IngestionError
 from firelens.storage import atomic_binary_writer
 
 USER_AGENT = "FireLens-BC-RAG/1.0 source-acquisition"
+MAX_SOURCE_BYTES = 32 * 1024 * 1024
+APPROVED_SOURCE_HOSTS = frozenset(
+    {
+        "firesmartbc.ca",
+        "www.bccdc.ca",
+        "www.emergencyinfobc.gov.bc.ca",
+        "www2.gov.bc.ca",
+    }
+)
 
 
 def _load_sources(registry_path: Path) -> list[dict[str, Any]]:
@@ -37,6 +47,31 @@ def _validate_payload(source: dict[str, Any], payload: bytes) -> None:
         )
 
 
+def _validated_source_url(source: dict[str, Any]) -> str:
+    value = source.get("canonical_url")
+    if not isinstance(value, str):
+        raise IngestionError(f"{source['source_id']} has no canonical HTTPS URL.")
+    parsed = urlparse(value)
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname not in APPROVED_SOURCE_HOSTS
+        or parsed.username is not None
+        or parsed.password is not None
+    ):
+        raise IngestionError(
+            f"{source['source_id']} canonical URL is outside approved HTTPS hosts."
+        )
+    return value
+
+
+def _validated_destination(project_root: Path, local_file: str) -> Path:
+    root = project_root.resolve()
+    destination = (root / local_file).resolve()
+    if destination == root or not destination.is_relative_to(root):
+        raise IngestionError("Registered source local_file escapes the project root.")
+    return destination
+
+
 def acquire_source(source: dict[str, Any], project_root: Path) -> Path:
     """Download one non-live registered source to its declared local path."""
 
@@ -45,21 +80,29 @@ def acquire_source(source: dict[str, Any], project_root: Path) -> Path:
     local_file = source.get("local_file")
     if not isinstance(local_file, str) or not local_file:
         raise IngestionError(f"{source['source_id']} has no declared local_file.")
+    canonical_url = _validated_source_url(source)
+    destination = _validated_destination(project_root, local_file)
 
     request = urllib.request.Request(
-        source["canonical_url"],
+        canonical_url,
         headers={"User-Agent": USER_AGENT},
     )
     try:
         with urllib.request.urlopen(request, timeout=45) as response:
-            payload = response.read()
+            final_url = str(response.geturl())
+            if _validated_source_url({**source, "canonical_url": final_url}) != final_url:
+                raise IngestionError("Registered source redirected outside approved hosts.")
+            payload = response.read(MAX_SOURCE_BYTES + 1)
     except Exception as exc:
+        if isinstance(exc, IngestionError):
+            raise
         raise IngestionError(
             f"Unable to download registered source {source['source_id']}."
         ) from exc
+    if len(payload) > MAX_SOURCE_BYTES:
+        raise IngestionError(f"{source['source_id']} exceeded the acquisition size limit.")
     _validate_payload(source, payload)
 
-    destination: Path = project_root / local_file
     with atomic_binary_writer(destination) as stream:
         stream.write(payload)
     return destination

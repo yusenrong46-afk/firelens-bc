@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 from firelens.agent.budget import RequestExecutionPolicy
@@ -53,6 +54,7 @@ class AgentPacket:
     related_links: list[RelatedLink] = field(default_factory=list)
     roster_total: int | None = None
     unavailable_layers: list[LiveResultKind] = field(default_factory=list)
+    retrieved_at: datetime | None = None
     policy: RequestExecutionPolicy = field(default_factory=RequestExecutionPolicy)
     tool_fingerprints: list[tuple[str, str]] = field(default_factory=list)
 

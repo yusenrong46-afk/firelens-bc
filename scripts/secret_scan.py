@@ -1,4 +1,4 @@
-"""Fail when a tracked text file contains a likely OpenRouter credential."""
+"""Fail when a tracked or nonignored untracked file contains an OpenRouter credential."""
 
 from __future__ import annotations
 
@@ -6,9 +6,9 @@ import subprocess
 from pathlib import Path
 
 
-def tracked_files() -> list[Path]:
+def repository_files() -> list[Path]:
     result = subprocess.run(
-        ["git", "ls-files", "-z"],
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
         check=True,
         capture_output=True,
     )
@@ -35,10 +35,10 @@ def contains_secret(path: Path) -> bool:
 
 
 def main() -> None:
-    matches = [str(path) for path in tracked_files() if contains_secret(path)]
+    matches = [str(path) for path in repository_files() if contains_secret(path)]
     if matches:
-        raise SystemExit("Secret-like value found in tracked file(s): " + ", ".join(matches))
-    print("Tracked secret scan passed.")
+        raise SystemExit("Secret-like value found in repository file(s): " + ", ".join(matches))
+    print("Repository secret scan passed.")
 
 
 if __name__ == "__main__":

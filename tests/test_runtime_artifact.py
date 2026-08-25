@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 import yaml
 
+from firelens.document_context import prompt_sha256
 from firelens.runtime_artifact import (
     ArtifactIdentity,
     RuntimeArtifactError,
@@ -51,7 +52,7 @@ def _artifact(root: Path, *, strategy: str = "metadata_context_v1") -> Path:
         root / "config/runtime_candidate.v1.json",
         json.dumps(
             {
-                "schema_version": "firelens.runtime_candidate.v3",
+                "schema_version": "firelens.runtime_candidate.v4",
                 "candidate_id": "candidate-1",
                 "release_version": "1.5.2-test.1",
                 "build_commit": COMMIT,
@@ -118,7 +119,7 @@ def _artifact(root: Path, *, strategy: str = "metadata_context_v1") -> Path:
         ),
     )
     matrix_stream = io.BytesIO()
-    np.save(matrix_stream, np.array([[0.25, 0.75]], dtype=np.float32), allow_pickle=False)
+    np.save(matrix_stream, np.array([[0.6, 0.8]], dtype=np.float32), allow_pickle=False)
     matrix = matrix_stream.getvalue()
     _write(root / "data/index/firelens_vectors.npy", matrix)
     _write(
@@ -206,6 +207,28 @@ def _artifact(root: Path, *, strategy: str = "metadata_context_v1") -> Path:
             },
             sort_keys=True,
         ),
+    )
+    candidate_path = root / "config/runtime_candidate.v1.json"
+    candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+    candidate.update(
+        {
+            "corpus_sha256": hashlib.sha256(
+                (root / "data/processed/firelens_static_corpus.chunks.jsonl").read_bytes()
+            ).hexdigest(),
+            "corpus_manifest_sha256": hashlib.sha256(
+                (root / "data/processed/firelens_static_corpus.manifest.json").read_bytes()
+            ).hexdigest(),
+            "vector_matrix_sha256": hashlib.sha256(
+                (root / "data/index/firelens_vectors.npy").read_bytes()
+            ).hexdigest(),
+            "vector_manifest_sha256": hashlib.sha256(
+                (root / "data/index/firelens_vectors.manifest.json").read_bytes()
+            ).hexdigest(),
+        }
+    )
+    candidate_path.write_text(
+        json.dumps(candidate, sort_keys=True),
+        encoding="utf-8",
     )
     return root
 
@@ -408,6 +431,106 @@ def test_rejects_non_application_entrypoint_and_invalid_vector_bytes(
         _inventory(invalid_vector)
 
 
+_CREATE_APP_API = "def create_app():\n    return object()\n"
+_CANONICAL_API_APP = f"{_CREATE_APP_API}app = create_app()\n"
+
+
+@pytest.mark.parametrize(
+    "app_source, api_package, api_source",
+    [
+        (
+            "from firelens.api import create_app\napp = create_app()\n",
+            False,
+            _CREATE_APP_API,
+        ),
+        ("from firelens.api import app as app\n", False, _CANONICAL_API_APP),
+        ("from firelens.api import app\n", False, _CANONICAL_API_APP),
+        ("from firelens.api import app as app\n", True, _CANONICAL_API_APP),
+    ],
+)
+def test_accepts_canonical_python_entrypoint_forms(
+    tmp_path: Path, app_source: str, api_package: bool, api_source: str
+) -> None:
+    root = _artifact(tmp_path / "artifact")
+    _write(root / "app.py", app_source)
+    if api_package:
+        (root / "src/firelens/api.py").unlink()
+        api_logical = "src/firelens/api/__init__.py"
+    else:
+        api_logical = "src/firelens/api.py"
+    _write(root / api_logical, api_source)
+    report = _inventory(root)
+    paths = {entry["logical_path"] for entry in report["files"]}
+    assert api_logical in paths
+
+
+@pytest.mark.parametrize(
+    "app_source, extra_files, match",
+    [
+        pytest.param(
+            "from firelens.other import app as app\n",
+            {"src/firelens/other.py": _CANONICAL_API_APP},
+            "not a canonical firelens.api re-export",
+            id="wrong-module",
+        ),
+        pytest.param(
+            "from firelens.api import create_app as app\n",
+            {},
+            "not a canonical firelens.api re-export",
+            id="wrong-symbol",
+        ),
+        pytest.param(
+            'app = __import__("firelens.api").app\n',
+            {"src/firelens/api.py": _CANONICAL_API_APP},
+            "not constructed by create_app",
+            id="dynamic-import",
+        ),
+        pytest.param(
+            "from firelens.api import *\n",
+            {"src/firelens/api.py": _CANONICAL_API_APP},
+            "ambiguous",
+            id="star-import",
+        ),
+        pytest.param(
+            "from firelens.api import app as app, create_app\n",
+            {"src/firelens/api.py": _CANONICAL_API_APP},
+            "not a canonical firelens.api re-export",
+            id="ambiguous-multi-name-import",
+        ),
+        pytest.param(
+            "from firelens.api import app as app\n",
+            {"src/firelens/api.py": _CREATE_APP_API},
+            "not constructed by create_app",
+            id="reexport-without-create-app",
+        ),
+    ],
+)
+def test_rejects_non_canonical_python_entrypoint_shapes(
+    tmp_path: Path, app_source: str, extra_files: dict[str, str], match: str
+) -> None:
+    root = _artifact(tmp_path / "artifact")
+    _write(root / "app.py", app_source)
+    for logical, source in extra_files.items():
+        _write(root / logical, source)
+    with pytest.raises(RuntimeArtifactError, match=match):
+        _inventory(root)
+
+
+def test_rejects_finite_shape_correct_but_non_unit_vector_rows(tmp_path: Path) -> None:
+    root = _artifact(tmp_path / "artifact")
+    matrix_path = root / "data/index/firelens_vectors.npy"
+    matrix_stream = io.BytesIO()
+    np.save(matrix_stream, np.array([[2.0, 0.0]], dtype=np.float32), allow_pickle=False)
+    matrix_path.write_bytes(matrix_stream.getvalue())
+    manifest_path = root / "data/index/firelens_vectors.manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["matrix_sha256"] = hashlib.sha256(matrix_path.read_bytes()).hexdigest()
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(RuntimeArtifactError, match="normalized"):
+        _inventory(root)
+
+
 def test_requires_exact_approved_repair_provenance(tmp_path: Path) -> None:
     root = _artifact(tmp_path / "artifact")
     registry_path = root / "data/repairs/text_overrides.yaml"
@@ -416,6 +539,28 @@ def test_requires_exact_approved_repair_provenance(tmp_path: Path) -> None:
     registry_path.write_text(yaml.safe_dump(registry), encoding="utf-8")
 
     with pytest.raises(RuntimeArtifactError, match="not approved"):
+        _inventory(root)
+
+
+@pytest.mark.parametrize("nested", [False, True])
+def test_rejects_duplicate_keys_in_governed_repair_yaml(
+    tmp_path: Path,
+    nested: bool,
+) -> None:
+    root = _artifact(tmp_path / "artifact")
+    registry_path = root / "data/repairs/text_overrides.yaml"
+    raw = registry_path.read_text(encoding="utf-8")
+    if nested:
+        raw = raw.replace(
+            "  review_status: human_verified",
+            "  review_status: pending_owner_review\n  review_status: human_verified",
+            1,
+        )
+    else:
+        raw = 'repair_registry_version: "ambiguous-first"\n' + raw
+    registry_path.write_text(raw, encoding="utf-8")
+
+    with pytest.raises(RuntimeArtifactError, match="duplicate"):
         _inventory(root)
 
 
@@ -439,8 +584,8 @@ def test_document_context_is_conditional_on_candidate_and_vector_manifest(
         "schema_version": "firelens_document_context.v2",
         "document_sha256": "b" * 64,
         "chunk_id": "source:page:1:chunk:1",
-        "model_id": "provider/context-test",
-        "prompt_sha256": "c" * 64,
+        "model_id": "openai/gpt-5.6-luna",
+        "prompt_sha256": prompt_sha256(),
         "context": "A synthetic retrieval context for the only test chunk.",
     }
     _write(
@@ -449,6 +594,38 @@ def test_document_context_is_conditional_on_candidate_and_vector_manifest(
     )
     report = _inventory(complete)
     assert report["runtime_configuration"]["retrieval_text_strategy"] == "document_context_v2"
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("prompt_sha256", "0" * 64, "prompt"),
+        ("model_id", "retired/context-model", "model"),
+    ],
+)
+def test_document_context_requires_current_prompt_and_model_identity(
+    tmp_path: Path,
+    field: str,
+    value: str,
+    message: str,
+) -> None:
+    root = _artifact(tmp_path / field, strategy="document_context_v2")
+    context_record = {
+        "schema_version": "firelens_document_context.v2",
+        "document_sha256": "b" * 64,
+        "chunk_id": "source:page:1:chunk:1",
+        "model_id": "openai/gpt-5.6-luna",
+        "prompt_sha256": prompt_sha256(),
+        "context": "A synthetic retrieval context for the only test chunk.",
+    }
+    context_record[field] = value
+    _write(
+        root / "data/index/document_context_v2.jsonl",
+        json.dumps(context_record, sort_keys=True) + "\n",
+    )
+
+    with pytest.raises(RuntimeArtifactError, match=message):
+        _inventory(root)
 
 
 def test_identity_must_match_frozen_candidate_configuration(tmp_path: Path) -> None:

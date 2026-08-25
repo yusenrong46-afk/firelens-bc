@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import tempfile
 import unittest
 from collections import Counter
@@ -18,6 +19,7 @@ from firelens.benchmark import (
     run_benchmark,
     run_conversation_benchmark,
 )
+from firelens.benchmark_support import benchmark_runtime_identity
 
 
 class BenchmarkSchemaTests(unittest.TestCase):
@@ -101,6 +103,48 @@ class BenchmarkSchemaTests(unittest.TestCase):
 
 
 class BenchmarkExecutionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_runtime_identity_refuses_a_dirty_git_checkout(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            runtime, _provider, _ = await make_runtime(temporary)
+            tracked = temporary / "tracked-source.py"
+            tracked.write_text("VALUE = 1\n", encoding="utf-8")
+            subprocess.run(["git", "init", "-q"], cwd=temporary, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "repoproof@example.invalid"],
+                cwd=temporary,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "RepoProof"], cwd=temporary, check=True
+            )
+            subprocess.run(["git", "add", "."], cwd=temporary, check=True)
+            subprocess.run(["git", "commit", "-q", "-m", "fixture"], cwd=temporary, check=True)
+            tracked.write_text("VALUE = 2\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "clean working tree"):
+                benchmark_runtime_identity(runtime)
+
+    async def test_runtime_identity_refuses_untracked_checkout_input(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            runtime, _provider, _ = await make_runtime(temporary)
+            subprocess.run(["git", "init", "-q"], cwd=temporary, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "repoproof@example.invalid"],
+                cwd=temporary,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "RepoProof"], cwd=temporary, check=True
+            )
+            subprocess.run(["git", "add", "."], cwd=temporary, check=True)
+            subprocess.run(["git", "commit", "-q", "-m", "fixture"], cwd=temporary, check=True)
+            (temporary / "untracked-runtime-input.json").write_text("{}\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "clean working tree"):
+                benchmark_runtime_identity(runtime)
+
     async def test_red_team_routes_without_provider_calls(self) -> None:
         root = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as directory:

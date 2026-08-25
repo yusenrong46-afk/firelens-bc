@@ -9,6 +9,7 @@ setup:
 	$(PYTHON) -m pip install -r requirements.lock
 	$(PYTHON) -m pip install --no-deps -e .
 	npm --prefix $(FRONTEND) ci
+	npm --prefix $(FRONTEND) run setup:browsers
 
 openapi:
 	$(PYTHON) scripts/export_openapi.py
@@ -23,6 +24,7 @@ check: secret-scan openapi
 	$(PYTHON) -m mypy
 	$(PYTHON) -m pytest -q -m "not browser and not qualification"
 	npm --prefix $(FRONTEND) test
+	npm --prefix $(FRONTEND) run test:tooling
 	npm --prefix $(FRONTEND) run build
 
 verify: check

@@ -81,7 +81,7 @@ export function App() {
           <a className="topbar-anchor" href="#conversation">Ask</a>
           <button className="topbar-project" type="button" aria-label="How FireLens works" onClick={() => setProjectOpen(true)}>
             <Info size={18} />
-            <span><strong>How FireLens works</strong><small>For employers &amp; evaluators</small></span>
+            <span><strong>How FireLens works</strong></span>
           </button>
           {(session.view.kind === "idle" || (mapAvailable && !showContext && !analyticalWorkspace)) && (
             <nav className="workspace-jump" aria-label="Choose workspace context">
@@ -103,7 +103,7 @@ export function App() {
       <ConnectionStatus />
       <div className="boundary">
         <Shield size={17} />
-        <span>Official live records, reviewed guidance, and general background stay visibly separate.</span>
+        <span>Not an emergency-warning service. Follow current instructions from official authorities.</span>
       </div>
       <main className={`workspace ${showContext ? "workspace--split" : "workspace--solo"} ${showMap ? "workspace--map" : "workspace--evidence"}`}>
         <ConversationPanel

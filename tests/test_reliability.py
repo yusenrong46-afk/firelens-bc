@@ -14,6 +14,7 @@ from rag_helpers import make_chunk
 
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
+    DETERMINISTIC_CONFLICT_TEXT,
     AggregateFreshness,
     AskResponse,
     ClaimSupport,
@@ -104,7 +105,7 @@ class ContractPropertyTests(unittest.TestCase):
                 status=ResponseStatus.ANSWER,
                 trace_id="conflict",
                 response_mode=ResponseMode.CONFLICT,
-                answer=bounded_answer,
+                answer=DETERMINISTIC_CONFLICT_TEXT,
                 claims=[grounded_claim],
                 evidence=[evidence],
                 validation=validation,

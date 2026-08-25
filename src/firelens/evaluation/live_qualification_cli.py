@@ -7,7 +7,6 @@ import asyncio
 import hashlib
 import json
 import math
-import subprocess
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -18,6 +17,7 @@ import httpx
 from firelens.api import create_app
 from firelens.config import FireLensConfig
 from firelens.contracts import LiveResult, LiveResultKind
+from firelens.git_identity import clean_checkout_commit
 from firelens.live import LAYER_URLS, LiveDataService
 from firelens.runtime import load_runtime
 
@@ -40,14 +40,10 @@ def _p95(values: list[float]) -> float:
 
 
 def _commit() -> str | None:
-    completed = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
+    return clean_checkout_commit(
+        ROOT,
+        context="live qualification identity",
     )
-    return completed.stdout.strip() if completed.returncode == 0 else None
 
 
 def _record_pairs(payload: dict[str, Any], field: str) -> set[tuple[str, str]]:

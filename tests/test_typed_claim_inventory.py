@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import json
+import shutil
+from pathlib import Path
+
 import pytest
+import yaml
 
 from firelens.answering.claim_render import render_typed_claim
 from firelens.answering.risk_policy import POLICY_VERSION, RiskTier
@@ -80,6 +85,76 @@ def test_reviewed_alert_and_sprinkler_surfaces_are_pinned() -> None:
             [sprinkler.evidence[0].primary_text],
         )
         == []
+    )
+
+
+def test_structured_evidence_and_proof_card_use_exact_bound_source_url() -> None:
+    from firelens.publication.compiler import compile_structured_claim
+    from firelens.publication.records import get_versioned
+
+    record = get_versioned("TC-EVAC-ORDER-001")
+    span_ids = set(record.source_span_ids)
+    corpus_path = (
+        Path(__file__).resolve().parents[1]
+        / "data/processed/firelens_static_corpus.chunks.jsonl"
+    )
+    bound_urls = {
+        row["canonical_url"]
+        for line in corpus_path.read_text(encoding="utf-8").splitlines()
+        if (row := json.loads(line))["chunk_id"] in span_ids
+    }
+    assert len(bound_urls) == 1
+
+    compiled = compile_structured_claim(
+        typed_claim_id=record.claim_id,
+        public_claim_id="C2",
+    )
+    expected = bound_urls.pop().rstrip("/")
+    assert str(compiled.evidence[0].canonical_url).rstrip("/") == expected
+    assert str(compiled.card.official_url).rstrip("/") == expected
+
+
+def test_structured_support_rejects_inconsistent_bound_source_urls(
+    tmp_path: Path,
+) -> None:
+    from firelens.publication.records import get_versioned
+
+    source_root = Path(__file__).resolve().parents[1]
+    inventory_path = tmp_path / "data/typed_claims/high_risk_v1.yaml"
+    corpus_path = tmp_path / "data/processed/firelens_static_corpus.chunks.jsonl"
+    inventory_path.parent.mkdir(parents=True)
+    corpus_path.parent.mkdir(parents=True)
+    shutil.copyfile(source_root / "data/typed_claims/high_risk_v1.yaml", inventory_path)
+    shutil.copyfile(
+        source_root / "data/processed/firelens_static_corpus.chunks.jsonl",
+        corpus_path,
+    )
+
+    rows = [json.loads(line) for line in corpus_path.read_text(encoding="utf-8").splitlines()]
+    order_id = "preparedbc_wildfire_guide:page:11:chunk:2"
+    order = next(row for row in rows if row["chunk_id"] == order_id)
+    second = next(
+        row
+        for row in rows
+        if row["document_sha256"] == order["document_sha256"] and row["chunk_id"] != order_id
+    )
+    second["canonical_url"] = "https://example.test/conflicting-source"
+    corpus_path.write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+    inventory = yaml.safe_load(inventory_path.read_text(encoding="utf-8"))
+    record = next(row for row in inventory["records"] if row["claim_id"] == "TC-EVAC-ORDER-001")
+    record["source_span_ids"].append(second["chunk_id"])
+    inventory_path.write_text(
+        yaml.safe_dump(inventory, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    assert (
+        get_versioned("TC-EVAC-ORDER-001", root=str(tmp_path)).available_for_structured_support
+        is False
     )
 
 

@@ -16,21 +16,34 @@ from firelens.contracts import (
     QueryRoute,
     ReasonCode,
     ResponseMode,
+    aggregate_live_freshness,
 )
 from firelens.live_answering import LiveAnswerCoordinator
+from firelens.live_support import LiveDataUnavailable
 
 
 class _EmptyOfficialLiveService:
-    def __init__(self, results: list[LiveResult] | None = None) -> None:
+    def __init__(
+        self,
+        results: list[LiveResult] | None = None,
+        *,
+        fail_layers: tuple[LiveResultKind, ...] = (),
+    ) -> None:
+        records = results or []
         self.response = LiveMapResponse(
             generated_at=datetime(2026, 8, 23, tzinfo=UTC),
-            results=results or [],
+            results=records,
+            aggregate_freshness=aggregate_live_freshness(records),
         )
         self.nearby_calls = 0
+        self.fail_layers = fail_layers
 
     async def nearby_page(self, *args: Any, **kwargs: Any) -> LiveMapResponse:
-        del args, kwargs
+        del args
         self.nearby_calls += 1
+        layers = kwargs.get("layers") or ()
+        if self.fail_layers and any(kind in self.fail_layers for kind in layers):
+            raise LiveDataUnavailable("official live source unavailable")
         return self.response
 
     async def map_results(self, *args: Any, **kwargs: Any) -> LiveMapResponse:
@@ -75,6 +88,13 @@ def test_empty_official_map_never_becomes_an_all_clear() -> None:
         assert "does not mean the area is safe" in public_text
         assert "not an all-clear" in public_text
         assert "not a safety determination" in public_text
+        assert "checked" in public_text
+        assert "bc wildfire service" in public_text
+        assert "2026-08-23" in public_text
+        assert response.status_banner is not None
+        assert response.status_banner.retrieval_completed_at == datetime(
+            2026, 8, 23, tzinfo=UTC
+        )
         assert "outside the grounded sources" not in public_text
         assert [section.kind for section in response.answer_sections] == [
             AnswerSectionKind.UNCERTAINTY,
@@ -130,5 +150,81 @@ def test_nonempty_lookup_corrects_the_empty_map_inference_without_a_safety_claim
         assert "does not establish that the area is safe" in public_text
         assert "1 layer record" in public_text
         assert "not distinct-fire counts or a safety determination" in public_text
+
+    asyncio.run(run())
+
+
+def _empty_map_safety_question() -> QueryRequest:
+    return QueryRequest(
+        question="The wildfire map is empty near Kelowna. Does that mean everything is safe?"
+    )
+
+
+def test_empty_live_all_unavailable_layers_is_never_an_all_clear() -> None:
+    async def run() -> None:
+        live = _EmptyOfficialLiveService(
+            fail_layers=(
+                LiveResultKind.INCIDENT,
+                LiveResultKind.PERIMETER,
+                LiveResultKind.EVACUATION,
+            )
+        )
+        execution = await FireLensAgent(
+            cast(Any, _UnexpectedStaticService()),
+            LiveAnswerCoordinator(cast(Any, live)),
+        ).answer(_empty_map_safety_question())
+        response = execution.response
+        public = " ".join([response.answer or "", *response.limitations]).casefold()
+        assert live.nearby_calls > 0
+        assert response.live_results == []
+        assert set(response.unavailable_layers) == {
+            LiveResultKind.INCIDENT,
+            LiveResultKind.PERIMETER,
+            LiveResultKind.EVACUATION,
+        }
+        assert "unavailable" in public
+        assert "checked" in public
+        assert "bc wildfire service" in public
+        assert "not an all-clear" in public
+        assert "does not mean the area is safe" in public or "did not establish" in public
+        assert "you are safe" not in public
+        assert "no fire near" not in public
+        assert response.status_banner is not None
+        assert response.status_banner.retrieval_completed_at is not None
+        assert response.status_banner.retrieval_completed_at.tzinfo is not None
+
+    asyncio.run(run())
+
+
+def test_empty_live_partially_unavailable_layers_is_never_an_all_clear() -> None:
+    async def run() -> None:
+        live = _EmptyOfficialLiveService(fail_layers=(LiveResultKind.EVACUATION,))
+        execution = await FireLensAgent(
+            cast(Any, _UnexpectedStaticService()),
+            LiveAnswerCoordinator(cast(Any, live)),
+        ).answer(_empty_map_safety_question())
+        response = execution.response
+        public = " ".join([response.answer or "", *response.limitations]).casefold()
+        assert live.nearby_calls > 0
+        assert response.live_results == []
+        assert LiveResultKind.EVACUATION in response.unavailable_layers
+        assert set(response.unavailable_layers) != {
+            LiveResultKind.INCIDENT,
+            LiveResultKind.PERIMETER,
+            LiveResultKind.EVACUATION,
+        }
+        assert "unavailable" in public
+        assert "checked" in public
+        assert "bc wildfire service" in public
+        assert "not an all-clear" in public
+        assert "no matching official wildfire records" in public
+        assert "you are safe" not in public
+        assert response.status_banner is not None
+        assert response.status_banner.retrieval_completed_at is not None
+        assert response.status_banner.retrieval_completed_at.tzinfo is not None
+        assert any(
+            "not a safety determination" in item.casefold() for item in response.limitations
+        )
+        assert any("not an all-clear" in item.casefold() for item in response.limitations)
 
     asyncio.run(run())

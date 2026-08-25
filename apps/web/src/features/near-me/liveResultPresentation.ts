@@ -19,6 +19,36 @@ export function resultKindLabel(kind: LiveResult["kind"]): string {
   return "Wildfire incident";
 }
 
+export const MAP_GEOMETRY_LEGEND = {
+  points:
+    "Points mark a record location or a representative source point. A point is not perimeter geometry.",
+  polygons:
+    "Polygon outlines may be wildfire perimeters or evacuation areas; each record label says which. A wildfire perimeter is not the active flame front.",
+} as const;
+
+export function mapGeometryLegendFor(result: LiveResult): string {
+  const type = (result.geometry as { type?: string } | undefined)?.type;
+  if (type === "Polygon" || type === "MultiPolygon") return MAP_GEOMETRY_LEGEND.polygons;
+  return MAP_GEOMETRY_LEGEND.points;
+}
+
+export function mapPopupGeometryMeaning(result: LiveResult): string {
+  const type = (result.geometry as { type?: string } | undefined)?.type;
+  if (result.kind === "evacuation") {
+    return "Evacuation area outline; not a wildfire perimeter.";
+  }
+  if (result.kind === "perimeter") {
+    if (type === "Polygon" || type === "MultiPolygon") {
+      return "Wildfire perimeter outline; not the active flame front.";
+    }
+    return "Perimeter record point. A point is not perimeter geometry.";
+  }
+  if (type === "Point") {
+    return "Wildfire incident point. A point is not perimeter geometry.";
+  }
+  return `${resultKindLabel(result.kind)}. A wildfire perimeter is not the active flame front.`;
+}
+
 export function resultDisplayName(result: LiveResult): string {
   const name = result.name?.trim();
   if (name && name.toLowerCase() !== "unnamed official record") return name;

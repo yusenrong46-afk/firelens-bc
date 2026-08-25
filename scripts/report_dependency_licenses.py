@@ -6,10 +6,22 @@ from __future__ import annotations
 import argparse
 import importlib.metadata
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROHIBITED = {"AGPL-3.0", "GPL-3.0", "SSPL-1.0"}
+_PROHIBITED_SPDX = re.compile(
+    r"(?<![A-Za-z0-9])(?:AGPL-3\.0|GPL-3\.0|SSPL-1\.0)"
+    r"(?:-(?:only|or-later)|\+)?(?![A-Za-z0-9])",
+    re.IGNORECASE,
+)
+
+
+def is_prohibited_license_expression(value: str) -> bool:
+    """Match prohibited SPDX identifiers, including version suffixes and expressions."""
+
+    return bool(_PROHIBITED_SPDX.search(value))
 
 
 def python_licenses() -> list[dict[str, str]]:
@@ -51,15 +63,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    report = {
-        "python": python_licenses(),
-        "node": node_licenses(ROOT / "apps/web/package-lock.json"),
+    python_rows = python_licenses()
+    node_rows = node_licenses(ROOT / "apps/web/package-lock.json")
+    report: dict[str, list[dict[str, str]] | list[str]] = {
+        "python": python_rows,
+        "node": node_rows,
     }
     prohibited = [
         f"{ecosystem}:{row['name']}:{row['license']}"
-        for ecosystem, rows in report.items()
+        for ecosystem, rows in (("python", python_rows), ("node", node_rows))
         for row in rows
-        if row["license"] in PROHIBITED
+        if is_prohibited_license_expression(row["license"])
     ]
     report["prohibited"] = prohibited
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

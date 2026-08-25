@@ -473,15 +473,17 @@ def test_semantic_holdout_rejects_noncanonical_extra_fields() -> None:
         _validate_semantic_holdout_payloads(manifest, report, bundle)
 
 
-def test_preview_parser_accepts_exact_canonical_evidence() -> None:
-    parsed = _preview(_preview_report())
+def test_preview_parser_accepts_exact_canonical_evidence(tmp_path: Path) -> None:
+    report = _preview_report()
+    raw_artifact = _write_preview_raw_artifact(report, tmp_path / "preview-raw.json")
+    parsed = _preview(report, raw_response_artifact=raw_artifact)
 
     assert parsed == {
         "status": "complete",
         "commit": "a" * 40,
         "deployment_id": "preview-1",
         "qualified": True,
-        "checks": _preview_report()["checks"],
+        "checks": report["checks"],
     }
 
 
@@ -595,6 +597,43 @@ def test_deployment_parser_accepts_cross_region_rate_limit_and_rollback_proof(
     assert parsed["rollback_rehearsal_passed"] is True
     assert parsed["candidate_deployment_id"] == "candidate-a"
     assert parsed["restored_deployment_id"] == "previous-a"
+
+
+def test_deployment_parser_rejects_first_rejection_ordinal_that_was_not_rejected(
+    tmp_path: Path,
+) -> None:
+    report = _deployment_report()
+    report["rate_limit_evidence"]["first_rejected_combined_ordinal"] = 1
+    rate_limit_path, rollback_path = _write_deployment_evidence(tmp_path, report)
+
+    with pytest.raises(ValueError, match="first rejected ordinal"):
+        _deployment(
+            report,
+            rate_limit_artifact=rate_limit_path,
+            rollback_artifact=rollback_path,
+        )
+
+
+def test_deployment_parser_rejects_an_earlier_observed_rejection(tmp_path: Path) -> None:
+    report = _deployment_report()
+    report["rate_limit_evidence"]["observations"].insert(
+        1,
+        {
+            "client_id": "client-a",
+            "region": "iad1",
+            "observed_at": "2026-08-06T12:00:00.500000+00:00",
+            "combined_ordinal": 2,
+            "status_code": 429,
+        },
+    )
+    rate_limit_path, rollback_path = _write_deployment_evidence(tmp_path, report)
+
+    with pytest.raises(ValueError, match="first rejected ordinal"):
+        _deployment(
+            report,
+            rate_limit_artifact=rate_limit_path,
+            rollback_artifact=rollback_path,
+        )
 
 
 def test_deployment_parser_rejects_same_deployment_rollback(tmp_path: Path) -> None:

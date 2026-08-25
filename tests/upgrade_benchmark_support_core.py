@@ -187,12 +187,22 @@ def _runtime_artifact_snapshot_fixture(identity: dict[str, object]) -> dict[str,
     contract_path = ROOT / "config/runtime_artifact_allowlist.v1.json"
     contract = json.loads(contract_path.read_text(encoding="utf-8"))
     contract_sha256 = hashlib.sha256(contract_path.read_bytes()).hexdigest()
+    artifact_identity_paths = {
+        "corpus_sha256": "data/processed/firelens_static_corpus.chunks.jsonl",
+        "corpus_manifest_sha256": "data/processed/firelens_static_corpus.manifest.json",
+        "vector_matrix_sha256": "data/index/firelens_vectors.npy",
+        "vector_manifest_sha256": "data/index/firelens_vectors.manifest.json",
+    }
     candidate = {
-        "schema_version": "firelens.runtime_candidate.v3",
+        "schema_version": "firelens.runtime_candidate.v4",
         "candidate_id": identity["candidate_id"],
         "release_version": identity["release_version"],
         "build_commit": identity["commit"],
         "corpus_version": identity["corpus_version"],
+        **{
+            field: hashlib.sha256(logical_path.encode()).hexdigest()
+            for field, logical_path in artifact_identity_paths.items()
+        },
         "embedding_model": identity["configuration"]["embedding_model"],
         "retrieval_text_strategy": identity["configuration"]["retrieval_text_strategy"],
         "rerank_model": identity["configuration"]["rerank_model"],
@@ -256,6 +266,7 @@ def _runtime_artifact_snapshot_fixture(identity: dict[str, object]) -> dict[str,
                 "logical_path": "config/runtime_candidate.v1.json",
                 "sha256": candidate_sha256,
                 "corpus_version": candidate["corpus_version"],
+                **{field: candidate[field] for field in artifact_identity_paths},
                 "embedding_model": candidate["embedding_model"],
                 "retrieval_text_strategy": candidate["retrieval_text_strategy"],
                 "rerank_model": candidate["rerank_model"],

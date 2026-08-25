@@ -15,6 +15,12 @@ V16_MODIFIED_MODULE_EXCEPTIONS = frozenset(
     {
         "src/firelens/answering/service.py",
         "src/firelens/contracts.py",
+        "src/firelens/evaluation/capture.py",
+        "src/firelens/evaluation/release_surfaces.py",
+        "src/firelens/live.py",
+        "src/firelens/review_workspace/cli.py",
+        "src/firelens/review_workspace/inputs.py",
+        "src/firelens/runtime_artifact.py",
     }
 )
 

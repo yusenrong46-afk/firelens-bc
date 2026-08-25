@@ -59,6 +59,7 @@ def _live_failure_response(
     *,
     config: FireLensConfig,
     request_started: float,
+    route: str,
 ) -> JSONResponse:
     trace_id = uuid4().hex
     status_code = {
@@ -67,7 +68,7 @@ def _live_failure_response(
     }.get(exc.kind, 503)
     log_operation(
         trace_id=trace_id,
-        route="live_nearby",
+        route=route,
         response_mode=ResponseMode.ABSTENTION.value,
         status=ResponseStatus.ERROR.value,
         latency_ms=(perf_counter() - request_started) * 1_000,
@@ -128,11 +129,19 @@ def install_live_routes(
         bbox: str | None = Query(default=None, max_length=100),
         layers: str = Query(default="incidents,perimeters,evacuations", max_length=100),
     ) -> LiveMapResponse | JSONResponse:
+        request_started = perf_counter()
         try:
             async with asyncio.timeout(config.public_request_deadline_seconds):
                 return await map_request(bbox, layers)
         except TimeoutError:
             return deadline_response(config, "live_map")
+        except LiveDataUnavailable as exc:
+            return _live_failure_response(
+                exc,
+                config=config,
+                request_started=request_started,
+                route="live_map",
+            )
 
     @app.post(
         "/api/v1/live/nearby",
@@ -164,4 +173,9 @@ def install_live_routes(
         except TimeoutError:
             return deadline_response(config, "live_nearby")
         except LiveDataUnavailable as exc:
-            return _live_failure_response(exc, config=config, request_started=request_started)
+            return _live_failure_response(
+                exc,
+                config=config,
+                request_started=request_started,
+                route="live_nearby",
+            )

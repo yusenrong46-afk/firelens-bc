@@ -11,10 +11,21 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "config" / "vercel_firewall.v1.json"
+PUBLIC_ROUTE_METHODS = frozenset(
+    {
+        ("/api/v1/ask", "POST"),
+        ("/api/v1/feedback", "POST"),
+        ("/api/v1/live/map", "GET"),
+        ("/api/v1/live/nearby", "POST"),
+    }
+)
 
 
 def load_plan(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    loaded = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(loaded, dict):
+        raise ValueError("firewall plan must be a JSON object")
+    payload: dict[str, Any] = loaded
     if payload.get("schema_version") != "firelens.vercel_firewall.v1":
         raise ValueError("unsupported firewall plan schema")
     observation_hours = payload.get("observation_period_hours")
@@ -30,6 +41,8 @@ def load_plan(path: Path) -> dict[str, Any]:
         name, path_value, method = _validate_rule(rule, names=names, routes=routes)
         names.add(name)
         routes.add((path_value, method))
+    if routes != PUBLIC_ROUTE_METHODS:
+        raise ValueError("firewall plan must cover every guarded public route and method")
     return payload
 
 
@@ -56,8 +69,7 @@ def _validate_rule(
     if not isinstance(name, str) or not name.strip() or name in names:
         raise ValueError("firewall rule names must be unique and non-empty")
     if not isinstance(path_value, str) or path_value not in {
-        "/api/v1/ask",
-        "/api/v1/live/map",
+        path for path, _ in PUBLIC_ROUTE_METHODS
     }:
         raise ValueError("firewall rules may target only public FireLens data routes")
     if not isinstance(method, str) or method not in {"GET", "POST"}:

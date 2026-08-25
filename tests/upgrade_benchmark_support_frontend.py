@@ -211,14 +211,16 @@ def _write_frontend_surface_fixture(
     for state in protocol["states"]:
         for viewport in protocol["viewports"]:
             screenshot_path = screenshots / f"{state['id']}--{viewport['id']}.png"
-            Image.new(
+            screenshot_image = Image.new(
                 "RGB",
                 (
                     viewport["width"] * viewport["device_scale_factor"],
                     viewport["height"] * viewport["device_scale_factor"],
                 ),
                 (12, 24, 36),
-            ).save(screenshot_path, format="PNG")
+            )
+            screenshot_image.putpixel((0, 0), (220, 230, 240))
+            screenshot_image.save(screenshot_path, format="PNG")
             applicable = state["id"] in protocol["map_parity"]["applicable_state_ids"]
             map_parity: bool | None = None
             if applicable:

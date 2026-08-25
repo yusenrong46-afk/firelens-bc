@@ -6,6 +6,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from firelens.git_identity import clean_checkout_commit
+
 
 def build_pre_release_report(
     *,
@@ -16,6 +18,7 @@ def build_pre_release_report(
     measured: int,
 ) -> dict[str, Any]:
     """Bind representative-workload measurements to Git and H8 review state."""
+    clean_checkout_commit(root, context="pre-release performance evidence")
     compared_routes = (comparison.get("compare") or {}).get("route_p95", {})
     regressed_routes = [
         route_id for route_id, row in compared_routes.items() if row.get("regressed_over_10pct")

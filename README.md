@@ -82,6 +82,12 @@ The governing principle is simple:
   because they share a larger source chunk.
 - Explicit `structured_reviewed`, `official_quote_only`, live, background, and
   unknown presentation throughout the API-derived UI.
+- An **adaptive, answer-first workspace**: province-wide and multi-record live
+  questions open deterministic Summary/Map/Records analysis; named-fire and
+  single-record questions keep the answer primary with map context on demand;
+  preparedness questions remain conversational with exact quotations.
+- Human-readable service failures that state when no wildfire status was shown
+  or inferred, preserve retry semantics, and link directly to the official map.
 - Empty-map behavior that states uncertainty and never turns “no returned records”
   into a safety determination.
 - Numeric kilometre ownership and rejection of model-invented unit conversions.
@@ -118,6 +124,7 @@ packets may use one bounded generation only after deterministic validation.
 ## Run it locally
 
 FireLens supports Python 3.12–3.14 and uses locked Python and npm dependencies.
+The setup target also installs the local Chromium build required by Playwright.
 
 ```bash
 make setup
@@ -225,7 +232,8 @@ Start here:
 
 - **Employers and reviewers:** this README, then the
   [V1.6 architecture](docs/ARCHITECTURE_V1_6.md) and
-  [current runbook](docs/releases/V1_6_RUNBOOK.md).
+  [current runbook](docs/releases/V1_6_RUNBOOK.md). A frozen candidate can be
+  challenged with the [GPT-5.6 Pro defect-first examination prompt](docs/audit/V1_6_GPT_5_6_PRO_FINAL_EXAMINATION_PROMPT.md).
 - **Researchers:** the [50-question catalog](docs/reports/V1_6_USER_END_QUESTIONS_50.md),
   [structured-publication report](docs/reports/V1_6_STRUCTURED_PUBLICATION_HARDEN_1_REPORT.md),
   and [ADRs](docs/adr/).

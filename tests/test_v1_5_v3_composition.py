@@ -9,6 +9,7 @@ from pydantic import HttpUrl
 from firelens.agent import AgentTool, FireLensAgent
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
+    DETERMINISTIC_CONFLICT_TEXT,
     AnswerSectionKind,
     AskResponse,
     ClaimSupport,
@@ -29,6 +30,7 @@ from firelens.contracts import (
     ResponseStatus,
     TemporalClass,
     ValidationReport,
+    aggregate_live_freshness,
 )
 from firelens.live_answering import LiveAnswerCoordinator
 
@@ -52,9 +54,11 @@ def _incident(*, authority: str = "BC Wildfire Service") -> LiveResult:
 class FixedLiveService:
     def __init__(self) -> None:
         self.requested_location = None
+        results = [_incident()]
         self.response = LiveMapResponse(
             generated_at=datetime(2026, 8, 13, tzinfo=UTC),
-            results=[_incident()],
+            results=results,
+            aggregate_freshness=aggregate_live_freshness(results),
         )
 
     async def map_results(self, *args: Any, **kwargs: Any) -> LiveMapResponse:
@@ -116,10 +120,7 @@ def _accepted_conflict() -> AskResponse:
         status=ResponseStatus.ANSWER,
         trace_id="c" * 32,
         response_mode=ResponseMode.CONFLICT,
-        answer=(
-            "The selected reviewed sources conflict. FireLens cannot determine which "
-            "version governs."
-        ),
+        answer=DETERMINISTIC_CONFLICT_TEXT,
         claims=[claim],
         evidence=[
             PublicEvidence(
@@ -465,21 +466,34 @@ class V3CompositionTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_nearest_perimeter_continuation_uses_distance_tool(self) -> None:
         service = FixedLiveService()
+        results = [
+            LiveResult(
+                result_id="perimeter:7",
+                kind=LiveResultKind.PERIMETER,
+                source_url="https://example.test/perimeter/7",
+                source_updated_at=datetime(2026, 8, 13, tzinfo=UTC),
+                retrieved_at=datetime(2026, 8, 13, tzinfo=UTC),
+                freshness=Freshness.FRESH,
+                status="Mapped perimeter",
+                name="Mountain Fire perimeter",
+                geometry={
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [-119.52, 49.88],
+                            [-119.48, 49.88],
+                            [-119.48, 49.92],
+                            [-119.52, 49.92],
+                            [-119.52, 49.88],
+                        ]
+                    ],
+                },
+            )
+        ]
         service.response = LiveMapResponse(
             generated_at=datetime(2026, 8, 13, tzinfo=UTC),
-            results=[
-                LiveResult(
-                    result_id="perimeter:7",
-                    kind=LiveResultKind.PERIMETER,
-                    source_url="https://example.test/perimeter/7",
-                    source_updated_at=datetime(2026, 8, 13, tzinfo=UTC),
-                    retrieved_at=datetime(2026, 8, 13, tzinfo=UTC),
-                    freshness=Freshness.FRESH,
-                    status="Mapped perimeter",
-                    name="Mountain Fire perimeter",
-                    geometry={"type": "Point", "coordinates": [-119.5, 49.9]},
-                )
-            ],
+            results=results,
+            aggregate_freshness=aggregate_live_freshness(results),
         )
 
         class UnexpectedStaticService:
