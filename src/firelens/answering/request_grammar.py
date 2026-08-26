@@ -88,7 +88,12 @@ _RECORD_COMMAND = re.compile(
     r"(?:give|show|display|list|map|check|find)\b|"
     r"(?:catch\s+(?:me|us)\s+up|bring\s+(?:me|us)\s+up\s+to\s+date)"
     r"(?:\s+on)?\b)"
-    r".{0,120}\b(?:wildfires?|fires?|burning|"
+    # A bare singular ``fire``/``wildfire`` after an imperative is too weak:
+    # it also matches topic commands such as "fire safety education" and
+    # "a map of fire-prone ecosystems".  Singular nouns remain supported
+    # when they own an explicit record-summary noun below, while bare record
+    # commands must name plural incidents or ask what is burning.
+    r".{0,120}\b(?:wildfires|fires|burning|"
     r"(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?|"
     r"picture|overview|snapshot))\b",
     re.IGNORECASE,
@@ -138,7 +143,14 @@ _FRONTED_SCOPE = re.compile(
     re.IGNORECASE,
 )
 _TRAILING_LOCATION = re.compile(
-    r"\b(?:near|around|round|within|in|across|for)\s+(?:the\s+)?"
+    r"\b(?:near|around|round|within|in|across)\s+(?:the\s+)?"
+    r"(?P<place>[a-z][a-z .'-]{1,100})",
+    re.IGNORECASE,
+)
+_TRAILING_RECORD_LOCATION = re.compile(
+    r"\b(?:(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?|"
+    r"picture|overview|snapshot)|(?:incident|perimeter)\s+records?)\s+for\s+"
+    r"(?:the\s+)?"
     r"(?P<place>[a-z][a-z .'-]{1,100})",
     re.IGNORECASE,
 )
@@ -279,7 +291,14 @@ def _live_location_candidate(text: str) -> str | None:
     scoped = _fronted_live_scope(text)
     if scoped is not None:
         return scoped
-    matches = tuple(_TRAILING_LOCATION.finditer(text))
+    # ``for`` usually introduces an audience or purpose, not geography.  It
+    # is accepted as a location preposition only after an explicit record or
+    # fire-summary noun (for example, ``wildfire update for <place>``).  This
+    # keeps established scoped queries while preventing phrases such as
+    # ``for students`` from silently becoming a community lookup.
+    matches = tuple(
+        (*_TRAILING_LOCATION.finditer(text), *_TRAILING_RECORD_LOCATION.finditer(text))
+    )
     if matches:
         candidate = matches[-1].group("place")
         candidate = _LOCATION_END.sub("", candidate)

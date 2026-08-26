@@ -213,6 +213,33 @@ def test_canonical_named_place_and_static_controls() -> None:
     assert live_layers_for_question(CANONICAL_STATIC) == ()
 
 
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Show a map of fire-prone ecosystems.",
+        "Give me fire safety education for students.",
+    ),
+)
+def test_agent_plan_rejects_bare_fire_topic_commands_as_live_records(
+    question: str,
+) -> None:
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert plan.route != QueryRoute.LIVE
+    assert plan.live_layers == ()
+    assert plan.location_label is None
+    assert plan.tool_calls == ()
+
+
+def test_agent_plan_does_not_promote_a_for_audience_to_geography() -> None:
+    plan = plan_agent_request(QueryRequest(question="Show current wildfires for students."))
+
+    assert plan.route == QueryRoute.LIVE
+    assert plan.geography == AgentGeography.PROVINCE_WIDE
+    assert plan.location_label is None
+    assert all(dict(call.arguments).get("place_label") is None for call in plan.tool_calls)
+
+
 @pytest.mark.parametrize("question", MIXED_LIVE)
 def test_mixed_paraphrases_keep_a_live_owned_plan(question: str) -> None:
     plan = plan_query(QueryRequest(question=question))

@@ -164,6 +164,37 @@ def test_wildfire_smoke_is_not_misread_as_an_incident_request() -> None:
     assert not facets.has_current_live_fire
 
 
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Show a map of fire-prone ecosystems.",
+        "Give me fire safety education for students.",
+    ),
+)
+def test_record_commands_do_not_turn_fire_topics_or_audiences_into_live_scope(
+    question: str,
+) -> None:
+    """A command plus the word ``fire`` is not itself a live-record request."""
+
+    facets = parse_request_facets(question)
+
+    assert not facets.has_current_live_fire
+    assert facets.live_location_candidates == ()
+    assert coarse_location_from_question(question) is None
+    assert plan_query(QueryRequest(question=question)).route != QueryRoute.LIVE
+    assert live_layers_for_question(question) == ()
+
+
+def test_audience_for_phrase_is_not_a_live_location() -> None:
+    question = "Show current wildfires for students."
+    facets = parse_request_facets(question)
+
+    assert facets.has_current_live_fire
+    assert facets.live_location_candidates == ()
+    assert coarse_location_from_question(question) is None
+    assert plan_query(QueryRequest(question=question)).route == QueryRoute.LIVE
+
+
 def test_plus_separates_terse_request_noun_phrases() -> None:
     facets = parse_request_facets(
         "FireSmart home tips + evacuation alert meaning + whether Kelowna is under order now."
@@ -296,6 +327,7 @@ def test_nonpersonal_guidance_does_not_gain_a_safety_block(question: str) -> Non
     (
         ("Show current official fire records for the Okanagan.", "Okanagan"),
         ("List the latest wildfire records for the Kootenays.", "Kootenays"),
+        ("Wildfire update for the Okanagan, please.", "Okanagan"),
     ),
 )
 def test_command_tail_scope_wins_over_command_descriptors(question: str, place: str) -> None:
