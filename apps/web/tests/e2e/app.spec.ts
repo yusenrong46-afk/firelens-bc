@@ -549,3 +549,15 @@ test("offers retry for a transient provider outage", async ({ page }) => {
   await expect(page.getByText("No wildfire status was shown or inferred.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Retry this question" })).toBeVisible();
 });
+
+test("respects reduced motion without hiding the answer", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await page.getByLabel("Ask FireLens a question").fill("What belongs in a grab-and-go bag?");
+  await page.getByLabel("Send question").click();
+  await expect(page.locator("#conversation .assistant-message .answer-lead")).toHaveText(
+    "Prepare water, food, and medication.",
+  );
+  const transition = await page.locator("#conversation").evaluate((node) => getComputedStyle(node).transitionDuration);
+  expect(transition === "0s" || transition === "").toBeTruthy();
+});

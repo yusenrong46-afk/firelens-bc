@@ -564,13 +564,19 @@ def _evidence_inputs(
     return paths
 
 
-def _build(root: Path, bundle: Path, inputs: dict[str, Path]) -> bool:
+def _build(
+    root: Path,
+    bundle: Path,
+    inputs: dict[str, Path],
+    *,
+    release_version: str = "1.6.0-rc.1",
+) -> bool:
     return build_candidate_evidence(
         root,
         bundle,
         commit=COMMIT,
         tree=TREE,
-        release_version="1.6.0-rc.1",
+        release_version=release_version,
         generated_at=GENERATED_AT,
         builder_id="https://github.com/owner/firelens-bc/actions/workflows/candidate.yml",
         invocation_id="123:1",
@@ -893,6 +899,26 @@ def test_release_version_must_match_python_web_and_runtime_subject(tmp_path: Pat
     _json(root / "apps/web/package.json", {"name": "ui", "version": "1.6.0-rc.2"})
     with pytest.raises(ValueError, match="release version identities do not match"):
         _build(root, tmp_path / "candidate", _evidence_inputs(tmp_path / "inputs"))
+
+
+def test_promoted_release_version_requires_the_internal_manifest(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path)
+    _write(root / "pyproject.toml", '[project]\nname = "fixture"\nversion = "1.6.0"\n')
+    _json(root / "apps/web/package.json", {"name": "ui", "version": "1.6.0"})
+    _json(
+        root / SUBJECT_FILE,
+        {
+            "schema_version": "firelens.runtime_candidate.v4",
+            "release_version": "1.6.0",
+        },
+    )
+    with pytest.raises(ValueError, match="release-promotion manifest"):
+        _build(
+            root,
+            tmp_path / "candidate",
+            _evidence_inputs(tmp_path / "inputs"),
+            release_version="1.6.0",
+        )
 
 
 def test_candidate_workflow_is_exact_head_zero_cost_v2_artifact() -> None:

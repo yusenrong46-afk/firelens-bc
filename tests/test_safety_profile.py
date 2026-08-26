@@ -1516,12 +1516,20 @@ def test_compiled_validation_rejects_forged_invalid_verified_and_mismatched_dist
     )
     forged = DistanceDerivation.model_construct(
         **{
-            **derivation.model_dump(),
+            **{
+                field: getattr(derivation, field)
+                for field in DistanceDerivation.model_fields
+            },
             "validation_status": DerivationValidationStatus.INVALID,
             "publication_state": PublicationState.VERIFIED,
         }
     )
-    forged_card = ProofCard.model_construct(**{**bound.model_dump(), "derivation": forged})
+    forged_card = ProofCard.model_construct(
+        **{
+            **{field: getattr(bound, field) for field in ProofCard.model_fields},
+            "derivation": forged,
+        }
+    )
     forged_report = validate_compiled_publication(
         packet=None,
         claims=[claim],
@@ -1547,7 +1555,10 @@ def test_compiled_validation_rejects_forged_invalid_verified_and_mismatched_dist
     )
     mismatch_text = "Distance 999.9 km geodesic to the official incident point."
     mismatch_card = ProofCard.model_construct(
-        **{**bound.model_dump(), "claim_text": mismatch_text}
+        **{
+            **{field: getattr(bound, field) for field in ProofCard.model_fields},
+            "claim_text": mismatch_text,
+        }
     )
     with pytest.raises(ValidationError, match="does not match the bound derivation"):
         ProofCard.model_validate(mismatch_card.model_dump())

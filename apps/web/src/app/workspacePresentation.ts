@@ -2,7 +2,7 @@ import type { AskResponse, ResponseMode } from "../shared/api/api";
 
 const MAP_INTENT = /\b(?:map|mapped|where|location|located|near|nearby|across|distribution|geograph(?:y|ic|ical))\b/i;
 const EXPLICIT_MAP_INTENT = /\b(?:map|mapped)\b/i;
-const ANALYSIS_INTENT = /\b(?:breakdown|counts?|distribution|geograph(?:y|ic|ical)|how many|by\s+(?:fire centre|status))\b/i;
+const ANALYSIS_INTENT = /\b(?:breakdown|counts?|distribut(?:ion|ed)|geograph(?:y|ic|ical)|how many|by\s+(?:fire centre|status))\b/i;
 
 export function questionRequestsMap(question: string | undefined): boolean {
   return Boolean(question && MAP_INTENT.test(question));

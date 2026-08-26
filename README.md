@@ -96,6 +96,8 @@ The governing principle is simple:
 - Empty-map behavior that states uncertainty and never turns “no returned records”
   into a safety determination.
 - Numeric kilometre ownership and rejection of model-invented unit conversions.
+- A typed **intent automaton** that owns request shape before the query plan
+  authorizes tools, layers, or geography.
 - An immutable **AgentQueryPlan** that is the sole authorization for each
   request's tools, live layers, and geography; model tool requests outside that
   plan are rejected.
@@ -106,6 +108,24 @@ The governing principle is simple:
 
 These are implementation properties, not a declaration that the system is
 deployed, independently certified, or appropriate for emergency decision-making.
+
+## Adaptive views
+
+The workspace chooses a presentation from the request, not a single chat layout
+for every answer.
+
+| Request | What you see |
+| --- | --- |
+| Multi-record or province-wide live analysis | Summary / Map / Records analysis workspace |
+| Named fire or a single official record | Answer first; map and record list only on demand |
+| Reviewed preparedness guidance | Chat with the exact source quotation and Proof Cards |
+| Mixed live + guidance | Separate authority-labelled sections, without duplicating the same claim |
+| Missing, stale, partial, or empty official layers | Visible limitations. Never an all-clear |
+
+The typed intent automaton owns request shape (clauses, time, layers, national
+scope, guidance, and place *candidates*) before `AgentQueryPlan` authorizes any
+tool. Downstream modules project those fields; they do not re-parse the question
+with a second phrase grammar.
 
 ## How an answer becomes publishable
 
@@ -132,7 +152,7 @@ packets may use one bounded generation only after deterministic validation; that
 generation may write from the packet but cannot request new tools, layers, or
 geography.
 
-## Run it locally
+## Quick start
 
 FireLens supports Python 3.12–3.14 and uses locked Python and npm dependencies.
 The setup target also installs the local Chromium build required by Playwright.

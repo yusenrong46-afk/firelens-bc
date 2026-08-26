@@ -25,6 +25,8 @@ def test_current_documentation_preserves_v1_6_rc2_authority_boundaries() -> None
     assert "## Why this is not “just a chatbot”" in readme
     assert "## What V1.6 adds" in readme
     assert "## How an answer becomes publishable" in readme
+    assert "## Adaptive views" in readme
+    assert "## Quick start" in readme
     assert "## Verification and evidence" in readme
     assert "RC2 hardening and qualification campaign" in readme
     assert "public package and API identity remains `1.6.0-rc.1`" in readme

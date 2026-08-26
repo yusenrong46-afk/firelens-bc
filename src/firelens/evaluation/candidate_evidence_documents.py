@@ -34,6 +34,7 @@ from firelens.evaluation.candidate_evidence_validation import (
     validate_timestamp,
     validate_workflow_identity,
 )
+from firelens.evaluation.release_promotion import TO_VERSION, validate_release_promotion
 
 
 def _python_components(root: Path) -> list[dict[str, object]]:
@@ -274,6 +275,16 @@ def documents(
             "candidate evidence builder/invocation does not match workflow identity"
         )
     validate_structured_eval(structured_eval, root=root)
+    if (
+        _normalized_release_version(release_version, label="requested release version")
+        == TO_VERSION
+    ):
+        validate_release_promotion(
+            root,
+            commit=commit,
+            tree=tree,
+            release_version=release_version,
+        )
     _, hard_probe_summary = validate_hard_probe(
         hard_probe,
         hard_probe_baseline,

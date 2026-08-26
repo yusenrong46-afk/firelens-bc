@@ -79,6 +79,7 @@ describe("task-first workspace presentation", () => {
       ],
     };
     expect(questionRequestsAnalysis("Show the wildfire distribution by status across B.C.")).toBe(true);
+    expect(questionRequestsAnalysis("How are wildfires distributed across BC right now?")).toBe(true);
     expect(questionRequestsAnalysis("What is the status of Mountain Fire?")).toBe(false);
     expect(shouldUseAnalyticalWorkspace({
       mode: "live",
