@@ -15,14 +15,18 @@ BUILD_TYPE = "https://firelens-bc.local/build-types/candidate-evidence/v2"
 COMMIT = re.compile(r"^[0-9a-f]{40}$")
 EXACT_REQUIREMENT = re.compile(r"^([A-Za-z0-9_.-]+)==([^\s;]+)$")
 STALE_REPORT_PATH = re.compile(r"(^|/)v1_5[^/]*(/|$)", re.IGNORECASE)
-HARD_PROBE_PROFILE = "rc2.1"
+HARD_PROBE_PROFILE = "rc2.2"
 HARD_PROBE_FROZEN_RC2_PROFILE_PATH = "data/evaluation/hard_probe_rc2_expectations.v1.yaml"
 HARD_PROBE_FROZEN_RC2_PROFILE_MANIFEST_PATH = (
     "data/evaluation/hard_probe_rc2_expectations.v1.manifest.json"
 )
-HARD_PROBE_PROFILE_PATH = "data/evaluation/hard_probe_rc2_1_expectations.v1.yaml"
-HARD_PROBE_PROFILE_MANIFEST_PATH = (
+HARD_PROBE_FROZEN_RC2_1_PROFILE_PATH = "data/evaluation/hard_probe_rc2_1_expectations.v1.yaml"
+HARD_PROBE_FROZEN_RC2_1_PROFILE_MANIFEST_PATH = (
     "data/evaluation/hard_probe_rc2_1_expectations.v1.manifest.json"
+)
+HARD_PROBE_PROFILE_PATH = "data/evaluation/hard_probe_rc2_2_expectations.v1.yaml"
+HARD_PROBE_PROFILE_MANIFEST_PATH = (
+    "data/evaluation/hard_probe_rc2_2_expectations.v1.manifest.json"
 )
 HARD_PROBE_RC2_MIGRATED_IDS = (
     "A04",
@@ -38,6 +42,10 @@ HARD_PROBE_RC2_MIGRATED_IDS = (
 )
 HARD_PROBE_MIGRATED_IDS = (*HARD_PROBE_RC2_MIGRATED_IDS, "A01")
 HARD_PROBE_QUOTE_ONLY_MIGRATED_IDS = frozenset(HARD_PROBE_RC2_MIGRATED_IDS) - {"J01"}
+HARD_PROBE_STRUCTURED_TWO_SIDED_IDS = frozenset({"A09", "A10"})
+HARD_PROBE_ACTIVE_QUOTE_ONLY_IDS = (
+    HARD_PROBE_QUOTE_ONLY_MIGRATED_IDS - HARD_PROBE_STRUCTURED_TWO_SIDED_IDS
+)
 HARD_PROBE_MIXED_MIGRATED_IDS = frozenset({"A01"})
 OFFICIAL_HANDOFF_ANSWER = (
     "FireLens does not have a reviewed structured claim for this high-risk question. "
@@ -63,6 +71,8 @@ MATERIAL_PATHS = (
     "data/evaluation/hard_probe.v1.manifest.json",
     HARD_PROBE_FROZEN_RC2_PROFILE_PATH,
     HARD_PROBE_FROZEN_RC2_PROFILE_MANIFEST_PATH,
+    HARD_PROBE_FROZEN_RC2_1_PROFILE_PATH,
+    HARD_PROBE_FROZEN_RC2_1_PROFILE_MANIFEST_PATH,
     HARD_PROBE_PROFILE_PATH,
     HARD_PROBE_PROFILE_MANIFEST_PATH,
     "data/evaluation/v1_6_user_end_questions_50.json",
@@ -326,6 +336,87 @@ def validate_mixed_migration(row: dict[str, Any], *, case_id: str) -> None:
         )
 
 
+def validate_structured_two_sided_migration(row: dict[str, Any], *, case_id: str) -> None:
+    """Recompute A09/A10 two-sided structured_reviewed coverage from response evidence."""
+
+    validate_zero_generation(row, case_id=case_id)
+    response = row.get("response")
+    if (
+        row.get("passed") is not True
+        or row.get("response_mode") != "grounded"
+        or row.get("validation_status") != "accepted"
+        or not isinstance(response, dict)
+        or response.get("status") != "answer"
+        or response.get("response_mode") != "grounded"
+    ):
+        raise ValueError(f"hard-probe two-sided structured case {case_id} did not pass safely")
+    validation = response.get("validation")
+    claims = response.get("claims")
+    evidence = response.get("evidence")
+    if (
+        not isinstance(validation, dict)
+        or validation.get("accepted") is not True
+        or not isinstance(claims, list)
+        or not claims
+        or not isinstance(evidence, list)
+        or not evidence
+    ):
+        raise ValueError(
+            f"hard-probe two-sided structured case {case_id} lacks accepted claims or evidence"
+        )
+    evidence_by_id = {
+        item.get("evidence_id"): item
+        for item in evidence
+        if isinstance(item, dict) and isinstance(item.get("evidence_id"), str)
+    }
+    publication_kinds: set[str] = set()
+    typed_ids: set[str] = set()
+    for claim in claims:
+        if not isinstance(claim, dict):
+            raise ValueError(
+                f"hard-probe two-sided structured case {case_id} has invalid claims"
+            )
+        publication = claim.get("publication")
+        supports = claim.get("supports")
+        if not isinstance(publication, dict) or not isinstance(supports, list) or not supports:
+            raise ValueError(
+                f"hard-probe two-sided structured case {case_id} lacks publication support"
+            )
+        kind = publication.get("kind")
+        typed_id = publication.get("typed_claim_id")
+        if not isinstance(kind, str):
+            raise ValueError(
+                f"hard-probe two-sided structured case {case_id} has an invalid publication kind"
+            )
+        publication_kinds.add(kind)
+        if isinstance(typed_id, str):
+            typed_ids.add(typed_id)
+        for support in supports:
+            if not isinstance(support, dict):
+                raise ValueError(
+                    f"hard-probe two-sided structured case {case_id} has invalid support"
+                )
+            evidence_item = evidence_by_id.get(support.get("evidence_id"))
+            quote = support.get("quote")
+            if (
+                not isinstance(evidence_item, dict)
+                or not isinstance(quote, str)
+                or not quote
+                or quote not in str(evidence_item.get("primary_text", ""))
+            ):
+                raise ValueError(
+                    f"hard-probe two-sided structured case {case_id} lacks exact quote support"
+                )
+    if publication_kinds != {"structured_reviewed"}:
+        raise ValueError(
+            f"hard-probe two-sided structured case {case_id} has an invalid publication kind"
+        )
+    if typed_ids != {"TC-EVAC-ALERT-001", "TC-EVAC-ORDER-001"}:
+        raise ValueError(
+            f"hard-probe two-sided structured case {case_id} lacks alert and order claims"
+        )
+
+
 def validate_handoff_migration(row: dict[str, Any]) -> None:
     if row.get("passed") is not True or row.get("response_mode") != "scope_redirect":
         raise ValueError("hard-probe migrated handoff case J01 did not pass safely")
@@ -359,7 +450,17 @@ def validate_report_semantic_checks(row: dict[str, Any], *, case_id: str) -> Non
         raise ValueError(f"hard-probe case {case_id} semantic checks are invalid")
     if row.get("passed") is True and base_issues:
         raise ValueError(f"hard-probe passing case {case_id} reports base semantic issues")
-    if case_id in HARD_PROBE_QUOTE_ONLY_MIGRATED_IDS:
+    if case_id in HARD_PROBE_STRUCTURED_TWO_SIDED_IDS:
+        expected_names = [
+            "at_least_one_claim",
+            "at_least_one_evidence",
+            "required_publication_kinds",
+            "validation_accepted",
+            "exact_quote_support",
+            "zero_generation_attempts",
+            "zero_generation_cost_usd",
+        ]
+    elif case_id in HARD_PROBE_ACTIVE_QUOTE_ONLY_IDS:
         expected_names = [
             "at_least_one_claim",
             "at_least_one_evidence",

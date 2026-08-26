@@ -35,10 +35,11 @@ may not relabel the runnable artifact.
    adaptive comparison is in progress.
 4. Run `make secret-scan` before any recovery or snapshot artifact.
 5. Run `make v1-6-package-verify` and `make v1-6-gate` for zero-cost identity.
-6. Run the permanent hard probe with `--expectation-profile rc2.1`. Confirm that
-   report v2 binds the unchanged historical dataset, the active RC2.1 profile
-   and manifest, the effective-expectations hash, and the exact candidate
-   commit/tree. The frozen RC2 pair remains a separately bound material.
+6. Run the permanent hard probe with `--expectation-profile rc2.2`. Confirm that
+   report v2 binds the unchanged historical dataset, the active RC2.2 profile
+   and manifest, the frozen RC2.1 profile and manifest, the effective-expectations
+   hash, and the exact candidate commit/tree. The frozen RC2 pair remains a
+   separately bound material.
 7. Do not treat missing H4 sealed 46/47 or H10 evidence as a pass.
 
 ## Structured-publication continuation
@@ -68,7 +69,7 @@ reviewer identity or approve a claim.
 | `make v1-6-baseline` | Frozen before snapshot / seal at Stage 0 | After-implementation improvement |
 | `make v1-6-gate` | Standard identity and current inventory | H10 release GO |
 | `make v1-6-package-verify` | Allowlist / Docker / Vercel logical parity helpers | A deployed origin |
-| RC2.1 offline hard probe | Historical cases plus stronger declared migration invariants at zero cost | Paid provider quality, sealed labels, or deployed behavior |
+| RC2.2 offline hard probe | Historical cases plus stronger declared migration invariants at zero cost, including A09/A10 two-sided structured coverage | Paid provider quality, sealed labels, or deployed behavior |
 | Preview / production qualify scripts | One HTTPS origin when authorized | UX, VoiceOver, firewall, or sealed retrieval |
 
 Archive limitation: a local report, an archived report, or a CI result from a
@@ -77,11 +78,14 @@ exact candidate commit and tree, the matching CI artifact, and the required
 human-authorized external gates.
 
 Candidate-evidence v2 must bind the unchanged historical hard-probe
-dataset/manifest, the frozen RC2 expectation profile/manifest, and the active
-RC2.1 expectation profile/manifest. It rejects a historical or RC2 current
+dataset/manifest, the frozen RC2 expectation profile/manifest, the frozen
+RC2.1 expectation profile/manifest, and the active RC2.2 expectation
+profile/manifest. It rejects a historical or RC2 current
 report, an arbitrary overlay, a stale Git identity, a changed material, an
 unlisted expectation migration, provider credentials, or cost. For A01 it
 recomputes the exact two-kind publication set and its response invariants.
+For A09 and A10 it recomputes two-sided `structured_reviewed` coverage of
+`TC-EVAC-ALERT-001` and `TC-EVAC-ORDER-001`.
 
 Paid comparison, preview Ask probes, firewall publish, rollback proof,
 VoiceOver, participant UX, and sealed V3 47-case retrieval stay `EXTERNAL`

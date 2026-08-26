@@ -229,16 +229,16 @@ Useful zero-cost commands:
 .venv/bin/python scripts/v1_6_structured_publication_eval.py \
   --output /tmp/firelens-structured-eval.json
 .venv/bin/python scripts/run_hard_probe.py --mode offline \
-  --expectation-profile rc2.1 --output /tmp/firelens-hard-probe.json
+  --expectation-profile rc2.2 --output /tmp/firelens-hard-probe.json
 .venv/bin/python -m pytest -q \
   tests/test_v1_6_user_end_questions.py \
   tests/test_v1_6_user_end_questions_end_to_end.py
 ```
 
 The permanent hard probe is public regression data, not a sealed holdout. The
-active RC2.1 profile preserves the historical dataset and `86/105` floor, copies
-the ten frozen RC2 migrations, and adds A01's exact mixed-publication contract as
-an eleventh migration. The historical and RC2 profiles remain unchanged.
+active RC2.2 profile preserves the historical dataset and `86/105` floor, copies
+frozen RC2.1, and migrates only A09/A10 to two-sided structured coverage. The
+historical, RC2, and RC2.1 profiles remain unchanged.
 Candidate evidence rejects stale Git identities, changed materials, unexplained
 paired regressions, provider credentials, provider cost, and incomplete artifacts.
 

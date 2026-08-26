@@ -135,15 +135,15 @@ Visible development benchmarks are not independent proof.
   each still-uncovered atomic definition aspect after rerank, without raising
   default `rerank_top_k`.
 - The permanent hard-probe dataset remains immutable. The named, hash-bound
-  `rc2` profile preserves ten safer response-mode migrations. The active
+  `rc2` profile preserves ten safer response-mode migrations. The frozen
   `rc2.1` profile copies those ten unchanged and appends A01's exact
-  `{structured_reviewed, official_quote_only}` mixed-publication contract while
-  preserving the historical questions, 105-case roster, and `86/105` floor.
-  The effective expectation hash and exact Git identity travel with report v2.
-  A09 and A10 stay on the frozen quote-only-exclusive RC2 migrations. Two-sided
-  packet-bound reviewed structured comparison can fail that overlay as an
-  explained paired regression rather than a product defect to reverse; a later
-  named profile is a separate Codex decision and is not implemented here.
+  `{structured_reviewed, official_quote_only}` mixed-publication contract. The
+  active `rc2.2` profile copies rc2.1 unchanged and migrates only A09 and A10
+  to two-sided `structured_reviewed` coverage of `TC-EVAC-ALERT-001` and
+  `TC-EVAC-ORDER-001` while preserving the historical questions, 105-case
+  roster, and `86/105` floor. The effective expectation hash and exact Git
+  identity travel with report v2. Frozen RC2 and RC2.1 remain separately bound
+  materials; they are not rewritten.
 
 ## Failures, ops, packaging
 

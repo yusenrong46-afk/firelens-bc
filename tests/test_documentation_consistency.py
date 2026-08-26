@@ -40,14 +40,14 @@ def test_current_documentation_preserves_v1_6_rc2_authority_boundaries() -> None
     assert "preview and production reject it" in architecture
     assert "reviewed structured claims and extraction-only source wording" in architecture
     assert "named, hash-bound `rc2` profile" in architecture
-    assert "active `rc2.1` profile" in architecture
+    assert "active `rc2.2` profile" in architecture
     assert "archival V1.5 code-and-design snapshot" in handbook
     assert "ADR 0017" in handbook
     assert "This handbook describes the code that runs now." not in handbook
     assert "exact Git commit and Git tree" in runbook
     assert "matching CI candidate-evidence artifact" in runbook
     assert "Candidate-evidence v2 must bind the unchanged historical hard-probe" in runbook
-    assert "--expectation-profile rc2.1" in runbook
+    assert "--expectation-profile rc2.2" in runbook
     assert "RC2.1 expectation profile/manifest" in runbook
     assert "Do not name `a5cd967`" in runbook
     assert "## Unreleased — V1.6 RC2" in changelog

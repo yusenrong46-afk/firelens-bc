@@ -1,0 +1,21 @@
+{
+  "schema_version": "firelens.hard_probe_expectations_manifest.v1",
+  "profile": "rc2.2",
+  "expectations_sha256": "17d73575e894395df2b6193c62ebfdcffb2cd3b892b79e233fb99a0f22fd8904",
+  "base_dataset_sha256": "ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035",
+  "migration_count": 11,
+  "migration_ids": [
+    "A01",
+    "A04",
+    "A05",
+    "A07",
+    "A08",
+    "A09",
+    "A10",
+    "I01",
+    "I02",
+    "J01",
+    "J02"
+  ],
+  "minimum_passed": 86
+}

@@ -226,6 +226,13 @@ def _semantic_checks(case: HardProbeCase, response: dict[str, Any]) -> list[str]
         issues.append("live claim was answered only from the static corpus")
     if case.id == "A02":
         issues.extend(_a02_comparison_coverage_issues(response))
+    if case.id in {"A09", "A10"}:
+        typed_ids = {
+            (claim.get("publication") or {}).get("typed_claim_id")
+            for claim in response.get("claims") or []
+        }
+        if "TC-EVAC-ALERT-001" not in typed_ids or "TC-EVAC-ORDER-001" not in typed_ids:
+            issues.append(f"{case.id} lacks two-sided structured alert and order claims")
     return sorted(set(issues))
 
 
@@ -608,7 +615,7 @@ async def run(args: argparse.Namespace) -> int:
         json.dump(report, stream, ensure_ascii=False, indent=2)
         stream.write("\n")
     print(json.dumps(report["summary"], indent=2))
-    if expectation_profile.profile in {"rc2", "rc2.1"} and full_dataset_executed:
+    if expectation_profile.profile in {"rc2", "rc2.1", "rc2.2"} and full_dataset_executed:
         return 0 if minimum_passed_met else 1
     return 0 if failed_count == 0 else 1
 
@@ -618,7 +625,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--mode", choices=("offline", "qualified"), default="offline")
     parser.add_argument(
         "--expectation-profile",
-        choices=("historical", "rc2", "rc2.1"),
+        choices=("historical", "rc2", "rc2.1", "rc2.2"),
         default="historical",
     )
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
