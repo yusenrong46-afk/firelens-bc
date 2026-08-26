@@ -28,7 +28,11 @@ from firelens.evaluation.hard_probe_expectations import OFFICIAL_HANDOFF_ANSWER
 from firelens.live_contracts import CoarseResolvedLocation, LocationInput
 from firelens.live_support import LiveResultKind, resolve_bc_location
 from firelens.providers.fake import FakeProvider
-from firelens.publication.compiler import compile_high_risk_answer, compile_structured_claim
+from firelens.publication.compiler import (
+    compile_high_risk_answer,
+    compile_structured_claim,
+    select_typed_claim_ids,
+)
 from firelens.publication.records import admitted_corpus_index, get_versioned
 from firelens.runtime import load_runtime
 
@@ -210,6 +214,25 @@ def test_terse_bag_question_suppresses_structured_reviewed() -> None:
         assert response.response_mode == ResponseMode.PARTIAL
 
     asyncio.run(run())
+
+
+def test_one_token_ask_excludes_structured_claims_even_with_matching_span() -> None:
+    """Guard the terse-exclusivity branch itself: a one-token ask must stay
+    quote-only even when retrieval surfaces an exact typed-claim source span
+    and support reports a matching aspect (the qualified-provider shape)."""
+
+    packet = _structured_packet("bag?", "TC-FIRESMART-021-01")
+    assert (
+        select_typed_claim_ids(
+            packet,
+            question="bag?",
+            supported_aspects=["What belongs in a grab-and-go bag?"],
+        )
+        == []
+    )
+    response = compile_high_risk_answer("bag?", packet, trace_id="terse-span-guard")
+    assert _publication_kinds(response) == {"official_quote_only"}
+    assert response.response_mode == ResponseMode.PARTIAL
 
 
 def test_full_contents_question_still_allows_mixed_structured_and_quote() -> None:
