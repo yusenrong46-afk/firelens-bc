@@ -25,15 +25,21 @@ _GUIDANCE_NOUN_MODIFIERS = (
     r"(?:(?:basic|simple|plain(?:-|\s+)(?:english|language))\s+)?"
 )
 _TERSE_GUIDANCE_START = (
-    r"(?:(?:advice|tips|guidance)\s+(?:for|about)\s+)?"
-    r"(?:(?:an?|the)\s+)?(?:emergency\s+kit|grab-and-go\s+bag|go\s+bag|"
+    r"(?:(?:advice|tips|guidance|contents?|checklist)\s+"
+    r"(?:for|about|on|of)\s+)?"
+    r"(?:(?:an?|the)\s+)?(?:emergency[-\s]+kit|"
+    r"grab[-\s]+and[-\s]+go[-\s]+bag|go[-\s]+bag|"
     r"(?:wildfire\s+)?smoke[-\s]+(?:readiness|health|preparedness)|"
     r"(?:structure[- ]protection\s+)?sprinklers?(?:\s+guidance)?|"
-    r"evacuation\s+(?:alert|order)\s+(?:definitions?|meaning|guidance)|"
+    r"evacuation[-\s]+(?:alert|order)\s+"
+    r"(?:definitions?|meaning|guidance|basics?|summar(?:y|ies)|overview)|"
     rf"{_GUIDANCE_NOUN_MODIFIERS}(?:difference|comparison|distinction)\s+"
     r"(?:between|of)\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)|"
-    rf"{_GUIDANCE_NOUN_MODIFIERS}(?:(?:evacuation|emergency|travel)\s+)*"
-    r"packing\s+(?:checklist|list))\b"
+    rf"{_GUIDANCE_NOUN_MODIFIERS}(?:(?:evacuation|emergency|travel)[-\s]+)*"
+    r"packing[-\s]+(?:checklist|list)|"
+    r"(?:emergency[-\s]+kit|grab[-\s]+and[-\s]+go[-\s]+bag|"
+    r"go[-\s]+bag|smoke[-\s]+(?:readiness|preparedness))\s+"
+    r"(?:advice|tips|guidance|contents?|checklist))\b"
 )
 _CLAUSE_BOUNDARY = re.compile(
     rf"(?:(?:[?;.+]\s*|,\s*|\s+(?:and|also|plus|but|then)\s+)"
@@ -48,6 +54,9 @@ _NON_BC_NATIONAL_SCOPE = re.compile(
     r"\bfrom\s+(?:the\s+)?atlantic\s+to\s+(?:the\s+)?pacific\b|"
     r"\b(?:across|throughout)\s+(?:the\s+)?nation\b|"
     r"\b(?:national|nation[- ]?wide)\s+(?:wildfire|fire)\s+"
+    r"(?:situation|status|updates?|reports?|summar(?:y|ies)|map|records?|"
+    r"picture|overview|snapshot|counts?)\b|"
+    r"\bcanada['’]s\s+(?:current\s+|latest\s+)?(?:wildfire|fire)\s+"
     r"(?:situation|status|updates?|reports?|summar(?:y|ies)|map|records?|"
     r"picture|overview|snapshot|counts?)\b",
     re.IGNORECASE,
@@ -74,7 +83,7 @@ _FIRE_SUMMARY_TEXT = (
 )
 _FIRE_SCOPE_TEXT = r"(?:near|around|round|within|in|across|throughout|by|close\s+to)"
 _FIRE_SUMMARY_TERMINUS_TEXT = (
-    rf"(?=\s*(?:$|[?.,;:]|and\b|plus\b|for\b|of\b|"
+    rf"(?=\s*(?:$|[?.,;:]|and\b|plus\b|for\b|from\b|of\b|"
     rf"{_FIRE_SCOPE_TEXT}\b|{_PRESENT_TIME_TEXT}\b|listed\b|reported\b))"
 )
 _CURRENT_INCIDENT_RECORD = re.compile(
@@ -278,6 +287,9 @@ _CURRENT_FIRE_STATUS = re.compile(
     rf"(?:active|current|latest|official|reported)\s+"
     rf"(?:(?:bc|b\.c\.|british\s+columbia|provincial)\s+)?"
     rf"(?:(?:wildfires|fires)\b|(?:wildfire|fire)\s+{_FIRE_SUMMARY_TEXT}\b)|"
+    rf"(?:^|[:,\N{{EM DASH}}\N{{EN DASH}}])\s*"
+    rf"(?:(?:bc|b\.c\.|british\s+columbia|provincial)\s+)"
+    rf"(?:active|current|latest|official|reported)\s+(?:wildfires|fires)\b|"
     rf"^\s*(?:[a-z][a-z .'-]{{1,80}}?\s+)?(?:wildfires|fires)\s+(?:are\s+)?"
     rf"(?:active|burning|current|listed|reported|{_PRESENT_TIME_TEXT})\b|"
     rf"\b(?:wildfire|fire)\s+{_FIRE_SUMMARY_TEXT}"
@@ -331,6 +343,16 @@ _TRAILING_RECORD_LOCATION = re.compile(
 _LOCATION_END = re.compile(
     r"\s+(?:right\s+now|currently|current|latest|today|tonight|now|"
     r"at\s+the\s+moment|at\s+present|this\s+(?:morning|afternoon|evening|week))\b.*$",
+    re.IGNORECASE,
+)
+
+_MAP_PIN_UI_OPERATION = re.compile(
+    r"\b(?:how\s+(?:do|can|would|should)\s+(?:i|we|you)\s+|"
+    r"(?:please\s+)?(?:add|create|drop|place|remove|delete|move)\s+)"
+    r"(?:an?\s+|the\s+)?(?:map\s+)?(?:pins?|markers?)\b|"
+    r"\b(?:add|create|drop|place|remove|delete|move)\s+"
+    r"(?:an?\s+|the\s+)?(?:pins?|markers?)\s+(?:to|from|on)\s+"
+    r"(?:the\s+)?(?:wildfire|fire|incident)?\s*map\b",
     re.IGNORECASE,
 )
 
@@ -433,6 +455,8 @@ def _fronted_live_scope(text: str) -> str | None:
 
 
 def _is_current_live_fire(text: str) -> bool:
+    if _MAP_PIN_UI_OPERATION.search(text):
+        return False
     fire_word = bool(_FIRE_WORD.search(text))
     incident_record = bool(_CURRENT_INCIDENT_RECORD.search(text))
     official_record = bool(_OFFICIAL_FIRE_SERVICE_RECORD.search(text))

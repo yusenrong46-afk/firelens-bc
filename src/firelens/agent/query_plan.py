@@ -293,10 +293,15 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             layers = (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER)
     static_query = planned_static_subrequest(request.question)
     location = request.location or coarse_location_from_question(request.question)
-    if (
+    actual_live_request = bool(
+        layers or facets.has_current_live_fire or public_plan.route == QueryRoute.LIVE or topics
+    )
+    outside_bc_scope = bool(
         is_national_scope_question(request.question)
         or requests_non_bc_national_scope(request.question)
-    ) or (location is not None and is_out_of_province_label(location.label)):
+        or (location is not None and is_out_of_province_label(location.label))
+    )
+    if actual_live_request and outside_bc_scope:
         return AgentQueryPlan(
             route=QueryRoute.LIVE,
             mode=AgentRequestMode.TERMINAL,

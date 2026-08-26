@@ -22,16 +22,11 @@ TRUST_EXPLANATION_PATTERN = (
 # live safety request merely because they contain the word "search" or "map".
 _LIVE_VIEW_REFERENCE = re.compile(
     r"\b(?:"
-    r"(?:wildfire|fire|incident|incidents?|perimeter|evacuation)\s+"
-    r"(?:map|layer|search(?:\s+results?)?)|"
-    r"(?:wildfire|fire)?\s*map|"
-    r"(?:incident|incidents?|fire|wildfire|records?|results?)\s+"
-    r"(?:appeared|appear|returned|return)\s+(?:in|on)\s+"
-    r"(?:the\s+)?(?:map|search|layer)|"
-    r"(?:map|layer|search(?:\s+results?)?)\s+"
-    r"(?:did\s+not|didn't|does\s+not|has\s+not|have\s+not)\s+return|"
-    r"(?:no|zero)\s+(?:map\s+)?(?:pins?|markers?)\s+"
-    r"(?:are\s+)?(?:showing|visible|displayed|present|appearing)"
+    r"(?:wildfire|fire|incident|incidents?|perimeter|evacuation|official\s+records?)\s+"
+    r"(?:map|layer|view|search(?:\s+results?)?)|"
+    r"(?:wildfire|fire)\s*map|"
+    r"(?:map|layer|view|search(?:\s+results?)?)|"
+    r"(?:pins?|markers?)"
     r")\b",
     re.IGNORECASE,
 )
@@ -45,12 +40,15 @@ _MAP_ABSENCE = re.compile(
     r"(?:did\s+not|didn't|does\s+not|has\s+not|have\s+not)\s+return\s+"
     r"(?:any\s+)?(?:results?|incidents?|fires?|wildfires?|records?)|"
     r"(?:no|zero)\s+(?:map\s+)?(?:pins?|markers?)\s+"
-    r"(?:are\s+)?(?:showing|visible|displayed|present|appearing))\b",
+    r"(?:are\s+)?(?:show|showing|visible|displayed|present|appearing)|"
+    r"(?:no|zero)\s+(?:pins?|markers?|incidents?|fires?|wildfires?|records?|results?)\b|"
+    r"(?:pins?|markers?)\s+(?:are\s+)?(?:not\s+)?(?:showing|visible))\b",
     re.IGNORECASE,
 )
 _SAFETY_INFERENCE = re.compile(
     r"\b(?:safe|all[- ]clear|(?:is\s+)?everything\s+(?:is\s+)?(?:okay|ok|fine)|"
     r"(?:no|zero)\s+(?:immediate\s+)?danger|"
+    r"(?:no|zero)\s+(?:immediate\s+)?threat|"
     r"(?:no|zero)\s+(?:(?:wild)?fire\s+risk|risk\s+(?:from|of)\s+(?:wild)?fire)|"
     r"(?:no|zero)\s+(?:immediate\s+)?risk(?!\s+of\s+"
     r"(?:data|search|archive|reporting)\b)|"
@@ -59,11 +57,18 @@ _SAFETY_INFERENCE = re.compile(
     r"(?:i|we)\s+(?:can|could|may|might|should)\s+"
     r"(?:return|go\s+back)(?:\s+home)?|"
     r"(?:can|could|may|might|should)\s+(?:i|we)\s+"
-    r"(?:return|go\s+back)(?:\s+home)?)\b",
+    r"(?:return|go\s+back)(?:\s+home)?|"
+    r"(?:i|we|people|residents?|famil(?:y|ies)|households?)\s+"
+    r"(?:can|could|may|might|should)\s+(?:safely\s+)?stay|"
+    r"(?:can|could|may|might|should)\s+"
+    r"(?:i|we|people|residents?|famil(?:y|ies)|households?)\s+"
+    r"(?:safely\s+)?stay)\b",
     re.IGNORECASE,
 )
 _HISTORICAL_ANALYSIS = re.compile(
-    r"\b(?:historical|historic|archive|archival)\b|\b(?:19|20)\d{2}\b",
+    r"\b(?:historical|historic|archive|archival)\b|\b(?:19|20)\d{2}\b|"
+    r"\b(?:database|data\s+(?:error|loss|quality)|report\s+(?:a\s+)?(?:bug|issue)|"
+    r"mock|fixture|screenshot|user\s+interface|ui\s+(?:test|state))\b",
     re.IGNORECASE,
 )
 _TRUST_EXPLANATION = re.compile(TRUST_EXPLANATION_PATTERN, re.IGNORECASE)

@@ -44,10 +44,19 @@ _MULTI_PLACE_FIRE_COMPARISONS = (
 
 _PLACE_PATTERNS = (
     re.compile(
-        r"\b(?:no|zero)\s+(?:map\s+)?(?:pins?|markers?)\s+"
-        r"(?:are\s+)?(?:showing|visible|displayed|present|appearing)\b"
+        r"\b(?:wildfire|fire|incident|perimeter|evacuation)?\s*"
+        r"(?:map|layer|view|search)\b.{0,50}"
+        r"\b(?:empty|blank|returned?\s+(?:no|zero)|returned?\s+nothing)\b"
         r".{0,50}\b(?:near|around|in)\s+"
-        r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?P<place>[a-z0-9][a-z0-9 .'-]{1,80}?)"
+        r"(?=[,;:.?!]|\s+(?:and|but|so)\b|$)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:no|zero)\s+(?:map\s+)?(?:pins?|markers?)\s+"
+        r"(?:are\s+)?(?:show|showing|visible|displayed|present|appearing)\b"
+        r".{0,50}\b(?:near|around|in)\s+"
+        r"(?P<place>[a-z0-9][a-z0-9 .'-]{1,80}?)"
         r"(?=[,;:.?!]|\s+(?:and|but|so)\b|$)",
         re.IGNORECASE,
     ),
@@ -57,7 +66,7 @@ _PLACE_PATTERNS = (
         r"(?:results?|fires?|wildfires?|records?))\b"
         r".{0,50}\b(?:on|in)\s+(?:the\s+)?(?:fire|wildfire)?\s*map\b"
         r".{0,50}\b(?:near|around|in)\s+"
-        r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?P<place>[a-z0-9][a-z0-9 .'-]{1,80}?)"
         r"(?=[,;:.?!]|\s+(?:and|but|so)\b|$)",
         re.IGNORECASE,
     ),
@@ -66,7 +75,7 @@ _PLACE_PATTERNS = (
         r"\b(?:empty|blank|nothing|no\s+(?:results?|fires?|wildfires?|records?)|"
         r"zero\s+(?:results?|fires?|wildfires?|records?))\b"
         r".{0,50}\b(?:near|around|in)\s+"
-        r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?P<place>[a-z0-9][a-z0-9 .'-]{1,80}?)"
         r"(?=[,;:.?!]|\s+(?:and|but|so)\b|$)",
         re.IGNORECASE,
     ),
@@ -352,6 +361,9 @@ _NATIONAL_SCOPE = re.compile(
     r"|\bcanada[- ]?wide\b|\bnation[- ]?wide\b|\bevery province\b|\ball provinces\b"
     r"|\bcoast(?:-|\s+)to(?:-|\s+)coast\b|\b(?:across|throughout)\s+the\s+country\b"
     r"|\ball\s+(?:ten|10)\s+provinces\b"
+    r"|\bcanada['’]s\s+(?:current\s+|latest\s+)?(?:wildfire|fire)\s+"
+    r"(?:situation|status|updates?|reports?|summar(?:y|ies)|map|records?|"
+    r"picture|overview|snapshot|counts?)\b"
     r"|\b(?:national|nation[- ]?wide)\s+(?:wildfire|fire)\s+"
     r"(?:situation|status|updates?|reports?|summar(?:y|ies)|map|records?|"
     r"picture|overview|snapshot|counts?)\b",
@@ -387,6 +399,13 @@ def _clean_place(candidate: str) -> str | None:
     if place.casefold().startswith("the "):
         place = place[4:].strip()
     lowered = place.casefold()
+    province_with_modifier = re.fullmatch(
+        r"(?P<province>bc|b\s*\.?\s*c\s*\.?|british\s+columbia|the\s+province|province)"
+        r"(?:\s+(?:active|current|latest|official|reported))?",
+        lowered,
+    )
+    if province_with_modifier is not None:
+        return None
     if re.fullmatch(r"b\s*\.?\s*c\s*\.?", lowered):
         return None
     words = frozenset(re.findall(r"[a-z]+", lowered))
