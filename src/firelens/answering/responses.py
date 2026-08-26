@@ -19,7 +19,7 @@ from firelens.contracts import (
     TemporalClass,
     ValidationReport,
 )
-from firelens.publication.compiler import explanation_authority
+from firelens.publication.fallback import explanation_authority
 
 
 def provider_abstention(

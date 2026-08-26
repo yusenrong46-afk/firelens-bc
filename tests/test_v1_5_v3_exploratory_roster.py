@@ -60,7 +60,7 @@ from firelens.evaluation.v3_exploratory_roster import (
 )
 from firelens.live import LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
-from firelens.publication.compiler import background_authority, explanation_authority
+from firelens.publication.fallback import background_authority, explanation_authority
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = ROOT / "output/v1_5_v3_exploratory/sanitized_roster_report.json"

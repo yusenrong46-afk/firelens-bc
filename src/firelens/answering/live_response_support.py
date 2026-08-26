@@ -17,6 +17,7 @@ from firelens.contracts import (
     ResponseMode,
     ResponseStatus,
 )
+from firelens.freshness_language import official_records_headline
 from firelens.live_support import OFFICIAL_FALLBACK_URLS
 from firelens.proof_presentation import AnswerStatusBanner
 
@@ -108,9 +109,15 @@ def empty_live_response(
             "orders or alerts."
         )
 
-    mode = ResponseMode.LIVE if resolved_location is not None else ResponseMode.ABSTENTION
+    mode = (
+        ResponseMode.ABSTENTION
+        if all_unavailable or resolved_location is None
+        else ResponseMode.LIVE
+    )
     status = (
-        ResponseStatus.ANSWER if resolved_location is not None else ResponseStatus.ABSTENTION
+        ResponseStatus.ABSTENTION
+        if all_unavailable or resolved_location is None
+        else ResponseStatus.ANSWER
     )
     limitations = [_EMPTY_LIVE_LIMITATION]
     if all_unavailable:
@@ -164,6 +171,12 @@ def freshness_limitation(state: AggregateFreshness) -> str | None:
             "some records may be outdated."
         )
     return None
+
+
+def records_section_heading(freshness: AggregateFreshness | None) -> str:
+    """One canonical heading for live/mixed record sections."""
+
+    return official_records_headline(freshness)
 
 
 def unique_limitations(*groups: list[str]) -> list[str]:

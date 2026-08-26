@@ -45,6 +45,12 @@ def publication_targets(question: str, supported_aspects: Sequence[str]) -> tupl
     )
 
 
+def is_terse_quote_only_request(question: str) -> bool:
+    """A one-token ask cannot mix a structured claim with official quotes."""
+
+    return len(tuple(TOKEN.finditer(question.casefold()))) == 1
+
+
 def typed_subject_covers_atomic_target(subject: str | None, target: str) -> bool:
     return subject == target and target in ALERT_ORDER_ATOMIC_TARGET_SET
 

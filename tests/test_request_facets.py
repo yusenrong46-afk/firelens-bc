@@ -1,9 +1,8 @@
 from pathlib import Path
 
 from firelens.answering.context import _select_evidence_hits
-from firelens.answering.intent import plan_query
+from firelens.answering.intent import plan_query, reviewed_guidance_plan
 from firelens.answering.request_facets import contents_request_facet, requests_contents
-from firelens.answering.service import StaticRAGService
 from firelens.contracts import QueryRequest
 from firelens.publication.comparison_targets import ALERT_ORDER_ATOMIC_TARGETS
 from firelens.retrieval.bm25 import load_chunk_records
@@ -62,7 +61,7 @@ def test_long_contents_question_uses_bounded_container_as_its_required_aspect() 
         + "What basic items should I put in a wildfire grab-and-go bag?"
     )
 
-    plan = StaticRAGService._reviewed_guidance_plan(plan_query(QueryRequest(question=question)))
+    plan = reviewed_guidance_plan(plan_query(QueryRequest(question=question)))
 
     assert plan.required_aspects == ["wildfire grab-and-go bag contents checklist"]
     assert plan.retrieval_requests[0].query == ("wildfire grab-and-go bag contents checklist")
@@ -70,7 +69,7 @@ def test_long_contents_question_uses_bounded_container_as_its_required_aspect() 
 
 def test_alert_order_comparison_retrieves_both_atomic_meanings() -> None:
     question = "What is the difference between an evacuation alert and an evacuation order?"
-    plan = StaticRAGService._reviewed_guidance_plan(plan_query(QueryRequest(question=question)))
+    plan = reviewed_guidance_plan(plan_query(QueryRequest(question=question)))
     queries = [request.query for request in plan.retrieval_requests]
 
     assert plan.required_aspects == [
@@ -87,7 +86,7 @@ def test_long_non_contents_guidance_retrieves_alert_and_order_meanings() -> None
         + "What's the difference between an evacuation alert and an evacuation order?"
     )
 
-    plan = StaticRAGService._reviewed_guidance_plan(plan_query(QueryRequest(question=question)))
+    plan = reviewed_guidance_plan(plan_query(QueryRequest(question=question)))
     queries = [request.query for request in plan.retrieval_requests]
 
     assert plan.required_aspects == [

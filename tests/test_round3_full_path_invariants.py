@@ -32,7 +32,7 @@ from firelens.contracts import (
 )
 from firelens.proof_presentation import build_proof_cards
 from firelens.providers.fake import FakeProvider
-from firelens.publication.compiler import explanation_authority
+from firelens.publication.fallback import explanation_authority
 from firelens.retrieval.vector import retrieval_hit_from_chunk
 
 SMOKE_QUOTE = "Avoid driving through areas of dense smoke."

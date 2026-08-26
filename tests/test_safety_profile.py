@@ -60,7 +60,7 @@ from firelens.live_support import (
 )
 from firelens.proof_presentation import ProofCard, make_proof_card
 from firelens.publication.compiled_validation import validate_compiled_publication
-from firelens.publication.compiler import explanation_authority
+from firelens.publication.fallback import explanation_authority
 from firelens.publication_contracts import PublicationAuthority, PublicationKind
 from firelens.safety_profile import (
     PublicationState,

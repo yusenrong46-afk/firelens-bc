@@ -25,7 +25,7 @@ from firelens.evaluation.claimbench import (
 )
 from firelens.evaluation.common import file_sha256
 from firelens.evaluation.v1_6_standard import load_v1_6_standard
-from firelens.publication.compiler import explanation_authority
+from firelens.publication.fallback import explanation_authority
 from firelens.retrieval.vector import retrieval_hit_from_chunk
 
 ROOT = Path(__file__).resolve().parents[1]

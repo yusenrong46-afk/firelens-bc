@@ -405,6 +405,8 @@ async def build_agent_query_plan(
         pass
     else:
         return plan
+    if plan.mode == AgentRequestMode.MIXED:
+        return plan
     return AgentQueryPlan(
         route=QueryRoute.LIVE,
         mode=AgentRequestMode.TERMINAL,

@@ -20,7 +20,8 @@ from firelens.contracts import (
     ValidationReport,
 )
 from firelens.proof_presentation import AnswerStatusBanner, ProofCard, make_proof_card
-from firelens.publication.compiler import compile_structured_claim, explanation_authority
+from firelens.publication.compiler import compile_structured_claim
+from firelens.publication.fallback import explanation_authority
 from firelens.publication_contracts import (
     QUOTE_RENDERER_ID,
     PublicationAuthority,

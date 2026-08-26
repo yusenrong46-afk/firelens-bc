@@ -40,7 +40,7 @@ from firelens.contracts import (
     aggregate_live_freshness,
 )
 from firelens.live_answering import LiveAnswerCoordinator
-from firelens.publication.compiler import background_authority, explanation_authority
+from firelens.publication.fallback import background_authority, explanation_authority
 
 CURRENT_LIVE = (
     "What's burning in Okanagan today?",

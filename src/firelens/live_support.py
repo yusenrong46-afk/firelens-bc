@@ -339,6 +339,32 @@ def _normalized_locality_name(value: str) -> str:
     return " ".join(re.sub(r"[^\w]+", " ", normalized).split())
 
 
+@dataclass(frozen=True, slots=True)
+class BcRegionEntry:
+    """A named BC region that the community geocoder cannot resolve as a locality."""
+
+    latitude: float
+    longitude: float
+    radius_km: float
+
+
+_BC_REGION_GAZETTEER = MappingProxyType(
+    {
+        "okanagan": BcRegionEntry(latitude=49.88, longitude=-119.49, radius_km=150.0),
+        "okanagan valley": BcRegionEntry(latitude=49.88, longitude=-119.49, radius_km=150.0),
+    }
+)
+
+
+def bc_region_entry(label: str) -> BcRegionEntry | None:
+    """Return a gazetteer region for an exact normalized BC region label."""
+
+    requested = _normalized_locality_name(label)
+    if requested.startswith("the "):
+        requested = requested.removeprefix("the ").strip()
+    return _BC_REGION_GAZETTEER.get(requested)
+
+
 def _exact_bc_locality(features: list[object], label: str) -> dict[str, Any] | None:
     requested = _normalized_locality_name(label)
     if not requested:
@@ -381,6 +407,9 @@ async def resolve_bc_location(get: _HttpGet, location: LocationInput) -> tuple[f
         return location.latitude, location.longitude
     if location.label is None:
         raise LiveDataUnavailable("a coarse location is required for a nearby query")
+    region = bc_region_entry(location.label)
+    if region is not None:
+        return round(region.latitude, 2), round(region.longitude, 2)
     try:
         response = await get(
             BC_GEOCODER_URL,

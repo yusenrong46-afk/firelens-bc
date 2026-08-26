@@ -26,7 +26,7 @@ from firelens.contracts import (
     ResponseStatus,
     ValidationReport,
 )
-from firelens.publication.compiler import explanation_authority
+from firelens.publication.fallback import explanation_authority
 from firelens.retrieval.vector import retrieval_hit_from_chunk
 
 FABLE_MUTATIONS = [

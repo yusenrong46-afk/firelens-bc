@@ -42,7 +42,7 @@ from firelens.contracts import (
     render_claim_texts,
 )
 from firelens.live_answering import LiveAnswerCoordinator
-from firelens.publication.compiler import background_authority, explanation_authority
+from firelens.publication.fallback import background_authority, explanation_authority
 
 
 def _accepted_validation() -> ValidationReport:

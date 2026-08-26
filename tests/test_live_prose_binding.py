@@ -30,7 +30,7 @@ from firelens.contracts import (
     aggregate_live_freshness,
 )
 from firelens.live_answering import LiveAnswerCoordinator
-from firelens.publication.compiler import explanation_authority
+from firelens.publication.fallback import explanation_authority
 
 
 def _timestamp() -> datetime:
