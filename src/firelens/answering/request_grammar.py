@@ -24,8 +24,9 @@ _GUIDANCE_NOUN_MODIFIERS = (
     r"(?:(?:basic|simple|plain(?:-|\s+)(?:english|language))\s+)?"
 )
 _TERSE_GUIDANCE_START = (
-    r"(?:emergency\s+kit|grab-and-go\s+bag|go\s+bag|"
+    r"(?:(?:an?|the)\s+)?(?:emergency\s+kit|grab-and-go\s+bag|go\s+bag|"
     r"(?:wildfire\s+)?smoke\s+(?:readiness|health|preparedness)|"
+    r"(?:structure[- ]protection\s+)?sprinklers?(?:\s+guidance)?|"
     r"evacuation\s+(?:alert|order)\s+(?:definitions?|meaning|guidance)|"
     rf"{_GUIDANCE_NOUN_MODIFIERS}(?:difference|comparison|distinction)\s+"
     r"(?:between|of)\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)|"
@@ -224,6 +225,8 @@ _PRESENT_FIRE_QUESTION = re.compile(
     rf"{_FIRE_SUMMARY_TERMINUS_TEXT}|"
     rf"\b(?:what|which)\s+(?:wildfire|fire|[a-z]{{2,20}}fires?)\s+(?:is\s+)?"
     rf"(?:nearest|closest)\s+to\b|"
+    rf"\bwhich\s+(?:wildfires|fires)\s+(?:are\s+)?"
+    rf"(?:nearest|closest)\s+to\b|"
     rf"\b(?:what|which)\s+is\s+(?:the\s+)?(?:nearest|closest)\s+"
     rf"(?:wildfire|fire)\b|"
     rf"\bhow\s+(?:far|close)(?:\s+away)?\s+is\s+"
@@ -306,7 +309,7 @@ _FRONTED_SCOPE = re.compile(
     re.IGNORECASE,
 )
 _TRAILING_LOCATION = re.compile(
-    r"\b(?:near|around|round|within|in|across|close\s+to)\s+(?:the\s+)?"
+    r"\b(?:near|around|round|within|in|across|close(?:st)?\s+to)\s+(?:the\s+)?"
     r"(?P<place>[a-z][a-z .'-]{1,100})",
     re.IGNORECASE,
 )

@@ -280,6 +280,45 @@ def test_analysis_dimension_is_not_parsed_as_a_place() -> None:
     assert coarse_location_from_question(question) is None
 
 
+def test_plural_closest_fire_question_keeps_the_named_place() -> None:
+    question = "Which fires are closest to Merritt?"
+
+    facets = parse_request_facets(question)
+    location = coarse_location_from_question(question)
+
+    assert facets.has_current_live_fire
+    assert facets.live_location_candidates == ("Merritt",)
+    assert location is not None and location.label == "Merritt"
+
+
+@pytest.mark.parametrize(
+    ("question", "live_clause", "guidance_clause", "place"),
+    (
+        (
+            "Show current fires in Kamloops plus a wildfire smoke preparedness checklist.",
+            "Show current fires in Kamloops",
+            "a wildfire smoke preparedness checklist",
+            "Kamloops",
+        ),
+        (
+            "Show fires in Penticton plus structure-protection sprinkler guidance.",
+            "Show fires in Penticton",
+            "structure-protection sprinkler guidance",
+            "Penticton",
+        ),
+    ),
+)
+def test_terse_guidance_is_split_before_live_location_extraction(
+    question: str, live_clause: str, guidance_clause: str, place: str
+) -> None:
+    facets = parse_request_facets(question)
+    location = coarse_location_from_question(question)
+
+    assert facets.clause_texts == (live_clause, guidance_clause)
+    assert tuple(clause.text for clause in facets.live_clauses) == (live_clause,)
+    assert location is not None and location.label == place
+
+
 def test_audience_for_phrase_is_not_a_live_location() -> None:
     question = "Show current wildfires for students."
     facets = parse_request_facets(question)

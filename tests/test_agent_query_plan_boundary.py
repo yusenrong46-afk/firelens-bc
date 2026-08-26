@@ -300,6 +300,33 @@ def test_selected_record_followups_cannot_widen_to_a_province_list(question: str
     assert plan.tool_calls[0].as_arguments() == {"result_id": "incident:boundary-17"}
 
 
+def test_plural_closest_question_is_a_location_bound_live_plan() -> None:
+    plan = plan_agent_request(QueryRequest(question="Which fires are closest to Merritt?"))
+
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == "Merritt"
+    assert plan.tool_calls[0].as_arguments() == {"place_label": "Merritt"}
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Show current fires in Kamloops plus a wildfire smoke preparedness checklist.",
+        "Show fires in Penticton plus structure-protection sprinkler guidance.",
+    ),
+)
+def test_terse_live_and_guidance_requests_keep_both_execution_lanes(question: str) -> None:
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert plan.mode == AgentRequestMode.MIXED
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert [call.name.value for call in plan.tool_calls] == [
+        "list_official_fires",
+        "search_reviewed_guidance",
+    ]
+
+
 def test_agent_plan_does_not_promote_a_for_audience_to_geography() -> None:
     plan = plan_agent_request(QueryRequest(question="Show current wildfires for students."))
 
