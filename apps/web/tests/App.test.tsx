@@ -1115,6 +1115,9 @@ describe("FireLens Source Lens", () => {
     await user.click(screen.getByLabelText("Send question"));
     expect(await screen.findByText("Preparedness sources")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Wildfire Preparedness Guide" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("article", { name: "Supported claim 1: Source-linked explanation" }),
+    ).toBeInTheDocument();
   });
 
   it("uses the stale map title when the answer records are stale and the province map is empty", async () => {

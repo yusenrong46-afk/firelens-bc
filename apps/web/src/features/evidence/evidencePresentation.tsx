@@ -45,7 +45,7 @@ export function SourcePanel({
   const [open, setOpen] = useState(initiallyOpen);
   const quoteOnly = supportState === "official_quote_only";
   return (
-    <article className="source-panel">
+    <article className="source-panel" aria-label={`Evidence source ${index + 1}: ${evidence.title}`}>
       <div className="source-panel__head">
         <button type="button" className="source-toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
           <span className="source-number">{index + 1}</span>

@@ -97,7 +97,10 @@ export function ClaimEvidence({
       ? "Human-verified source transcription"
       : evidence?.review_provenance?.replaceAll("_", " ");
   return (
-    <article className="claim-evidence">
+    <article
+      className="claim-evidence"
+      aria-label={`Supported claim ${index + 1}: ${supportLabel}`}
+    >
       <div className="claim-evidence__statement">
         <span className="claim-number">{index + 1}</span>
         <div><strong>{claim.text}</strong><small>{supportLabel}</small></div>
