@@ -16,7 +16,8 @@ _CLAUSE_START = (
     r"(?:what(?:['’]s|\s+is)?|where|when|why|how|which|who|"
     r"is|are|was|were|do|does|did|can|could|may|might|should|would|will|"
     r"has|have|had|there\s+(?:is|are|was|were)|"
-    r"give|show|display|list|map|tell|explain|define|describe|compare|"
+    r"give|show|display|list|map|tell|explain|define|describe|summari[sz]e|"
+    r"outline|compare|"
     r"check|find|put|move|focus|centre|center|zoom|help|catch|bring)\b"
 )
 _GUIDANCE_NOUN_MODIFIERS = (
@@ -64,7 +65,8 @@ _PRESENT_TIME_TEXT = (
     r"at\s+present|this\s+(?:morning|afternoon|evening|week))"
 )
 _FIRE_SUMMARY_TEXT = (
-    r"(?:situation|status|updates?|map|records?|picture|overview|snapshot|counts?)"
+    r"(?:situation|status|updates?|reports?|summar(?:y|ies)|map|records?|"
+    r"picture|overview|snapshot|counts?)"
 )
 _FIRE_SCOPE_TEXT = r"(?:near|around|round|within|in|across|throughout|by|close\s+to)"
 _FIRE_SUMMARY_TERMINUS_TEXT = (
@@ -163,7 +165,12 @@ _RECORD_COMMAND = re.compile(
 _PRESENT_FIRE_QUESTION = re.compile(
     r"\bwhat(?:['’]s|\s+is)\s+burning\b|"
     r"\bwhat(?:['’]s|\s+is)\s+on\s+fire\b|"
+    rf"\bwhether\s+anything\s+is\s+burning\s+{_FIRE_SCOPE_TEXT}\b|"
     rf"\b(?:is|are)\s+anything\s+burning\s+{_FIRE_SCOPE_TEXT}\b|"
+    rf"\b(?:is|are)\s+there\s+(?:any\s+)?"
+    rf"(?:(?:current|present)\s+)?(?:wildfire|fire)\s+"
+    rf"(?:activity|occurrences?)\b(?=.{{0,100}}\b(?:{_FIRE_SCOPE_TEXT}|"
+    rf"{_PRESENT_TIME_TEXT})\b)|"
     rf"(?:^|:)\s*(?:wildfires|fires)\s+{_FIRE_SCOPE_TEXT}\b|"
     # Wh-questions own a fire record set directly; they cannot reach forward
     # through an arbitrary topic phrase to find the word "wildfire".
@@ -281,8 +288,7 @@ _CURRENT_FIRE_STATUS = re.compile(
 _FRONTED_LOCATION = re.compile(
     r"^\s*(?:please\s+)?(?:give|show|display|tell)\s+(?:me\s+)?(?:the\s+)?"
     r"(?P<place>[a-z][a-z .'-]{1,80}?)\s+"
-    r"(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?|"
-    r"picture|overview|snapshot)\b",
+    rf"(?:wildfire|fire)\s+{_FIRE_SUMMARY_TEXT}\b",
     re.IGNORECASE,
 )
 _FRONTED_TIME_LOCATION = re.compile(
@@ -298,8 +304,7 @@ _PLACE_OWNED_FIRE_SUMMARY = re.compile(
     r"(?P<place>[a-z][a-z .'-]{1,80}?)(?:"
     r"(?:['\N{RIGHT SINGLE QUOTATION MARK}]s|"
     r"(?<=s)['\N{RIGHT SINGLE QUOTATION MARK}])\s+|\s+)"
-    r"(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?|"
-    r"picture|overview|snapshot)\b",
+    rf"(?:wildfire|fire)\s+{_FIRE_SUMMARY_TEXT}\b",
     re.IGNORECASE,
 )
 _FRONTED_SCOPE = re.compile(
@@ -314,8 +319,7 @@ _TRAILING_LOCATION = re.compile(
     re.IGNORECASE,
 )
 _TRAILING_RECORD_LOCATION = re.compile(
-    r"\b(?:(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?|"
-    r"picture|overview|snapshot)|(?:incident|perimeter)\s+records?)\s+for\s+"
+    rf"\b(?:wildfire|fire|incident|perimeter)\s+{_FIRE_SUMMARY_TEXT}\s+for\s+"
     r"(?:the\s+)?"
     r"(?P<place>[a-z][a-z .'-]{1,100})",
     re.IGNORECASE,

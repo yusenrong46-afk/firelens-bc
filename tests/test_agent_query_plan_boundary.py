@@ -278,6 +278,65 @@ def test_positive_live_grammar_families_authorize_bounded_fire_tools(
 
 
 @pytest.mark.parametrize(
+    ("question", "place"),
+    (
+        (
+            "Is there any wildfire activity in the Kootenays at the moment?",
+            "Kootenays",
+        ),
+        (
+            "Bring up the current incident picture for the Thompson region.",
+            "Thompson region",
+        ),
+        ("Revelstoke wildfire report now.", "Revelstoke"),
+    ),
+)
+def test_exposed_present_activity_and_report_plans_are_location_bounded(
+    question: str, place: str
+) -> None:
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert plan.route == QueryRoute.LIVE
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == place
+    assert [call.name.value for call in plan.tool_calls] == ["list_official_fires"]
+    assert plan.tool_calls[0].as_arguments() == {"place_label": place}
+
+
+@pytest.mark.parametrize(
+    ("question", "place", "static_subrequest"),
+    (
+        (
+            "Show fire reports in the Kootenays, then summarize evacuation-order basics.",
+            "Kootenays",
+            "summarize evacuation-order basics",
+        ),
+        (
+            "Check whether anything is burning near Revelstoke and outline how to "
+            "prepare a go bag.",
+            "Revelstoke",
+            "outline how to prepare a go bag",
+        ),
+    ),
+)
+def test_exposed_report_and_occurrence_requests_keep_two_bounded_lanes(
+    question: str, place: str, static_subrequest: str
+) -> None:
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert plan.route == QueryRoute.LIVE
+    assert plan.mode == AgentRequestMode.MIXED
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == place
+    assert plan.static_subrequest == static_subrequest
+    assert [call.name.value for call in plan.tool_calls] == [
+        "list_official_fires",
+        "search_reviewed_guidance",
+    ]
+
+
+@pytest.mark.parametrize(
     "question",
     (
         "What is its present status?",

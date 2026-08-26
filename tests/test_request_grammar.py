@@ -218,6 +218,113 @@ def test_positive_live_grammar_owns_record_occurrence_status_or_scope(
 
 
 @pytest.mark.parametrize(
+    ("question", "place"),
+    (
+        (
+            "Is there any wildfire activity in the Kootenays at the moment?",
+            "Kootenays",
+        ),
+        ("Are there current fire occurrences around Fernie?", "Fernie"),
+        (
+            "Bring up the current incident picture for the Thompson region.",
+            "Thompson region",
+        ),
+        (
+            "Show the latest incident overview for the Cariboo region.",
+            "Cariboo region",
+        ),
+        ("Revelstoke wildfire report now.", "Revelstoke"),
+        ("Smithers fire summary at the moment.", "Smithers"),
+    ),
+)
+def test_present_activity_and_report_families_keep_bounded_location_scope(
+    question: str, place: str
+) -> None:
+    """Occurrence and report nouns are current only with a present-time form."""
+
+    facets = parse_request_facets(question)
+    location = coarse_location_from_question(question)
+
+    assert facets.has_current_live_fire
+    assert facets.live_location_candidates == (place,)
+    assert location is not None and location.label == place
+    assert plan_query(QueryRequest(question=question)).route == QueryRoute.LIVE
+    assert live_layers_for_question(question) == (
+        LiveResultKind.INCIDENT,
+        LiveResultKind.PERIMETER,
+    )
+
+
+@pytest.mark.parametrize(
+    ("question", "live_fragment", "static_fragment", "place"),
+    (
+        (
+            "Show fire reports in the Kootenays, then summarize evacuation-order basics.",
+            "Show fire reports in the Kootenays",
+            "summarize evacuation-order basics",
+            "Kootenays",
+        ),
+        (
+            "List wildfire reports around Fernie and outline evacuation alert meaning.",
+            "List wildfire reports around Fernie",
+            "outline evacuation alert meaning",
+            "Fernie",
+        ),
+        (
+            "Check whether anything is burning near Revelstoke and outline how to "
+            "prepare a go bag.",
+            "Check whether anything is burning near Revelstoke",
+            "outline how to prepare a go bag",
+            "Revelstoke",
+        ),
+        (
+            "Find whether anything is burning around Nelson, then summarize emergency "
+            "kit preparation.",
+            "Find whether anything is burning around Nelson",
+            "summarize emergency kit preparation",
+            "Nelson",
+        ),
+    ),
+)
+def test_report_and_occurrence_clauses_split_from_introduced_guidance(
+    question: str,
+    live_fragment: str,
+    static_fragment: str,
+    place: str,
+) -> None:
+    """Summarize/outline introduce a new bounded clause after a live request."""
+
+    facets = parse_request_facets(question)
+    location = coarse_location_from_question(question)
+
+    assert facets.clause_texts == (live_fragment, static_fragment)
+    assert tuple(clause.text for clause in facets.live_clauses) == (live_fragment,)
+    assert tuple(clause.text for clause in facets.non_live_clauses) == (static_fragment,)
+    assert location is not None and location.label == place
+    assert static_guidance_fragment(question) == static_fragment
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Explain historical wildfire activity in the Kootenays.",
+        "Summarize a wildfire occurrence study for students.",
+        "Outline fire reporting policy in British Columbia.",
+        "Describe Revelstoke wildfire reports from last season.",
+    ),
+)
+def test_activity_and_report_topic_nouns_do_not_widen_static_or_historical_text(
+    question: str,
+) -> None:
+    facets = parse_request_facets(question)
+
+    assert not facets.has_current_live_fire
+    assert facets.live_location_candidates == ()
+    assert coarse_location_from_question(question) is None
+    assert live_layers_for_question(question) == ()
+
+
+@pytest.mark.parametrize(
     "question",
     (
         "Could this fire reach our community tonight?",

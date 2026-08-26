@@ -167,7 +167,8 @@ _REVIEWED_GUIDANCE_PATTERNS = (
     r"\b(?:grab-and-go|go bag|emergency kit|emergency plan(?:ning)?|household plan)\b",
     r"\b(?:family|household|pets?)\b.{0,50}\b(?:prepare|evacuation|emergency)\b",
     r"\b(?:prepare|preparing)\b.{0,50}\b(?:family|household|pets?|evacuation)\b",
-    r"\b(?:evacuation|evac)\s+(?:alert|order)\b",
+    r"\b(?:evacuation|evac)[-\s]+(?:alerts?|orders?)\b"
+    r"(?:.{0,40}\b(?:basics?|summar(?:y|ies)|overview|guidance)\b)?",
     r"\b(?:wildfire smoke|smoke indoors?|smoke exposure|smoke\s+(?:in|inside)\s+(?:my\s+|our\s+|the\s+)?(?:home|house))\b",
     r"\b(?:wildfire rank|stage of control|stages of control)\b",
     r"\b(?:out(?:ta| of) control|being held|under control)\b.{0,30}\b(?:fire|wildfire|mean)\b",

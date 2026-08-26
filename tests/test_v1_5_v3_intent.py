@@ -12,7 +12,10 @@ from firelens.answering.intent import (
     static_guidance_fragment,
     unsupported_live_topics,
 )
-from firelens.answering.intent_safety import is_empty_map_safety_inference
+from firelens.answering.intent_safety import (
+    empty_map_safety_routing,
+    is_empty_map_safety_inference,
+)
 from firelens.answering.live_request_intent import (
     is_distance_request,
     is_prescriptive_evacuation_distance_request,
@@ -75,6 +78,48 @@ class V3DeterministicIntentTests(unittest.TestCase):
                         LiveResultKind.EVACUATION,
                     ),
                 )
+
+    def test_empty_operational_views_cannot_become_an_all_clear(self) -> None:
+        """Absence in an incident view triggers the bounded live correction path."""
+
+        cases = (
+            "The incident layer is empty; confirm there is no danger.",
+            "No incidents appeared in the search—does that prove conditions are safe?",
+            "The map did not return records; can I assume there is no risk?",
+            "The incident search returned zero records. Is everything okay?",
+            "The wildfire layer returned nothing today. Is that an all-clear?",
+        )
+        for question in cases:
+            with self.subTest(question=question):
+                self.assertTrue(is_empty_map_safety_inference(question))
+                plan = plan_query(QueryRequest(question=question))
+                self.assertEqual(plan.route, QueryRoute.LIVE)
+                self.assertEqual(plan.boundary_reason, ReasonCode.LIVE_DATA_REQUIRED)
+                self.assertEqual(plan.limitations, ["An empty map view is not an all-clear."])
+                self.assertEqual(
+                    live_layers_for_question(question),
+                    (
+                        LiveResultKind.INCIDENT,
+                        LiveResultKind.PERIMETER,
+                        LiveResultKind.EVACUATION,
+                    ),
+                )
+                _, correction = empty_map_safety_routing(question, question, allow_live=True)
+                self.assertIsNotNone(correction)
+                assert correction is not None
+                self.assertEqual(correction.route, QueryRoute.LIVE)
+                self.assertEqual(correction.boundary_reason, ReasonCode.LIVE_DATA_REQUIRED)
+
+    def test_empty_operational_view_guard_avoids_non_safety_questions(self) -> None:
+        for question in (
+            "How do I search the wildfire map?",
+            "The historical incident layer is empty for 1950; was the province safe then?",
+            "My generic search returned no results. How can I improve the query?",
+            "The map did not return records; how do I report a data bug?",
+            "The wildfire map is blank near Kelowna. Does that mean zero risk of data errors?",
+        ):
+            with self.subTest(question=question):
+                self.assertFalse(is_empty_map_safety_inference(question))
 
     def test_wildfire_risk_questions_without_map_absence_are_not_empty_map_inferences(
         self,
