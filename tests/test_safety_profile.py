@@ -1516,10 +1516,7 @@ def test_compiled_validation_rejects_forged_invalid_verified_and_mismatched_dist
     )
     forged = DistanceDerivation.model_construct(
         **{
-            **{
-                field: getattr(derivation, field)
-                for field in DistanceDerivation.model_fields
-            },
+            **{field: getattr(derivation, field) for field in DistanceDerivation.model_fields},
             "validation_status": DerivationValidationStatus.INVALID,
             "publication_state": PublicationState.VERIFIED,
         }
