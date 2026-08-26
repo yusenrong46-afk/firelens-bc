@@ -31,6 +31,10 @@
   historical dataset, RC2, RC2.1, or the `86/105` floor. Candidate evidence
   uses RC2.2 as the active overlay while retaining RC2 and RC2.1 as frozen
   materials.
+- Bound V1.6 promotion ancestry with isolated `rev-list` reachability so Git
+  2.55 commit-graph false negatives and inherited `GIT_DIR` cannot reject a
+  merge commit when F and unique P are ancestors. Overlays, the 86 floor, and
+  `ALLOWED_PROMOTION_PATHS` are unchanged.
 - Added a typed intent automaton as the single owner of request shape before
   `AgentQueryPlan` authorizes tools, layers, and geography.
 - Rendered live current-record answers from fetched typed official records so

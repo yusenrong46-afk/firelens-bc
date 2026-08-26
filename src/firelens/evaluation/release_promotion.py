@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -163,13 +164,20 @@ def _require_git(root: Path) -> bool:
     return (root / ".git").exists() or (root / ".git").is_file()
 
 
+def _git_env() -> dict[str, str]:
+    env = os.environ.copy()
+    for key in ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE"):
+        env.pop(key, None)
+    return env
+
+
 def _git(root: Path, *args: str) -> str:
     completed = subprocess.run(
-        ["git", *args],
-        cwd=root,
+        ["git", "-C", str(root), "-c", "core.commitGraph=false", *args],
         check=False,
         capture_output=True,
         text=True,
+        env=_git_env(),
     )
     if completed.returncode != 0:
         raise ValueError(f"release-promotion git command failed: git {' '.join(args)}")
@@ -184,6 +192,10 @@ def bind_functional_parent(
     After a merge to main, first-parent HEAD^ is the previous main tip, not the
     promotion parent. Ancestry plus an exact parent-tree match is the
     merge-safe identity check. It does not relax the allowlisted tree diff.
+
+    Reachability uses ``rev-list``, not ``merge-base --is-ancestor``. Git 2.55.0
+    on GitHub-hosted ubuntu-24.04 can false-negative merge-base through the
+    commit-graph; inherited GIT_DIR/GIT_WORK_TREE can also point at a decoy.
     """
 
     if COMMIT_RE.fullmatch(parent_commit) is None or COMMIT_RE.fullmatch(parent_tree) is None:
@@ -191,14 +203,7 @@ def bind_functional_parent(
     observed_parent_tree = _git(root, "rev-parse", f"{parent_commit}^{{tree}}")
     if observed_parent_tree != parent_tree:
         raise ValueError("functional parent tree does not match the promotion manifest")
-    completed = subprocess.run(
-        ["git", "merge-base", "--is-ancestor", parent_commit, commit],
-        cwd=root,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if completed.returncode != 0:
+    if _git(root, "rev-list", "--max-count=1", parent_commit, "--not", commit):
         raise ValueError("functional parent does not precede the promotion commit")
 
 
