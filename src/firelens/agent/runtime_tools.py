@@ -11,8 +11,6 @@ from firelens.agent.packet import AgentPacket, live_record_fact
 from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
     live_layers_for_question,
-    static_guidance_fragment,
-    unsupported_live_topics,
 )
 from firelens.answering.live_analysis import (
     annotate_live_results,
@@ -47,6 +45,10 @@ async def execute_tool(
     """Run one allowlisted tool and merge facts into the packet."""
 
     live_service: LiveDataService = live_coordinator.live_service
+    plan = packet.query_plan
+    if plan is not None and not plan.authorizes(name, arguments):
+        packet.policy.refused_tool_calls += 1
+        return json.dumps({"error": "tool_call_not_authorized_by_request_plan"})
     fingerprint = tool_fingerprint(name, arguments)
     if not packet.policy.consume_tool_call():
         return json.dumps({"error": "tool_call_budget_exhausted"})
@@ -55,7 +57,9 @@ async def execute_tool(
         return json.dumps({"error": "duplicate_tool_dispatch"})
     packet.tool_fingerprints.append(fingerprint)
     if name == AgentTool.LIST_OFFICIAL_FIRES.value:
-        requested_layers = live_layers_for_question(request.question)
+        requested_layers = (
+            plan.live_layers if plan is not None else live_layers_for_question(request.question)
+        )
         fire_layers = tuple(
             layer
             for layer in requested_layers
@@ -115,8 +119,6 @@ async def execute_tool(
         return json.dumps({"records": [live_record_fact(item) for item in results]})
     if name == AgentTool.SEARCH_REVIEWED_GUIDANCE.value:
         query = str(arguments.get("query") or request.question)
-        if live_layers_for_question(query) or unsupported_live_topics(query):
-            query = static_guidance_fragment(query) or query
         static_request = QueryRequest(
             question=query,
             history=request.history,

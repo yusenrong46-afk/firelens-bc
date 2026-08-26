@@ -20,7 +20,12 @@ from firelens.contracts import (
     ValidationReport,
 )
 from firelens.proof_presentation import AnswerStatusBanner, ProofCard, make_proof_card
-from firelens.publication_contracts import PublicationAuthority, PublicationKind
+from firelens.publication.compiler import compile_structured_claim, explanation_authority
+from firelens.publication_contracts import (
+    QUOTE_RENDERER_ID,
+    PublicationAuthority,
+    PublicationKind,
+)
 from firelens.safety_profile import PublicationState, TruthClass
 
 _VALIDATION = ValidationReport(
@@ -58,6 +63,7 @@ def _grounded() -> AskResponse:
                     authority="PreparedBC",
                     review_provenance="human_verified_repair",
                 ),
+                publication=explanation_authority(),
             )
         ],
         evidence=[
@@ -84,11 +90,11 @@ def test_grounded_response_carries_proof_cards_and_checklist() -> None:
     assert response.status_banner.headline == "Grounded in reviewed official sources"
     assert GROUNDED_PUBLIC_WORDING in response.status_banner.detail
     assert response.status_banner.freshness_label == "Stable reviewed guidance"
-    assert response.supported_items == ["Keep water and food in a grab-and-go bag."]
+    assert response.supported_items == []
     assert response.unknown_items == ["Stable guidance only."]
     card = response.proof_cards[0]
-    assert card.support_state == "supported"
-    assert card.support_label == "Supported by an exact reviewed quotation"
+    assert card.support_state == "source_linked_explanation"
+    assert card.support_label == "Source-linked explanation"
     assert card.exact_passage == "Food & water"
     assert card.authority == "PreparedBC"
     assert card.source_revision == "PDF page 5"
@@ -242,7 +248,11 @@ def _published_claim(
         source_revision_sha256=(
             "a" * 64 if kind == PublicationKind.STRUCTURED_REVIEWED else None
         ),
-        renderer_id="firelens.test_renderer.v1",
+        renderer_id=(
+            "firelens.test_renderer.v1"
+            if kind == PublicationKind.STRUCTURED_REVIEWED
+            else QUOTE_RENDERER_ID
+        ),
         support_provenance="exact_official_quote",
     )
     supports = (
@@ -274,6 +284,14 @@ def _forged_structured_reviewed_card(claim_id: str, text: str) -> ProofCard:
         critical_fields_checked="Critical fields checked and preserved",
         freshness="Stable reviewed guidance",
         official_url="https://example.test/e1",
+        publication=PublicationAuthority(
+            kind=PublicationKind.STRUCTURED_REVIEWED,
+            typed_claim_id="TC-FORGED",
+            review_status="approved",
+            source_revision_sha256="a" * 64,
+            renderer_id="firelens.test_renderer.v1",
+            support_provenance="typed_inventory",
+        ),
     )
 
 
@@ -327,7 +345,10 @@ def test_quote_only_publication_controls_banner_and_proof_wording() -> None:
 
 
 def test_reviewed_and_quote_only_publications_use_mixed_banner() -> None:
-    reviewed = "Keep an emergency kit ready."
+    compiled = compile_structured_claim(
+        typed_claim_id="TC-EVAC-ORDER-001", public_claim_id="C1"
+    )
+    reviewed = compiled.claim.text
     quote = "Follow the directions of local authorities during an evacuation."
     response = AskResponse(
         status=ResponseStatus.ANSWER,
@@ -335,13 +356,7 @@ def test_reviewed_and_quote_only_publications_use_mixed_banner() -> None:
         response_mode=ResponseMode.PARTIAL,
         answer=f"{reviewed} {quote}",
         claims=[
-            _published_claim(
-                claim_id="C1",
-                evidence_id="E1",
-                text=reviewed,
-                quote=reviewed,
-                kind=PublicationKind.STRUCTURED_REVIEWED,
-            ),
+            compiled.claim,
             _published_claim(
                 claim_id="C2",
                 evidence_id="E2",
@@ -351,7 +366,7 @@ def test_reviewed_and_quote_only_publications_use_mixed_banner() -> None:
             ),
         ],
         evidence=[
-            _published_evidence("E1", reviewed),
+            *compiled.evidence,
             _published_evidence("E2", quote),
         ],
         validation=_VALIDATION,
@@ -372,16 +387,26 @@ def test_reviewed_and_quote_only_publications_use_mixed_banner() -> None:
 def test_rejected_publication_is_not_strengthened_by_additive_proof_fields(
     kind: PublicationKind,
 ) -> None:
-    text = "Follow the directions of local authorities during an evacuation."
+    if kind == PublicationKind.STRUCTURED_REVIEWED:
+        compiled = compile_structured_claim(
+            typed_claim_id="TC-EVAC-ORDER-001", public_claim_id="C1"
+        )
+        claim = compiled.claim
+        evidence = list(compiled.evidence)
+    else:
+        text = "Follow the directions of local authorities during an evacuation."
+        claim = _published_claim(
+            claim_id="C1", evidence_id="E1", text=text, quote=text, kind=kind
+        )
+        evidence = [_published_evidence("E1", text)]
+    text = claim.text
     response = AskResponse(
         status=ResponseStatus.ANSWER,
         trace_id=f"trace-rejected-{kind.value}",
         response_mode=ResponseMode.PARTIAL,
         answer=text,
-        claims=[
-            _published_claim(claim_id="C1", evidence_id="E1", text=text, quote=text, kind=kind)
-        ],
-        evidence=[_published_evidence("E1", text)],
+        claims=[claim],
+        evidence=evidence,
         validation=_REJECTED_VALIDATION,
         proof_cards=[
             make_proof_card(
@@ -397,6 +422,14 @@ def test_rejected_publication_is_not_strengthened_by_additive_proof_fields(
                 critical_fields_checked="Critical fields checked and preserved",
                 freshness="Stable reviewed guidance",
                 official_url="https://example.test/e1",
+                publication=PublicationAuthority(
+                    kind=PublicationKind.STRUCTURED_REVIEWED,
+                    typed_claim_id="TC-FORGED",
+                    review_status="approved",
+                    source_revision_sha256="a" * 64,
+                    renderer_id="firelens.test_renderer.v1",
+                    support_provenance="typed_inventory",
+                ),
             )
         ],
     )
@@ -494,14 +527,11 @@ def test_rejected_no_claim_response_replaces_strengthening_banner() -> None:
 
 
 def test_failed_critical_field_preservation_is_not_listed_as_supported() -> None:
-    text = "Keep an emergency kit ready."
-    claim = _published_claim(
-        claim_id="C1",
-        evidence_id="E1",
-        text=text,
-        quote=text,
-        kind=PublicationKind.STRUCTURED_REVIEWED,
+    compiled = compile_structured_claim(
+        typed_claim_id="TC-EVAC-ORDER-001", public_claim_id="C1"
     )
+    claim = compiled.claim
+    text = claim.text
     assert claim.trust is not None
     claim = claim.model_copy(
         update={
@@ -514,7 +544,7 @@ def test_failed_critical_field_preservation_is_not_listed_as_supported() -> None
         response_mode=ResponseMode.GROUNDED,
         answer=text,
         claims=[claim],
-        evidence=[_published_evidence("E1", text)],
+        evidence=list(compiled.evidence),
         validation=_VALIDATION,
     )
 
@@ -534,22 +564,17 @@ def test_failed_critical_field_preservation_is_not_listed_as_supported() -> None
 
 
 def test_matching_structured_reviewed_card_is_preserved() -> None:
-    text = "Keep an emergency kit ready."
+    compiled = compile_structured_claim(
+        typed_claim_id="TC-EVAC-ORDER-001", public_claim_id="C1"
+    )
+    text = compiled.claim.text
     original = AskResponse(
         status=ResponseStatus.ANSWER,
         trace_id="trace-matching-structured",
         response_mode=ResponseMode.PARTIAL,
         answer=text,
-        claims=[
-            _published_claim(
-                claim_id="C1",
-                evidence_id="E1",
-                text=text,
-                quote=text,
-                kind=PublicationKind.STRUCTURED_REVIEWED,
-            )
-        ],
-        evidence=[_published_evidence("E1", text)],
+        claims=[compiled.claim],
+        evidence=list(compiled.evidence),
         validation=_VALIDATION,
     )
     matching = original.proof_cards[0]
@@ -571,7 +596,101 @@ def test_matching_structured_reviewed_card_is_preserved() -> None:
     assert card.support_state == "structured_reviewed"
     assert card.truth_class is TruthClass.SOURCE_FACT
     assert card.publication_state is PublicationState.VERIFIED
-    assert card.exact_passage == text
+    assert card.exact_passage == compiled.card.exact_passage
+
+
+def test_forged_structured_reviewed_card_text_rebinds_to_linked_claim() -> None:
+    compiled = compile_structured_claim(
+        typed_claim_id="TC-EVAC-ORDER-001", public_claim_id="C1"
+    )
+    text = compiled.claim.text
+    original = AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id="trace-structured-text-binding",
+        response_mode=ResponseMode.PARTIAL,
+        answer=text,
+        claims=[compiled.claim],
+        evidence=list(compiled.evidence),
+        validation=_VALIDATION,
+    )
+    forged = original.proof_cards[0].model_copy(
+        update={"claim_text": "Evacuation is unnecessary."}
+    )
+
+    rebound = AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id="trace-structured-text-binding-rebound",
+        response_mode=ResponseMode.PARTIAL,
+        answer=text,
+        claims=original.claims,
+        evidence=original.evidence,
+        validation=_VALIDATION,
+        proof_cards=[forged],
+    )
+
+    assert rebound.proof_cards[0].claim_text == text
+
+
+def test_forged_official_live_typed_card_text_rebinds_to_compiled_claim() -> None:
+    from firelens.publication.compiler import compile_live_fact
+
+    timestamp = datetime(2026, 8, 13, 19, 0, tzinfo=UTC)
+    result = LiveResult(
+        result_id="incident:7",
+        kind=LiveResultKind.INCIDENT,
+        authority="BC Wildfire Service",
+        source_url="https://example.test/incidents/7",
+        source_updated_at=timestamp,
+        retrieved_at=timestamp,
+        freshness=Freshness.FRESH,
+        status="Out of Control",
+        name="Test Fire",
+        geometry={"type": "Point", "coordinates": [-119.5, 49.89]},
+    )
+    compiled = compile_live_fact(result, public_claim_id="C1")
+    forged = compiled.card.model_copy(
+        update={
+            "claim_id": result.result_id,
+            "claim_text": "There is no active wildfire.",
+        }
+    )
+
+    rebound = AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id="trace-live-text-binding-rebound",
+        response_mode=ResponseMode.LIVE,
+        answer=compiled.claim.text,
+        live_results=[result],
+        aggregate_freshness=Freshness.FRESH,
+        limitations=["This uses official records and is not a safety determination."],
+        proof_cards=[forged],
+    )
+
+    assert rebound.proof_cards[0].claim_text == compiled.claim.text
+
+
+def test_compiled_live_response_keeps_card_bound_by_typed_live_fact_id() -> None:
+    from firelens.publication.compiler import compile_live_fact
+
+    timestamp = datetime(2026, 8, 13, 19, 0, tzinfo=UTC)
+    result = LiveResult(
+        result_id="incident:7",
+        kind=LiveResultKind.INCIDENT,
+        authority="BC Wildfire Service",
+        source_url="https://example.test/incidents/7",
+        source_updated_at=timestamp,
+        retrieved_at=timestamp,
+        freshness=Freshness.FRESH,
+        status="Out of Control",
+        name="Test Fire",
+        geometry={"type": "Point", "coordinates": [-119.5, 49.89]},
+    )
+
+    compiled = compile_live_fact(result, public_claim_id="C1")
+
+    assert [card.claim_id for card in compiled.response.proof_cards] == ["C1"]
+    assert compiled.response.proof_cards[0].claim_text == compiled.claim.text
+    assert compiled.response.proof_cards[0].publication.typed_live_fact_id == result.result_id
 
 
 @pytest.mark.parametrize(

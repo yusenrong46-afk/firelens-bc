@@ -673,6 +673,7 @@ export interface components {
             freshness: string;
             /** Official Url */
             official_url?: string | null;
+            publication: components["schemas"]["PublicationAuthority"];
             publication_state: components["schemas"]["PublicationState"];
             /** Review State */
             review_state: string;
@@ -694,7 +695,7 @@ export interface components {
             /** Claim Id */
             claim_id: string;
             evidence_status: components["schemas"]["EvidenceStatus"];
-            publication?: components["schemas"]["PublicationAuthority"] | null;
+            publication: components["schemas"]["PublicationAuthority"];
             /** Supports */
             supports?: components["schemas"]["ClaimSupport"][];
             /** Text */

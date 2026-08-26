@@ -1,6 +1,6 @@
 # ADR 0011: Luna as Ask brain over a thin application
 
-Status: accepted
+Status: accepted; superseded in part by ADR 0017 (2026-08-25)
 Date: 2026-08-15
 Amended: 2026-08-15
 
@@ -20,6 +20,13 @@ not veto a wrong kilometre, and the offline stand-in picked an arbitrary
 record as “closest.”
 
 ## Decision
+
+> **Current supersession.** This ADR records the V1.5 decision to let Luna
+> choose from fixed tools. ADR 0017 now assigns tool selection, live-layer
+> scope, geography, selected-record identity, and reviewed-guidance subrequests
+> to immutable application-owned `AgentQueryPlan`. Luna may only propose prose
+> from the authorized packet. The rest of this ADR remains historical context
+> for the bounded-provider and application-owned evidence principles.
 
 FireLens Ask is an **augmented LLM**: Luna is the brain; the application is
 thin and stable.

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 
+from firelens.answering.request_grammar import parse_request_facets
 from firelens.live_contracts import LocationInput
 
 _PERSONAL_LOCATION = re.compile(
@@ -337,7 +338,9 @@ _WHOLE_COUNTRY_LABELS = frozenset(
 
 _NATIONAL_SCOPE = re.compile(
     r"\b(?:across|all of|rest of|throughout|in)\s+(?:canada|the\s+(?:us|usa|united states)|america)\b"
-    r"|\bcanada[- ]?wide\b|\bnation[- ]?wide\b|\bevery province\b|\ball provinces\b",
+    r"|\bcanada[- ]?wide\b|\bnation[- ]?wide\b|\bevery province\b|\ball provinces\b"
+    r"|\bcoast(?:-|\s+)to(?:-|\s+)coast\b|\b(?:across|throughout)\s+the\s+country\b"
+    r"|\ball\s+(?:ten|10)\s+provinces\b",
     re.IGNORECASE,
 )
 
@@ -370,6 +373,8 @@ def _clean_place(candidate: str) -> str | None:
     if place.casefold().startswith("the "):
         place = place[4:].strip()
     lowered = place.casefold()
+    if re.fullmatch(r"b\s*\.?\s*c\s*\.?", lowered):
+        return None
     words = frozenset(re.findall(r"[a-z]+", lowered))
     if (
         len(place) < 2
@@ -453,6 +458,8 @@ def is_province_wide_label(label: str | None) -> bool:
     for suffix in (", canada", " canada"):
         if normalized.endswith(suffix):
             normalized = normalized[: -len(suffix)].strip(" .,")
+    if re.fullmatch(r"b\s*\.?\s*c\s*\.?", normalized):
+        normalized = "bc"
     return normalized in _PROVINCE_WIDE_LABELS
 
 
@@ -465,26 +472,48 @@ def coarse_location_from_question(question: str) -> LocationInput | None:
         return None
     if any(pattern.search(question) for pattern in _MULTI_PLACE_FIRE_COMPARISONS):
         return None
-    for pattern in _PLACE_PATTERNS:
-        match = pattern.search(question)
-        if match is None:
-            continue
-        place = _clean_place(match.group("place"))
+
+    facets = parse_request_facets(question)
+    if facets.only_non_current_fire:
+        return None
+    for candidate in facets.live_location_candidates:
+        place = _clean_place(candidate)
         if place is None:
             continue
         try:
             return LocationInput(label=place, radius_km=50)
         except ValueError:
             return None
-    for pattern in _CONTEXTUAL_PLACE_PATTERNS:
-        match = pattern.search(question)
-        if match is not None:
+
+    # When the grammar finds a current fire clause, location extraction is
+    # intentionally scoped to that clause. A later guidance clause must not
+    # lend its place phrase to the live lookup.
+    search_texts = (
+        tuple(clause.text for clause in facets.live_clauses)
+        if facets.has_current_live_fire
+        else (question,)
+    )
+    for search_text in search_texts:
+        for pattern in _PLACE_PATTERNS:
+            match = pattern.search(search_text)
+            if match is None:
+                continue
             place = _clean_place(match.group("place"))
-            if place is not None:
-                try:
-                    return LocationInput(label=place, radius_km=50)
-                except ValueError:
-                    return None
+            if place is None:
+                continue
+            try:
+                return LocationInput(label=place, radius_km=50)
+            except ValueError:
+                return None
+        for pattern in _CONTEXTUAL_PLACE_PATTERNS:
+            match = pattern.search(search_text)
+            if match is not None:
+                place = _clean_place(match.group("place"))
+                if place is not None:
+                    try:
+                        return LocationInput(label=place, radius_km=50)
+                    except ValueError:
+                        return None
     return None
 
 

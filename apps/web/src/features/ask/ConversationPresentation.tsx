@@ -56,7 +56,7 @@ export function ServiceFailureState({
     >
       <WarningCircle size={22} aria-hidden="true" />
       <div>
-        <strong id="service-failure-heading">We couldn't retrieve official records for this question</strong>
+        <strong id="service-failure-heading">We couldn't complete this question</strong>
         <p>{message}</p>
         <p>No wildfire status was shown or inferred.</p>
         <div className="service-failure__actions">

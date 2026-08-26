@@ -8,12 +8,12 @@ from collections.abc import Sequence
 
 from firelens import freshness_language
 from firelens.answering.intent_safety import is_empty_map_safety_inference
+from firelens.answering.live_analysis_regional import geography_answer
 from firelens.answering.live_evacuation import (
     evacuation_answer,
     is_evacuation_record_question,
 )
 from firelens.answering.live_record_intent import is_fire_geography_analysis
-from firelens.answering.location_intent import directional_bc_region_label
 from firelens.contracts import (
     CoarseResolvedLocation,
     LiveResult,
@@ -47,21 +47,6 @@ _COUNT = re.compile(
 )
 _FIRE_CENTRE_MOST = re.compile(
     r"\bfire centres?\b.{0,40}\bmost\b|\bmost\b.{0,40}\bfire centres?\b",
-    re.IGNORECASE,
-)
-_NORTH_SOUTH_COMPARISON = re.compile(
-    r"\bnorthern?\b.{0,120}\bsouthern?\b|\bsouthern?\b.{0,120}\bnorthern?\b",
-    re.IGNORECASE,
-)
-_LATITUDE_DENSITY = re.compile(
-    r"\blatitude\b.{0,80}\b(?:bands?|density)\b|"
-    r"\b(?:bands?|density)\b.{0,80}\blatitude\b",
-    re.IGNORECASE,
-)
-_GENERIC_DENSITY = re.compile(r"\bdensity\b", re.IGNORECASE)
-_OKANAGAN_KOOTENAYS_COMPARISON = re.compile(
-    r"\bokanagan\b.{0,120}\bkootenays?\b|"
-    r"\bkootenays?\b.{0,120}\bokanagan\b",
     re.IGNORECASE,
 )
 _HEDGE = re.compile(
@@ -370,7 +355,7 @@ def official_analysis_answer(
     if "closest" in lowered or "nearest" in lowered or "how close" in lowered:
         return _closest(request, records)
     if is_fire_geography_analysis(request.question):
-        return _geography(request.question, records)
+        return geography_answer(request.question, records)
     if _COUNT.search(request.question):
         return _count(records, roster_total)
     if static_answer and (
@@ -536,81 +521,6 @@ def _most_fire_centre(records: Sequence[LiveResult]) -> str:
         f"{name} has the most listed incidents among fetched records, with {count}. "
         "This is a record count, not a safety determination."
     )
-
-
-def _geography(question: str, records: Sequence[LiveResult]) -> str:
-    limitation = _geography_limitation(question)
-    if not records:
-        unavailable = (
-            "The official records available for this request do not include "
-            "fire-centre labels to summarize."
-        )
-        return f"{limitation} {unavailable}" if limitation else unavailable
-    incidents = [item for item in records if item.kind == LiveResultKind.INCIDENT]
-    if not incidents:
-        unavailable = "The fetched official records do not include wildfire incidents."
-        return f"{limitation} {unavailable}" if limitation else unavailable
-    centres = Counter(
-        item.fire_centre.strip()
-        for item in incidents
-        if item.fire_centre and item.fire_centre.strip()
-    )
-    statuses = Counter(item.status for item in incidents)
-    status_text = ", ".join(
-        f"{name}={count}" for name, count in sorted(statuses.items(), key=lambda row: row[0])
-    )
-    if centres:
-        ordered = sorted(centres.items(), key=lambda row: (-row[1], row[0].casefold()))
-        centre_text = ", ".join(f"{name}={count}" for name, count in ordered)
-        highest = ordered[0][1]
-        leaders = ", ".join(name for name, count in ordered if count == highest)
-        missing_centre_count = len(incidents) - sum(centres.values())
-        missing_note = (
-            f" {missing_centre_count} fetched incident records were omitted from the "
-            "fire-centre breakdown because the official centre label was unavailable."
-            if missing_centre_count
-            else ""
-        )
-        breakdown = (
-            "The only validated regional grouping in these records is the official "
-            "fire-centre label. Incident counts by fire-centre label among fetched records: "
-            f"{centre_text}. Highest count in this bounded result: {leaders}={highest}. "
-            f"Status counts across the same incident records: {status_text}."
-            f"{missing_note}"
-        )
-        return f"{limitation} {breakdown}" if limitation else breakdown
-    unavailable = (
-        "The official layer did not provide a fire-centre field. "
-        f"Status counts from fetched records: {status_text}."
-    )
-    return f"{limitation} {unavailable}" if limitation else unavailable
-
-
-def _geography_limitation(question: str) -> str:
-    if _NORTH_SOUTH_COMPARISON.search(question) or directional_bc_region_label(question):
-        return (
-            "The official records do not provide a validated north/south classification "
-            "for the requested directional B.C. region, so FireLens cannot determine "
-            "which fetched incidents belong there or make a north-versus-south comparison."
-        )
-    if _LATITUDE_DENSITY.search(question):
-        return (
-            "FireLens has no validated latitude-band or density aggregation for "
-            "these records: latitude bands and area denominators are not defined, "
-            "so no latitude-band density is calculated."
-        )
-    if _GENERIC_DENSITY.search(question):
-        return (
-            "FireLens has no validated wildfire-density measure or area denominator "
-            "for these records, so it does not calculate a density."
-        )
-    if _OKANAGAN_KOOTENAYS_COMPARISON.search(question):
-        return (
-            "The official records do not provide a validated Okanagan-versus-"
-            "Kootenays classification or mapping, so FireLens does not make that "
-            "regional comparison."
-        )
-    return ""
 
 
 def _count(records: Sequence[LiveResult], roster_total: int | None) -> str:

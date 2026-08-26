@@ -21,6 +21,8 @@ _PROHIBITED_PATTERNS = (
     r"\btell me if\s+(?:i am|i'm|we are)\s+safe\b",
     r"\b(?:return|go back)\s+home\s+(?:yet|now|today|tonight)\b",
     r"\b(?:are|is)\s+(?:i|we|my family|our family)\s+okay\s+to\s+(?:wait|stay|leave|evacuate|return)\b",
+    r"\b(?:tell me|decide|say)\s+(?:if|whether)\s+(?:i|we|my|our)\b.{0,40}\bshould\s+(?:stay|leave|evacuate|return)\b",
+    r"\btell me\s+(?:i|we|my family|our family)\s+(?:do|does)\s+not\s+need\s+to\s+(?:stay|leave|evacuate|return)\b",
     r"\b(?:decide|tell me)\s+(?:if|whether)\s+(?:i|we)\s+(?:stay|leave|evacuate|return)\b",
     r"\bwhether\s+(?:i|we)\s+should\s+(?:stay|leave|evacuate|return)\b",
     r"\bshould\s+(?:i|we)\s+go\s+(?:now|today|tonight|this morning|this afternoon|this evening)\b",

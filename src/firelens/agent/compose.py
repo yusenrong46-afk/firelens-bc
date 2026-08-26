@@ -11,6 +11,7 @@ from firelens.answering.intent_safety import is_empty_map_safety_inference
 from firelens.answering.live_analysis import (
     compose_official_answer,
     extracted_located_fire_name,
+    official_display_name,
 )
 from firelens.answering.live_composition import supported_static_when_live_missing
 from firelens.answering.live_request_intent import (
@@ -20,6 +21,7 @@ from firelens.answering.live_request_intent import (
 )
 from firelens.answering.live_response_support import empty_live_response
 from firelens.contracts import (
+    BACKGROUND_LIMITATION,
     AggregateFreshness,
     AnswerSection,
     AnswerSectionKind,
@@ -36,9 +38,6 @@ from firelens.contracts import (
 )
 from firelens.publication.compiler import public_mixed_answer
 
-_LAYER_UNAVAILABLE = (
-    "Some official live layers were unavailable for this request. That is not an all-clear."
-)
 _STALE_RECORDS_LIMITATION = (
     "A live refresh failed; some official records shown are cached and may be outdated."
 )
@@ -125,8 +124,14 @@ def _with_packet_fields(
     limitations = list(response.limitations)
     if packet.unavailable_layers:
         updates["unavailable_layers"] = list(packet.unavailable_layers)
-        if _LAYER_UNAVAILABLE not in limitations:
-            limitations.append(_LAYER_UNAVAILABLE)
+        names = ", ".join(
+            dict.fromkeys(layer.value.replace("_", " ") for layer in packet.unavailable_layers)
+        )
+        layer_unavailable = (
+            f"Some official layers are unavailable: {names}. That is not an all-clear."
+        )
+        if layer_unavailable not in limitations:
+            limitations.append(layer_unavailable)
             updates["limitations"] = limitations
             # history_text embeds limitations; clear it so the contract
             # validator derives it again instead of serving a stale value
@@ -175,6 +180,38 @@ def _records_heading(freshness: AggregateFreshness | None) -> str:
     return "Current official records"
 
 
+def _packet_live_answer(
+    request: QueryRequest,
+    packet: AgentPacket,
+    *,
+    static_answer: str | None = None,
+) -> str:
+    """Compose live text without turning an unavailable layer into a zero result."""
+
+    if packet.live_results and packet.unavailable_layers:
+        unavailable = [layer.value.replace("_", " ") for layer in packet.unavailable_layers]
+        names = (
+            unavailable[0]
+            if len(unavailable) == 1
+            else ", ".join(unavailable[:-1]) + f" and {unavailable[-1]}"
+        )
+        layer_label = "layer was" if len(unavailable) == 1 else "layers were"
+        summary = "; ".join(
+            f"{official_display_name(item)}: {item.status}" for item in packet.live_results[:8]
+        )
+        return (
+            f"FireLens could not verify {names} records because the official {names} "
+            f"{layer_label} unavailable. Available official records in this response: "
+            f"{summary}."
+        )
+    return compose_official_answer(
+        request,
+        packet.live_results,
+        roster_total=packet.roster_total,
+        static_answer=static_answer,
+    )
+
+
 def _live_limitations(
     freshness: AggregateFreshness | None, base: list[str] | None = None
 ) -> list[str]:
@@ -182,6 +219,27 @@ def _live_limitations(
     if freshness in {AggregateFreshness.STALE, AggregateFreshness.MIXED}:
         limitations.append(_STALE_RECORDS_LIMITATION)
     return list(dict.fromkeys(limitations))
+
+
+def _unestablished_static_limitations(packet: AgentPacket) -> list[str]:
+    static = packet.static_response
+    established_modes = {
+        ResponseMode.GROUNDED,
+        ResponseMode.PARTIAL,
+        ResponseMode.CONFLICT,
+        ResponseMode.BACKGROUND,
+    }
+    if static is None or (
+        static.response_mode in established_modes
+        and static.claims
+        and static.validation is not None
+        and static.validation.accepted
+    ):
+        return []
+    return [
+        "The requested non-live clause was not established from reviewed FireLens "
+        "evidence and was not silently replaced."
+    ]
 
 
 def _unresolved_place_response(request: QueryRequest) -> AskResponse:
@@ -233,13 +291,12 @@ def _build_ask_response(
     static = packet.static_response
     live = packet.live_results
     links = packet.related_links
-    if live and is_empty_map_safety_inference(request.question):
+    if live and (packet.unavailable_layers or is_empty_map_safety_inference(request.question)):
         # The false-inference correction is application-owned. A model may not
         # soften it or turn returned records into a personalized safety claim.
-        answer = compose_official_answer(
+        answer = _packet_live_answer(
             request,
-            live,
-            roster_total=packet.roster_total,
+            packet,
             static_answer=static.answer if static is not None else None,
         )
     if _missing_selected(request, packet):
@@ -310,6 +367,51 @@ def _build_ask_response(
     if (
         live
         and static is not None
+        and static.response_mode == ResponseMode.BACKGROUND
+        and static.claims
+        and not static.evidence
+        and static.validation is not None
+        and static.validation.accepted
+    ):
+        freshness = aggregate_live_freshness(live)
+        live_text = _packet_live_answer(
+            request,
+            packet,
+            static_answer=None,
+        )
+        background_text = render_claim_texts(static.claims)
+        return AskResponse(
+            status=ResponseStatus.ANSWER,
+            trace_id=static.trace_id,
+            response_mode=ResponseMode.MIXED,
+            answer=f"{live_text}\n\nGeneral background: {background_text}",
+            answer_sections=[
+                AnswerSection(
+                    kind=AnswerSectionKind.CURRENT_RECORDS,
+                    heading=_records_heading(freshness),
+                    text=live_text,
+                ),
+                AnswerSection(
+                    kind=AnswerSectionKind.GENERAL_BACKGROUND,
+                    heading="General background",
+                    text=background_text,
+                ),
+            ],
+            claims=static.claims,
+            evidence=[],
+            live_results=live,
+            aggregate_freshness=freshness,
+            limitations=_live_limitations(
+                freshness,
+                [*static.limitations, BACKGROUND_LIMITATION],
+            ),
+            validation=static.validation,
+            selected_live_result_id=request.context.selected_live_result_id,
+            resolved_location=packet.resolved_location,
+        )
+    if (
+        live
+        and static is not None
         and static.response_mode in {ResponseMode.GROUNDED, ResponseMode.PARTIAL}
         and static.claims
         and static.evidence
@@ -317,7 +419,12 @@ def _build_ask_response(
         and static.validation.accepted
     ):
         freshness = aggregate_live_freshness(live)
-        answer = public_mixed_answer(packet, answer)
+        live_text = _packet_live_answer(
+            request,
+            packet,
+            static_answer=None,
+        )
+        answer = public_mixed_answer(packet, live_text)
         return AskResponse(
             status=ResponseStatus.ANSWER,
             trace_id=static.trace_id,
@@ -327,7 +434,7 @@ def _build_ask_response(
                 AnswerSection(
                     kind=AnswerSectionKind.CURRENT_RECORDS,
                     heading=_records_heading(freshness),
-                    text=answer,
+                    text=live_text,
                 ),
                 AnswerSection(
                     kind=AnswerSectionKind.REVIEWED_GUIDANCE,
@@ -387,7 +494,10 @@ def _build_ask_response(
             resolved_location=packet.resolved_location,
             limitations=_live_limitations(
                 freshness,
-                ["This uses official records and is not a safety assessment."],
+                [
+                    "This uses official records and is not a safety assessment.",
+                    *_unestablished_static_limitations(packet),
+                ],
             ),
         )
     if static is not None and links:

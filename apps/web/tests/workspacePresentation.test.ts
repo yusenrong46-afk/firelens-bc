@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   preferredContextSurface,
+  questionExplicitlyRequestsMap,
   questionRequestsAnalysis,
   questionRequestsMap,
   shouldOfferContextMap,
@@ -37,6 +38,11 @@ describe("task-first workspace presentation", () => {
     expect(questionRequestsMap("What belongs in a grab-and-go bag?")).toBe(false);
   });
 
+  it("distinguishes literal map asks from spatial analysis wording", () => {
+    expect(questionExplicitlyRequestsMap("Show these incidents on a map")).toBe(true);
+    expect(questionExplicitlyRequestsMap("Show the wildfire distribution across B.C.")).toBe(false);
+  });
+
   it("offers a context map only for live or mixed spatial responses", () => {
     expect(shouldOfferContextMap({
       mode: "live",
@@ -59,7 +65,7 @@ describe("task-first workspace presentation", () => {
     expect(preferredContextSurface({ mode: "live", question: "Status please" })).toBe("evidence");
     expect(preferredContextSurface({ mode: "live", question: "Where is Mountain Fire?" })).toBe("evidence");
     expect(preferredContextSurface({ mode: "mixed", question: "Show this on a map" })).toBe("map");
-    expect(preferredContextSurface({ mode: "live", question: "Wildfire distribution across B.C." })).toBe("map");
+    expect(preferredContextSurface({ mode: "live", question: "Wildfire distribution across B.C." })).toBe("evidence");
     expect(preferredContextSurface({ mode: "mixed", question: "What should I prepare?" })).toBe("evidence");
   });
 
@@ -122,7 +128,7 @@ describe("task-first workspace presentation", () => {
     expect(preferredContextSurface({
       mode: "live",
       question: "Show wildfire distribution by status across B.C.",
-    })).toBe("map");
+    })).toBe("evidence");
 
     expect(shouldOfferContextMap({
       mode: "grounded",

@@ -119,8 +119,10 @@ class FireLensConfig(BaseModel):
                 raise ValueError(
                     "production requires OpenRouter data_collection=deny and disabled fallback"
                 )
-        if self.deployment_environment == "production" and self.trace_content:
-            raise ValueError("production cannot persist request or response content in traces")
+        if self.deployment_environment in {"preview", "production"} and self.trace_content:
+            raise ValueError(
+                "preview and production cannot persist request or response content in traces"
+            )
         return self
 
     @property

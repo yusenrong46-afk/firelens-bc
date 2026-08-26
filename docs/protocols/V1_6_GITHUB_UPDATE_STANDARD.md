@@ -182,8 +182,9 @@ When you must edit `README.md`:
 5. Keep the authority line in this family:
 
 ```text
-A language model chooses tools and writes prose. It is never the
-authority for what is true.
+A language model proposes prose from an application-owned packet. It is
+never the authority for what is true, which tools run, or which geography
+is fetched.
 ```
 
 or the shorter form already used:
@@ -247,6 +248,22 @@ production-ready
 fully qualified
 OpenAI-verified
 ```
+
+### Current agent and trace vocabulary
+
+When public prose describes Ask, preserve the current ownership boundary:
+
+- `src/firelens/agent/query_plan.py` builds the immutable `AgentQueryPlan` that
+  is the sole authorization for tools, source layers, geography, and any static
+  subrequest.
+- A provider may propose prose only from the authorized packet. It cannot widen
+  the plan or repeat a tool call.
+- Default traces persist no question, answer, history, coordinates, evidence
+  text, or deterministic query hash. Local `FIRELENS_TRACE_CONTENT=true` may
+  retain the raw question for debugging; preview and production reject it.
+
+Do not turn those repository-enforced boundaries into a claim of deployment
+verification, provider certification, or full qualification.
 
 ## Merge standard
 

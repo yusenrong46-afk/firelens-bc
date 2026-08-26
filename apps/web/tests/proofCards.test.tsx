@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import { App } from "../src/app/App";
-import { getProofCards, getStatusBanner, bindProofProfile, bindDistanceDerivation, CANONICAL_DISTANCE_DERIVATION, freshnessToken } from "../src/features/ask/proofPresentation";
+import { getProofCards, getClaimSupportState, getStatusBanner, bindProofProfile, bindDistanceDerivation, CANONICAL_DISTANCE_DERIVATION, freshnessToken } from "../src/features/ask/proofPresentation";
 import { StatusBanner } from "../src/features/ask/StatusBanner";
 import { TileFailureWarning } from "../src/features/near-me/OfficialBasemap";
 import { MatchingRecordList } from "../src/features/near-me/LiveRecordLists";
@@ -30,6 +30,13 @@ const grounded = {
         semantic_support_state: "exact_quote",
         conflict_or_supersession: "none",
         freshness: "stable_guidance",
+      },
+      publication: {
+        kind: "source_linked_explanation",
+        review_status: "none",
+        renderer_id: "firelens.grounded_generator.v1",
+        support_provenance: "validated_generated_explanation",
+        risk_tier: "C",
       },
     },
   ],
@@ -65,6 +72,13 @@ const grounded = {
       official_url: "https://example.test/guide.pdf",
       truth_class: "model_summary",
       publication_state: "review",
+      publication: {
+        kind: "source_linked_explanation",
+        review_status: "none",
+        renderer_id: "firelens.grounded_generator.v1",
+        support_provenance: "validated_generated_explanation",
+        risk_tier: "C",
+      },
     },
   ],
   validation: {
@@ -105,9 +119,11 @@ describe("proof-carrying answer surface", () => {
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByRole("status", { name: "Answer status" })).toHaveTextContent(
-      "Grounded in reviewed official sources",
+      "Source-linked explanation",
     );
-    expect(screen.getByText(/exact supporting quotations/)).toBeInTheDocument();
+    expect(screen.getByText(
+      "This explanation links to source material but is not a reviewed structured FireLens claim.",
+    )).toBeInTheDocument();
     expect(screen.queryByLabelText("What FireLens established")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Established from FireLens sources" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Not established" })).not.toBeInTheDocument();
@@ -115,7 +131,7 @@ describe("proof-carrying answer surface", () => {
     const evidenceButton = screen.getByRole("button", { name: /Keep water and food in a grab-and-go bag\./ });
     expect(evidenceButton).toBeInTheDocument();
     await user.click(evidenceButton);
-    expect(screen.getAllByText("Supported by an exact reviewed quotation").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Source-linked explanation").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Human-verified source transcription").length).toBeGreaterThan(0);
     expect(screen.getByText("Critical fields checked and preserved")).toBeInTheDocument();
     expect(screen.getAllByText("Food & water").length).toBeGreaterThan(0);
@@ -835,5 +851,177 @@ describe("proof-carrying answer surface", () => {
       />,
     );
     expect(screen.getByText(/Fetched:/)).toBeInTheDocument();
+  });
+
+  it("projects an unknown publication kind as unknown rather than a reviewed source fact", () => {
+    const malformed = {
+      ...grounded,
+      claims: grounded.claims.map((claim) => ({
+        ...claim,
+        publication: {
+          kind: "reviewed_official",
+          review_status: "approved",
+          renderer_id: "firelens.unknown_renderer.v1",
+          support_provenance: "typed_inventory",
+        },
+      })),
+      proof_cards: grounded.proof_cards.map((card) => ({
+        ...card,
+        support_state: "structured_reviewed",
+        support_label: "Reviewed structured claim",
+        truth_class: "source_fact",
+        publication_state: "verified",
+      })),
+    } as unknown as AskResponse;
+    const card = getProofCards(malformed)[0];
+    const claim = malformed.claims![0]!;
+    expect(getClaimSupportState(malformed, claim)).toBe("unknown");
+    expect(card).toMatchObject({
+      support_state: "unknown",
+      publication_state: "rejected",
+      truth_class: "unknown",
+    });
+    expect(card!.support_label).not.toBe("Reviewed structured claim");
+    expect(card!.support_label).not.toBe("Supported by an exact reviewed quotation");
+  });
+
+  it("downgrades a proof card when its claim has no publication authority", () => {
+    const malformed = {
+      ...grounded,
+      claims: grounded.claims.map(({ publication: _publication, ...claim }) => claim),
+    } as unknown as AskResponse;
+
+    expect(getProofCards(malformed)[0]).toMatchObject({
+      support_state: "unknown",
+      truth_class: "unknown",
+      publication_state: "rejected",
+    });
+  });
+
+  it("rebuilds rather than trusting a card whose publication authority is missing", () => {
+    const malformed = {
+      ...grounded,
+      proof_cards: grounded.proof_cards.map(({ publication: _publication, ...card }) => ({
+        ...card,
+        authority: "Untrusted API authority",
+        exact_passage: "Untrusted API wording",
+      })),
+    } as unknown as AskResponse;
+
+    expect(getProofCards(malformed)[0]).toMatchObject({
+      support_state: "source_linked_explanation",
+      authority: "PreparedBC",
+      exact_passage: "Food & water",
+      publication: grounded.claims[0]!.publication,
+    });
+  });
+
+  it("rebuilds from the claim when a same-kind card differs in authority identity", () => {
+    const claimPublication = {
+      kind: "structured_reviewed",
+      typed_claim_id: "TC-identity",
+      review_status: "approved",
+      source_revision_sha256: "a".repeat(64),
+      source_span_sha256: "b".repeat(64),
+      renderer_id: "firelens.structured_renderer.v1",
+      support_provenance: "typed_inventory",
+      risk_tier: "A",
+    };
+    const malformed = {
+      ...grounded,
+      claims: grounded.claims.map((claim) => ({ ...claim, publication: claimPublication })),
+      proof_cards: grounded.proof_cards.map((card) => ({
+        ...card,
+        publication: {
+          ...claimPublication,
+          source_revision_sha256: "c".repeat(64),
+          review_status: "pending_review",
+          renderer_id: "firelens.wrong_renderer.v1",
+        },
+        authority: "Untrusted API authority",
+        exact_passage: "Untrusted API wording",
+      })),
+    } as unknown as AskResponse;
+
+    expect(getProofCards(malformed)[0]).toMatchObject({
+      support_state: "structured_reviewed",
+      authority: "PreparedBC",
+      exact_passage: "Food & water",
+      publication: claimPublication,
+    });
+  });
+
+  it("does not accept an unknown proof-card publication kind", () => {
+    const malformed = {
+      ...grounded,
+      proof_cards: grounded.proof_cards.map((card) => ({
+        ...card,
+        publication: {
+          ...card.publication,
+          kind: "unrecognised_publication_kind",
+        },
+        authority: "Untrusted API authority",
+      })),
+    } as unknown as AskResponse;
+
+    expect(getProofCards(malformed)[0]).toMatchObject({
+      support_state: "source_linked_explanation",
+      authority: "PreparedBC",
+      publication: grounded.claims[0]!.publication,
+    });
+  });
+
+  it("rebinds a live card with a mismatched live identity only from its matching live result", () => {
+    const livePublication = {
+      kind: "official_live_typed",
+      typed_live_fact_id: record.result_id,
+      review_status: "official_live_record",
+      source_revision_sha256: null,
+      source_span_sha256: null,
+      renderer_id: "firelens.live_typed_renderer.v1",
+      support_provenance: "typed_official_live_fact",
+      risk_tier: "B",
+    };
+    const malformed = {
+      status: "answer",
+      response_mode: "live",
+      trace_id: "trace-live-identity-mismatch",
+      answer: "Listed Fire is Out of Control.",
+      claims: [{
+        claim_id: record.result_id,
+        text: "Listed Fire",
+        evidence_status: "official_live",
+        supports: [],
+        publication: livePublication,
+      }],
+      evidence: [],
+      limitations: [],
+      live_results: [record],
+      proof_cards: [{
+        claim_id: record.result_id,
+        claim_text: "Untrusted live card",
+        support_state: "official_live_typed",
+        support_label: "Official live record",
+        authority: "Untrusted API authority",
+        exact_passage: "Untrusted API wording",
+        source_title: "Untrusted title",
+        source_revision: "Untrusted revision",
+        review_state: "Untrusted review",
+        critical_fields_checked: "Untrusted validation",
+        freshness: "fresh",
+        official_url: "https://untrusted.example.test",
+        publication: { ...livePublication, typed_live_fact_id: "incident:wrong" },
+      }],
+      validation: { accepted: true },
+    } as unknown as AskResponse;
+
+    expect(getProofCards(malformed)[0]).toMatchObject({
+      claim_id: record.result_id,
+      claim_text: "Listed Fire",
+      authority: record.authority,
+      exact_passage: record.status,
+      official_url: record.source_url,
+      publication: livePublication,
+    });
   });
 });

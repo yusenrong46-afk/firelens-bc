@@ -57,6 +57,7 @@ class AgentPacket:
     retrieved_at: datetime | None = None
     policy: RequestExecutionPolicy = field(default_factory=RequestExecutionPolicy)
     tool_fingerprints: list[tuple[str, str]] = field(default_factory=list)
+    query_plan: Any | None = None
 
     def mark_unavailable(
         self, layers: tuple[LiveResultKind, ...] | list[LiveResultKind]

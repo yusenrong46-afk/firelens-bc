@@ -4,6 +4,13 @@
 
 ### Changed
 
+- Made immutable `AgentQueryPlan` the sole authorization for public Ask tools,
+  live layers, geography, selected records, and reviewed-guidance subrequests.
+  Provider requests outside that plan, including repeats, are rejected.
+- Made default local traces content-minimized: no question, answer, history,
+  coordinates, evidence text, or deterministic query hash is persisted.
+  Raw-question tracing is an explicit local debugging opt-in and is rejected in
+  preview and production.
 - Hardened evidence identity, relevance selection, distance rails, and the
   atomic quote floor for structured publication.
 - Made public support presentation a per-item projection of publication kind:

@@ -42,6 +42,7 @@ from firelens.contracts import (
     render_claim_texts,
 )
 from firelens.live_answering import LiveAnswerCoordinator
+from firelens.publication.compiler import background_authority, explanation_authority
 
 
 def _accepted_validation() -> ValidationReport:
@@ -73,6 +74,7 @@ def _grounded_claim(index: int, text: str) -> PublicClaim:
         text=text,
         evidence_status=EvidenceStatus.VERIFIED_CORPUS,
         supports=[ClaimSupport(evidence_id="E1", quote="Official supporting text.")],
+        publication=explanation_authority(),
     )
 
 
@@ -132,6 +134,7 @@ class PublicContractBoundTests(unittest.TestCase):
                 claim_id=f"C{index}",
                 text=f"Background claim {index}.",
                 evidence_status=EvidenceStatus.GENERAL_BACKGROUND,
+                publication=background_authority(),
             )
             for index in range(1, 14)
         ]
@@ -161,6 +164,7 @@ class PublicContractBoundTests(unittest.TestCase):
             claim_id="C1",
             text="Wildfire smoke can affect air quality.",
             evidence_status=EvidenceStatus.GENERAL_BACKGROUND,
+            publication=background_authority(),
         )
         with self.assertRaisesRegex(ValidationError, "rendered from its public claims"):
             AskResponse(
@@ -352,11 +356,41 @@ class PublicContractBoundTests(unittest.TestCase):
         self.assertIn("Official cached records", history)
         self.assertNotIn("Official current records", history)
 
+    def test_current_record_section_rejects_reviewed_claim_text(self) -> None:
+        claim = _grounded_claim(1, "Keep water in an emergency kit.")
+        live = _incident(1)
+
+        with self.assertRaisesRegex(ValidationError, "current record section"):
+            AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id="8" * 32,
+                response_mode=ResponseMode.MIXED,
+                answer="Test Fire 1 is being held. Keep water in an emergency kit.",
+                answer_sections=[
+                    AnswerSection(
+                        kind=AnswerSectionKind.CURRENT_RECORDS,
+                        heading="Current official records",
+                        text="Test Fire 1 is being held. Keep water in an emergency kit.",
+                    ),
+                    AnswerSection(
+                        kind=AnswerSectionKind.REVIEWED_GUIDANCE,
+                        heading="Reviewed guidance",
+                        text=claim.text,
+                    ),
+                ],
+                claims=[claim],
+                evidence=[_public_evidence()],
+                validation=_accepted_validation(),
+                live_results=[live],
+                aggregate_freshness=AggregateFreshness.FRESH,
+            )
+
     def test_history_keeps_authority_and_deduplicated_limitations(self) -> None:
         claim = PublicClaim(
             claim_id="C1",
             text="Wildfire smoke can affect air quality.",
             evidence_status=EvidenceStatus.GENERAL_BACKGROUND,
+            publication=background_authority(),
         )
         response = AskResponse(
             status=ResponseStatus.ANSWER,

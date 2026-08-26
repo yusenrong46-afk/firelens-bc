@@ -60,6 +60,7 @@ from firelens.evaluation.v3_exploratory_roster import (
 )
 from firelens.live import LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
+from firelens.publication.compiler import background_authority, explanation_authority
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = ROOT / "output/v1_5_v3_exploratory/sanitized_roster_report.json"
@@ -141,6 +142,7 @@ def _background() -> AskResponse:
                 claim_id="C1",
                 text="Pack water and copies of important documents.",
                 evidence_status=EvidenceStatus.GENERAL_BACKGROUND,
+                publication=background_authority(),
             )
         ],
         limitations=[BACKGROUND_LIMITATION],
@@ -159,6 +161,7 @@ def _grounded() -> AskResponse:
         text="Include water, food, and copies of documents in a grab-and-go bag.",
         evidence_status=EvidenceStatus.VERIFIED_CORPUS,
         supports=[ClaimSupport(evidence_id="E1", quote="Include water, food, and copies")],
+        publication=explanation_authority(),
     )
     return AskResponse(
         status=ResponseStatus.ANSWER,

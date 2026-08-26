@@ -3,8 +3,9 @@
 **An answer-first, evidence-bound wildfire assistant for British Columbia.**
 FireLens combines official incident records, reviewed preparedness guidance,
 explicit uncertainty, and map context when it is useful. A language model may
-choose tools and propose wording; it is never the authority for what FireLens
-publishes as fact.
+propose wording only from an application-owned evidence packet; it is never the
+authority for what FireLens publishes as fact, which tools run, or which
+geography and source layers a request may use.
 
 ![FireLens BC answer-first workspace for asking about a fire, a B.C. place, or preparedness](docs/assets/firelens-v1-6-overview.jpg)
 
@@ -62,6 +63,10 @@ publication authority:
 6. **Evidence is tied to code identity.** Candidate reports bind the exact Git
    commit and tree, datasets, corpus, vector index, package locks, workflow, and
    zero-cost execution boundary.
+7. **The request plan owns retrieval scope.** Before a provider sees a request,
+   an immutable `AgentQueryPlan` fixes the permitted tools, source layers,
+   geography, and any reviewed-guidance subrequest. A provider cannot widen that
+   scope or repeat a tool call.
 
 The governing principle is simple:
 
@@ -91,6 +96,9 @@ The governing principle is simple:
 - Empty-map behavior that states uncertainty and never turns “no returned records”
   into a safety determination.
 - Numeric kilometre ownership and rejection of model-invented unit conversions.
+- An immutable **AgentQueryPlan** that is the sole authorization for each
+  request's tools, live layers, and geography; model tool requests outside that
+  plan are rejected.
 - A hash-bound **50-question user-experience catalog**, including misleading and
   adversarial prompts, with deterministic end-to-end fixtures.
 - Candidate-evidence v2 for exact-head CI qualification, security evidence, SBOM,
@@ -104,8 +112,9 @@ deployed, independently certified, or appropriate for emergency decision-making.
 ```mermaid
 flowchart LR
     Q["Question + up to 6 browser-held turns"] --> R["Deterministic routing and input rails"]
-    R --> L["Official BC live layers"]
-    R --> G["Reviewed guidance retrieval"]
+    R --> P0["Immutable AgentQueryPlan\n(authorized tools, layers, geography)"]
+    P0 --> L["Official BC live layers"]
+    P0 --> G["Reviewed guidance retrieval"]
     L --> P["Typed evidence packet"]
     G --> P
     P --> V["Identity, relevance, quote, field, and authority validation"]
@@ -119,7 +128,9 @@ flowchart LR
 
 Live distance, size, count, and comparison answers use application-owned analysis.
 High-risk structured guidance is rendered deterministically. Eligible lower-risk
-packets may use one bounded generation only after deterministic validation.
+packets may use one bounded generation only after deterministic validation; that
+generation may write from the packet but cannot request new tools, layers, or
+geography.
 
 ## Run it locally
 
@@ -232,8 +243,12 @@ Start here:
 
 - **Employers and reviewers:** this README, then the
   [V1.6 architecture](docs/ARCHITECTURE_V1_6.md) and
-  [current runbook](docs/releases/V1_6_RUNBOOK.md). A frozen candidate can be
+  [current runbook](docs/releases/V1_6_RUNBOOK.md). For a short, evidence-honest
+  technical walkthrough, read the [climate decision intelligence case study](docs/portfolio/CLIMATE_DECISION_INTELLIGENCE_CASE_STUDY.md) and use the
+  [fixture-backed demo script](docs/portfolio/DEMO_SCRIPT.md). A frozen candidate can be
   challenged with the [GPT-5.6 Pro defect-first examination prompt](docs/audit/V1_6_GPT_5_6_PRO_FINAL_EXAMINATION_PROMPT.md).
+- **Offline reviewers:** when GitHub or checkout access is blocked, use the
+  [sanitized evidence-bundle examination prompt](docs/audit/V1_6_GPT_5_6_PRO_OFFLINE_BUNDLE_EXAMINATION_PROMPT.md); it treats missing evidence as unknown rather than inventing it.
 - **Researchers:** the [50-question catalog](docs/reports/V1_6_USER_END_QUESTIONS_50.md),
   [structured-publication report](docs/reports/V1_6_STRUCTURED_PUBLICATION_HARDEN_1_REPORT.md),
   and [ADRs](docs/adr/).
@@ -245,8 +260,12 @@ Start here:
 
 ## Privacy and limits
 
-- FireLens does not persist raw questions, answers, browser-held history, precise
-  locations, or deterministic query hashes.
+- Default traces do not persist a question, answer, browser-held history,
+  coordinates, evidence text, or a deterministic query hash. They retain only
+  allowlisted categorical diagnostics and bounded numeric observations.
+- A local developer may explicitly set `FIRELENS_TRACE_CONTENT=true` to retain
+  the raw question for debugging. Preview and production configuration reject
+  that option; it is not a deployment privacy certification.
 - Live location is optional, coarse, rounded, request-scoped, and rejected when it
   resembles an exact address.
 - Embedding and generation require OpenRouter zero-data-retention eligibility,

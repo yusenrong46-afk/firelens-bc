@@ -19,6 +19,7 @@ from firelens.contracts import (
     TemporalClass,
     ValidationReport,
 )
+from firelens.publication.compiler import explanation_authority
 
 
 def provider_abstention(
@@ -99,6 +100,7 @@ def conflict_response(trace_id: str, packet: EvidencePacket) -> AskResponse:
                 supports=[
                     ClaimSupport(evidence_id=candidate.evidence_id, quote=candidate.text)
                 ],
+                publication=explanation_authority(),
             )
         )
         if candidate.evidence_id in seen_evidence:

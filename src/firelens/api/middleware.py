@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 from uuid import uuid4
 
 from fastapi import FastAPI, Request, Response
-from fastapi.exceptions import RequestValidationError
+from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
 
 from firelens.agent.failures import shout_unexpected
@@ -130,28 +130,16 @@ def install_middlewares(
 
 
 def install_exception_handlers(app: FastAPI, config: FireLensConfig) -> None:
-    @app.exception_handler(RequestValidationError)
-    async def request_validation_handler(
-        request: Request, exc: RequestValidationError
-    ) -> JSONResponse:
-        details = [
-            {key: value for key, value in error.items() if key != "ctx"}
-            for error in exc.errors()
-        ]
-        return JSONResponse(
-            status_code=422 if request.url.path == "/api/v1/feedback" else 400,
-            content={
-                **ErrorEnvelope(
-                    trace_id=uuid4().hex,
-                    error_kind="invalid_request",
-                    message="The request did not match the FireLens API contract.",
-                ).model_dump(),
-                "details": details,
-            },
-        )
+    def unexpected_response(request: Request, exc: Exception) -> JSONResponse:
+        """Return and record a content-free public error response.
 
-    @app.exception_handler(Exception)
-    async def unexpected_error_handler(request: Request, exc: Exception) -> JSONResponse:
+        A dedicated response-validation handler calls this helper so malformed
+        internal response data is consumed inside ``ExceptionMiddleware``.
+        Letting it reach the server-wide fallback can cause an ASGI server to
+        log the validation exception, whose diagnostics may contain rejected
+        response values.
+        """
+
         classified = shout_unexpected(exc, environment=config.deployment_environment)
         trace_id = uuid4().hex
         build_commit = config.build_commit
@@ -175,3 +163,36 @@ def install_exception_handlers(app: FastAPI, config: FireLensConfig) -> None:
             error_kind=classified.public_kind,
             message=classified.public_message,
         )
+
+    @app.exception_handler(RequestValidationError)
+    async def request_validation_handler(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        details = [
+            {
+                "type": str(error.get("type", "validation_error")),
+                "loc": list(error.get("loc", ())),
+            }
+            for error in exc.errors()
+        ]
+        return JSONResponse(
+            status_code=422 if request.url.path == "/api/v1/feedback" else 400,
+            content={
+                **ErrorEnvelope(
+                    trace_id=uuid4().hex,
+                    error_kind="invalid_request",
+                    message="The request did not match the FireLens API contract.",
+                ).model_dump(),
+                "details": details,
+            },
+        )
+
+    @app.exception_handler(ResponseValidationError)
+    async def response_validation_handler(
+        request: Request, exc: ResponseValidationError
+    ) -> JSONResponse:
+        return unexpected_response(request, exc)
+
+    @app.exception_handler(Exception)
+    async def unexpected_error_handler(request: Request, exc: Exception) -> JSONResponse:
+        return unexpected_response(request, exc)

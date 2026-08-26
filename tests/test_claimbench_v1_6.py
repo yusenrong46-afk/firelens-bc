@@ -25,6 +25,7 @@ from firelens.evaluation.claimbench import (
 )
 from firelens.evaluation.common import file_sha256
 from firelens.evaluation.v1_6_standard import load_v1_6_standard
+from firelens.publication.compiler import explanation_authority
 from firelens.retrieval.vector import retrieval_hit_from_chunk
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,6 +78,7 @@ def test_public_claim_trust_is_additive() -> None:
             authority="recognized_wildfire_preparedness_program",
             review_provenance="native_text",
         ),
+        publication=explanation_authority(),
     )
     dumped = claim.model_dump()
     assert dumped["evidence_status"] == "verified_corpus"

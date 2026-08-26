@@ -1,10 +1,11 @@
-import { lazy, Suspense, useMemo } from "react";
+import { lazy, Suspense, useMemo, type RefObject } from "react";
 import {
   ArrowSquareOut,
   ChatsCircle,
   Info,
   Shield,
   WarningCircle,
+  X,
 } from "@phosphor-icons/react";
 import { abstentionPresentation } from "../ask/abstentionPresentation";
 import { ProofCard } from "../ask/StatusBanner";
@@ -58,11 +59,15 @@ export function EvidencePanel({
   surface,
   mapAvailable,
   onSurfaceChange,
+  onClose,
+  panelRef,
 }: {
   session: FireLensSession;
   surface: "evidence" | "map";
   mapAvailable: boolean;
   onSurfaceChange: (surface: "evidence" | "map") => void;
+  onClose: () => void;
+  panelRef: RefObject<HTMLElement | null>;
 }) {
   const {
     askAboutResult,
@@ -111,7 +116,13 @@ export function EvidencePanel({
       : "Answer context";
 
   return (
-    <aside className={`evidence-panel evidence-panel--${surface}`} aria-label={contextTitle}>
+    <aside
+      className={`evidence-panel evidence-panel--${surface}`}
+      aria-label={contextTitle}
+      id="answer-context"
+      ref={panelRef}
+      tabIndex={-1}
+    >
       <div className="context-toolbar">
         <div>
           <span className="selected-kicker">Context</span>
@@ -137,6 +148,9 @@ export function EvidencePanel({
             </button>
           </div>
         )}
+        <button className="context-close" type="button" onClick={onClose} aria-label="Close answer context">
+          <X size={19} aria-hidden="true" />
+        </button>
       </div>
       <div className="evidence-inner">
         {surface === "map" ? (

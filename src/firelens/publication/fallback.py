@@ -84,6 +84,7 @@ def quote_only_claim(
         critical_fields_checked="Exact official wording, not a FireLens interpretation",
         freshness="Stable source wording",
         official_url=evidence.canonical_url,
+        publication=authority,
     )
     return claim, evidence, card
 

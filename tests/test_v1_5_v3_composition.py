@@ -33,6 +33,7 @@ from firelens.contracts import (
     aggregate_live_freshness,
 )
 from firelens.live_answering import LiveAnswerCoordinator
+from firelens.publication.compiler import background_authority, explanation_authority
 
 
 def _incident(*, authority: str = "BC Wildfire Service") -> LiveResult:
@@ -97,6 +98,7 @@ def _accepted_background() -> AskResponse:
                 claim_id="C1",
                 text="Pack water, medication, and copies of important documents.",
                 evidence_status=EvidenceStatus.GENERAL_BACKGROUND,
+                publication=background_authority(),
             )
         ],
         limitations=[BACKGROUND_LIMITATION],
@@ -115,6 +117,7 @@ def _accepted_conflict() -> AskResponse:
         text="One reviewed source contains a conflicting requirement.",
         evidence_status=EvidenceStatus.VERIFIED_CORPUS,
         supports=[ClaimSupport(evidence_id="E1", quote="Conflicting requirement")],
+        publication=explanation_authority(),
     )
     return AskResponse(
         status=ResponseStatus.ANSWER,

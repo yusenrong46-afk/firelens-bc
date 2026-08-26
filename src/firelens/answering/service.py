@@ -88,9 +88,10 @@ from firelens.errors import ProviderError
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.operational_logging import log_operation
 from firelens.providers.base import AIProvider
+from firelens.publication.compiler import background_authority
 from firelens.retrieval.bm25 import BM25Index
 from firelens.retrieval.pipeline import RetrievalPipeline
-from firelens.traces import TraceRecorder
+from firelens.traces import TraceRecorder, project_ask_trace_details
 
 
 class StaticRAGService:
@@ -116,7 +117,6 @@ class StaticRAGService:
         self.trace_recorder = trace_recorder or TraceRecorder(
             config.trace_dir,
             include_content=config.trace_content,
-            include_question_fingerprint=config.deployment_environment != "production",
             max_files=config.trace_max_files,
             max_bytes=config.trace_max_bytes,
         )
@@ -233,6 +233,7 @@ class StaticRAGService:
         route: str,
         **details: object,
     ) -> AskResponse:
+        trace_details = project_ask_trace_details(details)
         operation = self._active_operations.pop(response.trace_id, None)
         if operation is not None:
             started, provider_models = operation
@@ -286,7 +287,7 @@ class StaticRAGService:
                 "reason_code": response.reason_code,
                 "error_kind": response.error_kind,
                 "history_turn_count": len(request.history),
-                **details,
+                **trace_details,
             },
         )
         return response
@@ -438,7 +439,8 @@ class StaticRAGService:
                 "provider_usage": bundle.provider_usage,
                 "provider_attempts": bundle.provider_attempts,
                 "provider_models": bundle.provider_models,
-                "errors": bundle.errors,
+                "error_count": len(bundle.errors),
+                "error_types": bundle.errors,
             },
         )
         return SearchExecution(
@@ -586,6 +588,7 @@ class StaticRAGService:
                 claim_id=f"C{index}",
                 text=claim.text,
                 evidence_status=EvidenceStatus.GENERAL_BACKGROUND,
+                publication=background_authority(),
             )
             for index, claim in enumerate(generated.draft.claims, start=1)
         ]

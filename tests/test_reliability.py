@@ -34,6 +34,7 @@ from firelens.contracts import (
     bounded_assistant_history,
 )
 from firelens.errors import IndexValidationError
+from firelens.publication.compiler import background_authority, explanation_authority
 from firelens.retrieval.embeddings import load_embedding_cache
 from firelens.retrieval.hybrid import reciprocal_rank_fusion
 from firelens.retrieval.vector import retrieval_hit_from_chunk
@@ -57,11 +58,13 @@ class ContractPropertyTests(unittest.TestCase):
             text="Keep water in an emergency kit.",
             evidence_status=EvidenceStatus.VERIFIED_CORPUS,
             supports=[ClaimSupport(evidence_id="E1", quote="Keep water")],
+            publication=explanation_authority(),
         )
         background_claim = PublicClaim(
             claim_id="C1",
             text="Wildfire smoke can affect air quality.",
             evidence_status=EvidenceStatus.GENERAL_BACKGROUND,
+            publication=background_authority(),
         )
         evidence = PublicEvidence(
             evidence_id="E1",
@@ -291,9 +294,9 @@ class PersistenceTests(unittest.IsolatedAsyncioTestCase):
             self.assertFalse((Path(directory) / "trace-failure.json").exists())
             self.assertFalse(list(Path(directory).glob("*.tmp")))
 
-    async def test_production_trace_can_omit_question_fingerprint(self) -> None:
+    async def test_default_trace_omits_question_fingerprint(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            recorder = TraceRecorder(Path(directory), include_question_fingerprint=False)
+            recorder = TraceRecorder(Path(directory))
             written = await recorder.record(
                 "a" * 32,
                 question="PRIVATE QUESTION",

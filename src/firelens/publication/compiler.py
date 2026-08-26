@@ -33,6 +33,7 @@ from firelens.contracts import (
     aggregate_live_freshness,
     render_claim_texts,
 )
+from firelens.live_claim_renderer import render_typed_live_claim
 from firelens.live_contracts import LiveResult
 from firelens.proof_presentation import ProofCard, make_proof_card
 from firelens.publication.compiled_validation import (
@@ -158,7 +159,7 @@ def compile_structured_claim(
 
 
 def compile_live_fact(result: LiveResult, public_claim_id: str) -> CompiledClaim:
-    text = _live_text(result)
+    text = render_typed_live_claim(result)
     authority = PublicationAuthority(
         kind=PublicationKind.OFFICIAL_LIVE_TYPED,
         typed_live_fact_id=result.result_id,
@@ -190,6 +191,7 @@ def compile_live_fact(result: LiveResult, public_claim_id: str) -> CompiledClaim
         ),
         official_url=result.source_url,
         derivation=result.distance_derivation,
+        publication=authority,
     )
     response = AskResponse(
         status=ResponseStatus.ANSWER,
@@ -530,22 +532,8 @@ def explanation_authority() -> PublicationAuthority:
     )
 
 
-def _live_text(result: LiveResult) -> str:
-    name = result.name or result.incident_number or result.result_id
-    freshness = (
-        result.freshness.value if hasattr(result.freshness, "value") else result.freshness
-    )
-    parts = [
-        f"{name} status is {result.status} according to {result.authority}.",
-        f"Official source updated {result.source_updated_at.date().isoformat()}.",
-        f"FireLens retrieved this record {result.retrieved_at.isoformat()}.",
-        f"Freshness is {freshness}.",
-    ]
-    if result.distance_km is not None and result.distance_basis is not None:
-        basis = result.distance_basis.replace("_", " ")
-        parts.append(f"Distance {result.distance_km:g} km geodesic to the official {basis}.")
-    parts.append("This is not a safety determination.")
-    return " ".join(parts)
+def background_authority() -> PublicationAuthority:
+    return PublicationAuthority(kind=PublicationKind.GENERAL_BACKGROUND)
 
 
 def _card_from_claim(
@@ -572,6 +560,11 @@ def _card_from_claim(
         else "Exact official wording, not a FireLens interpretation",
         freshness="Stable reviewed guidance",
         official_url=evidence.canonical_url,
+        publication=(
+            authority
+            if authority is not None
+            else PublicationAuthority(kind=PublicationKind.UNSUPPORTED)
+        ),
     )
 
 

@@ -26,6 +26,7 @@ from firelens.contracts import (
     ResponseStatus,
     ValidationReport,
 )
+from firelens.publication.compiler import explanation_authority
 from firelens.retrieval.vector import retrieval_hit_from_chunk
 
 FABLE_MUTATIONS = [
@@ -245,6 +246,7 @@ def test_live_missing_composition_does_not_call_static_current() -> None:
                 text="Include water, medication, and copies of important documents.",
                 evidence_status=EvidenceStatus.VERIFIED_CORPUS,
                 supports=[ClaimSupport(evidence_id="E1", quote="Include water")],
+                publication=explanation_authority(),
             )
         ],
         evidence=[

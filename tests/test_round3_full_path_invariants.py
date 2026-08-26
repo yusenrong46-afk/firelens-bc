@@ -32,6 +32,7 @@ from firelens.contracts import (
 )
 from firelens.proof_presentation import build_proof_cards
 from firelens.providers.fake import FakeProvider
+from firelens.publication.compiler import explanation_authority
 from firelens.retrieval.vector import retrieval_hit_from_chunk
 
 SMOKE_QUOTE = "Avoid driving through areas of dense smoke."
@@ -107,6 +108,7 @@ def test_output_rail_rejects_rewritten_avoid_to_perform() -> None:
                 text=SMOKE_QUOTE,
                 evidence_status=EvidenceStatus.VERIFIED_CORPUS,
                 supports=[ClaimSupport(evidence_id="E1", quote=SMOKE_QUOTE)],
+                publication=explanation_authority(),
             )
         ],
         evidence=[
@@ -153,6 +155,7 @@ def test_failed_critical_fields_cannot_appear_supported_on_proof_cards() -> None
                     review_provenance="native_text",
                     critical_fields_preserved=False,
                 ),
+                publication=explanation_authority(),
             )
         ],
         evidence=[

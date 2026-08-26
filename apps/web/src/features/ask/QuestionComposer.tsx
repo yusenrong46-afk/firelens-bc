@@ -2,12 +2,14 @@ import { Info, PaperPlaneTilt } from "@phosphor-icons/react";
 import type { FormEvent } from "react";
 
 export function QuestionComposer({
+  continuationPending = false,
   idle,
   loading,
   onQueryChange,
   onSubmit,
   query,
 }: {
+  continuationPending?: boolean;
   idle: boolean;
   loading: boolean;
   onQueryChange: (query: string) => void;
@@ -21,7 +23,9 @@ export function QuestionComposer({
           aria-label="Ask FireLens a question"
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Ask about a fire, a B.C. place, or preparedness…"
+          placeholder={continuationPending
+            ? "Ask a new question…"
+            : "Ask about a fire, a B.C. place, or preparedness…"}
           maxLength={2000}
           disabled={loading}
         />
@@ -29,10 +33,11 @@ export function QuestionComposer({
           <PaperPlaneTilt size={20} weight="fill" />
         </button>
       </div>
-      <p>
-        <Info size={16} /> Live facts stay tied to official records. Reviewed guidance
-        and general background are labelled separately.
-      </p>
+      {continuationPending ? (
+        <p><Info size={16} /> Use the community field above to continue this task. Type here only to start a new question.</p>
+      ) : (
+        <p><Info size={16} /> Sources and status boundaries appear with each answer.</p>
+      )}
     </form>
   );
 }

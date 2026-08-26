@@ -12,6 +12,7 @@ from typing import Annotated, Any, Literal, Protocol
 from pydantic import Field, HttpUrl, field_validator, model_validator
 
 from firelens import api_contracts as _api_contracts
+from firelens import live_contracts as _live_contracts
 from firelens.assistant_history import ASSISTANT_HISTORY_LIMIT as ASSISTANT_HISTORY_LIMIT
 from firelens.assistant_history import bounded_assistant_history as bounded_assistant_history
 from firelens.assistant_history import render_assistant_history as render_assistant_history
@@ -25,59 +26,9 @@ from firelens.contract_composition import (
 )
 from firelens.contract_composition import is_canonical_conflict_answer
 from firelens.evidence_packet_identity import validate_evidence_packet_identity
-from firelens.live_contracts import (
-    AggregateFreshness as AggregateFreshness,
-)
-from firelens.live_contracts import (
-    CoarseResolvedLocation as CoarseResolvedLocation,
-)
-from firelens.live_contracts import (
-    DistanceDerivation as DistanceDerivation,
-)
-from firelens.live_contracts import (
-    Freshness as Freshness,
-)
-from firelens.live_contracts import (
-    GeometryRelation as GeometryRelation,
-)
-from firelens.live_contracts import (
-    LiveLayerStatus as LiveLayerStatus,
-)
-from firelens.live_contracts import (
-    LiveMapResponse as LiveMapResponse,
-)
-from firelens.live_contracts import (
-    LivePagination as LivePagination,
-)
-from firelens.live_contracts import (
-    LiveResult as LiveResult,
-)
-from firelens.live_contracts import (
-    LiveResultKind as LiveResultKind,
-)
-from firelens.live_contracts import (
-    LocationInput as LocationInput,
-)
-from firelens.live_contracts import (
-    MapViewport as MapViewport,
-)
-from firelens.live_contracts import (
-    NearMeRequest as NearMeRequest,
-)
-from firelens.live_contracts import (
-    NearMeResponse as NearMeResponse,
-)
-from firelens.live_contracts import (
-    aggregate_live_freshness as aggregate_live_freshness,
-)
-from firelens.live_contracts import (
-    bind_distance_derivation as bind_distance_derivation,
-)
-from firelens.live_contracts import (
-    freshness_for_observation as freshness_for_observation,
-)
 from firelens.proof_presentation import AnswerStatusBanner, ProofCard, attach_proof_presentation
 from firelens.publication_contracts import PublicationAuthority
+from firelens.publication_response_binding import public_claim_authority_error
 
 DocumentContextDraft = _api_contracts.DocumentContextDraft
 DocumentContextItem = _api_contracts.DocumentContextItem
@@ -97,6 +48,24 @@ RerankResponse = _api_contracts.RerankResponse
 RerankResult = _api_contracts.RerankResult
 ValidationReport = _api_contracts.ValidationReport
 response_history_prefix = _api_contracts.response_history_prefix
+
+AggregateFreshness = _live_contracts.AggregateFreshness
+CoarseResolvedLocation = _live_contracts.CoarseResolvedLocation
+DistanceDerivation = _live_contracts.DistanceDerivation
+Freshness = _live_contracts.Freshness
+GeometryRelation = _live_contracts.GeometryRelation
+LiveLayerStatus = _live_contracts.LiveLayerStatus
+LiveMapResponse = _live_contracts.LiveMapResponse
+LivePagination = _live_contracts.LivePagination
+LiveResult = _live_contracts.LiveResult
+LiveResultKind = _live_contracts.LiveResultKind
+LocationInput = _live_contracts.LocationInput
+MapViewport = _live_contracts.MapViewport
+NearMeRequest = _live_contracts.NearMeRequest
+NearMeResponse = _live_contracts.NearMeResponse
+aggregate_live_freshness = _live_contracts.aggregate_live_freshness
+bind_distance_derivation = _live_contracts.bind_distance_derivation
+freshness_for_observation = _live_contracts.freshness_for_observation
 
 PUBLIC_ANSWER_MAX_CHARS = ASSISTANT_HISTORY_LIMIT
 MAX_GROUNDED_ANSWER_CHARS = 2_500
@@ -435,7 +404,7 @@ class PublicClaim(FrozenStrictModel):
     evidence_status: EvidenceStatus
     supports: list[ClaimSupport] = Field(default_factory=list, max_length=5)
     trust: ClaimTrust | None = None
-    publication: PublicationAuthority | None = None
+    publication: PublicationAuthority
 
     @field_validator("text")
     @classmethod
@@ -586,8 +555,21 @@ class AskResponse(StrictModel):
             raise ValueError("required input is only valid for resumable input responses")
         if not self.live_results and self.aggregate_freshness is not None:
             raise ValueError("aggregate freshness requires live results")
+        self._validate_claim_publication_authority()
         attach_proof_presentation(self)
         return self
+
+    def _validate_claim_publication_authority(self) -> None:
+        evidence_by_id = {item.evidence_id: item for item in self.evidence}
+        live_results_by_id = {item.result_id: item for item in self.live_results}
+        for claim in self.claims:
+            error = public_claim_authority_error(
+                claim,
+                evidence_by_id=evidence_by_id,
+                live_results_by_id=live_results_by_id,
+            )
+            if error:
+                raise ValueError(f"claim {claim.claim_id}: {error}")
 
     def _validate_answer_sections(self) -> None:
         if not self.answer_sections:
@@ -622,6 +604,15 @@ class AskResponse(StrictModel):
                 "answer sections require matching typed response data: "
                 + ", ".join(unsupported)
             )
+        current_text = "\n".join(
+            section.text
+            for section in self.answer_sections
+            if section.kind == AnswerSectionKind.CURRENT_RECORDS
+        )
+        if current_text and any(
+            claim.text and claim.text in current_text for claim in self.claims
+        ):
+            raise ValueError("current record section cannot contain non-live public claim text")
         if (
             self.response_mode == ResponseMode.CONFLICT
             or AnswerSectionKind.CONFLICTING_GUIDANCE in kinds

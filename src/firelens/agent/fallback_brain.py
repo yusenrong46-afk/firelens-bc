@@ -10,11 +10,14 @@ from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
     live_layers_for_question,
     reviewed_guidance_intent,
+    static_guidance_fragment,
     unsupported_live_topics,
 )
+from firelens.answering.intent_safety import is_empty_map_safety_inference
 from firelens.answering.live_analysis import compose_official_answer
 from firelens.answering.live_request_intent import is_selected_live_request
 from firelens.answering.location_intent import coarse_location_from_question
+from firelens.answering.request_grammar import parse_request_facets
 from firelens.contracts import LiveResultKind, QueryRequest
 
 _GUIDANCE = re.compile(
@@ -56,6 +59,29 @@ def should_prefetch_reviewed_guidance(question: str) -> bool:
     return confident_guidance_intent(question)
 
 
+def planned_static_subrequest(question: str) -> str | None:
+    """Preserve one exact non-live clause for static or mixed execution."""
+
+    if is_empty_map_safety_inference(question):
+        return None
+    layers = live_layers_for_question(question)
+    facets = parse_request_facets(question)
+    fragment = static_guidance_fragment(question)
+    if fragment is not None and (
+        layers or facets.has_current_live_fire or unsupported_live_topics(question)
+    ):
+        return fragment
+    if facets.has_current_live_fire:
+        non_live = " and ".join(
+            clause.text for clause in facets.non_live_clauses if clause.text
+        )
+        if non_live:
+            return non_live[:2_000]
+    if not layers and should_prefetch_reviewed_guidance(question):
+        return question
+    return None
+
+
 def heuristic_tool_calls(request: QueryRequest) -> list[dict[str, Any]]:
     """Offline tool choice for tests without a provider chat loop."""
 
@@ -64,6 +90,7 @@ def heuristic_tool_calls(request: QueryRequest) -> list[dict[str, Any]]:
     location = request.location or coarse_location_from_question(question)
     place = location.label if location is not None else None
     layers = live_layers_for_question(question)
+    static_query = planned_static_subrequest(question)
     if request.context.selected_live_result_id and (
         _PREDICTION.search(question)
         or is_selected_live_request(request)
@@ -88,18 +115,11 @@ def heuristic_tool_calls(request: QueryRequest) -> list[dict[str, Any]]:
                     "arguments": arguments,
                 }
             )
-    if should_prefetch_reviewed_guidance(question):
+    if static_query is not None:
         calls.append(
             {
                 "name": AgentTool.SEARCH_REVIEWED_GUIDANCE.value,
-                "arguments": {"query": question},
-            }
-        )
-    if not calls and should_prefetch_reviewed_guidance(question):
-        calls.append(
-            {
-                "name": AgentTool.SEARCH_REVIEWED_GUIDANCE.value,
-                "arguments": {"query": question},
+                "arguments": {"query": static_query},
             }
         )
     return calls

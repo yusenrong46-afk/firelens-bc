@@ -30,6 +30,7 @@ from firelens.answering.location_intent import (
     asks_for_personal_location,
     coarse_location_from_question,
 )
+from firelens.answering.request_grammar import parse_request_facets
 from firelens.answering.return_intent import reviewed_return_condition_intent
 from firelens.contracts import (
     AuthorityClass,
@@ -66,11 +67,6 @@ TOPIC_CATALOGUE: tuple[tuple[str, str], ...] = (
 
 SUGGESTED_QUESTIONS: tuple[str, ...] = tuple(item[1] for item in TOPIC_CATALOGUE)
 
-_REQUEST_FRAGMENT_SPLIT = re.compile(
-    r"[?;+]|\s+(?:and|also|plus)\s+"
-    r"(?!(?:an?\s+)?(?:(?:evacuation|evac)\s+)?orders?\b)",
-    re.IGNORECASE,
-)
 _CURRENT_CUE_TEXT = (
     r"(?:right now|currently|current|latest|today|tonight|tomorrow|now|at the moment)"
 )
@@ -161,11 +157,7 @@ _STATIC_GUIDANCE_TERMS = (
 def request_fragments(question: str) -> tuple[str, ...]:
     """Split top-level request clauses without breaking alert/order definitions."""
 
-    return tuple(
-        fragment
-        for part in _REQUEST_FRAGMENT_SPLIT.split(question)
-        if (fragment := part.strip(" ,.?;"))
-    )
+    return parse_request_facets(question).clause_texts
 
 
 _REVIEWED_GUIDANCE_PATTERNS = (
@@ -317,11 +309,14 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
     """Return only official layers that can answer the user's live intent."""
 
     original_question = question
+    facets = parse_request_facets(original_question)
+    if facets.only_non_current_fire:
+        return ()
     original_location = coarse_location_from_question(original_question)
     supported_fragments = [
-        fragment
-        for fragment in request_fragments(question)
-        if not unsupported_live_topics(fragment)
+        clause.text
+        for clause in facets.clauses
+        if clause.current_live_fire or not unsupported_live_topics(clause.text)
     ]
     if not supported_fragments:
         return ()
@@ -329,19 +324,22 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
     lowered = question.casefold()
     layers: list[LiveResultKind] = []
     personal_location = _requires_personal_live_location(question)
-    fire_status_requested = any(
-        re.search(pattern, lowered)
-        for pattern in (
-            r"\b(?:active|current|latest)\s+(?:(?:bc|b\.c\.|british columbia)\s+)?(?:fires?|wildfires?)\b",
-            r"\bhow many\b.{0,40}\b(?:fires?|wildfires?)\b",
-            r"\b(?:fire|wildfire)\s+(?:status|situation|map|update|updates)\b",
-            r"\b(?:is there|are there|where is)\b.{0,30}\b(?:fire|wildfire)\b",
-            r"\b(?:is there|are there|where is)\b.{0,40}[a-z]{1,12}fires?\b.{0,30}\b(?:near|around|by|in|within)\b",
-            r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?)\b.{0,40}\b(?:burning|near|around|in bc|in british columbia)\b",
-            r"\b(?:fires?|wildfires?)\b.{0,60}\b(?:listed|reported|published)\s+by\s+"
-            r"(?:bcws|bc wildfire service)\b",
-            r"\b(?:bcws|bc wildfire service)\b.{0,50}\b(?:status|map|update|latest|fire)\b",
+    fire_status_requested = (
+        any(
+            re.search(pattern, lowered)
+            for pattern in (
+                r"\b(?:active|current|latest)\s+(?:(?:bc|b\.c\.|british columbia)\s+)?(?:fires?|wildfires?)\b",
+                r"\bhow many\b.{0,40}\b(?:fires?|wildfires?)\b",
+                r"\b(?:fire|wildfire)\s+(?:status|situation|map|update|updates)\b",
+                r"\b(?:is there|are there|where is)\b.{0,30}\b(?:fire|wildfire)\b",
+                r"\b(?:is there|are there|where is)\b.{0,40}[a-z]{1,12}fires?\b.{0,30}\b(?:near|around|by|in|within)\b",
+                r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?)\b.{0,40}\b(?:burning|near|around|in bc|in british columbia)\b",
+                r"\b(?:fires?|wildfires?)\b.{0,60}\b(?:listed|reported|published)\s+by\s+"
+                r"(?:bcws|bc wildfire service)\b",
+                r"\b(?:bcws|bc wildfire service)\b.{0,50}\b(?:status|map|update|latest|fire)\b",
+            )
         )
+        or facets.has_current_live_fire
     )
     perimeter_requested = bool(re.search(r"\bperimeters?\b", lowered))
     incident_requested = bool(re.search(r"\bincidents?\b", lowered))
@@ -446,7 +444,7 @@ def live_query_requires_location(question: str) -> bool:
 def static_guidance_fragment(question: str) -> str | None:
     """Keep the user's own stable-guidance clause for a mixed live/static request."""
 
-    fragments = request_fragments(question)
+    fragments = parse_request_facets(question).clause_texts
     selected = [
         fragment
         for fragment in fragments
@@ -481,6 +479,7 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
 
     question = request.question
     processing_question = focused_question(question)
+    facets = parse_request_facets(processing_question)
     lowered = processing_question.lower()
     routing_texts = _routing_texts(request)
     safety_texts: tuple[str, ...] = (question.lower(),)
@@ -504,13 +503,18 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     live = live or is_fire_geography_analysis(processing_question)
     live = live or is_fire_record_analysis(processing_question)
     live = live or bool(unsupported_live_topics(processing_question))
+    live = live or facets.has_current_live_fire
     named_location = coarse_location_from_question(processing_question)
-    named_live_command = named_location is not None and bool(
-        re.search(
-            r"\b(?:where|show|map|current|latest|right now|rn|today|situation|status|"
-            r"active|burning|happening|alert|alerts?|order|orders?|official|records?|"
-            r"fires?|wildfires?|perimeters?)\b",
-            lowered,
+    named_live_command = (
+        not facets.only_non_current_fire
+        and named_location is not None
+        and bool(
+            re.search(
+                r"\b(?:where|show|map|current|latest|right now|rn|today|situation|status|"
+                r"active|burning|happening|alert|alerts?|order|orders?|official|records?|"
+                r"fires?|wildfires?|perimeters?)\b",
+                lowered,
+            )
         )
     )
     personal_live_command = _requires_personal_live_location(processing_question)

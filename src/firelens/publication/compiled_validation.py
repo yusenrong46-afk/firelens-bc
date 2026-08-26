@@ -187,7 +187,7 @@ def validate_compiled_publication(
                 quotes_exact = False
                 errors.append(f"claim {claim.claim_id} support is not exact source text")
 
-        authority = claim.publication
+        authority = getattr(claim, "publication", None)
         if authority is None:
             policy_valid = False
             errors.append(f"claim {claim.claim_id} has no publication authority")

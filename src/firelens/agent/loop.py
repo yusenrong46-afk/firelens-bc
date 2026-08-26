@@ -31,10 +31,11 @@ from firelens.agent.loop_support import (
 from firelens.agent.packet import AgentPacket
 from firelens.agent.prefetch import needs_location, prefetch_evidence, resolve_place
 from firelens.agent.prompts import OPENROUTER_TOOLS, SYSTEM_PROMPT
+from firelens.agent.query_plan import AgentQueryPlan
 from firelens.agent.rails import execution_allowed, output_rail_errors
 from firelens.agent.runtime_tools import execute_tool
 from firelens.agent.tools import AgentTool
-from firelens.answering.intent import live_layers_for_question, unsupported_live_topics
+from firelens.answering.intent import unsupported_live_topics
 from firelens.answering.live_analysis import (
     official_analysis_answer,
     replace_ungrounded_live_hedge,
@@ -83,10 +84,11 @@ async def run_agent_loop(
     live_coordinator: LiveAnswerCoordinator,
     static_service: StaticAnswerService,
     provider: ChatProvider | None,
+    query_plan: AgentQueryPlan,
 ) -> tuple[AskResponse, QueryRoute, tuple[AgentTool, ...], AgentPacket]:
     """Run one Ask through Luna (or the offline stand-in) and rails."""
 
-    packet = AgentPacket()
+    packet = AgentPacket(query_plan=query_plan)
     unsupported = tuple(unsupported_live_topics(request.question))
     packet.related_links = related_live_links(unsupported)
     packet.unknown_topics.extend(unsupported)
@@ -104,7 +106,7 @@ async def run_agent_loop(
         )
     if (
         unsupported
-        and not live_layers_for_question(request.question)
+        and not query_plan.live_layers
         and not should_prefetch_reviewed_guidance(request.question)
     ):
         # An unsupported current-data request is already fully classified by
@@ -136,7 +138,7 @@ async def run_agent_loop(
             (AgentTool.GET_OFFICIAL_FIRE,),
             packet,
         )
-    await prefetch_evidence(request, live_coordinator, static_service, packet)
+    await prefetch_evidence(request, live_coordinator, static_service, packet, query_plan)
     if provider is None:
         answer = await _offline_loop(request, live_coordinator, static_service, packet)
     else:

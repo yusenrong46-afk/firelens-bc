@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:real": "playwright test --config=playwright.real.config.ts",
     "test:tooling": "node --test tests/tooling-config.test.mjs",
     "test:surface": "node --test tests/frontend-surface-runner.test.mjs",
     "qualify:surface": "npm run build && node scripts/qualify-frontend-surface.mjs",

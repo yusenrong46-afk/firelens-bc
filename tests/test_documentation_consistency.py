@@ -29,12 +29,18 @@ def test_current_documentation_preserves_v1_6_rc2_authority_boundaries() -> None
     assert "RC2 hardening and qualification campaign" in readme
     assert "public package and API identity remains `1.6.0-rc.1`" in readme
     assert "not a current wildfire or evacuation report" in readme
+    assert "The request plan owns retrieval scope" in readme
+    assert "Preview and production configuration reject" in readme
     assert "production-ready" not in readme.casefold()
     assert "current architecture authority" in architecture
+    assert "Deterministic request-plan boundary" in architecture
+    assert "sole authority for a request's tools, live layers, geography" in architecture
+    assert "preview and production reject it" in architecture
     assert "reviewed structured claims and extraction-only source wording" in architecture
     assert "named, hash-bound `rc2` profile" in architecture
     assert "active `rc2.1` profile" in architecture
     assert "archival V1.5 code-and-design snapshot" in handbook
+    assert "ADR 0017" in handbook
     assert "This handbook describes the code that runs now." not in handbook
     assert "exact Git commit and Git tree" in runbook
     assert "matching CI candidate-evidence artifact" in runbook
@@ -59,3 +65,18 @@ def test_readme_relative_links_and_image_exist() -> None:
         if not (ROOT / target).exists():
             missing.append(raw)
     assert missing == []
+
+
+def test_portfolio_and_offline_examination_documents_preserve_limits() -> None:
+    case_study = _read("docs/portfolio/CLIMATE_DECISION_INTELLIGENCE_CASE_STUDY.md")
+    demo = _read("docs/portfolio/DEMO_SCRIPT.md")
+    offline_prompt = _read("docs/audit/V1_6_GPT_5_6_PRO_OFFLINE_BUNDLE_EXAMINATION_PROMPT.md")
+
+    assert "Why naive RAG fails" in case_study
+    assert "Remaining limits" in case_study
+    assert "not an emergency authority" in case_study
+    assert "fixture lane" in demo
+    assert "current incident, evacuation, or safety information" in demo
+    assert "GitHub, network, and a local checkout are unavailable" in offline_prompt
+    assert "state UNKNOWN" in offline_prompt
+    assert "must not edit files, make network calls" in offline_prompt

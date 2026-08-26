@@ -1,7 +1,7 @@
 # FireLens V1.6 architecture
 
 Status: current architecture authority for Ask, trust, packaging, and proof UX.
-Date: 2026-08-17
+Date: 2026-08-25
 
 The RC2 label names the current hardening and qualification campaign. The
 public package, runtime, and OpenAPI identity remains `1.6.0-rc.1` until a
@@ -19,22 +19,28 @@ fire-related evacuations). The map is offered on demand and opens first only for
 explicit map or geographic-analysis requests. FireLens is not an emergency-warning
 system, evacuation router, medical advisor, or open-web agent.
 
-Models may choose bounded tools and propose wording. Deterministic code and
-authorized humans decide what may be published as supported fact.
+The application builds an immutable `AgentQueryPlan` before evidence work. It
+is the sole authority for a request's tools, live layers, geography, and exact
+reviewed-guidance subrequest. Models may propose wording from the resulting
+packet; deterministic code and authorized humans decide what may be published
+as supported fact.
 
 ## Ask path
 
-Public Ask is `FireLensAgent` in `src/firelens/agent/coordinator.py` plus the
-bounded loop in `src/firelens/agent/loop.py` (ADR 0011, ADR 0013).
+Public Ask is `FireLensAgent` in `src/firelens/agent/coordinator.py`, the
+immutable planner in `src/firelens/agent/query_plan.py`, and the bounded loop
+in `src/firelens/agent/loop.py` (ADR 0017; ADR 0011 and ADR 0013 are superseded
+in part).
 
 ```text
 QueryRequest
   -> input seatbelt (prohibited / medical / jailbreak)
   -> capability overview (local, zero provider inference)
-  -> prefetch official layers and, when warranted, reviewed guidance
+  -> AgentQueryPlan (exact tools, layers, geography, static subrequest, or terminal response)
+  -> execute only plan-authorized official layers and reviewed guidance
   -> pure accepted static: return validated AskResponse (outer_chat_turns = 0)
-  -> ready live / mixed: at most one outer write from the official packet
-  -> unresolved tools: max two rounds + one terminal write
+  -> ready live / mixed: at most one outer write from the authorized packet
+  -> any provider tool request outside the plan: reject; duplicates: reject
   -> output rails; at most one rewrite; typed fallback
   -> compose_response (lanes, freshness, Proof Cards)
 ```
@@ -43,6 +49,23 @@ QueryRequest
 retrieve, support, grounded generate, validate). It is not the public Ask
 brain. Live answering helpers compute geodesic kilometres after fetch; Luna
 must not invent a different distance.
+
+## Deterministic request-plan boundary
+
+`AgentQueryPlan` is a frozen per-request value. It can authorize only the
+specific fixed tool calls it contains, including normalized arguments. It
+expresses one of five modes: static, live, mixed, selected-record, or a
+deterministic terminal response. Location binding may turn an unresolved
+community into a `requires_input` terminal response, but it cannot add layers,
+replace a selected record, or broaden geography.
+
+The loop prefetches the plan's calls. If a provider later proposes a tool call,
+runtime dispatch compares its exact name and arguments with the plan and rejects
+anything else. A per-request fingerprint also rejects a repeated dispatch. The
+provider therefore cannot convert a local request to province-wide, add an
+evacuation layer, fetch another record, or retrieve a different guidance query.
+Its remaining role is bounded prose over the packet, subject to output rails and
+deterministic publication.
 
 ## Route budgets
 
@@ -56,7 +79,8 @@ separately from static `grounded_generation`. Frozen budgets live in
 | pure static accepted | outer writes = 0; at most one grounded generation |
 | ready live | at most one outer write; no duplicate tool dispatch |
 | ready mixed | one validated static generation + at most one connective write |
-| unresolved tool loop | two rounds + one terminal write |
+| provider tool request outside the plan | rejected; no dispatch |
+| repeated planned tool request | rejected; no repeat dispatch |
 | rejected output | one rewrite, then deterministic fallback |
 
 ## Retrieval
@@ -110,6 +134,13 @@ programming errors become a sanitized public kind, a content-free ops event,
 and a loud local/test failure — never a source outage. Operational events are
 `firelens.operational_event.v3` (no question, answer, history, coordinates,
 evidence text, or secrets).
+
+Local JSON traces apply the same content-minimization boundary by default: they
+contain no question, answer, history, coordinates, evidence text, or query hash.
+`FIRELENS_TRACE_CONTENT=true` is an explicit local-only debugging opt-in that
+may retain the raw question; preview and production reject it during
+configuration validation. This is an executed application boundary, not a
+privacy certification or deployed-sink attestation.
 
 Vercel and Docker share `config/runtime_artifact_allowlist.v1.json`. Source
 Change Radar hashes approved sources and opens a human review packet; it never
@@ -168,7 +199,8 @@ Executable offline traces: `src/firelens/evaluation/golden_traces.py` and
 
 ## Related documents
 
-- ADR 0011 — Luna as Ask brain over a thin application
-- ADR 0013 — evidence-efficient V1.6 agent
+- ADR 0017 — deterministic AgentQueryPlan ownership
+- ADR 0011 — Luna as Ask brain over a thin application (historical, superseded in part)
+- ADR 0013 — evidence-efficient V1.6 agent (historical, superseded in part)
 - `docs/releases/V1_6_RUNBOOK.md`
 - `docs/plans/V1_6_IMPLEMENTATION.md` (frozen before implementation)

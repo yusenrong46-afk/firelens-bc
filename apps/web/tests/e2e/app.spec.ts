@@ -11,6 +11,12 @@ const answer = {
     text: "Prepare water, food, and medication.",
     evidence_status: "verified_corpus",
     supports: [{ evidence_id: "E1", quote: "Food & water" }],
+    publication: {
+      kind: "source_linked_explanation",
+      review_status: "source_linked",
+      renderer_id: "firelens.explanation_renderer.v1",
+      support_provenance: "validated_grounded_explanation",
+    },
   }],
   evidence: [{
     evidence_id: "E1",
@@ -539,7 +545,7 @@ test("offers retry for a transient provider outage", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("Simulate provider unavailable");
   await page.getByLabel("Send question").click();
-  await expect(page.getByRole("status", { name: "We couldn't retrieve official records for this question" })).toBeVisible();
+  await expect(page.getByRole("status", { name: "We couldn't complete this question" })).toBeVisible();
   await expect(page.getByText("No wildfire status was shown or inferred.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Retry this question" })).toBeVisible();
 });
