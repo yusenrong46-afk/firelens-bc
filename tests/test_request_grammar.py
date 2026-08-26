@@ -148,6 +148,65 @@ def test_mixed_smoke_and_kit_guidance_remain_separate_from_live_scope(
 
 
 @pytest.mark.parametrize(
+    ("question", "live_fragment", "static_fragment", "place"),
+    (
+        (
+            "Show fires around Vernon plus smoke-readiness guidance.",
+            "Show fires around Vernon",
+            "smoke-readiness guidance",
+            "Vernon",
+        ),
+        (
+            "List fires near Terrace and wildfire smoke-preparedness advice.",
+            "List fires near Terrace",
+            "wildfire smoke-preparedness advice",
+            "Terrace",
+        ),
+        (
+            "Current fires across BC and advice for a grab-and-go bag.",
+            "Current fires across BC",
+            "advice for a grab-and-go bag",
+            None,
+        ),
+        (
+            "Current wildfires throughout British Columbia, plus tips for an emergency kit.",
+            "Current wildfires throughout British Columbia",
+            "tips for an emergency kit",
+            None,
+        ),
+    ),
+)
+def test_hyphenated_and_advice_guidance_forms_split_from_live_records(
+    question: str,
+    live_fragment: str,
+    static_fragment: str,
+    place: str | None,
+) -> None:
+    facets = parse_request_facets(question)
+    location = coarse_location_from_question(question)
+
+    assert facets.clause_texts == (live_fragment, static_fragment)
+    assert tuple(clause.text for clause in facets.live_clauses) == (live_fragment,)
+    assert tuple(clause.text for clause in facets.non_live_clauses) == (static_fragment,)
+    assert (location.label if location is not None else None) == place
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Explain smoke-readiness research for workplaces.",
+        "Summarize advice for a grab-and-go bag.",
+    ),
+)
+def test_static_guidance_forms_alone_do_not_authorize_live_records(question: str) -> None:
+    facets = parse_request_facets(question)
+
+    assert not facets.has_current_live_fire
+    assert plan_query(QueryRequest(question=question)).route != QueryRoute.LIVE
+    assert live_layers_for_question(question) == ()
+
+
+@pytest.mark.parametrize(
     "question",
     (
         "Give me the current wildfire picture from Atlantic to Pacific.",
@@ -156,6 +215,35 @@ def test_mixed_smoke_and_kit_guidance_remain_separate_from_live_scope(
 )
 def test_non_bc_national_scope_cues_are_explicit(question: str) -> None:
     assert requests_non_bc_national_scope(question)
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Give me the national wildfire situation today.",
+        "Show the nationwide fire status right now.",
+    ),
+)
+def test_current_national_fire_summary_is_explicitly_outside_bc_scope(
+    question: str,
+) -> None:
+    assert parse_request_facets(question).has_current_live_fire
+    assert requests_non_bc_national_scope(question)
+    assert coarse_location_from_question(question) is None
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Explain national wildfire policy research.",
+        "Summarize the history of Canada's wildfire strategy.",
+    ),
+)
+def test_national_research_and_policy_are_not_live_scope_redirect_cues(
+    question: str,
+) -> None:
+    assert not requests_non_bc_national_scope(question)
+    assert not parse_request_facets(question).has_current_live_fire
 
 
 def test_wildfire_smoke_is_not_misread_as_an_incident_request() -> None:

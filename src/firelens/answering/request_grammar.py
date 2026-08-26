@@ -25,8 +25,9 @@ _GUIDANCE_NOUN_MODIFIERS = (
     r"(?:(?:basic|simple|plain(?:-|\s+)(?:english|language))\s+)?"
 )
 _TERSE_GUIDANCE_START = (
+    r"(?:(?:advice|tips|guidance)\s+(?:for|about)\s+)?"
     r"(?:(?:an?|the)\s+)?(?:emergency\s+kit|grab-and-go\s+bag|go\s+bag|"
-    r"(?:wildfire\s+)?smoke\s+(?:readiness|health|preparedness)|"
+    r"(?:wildfire\s+)?smoke[-\s]+(?:readiness|health|preparedness)|"
     r"(?:structure[- ]protection\s+)?sprinklers?(?:\s+guidance)?|"
     r"evacuation\s+(?:alert|order)\s+(?:definitions?|meaning|guidance)|"
     rf"{_GUIDANCE_NOUN_MODIFIERS}(?:difference|comparison|distinction)\s+"
@@ -45,7 +46,10 @@ _CLAUSE_BOUNDARY = re.compile(
 
 _NON_BC_NATIONAL_SCOPE = re.compile(
     r"\bfrom\s+(?:the\s+)?atlantic\s+to\s+(?:the\s+)?pacific\b|"
-    r"\b(?:across|throughout)\s+(?:the\s+)?nation\b",
+    r"\b(?:across|throughout)\s+(?:the\s+)?nation\b|"
+    r"\b(?:national|nation[- ]?wide)\s+(?:wildfire|fire)\s+"
+    r"(?:situation|status|updates?|reports?|summar(?:y|ies)|map|records?|"
+    r"picture|overview|snapshot|counts?)\b",
     re.IGNORECASE,
 )
 

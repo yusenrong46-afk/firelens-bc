@@ -29,7 +29,9 @@ _LIVE_VIEW_REFERENCE = re.compile(
     r"(?:appeared|appear|returned|return)\s+(?:in|on)\s+"
     r"(?:the\s+)?(?:map|search|layer)|"
     r"(?:map|layer|search(?:\s+results?)?)\s+"
-    r"(?:did\s+not|didn't|does\s+not|has\s+not|have\s+not)\s+return"
+    r"(?:did\s+not|didn't|does\s+not|has\s+not|have\s+not)\s+return|"
+    r"(?:no|zero)\s+(?:map\s+)?(?:pins?|markers?)\s+"
+    r"(?:are\s+)?(?:showing|visible|displayed|present|appearing)"
     r")\b",
     re.IGNORECASE,
 )
@@ -41,7 +43,9 @@ _MAP_ABSENCE = re.compile(
     r"(?:matching\s+)?(?:results?|incidents?|fires?|wildfires?|records?)|"
     r"(?:returned|return(?:ed)?)\s+nothing|"
     r"(?:did\s+not|didn't|does\s+not|has\s+not|have\s+not)\s+return\s+"
-    r"(?:any\s+)?(?:results?|incidents?|fires?|wildfires?|records?))\b",
+    r"(?:any\s+)?(?:results?|incidents?|fires?|wildfires?|records?)|"
+    r"(?:no|zero)\s+(?:map\s+)?(?:pins?|markers?)\s+"
+    r"(?:are\s+)?(?:showing|visible|displayed|present|appearing))\b",
     re.IGNORECASE,
 )
 _SAFETY_INFERENCE = re.compile(
@@ -51,7 +55,11 @@ _SAFETY_INFERENCE = re.compile(
     r"(?:no|zero)\s+(?:immediate\s+)?risk(?!\s+of\s+"
     r"(?:data|search|archive|reporting)\b)|"
     r"(?:(?:wild)?fire\s+risk|risk\s+(?:from|of)\s+(?:wild)?fire)\s+"
-    r"(?:is\s+)?(?:no|zero))\b",
+    r"(?:is\s+)?(?:no|zero)|"
+    r"(?:i|we)\s+(?:can|could|may|might|should)\s+"
+    r"(?:return|go\s+back)(?:\s+home)?|"
+    r"(?:can|could|may|might|should)\s+(?:i|we)\s+"
+    r"(?:return|go\s+back)(?:\s+home)?)\b",
     re.IGNORECASE,
 )
 _HISTORICAL_ANALYSIS = re.compile(

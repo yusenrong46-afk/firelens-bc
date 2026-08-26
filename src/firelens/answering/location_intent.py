@@ -44,6 +44,14 @@ _MULTI_PLACE_FIRE_COMPARISONS = (
 
 _PLACE_PATTERNS = (
     re.compile(
+        r"\b(?:no|zero)\s+(?:map\s+)?(?:pins?|markers?)\s+"
+        r"(?:are\s+)?(?:showing|visible|displayed|present|appearing)\b"
+        r".{0,50}\b(?:near|around|in)\s+"
+        r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?=[,;:.?!]|\s+(?:and|but|so)\b|$)",
+        re.IGNORECASE,
+    ),
+    re.compile(
         r"\b(?:nothing|no\s+(?:matching\s+)?"
         r"(?:results?|fires?|wildfires?|records?)|zero\s+(?:matching\s+)?"
         r"(?:results?|fires?|wildfires?|records?))\b"
@@ -249,6 +257,8 @@ _REJECTED_PLACES = {
     "current",
     "latest",
     "active",
+    "national",
+    "nationwide",
     "distance",
     "display",
     "map",
@@ -341,7 +351,10 @@ _NATIONAL_SCOPE = re.compile(
     r"\b(?:across|all of|rest of|throughout|in)\s+(?:canada|the\s+(?:us|usa|united states)|america)\b"
     r"|\bcanada[- ]?wide\b|\bnation[- ]?wide\b|\bevery province\b|\ball provinces\b"
     r"|\bcoast(?:-|\s+)to(?:-|\s+)coast\b|\b(?:across|throughout)\s+the\s+country\b"
-    r"|\ball\s+(?:ten|10)\s+provinces\b",
+    r"|\ball\s+(?:ten|10)\s+provinces\b"
+    r"|\b(?:national|nation[- ]?wide)\s+(?:wildfire|fire)\s+"
+    r"(?:situation|status|updates?|reports?|summar(?:y|ies)|map|records?|"
+    r"picture|overview|snapshot|counts?)\b",
     re.IGNORECASE,
 )
 

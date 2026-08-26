@@ -243,6 +243,7 @@ def test_agent_plan_rejects_bare_fire_topic_commands_as_live_records(
         "Are there lessons about wildfire ecology in schools?",
         "Show a comparison of wildfire policies.",
         "Research on current wildfires in British Columbia.",
+        "Explain national wildfire policy research.",
     ),
 )
 def test_static_fire_topic_families_never_authorize_live_tools(question: str) -> None:
@@ -424,6 +425,74 @@ def test_required_mixed_scope_cases_keep_live_and_reviewed_guidance(question: st
     )
     assert facets.has_current_live_fire
     assert facets.non_live_clauses
+
+
+@pytest.mark.parametrize(
+    ("question", "geography", "place", "static_subrequest"),
+    (
+        (
+            "Show fires around Vernon plus smoke-readiness guidance.",
+            AgentGeography.LOCATION_RADIUS,
+            "Vernon",
+            "smoke-readiness guidance",
+        ),
+        (
+            "List current fires near Terrace and wildfire smoke-preparedness advice.",
+            AgentGeography.LOCATION_RADIUS,
+            "Terrace",
+            "wildfire smoke-preparedness advice",
+        ),
+        (
+            "Current fires across BC and advice for a grab-and-go bag.",
+            AgentGeography.PROVINCE_WIDE,
+            None,
+            "advice for a grab-and-go bag",
+        ),
+        (
+            "Current wildfires throughout British Columbia plus tips for an emergency kit.",
+            AgentGeography.PROVINCE_WIDE,
+            None,
+            "tips for an emergency kit",
+        ),
+    ),
+)
+def test_guidance_surface_variants_keep_mixed_agent_lanes(
+    question: str,
+    geography: AgentGeography,
+    place: str | None,
+    static_subrequest: str,
+) -> None:
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert plan.route == QueryRoute.LIVE
+    assert plan.mode == AgentRequestMode.MIXED
+    assert plan.geography == geography
+    assert plan.location_label == place
+    assert plan.static_subrequest == static_subrequest
+    assert [call.name.value for call in plan.tool_calls] == [
+        "list_official_fires",
+        "search_reviewed_guidance",
+    ]
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Give me the national wildfire situation today.",
+        "Show the nationwide fire status right now.",
+    ),
+)
+def test_current_national_fire_summary_is_terminal_without_bc_tools(
+    question: str,
+) -> None:
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert plan.route == QueryRoute.LIVE
+    assert plan.mode == AgentRequestMode.TERMINAL
+    assert plan.tool_calls == ()
+    assert plan.location_label is None
+    assert plan.terminal_response is not None
+    assert plan.terminal_response.response_mode == ResponseMode.SCOPE_REDIRECT
 
 
 def test_public_agent_keeps_accepted_background_with_live_records() -> None:

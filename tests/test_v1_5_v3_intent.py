@@ -79,6 +79,50 @@ class V3DeterministicIntentTests(unittest.TestCase):
                     ),
                 )
 
+    def test_empty_view_return_and_pin_inferences_are_never_an_all_clear(self) -> None:
+        cases = (
+            (
+                "The wildfire map is blank near Kelowna, so I can return home, correct?",
+                "Kelowna",
+            ),
+            (
+                "The incident map is empty around Vernon; that means we may go back "
+                "home, right?",
+                "Vernon",
+            ),
+            (
+                "No pins are showing near Kamloops. Does that prove there is no danger?",
+                "Kamloops",
+            ),
+            (
+                "Zero map markers are visible around Nelson, so that is an all-clear?",
+                "Nelson",
+            ),
+        )
+        for question, expected_place in cases:
+            with self.subTest(question=question):
+                self.assertTrue(is_empty_map_safety_inference(question))
+                plan = plan_query(QueryRequest(question=question))
+                self.assertEqual(plan.route, QueryRoute.LIVE)
+                self.assertEqual(plan.boundary_reason, ReasonCode.LIVE_DATA_REQUIRED)
+                self.assertIn("not an all-clear", plan.limitations[0])
+                location = coarse_location_from_question(question)
+                self.assertIsNotNone(location)
+                assert location is not None
+                self.assertEqual(location.label, expected_place)
+
+    def test_pin_and_return_phrases_without_empty_operational_view_are_not_corrections(
+        self,
+    ) -> None:
+        for question in (
+            "How do I pin Kamloops on the wildfire map?",
+            "When may evacuated residents return home after officials say it is safe?",
+            "No chart pins are showing in my historical research notebook.",
+            "Does an empty database field create a risk of data loss?",
+        ):
+            with self.subTest(question=question):
+                self.assertFalse(is_empty_map_safety_inference(question))
+
     def test_empty_operational_views_cannot_become_an_all_clear(self) -> None:
         """Absence in an incident view triggers the bounded live correction path."""
 
