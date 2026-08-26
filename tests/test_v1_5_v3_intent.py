@@ -25,6 +25,7 @@ from firelens.answering.location_intent import is_out_of_province_label
 from firelens.contracts import (
     ConversationTurn,
     LiveResultKind,
+    MapContext,
     QueryRequest,
     QueryRoute,
     ReasonCode,
@@ -536,6 +537,11 @@ class V3DeterministicIntentTests(unittest.TestCase):
         for question in (
             "Tell me the universal distance everyone should evacuate from every wildfire.",
             "Give a universal evacuation distance every family must follow.",
+            "What exact evacuation distance should every resident use from any wildfire?",
+            (
+                "Give one exact evacuation radius in kilometres that is safe for every "
+                "wildfire and every person."
+            ),
         ):
             with self.subTest(question=question):
                 request = QueryRequest(question=question)
@@ -545,12 +551,31 @@ class V3DeterministicIntentTests(unittest.TestCase):
                 self.assertFalse(is_distance_request(request))
                 self.assertFalse(is_unbound_distance_request(request))
 
-        genuine = QueryRequest(
-            question="What is the distance from Kelowna to the nearest wildfire?"
+        genuine_distance_requests = (
+            QueryRequest(question="What is the distance from Kelowna to the nearest wildfire?"),
+            QueryRequest(
+                question="How far is it from Kelowna?",
+                context=MapContext(selected_live_result_id="incident:42"),
+            ),
         )
-        self.assertFalse(is_prescriptive_evacuation_distance_request(genuine))
-        self.assertTrue(is_distance_request(genuine))
-        self.assertFalse(is_unbound_distance_request(genuine))
+        for request in genuine_distance_requests:
+            with self.subTest(question=request.question):
+                self.assertFalse(is_prescriptive_evacuation_distance_request(request))
+                self.assertTrue(is_distance_request(request))
+                self.assertFalse(is_unbound_distance_request(request))
+
+        for question in (
+            "Why is a universal evacuation distance unreliable across wildfires?",
+            "Why should agencies not use one universal evacuation distance?",
+            (
+                "Explain why kilometres are measurement units, not one safe evacuation "
+                "radius for every wildfire."
+            ),
+        ):
+            with self.subTest(question=question):
+                request = QueryRequest(question=question)
+                self.assertFalse(is_prescriptive_evacuation_distance_request(request))
+                self.assertEqual(plan_query(request).route, QueryRoute.RELATED)
 
     def test_kit_followup_should_i_do_that_is_not_a_medical_boundary(self) -> None:
         history = [

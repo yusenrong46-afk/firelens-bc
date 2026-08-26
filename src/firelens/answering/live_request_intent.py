@@ -30,8 +30,14 @@ _PRESCRIPTIVE_EVACUATION_ACTION = re.compile(
     re.IGNORECASE,
 )
 _PRESCRIPTIVE_DISTANCE_RULE = re.compile(
-    r"\b(?:should|must|need(?:s)?\s+to|ought\s+to)\s+"
+    r"\b(?:should|must|need(?:s)?\s+to|ought\s+to)\b"
+    r"(?:\s+(?!(?:not|never)\b)[a-z][a-z'-]*){0,5}\s+"
     r"(?:follow|keep|maintain|obey|use)\b",
+    re.IGNORECASE,
+)
+_EXACT_UNIVERSAL_DISTANCE_REQUEST = re.compile(
+    r"^\s*(?:give|provide)(?:\s+me)?\s+(?:one|a|the)\s+(?:single\s+)?exact\s+"
+    r"evacuation\s+(?:distance|radius)\b",
     re.IGNORECASE,
 )
 _SELECTED_ENTITY_PATTERN = re.compile(
@@ -119,7 +125,10 @@ def is_prescriptive_evacuation_distance_request(request: QueryRequest) -> bool:
             )
             or (
                 _EXPLICIT_EVACUATION_DISTANCE_PATTERN.search(question)
-                and _PRESCRIPTIVE_DISTANCE_RULE.search(question)
+                and (
+                    _PRESCRIPTIVE_DISTANCE_RULE.search(question)
+                    or _EXACT_UNIVERSAL_DISTANCE_REQUEST.search(question)
+                )
             )
         )
     )

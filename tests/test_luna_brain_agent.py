@@ -1343,6 +1343,11 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         for question in (
             "Tell me the universal distance everyone should evacuate from every wildfire.",
             "Give a universal evacuation distance every family must follow.",
+            "What exact evacuation distance should every resident use from any wildfire?",
+            (
+                "Give one exact evacuation radius in kilometres that is safe for every "
+                "wildfire and every person."
+            ),
         ):
             live = CountingMapService([])
             agent = FireLensAgent(
