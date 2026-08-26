@@ -189,8 +189,8 @@ _PRESENT_FIRE_QUESTION = re.compile(
     # through an arbitrary topic phrase to find the word "wildfire".
     r"\b(?:what|which)\s+"
     r"(?:(?:active|current|latest|official|reported)\s+)*"
-    rf"(?:wildfires|fires)\s+(?:burning|listed|reported|{_FIRE_SCOPE_TEXT}|"
-    rf"(?:is|are|remain)\s+(?:active|burning|current|listed|reported|"
+    rf"(?:wildfires|fires)\s+(?:burning|happening|listed|reported|{_FIRE_SCOPE_TEXT}|"
+    rf"(?:is|are|remain)\s+(?:active|burning|happening|current|listed|reported|"
     rf"{_FIRE_SCOPE_TEXT}|{_PRESENT_TIME_TEXT}))\b|"
     r"\bhow\s+many\s+(?:(?:active|current|official|reported)\s+)*"
     r"(?:wildfires?|fires?)\b|"

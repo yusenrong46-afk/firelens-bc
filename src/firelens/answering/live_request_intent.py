@@ -14,6 +14,9 @@ _DISTANCE_PATTERN = re.compile(
     r"\b(?:how far|how close|distance|kilomet(?:er|re)s?|miles?)\b", re.IGNORECASE
 )
 _EXPLICIT_FIRE_PATTERN = re.compile(r"\b(?:fire|wildfire|incident|perimeter)\b", re.IGNORECASE)
+_EXPLICIT_EVACUATION_DISTANCE_PATTERN = re.compile(
+    r"\bevacuation\s+(?:distance|radius)\b", re.IGNORECASE
+)
 _UNIVERSAL_DISTANCE_SCOPE = re.compile(
     r"\b(?:everyone|everybody|every\s+resident|all\s+(?:people|residents?|"
     r"famil(?:y|ies)|households?|communities))\b|"
@@ -24,6 +27,11 @@ _UNIVERSAL_DISTANCE_SCOPE = re.compile(
 _PRESCRIPTIVE_EVACUATION_ACTION = re.compile(
     r"\b(?:should|must|need(?:s)?\s+to|ought\s+to)\s+"
     r"(?:evacuat(?:e|ing)|leave)\b",
+    re.IGNORECASE,
+)
+_PRESCRIPTIVE_DISTANCE_RULE = re.compile(
+    r"\b(?:should|must|need(?:s)?\s+to|ought\s+to)\s+"
+    r"(?:follow|keep|maintain|obey|use)\b",
     re.IGNORECASE,
 )
 _SELECTED_ENTITY_PATTERN = re.compile(
@@ -103,9 +111,17 @@ def is_prescriptive_evacuation_distance_request(request: QueryRequest) -> bool:
     question = request.question
     return bool(
         _DISTANCE_PATTERN.search(question)
-        and _EXPLICIT_FIRE_PATTERN.search(question)
         and _UNIVERSAL_DISTANCE_SCOPE.search(question)
-        and _PRESCRIPTIVE_EVACUATION_ACTION.search(question)
+        and (
+            (
+                _EXPLICIT_FIRE_PATTERN.search(question)
+                and _PRESCRIPTIVE_EVACUATION_ACTION.search(question)
+            )
+            or (
+                _EXPLICIT_EVACUATION_DISTANCE_PATTERN.search(question)
+                and _PRESCRIPTIVE_DISTANCE_RULE.search(question)
+            )
+        )
     )
 
 

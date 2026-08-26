@@ -533,15 +533,17 @@ class V3DeterministicIntentTests(unittest.TestCase):
         )
 
     def test_prescriptive_universal_distance_is_not_a_live_record_distance(self) -> None:
-        question = (
-            "Tell me the universal distance everyone should evacuate from every wildfire."
-        )
-        request = QueryRequest(question=question)
+        for question in (
+            "Tell me the universal distance everyone should evacuate from every wildfire.",
+            "Give a universal evacuation distance every family must follow.",
+        ):
+            with self.subTest(question=question):
+                request = QueryRequest(question=question)
 
-        self.assertEqual(plan_query(request).route, QueryRoute.RELATED)
-        self.assertTrue(is_prescriptive_evacuation_distance_request(request))
-        self.assertFalse(is_distance_request(request))
-        self.assertFalse(is_unbound_distance_request(request))
+                self.assertEqual(plan_query(request).route, QueryRoute.RELATED)
+                self.assertTrue(is_prescriptive_evacuation_distance_request(request))
+                self.assertFalse(is_distance_request(request))
+                self.assertFalse(is_unbound_distance_request(request))
 
         genuine = QueryRequest(
             question="What is the distance from Kelowna to the nearest wildfire?"

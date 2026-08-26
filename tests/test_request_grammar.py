@@ -305,6 +305,39 @@ def test_positive_live_grammar_owns_record_occurrence_status_or_scope(
     assert live_layers_for_question(question)
 
 
+def test_happening_fire_record_question_keeps_its_named_live_scope() -> None:
+    question = "What fires are happening near Smithers?"
+
+    facets = parse_request_facets(question)
+    location = coarse_location_from_question(question)
+
+    assert facets.has_current_live_fire
+    assert facets.live_location_candidates == ("Smithers",)
+    assert location is not None and location.label == "Smithers"
+    assert plan_query(QueryRequest(question=question)).route == QueryRoute.LIVE
+    assert live_layers_for_question(question) == (
+        LiveResultKind.INCIDENT,
+        LiveResultKind.PERIMETER,
+    )
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "What fire-safety events are happening near Smithers?",
+        "What fires happened near Smithers last summer?",
+        "What fires are happening near Smithers in the historical archive?",
+    ),
+)
+def test_happening_without_a_current_fire_record_stays_non_live(question: str) -> None:
+    facets = parse_request_facets(question)
+
+    assert not facets.has_current_live_fire
+    assert facets.live_location_candidates == ()
+    assert plan_query(QueryRequest(question=question)).route != QueryRoute.LIVE
+    assert live_layers_for_question(question) == ()
+
+
 @pytest.mark.parametrize(
     ("question", "place"),
     (

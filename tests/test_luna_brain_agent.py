@@ -1340,36 +1340,39 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
     async def test_universal_evacuation_distance_uses_uncovered_high_risk_handoff(
         self,
     ) -> None:
-        live = CountingMapService([])
-        agent = FireLensAgent(
-            cast(Any, SilentStatic()),
-            LiveAnswerCoordinator(cast(Any, live)),
-        )
-
-        execution = await agent.answer(
-            QueryRequest(
-                question=(
-                    "Tell me the universal distance everyone should evacuate "
-                    "from every wildfire."
-                )
+        for question in (
+            "Tell me the universal distance everyone should evacuate from every wildfire.",
+            "Give a universal evacuation distance every family must follow.",
+        ):
+            live = CountingMapService([])
+            agent = FireLensAgent(
+                cast(Any, SilentStatic()),
+                LiveAnswerCoordinator(cast(Any, live)),
             )
-        )
+            with self.subTest(question=question):
+                execution = await agent.answer(QueryRequest(question=question))
 
-        response = execution.response
-        self.assertEqual(execution.route, QueryRoute.RELATED)
-        self.assertEqual(execution.tools, ())
-        self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
-        self.assertEqual(response.reason_code, ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED)
-        self.assertEqual(
-            response.answer,
-            "FireLens does not have a reviewed structured claim for this high-risk "
-            "question. Use the issuing authority for official wording.",
-        )
-        self.assertFalse(response.claims)
-        self.assertFalse(response.evidence)
-        self.assertFalse(response.live_results)
-        self.assertNotRegex(response.answer or "", r"\b\d+(?:\.\d+)?\b")
-        self.assertEqual((live.map_calls, live.nearby_calls, live.resolve_calls), (0, 0, 0))
+                response = execution.response
+                self.assertEqual(execution.route, QueryRoute.RELATED)
+                self.assertEqual(execution.tools, ())
+                self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
+                self.assertEqual(
+                    response.reason_code,
+                    ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED,
+                )
+                self.assertEqual(
+                    response.answer,
+                    "FireLens does not have a reviewed structured claim for this high-risk "
+                    "question. Use the issuing authority for official wording.",
+                )
+                self.assertFalse(response.claims)
+                self.assertFalse(response.evidence)
+                self.assertFalse(response.live_results)
+                self.assertNotRegex(response.answer or "", r"\b\d+(?:\.\d+)?\b")
+                self.assertEqual(
+                    (live.map_calls, live.nearby_calls, live.resolve_calls),
+                    (0, 0, 0),
+                )
 
     async def test_named_place_how_close_is_not_unbound(self) -> None:
         agent = _agent(
