@@ -25,6 +25,18 @@
 - Added the independently hash-bound RC2.1 profile: it retains the ten frozen
   RC2 migrations and appends A01's exact reviewed-plus-quote-only contract as
   the eleventh migration without changing the dataset, schema, or floor.
+- Added the independently hash-bound RC2.2 profile: it copies frozen RC2.1
+  unchanged and migrates only A09 and A10 to two-sided `structured_reviewed`
+  coverage of `TC-EVAC-ALERT-001` and `TC-EVAC-ORDER-001` without rewriting the
+  historical dataset, RC2, RC2.1, or the `86/105` floor. Candidate evidence
+  uses RC2.2 as the active overlay while retaining RC2 and RC2.1 as frozen
+  materials.
+- Bound V1.6 promotion ancestry with isolated `rev-list` reachability so Git
+  2.55 commit-graph false negatives and inherited `GIT_DIR` cannot reject a
+  merge commit when F and unique P are ancestors. Candidate-evidence now
+  unshallows after qualification, which can write a shallow boundary that hides
+  F while leaving HEAD unchanged. Overlays, the 86 floor, and
+  `ALLOWED_PROMOTION_PATHS` are unchanged.
 - Added a typed intent automaton as the single owner of request shape before
   `AgentQueryPlan` authorizes tools, layers, and geography.
 - Rendered live current-record answers from fetched typed official records so
@@ -41,12 +53,10 @@
   keeps a fused hit for each still-uncovered atomic aspect after rerank so a
   packet that contains both reviewed spans can ground; a one-sided packet
   stays partial.
-- A09 and A10 remain on the frozen RC2/RC2.1 exclusive `official_quote_only`
-  migrations. Current output is two-sided `structured_reviewed` coverage of
-  `TC-EVAC-ALERT-001` and `TC-EVAC-ORDER-001`. That is an explained paired
-  overlay regression from stronger reviewed structured comparison, not a
-  product defect to reverse and not an rc2.1 profile migration. The 86/105
-  floor is unchanged and still met.
+- A09 and A10 now pass under the added RC2.2 overlay as two-sided
+  `structured_reviewed` coverage of `TC-EVAC-ALERT-001` and `TC-EVAC-ORDER-001`.
+  They remain exclusive `official_quote_only` failures under frozen RC2 and
+  RC2.1. The 86/105 floor is unchanged.
 - Bound trailing `from <place>` as location scope for nearest-wildfire
   requests.
 - Bound quote-only official wording to an admitted corpus chunk identity and

@@ -24,6 +24,39 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+      - name: Ensure functional parent is an ancestor of HEAD
+        run: |
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          def git(*args: str) -> str:
+              return subprocess.check_output(["git", *args], text=True).strip()
+
+          manifest = json.loads(
+              Path("config/firelens.v1_6_release_promotion.v1.json").read_text()
+          )
+          parent = manifest["functional_parent_commit"]
+          head = git("rev-parse", "HEAD")
+          print("HEAD", head)
+          print("F", parent)
+          print("git-dir", git("rev-parse", "--git-dir"))
+          print("shallow", git("rev-parse", "--is-shallow-repository"))
+          print("log", git("log", "--oneline", "-8"))
+          leftover = git("rev-list", "--max-count=3", parent, "--not", head)
+          print("leftover", leftover or "<empty>")
+          if leftover:
+              subprocess.run(["git", "fetch", "--unshallow"], check=False)
+              subprocess.run(
+                  ["git", "fetch", "origin", parent, "main"],
+                  check=False,
+              )
+              leftover = git("rev-list", "--max-count=3", parent, "--not", head)
+              print("leftover-after-fetch", leftover or "<empty>")
+          if leftover:
+              raise SystemExit("functional parent is not an ancestor of HEAD")
+          PY
       - name: Capture exact clean starting identity
         run: |
           observed_commit="$(git rev-parse HEAD)"
@@ -147,7 +180,7 @@ jobs:
             --output candidate-inputs/structured-publication-eval.json
           structured_publication_eval=$?
           .venv/bin/python scripts/run_hard_probe.py --mode offline \
-            --expectation-profile rc2.1 \
+            --expectation-profile rc2.2 \
             --output candidate-inputs/hard-probe.json
           hard_probe_offline=$?
           .venv/bin/pip-audit -r requirements.lock --format json \
@@ -194,7 +227,7 @@ jobs:
               ),
               (
                   "hard_probe_offline",
-                  "scripts/run_hard_probe.py --mode offline --expectation-profile rc2.1 --output "
+                  "scripts/run_hard_probe.py --mode offline --expectation-profile rc2.2 --output "
                   "candidate-inputs/hard-probe.json",
               ),
               ("python_audit", "pip-audit -r requirements.lock --format json"),
@@ -224,6 +257,36 @@ jobs:
               json.dumps(payload, indent=2, sort_keys=True) + "\n",
               encoding="utf-8",
           )
+          PY
+      - name: Reconfirm promotion ancestry before evidence build
+        run: |
+          git fetch --unshallow || true
+          git fetch origin --prune --no-recurse-submodules \
+            '+refs/heads/*:refs/remotes/origin/*' || true
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          def git(*args: str) -> str:
+              return subprocess.check_output(["git", *args], text=True).strip()
+
+          parent = json.loads(
+              Path("config/firelens.v1_6_release_promotion.v1.json").read_text()
+          )["functional_parent_commit"]
+          head = git("rev-parse", "HEAD")
+          leftover = git("rev-list", "--max-count=3", parent, "--not", head)
+          print("HEAD", head)
+          print("F", parent)
+          print("git-dir", git("rev-parse", "--git-dir"))
+          print("shallow", git("rev-parse", "--is-shallow-repository"))
+          print("leftover", leftover or "<empty>")
+          if leftover:
+              subprocess.run(["git", "fetch", "origin", parent, "main"], check=False)
+              leftover = git("rev-list", "--max-count=3", parent, "--not", head)
+              print("leftover-after-fetch", leftover or "<empty>")
+          if leftover:
+              raise SystemExit("functional parent is not an ancestor of HEAD before evidence")
           PY
       - name: Build and recompute candidate-evidence v2
         id: candidate

@@ -23,6 +23,10 @@ DEFAULT_RC2_1_EXPECTATIONS = ROOT / "data/evaluation/hard_probe_rc2_1_expectatio
 DEFAULT_RC2_1_EXPECTATIONS_MANIFEST = (
     ROOT / "data/evaluation/hard_probe_rc2_1_expectations.v1.manifest.json"
 )
+DEFAULT_RC2_2_EXPECTATIONS = ROOT / "data/evaluation/hard_probe_rc2_2_expectations.v1.yaml"
+DEFAULT_RC2_2_EXPECTATIONS_MANIFEST = (
+    ROOT / "data/evaluation/hard_probe_rc2_2_expectations.v1.manifest.json"
+)
 HARD_PROBE_MINIMUM_PASSED = 86
 RC2_MIGRATION_IDS = (
     "A04",
@@ -38,6 +42,8 @@ RC2_MIGRATION_IDS = (
 )
 RC2_QUOTE_ONLY_IDS = frozenset(RC2_MIGRATION_IDS) - {"J01"}
 RC2_1_MIGRATION_IDS = (*RC2_MIGRATION_IDS, "A01")
+RC2_2_MIGRATION_IDS = RC2_1_MIGRATION_IDS
+RC2_2_STRUCTURED_TWO_SIDED_IDS = frozenset({"A09", "A10"})
 OFFICIAL_HANDOFF_ANSWER = (
     "FireLens does not have a reviewed structured claim for this high-risk question. "
     "Use the issuing authority for official wording."
@@ -52,6 +58,10 @@ RC2_HANDOFF_RATIONALE = (
 RC2_1_MIXED_RATIONALE = (
     "Accept the deterministic mixed reviewed-claim and exact-official-quote response "
     "for the requested grab-and-go contents."
+)
+RC2_2_TWO_SIDED_RATIONALE = (
+    "Accept the deterministic two-sided structured_reviewed coverage of the reviewed "
+    "evacuation-alert and evacuation-order claims."
 )
 
 
@@ -116,7 +126,7 @@ class HardProbeExpectationMigration(ProbeModel):
 
 class HardProbeExpectationOverlay(ProbeModel):
     schema_version: Literal["firelens.hard_probe_expectations.v1"]
-    profile: Literal["rc2", "rc2.1"]
+    profile: Literal["rc2", "rc2.1", "rc2.2"]
     base_dataset_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     minimum_passed: int
     migrations: list[HardProbeExpectationMigration] = Field(min_length=10, max_length=11)
@@ -143,7 +153,7 @@ class HardProbeExpectationOverlay(ProbeModel):
 
 class HardProbeExpectationManifest(ProbeModel):
     schema_version: Literal["firelens.hard_probe_expectations_manifest.v1"]
-    profile: Literal["rc2", "rc2.1"]
+    profile: Literal["rc2", "rc2.1", "rc2.2"]
     expectations_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     base_dataset_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     migration_count: int
@@ -165,7 +175,7 @@ class HardProbeExpectationManifest(ProbeModel):
 
 
 class LoadedExpectationProfile(ProbeModel):
-    profile: Literal["historical", "rc2", "rc2.1"]
+    profile: Literal["historical", "rc2", "rc2.1", "rc2.2"]
     base_dataset_sha256: str
     minimum_passed: int
     expectation_overlay_sha256: str | None
@@ -173,8 +183,22 @@ class LoadedExpectationProfile(ProbeModel):
 
 
 def _expected_profile_migration(
-    profile: Literal["rc2", "rc2.1"], case_id: str
+    profile: Literal["rc2", "rc2.1", "rc2.2"], case_id: str
 ) -> dict[str, Any]:
+    if profile == "rc2.2" and case_id in RC2_2_STRUCTURED_TWO_SIDED_IDS:
+        return {
+            "id": case_id,
+            "add_allowed_modes": ["partial"],
+            "required_publication_kinds": ["structured_reviewed"],
+            "require_validation_accepted": True,
+            "require_exact_quote_support": True,
+            "require_zero_generation": True,
+            "require_zero_claims": False,
+            "require_zero_evidence": False,
+            "require_official_handoff": False,
+            "required_reason_code": None,
+            "rationale": RC2_2_TWO_SIDED_RATIONALE,
+        }
     if case_id in RC2_QUOTE_ONLY_IDS:
         return {
             "id": case_id,
@@ -203,7 +227,7 @@ def _expected_profile_migration(
             "required_reason_code": "high_risk_claim_not_structured",
             "rationale": RC2_HANDOFF_RATIONALE,
         }
-    if profile == "rc2.1" and case_id == "A01":
+    if profile in {"rc2.1", "rc2.2"} and case_id == "A01":
         return {
             "id": case_id,
             "add_allowed_modes": ["partial"],
@@ -251,7 +275,7 @@ def load_dataset(path: Path, manifest_path: Path) -> HardProbeDataset:
 
 
 def load_expectation_profile(
-    profile: Literal["historical", "rc2", "rc2.1"],
+    profile: Literal["historical", "rc2", "rc2.1", "rc2.2"],
     dataset: HardProbeDataset,
     *,
     dataset_path: Path = DEFAULT_DATASET,
@@ -259,6 +283,8 @@ def load_expectation_profile(
     rc2_manifest_path: Path = DEFAULT_RC2_EXPECTATIONS_MANIFEST,
     rc2_1_expectations_path: Path = DEFAULT_RC2_1_EXPECTATIONS,
     rc2_1_manifest_path: Path = DEFAULT_RC2_1_EXPECTATIONS_MANIFEST,
+    rc2_2_expectations_path: Path = DEFAULT_RC2_2_EXPECTATIONS,
+    rc2_2_manifest_path: Path = DEFAULT_RC2_2_EXPECTATIONS_MANIFEST,
 ) -> LoadedExpectationProfile:
     """Load a repository-owned named overlay, failing closed on every binding."""
 
@@ -271,11 +297,18 @@ def load_expectation_profile(
             expectation_overlay_sha256=None,
             migrations={},
         )
-    if profile not in {"rc2", "rc2.1"}:
+    if profile not in {"rc2", "rc2.1", "rc2.2"}:
         raise ValueError(f"unknown hard-probe expectation profile: {profile}")
 
-    expectations_path = rc2_expectations_path if profile == "rc2" else rc2_1_expectations_path
-    manifest_path = rc2_manifest_path if profile == "rc2" else rc2_1_manifest_path
+    if profile == "rc2":
+        expectations_path = rc2_expectations_path
+        manifest_path = rc2_manifest_path
+    elif profile == "rc2.1":
+        expectations_path = rc2_1_expectations_path
+        manifest_path = rc2_1_manifest_path
+    else:
+        expectations_path = rc2_2_expectations_path
+        manifest_path = rc2_2_manifest_path
     expectations_sha256 = file_sha256(expectations_path)
     manifest = HardProbeExpectationManifest.model_validate(
         json.loads(manifest_path.read_text(encoding="utf-8"))

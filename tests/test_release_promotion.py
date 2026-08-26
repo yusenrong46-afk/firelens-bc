@@ -77,8 +77,7 @@ def test_current_version_surfaces_are_internally_consistent() -> None:
 
 
 def test_promoted_checkout_binds_the_internal_manifest() -> None:
-    if DEFAULT_RELEASE_VERSION != TO_VERSION:
-        return
+    assert DEFAULT_RELEASE_VERSION == TO_VERSION
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     tree = subprocess.check_output(
         ["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True
@@ -117,11 +116,22 @@ def test_promoted_merge_commit_binds_functional_parent_as_ancestor() -> None:
     assert report["functional_parent_commit"] == manifest["functional_parent_commit"]
     assert report["functional_parent_tree"] == manifest["functional_parent_tree"]
     assert report["promotion_commit"] == "1702db85ae32871c7bd9d5a9b27c3116a6a26176"
-    subprocess.run(
-        ["git", "merge-base", "--is-ancestor", report["promotion_commit"], commit],
-        cwd=ROOT,
-        check=True,
-    )
+    reachable = subprocess.check_output(
+        [
+            "git",
+            "-C",
+            str(ROOT),
+            "-c",
+            "core.commitGraph=false",
+            "rev-list",
+            "--max-count=1",
+            report["promotion_commit"],
+            "--not",
+            commit,
+        ],
+        text=True,
+    ).strip()
+    assert reachable == ""
 
 
 def test_promotion_validator_rejects_a_non_head_commit() -> None:
@@ -190,6 +200,24 @@ def test_functional_parent_binding_uses_ancestry_not_first_parent(tmp_path: Path
         repo, parent_commit=functional, parent_tree=functional_tree, commit=merge
     )
     assert unique_promotion_commit(repo, parent_commit=functional, commit=merge) == promotion
+    decoy = tmp_path / "decoy"
+    decoy.mkdir()
+    subprocess.run(["git", "init"], cwd=decoy, check=True, capture_output=True, text=True)
+    _empty_git_commit(decoy, "decoy", env)
+    previous_git_dir = os.environ.get("GIT_DIR")
+    os.environ["GIT_DIR"] = str(decoy / ".git")
+    try:
+        bind_functional_parent(
+            repo, parent_commit=functional, parent_tree=functional_tree, commit=merge
+        )
+        assert (
+            unique_promotion_commit(repo, parent_commit=functional, commit=merge) == promotion
+        )
+    finally:
+        if previous_git_dir is None:
+            os.environ.pop("GIT_DIR", None)
+        else:
+            os.environ["GIT_DIR"] = previous_git_dir
     later = _empty_git_commit(repo, "later main fix", env)
     assert unique_promotion_commit(repo, parent_commit=functional, commit=later) == promotion
     first_after_later = subprocess.check_output(

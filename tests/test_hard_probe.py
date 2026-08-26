@@ -8,6 +8,11 @@ from pathlib import Path
 
 import yaml
 
+from firelens.evaluation.hard_probe_expectations import (
+    DEFAULT_RC2_2_EXPECTATIONS,
+    DEFAULT_RC2_2_EXPECTATIONS_MANIFEST,
+    RC2_2_MIGRATION_IDS,
+)
 from scripts.run_hard_probe import (
     DEFAULT_RC2_1_EXPECTATIONS,
     DEFAULT_RC2_1_EXPECTATIONS_MANIFEST,
@@ -128,6 +133,45 @@ class HardProbeDatasetTests(unittest.TestCase):
         )
         self.assertEqual(manifest["migration_count"], 11)
 
+    def test_named_rc2_2_profile_is_hash_bound_and_migrates_only_a09_a10(self) -> None:
+        dataset = load_dataset(self.dataset_path, self.manifest_path)
+        rc2_1 = load_expectation_profile("rc2.1", dataset, dataset_path=self.dataset_path)
+        rc2_2 = load_expectation_profile("rc2.2", dataset, dataset_path=self.dataset_path)
+
+        self.assertEqual(
+            rc2_2.expectation_overlay_sha256,
+            file_sha256(DEFAULT_RC2_2_EXPECTATIONS),
+        )
+        self.assertEqual(tuple(rc2_2.migrations), RC2_2_MIGRATION_IDS)
+        self.assertEqual(tuple(rc2_2.migrations), tuple(rc2_1.migrations))
+        self.assertEqual(
+            rc2_1.migrations["A09"].required_publication_kinds,
+            ["official_quote_only"],
+        )
+        self.assertEqual(
+            rc2_2.migrations["A09"].required_publication_kinds,
+            ["structured_reviewed"],
+        )
+        self.assertEqual(
+            rc2_2.migrations["A10"].required_publication_kinds,
+            ["structured_reviewed"],
+        )
+        self.assertEqual(
+            rc2_1.migrations["A01"].required_publication_kinds,
+            rc2_2.migrations["A01"].required_publication_kinds,
+        )
+        effective = effective_expectations_payload(dataset, rc2_2)
+        self.assertEqual(
+            canonical_json_sha256(effective),
+            "7c009b40dbf43e1a455f14de5d6f67da06c65c7784c88e353ca2330d9d942215",
+        )
+        manifest = json.loads(DEFAULT_RC2_2_EXPECTATIONS_MANIFEST.read_text())
+        self.assertEqual(
+            manifest["expectations_sha256"], file_sha256(DEFAULT_RC2_2_EXPECTATIONS)
+        )
+        self.assertEqual(manifest["migration_count"], 11)
+        self.assertEqual(manifest["profile"], "rc2.2")
+
     def test_rc2_profile_fails_closed_on_contract_drift(self) -> None:
         dataset = load_dataset(self.dataset_path, self.manifest_path)
         source_overlay = yaml.safe_load(DEFAULT_RC2_EXPECTATIONS.read_text(encoding="utf-8"))
@@ -202,6 +246,27 @@ class HardProbeDatasetTests(unittest.TestCase):
                     dataset_path=self.dataset_path,
                     rc2_1_expectations_path=overlay_path,
                     rc2_1_manifest_path=manifest_path,
+                )
+
+    def test_rc2_2_profile_fails_closed_on_a09_contract_drift(self) -> None:
+        dataset = load_dataset(self.dataset_path, self.manifest_path)
+        overlay = yaml.safe_load(DEFAULT_RC2_2_EXPECTATIONS.read_text(encoding="utf-8"))
+        manifest = json.loads(DEFAULT_RC2_2_EXPECTATIONS_MANIFEST.read_text(encoding="utf-8"))
+        a09 = next(item for item in overlay["migrations"] if item["id"] == "A09")
+        a09["required_publication_kinds"] = ["official_quote_only"]
+        with tempfile.TemporaryDirectory() as directory:
+            overlay_path = Path(directory) / "expectations.yaml"
+            manifest_path = Path(directory) / "manifest.json"
+            overlay_path.write_text(yaml.safe_dump(overlay, sort_keys=False), encoding="utf-8")
+            manifest["expectations_sha256"] = file_sha256(overlay_path)
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "not frozen"):
+                load_expectation_profile(
+                    "rc2.2",
+                    dataset,
+                    dataset_path=self.dataset_path,
+                    rc2_2_expectations_path=overlay_path,
+                    rc2_2_manifest_path=manifest_path,
                 )
 
     def test_rc2_migration_invariants_are_independently_reported(self) -> None:
@@ -298,6 +363,10 @@ class HardProbeDatasetTests(unittest.TestCase):
             parse_args(["--expectation-profile", "rc2.1"]).expectation_profile,
             "rc2.1",
         )
+        self.assertEqual(
+            parse_args(["--expectation-profile", "rc2.2"]).expectation_profile,
+            "rc2.2",
+        )
         with self.assertRaises(SystemExit):
             parse_args(["--expectation-profile", "./custom.yaml"])
 
@@ -384,6 +453,58 @@ class HardProbeDatasetTests(unittest.TestCase):
             all(check["passed"] for check in row["semantic_checks"]["migration_invariants"])
         )
 
+    def test_a09_remains_failed_under_rc2_1_and_passes_under_rc2_2(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            rc2_1_output = Path(directory) / "rc2-1.json"
+            rc2_1_args = parse_args(
+                [
+                    "--mode",
+                    "offline",
+                    "--expectation-profile",
+                    "rc2.1",
+                    "--case-id",
+                    "A09",
+                    "--output",
+                    str(rc2_1_output),
+                ]
+            )
+            self.assertEqual(asyncio.run(run_probe(rc2_1_args)), 1)
+            rc2_1_report = json.loads(rc2_1_output.read_text(encoding="utf-8"))
+
+            rc2_2_output = Path(directory) / "rc2-2.json"
+            rc2_2_args = parse_args(
+                [
+                    "--mode",
+                    "offline",
+                    "--expectation-profile",
+                    "rc2.2",
+                    "--case-id",
+                    "A09",
+                    "--case-id",
+                    "A10",
+                    "--output",
+                    str(rc2_2_output),
+                ]
+            )
+            self.assertEqual(asyncio.run(run_probe(rc2_2_args)), 0)
+            rc2_2_report = json.loads(rc2_2_output.read_text(encoding="utf-8"))
+
+        self.assertFalse(rc2_1_report["results"][0]["passed"])
+        for row in rc2_2_report["results"]:
+            self.assertTrue(row["passed"], row["id"])
+            self.assertEqual(row["response_mode"], "grounded")
+            typed_ids = {
+                claim["publication"]["typed_claim_id"] for claim in row["response"]["claims"]
+            }
+            self.assertEqual(typed_ids, {"TC-EVAC-ALERT-001", "TC-EVAC-ORDER-001"})
+            self.assertEqual(
+                {claim["publication"]["kind"] for claim in row["response"]["claims"]},
+                {"structured_reviewed"},
+            )
+            self.assertTrue(
+                all(check["passed"] for check in row["semantic_checks"]["migration_invariants"])
+            )
+
     def test_a02_semantic_invariant_rejects_one_sided_grounded_comparison(self) -> None:
         dataset = load_dataset(self.dataset_path, self.manifest_path)
         case = next(item for item in dataset.cases if item.id == "A02")
@@ -459,4 +580,16 @@ class HardProbeDatasetTests(unittest.TestCase):
         self.assertFalse(
             any("missing-aspect limitation" in issue for issue in partial_issues),
             partial_issues,
+        )
+
+        a09 = next(item for item in dataset.cases if item.id == "A09")
+        a09_issues = _semantic_checks(a09, one_sided)
+        self.assertTrue(
+            any("two-sided structured alert and order" in issue for issue in a09_issues),
+            a09_issues,
+        )
+        a09_both = _semantic_checks(a09, both_sides)
+        self.assertFalse(
+            any("two-sided structured alert and order" in issue for issue in a09_both),
+            a09_both,
         )

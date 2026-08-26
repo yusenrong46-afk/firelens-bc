@@ -11,6 +11,9 @@ from typing import Any
 import yaml
 
 from firelens.evaluation.candidate_evidence_common import (
+    HARD_PROBE_ACTIVE_QUOTE_ONLY_IDS,
+    HARD_PROBE_FROZEN_RC2_1_PROFILE_MANIFEST_PATH,
+    HARD_PROBE_FROZEN_RC2_1_PROFILE_PATH,
     HARD_PROBE_FROZEN_RC2_PROFILE_MANIFEST_PATH,
     HARD_PROBE_FROZEN_RC2_PROFILE_PATH,
     HARD_PROBE_MIGRATED_IDS,
@@ -20,6 +23,7 @@ from firelens.evaluation.candidate_evidence_common import (
     HARD_PROBE_PROFILE_PATH,
     HARD_PROBE_QUOTE_ONLY_MIGRATED_IDS,
     HARD_PROBE_RC2_MIGRATED_IDS,
+    HARD_PROBE_STRUCTURED_TWO_SIDED_IDS,
     REQUIRED_COMMAND_POLICIES,
     file_record,
     load_json,
@@ -28,6 +32,7 @@ from firelens.evaluation.candidate_evidence_common import (
     validate_mixed_migration,
     validate_quote_only_migration,
     validate_report_semantic_checks,
+    validate_structured_two_sided_migration,
 )
 
 
@@ -300,11 +305,27 @@ def _profile_case_inputs(root: Path) -> tuple[list[dict[str, Any]], dict[str, An
     return normalized_cases, {"dataset_sha256": base_hash}
 
 
-def _validate_migration(value: Any) -> dict[str, Any]:
+def _validate_migration(value: Any, *, profile_name: str) -> dict[str, Any]:
     migration = exact_object(value, _MIGRATION_FIELDS, "hard-probe profile migration")
     case_id = nonempty_string(migration["id"], "hard-probe profile migration id")
     nonempty_string(migration["rationale"], f"hard-probe profile migration {case_id} rationale")
-    if case_id in HARD_PROBE_QUOTE_ONLY_MIGRATED_IDS:
+    if profile_name == "rc2.2" and case_id in HARD_PROBE_STRUCTURED_TWO_SIDED_IDS:
+        expected = {
+            "add_allowed_modes": ["partial"],
+            "required_publication_kinds": ["structured_reviewed"],
+            "require_validation_accepted": True,
+            "require_exact_quote_support": True,
+            "require_zero_generation": True,
+            "require_zero_claims": False,
+            "require_zero_evidence": False,
+            "require_official_handoff": False,
+            "required_reason_code": None,
+            "rationale": (
+                "Accept the deterministic two-sided structured_reviewed coverage of the "
+                "reviewed evacuation-alert and evacuation-order claims."
+            ),
+        }
+    elif case_id in HARD_PROBE_QUOTE_ONLY_MIGRATED_IDS:
         expected = {
             "add_allowed_modes": ["partial"],
             "required_publication_kinds": ["official_quote_only"],
@@ -385,7 +406,9 @@ def _load_named_profile(
         or not isinstance(profile["migrations"], list)
     ):
         raise ValueError("hard-probe expectation profile identity or floor is invalid")
-    migrations = [_validate_migration(item) for item in profile["migrations"]]
+    migrations = [
+        _validate_migration(item, profile_name=profile_name) for item in profile["migrations"]
+    ]
     migration_ids = [item["id"] for item in migrations]
     if migration_ids != list(expected_migration_ids):
         raise ValueError("hard-probe expectation profile migration roster is invalid")
@@ -423,6 +446,14 @@ def _load_hard_probe_profile(root: Path) -> dict[str, Any]:
         profile_relative_path=HARD_PROBE_FROZEN_RC2_PROFILE_PATH,
         manifest_relative_path=HARD_PROBE_FROZEN_RC2_PROFILE_MANIFEST_PATH,
         expected_migration_ids=HARD_PROBE_RC2_MIGRATED_IDS,
+    )
+    _load_named_profile(
+        root,
+        base_hash=base_hash,
+        profile_name="rc2.1",
+        profile_relative_path=HARD_PROBE_FROZEN_RC2_1_PROFILE_PATH,
+        manifest_relative_path=HARD_PROBE_FROZEN_RC2_1_PROFILE_MANIFEST_PATH,
+        expected_migration_ids=HARD_PROBE_MIGRATED_IDS,
     )
     migrations, profile_hash = _load_named_profile(
         root,
@@ -585,10 +616,12 @@ def validate_hard_probe(
                 f"exact-run hard-probe effective expectations are invalid: {case_id}"
             )
         validate_report_semantic_checks(row, case_id=case_id)
-    for case_id in sorted(HARD_PROBE_QUOTE_ONLY_MIGRATED_IDS):
+    for case_id in sorted(HARD_PROBE_ACTIVE_QUOTE_ONLY_IDS):
         validate_quote_only_migration(rows[case_id], case_id=case_id)
     for case_id in sorted(HARD_PROBE_MIXED_MIGRATED_IDS):
         validate_mixed_migration(rows[case_id], case_id=case_id)
+    for case_id in sorted(HARD_PROBE_STRUCTURED_TWO_SIDED_IDS):
+        validate_structured_two_sided_migration(rows[case_id], case_id=case_id)
     validate_handoff_migration(rows["J01"])
 
     regressions = sorted(baseline_passed - passed - set(HARD_PROBE_MIGRATED_IDS))
