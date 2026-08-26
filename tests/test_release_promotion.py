@@ -77,8 +77,7 @@ def test_current_version_surfaces_are_internally_consistent() -> None:
 
 
 def test_promoted_checkout_binds_the_internal_manifest() -> None:
-    if DEFAULT_RELEASE_VERSION != TO_VERSION:
-        return
+    assert DEFAULT_RELEASE_VERSION == TO_VERSION
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     tree = subprocess.check_output(
         ["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True

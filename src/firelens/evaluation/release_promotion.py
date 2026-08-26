@@ -203,8 +203,14 @@ def bind_functional_parent(
     observed_parent_tree = _git(root, "rev-parse", f"{parent_commit}^{{tree}}")
     if observed_parent_tree != parent_tree:
         raise ValueError("functional parent tree does not match the promotion manifest")
-    if _git(root, "rev-list", "--max-count=1", parent_commit, "--not", commit):
-        raise ValueError("functional parent does not precede the promotion commit")
+    leftover = _git(root, "rev-list", "--max-count=1", parent_commit, "--not", commit)
+    if leftover:
+        git_dir = _git(root, "rev-parse", "--git-dir")
+        shallow = _git(root, "rev-parse", "--is-shallow-repository")
+        raise ValueError(
+            "functional parent does not precede the promotion commit "
+            f"(leftover={leftover} git_dir={git_dir} shallow={shallow} root={root})"
+        )
 
 
 def unique_promotion_commit(root: Path, *, parent_commit: str, commit: str) -> str:
