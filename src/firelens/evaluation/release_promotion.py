@@ -176,6 +176,46 @@ def _git(root: Path, *args: str) -> str:
     return completed.stdout.strip()
 
 
+def bind_functional_parent(
+    root: Path, *, parent_commit: str, parent_tree: str, commit: str
+) -> None:
+    """Require the recorded functional parent to precede this commit in Git.
+
+    After a merge to main, first-parent HEAD^ is the previous main tip, not the
+    promotion parent. Ancestry plus an exact parent-tree match is the
+    merge-safe identity check. It does not relax the allowlisted tree diff.
+    """
+
+    if COMMIT_RE.fullmatch(parent_commit) is None or COMMIT_RE.fullmatch(parent_tree) is None:
+        raise ValueError("functional parent identities must be full lowercase Git SHAs")
+    observed_parent_tree = _git(root, "rev-parse", f"{parent_commit}^{{tree}}")
+    if observed_parent_tree != parent_tree:
+        raise ValueError("functional parent tree does not match the promotion manifest")
+    completed = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", parent_commit, commit],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        raise ValueError("functional parent does not precede the promotion commit")
+
+
+def unique_promotion_commit(root: Path, *, parent_commit: str, commit: str) -> str:
+    """Return the unique descendant whose first parent is the functional parent."""
+
+    listing = _git(root, "rev-list", "--parents", f"{parent_commit}..{commit}")
+    matches: list[str] = []
+    for line in listing.splitlines():
+        parts = line.split()
+        if len(parts) >= 2 and parts[1] == parent_commit:
+            matches.append(parts[0])
+    if len(matches) != 1:
+        raise ValueError("functional parent does not precede a unique promotion commit")
+    return matches[0]
+
+
 def validate_release_promotion(
     root: Path,
     *,
@@ -250,18 +290,27 @@ def validate_release_promotion(
         head_tree = _git(root, "rev-parse", "HEAD^{tree}")
         if head != commit or head_tree != tree:
             raise ValueError("release-promotion checkout does not match candidate identity")
-        observed_parent = _git(root, "rev-parse", "HEAD^")
-        observed_parent_tree = _git(root, "rev-parse", "HEAD^^{tree}")
-        if observed_parent != parent_commit or observed_parent_tree != parent_tree:
-            raise ValueError("functional parent does not precede the promotion commit")
+        bind_functional_parent(
+            root,
+            parent_commit=parent_commit,
+            parent_tree=parent_tree,
+            commit=commit,
+        )
+        promotion_commit = unique_promotion_commit(
+            root, parent_commit=parent_commit, commit=commit
+        )
         changed = [
             line
-            for line in _git(root, "diff", "--name-only", parent_commit, commit).splitlines()
+            for line in _git(
+                root, "diff", "--name-only", parent_commit, promotion_commit
+            ).splitlines()
             if line
         ]
         extra = [path for path in changed if path not in ALLOWED_PROMOTION_PATHS]
         if extra:
             raise ValueError("promotion diff contains non-allowlisted paths")
+    else:
+        promotion_commit = None
     return {
         "schema_version": SCHEMA_VERSION,
         "from_version": FROM_VERSION,
@@ -269,6 +318,7 @@ def validate_release_promotion(
         "frozen_standard_sha256": observed_standard,
         "functional_parent_commit": parent_commit,
         "functional_parent_tree": parent_tree,
+        "promotion_commit": promotion_commit,
         "allowed_paths": list(ALLOWED_PROMOTION_PATHS),
         "version_surfaces": surfaces,
     }
