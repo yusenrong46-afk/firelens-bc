@@ -9,7 +9,7 @@ geography and source layers a request may use.
 
 ![FireLens BC answer-first workspace for asking about a fire, a B.C. place, or preparedness](docs/assets/firelens-v1-6-overview.jpg)
 
-_Deterministic local demonstration data, not a current wildfire or evacuation report._
+_Deterministic local demonstration data, not a current wildfire or evacuation report. Screenshot captured from this V1.6 candidate (`docs/assets/firelens-v1-6-overview.jpg`), not from the public site._
 
 > **Project status:** the V1.6 RC2 hardening and qualification campaign is
 > integrated in this engineering candidate; the public package and API identity is `1.6.0`.

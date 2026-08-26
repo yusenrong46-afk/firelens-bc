@@ -39,6 +39,7 @@ from firelens.live_support import (
     WGS84_GEOD,
     _BBox,
     _CacheKey,
+    bc_region_entry,
 )
 from firelens.live_support import (
     GEOCODER_ACCEPTED_PRECISIONS as GEOCODER_ACCEPTED_PRECISIONS,
@@ -653,10 +654,15 @@ class LiveDataService:
         layers: tuple[LiveResultKind, ...],
     ) -> tuple[LiveMapResponse, float, float, _BBox]:
         latitude, longitude = await self.resolve_location(location)
-        west = WGS84_GEOD.fwd(longitude, latitude, 270, location.radius_km * 1_000)[0]
-        east = WGS84_GEOD.fwd(longitude, latitude, 90, location.radius_km * 1_000)[0]
-        south = WGS84_GEOD.fwd(longitude, latitude, 180, location.radius_km * 1_000)[1]
-        north = WGS84_GEOD.fwd(longitude, latitude, 0, location.radius_km * 1_000)[1]
+        radius_km = location.radius_km
+        if location.label:
+            region = bc_region_entry(location.label)
+            if region is not None:
+                radius_km = region.radius_km
+        west = WGS84_GEOD.fwd(longitude, latitude, 270, radius_km * 1_000)[0]
+        east = WGS84_GEOD.fwd(longitude, latitude, 90, radius_km * 1_000)[0]
+        south = WGS84_GEOD.fwd(longitude, latitude, 180, radius_km * 1_000)[1]
+        north = WGS84_GEOD.fwd(longitude, latitude, 0, radius_km * 1_000)[1]
         bbox = (west, south, east, north)
         response = await self.map_results(
             layers=layers,
@@ -669,7 +675,7 @@ class LiveDataService:
                 result.geometry,
                 latitude=latitude,
                 longitude=longitude,
-                radius_km=location.radius_km,
+                radius_km=radius_km,
             )
             if relation == GeometryRelation.UNKNOWN:
                 unknown_located = True

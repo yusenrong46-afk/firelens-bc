@@ -42,6 +42,20 @@ UNCOVERED_LIMITATION = (
 MISSING_ASPECT_LIMITATION_PREFIX = "Not supported by selected evidence: "
 
 
+def explanation_authority() -> PublicationAuthority:
+    return PublicationAuthority(
+        kind=PublicationKind.SOURCE_LINKED_EXPLANATION,
+        review_status="none",
+        renderer_id="firelens.grounded_generator.v1",
+        support_provenance="validated_generated_explanation",
+        risk_tier=RiskTier.C.value,
+    )
+
+
+def background_authority() -> PublicationAuthority:
+    return PublicationAuthority(kind=PublicationKind.GENERAL_BACKGROUND)
+
+
 def admitted_official_quote_source(
     item: PublicEvidence | EvidenceSpan | None,
     quote: str = "",

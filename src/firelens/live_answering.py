@@ -25,6 +25,7 @@ from firelens.answering.live_request_intent import (
 )
 from firelens.answering.live_response_support import (
     freshness_limitation,
+    records_section_heading,
     unique_limitations,
 )
 from firelens.answering.live_static_request import extract_static_request
@@ -437,7 +438,7 @@ class LiveAnswerCoordinator:
                 answer_sections=[
                     _section(
                         AnswerSectionKind.CURRENT_RECORDS,
-                        "Current official records",
+                        records_section_heading(aggregate_freshness),
                         live_answer,
                     ),
                     _section(
@@ -488,7 +489,7 @@ class LiveAnswerCoordinator:
                 answer_sections=[
                     _section(
                         AnswerSectionKind.CURRENT_RECORDS,
-                        "Current official records",
+                        records_section_heading(aggregate_freshness),
                         live_answer,
                     ),
                     _section(
@@ -533,7 +534,7 @@ class LiveAnswerCoordinator:
                 answer_sections=[
                     _section(
                         AnswerSectionKind.CURRENT_RECORDS,
-                        "Current official records",
+                        records_section_heading(aggregate_freshness),
                         live_answer,
                     ),
                     _section(
@@ -592,7 +593,7 @@ class LiveAnswerCoordinator:
                 answer_sections=[
                     _section(
                         AnswerSectionKind.CURRENT_RECORDS,
-                        "Current official records",
+                        records_section_heading(aggregate_freshness),
                         live_answer,
                     ),
                     _section(
@@ -626,7 +627,9 @@ class LiveAnswerCoordinator:
             answer=live_answer + unsupported_suffix,
             answer_sections=[
                 _section(
-                    AnswerSectionKind.CURRENT_RECORDS, "Current official records", live_answer
+                    AnswerSectionKind.CURRENT_RECORDS,
+                    records_section_heading(aggregate_freshness),
+                    live_answer,
                 ),
                 *unsupported_sections,
             ],

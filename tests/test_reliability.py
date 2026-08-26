@@ -34,7 +34,7 @@ from firelens.contracts import (
     bounded_assistant_history,
 )
 from firelens.errors import IndexValidationError
-from firelens.publication.compiler import background_authority, explanation_authority
+from firelens.publication.fallback import background_authority, explanation_authority
 from firelens.retrieval.embeddings import load_embedding_cache
 from firelens.retrieval.hybrid import reciprocal_rank_fusion
 from firelens.retrieval.vector import retrieval_hit_from_chunk

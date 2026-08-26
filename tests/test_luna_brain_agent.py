@@ -47,7 +47,8 @@ from firelens.contracts import (
 from firelens.live import LiveDataErrorKind, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
 from firelens.live_contracts import bind_distance_derivation
-from firelens.publication.compiler import compile_structured_claim, explanation_authority
+from firelens.publication.compiler import compile_structured_claim
+from firelens.publication.fallback import explanation_authority
 
 
 def _timestamp() -> datetime:

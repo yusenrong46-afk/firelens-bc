@@ -28,7 +28,7 @@ from firelens.contracts import (
     RetrievalTextStrategy,
 )
 from firelens.providers.fake import FakeProvider
-from firelens.publication.compiler import background_authority, explanation_authority
+from firelens.publication.fallback import background_authority, explanation_authority
 from firelens.retrieval.embeddings import build_vector_index
 from firelens.retrieval.pipeline import RetrievalPipeline
 from firelens.runtime import load_runtime

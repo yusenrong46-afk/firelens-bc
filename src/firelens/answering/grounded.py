@@ -14,6 +14,7 @@ from firelens.answering.generate import (
     generation_messages,
     repair_generation_messages,
 )
+from firelens.answering.intent import reviewed_guidance_intent
 from firelens.answering.risk_policy import RiskTier
 from firelens.answering.typed_snapshot import classify_text
 from firelens.answering.validate import salvage_valid_grounded_claims, validate_draft
@@ -41,9 +42,9 @@ from firelens.errors import ProviderError
 from firelens.providers.base import AIProvider
 from firelens.publication.compiler import (
     compile_high_risk_answer,
-    explanation_authority,
     packet_requires_structured,
 )
+from firelens.publication.fallback import explanation_authority, official_handoff_response
 
 MAX_REPAIR_COUNT = 1
 
@@ -111,6 +112,35 @@ def _validation_failure(message: str) -> ValidationReport:
         policy_valid=False,
         errors=[message],
     )
+
+
+def compile_without_generation(
+    question: str,
+    packet: EvidencePacket | None,
+    *,
+    trace_id: str,
+    supported_aspects: Sequence[str] = (),
+    force_partial: bool = False,
+) -> AskResponse | None:
+    """Compile a high-risk answer or handoff instead of calling a generator."""
+
+    if packet is None:
+        return (
+            official_handoff_response(trace_id) if reviewed_guidance_intent(question) else None
+        )
+    if not packet_requires_structured(packet, question) and not reviewed_guidance_intent(
+        question
+    ):
+        return None
+    response = compile_high_risk_answer(
+        question,
+        packet,
+        trace_id=trace_id,
+        supported_aspects=supported_aspects,
+    )
+    if force_partial and response.response_mode == ResponseMode.GROUNDED:
+        return response.model_copy(update={"response_mode": ResponseMode.PARTIAL})
+    return response
 
 
 class GroundedAnswerEngine:

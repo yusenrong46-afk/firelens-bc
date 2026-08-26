@@ -393,6 +393,10 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("current", response.answer.casefold())
         self.assertNotIn("latest", response.answer.casefold())
         self.assertTrue(any("stale cached" in item.casefold() for item in response.limitations))
+        self.assertEqual(
+            response.answer_sections[0].heading,
+            "Official records with mixed freshness",
+        )
 
     async def test_missing_location_requests_input_before_live_fetch(self) -> None:
         live_service = UnexpectedLiveService()

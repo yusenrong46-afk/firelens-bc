@@ -24,17 +24,22 @@ from firelens.answering.generate import (
     background_messages,
     background_schema,
 )
-from firelens.answering.grounded import GenerationObservation, GroundedAnswerEngine
+from firelens.answering.grounded import (
+    GenerationObservation,
+    GroundedAnswerEngine,
+    compile_without_generation,
+)
 from firelens.answering.intent import (
     SUGGESTED_QUESTIONS,
     TOPIC_CATALOGUE,
     apply_planning_decision,
     plan_query,
+    publication_question,
     resolved_user_question,
-    reviewed_guidance_intent,
+    reviewed_guidance_plan,
+    skips_provider_planning,
 )
 from firelens.answering.planner import planning_messages, planning_schema
-from firelens.answering.request_facets import contents_request_facet
 from firelens.answering.responses import (
     conflict_response as _conflict_response,
 )
@@ -69,7 +74,6 @@ from firelens.contracts import (
     BackgroundDraft,
     EvidencePacket,
     EvidenceStatus,
-    PlanningDecision,
     PlanningResponse,
     PublicClaim,
     QueryPlan,
@@ -88,8 +92,7 @@ from firelens.errors import ProviderError
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.operational_logging import log_operation
 from firelens.providers.base import AIProvider
-from firelens.publication.comparison_targets import alert_order_comparison_targets
-from firelens.publication.compiler import background_authority
+from firelens.publication.fallback import background_authority
 from firelens.retrieval.bm25 import BM25Index
 from firelens.retrieval.pipeline import RetrievalPipeline
 from firelens.traces import TraceRecorder, project_ask_trace_details
@@ -188,48 +191,6 @@ class StaticRAGService:
             return refined.bundle, refined.packet
         return bundle, packet
 
-    @staticmethod
-    def _reviewed_guidance_plan(plan: QueryPlan) -> QueryPlan:
-        contents_facet = contents_request_facet(plan.original_question)
-        retrieval_query = (
-            contents_facet.retrieval_query
-            if contents_facet is not None
-            else plan.normalized_question
-        )
-        if len(plan.original_question) <= 160:
-            required_aspect = plan.original_question
-        elif contents_facet is not None:
-            # Keep the same syntactically derived container target used for
-            # retrieval. PlanningDecision deliberately caps an aspect at 160
-            # characters, so a long preamble must not make this fail closed
-            # before retrieval starts.
-            required_aspect = contents_facet.retrieval_query
-        else:
-            # focused_question() has already reduced constructed long-preamble
-            # inputs to their final explicit question. Preserve that earlier
-            # deterministic behavior for every non-contents guidance request.
-            required_aspect = plan.normalized_question
-        if len(required_aspect) > 160:
-            # QueryPlan accepts a wider normalized question than the planning
-            # contract. This final bound prevents a 161--500 character stable-
-            # guidance request from raising a schema exception. It is used only
-            # after the semantic targets above have been selected.
-            required_aspect = required_aspect[:160].rstrip()
-        atomic = alert_order_comparison_targets(plan.original_question)
-        retrieval_queries = list(dict.fromkeys([retrieval_query, *atomic]))[:3]
-        required_aspects = list(atomic) or [required_aspect]
-        return apply_planning_decision(
-            plan,
-            PlanningDecision(
-                relation=QueryRelation.GROUNDED_CANDIDATE,
-                retrieval_queries=retrieval_queries,
-                required_aspects=required_aspects,
-                explanation=(
-                    "A deterministic reviewed-guidance intent used bounded corpus retrieval."
-                ),
-            ),
-        )
-
     async def _record_ask(
         self,
         request: QueryRequest,
@@ -309,8 +270,11 @@ class StaticRAGService:
         planning: PlanningResponse | None = None
         packet: EvidencePacket | None = None
 
-        if plan.route == QueryRoute.RELATED and reviewed_guidance_intent(request.question):
-            plan = self._reviewed_guidance_plan(plan)
+        if plan.route == QueryRoute.RELATED and skips_provider_planning(request):
+            resolved = resolved_user_question(request)
+            if resolved != plan.normalized_question:
+                plan = plan.model_copy(update={"normalized_question": resolved})
+            plan = reviewed_guidance_plan(plan)
             bundle, packet = await self._retrieve_for_plan(
                 plan,
                 request,
@@ -721,6 +685,14 @@ class StaticRAGService:
             prefer_reviewed_quotes
             and search.support.status in {SupportStatus.ANSWERABLE, SupportStatus.PARTIAL}
         ):
+            compiled = compile_without_generation(
+                publication_question(request),
+                execution.evidence_packet,
+                trace_id=trace_id,
+                supported_aspects=search.support.supported_aspects,
+            )
+            if compiled is not None:
+                return await self._record_ask(request, compiled, route=route.value)
             return await self._background_answer(
                 request,
                 trace_id=trace_id,
@@ -744,6 +716,15 @@ class StaticRAGService:
             return await self._record_ask(request, response, route=route.value)
 
         if search.support.status not in {SupportStatus.ANSWERABLE, SupportStatus.PARTIAL}:
+            compiled = compile_without_generation(
+                publication_question(request),
+                execution.evidence_packet,
+                trace_id=trace_id,
+                supported_aspects=search.support.supported_aspects,
+                force_partial=True,
+            )
+            if compiled is not None:
+                return await self._record_ask(request, compiled, route=route.value)
             return await self._background_answer(
                 request,
                 trace_id=trace_id,
@@ -773,7 +754,7 @@ class StaticRAGService:
                 }
             )
 
-        generation_question = resolved_user_question(request)
+        generation_question = publication_question(request)
         outcome = await self.grounded_answers.answer(
             generation_question,
             packet,

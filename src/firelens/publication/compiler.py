@@ -39,6 +39,7 @@ from firelens.proof_presentation import ProofCard, make_proof_card
 from firelens.publication.comparison_targets import (
     ALERT_ORDER_ATOMIC_TARGET_SET,
     MISSING_ASPECT_LIMITATION_PREFIX,
+    is_terse_quote_only_request,
     typed_subject_covers_atomic_target,
 )
 from firelens.publication.comparison_targets import (
@@ -340,8 +341,11 @@ def select_typed_claim_ids(
     question: str | None = None,
     supported_aspects: Sequence[str] = (),
 ) -> list[str]:
+    asked = question or packet.question
+    if is_terse_quote_only_request(asked):
+        return []
     selected: list[str] = []
-    targets = _publication_targets(question or packet.question, supported_aspects)
+    targets = _publication_targets(asked, supported_aspects)
     evidence_by_id = {item.evidence_id: item for item in packet.items}
     for candidate in packet.quote_candidates:
         evidence = evidence_by_id.get(candidate.evidence_id)
@@ -563,20 +567,6 @@ def compiled_static_text(packet: object) -> str | None:
     if any(getattr(claim, "publication", None) for claim in static.claims):
         return (static.answer or "").strip() or None
     return None
-
-
-def explanation_authority() -> PublicationAuthority:
-    return PublicationAuthority(
-        kind=PublicationKind.SOURCE_LINKED_EXPLANATION,
-        review_status="none",
-        renderer_id="firelens.grounded_generator.v1",
-        support_provenance="validated_generated_explanation",
-        risk_tier=RiskTier.C.value,
-    )
-
-
-def background_authority() -> PublicationAuthority:
-    return PublicationAuthority(kind=PublicationKind.GENERAL_BACKGROUND)
 
 
 def _card_from_claim(

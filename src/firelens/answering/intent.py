@@ -26,6 +26,7 @@ from firelens.answering.location_intent import (
     asks_for_personal_location,
     coarse_location_from_question,
 )
+from firelens.answering.request_facets import contents_request_facet
 from firelens.answering.request_grammar import parse_request_facets
 from firelens.answering.return_intent import reviewed_return_condition_intent
 from firelens.contracts import (
@@ -39,6 +40,7 @@ from firelens.contracts import (
     ReasonCode,
     RetrievalRequest,
 )
+from firelens.publication.comparison_targets import alert_order_comparison_targets
 
 STATIC_LIMITATION = "This answer uses stable guidance and does not provide current status."
 
@@ -131,7 +133,7 @@ def request_fragments(question: str) -> tuple[str, ...]:
 
 _DEICTIC_FOLLOWUP = re.compile(
     r"\b(?:it|that|this|they|them|there|those|these|the (?:first|second|third|other) one|"
-    r"that (?:guidance|system|advice|status)|right now|what about now)\b"
+    r"that (?:guidance|system|advice|status)|right now|what about)\b"
 )
 
 
@@ -329,6 +331,23 @@ def reviewed_guidance_intent(question: str) -> bool:
     )
 
 
+def skips_provider_planning(request: QueryRequest) -> bool:
+    """Skip provider planning when reviewed guidance is already determined."""
+
+    if reviewed_guidance_intent(request.question):
+        return True
+    resolved = resolved_user_question(request)
+    return resolved != focused_question(request.question) and reviewed_guidance_intent(resolved)
+
+
+def publication_question(request: QueryRequest) -> str:
+    """Compile against the current ask, not a retrieved earlier subject."""
+
+    if skips_provider_planning(request):
+        return focused_question(request.question)
+    return resolved_user_question(request)
+
+
 def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     """Apply the zero-provider-call boundary and mark ordinary questions related."""
 
@@ -481,4 +500,48 @@ def apply_planning_decision(
             "retrieval_requests": requests,
             "required_aspects": required_aspects,
         }
+    )
+
+
+def reviewed_guidance_plan(plan: QueryPlan) -> QueryPlan:
+    """Force grounded corpus retrieval without consulting a provider planner."""
+
+    contents_facet = contents_request_facet(plan.original_question)
+    retrieval_query = (
+        contents_facet.retrieval_query
+        if contents_facet is not None
+        else plan.normalized_question
+    )
+    if len(plan.original_question) <= 160:
+        required_aspect = plan.original_question
+    elif contents_facet is not None:
+        # Keep the same syntactically derived container target used for
+        # retrieval. PlanningDecision deliberately caps an aspect at 160
+        # characters, so a long preamble must not make this fail closed
+        # before retrieval starts.
+        required_aspect = contents_facet.retrieval_query
+    else:
+        # focused_question() has already reduced constructed long-preamble
+        # inputs to their final explicit question. Preserve that earlier
+        # deterministic behavior for every non-contents guidance request.
+        required_aspect = plan.normalized_question
+    if len(required_aspect) > 160:
+        # QueryPlan accepts a wider normalized question than the planning
+        # contract. This final bound prevents a 161--500 character stable-
+        # guidance request from raising a schema exception. It is used only
+        # after the semantic targets above have been selected.
+        required_aspect = required_aspect[:160].rstrip()
+    atomic = alert_order_comparison_targets(plan.original_question)
+    retrieval_queries = list(dict.fromkeys([retrieval_query, *atomic]))[:3]
+    required_aspects = list(atomic) or [required_aspect]
+    return apply_planning_decision(
+        plan,
+        PlanningDecision(
+            relation=QueryRelation.GROUNDED_CANDIDATE,
+            retrieval_queries=retrieval_queries,
+            required_aspects=required_aspects,
+            explanation=(
+                "A deterministic reviewed-guidance intent used bounded corpus retrieval."
+            ),
+        ),
     )

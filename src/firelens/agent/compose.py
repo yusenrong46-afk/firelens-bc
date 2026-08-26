@@ -20,7 +20,10 @@ from firelens.answering.live_request_intent import (
     is_selected_live_request,
     is_unsupported_selected_request,
 )
-from firelens.answering.live_response_support import empty_live_response
+from firelens.answering.live_response_support import (
+    empty_live_response,
+    records_section_heading,
+)
 from firelens.contract_composition import canonical_live_or_mixed_answer
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
@@ -176,9 +179,7 @@ def _missing_selected(request: QueryRequest, packet: AgentPacket) -> bool:
 
 
 def _records_heading(freshness: AggregateFreshness | None) -> str:
-    if freshness in {AggregateFreshness.STALE, AggregateFreshness.MIXED}:
-        return "Official records (cached; refresh failed)"
-    return "Current official records"
+    return records_section_heading(freshness)
 
 
 def _packet_live_answer(
@@ -522,6 +523,28 @@ def _build_ask_response(
                 ],
             ),
         )
+    if static is not None and not live:
+        requested = live_layers_for_question(request.question)
+        if requested:
+            empty = empty_live_response(
+                requested_layers=requested,
+                unavailable_layers=packet.unavailable_layers,
+                resolved_location=packet.resolved_location,
+                retrieved_at=packet.retrieved_at,
+            )
+            current = (
+                empty.answer_sections[0].text if empty.answer_sections else (empty.answer or "")
+            )
+            merged = supported_static_when_live_missing(
+                static,
+                current,
+                limitations=list(empty.limitations),
+                unavailable_layers=list(packet.unavailable_layers),
+                related_links=list(empty.related_links) or list(links),
+                resolved_location=packet.resolved_location,
+            )
+            if merged is not None:
+                return merged
     if static is not None and links:
         topics = [topic for topic in packet.unknown_topics if topic != "prediction"]
         merged = supported_static_when_live_missing(

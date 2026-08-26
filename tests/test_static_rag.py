@@ -1136,7 +1136,7 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             "Reduce indoor wildfire smoke by keeping windows and doors closed when appropriate.",
         )
         with tempfile.TemporaryDirectory() as directory:
-            runtime, _, _ = await make_runtime(
+            runtime, provider, _ = await make_runtime(
                 Path(directory), provider=UnsafeBackgroundProvider(), chunks=[chunk]
             )
             response = await runtime.service.ask(
@@ -1146,10 +1146,9 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(response.status, ResponseStatus.ANSWER)
         self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
-        self.assertEqual(response.reason_code, "draft_validation_failed")
-        self.assertTrue(response.related_links)
-        self.assertTrue(response.validation)
-        self.assertFalse(response.validation.accepted)
+        self.assertEqual(response.reason_code, ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED)
+        self.assertEqual(provider.generate_calls, 0)
+        self.assertFalse(response.claims)
         self.assertNotIn("leave immediately", response.answer.casefold())
 
     async def test_live_and_prohibited_questions_make_no_provider_calls(self) -> None:
