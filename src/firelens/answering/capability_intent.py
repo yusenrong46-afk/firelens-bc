@@ -17,6 +17,7 @@ _CAPABILITY_PATTERNS = (
     r"\b(?:do you know anything|what do you know) about\b",
     r"\bwhat (?:parts|areas|aspects|kinds).{0,60}\bfirelens (?:explain|cover|answer)\b",
     r"\bhow do (?:your|firelens) citations work\b",
+    r"\bhow does firelens\b.{0,60}\b(?:map|maps|work|data|citations)\b",
     TRUST_EXPLANATION_PATTERN,
     r"\bwhat is (?:actually )?inside (?:the )?(?:source )?collection\b",
     r"\b(?:do not|don't) know what is in the collection\b",

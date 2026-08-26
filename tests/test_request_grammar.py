@@ -43,6 +43,46 @@ def test_present_fire_request_families_share_live_and_location_facets(
 
 
 @pytest.mark.parametrize(
+    ("question", "place"),
+    (
+        ("How far is the nearest wildfire from Kelowna?", "Kelowna"),
+        ("How far is the nearest wildfire from Prince George?", "Prince George"),
+    ),
+)
+def test_nearest_wildfire_from_place_is_a_local_live_lookup(question: str, place: str) -> None:
+    facets = parse_request_facets(question)
+    location = coarse_location_from_question(question)
+
+    assert place in facets.live_location_candidates
+    assert location is not None and location.label == place
+    assert plan_query(QueryRequest(question=question)).route == QueryRoute.LIVE
+    assert live_layers_for_question(question)
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "What is the difference from an evacuation order?",
+        "How far should every resident live from every wildfire?",
+        "How far is the nearest wildfire from the official map?",
+        "What should people take from home during an evacuation?",
+    ),
+)
+def test_from_preposition_does_not_extract_non_community_places(question: str) -> None:
+    location = coarse_location_from_question(question)
+    candidates = parse_request_facets(question).live_location_candidates
+    labels = {*(candidates), *((location.label,) if location is not None else ())}
+    assert not {item.casefold() for item in labels} & {
+        "evacuation order",
+        "every wildfire",
+        "official map",
+        "home",
+        "wildfire",
+        "map",
+    }
+
+
+@pytest.mark.parametrize(
     "question",
     (
         "What fires burned near Cranbrook last summer?",

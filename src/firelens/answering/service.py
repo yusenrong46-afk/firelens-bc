@@ -88,6 +88,7 @@ from firelens.errors import ProviderError
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.operational_logging import log_operation
 from firelens.providers.base import AIProvider
+from firelens.publication.comparison_targets import alert_order_comparison_targets
 from firelens.publication.compiler import background_authority
 from firelens.retrieval.bm25 import BM25Index
 from firelens.retrieval.pipeline import RetrievalPipeline
@@ -170,6 +171,7 @@ class StaticRAGService:
             config=self.config,
             evidence_index=self.evidence_index,
             selection_aspects=tuple(dict.fromkeys([*plan.required_aspects, *request_queries])),
+            coverage_hits=bundle.fused_hits,
         )
         if self.config.retrieval_strategy == "adaptive_v1":
             refined = await refine_if_needed(
@@ -213,12 +215,15 @@ class StaticRAGService:
             # guidance request from raising a schema exception. It is used only
             # after the semantic targets above have been selected.
             required_aspect = required_aspect[:160].rstrip()
+        atomic = alert_order_comparison_targets(plan.original_question)
+        retrieval_queries = list(dict.fromkeys([retrieval_query, *atomic]))[:3]
+        required_aspects = list(atomic) or [required_aspect]
         return apply_planning_decision(
             plan,
             PlanningDecision(
                 relation=QueryRelation.GROUNDED_CANDIDATE,
-                retrieval_queries=[retrieval_query],
-                required_aspects=[required_aspect],
+                retrieval_queries=retrieval_queries,
+                required_aspects=required_aspects,
                 explanation=(
                     "A deterministic reviewed-guidance intent used bounded corpus retrieval."
                 ),

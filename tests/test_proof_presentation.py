@@ -217,7 +217,7 @@ def test_preserved_live_card_rebinds_current_result_freshness_and_url() -> None:
         status=ResponseStatus.ANSWER,
         trace_id="trace-live-rebind-stale",
         response_mode=ResponseMode.LIVE,
-        answer="Test Fire is Out of Control.",
+        answer="Test Fire is Being Held.",
         live_results=[stale],
         limitations=["This uses official records and is not a safety determination."],
         aggregate_freshness="stale",
@@ -295,12 +295,17 @@ def _forged_structured_reviewed_card(claim_id: str, text: str) -> ProofCard:
     )
 
 
-def _published_evidence(evidence_id: str, quote: str) -> PublicEvidence:
+def _published_evidence(
+    evidence_id: str,
+    quote: str,
+    *,
+    canonical_url: str | None = None,
+) -> PublicEvidence:
     return PublicEvidence(
         evidence_id=evidence_id,
         title="Official emergency guidance",
         publisher="PreparedBC",
-        canonical_url=f"https://example.test/{evidence_id.lower()}",
+        canonical_url=canonical_url or f"https://example.test/{evidence_id.lower()}",
         locator="Emergency guidance",
         temporal_class="stable_guidance",
         review_provenance="native_text",
@@ -309,8 +314,29 @@ def _published_evidence(evidence_id: str, quote: str) -> PublicEvidence:
     )
 
 
+_ADMITTED_QUOTE = (
+    "Grab-and-Go Bag\n"
+    "• Pen & notepad\n"
+    "• Phone charger & battery bank\n"
+    "• Flashlight\n"
+    "• Radio\n"
+    "• First aid kit\n"
+    "• Personal toiletries\n"
+    "• Seasonal clothing\n"
+    "• Food & water\n"
+    "• Batteries\n"
+    "• Whistle\n"
+    "• Emergency plan"
+)
+_ADMITTED_QUOTE_URL = (
+    "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/"
+    "emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/"
+    "wildfire_preparedness_guide.pdf"
+)
+
+
 def test_quote_only_publication_controls_banner_and_proof_wording() -> None:
-    quote = "Follow the directions of local authorities during an evacuation."
+    quote = _ADMITTED_QUOTE
     response = AskResponse(
         status=ResponseStatus.ANSWER,
         trace_id="trace-quote-only",
@@ -325,7 +351,7 @@ def test_quote_only_publication_controls_banner_and_proof_wording() -> None:
                 kind=PublicationKind.OFFICIAL_QUOTE_ONLY,
             )
         ],
-        evidence=[_published_evidence("E1", quote)],
+        evidence=[_published_evidence("E1", quote, canonical_url=_ADMITTED_QUOTE_URL)],
         validation=_VALIDATION,
     )
 
@@ -349,7 +375,7 @@ def test_reviewed_and_quote_only_publications_use_mixed_banner() -> None:
         typed_claim_id="TC-EVAC-ORDER-001", public_claim_id="C1"
     )
     reviewed = compiled.claim.text
-    quote = "Follow the directions of local authorities during an evacuation."
+    quote = _ADMITTED_QUOTE
     response = AskResponse(
         status=ResponseStatus.ANSWER,
         trace_id="trace-mixed-publication",
@@ -367,7 +393,7 @@ def test_reviewed_and_quote_only_publications_use_mixed_banner() -> None:
         ],
         evidence=[
             *compiled.evidence,
-            _published_evidence("E2", quote),
+            _published_evidence("E2", quote, canonical_url=_ADMITTED_QUOTE_URL),
         ],
         validation=_VALIDATION,
     )
@@ -394,11 +420,11 @@ def test_rejected_publication_is_not_strengthened_by_additive_proof_fields(
         claim = compiled.claim
         evidence = list(compiled.evidence)
     else:
-        text = "Follow the directions of local authorities during an evacuation."
+        text = _ADMITTED_QUOTE
         claim = _published_claim(
             claim_id="C1", evidence_id="E1", text=text, quote=text, kind=kind
         )
-        evidence = [_published_evidence("E1", text)]
+        evidence = [_published_evidence("E1", text, canonical_url=_ADMITTED_QUOTE_URL)]
     text = claim.text
     response = AskResponse(
         status=ResponseStatus.ANSWER,

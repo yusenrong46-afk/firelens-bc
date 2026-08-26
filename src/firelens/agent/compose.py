@@ -14,12 +14,14 @@ from firelens.answering.live_analysis import (
     official_display_name,
 )
 from firelens.answering.live_composition import supported_static_when_live_missing
+from firelens.answering.live_distance import distance_answer
 from firelens.answering.live_request_intent import (
     is_distance_request,
     is_selected_live_request,
     is_unsupported_selected_request,
 )
 from firelens.answering.live_response_support import empty_live_response
+from firelens.contract_composition import canonical_live_or_mixed_answer
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
     AggregateFreshness,
@@ -36,7 +38,6 @@ from firelens.contracts import (
     aggregate_live_freshness,
     render_claim_texts,
 )
-from firelens.publication.compiler import public_mixed_answer
 
 _STALE_RECORDS_LIMITATION = (
     "A live refresh failed; some official records shown are cached and may be outdated."
@@ -212,6 +213,19 @@ def _packet_live_answer(
     )
 
 
+def _published_live_text(
+    request: QueryRequest,
+    packet: AgentPacket,
+    *,
+    static_answer: str | None = None,
+) -> str:
+    if is_distance_request(request) and packet.live_results:
+        composed = distance_answer(request, packet.live_results)
+        if composed:
+            return composed
+    return _packet_live_answer(request, packet, static_answer=static_answer)
+
+
 def _live_limitations(
     freshness: AggregateFreshness | None, base: list[str] | None = None
 ) -> list[str]:
@@ -350,7 +364,7 @@ def _build_ask_response(
             status=ResponseStatus.ANSWER,
             trace_id=uuid4().hex,
             response_mode=ResponseMode.SCOPE_REDIRECT,
-            answer=answer,
+            answer=_published_live_text(request, packet),
             reason_code=ReasonCode.SCOPE_REDIRECT,
             limitations=[
                 "FireLens did not infer a cause or prediction that the selected record does not state."
@@ -374,7 +388,7 @@ def _build_ask_response(
         and static.validation.accepted
     ):
         freshness = aggregate_live_freshness(live)
-        live_text = _packet_live_answer(
+        live_text = _published_live_text(
             request,
             packet,
             static_answer=None,
@@ -419,29 +433,36 @@ def _build_ask_response(
         and static.validation.accepted
     ):
         freshness = aggregate_live_freshness(live)
-        live_text = _packet_live_answer(
+        live_text = _published_live_text(
             request,
             packet,
             static_answer=None,
         )
-        answer = public_mixed_answer(packet, live_text)
+        guidance = render_claim_texts(static.claims)
+        sections = [
+            AnswerSection(
+                kind=AnswerSectionKind.CURRENT_RECORDS,
+                heading=_records_heading(freshness),
+                text=live_text,
+            ),
+            AnswerSection(
+                kind=AnswerSectionKind.REVIEWED_GUIDANCE,
+                heading="Reviewed preparedness guidance",
+                text=guidance,
+            ),
+        ]
+        answer = (
+            canonical_live_or_mixed_answer(
+                [(section.kind.value, section.text) for section in sections]
+            )
+            or live_text
+        )
         return AskResponse(
             status=ResponseStatus.ANSWER,
             trace_id=static.trace_id,
             response_mode=ResponseMode.MIXED,
             answer=answer,
-            answer_sections=[
-                AnswerSection(
-                    kind=AnswerSectionKind.CURRENT_RECORDS,
-                    heading=_records_heading(freshness),
-                    text=live_text,
-                ),
-                AnswerSection(
-                    kind=AnswerSectionKind.REVIEWED_GUIDANCE,
-                    heading="Reviewed preparedness guidance",
-                    text=render_claim_texts(static.claims),
-                ),
-            ],
+            answer_sections=sections,
             claims=static.claims,
             evidence=static.evidence,
             live_results=live,
@@ -453,17 +474,18 @@ def _build_ask_response(
         )
     if live and links:
         freshness = aggregate_live_freshness(live)
+        live_text = _published_live_text(request, packet)
         handoff = handoff_answer(packet)
         return AskResponse(
             status=ResponseStatus.ANSWER,
             trace_id=uuid4().hex,
             response_mode=ResponseMode.MIXED,
-            answer=f"{answer}\n\nRelated official information: {handoff}",
+            answer=f"{live_text}\n\nRelated official information: {handoff}",
             answer_sections=[
                 AnswerSection(
                     kind=AnswerSectionKind.CURRENT_RECORDS,
                     heading=_records_heading(freshness),
-                    text=answer,
+                    text=live_text,
                 ),
                 AnswerSection(
                     kind=AnswerSectionKind.OFFICIAL_HANDOFF,
@@ -487,7 +509,7 @@ def _build_ask_response(
             status=ResponseStatus.ANSWER,
             trace_id=uuid4().hex,
             response_mode=ResponseMode.LIVE,
-            answer=answer,
+            answer=_published_live_text(request, packet),
             live_results=live,
             aggregate_freshness=freshness,
             selected_live_result_id=request.context.selected_live_result_id,

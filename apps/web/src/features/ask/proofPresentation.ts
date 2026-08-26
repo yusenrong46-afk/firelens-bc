@@ -161,6 +161,12 @@ export type ProofCardView = {
 };
 
 type Claim = NonNullable<AskResponse["claims"]>[number];
+type ApiProofCard = NonNullable<AskResponse["proof_cards"]>[number];
+
+function asProofCardView(card: ApiProofCard): ProofCardView {
+  // Runtime JSON may still carry constructor authority; it is not a public OpenAPI field.
+  return card as ProofCardView;
+}
 
 export function bindProofProfile(
   supportState: SupportState,
@@ -653,32 +659,33 @@ export function getProofCards(response: AskResponse | undefined): ProofCardView[
         : (response.live_results ?? []).map((result) => result.result_id),
     );
     return (response.proof_cards ?? []).filter((card) => validCardIds.has(card.claim_id)).map((card) => {
-      const claim = claimsById.get(card.claim_id);
+      const view = asProofCardView(card);
+      const claim = claimsById.get(view.claim_id);
       if (!claim) {
-        const bound = liveResults.find((result) => result.result_id === card.claim_id)
-          ?? liveResults.find((result) => result.result_id === card.publication?.typed_live_fact_id);
-        if (isOfficialLiveTyped(card) && !officialLiveIdMatchesBound(card, bound?.result_id)) {
-          return unknownProofCard(card);
+        const bound = liveResults.find((result) => result.result_id === view.claim_id)
+          ?? liveResults.find((result) => result.result_id === view.publication?.typed_live_fact_id);
+        if (isOfficialLiveTyped(view) && !officialLiveIdMatchesBound(view, bound?.result_id)) {
+          return unknownProofCard(view);
         }
-        return projectValidation(card);
+        return projectValidation(view);
       }
       const state = getClaimSupportState(response, claim);
-      if (state === "unknown" || !cardAuthorityMatchesClaim(card, claim)) {
+      if (state === "unknown" || !cardAuthorityMatchesClaim(view, claim)) {
         return state === "unknown"
-          ? unknownProofCard({ ...card, claim_text: claim.text })
+          ? unknownProofCard({ ...view, claim_text: claim.text })
           : canRebuildClaimProofCard(response, claim, evidenceById)
             ? projectValidation(claimProofCard(response, claim, evidenceById))
-            : unknownProofCard({ ...card, claim_text: claim.text });
+            : unknownProofCard({ ...view, claim_text: claim.text });
       }
       return projectValidation({
-        ...card,
+        ...view,
         support_state: state,
         support_label: SUPPORT_LABELS[state],
         review_state: state === "official_quote_only"
           ? "Source extraction only; no structured-claim review"
-          : card.review_state,
-        freshness: state === "official_quote_only" ? "Stable source wording" : card.freshness,
-        publication: claim.publication ?? card.publication ?? UNSUPPORTED_PUBLICATION,
+          : view.review_state,
+        freshness: state === "official_quote_only" ? "Stable source wording" : view.freshness,
+        publication: claim.publication ?? view.publication ?? UNSUPPORTED_PUBLICATION,
       });
     });
   }

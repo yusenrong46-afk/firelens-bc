@@ -147,6 +147,7 @@ async def refine_if_needed(
         config=config,
         evidence_index=evidence_index,
         selection_aspects=tuple(dict.fromkeys([*plan.required_aspects, *request_queries])),
+        coverage_hits=merge_hits(first_bundle.fused_hits, second.fused_hits),
     )
     merged = first_bundle.model_copy(
         update={

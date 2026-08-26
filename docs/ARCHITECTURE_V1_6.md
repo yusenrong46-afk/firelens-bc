@@ -57,7 +57,9 @@ Request shape is owned by the typed intent automaton in
 clause boundaries, temporal scope, live operations and layers, national scope,
 reviewed-guidance signals, and location candidates. `AgentQueryPlan` authorizes
 tools from that projection. Downstream modules must not re-parse the question
-with an independent phrase grammar.
+with an independent phrase grammar. Current-advice and preparedness-checklist
+clauses stay on the reviewed-guidance lane. A preparedness noun does not let
+static documents answer whether an evacuation order or incident is active.
 
 `AgentQueryPlan` is a frozen per-request value. It can authorize only the
 specific fixed tool calls it contains, including normalized arguments. It
@@ -71,8 +73,9 @@ runtime dispatch compares its exact name and arguments with the plan and rejects
 anything else. A per-request fingerprint also rejects a repeated dispatch. The
 provider therefore cannot convert a local request to province-wide, add an
 evacuation layer, fetch another record, or retrieve a different guidance query.
-Its remaining role is bounded prose over the packet, subject to output rails and
-deterministic publication.
+Its remaining role is bounded connective prose over reviewed-guidance packets,
+subject to output rails. Live current-record text is rendered from fetched
+typed official records; provider prose cannot become the public live answer.
 
 ## Route budgets
 
@@ -124,15 +127,23 @@ Visible development benchmarks are not independent proof.
   are still checker-gated rather than inventory-rendered.
 - High-risk structured publication is deterministic and has zero generation.
   An eligible lower-risk ready packet may use one bounded generation only after
-  deterministic validation. Uncovered high-risk material remains an exact-source
+  deterministic validation.   Uncovered high-risk material remains an exact-source
   quote-only, partial, or handoff response; it is not a reviewed structured
-  claim.
+  claim. Quote-only official wording requires an admitted static-corpus chunk
+  identity and the exact quote in that chunk, not only a gov.bc.ca host and
+  64-hex hash. Alert/order comparison packets reserve a fused candidate for
+  each still-uncovered atomic definition aspect after rerank, without raising
+  default `rerank_top_k`.
 - The permanent hard-probe dataset remains immutable. The named, hash-bound
   `rc2` profile preserves ten safer response-mode migrations. The active
   `rc2.1` profile copies those ten unchanged and appends A01's exact
   `{structured_reviewed, official_quote_only}` mixed-publication contract while
   preserving the historical questions, 105-case roster, and `86/105` floor.
   The effective expectation hash and exact Git identity travel with report v2.
+  A09 and A10 stay on the frozen quote-only-exclusive RC2 migrations. Two-sided
+  packet-bound reviewed structured comparison can fail that overlay as an
+  explained paired regression rather than a product defect to reverse; a later
+  named profile is a separate Codex decision and is not implemented here.
 
 ## Failures, ops, packaging
 
@@ -161,7 +172,10 @@ labelled in text, not colour alone. Presentation is a projection of
 `publication.kind`: reviewed structured claims and extraction-only source
 wording are labelled independently, including in mixed answers. Publication
 kind owns that authority; a Proof Card profile is a projection of the owning
-claim, not an independent `verified` source of truth. A stored card that
+claim, not an independent `verified` source of truth. `ProofCard.publication` is
+internal fail-closed constructor authority and is not a public OpenAPI field.
+`PublicClaim.publication` remains optional/nullable on the public contract;
+verified corpus claims still require it internally. A stored card that
 disagrees with `publication.kind` is rebuilt from the claim or fails closed.
 Extraction-only source wording is never strengthened by a legacy status banner.
 Rejected validation forces an unknown presentation even when an older response

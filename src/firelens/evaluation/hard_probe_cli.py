@@ -224,7 +224,34 @@ def _semantic_checks(case: HardProbeCase, response: dict[str, Any]) -> list[str]
     issues.extend(_unsafe_assertion_issues(answer))
     if case.section in {"F", "G", "K"} and mode == ResponseMode.GROUNDED.value:
         issues.append("live claim was answered only from the static corpus")
+    if case.id == "A02":
+        issues.extend(_a02_comparison_coverage_issues(response))
     return sorted(set(issues))
+
+
+def _a02_comparison_coverage_issues(response: dict[str, Any]) -> list[str]:
+    """Added invariant: grounded A02 must cover both atomic alert and order definitions."""
+
+    mode = response.get("response_mode")
+    answer = (response.get("answer") or "").casefold()
+    limitations = " ".join(response.get("limitations") or []).casefold()
+    typed_ids = {
+        (claim.get("publication") or {}).get("typed_claim_id")
+        for claim in response.get("claims") or []
+    }
+    has_alert = "TC-EVAC-ALERT-001" in typed_ids or (
+        "alert" in answer and "short notice" in answer
+    )
+    has_order = "TC-EVAC-ORDER-001" in typed_ids or (
+        "order" in answer and "leave immediately" in answer
+    )
+    issues: list[str] = []
+    if mode == "grounded" and not (has_alert and has_order):
+        issues.append("A02 grounded comparison lacks both alert and order definitions")
+    if mode == "partial" and (not has_alert or not has_order):
+        if "not supported by selected evidence" not in limitations:
+            issues.append("A02 partial comparison lacks an explicit missing-aspect limitation")
+    return issues
 
 
 def _grounded_semantic_issues(response: dict[str, Any]) -> list[str]:

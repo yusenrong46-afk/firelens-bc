@@ -94,7 +94,13 @@ def _noisy_place(candidate: str) -> bool:
     token_set = frozenset(lex.tokenize(candidate))
     return bool(
         token_set
-        & (lex.FIRE_WORDS | lex.PERIMETER_WORDS | lex.RECORD_NOUNS | {"mapped", "official"})
+        & (
+            lex.FIRE_WORDS
+            | lex.PERIMETER_WORDS
+            | lex.EVACUATION_WORDS
+            | lex.RECORD_NOUNS
+            | {"mapped", "official", "home", "house", "property", "every", "any"}
+        )
     )
 
 

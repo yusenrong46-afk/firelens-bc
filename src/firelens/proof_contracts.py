@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, HttpUrl, model_validator
+from pydantic.json_schema import SkipJsonSchema
 
 from firelens._publication_authority import (
     _UNSUPPORTED_PUBLICATION,
@@ -68,7 +69,7 @@ class ProofCard(FrozenStrictModel):
     truth_class: TruthClass
     publication_state: PublicationState
     derivation: DistanceDerivation | None = None
-    publication: PublicationAuthority
+    publication: Annotated[PublicationAuthority, SkipJsonSchema()]
 
     @model_validator(mode="after")
     def profile_metadata_matches_support_state(self) -> ProofCard:

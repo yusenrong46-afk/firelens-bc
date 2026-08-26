@@ -53,6 +53,13 @@ provider, or decide that a place is a BC community.
 - Colon-fronted discourse labels (`Harder:`, `Please:`) are a prefix class,
   not geography. Named-place extractors run before fronted scope, and
   existential "is there a <place> order" is a live-clause form.
+- The web workspace still classifies map vs evidence vs analytical layout from
+  the raw question in `apps/web/src/app/workspacePresentation.ts`. That regex
+  is presentation-only: it does not authorize tools, layers, or geography, and
+  it is not a second request parser. Map-first layout is limited to questions
+  that explicitly contain `map`/`mapped`; geographic-analysis wording uses the
+  analytical workspace over the evidence surface rather than opening the map
+  first.
 
 ## Does not change
 

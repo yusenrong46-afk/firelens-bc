@@ -24,7 +24,7 @@ from firelens.live_contracts import (
     GEODESIC_CRS,
 )
 from firelens.proof_presentation import ProofCard
-from firelens.publication.fallback import UNCOVERED_LIMITATION
+from firelens.publication.fallback import UNCOVERED_LIMITATION, admitted_official_quote_source
 from firelens.publication.records import get_versioned
 from firelens.publication_contracts import PublicationKind
 from firelens.safety_profile import (
@@ -240,12 +240,22 @@ def validate_compiled_publication(
             actual_support = {
                 (support.evidence_id, support.quote) for support in claim.supports
             }
+            evidence_item = None
+            if packet is not None and actual_support:
+                support_id, quote = next(iter(actual_support))
+                evidence_item = packet_items.get(support_id)
+            else:
+                quote = ""
             if (
                 len(actual_support) != 1
                 or not actual_support.issubset(packet_candidates)
-                or claim.text not in {quote for _evidence_id, quote in actual_support}
+                or claim.text not in {item_quote for _evidence_id, item_quote in actual_support}
                 or authority.review_status != "extraction_only"
                 or authority.support_provenance != "exact_official_quote"
+                or (
+                    packet is not None
+                    and not admitted_official_quote_source(evidence_item, quote)
+                )
             ):
                 policy_valid = False
                 claim_support_valid = False

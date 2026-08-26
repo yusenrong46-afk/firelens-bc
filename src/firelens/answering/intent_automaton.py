@@ -89,6 +89,11 @@ def _is_guidance(tokens: tuple[str, ...]) -> bool:
     if generic_guidance and governed_topic:
         if token_set & lex.DEFINITION_WORDS:
             return True
+        explicit_guidance_noun = bool(
+            token_set & {"advice", "guidance", "tips", "checklist", "preparedness", "readiness"}
+        )
+        if explicit_guidance_noun:
+            return True
         if token_set & lex.CURRENT_WORDS or lex.has_any_phrase(tokens, lex.CURRENT_PHRASES):
             return False
         return True
@@ -106,7 +111,7 @@ def _is_guidance(tokens: tuple[str, ...]) -> bool:
 def _is_universal_distance(tokens: tuple[str, ...]) -> bool:
     token_set = frozenset(tokens)
     return bool(
-        token_set & {"distance", "radius"}
+        token_set & {"distance", "radius", "far"}
         and (
             token_set & {"everyone", "everybody", "universal"}
             or lex.has_phrase(tokens, ("every", "resident"))
@@ -188,7 +193,14 @@ def _split_clauses(question: str) -> tuple[str, ...]:
 
 def _is_product_help(tokens: tuple[str, ...]) -> bool:
     token_set = frozenset(tokens)
-    return bool(token_set & lex.UI_OBJECTS and token_set & lex.UI_ACTIONS)
+    if token_set & lex.UI_OBJECTS and token_set & lex.UI_ACTIONS:
+        return True
+    return bool(
+        "firelens" in token_set
+        and token_set & {"how", "what"}
+        and token_set & {"map", "maps", "work", "works", "data", "citations"}
+        and not (token_set & lex.SCOPE_WORDS)
+    )
 
 
 def _is_expository(tokens: tuple[str, ...]) -> bool:
@@ -242,6 +254,16 @@ def _guidance_blocks_live(tokens: tuple[str, ...], temporal: TemporalScope) -> b
     token_set = frozenset(tokens)
     if token_set & lex.DEFINITION_WORDS:
         return True
+    asked_live_records = bool(token_set & lex.LIVE_RECORD_ASK_COMMANDS)
+    if token_set & {"advice", "guidance", "tips", "checklist"} and not asked_live_records:
+        return True
+    if token_set & {"preparedness", "readiness"} and not asked_live_records:
+        live_status_ask = bool(
+            token_set & (lex.EVACUATION_WORDS | lex.FIRE_WORDS | lex.PERIMETER_WORDS)
+            and token_set & {"active", "burning", "happening", "listed", "reported"}
+        )
+        if not live_status_ask:
+            return True
     return not bool(
         temporal == TemporalScope.CURRENT
         or token_set & lex.LIVE_RECORD_ASK_COMMANDS

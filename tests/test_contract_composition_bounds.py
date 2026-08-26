@@ -333,7 +333,7 @@ class PublicContractBoundTests(unittest.TestCase):
             status=ResponseStatus.ANSWER,
             trace_id="4" * 32,
             response_mode=ResponseMode.MIXED,
-            answer="Cached Fire is listed. Keep water in an emergency kit.",
+            answer="Cached Fire is listed.\n\nKeep water in an emergency kit.",
             answer_sections=[
                 AnswerSection(
                     kind=AnswerSectionKind.CURRENT_RECORDS,

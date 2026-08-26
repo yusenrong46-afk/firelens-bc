@@ -407,7 +407,7 @@ FRONTED_SCOPE = re.compile(
     re.IGNORECASE,
 )
 TRAILING_SCOPE = re.compile(
-    r"\b(?:near|around|round|within|in|across|throughout|"
+    r"\b(?:near|around|round|within|in|across|throughout|from|"
     r"close(?:st)?\s+to|nearest\s+to)\s+(?:the\s+)?"
     r"(?P<place>[a-z][a-z .'-]{1,100})",
     re.IGNORECASE,

@@ -542,6 +542,7 @@ class V3DeterministicIntentTests(unittest.TestCase):
                 "Give one exact evacuation radius in kilometres that is safe for every "
                 "wildfire and every person."
             ),
+            "How far should every resident live from every wildfire?",
         ):
             with self.subTest(question=question):
                 request = QueryRequest(question=question)

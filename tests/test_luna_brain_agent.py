@@ -1501,9 +1501,8 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         answer = execution.response.answer or ""
         self.assertEqual(
             answer,
-            "The official records available for this request do not report that fact.",
+            "No fetched official record is named Phantom Ridge Fire.",
         )
-        self.assertNotIn("Phantom Ridge Fire", answer)
         self.assertNotIn("Mountain Fire", answer)
 
     async def test_fire_number_is_used_when_name_is_missing(self) -> None:
@@ -1720,9 +1719,8 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         answer = execution.response.answer or ""
         self.assertEqual(
             answer,
-            "The official records available for this request do not report that fact.",
+            "No fetched official record is named Phantom Ridge Fire.",
         )
-        self.assertNotIn("Phantom Ridge Fire", answer)
         self.assertNotIn("Mountain Fire", answer)
 
     async def test_published_answer_strips_precise_coordinates(self) -> None:
@@ -1737,7 +1735,8 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertNotIn("49.589303", execution.response.answer or "")
-        self.assertIn("official mapped geometry", execution.response.answer or "")
+        self.assertNotIn("-119.906732", execution.response.answer or "")
+        self.assertIn("Ridge Fire", execution.response.answer or "")
 
     async def test_official_packet_omits_raw_coordinates(self) -> None:
         fact = live_record_fact(_fire(result_id="incident:2", name="Ridge Fire"))

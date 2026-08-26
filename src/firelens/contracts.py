@@ -28,7 +28,10 @@ from firelens.contract_composition import is_canonical_conflict_answer
 from firelens.evidence_packet_identity import validate_evidence_packet_identity
 from firelens.proof_presentation import AnswerStatusBanner, ProofCard, attach_proof_presentation
 from firelens.publication_contracts import PublicationAuthority
-from firelens.publication_response_binding import public_claim_authority_error
+from firelens.publication_response_binding import (
+    ask_claim_publication_error,
+    current_records_binding_error,
+)
 
 DocumentContextDraft = _api_contracts.DocumentContextDraft
 DocumentContextItem = _api_contracts.DocumentContextItem
@@ -404,7 +407,7 @@ class PublicClaim(FrozenStrictModel):
     evidence_status: EvidenceStatus
     supports: list[ClaimSupport] = Field(default_factory=list, max_length=5)
     trust: ClaimTrust | None = None
-    publication: PublicationAuthority
+    publication: PublicationAuthority | None = None
 
     @field_validator("text")
     @classmethod
@@ -418,6 +421,8 @@ class PublicClaim(FrozenStrictModel):
         pairs = [(item.evidence_id, item.quote) for item in self.supports]
         if len(pairs) != len(set(pairs)):
             raise ValueError("claim support pairs must be unique")
+        if self.evidence_status == EvidenceStatus.VERIFIED_CORPUS and self.publication is None:
+            raise ValueError("verified corpus claims require publication")
         if self.evidence_status == EvidenceStatus.VERIFIED_CORPUS and not self.supports:
             raise ValueError("verified corpus claims require support")
         if self.evidence_status == EvidenceStatus.GENERAL_BACKGROUND and self.supports:
@@ -555,21 +560,17 @@ class AskResponse(StrictModel):
             raise ValueError("required input is only valid for resumable input responses")
         if not self.live_results and self.aggregate_freshness is not None:
             raise ValueError("aggregate freshness requires live results")
-        self._validate_claim_publication_authority()
-        attach_proof_presentation(self)
-        return self
-
-    def _validate_claim_publication_authority(self) -> None:
-        evidence_by_id = {item.evidence_id: item for item in self.evidence}
-        live_results_by_id = {item.result_id: item for item in self.live_results}
-        for claim in self.claims:
-            error = public_claim_authority_error(
-                claim,
-                evidence_by_id=evidence_by_id,
-                live_results_by_id=live_results_by_id,
+        error = ask_claim_publication_error(self)
+        if error:
+            raise ValueError(error)
+        if self.response_mode in {ResponseMode.LIVE, ResponseMode.MIXED}:
+            error = current_records_binding_error(
+                self.answer, self.live_results, self.answer_sections
             )
             if error:
-                raise ValueError(f"claim {claim.claim_id}: {error}")
+                raise ValueError(error)
+        attach_proof_presentation(self)
+        return self
 
     def _validate_answer_sections(self) -> None:
         if not self.answer_sections:

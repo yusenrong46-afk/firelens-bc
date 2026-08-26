@@ -29,6 +29,12 @@ _PRESCRIPTIVE_EVACUATION_ACTION = re.compile(
     r"(?:evacuat(?:e|ing)|leave)\b",
     re.IGNORECASE,
 )
+_PRESCRIPTIVE_STANDOFF_ACTION = re.compile(
+    r"\b(?:should|must|need(?:s)?\s+to|ought\s+to)\b"
+    r"(?:\s+(?!(?:not|never)\b)[a-z][a-z'-]*){0,5}\s+"
+    r"(?:live|stay|remain|keep)\b",
+    re.IGNORECASE,
+)
 _PRESCRIPTIVE_DISTANCE_RULE = re.compile(
     r"\b(?:should|must|need(?:s)?\s+to|ought\s+to)\b"
     r"(?:\s+(?!(?:not|never)\b)[a-z][a-z'-]*){0,5}\s+"
@@ -122,6 +128,10 @@ def is_prescriptive_evacuation_distance_request(request: QueryRequest) -> bool:
             (
                 _EXPLICIT_FIRE_PATTERN.search(question)
                 and _PRESCRIPTIVE_EVACUATION_ACTION.search(question)
+            )
+            or (
+                _EXPLICIT_FIRE_PATTERN.search(question)
+                and _PRESCRIPTIVE_STANDOFF_ACTION.search(question)
             )
             or (
                 _EXPLICIT_EVACUATION_DISTANCE_PATTERN.search(question)

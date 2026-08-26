@@ -27,7 +27,9 @@ def make_chunk(
         source_id="source-a",
         title="Preparedness Guide",
         publisher="Government of British Columbia",
-        canonical_url="https://example.test/preparedness",
+        canonical_url=(
+            "https://www2.gov.bc.ca/gov/content/safety/emergency-preparedness-response-recovery"
+        ),
         temporal_class="stable_guidance",
         authority_class=authority,
         document_sha256="a" * 64,

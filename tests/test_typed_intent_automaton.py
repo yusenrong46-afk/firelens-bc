@@ -12,7 +12,7 @@ from hypothesis import strategies as st
 from pydantic import HttpUrl
 
 from firelens.agent import FireLensAgent
-from firelens.agent.query_plan import AgentRequestMode, plan_agent_request
+from firelens.agent.query_plan import AgentGeography, AgentRequestMode, plan_agent_request
 from firelens.answering.intent import live_layers_for_question, static_guidance_fragment
 from firelens.answering.intent_automaton import (
     ClauseIntentKind,
@@ -156,6 +156,88 @@ def test_alert_order_definition_is_reviewed_guidance_not_live() -> None:
     assert live_layers_for_question(question) == ()
     assert plan.mode == AgentRequestMode.STATIC
     assert plan.route.value != "live"
+
+
+def test_nearest_wildfire_from_place_extracts_the_community() -> None:
+    question = "How far is the nearest wildfire from Kelowna?"
+    parsed = parse_request_intent(question)
+    location = coarse_location_from_question(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert parsed.live_location_candidates == ("Kelowna",)
+    assert location is not None and location.label == "Kelowna"
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == "Kelowna"
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "What is the difference from an evacuation order?",
+        "How far should every resident live from every wildfire?",
+        "How far is the nearest wildfire from the official map?",
+        "What should people take from home during an evacuation?",
+    ),
+)
+def test_from_scope_does_not_invent_non_community_places(question: str) -> None:
+    parsed = parse_request_intent(question)
+    location = coarse_location_from_question(question)
+
+    assert "Kelowna" not in parsed.live_location_candidates
+    if location is not None:
+        assert location.label.casefold() not in {
+            "evacuation order",
+            "every wildfire",
+            "official map",
+            "home",
+            "wildfire",
+        }
+
+
+def test_current_preparedness_advice_is_reviewed_guidance_not_live() -> None:
+    for question in (
+        "Current wildfire preparedness advice for Kelowna",
+        "current evacuation advice in Kelowna",
+    ):
+        parsed = parse_request_intent(question)
+        plan = plan_agent_request(QueryRequest(question=question))
+        assert parsed.has_reviewed_guidance, question
+        assert not parsed.has_live_records, question
+        assert plan.mode == AgentRequestMode.STATIC, question
+
+
+def test_static_preparedness_docs_cannot_establish_active_order_status() -> None:
+    question = (
+        "Static preparedness documents can tell me whether an evacuation order "
+        "is active, correct?"
+    )
+    parsed = parse_request_intent(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+    assert parsed.has_live_records
+    assert LiveResultKind.EVACUATION in parsed.live_layers
+    assert plan.mode != AgentRequestMode.STATIC
+
+
+def test_how_firelens_maps_current_data_is_product_help_not_live() -> None:
+    question = "How does FireLens map current wildfire data?"
+    parsed = parse_request_intent(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert not parsed.has_live_records
+    assert any(clause.kind == ClauseIntentKind.PRODUCT_HELP for clause in parsed.clauses) or (
+        plan.mode == AgentRequestMode.STATIC
+    )
+    assert plan.mode != AgentRequestMode.LIVE
+    assert plan.geography != AgentGeography.PROVINCE_WIDE or not plan.live_layers
+
+
+def test_universal_standoff_distance_is_not_a_live_geometry_ask() -> None:
+    question = "How far should every resident live from every wildfire?"
+    parsed = parse_request_intent(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert not parsed.has_live_records
+    assert plan.mode != AgentRequestMode.LIVE
 
 
 @pytest.mark.parametrize(

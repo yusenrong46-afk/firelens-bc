@@ -27,6 +27,34 @@
   the eleventh migration without changing the dataset, schema, or floor.
 - Added a typed intent automaton as the single owner of request shape before
   `AgentQueryPlan` authorizes tools, layers, and geography.
+- Rendered live current-record answers from fetched typed official records so
+  provider prose cannot publish unbound status, fire-count, or kilometre
+  assertions while retaining those records.
+- Restored OpenAPI `ProofCard` / `PublicClaim` publication requiredness to the
+  origin/main public contract: `ProofCard.publication` is not a public field;
+  `PublicClaim.publication` stays optional/nullable. Internal proof-card
+  publication authority remains required.
+- Required both atomic evacuation-alert and evacuation-order definitions for a
+  grounded comparison, or `PARTIAL` with
+  `Not supported by selected evidence: evacuation alert meaning`. Comparison
+  retrieval now queries both atomic meanings, and packet selection
+  keeps a fused hit for each still-uncovered atomic aspect after rerank so a
+  packet that contains both reviewed spans can ground; a one-sided packet
+  stays partial.
+- A09 and A10 remain on the frozen RC2/RC2.1 exclusive `official_quote_only`
+  migrations. Current output is two-sided `structured_reviewed` coverage of
+  `TC-EVAC-ALERT-001` and `TC-EVAC-ORDER-001`. That is an explained paired
+  overlay regression from stronger reviewed structured comparison, not a
+  product defect to reverse and not an rc2.1 profile migration. The 86/105
+  floor is unchanged and still met.
+- Bound trailing `from <place>` as location scope for nearest-wildfire
+  requests.
+- Bound quote-only official wording to an admitted corpus chunk identity and
+  exact quote occurrence; a gov.bc.ca URL plus a 64-hex hash is not enough.
+  Unofficial hosts stay rejected. Kept current-advice on the guidance lane;
+  treated FireLens map-data questions as non-live; routed universal standoff
+  prompts as prescriptive rather than live geometry. A preparedness noun does
+  not let static documents answer whether an evacuation order is active.
 - Rebuilt the README as a reader-first explanation of the product, authority
   boundary, V1.6 work, verification limits, and contributor entry points.
 - Made rejected validation downgrade public presentation even for no-claim
