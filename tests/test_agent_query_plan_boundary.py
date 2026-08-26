@@ -10,6 +10,7 @@ import pytest
 from pydantic import HttpUrl
 
 from firelens.agent import FireLensAgent
+from firelens.agent.query_plan import AgentGeography, AgentRequestMode, plan_agent_request
 from firelens.answering.intent import (
     live_layers_for_question,
     plan_query,
@@ -331,3 +332,36 @@ def test_canonical_mixed_keeps_both_halves_with_separate_authority() -> None:
     assert AnswerSectionKind.REVIEWED_GUIDANCE in kinds
     assert live.nearby_calls == 1
     assert (live.nearby_label or "").casefold() == "kelowna"
+
+
+@pytest.mark.parametrize(
+    ("question", "place", "static_subrequest"),
+    (
+        (
+            "Show active fires near Nelson, plus a plain-language comparison of "
+            "an evacuation alert and order.",
+            "Nelson",
+            "a plain-language comparison of an evacuation alert and order",
+        ),
+        (
+            "Thompson wildfire situation and a basic evacuation packing checklist.",
+            "Thompson",
+            "a basic evacuation packing checklist",
+        ),
+    ),
+)
+def test_conversational_mixed_noun_phrases_create_two_bounded_execution_lanes(
+    question: str, place: str, static_subrequest: str
+) -> None:
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert plan.route == QueryRoute.LIVE
+    assert plan.mode == AgentRequestMode.MIXED
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == place
+    assert plan.live_layers == (
+        LiveResultKind.INCIDENT,
+        LiveResultKind.PERIMETER,
+    )
+    assert plan.static_subrequest == static_subrequest
+    assert len(plan.tool_calls) == 2

@@ -364,3 +364,82 @@ def test_regional_aggregate_comparisons_do_not_become_one_location(question: str
     assert plan_query(QueryRequest(question=question)).route == QueryRoute.LIVE
     assert coarse_location_from_question(question) is None
     assert live_layers_for_question(question)
+
+
+@pytest.mark.parametrize(
+    ("question", "place"),
+    (
+        ("Catch us up on Smithers' wildfire overview.", "Smithers"),
+        ("Vernon fire update, latest please.", "Vernon"),
+    ),
+)
+def test_place_owned_current_fire_summary_families_keep_location_scope(
+    question: str, place: str
+) -> None:
+    """Conversational and terse summary requests still name a local live scope."""
+
+    facets = parse_request_facets(question)
+    location = coarse_location_from_question(question)
+
+    assert facets.has_current_live_fire
+    assert facets.live_location_candidates == (place,)
+    assert location is not None and location.label == place
+    assert plan_query(QueryRequest(question=question)).route == QueryRoute.LIVE
+    assert live_layers_for_question(question) == (
+        LiveResultKind.INCIDENT,
+        LiveResultKind.PERIMETER,
+    )
+
+
+@pytest.mark.parametrize(
+    ("question", "live_fragment", "static_fragment", "place"),
+    (
+        (
+            "List current fires around Terrace, and a simple comparison between "
+            "an evacuation alert and order.",
+            "List current fires around Terrace",
+            "a simple comparison between an evacuation alert and order",
+            "Terrace",
+        ),
+        (
+            "Cariboo wildfire status plus an evacuation travel packing list.",
+            "Cariboo wildfire status",
+            "an evacuation travel packing list",
+            "Cariboo",
+        ),
+    ),
+)
+def test_terse_definition_and_packing_noun_phrases_remain_mixed(
+    question: str,
+    live_fragment: str,
+    static_fragment: str,
+    place: str,
+) -> None:
+    facets = parse_request_facets(question)
+    location = coarse_location_from_question(question)
+
+    assert facets.clause_texts == (live_fragment, static_fragment)
+    assert tuple(clause.text for clause in facets.live_clauses) == (live_fragment,)
+    assert location is not None and location.label == place
+    assert plan_query(QueryRequest(question=question)).route == QueryRoute.LIVE
+    assert live_layers_for_question(question) == (
+        LiveResultKind.INCIDENT,
+        LiveResultKind.PERIMETER,
+    )
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Explain Smithers' historical wildfire overview.",
+        "Describe Vernon's wildfire ecology.",
+    ),
+)
+def test_place_owned_summary_vocabulary_does_not_override_noncurrent_cues(
+    question: str,
+) -> None:
+    facets = parse_request_facets(question)
+
+    assert not facets.has_current_live_fire
+    assert coarse_location_from_question(question) is None
+    assert live_layers_for_question(question) == ()

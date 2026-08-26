@@ -17,12 +17,20 @@ _CLAUSE_START = (
     r"is|are|was|were|do|does|did|can|could|may|might|should|would|will|"
     r"has|have|had|there\s+(?:is|are|was|were)|"
     r"give|show|display|list|map|tell|explain|define|describe|compare|"
-    r"check|find|put|move|focus|centre|center|zoom|help)\b"
+    r"check|find|put|move|focus|centre|center|zoom|help|catch|bring)\b"
+)
+_GUIDANCE_NOUN_MODIFIERS = (
+    r"(?:(?:an?|the)\s+)?"
+    r"(?:(?:basic|simple|plain(?:-|\s+)(?:english|language))\s+)?"
 )
 _TERSE_GUIDANCE_START = (
     r"(?:emergency\s+kit|grab-and-go\s+bag|go\s+bag|"
     r"(?:wildfire\s+)?smoke\s+(?:readiness|health|preparedness)|"
-    r"evacuation\s+(?:alert|order)\s+(?:definitions?|meaning|guidance))\b"
+    r"evacuation\s+(?:alert|order)\s+(?:definitions?|meaning|guidance)|"
+    rf"{_GUIDANCE_NOUN_MODIFIERS}(?:difference|comparison|distinction)\s+"
+    r"(?:between|of)\s+(?:an?\s+)?(?:evacuation\s+)?(?:alert|order)|"
+    rf"{_GUIDANCE_NOUN_MODIFIERS}(?:(?:evacuation|emergency|travel)\s+)*"
+    r"packing\s+(?:checklist|list))\b"
 )
 _CLAUSE_BOUNDARY = re.compile(
     rf"(?:(?:[?;.+]\s*|,\s*|\s+(?:and|also|plus|but|then)\s+)"
@@ -76,9 +84,13 @@ _EXPOSITORY = re.compile(
     re.IGNORECASE,
 )
 _RECORD_COMMAND = re.compile(
-    r"^\s*(?:please\s+)?(?:give|show|display|list|map|check|find)\b"
+    r"^\s*(?:please\s+)?(?:"
+    r"(?:give|show|display|list|map|check|find)\b|"
+    r"(?:catch\s+(?:me|us)\s+up|bring\s+(?:me|us)\s+up\s+to\s+date)"
+    r"(?:\s+on)?\b)"
     r".{0,120}\b(?:wildfires?|fires?|burning|"
-    r"(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?))\b",
+    r"(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?|"
+    r"picture|overview|snapshot))\b",
     re.IGNORECASE,
 )
 _PRESENT_FIRE_QUESTION = re.compile(
@@ -95,14 +107,28 @@ _PRESENT_FIRE_QUESTION = re.compile(
 _CURRENT_FIRE_STATUS = re.compile(
     r"\b(?:active|burning|current|latest)\b.{0,80}\b(?:wildfires?|fires?)\b|"
     r"\b(?:wildfires?|fires?)\b.{0,80}\b(?:active|burning|current|latest)\b|"
-    r"\b(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?)\b",
+    r"\b(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?|"
+    r"picture|overview|snapshot)\b",
     re.IGNORECASE,
 )
 
 _FRONTED_LOCATION = re.compile(
     r"^\s*(?:please\s+)?(?:give|show|display|tell)\s+(?:me\s+)?(?:the\s+)?"
     r"(?P<place>[a-z][a-z .'-]{1,80}?)\s+"
-    r"(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?)\b",
+    r"(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?|"
+    r"picture|overview|snapshot)\b",
+    re.IGNORECASE,
+)
+_PLACE_OWNED_FIRE_SUMMARY = re.compile(
+    r"^\s*(?:please\s+)?"
+    r"(?:(?:catch\s+(?:me|us)\s+up|bring\s+(?:me|us)\s+up\s+to\s+date)"
+    r"(?:\s+on)?\s+)?"
+    r"(?!(?:give|show|display|list|map|check|find|tell)\b)"
+    r"(?P<place>[a-z][a-z .'-]{1,80}?)(?:"
+    r"(?:['\N{RIGHT SINGLE QUOTATION MARK}]s|"
+    r"(?<=s)['\N{RIGHT SINGLE QUOTATION MARK}])\s+|\s+)"
+    r"(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?|"
+    r"picture|overview|snapshot)\b",
     re.IGNORECASE,
 )
 _FRONTED_SCOPE = re.compile(
@@ -266,6 +292,9 @@ def _live_location_candidate(text: str) -> str | None:
     fronted = _FRONTED_LOCATION.search(text)
     if fronted is not None:
         return fronted.group("place").strip()
+    owned_summary = _PLACE_OWNED_FIRE_SUMMARY.search(text)
+    if owned_summary is not None:
+        return owned_summary.group("place").strip()
     return None
 
 
