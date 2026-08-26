@@ -89,6 +89,7 @@ def test_promoted_checkout_binds_the_internal_manifest() -> None:
     assert report["to_version"] == TO_VERSION
     assert report["frozen_standard_sha256"] == file_sha256(ROOT / STANDARD_RELATIVE)
     assert set(report["version_surfaces"].values()) == {TO_VERSION}
+    assert report["promotion_commit"] == "1702db85ae32871c7bd9d5a9b27c3116a6a26176"
 
 
 def test_promoted_merge_commit_binds_functional_parent_as_ancestor() -> None:
@@ -115,7 +116,12 @@ def test_promoted_merge_commit_binds_functional_parent_as_ancestor() -> None:
     )
     assert report["functional_parent_commit"] == manifest["functional_parent_commit"]
     assert report["functional_parent_tree"] == manifest["functional_parent_tree"]
-    assert report["promotion_commit"] == second.stdout.strip()
+    assert report["promotion_commit"] == "1702db85ae32871c7bd9d5a9b27c3116a6a26176"
+    subprocess.run(
+        ["git", "merge-base", "--is-ancestor", report["promotion_commit"], commit],
+        cwd=ROOT,
+        check=True,
+    )
 
 
 def test_promotion_validator_rejects_a_non_head_commit() -> None:
