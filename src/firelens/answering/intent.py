@@ -10,9 +10,9 @@ from __future__ import annotations
 import re
 
 from firelens.answering.capability_intent import is_capability_question
+from firelens.answering.intent_automaton import TemporalScope, parse_request_intent
 from firelens.answering.intent_patterns import (
     _CORPUS_REFERENCE_PATTERNS,
-    _LIVE_PATTERNS,
     _PERSONALIZED_MEDICAL_PATTERNS,
     _POLICY_MANIPULATION_PATTERNS,
     _PROHIBITED_PATTERNS,
@@ -21,10 +21,6 @@ from firelens.answering.intent_safety import (
     empty_map_safety_routing,
     is_empty_map_safety_inference,
     trust_explanation_limitations,
-)
-from firelens.answering.live_record_intent import (
-    is_fire_geography_analysis,
-    is_fire_record_analysis,
 )
 from firelens.answering.location_intent import (
     asks_for_personal_location,
@@ -125,33 +121,6 @@ _UNSUPPORTED_LIVE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
         ),
     ),
 )
-_EVACUATION_TOPIC = re.compile(
-    r"\b(?:evacuations?|(?:(?:evacuation|evac)\s+)?(?:alerts?|orders?)|"
-    r"emergencyinfo\s*bc)\b",
-    re.IGNORECASE,
-)
-_EVACUATION_DEFINITION = re.compile(
-    r"\b(?:explain|define|meaning|mean|difference|versus|vs\.?)\b.{0,80}"
-    r"\b(?:alerts?|orders?)\b|"
-    r"\b(?:alerts?|orders?)\b.{0,80}"
-    r"\b(?:mean|meaning|difference|versus|vs\.?)\b",
-    re.IGNORECASE,
-)
-_STATIC_GUIDANCE_TERMS = (
-    "prepare",
-    "preparedness",
-    "precaution",
-    "kit",
-    "bag",
-    "grab-and-go",
-    "firesmart",
-    "reduce wildfire risk",
-    "sprinkler",
-    "smoke exposure",
-    "protect from smoke",
-    "alert mean",
-    "order mean",
-)
 
 
 def request_fragments(question: str) -> tuple[str, ...]:
@@ -159,21 +128,6 @@ def request_fragments(question: str) -> tuple[str, ...]:
 
     return parse_request_facets(question).clause_texts
 
-
-_REVIEWED_GUIDANCE_PATTERNS = (
-    r"\b(?:home ignition zone|firesmart|combustible material|ember risk)\b",
-    r"\bprecautions?\b",
-    r"\bwhat should i (?:take|do|pack|prepare)\b.{0,80}\b(?:fire|wildfire|evacuat)",
-    r"\b(?:grab-and-go|go bag|emergency kit|emergency plan(?:ning)?|household plan)\b",
-    r"\b(?:family|household|pets?)\b.{0,50}\b(?:prepare|evacuation|emergency)\b",
-    r"\b(?:prepare|preparing)\b.{0,50}\b(?:family|household|pets?|evacuation)\b",
-    r"\b(?:evacuation|evac)[-\s]+(?:alerts?|orders?)\b"
-    r"(?:.{0,40}\b(?:basics?|summar(?:y|ies)|overview|guidance)\b)?",
-    r"\b(?:wildfire smoke|smoke indoors?|smoke exposure|smoke\s+(?:in|inside)\s+(?:my\s+|our\s+|the\s+)?(?:home|house))\b",
-    r"\b(?:wildfire rank|stage of control|stages of control)\b",
-    r"\b(?:out(?:ta| of) control|being held|under control)\b.{0,30}\b(?:fire|wildfire|mean)\b",
-    r"\b(?:structure[- ]protection sprinklers?|home ignition)\b",
-)
 
 _DEICTIC_FOLLOWUP = re.compile(
     r"\b(?:it|that|this|they|them|there|those|these|the (?:first|second|third|other) one|"
@@ -305,77 +259,30 @@ def _requires_personal_live_location(question: str) -> bool:
 def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
     """Return only official layers that can answer the user's live intent."""
 
-    original_question = question
-    facets = parse_request_facets(original_question)
-    if facets.only_non_current_fire:
+    parsed = parse_request_intent(question)
+    if not parsed.has_live_records and parsed.temporal_scope == TemporalScope.NONCURRENT:
         return ()
-    original_location = coarse_location_from_question(original_question)
+    original_location = coarse_location_from_question(question)
     if (
         original_location is None
         and re.search(
             r"\b(?:this|that|selected)\s+(?:fire|wildfire|incident|record)\b",
-            original_question,
+            question,
             re.IGNORECASE,
         )
         and re.search(
             r"\b(?:status|details?|size|large|big|hectares?|source|updated|updates?)\b",
-            original_question,
+            question,
             re.IGNORECASE,
         )
     ):
         # Deictic attributes must bind to a selected ID, never a province list.
         return ()
-    supported_fragments = [
-        clause.text
-        for clause in facets.clauses
-        if clause.current_live_fire or not unsupported_live_topics(clause.text)
-    ]
-    if not supported_fragments:
-        return ()
-    question = " and ".join(supported_fragments)
-    lowered = question.casefold()
-    layers: list[LiveResultKind] = []
-    # RequestFacets is the sole incident-current authority.
-    fire_status_requested = facets.has_current_live_fire
-    perimeter_requested = bool(re.search(r"\bperimeters?\b", lowered))
-    incident_requested = bool(re.search(r"\bincidents?\b", lowered))
-    perimeter_only_phrase = bool(re.search(r"\b(?:fire|wildfire)\s+perimeters?\b", lowered))
-    if facets.has_current_live_fire and is_fire_geography_analysis(question):
-        # Fire-centre geography is an incident-layer field. Pulling perimeter
-        # polygons here duplicates fires, inflates status totals, and sends the
-        # browser records that cannot contribute to this analysis.
-        layers.append(LiveResultKind.INCIDENT)
-    elif perimeter_requested and not incident_requested and perimeter_only_phrase:
-        layers.append(LiveResultKind.PERIMETER)
-    elif perimeter_requested and not fire_status_requested:
-        if incident_requested:
-            layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
-        else:
-            layers.append(LiveResultKind.PERIMETER)
-    elif fire_status_requested:
-        layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
-        if original_location is not None and re.search(
-            r"\bofficial\s+(?:live\s+)?records?\b", lowered
-        ):
-            # A location-scoped request for generic official records asks for
-            # every map layer FireLens owns, not only incident records.
-            layers.append(LiveResultKind.EVACUATION)
-    elif (
-        facets.has_current_live_fire
-        and re.search(r"\bincident\b", lowered)
-        and re.search(r"\bperimeter\b", lowered)
-    ):
-        layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
-    if any(
-        _EVACUATION_TOPIC.search(fragment)
-        and plan_query(QueryRequest(question=fragment)).route == QueryRoute.LIVE
-        for fragment in request_fragments(original_question)
-    ):
-        layers.append(LiveResultKind.EVACUATION)
-    if is_empty_map_safety_inference(original_question):
-        # An empty fire map cannot establish evacuation status or personal safety.
-        # Fetch every owned official layer so the response can expose the whole
-        # bounded lookup and hand off to the issuing authority without an all-clear.
+    layers = list(parsed.live_layers)
+    if is_empty_map_safety_inference(question):
+        # Empty-map all-clear attempts are a safety overlay on the typed parse:
+        # fetch every owned official layer so the response can expose the lookup
+        # and hand off without inventing an all-clear.
         layers.extend(
             (
                 LiveResultKind.INCIDENT,
@@ -383,16 +290,6 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
                 LiveResultKind.EVACUATION,
             )
         )
-    if (
-        not layers
-        and facets.has_current_live_fire
-        and (is_fire_geography_analysis(question) or is_fire_record_analysis(question))
-        and re.search(
-            r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?)\b",
-            lowered,
-        )
-    ):
-        layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
     return tuple(dict.fromkeys(layers))
 
 
@@ -420,33 +317,15 @@ def live_query_requires_location(question: str) -> bool:
 def static_guidance_fragment(question: str) -> str | None:
     """Keep the user's own stable-guidance clause for a mixed live/static request."""
 
-    fragments = parse_request_facets(question).clause_texts
-    selected = [
-        fragment
-        for fragment in fragments
-        if fragment
-        and (
-            any(term in fragment.casefold() for term in _STATIC_GUIDANCE_TERMS)
-            or any(
-                re.search(pattern, fragment.casefold())
-                for pattern in _REVIEWED_GUIDANCE_PATTERNS
-            )
-            or reviewed_return_condition_intent(fragment)
-            or _EVACUATION_DEFINITION.search(fragment)
-        )
-        and plan_query(QueryRequest(question=fragment)).route == QueryRoute.RELATED
-    ]
-    if not selected:
-        return None
-    return " and ".join(selected)[:2_000]
+    return parse_request_intent(question).reviewed_guidance_text
 
 
 def reviewed_guidance_intent(question: str) -> bool:
     """Recognize only topics represented by the reviewed static collection."""
 
-    lowered = question.casefold()
-    return reviewed_return_condition_intent(question) or any(
-        re.search(pattern, lowered) for pattern in _REVIEWED_GUIDANCE_PATTERNS
+    return bool(
+        reviewed_return_condition_intent(question)
+        or parse_request_intent(question).has_reviewed_guidance
     )
 
 
@@ -455,7 +334,7 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
 
     question = request.question
     processing_question = focused_question(question)
-    facets = parse_request_facets(processing_question)
+    parsed_intent = parse_request_intent(processing_question)
     lowered = processing_question.lower()
     routing_texts = _routing_texts(request)
     safety_texts: tuple[str, ...] = (question.lower(),)
@@ -475,37 +354,9 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     )
     if reviewed_return_condition_intent(processing_question):
         personalized = False
-    live = any(re.search(pattern, text) for text in routing_texts for pattern in _LIVE_PATTERNS)
-    live = live or bool(unsupported_live_topics(processing_question))
-    live = live or any(
-        parse_request_facets(text).has_current_live_fire for text in routing_texts
-    )
-    named_location = coarse_location_from_question(processing_question)
-    named_live_command = (
-        not facets.only_non_current_fire
-        and named_location is not None
-        and (
-            facets.has_current_live_fire
-            or bool(
-                re.search(
-                    r"\b(?:alert|alerts?|order|orders?|evacuation|perimeters?)\b",
-                    lowered,
-                )
-            )
-        )
-    )
-    personal_live_command = _requires_personal_live_location(processing_question) and (
-        facets.has_current_live_fire
-        or bool(re.search(r"\b(?:perimeters?|evacuation|alerts?|orders?)\b", lowered))
-    )
-    province_record_command = bool(
-        (
-            re.search(r"\bperimeter\b", lowered)
-            or (facets.has_current_live_fire and re.search(r"\bincident\b", lowered))
-        )
-        and re.search(r"\b(?:current|latest|show|map|record|records)\b", lowered)
-    )
-    live = live or named_live_command or personal_live_command or province_record_command
+    live = bool(unsupported_live_topics(processing_question))
+    live = live or parsed_intent.has_live_records
+    live = live or any(parse_request_intent(text).has_live_records for text in routing_texts)
     manipulation = any(
         re.search(pattern, text)
         for text in safety_texts

@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import re
 
-from firelens.answering.request_grammar import parse_request_facets
+from firelens.answering.request_grammar import (
+    parse_request_facets,
+    requests_non_bc_national_scope,
+)
 from firelens.live_contracts import LocationInput
 
 _PERSONAL_LOCATION = re.compile(
@@ -268,6 +271,11 @@ _REJECTED_PLACES = {
     "active",
     "national",
     "nationwide",
+    "nation",
+    "canadian",
+    "students",
+    "untrusted",
+    "preamble",
     "distance",
     "display",
     "map",
@@ -354,20 +362,6 @@ _OUT_OF_PROVINCE_PLACES = frozenset(
 
 _WHOLE_COUNTRY_LABELS = frozenset(
     {"canada", "the rest of canada", "united states", "usa", "us", "america"}
-)
-
-_NATIONAL_SCOPE = re.compile(
-    r"\b(?:across|all of|rest of|throughout|in)\s+(?:canada|the\s+(?:us|usa|united states)|america)\b"
-    r"|\bcanada[- ]?wide\b|\bnation[- ]?wide\b|\bevery province\b|\ball provinces\b"
-    r"|\bcoast(?:-|\s+)to(?:-|\s+)coast\b|\b(?:across|throughout)\s+the\s+country\b"
-    r"|\ball\s+(?:ten|10)\s+provinces\b"
-    r"|\bcanada['’]s\s+(?:current\s+|latest\s+)?(?:wildfire|fire)\s+"
-    r"(?:situation|status|updates?|reports?|summar(?:y|ies)|map|records?|"
-    r"picture|overview|snapshot|counts?)\b"
-    r"|\b(?:national|nation[- ]?wide)\s+(?:wildfire|fire)\s+"
-    r"(?:situation|status|updates?|reports?|summar(?:y|ies)|map|records?|"
-    r"picture|overview|snapshot|counts?)\b",
-    re.IGNORECASE,
 )
 
 
@@ -477,9 +471,9 @@ def is_out_of_province_label(label: str | None) -> bool:
 
 
 def is_national_scope_question(question: str) -> bool:
-    """True when the question asks about Canada-wide or non-BC national scope."""
+    """True when a current-record request explicitly owns non-BC national scope."""
 
-    return bool(_NATIONAL_SCOPE.search(question))
+    return requests_non_bc_national_scope(question)
 
 
 def is_province_wide_label(label: str | None) -> bool:

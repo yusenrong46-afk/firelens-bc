@@ -17,6 +17,7 @@ from firelens.answering.intent import (
     plan_query,
     reviewed_guidance_intent,
 )
+from firelens.answering.intent_automaton import parse_request_intent
 from firelens.answering.location_intent import (
     asks_for_personal_location,
     coarse_location_from_question,
@@ -140,7 +141,7 @@ def _live_place_correction(request: QueryRequest) -> QueryRequest | None:
                 "location": None,
             }
         )
-    if reviewed_guidance_intent(place):
+    if reviewed_guidance_intent(place) or parse_request_intent(place).has_prefetchable_guidance:
         return None
     parsed_place = coarse_location_from_question(f"map {place}")
     if parsed_place is None or parsed_place.label is None:

@@ -10,29 +10,15 @@ from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
     live_layers_for_question,
     reviewed_guidance_intent,
-    static_guidance_fragment,
     unsupported_live_topics,
 )
+from firelens.answering.intent_automaton import parse_request_intent
 from firelens.answering.intent_safety import is_empty_map_safety_inference
 from firelens.answering.live_analysis import compose_official_answer
 from firelens.answering.live_request_intent import is_selected_live_request
 from firelens.answering.location_intent import coarse_location_from_question
-from firelens.answering.request_grammar import parse_request_facets
 from firelens.contracts import LiveResultKind, QueryRequest
 
-_GUIDANCE = re.compile(
-    r"\b(?:kit|grab-and-go|go[- ]bags?|firesmart|prepare|preparing|preparedness|"
-    r"precaution|precautions|emergency plan|what belongs|smoke preparedness|"
-    r"pack(?:ing)?|what should i (?:take|do|pack))\b",
-    re.IGNORECASE,
-)
-_DEFINITION = re.compile(
-    r"\b(?:explain|define|meaning|mean|difference|versus|vs\.?)\b.{0,80}"
-    r"\b(?:alerts?|orders?)\b|"
-    r"\b(?:alerts?|orders?)\b.{0,80}"
-    r"\b(?:mean|meaning|difference|versus|vs\.?)\b",
-    re.IGNORECASE,
-)
 _PREDICTION = re.compile(
     r"\b(?:when will|will it|predict|forecast|reach|spread to|be contained)\b",
     re.IGNORECASE,
@@ -42,42 +28,30 @@ _PREDICTION = re.compile(
 def confident_guidance_intent(question: str) -> bool:
     """Guidance or definition intent strong enough to prefetch reviewed RAG."""
 
-    return bool(
-        _GUIDANCE.search(question)
-        or _DEFINITION.search(question)
-        or (reviewed_guidance_intent(question) and not unsupported_live_topics(question))
-    )
+    return reviewed_guidance_intent(question)
 
 
 def should_prefetch_reviewed_guidance(question: str) -> bool:
     """Skip static prefetch on live-only questions so official records stay first."""
 
-    if _GUIDANCE.search(question) or _DEFINITION.search(question):
-        return True
-    if live_layers_for_question(question):
+    parsed = parse_request_intent(question)
+    if live_layers_for_question(question) and not parsed.has_reviewed_guidance:
         return False
-    return confident_guidance_intent(question)
+    return reviewed_guidance_intent(question) or parsed.has_prefetchable_guidance
 
 
 def planned_static_subrequest(question: str) -> str | None:
-    """Preserve one exact non-live clause for static or mixed execution."""
+    """Preserve the exact non-live clause for static or mixed execution."""
 
     if is_empty_map_safety_inference(question):
         return None
+    parsed = parse_request_intent(question)
     layers = live_layers_for_question(question)
-    facets = parse_request_facets(question)
-    fragment = static_guidance_fragment(question)
-    if fragment is not None and (
-        layers or facets.has_current_live_fire or unsupported_live_topics(question)
-    ):
-        return fragment
-    if facets.has_current_live_fire:
-        non_live = " and ".join(
-            clause.text for clause in facets.non_live_clauses if clause.text
-        )
-        if non_live:
-            return non_live[:2_000]
-    if not layers and should_prefetch_reviewed_guidance(question):
+    if layers or parsed.has_live_records:
+        return parsed.static_subrequest_text
+    if unsupported_live_topics(question):
+        return parsed.reviewed_guidance_text
+    if should_prefetch_reviewed_guidance(question):
         return question
     return None
 

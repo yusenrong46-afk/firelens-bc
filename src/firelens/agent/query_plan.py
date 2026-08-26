@@ -15,11 +15,8 @@ from firelens.answering.intent import (
     plan_query,
     unsupported_live_topics,
 )
+from firelens.answering.intent_automaton import parse_request_intent
 from firelens.answering.live_handoffs import related_live_links
-from firelens.answering.live_record_intent import (
-    is_fire_geography_analysis,
-    is_fire_record_analysis,
-)
 from firelens.answering.live_request_intent import (
     is_distance_request,
     is_selected_live_request,
@@ -27,13 +24,8 @@ from firelens.answering.live_request_intent import (
 )
 from firelens.answering.location_intent import (
     coarse_location_from_question,
-    is_national_scope_question,
     is_out_of_province_label,
     is_province_wide_label,
-)
-from firelens.answering.request_grammar import (
-    parse_request_facets,
-    requests_non_bc_national_scope,
 )
 from firelens.contracts import (
     AskResponse,
@@ -279,26 +271,20 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
 
     topics = unsupported_live_topics(request.question)
     layers = live_layers_for_question(request.question)
-    facets = parse_request_facets(request.question)
-    supported_live_clause = any(
-        clause.current_live_fire and not unsupported_live_topics(clause.text)
-        for clause in facets.clauses
-    )
+    parsed_intent = parse_request_intent(request.question)
+    supported_live_clause = parsed_intent.has_live_records
     if topics and not supported_live_clause:
         layers = ()
-    if not layers and public_plan.route == QueryRoute.LIVE:
-        if is_fire_geography_analysis(request.question):
-            layers = (LiveResultKind.INCIDENT,)
-        elif is_fire_record_analysis(request.question):
-            layers = (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER)
     static_query = planned_static_subrequest(request.question)
     location = request.location or coarse_location_from_question(request.question)
     actual_live_request = bool(
-        layers or facets.has_current_live_fire or public_plan.route == QueryRoute.LIVE or topics
+        layers
+        or parsed_intent.has_live_records
+        or public_plan.route == QueryRoute.LIVE
+        or topics
     )
     outside_bc_scope = bool(
-        is_national_scope_question(request.question)
-        or requests_non_bc_national_scope(request.question)
+        parsed_intent.requests_non_bc_scope
         or (location is not None and is_out_of_province_label(location.label))
     )
     if actual_live_request and outside_bc_scope:

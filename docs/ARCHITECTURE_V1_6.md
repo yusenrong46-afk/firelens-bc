@@ -29,8 +29,8 @@ as supported fact.
 
 Public Ask is `FireLensAgent` in `src/firelens/agent/coordinator.py`, the
 immutable planner in `src/firelens/agent/query_plan.py`, and the bounded loop
-in `src/firelens/agent/loop.py` (ADR 0017; ADR 0011 and ADR 0013 are superseded
-in part).
+in `src/firelens/agent/loop.py` (ADR 0018, ADR 0017; ADR 0011 and ADR 0013 are
+superseded in part).
 
 ```text
 QueryRequest
@@ -51,6 +51,13 @@ brain. Live answering helpers compute geodesic kilometres after fetch; Luna
 must not invent a different distance.
 
 ## Deterministic request-plan boundary
+
+Request shape is owned by the typed intent automaton in
+`src/firelens/answering/intent_automaton.py` (ADR 0018). One parse supplies
+clause boundaries, temporal scope, live operations and layers, national scope,
+reviewed-guidance signals, and location candidates. `AgentQueryPlan` authorizes
+tools from that projection. Downstream modules must not re-parse the question
+with an independent phrase grammar.
 
 `AgentQueryPlan` is a frozen per-request value. It can authorize only the
 specific fixed tool calls it contains, including normalized arguments. It
