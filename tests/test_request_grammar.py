@@ -262,6 +262,24 @@ def test_static_fire_topics_do_not_satisfy_the_positive_live_grammar(
     assert facets.live_location_candidates == ()
 
 
+def test_close_to_scope_binds_the_named_place_without_widening() -> None:
+    question = "Are any wildfires burning close to Revelstoke?"
+
+    facets = parse_request_facets(question)
+    location = coarse_location_from_question(question)
+
+    assert facets.has_current_live_fire
+    assert facets.live_location_candidates == ("Revelstoke",)
+    assert location is not None and location.label == "Revelstoke"
+
+
+def test_analysis_dimension_is_not_parsed_as_a_place() -> None:
+    question = "Break down the current fires by status in B.C."
+
+    assert parse_request_facets(question).has_current_live_fire
+    assert coarse_location_from_question(question) is None
+
+
 def test_audience_for_phrase_is_not_a_live_location() -> None:
     question = "Show current wildfires for students."
     facets = parse_request_facets(question)

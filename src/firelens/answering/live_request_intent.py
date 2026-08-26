@@ -32,7 +32,7 @@ _SELECTED_ENTITY_PATTERN = re.compile(
 )
 _SELECTED_ATTRIBUTE_PATTERN = re.compile(
     r"\b(?:status|happening|details?|size|large|big|hectares?|source|publisher|dataset|"
-    r"updated|updates?|update time|update timestamp)\b",
+    r"updated|updates?|update time|update timestamp|perimeter|map|location|position)\b",
     re.IGNORECASE,
 )
 _SELECTED_UNSUPPORTED_PATTERN = re.compile(
@@ -56,10 +56,12 @@ _SELECTED_LIVE_ELLIPTICAL = re.compile(
     r"^\s*(?:"
     r"(?:what|which)\s+(?:source|publisher|dataset)\s+(?:reported|published)\s+it|"
     r"who\s+(?:reported|published)\s+it|"
-    r"what(?:'s|\s+is)\s+its\s+(?:status|size|source)|"
+    r"what(?:'s|\s+is)\s+its\s+"
+    r"(?:(?:present|current|latest)\s+)?(?:status|size|source|perimeter|location)|"
     r"how\s+(?:large|big)\s+is\s+it|"
     r"when\s+was\s+it\s+updated|"
-    r"(?:what|any)\s+updates?(?:\s+on\s+it)?"
+    r"(?:what|any)\s+updates?(?:\s+on\s+it)?|"
+    r"(?:and\s+)?(?:the\s+)?(?:perimeter|map|location)"
     r")[?!.]*\s*$",
     re.IGNORECASE,
 )

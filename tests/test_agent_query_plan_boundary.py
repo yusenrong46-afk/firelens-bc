@@ -28,6 +28,7 @@ from firelens.contracts import (
     LiveMapResponse,
     LiveResult,
     LiveResultKind,
+    MapContext,
     PublicClaim,
     PublicEvidence,
     QueryRequest,
@@ -274,6 +275,29 @@ def test_positive_live_grammar_families_authorize_bounded_fire_tools(
     assert plan.route == QueryRoute.LIVE
     assert plan.live_layers
     assert [call.name.value for call in plan.tool_calls] == ["list_official_fires"]
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "What is its present status?",
+        "Put this fire on the map.",
+        "Show the selected perimeter.",
+        "And the perimeter?",
+    ),
+)
+def test_selected_record_followups_cannot_widen_to_a_province_list(question: str) -> None:
+    plan = plan_agent_request(
+        QueryRequest(
+            question=question,
+            context=MapContext(selected_live_result_id="incident:boundary-17"),
+        )
+    )
+
+    assert plan.mode == AgentRequestMode.SELECTED
+    assert plan.geography == AgentGeography.SELECTED_RECORD
+    assert [call.name.value for call in plan.tool_calls] == ["get_official_fire"]
+    assert plan.tool_calls[0].as_arguments() == {"result_id": "incident:boundary-17"}
 
 
 def test_agent_plan_does_not_promote_a_for_audience_to_geography() -> None:

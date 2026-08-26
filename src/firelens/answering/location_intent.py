@@ -223,6 +223,7 @@ _NON_PLACE_ANALYSIS_WORDS = frozenset(
         "geographic",
         "geographically",
         "geography",
+        "status",
         "centre",
         "centres",
     }
