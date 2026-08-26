@@ -29,7 +29,7 @@ def test_current_documentation_preserves_v1_6_rc2_authority_boundaries() -> None
     assert "## Quick start" in readme
     assert "## Verification and evidence" in readme
     assert "RC2 hardening and qualification campaign" in readme
-    assert "public package and API identity remains `1.6.0-rc.1`" in readme
+    assert "public package and API identity is `1.6.0`" in readme
     assert "not a current wildfire or evacuation report" in readme
     assert "The request plan owns retrieval scope" in readme
     assert "Preview and production configuration reject" in readme

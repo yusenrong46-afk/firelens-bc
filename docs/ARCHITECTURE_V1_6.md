@@ -4,8 +4,8 @@ Status: current architecture authority for Ask, trust, packaging, and proof UX.
 Date: 2026-08-25
 
 The RC2 label names the current hardening and qualification campaign. The
-public package, runtime, and OpenAPI identity remains `1.6.0-rc.1` until a
-separately authorized version change; evidence must record that actual identity.
+public package, runtime, and OpenAPI identity is `1.6.0`; evidence must record
+that actual identity.
 
 This document replaces the V1.5 technical handbook for runtime Ask behaviour.
 `docs/TECHNICAL_HANDBOOK.md` is historical (2026-07-30). Qualification evidence

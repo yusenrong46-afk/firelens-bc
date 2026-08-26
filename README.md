@@ -12,7 +12,7 @@ geography and source layers a request may use.
 _Deterministic local demonstration data, not a current wildfire or evacuation report._
 
 > **Project status:** the V1.6 RC2 hardening and qualification campaign is
-> integrated in this engineering candidate; the public package and API identity remains `1.6.0-rc.1` until a separately authorized version change.
+> integrated in this engineering candidate; the public package and API identity is `1.6.0`.
 > Local or CI success is not deployment or release proof, and the existing
 > [public site](https://firelens-bc.vercel.app) must not be assumed to match this checkout.
 

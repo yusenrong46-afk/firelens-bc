@@ -55,6 +55,8 @@
   treated FireLens map-data questions as non-live; routed universal standoff
   prompts as prescriptive rather than live geometry. A preparedness noun does
   not let static documents answer whether an evacuation order is active.
+- Promoted the public package, runtime, Docker, Render, OpenAPI, and
+  candidate-evidence identity from `1.6.0-rc.1` to `1.6.0`.
 - Rebuilt the README as a reader-first explanation of the product, authority
   boundary, V1.6 work, verification limits, and contributor entry points.
 - Made rejected validation downgrade public presentation even for no-claim

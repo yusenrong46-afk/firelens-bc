@@ -1001,7 +1001,8 @@ def test_candidate_workflow_is_exact_head_zero_cost_v2_artifact() -> None:
     assert "github.event.pull_request.head.sha || github.sha" in workflow_text
     assert "scripts/run_hard_probe.py --mode offline" in workflow_text
     assert "--expectation-profile rc2.1" in workflow_text
-    assert "--release-version 1.6.0-rc.1" in workflow_text
+    assert "--release-version 1.6.0" in workflow_text
+    assert "--release-version 1.6.0-rc.1" not in workflow_text
     assert "--release-version 1.6.0-rc.2" not in workflow_text
     assert "firelens.candidate_evidence.v2" in workflow_text
     assert "--expected-tree" in workflow_text
