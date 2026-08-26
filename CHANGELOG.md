@@ -33,7 +33,9 @@
   materials.
 - Bound V1.6 promotion ancestry with isolated `rev-list` reachability so Git
   2.55 commit-graph false negatives and inherited `GIT_DIR` cannot reject a
-  merge commit when F and unique P are ancestors. Overlays, the 86 floor, and
+  merge commit when F and unique P are ancestors. Candidate-evidence now
+  unshallows after qualification, which can write a shallow boundary that hides
+  F while leaving HEAD unchanged. Overlays, the 86 floor, and
   `ALLOWED_PROMOTION_PATHS` are unchanged.
 - Added a typed intent automaton as the single owner of request shape before
   `AgentQueryPlan` authorizes tools, layers, and geography.

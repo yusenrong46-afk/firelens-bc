@@ -260,6 +260,9 @@ jobs:
           PY
       - name: Reconfirm promotion ancestry before evidence build
         run: |
+          git fetch --unshallow || true
+          git fetch origin --prune --no-recurse-submodules \
+            '+refs/heads/*:refs/remotes/origin/*' || true
           python3 - <<'PY'
           import json
           import subprocess
@@ -278,6 +281,10 @@ jobs:
           print("git-dir", git("rev-parse", "--git-dir"))
           print("shallow", git("rev-parse", "--is-shallow-repository"))
           print("leftover", leftover or "<empty>")
+          if leftover:
+              subprocess.run(["git", "fetch", "origin", parent, "main"], check=False)
+              leftover = git("rev-list", "--max-count=3", parent, "--not", head)
+              print("leftover-after-fetch", leftover or "<empty>")
           if leftover:
               raise SystemExit("functional parent is not an ancestor of HEAD before evidence")
           PY
