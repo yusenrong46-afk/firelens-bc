@@ -6,6 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import yaml
+
 from scripts.check_actions_pinned import unpinned_actions, unpinned_dockerfile_bases
 from scripts.check_lockfiles import check_node_lock, check_python_lock
 
@@ -50,6 +52,28 @@ class CIControlTests(unittest.TestCase):
                 encoding="utf-8",
             )
             self.assertEqual(unpinned_dockerfile_bases(dockerfile), [])
+
+    def test_pr_workflows_check_out_exact_head_sha(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        expected_ref = "${{ github.event.pull_request.head.sha || github.sha }}"
+        for relative in (
+            ".github/workflows/verify.yml",
+            ".github/workflows/candidate.yml",
+        ):
+            text = (root / relative).read_text(encoding="utf-8")
+            workflow = yaml.safe_load(text)
+            checkout_refs = [
+                (step.get("with") or {}).get("ref")
+                for job in workflow["jobs"].values()
+                for step in job["steps"]
+                if str(step.get("uses", "")).startswith("actions/checkout@")
+            ]
+            self.assertEqual(checkout_refs, [expected_ref], relative)
+            self.assertIn(
+                "CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}", text
+            )
+            self.assertIn("git rev-parse HEAD", text)
+            self.assertIn("$CANDIDATE_SHA", text)
 
     def test_secret_scan_includes_nonignored_untracked_files(self) -> None:
         root = Path(__file__).resolve().parents[1]

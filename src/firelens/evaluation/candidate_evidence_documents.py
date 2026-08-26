@@ -34,7 +34,11 @@ from firelens.evaluation.candidate_evidence_validation import (
     validate_timestamp,
     validate_workflow_identity,
 )
-from firelens.evaluation.release_promotion import TO_VERSION, validate_release_promotion
+from firelens.evaluation.release_promotion import (
+    TO_VERSION,
+    promotion_material_record,
+    validate_release_promotion,
+)
 
 
 def _python_components(root: Path) -> list[dict[str, object]]:
@@ -230,6 +234,16 @@ def _security_document(
     }
 
 
+def evidence_materials(root: Path, *, release_version: str) -> list[dict[str, object]]:
+    materials = [file_record(root, name) for name in MATERIAL_PATHS]
+    if (
+        _normalized_release_version(release_version, label="requested release version")
+        == TO_VERSION
+    ):
+        materials.append(promotion_material_record(root))
+    return materials
+
+
 def documents(
     root: Path,
     *,
@@ -293,7 +307,7 @@ def documents(
         tree=tree,
     )
 
-    materials = [file_record(root, name) for name in MATERIAL_PATHS]
+    materials = evidence_materials(root, release_version=release_version)
     subjects = [file_record(root, SUBJECT_FILE), tree_record(root, SUBJECT_TREE)]
     components = sorted(
         [*_python_components(root), *_node_components(root)],

@@ -3,6 +3,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from firelens.config import DEFAULT_RELEASE_VERSION
 from firelens.evaluation.common import file_sha256
 from firelens.evaluation.release_promotion import (
@@ -83,3 +85,16 @@ def test_promoted_checkout_binds_the_internal_manifest() -> None:
     assert report["to_version"] == TO_VERSION
     assert report["frozen_standard_sha256"] == file_sha256(ROOT / STANDARD_RELATIVE)
     assert set(report["version_surfaces"].values()) == {TO_VERSION}
+
+
+def test_promotion_validator_rejects_a_non_head_commit() -> None:
+    if DEFAULT_RELEASE_VERSION != TO_VERSION:
+        return
+    head_tree = subprocess.check_output(
+        ["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True
+    ).strip()
+    parent = subprocess.check_output(["git", "rev-parse", "HEAD^"], cwd=ROOT, text=True).strip()
+    with pytest.raises(ValueError, match="checkout does not match candidate identity"):
+        validate_release_promotion(
+            ROOT, commit=parent, tree=head_tree, release_version=TO_VERSION
+        )
