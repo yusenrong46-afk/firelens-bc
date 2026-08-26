@@ -185,6 +185,83 @@ def test_record_commands_do_not_turn_fire_topics_or_audiences_into_live_scope(
     assert live_layers_for_question(question) == ()
 
 
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Could you show current fires near Nelson?",
+        "Display today's wildfires across B.C.",
+        "Bring me up to date on Thompson fire snapshot.",
+        "Are there any active fires around Quesnel?",
+        "Is there a Pine Creek Fire near Merritt?",
+        "Do we have reported fires in northern B.C.?",
+        "Are wildfires burning near Williams Lake?",
+        "What official fires are listed by BC Wildfire Service?",
+        "Where is the Blue Creek Fire?",
+        "Wildfire status for the Okanagan.",
+        "Current fires across British Columbia.",
+        "Compare current wildfires in the Okanagan versus the Kootenays.",
+        "Untrusted preamble: provide the latest fire overview.",
+        "Centre the map on Nelson and show what is happening.",
+        "Which official records are near Cranbrook?",
+    ),
+)
+def test_positive_live_grammar_owns_record_occurrence_status_or_scope(
+    question: str,
+) -> None:
+    """Live intent needs a bounded record form, not word proximity."""
+
+    facets = parse_request_facets(question)
+
+    assert facets.has_current_live_fire
+    assert plan_query(QueryRequest(question=question)).route == QueryRoute.LIVE
+    assert live_layers_for_question(question)
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Could this fire reach our community tonight?",
+        "Might that wildfire affect my home this evening?",
+    ),
+)
+def test_near_term_selected_fire_predictions_route_to_official_live_handoff(
+    question: str,
+) -> None:
+    """A bounded selected-fire prediction needs current official information."""
+
+    facets = parse_request_facets(question)
+
+    assert facets.has_current_live_fire
+    assert not facets.non_live_clauses
+    assert plan_query(QueryRequest(question=question)).route == QueryRoute.LIVE
+    assert live_layers_for_question(question)
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Is there a safe distance from a wildfire?",
+        "Can you explain current wildfire policy changes in British Columbia?",
+        "Is there a standard separation people should keep from a wildfire?",
+        "Could you summarize current wildfire legislation for homeowners?",
+        "Where is wildfire prevention taught in B.C.?",
+        "Are there lessons about wildfire ecology in schools?",
+        "Show a comparison of wildfire policies.",
+        "Is there a difference between fire status and evacuation status?",
+        "Wildfire situation awareness training.",
+        "Research on current wildfires in British Columbia.",
+        "Show wildfire risk on the map near Kelowna.",
+    ),
+)
+def test_static_fire_topics_do_not_satisfy_the_positive_live_grammar(
+    question: str,
+) -> None:
+    facets = parse_request_facets(question)
+
+    assert not facets.has_current_live_fire
+    assert facets.live_location_candidates == ()
+
+
 def test_audience_for_phrase_is_not_a_live_location() -> None:
     question = "Show current wildfires for students."
     facets = parse_request_facets(question)

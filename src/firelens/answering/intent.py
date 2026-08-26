@@ -210,11 +210,7 @@ def resolved_user_question(request: QueryRequest) -> str:
 
 
 def _routing_texts(request: QueryRequest) -> tuple[str, ...]:
-    """Use history only for a genuinely elliptical current question.
-
-    This prevents an old live request from poisoning a later, self-contained
-    stable-guidance question while still resolving "What about right now?".
-    """
+    """Use history only for a genuinely elliptical current question."""
 
     current = focused_question(request.question).lower()
     if len(current.split()) > 16 or not _DEICTIC_FOLLOWUP.search(current):
@@ -313,6 +309,21 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
     if facets.only_non_current_fire:
         return ()
     original_location = coarse_location_from_question(original_question)
+    if (
+        original_location is None
+        and re.search(
+            r"\b(?:this|that|selected)\s+(?:fire|wildfire|incident|record)\b",
+            original_question,
+            re.IGNORECASE,
+        )
+        and re.search(
+            r"\b(?:status|details?|size|large|big|hectares?|source|updated|updates?)\b",
+            original_question,
+            re.IGNORECASE,
+        )
+    ):
+        # Deictic attributes must bind to a selected ID, never a province list.
+        return ()
     supported_fragments = [
         clause.text
         for clause in facets.clauses
@@ -323,28 +334,12 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
     question = " and ".join(supported_fragments)
     lowered = question.casefold()
     layers: list[LiveResultKind] = []
-    personal_location = _requires_personal_live_location(question)
-    fire_status_requested = (
-        any(
-            re.search(pattern, lowered)
-            for pattern in (
-                r"\b(?:active|current|latest)\s+(?:(?:bc|b\.c\.|british columbia)\s+)?(?:fires?|wildfires?)\b",
-                r"\bhow many\b.{0,40}\b(?:fires?|wildfires?)\b",
-                r"\b(?:fire|wildfire)\s+(?:status|situation|map|update|updates)\b",
-                r"\b(?:is there|are there|where is)\b.{0,30}\b(?:fire|wildfire)\b",
-                r"\b(?:is there|are there|where is)\b.{0,40}[a-z]{1,12}fires?\b.{0,30}\b(?:near|around|by|in|within)\b",
-                r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?)\b.{0,40}\b(?:burning|near|around|in bc|in british columbia)\b",
-                r"\b(?:fires?|wildfires?)\b.{0,60}\b(?:listed|reported|published)\s+by\s+"
-                r"(?:bcws|bc wildfire service)\b",
-                r"\b(?:bcws|bc wildfire service)\b.{0,50}\b(?:status|map|update|latest|fire)\b",
-            )
-        )
-        or facets.has_current_live_fire
-    )
+    # RequestFacets is the sole incident-current authority.
+    fire_status_requested = facets.has_current_live_fire
     perimeter_requested = bool(re.search(r"\bperimeters?\b", lowered))
     incident_requested = bool(re.search(r"\bincidents?\b", lowered))
     perimeter_only_phrase = bool(re.search(r"\b(?:fire|wildfire)\s+perimeters?\b", lowered))
-    if is_fire_geography_analysis(question):
+    if facets.has_current_live_fire and is_fire_geography_analysis(question):
         # Fire-centre geography is an incident-layer field. Pulling perimeter
         # polygons here duplicates fires, inflates status totals, and sends the
         # browser records that cannot contribute to this analysis.
@@ -358,38 +353,17 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
             layers.append(LiveResultKind.PERIMETER)
     elif fire_status_requested:
         layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
-    elif original_location is not None and re.search(
-        r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?)\b(?!\s+smoke)|"
-        r"\b(?:fire|wildfire)\s+(?:map|status|situation|update)\b|"
-        r"\b(?:map|burning|happening)\b",
-        lowered,
+        if original_location is not None and re.search(
+            r"\bofficial\s+(?:live\s+)?records?\b", lowered
+        ):
+            # A location-scoped request for generic official records asks for
+            # every map layer FireLens owns, not only incident records.
+            layers.append(LiveResultKind.EVACUATION)
+    elif (
+        facets.has_current_live_fire
+        and re.search(r"\bincident\b", lowered)
+        and re.search(r"\bperimeter\b", lowered)
     ):
-        layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
-    elif original_location is not None and re.search(
-        r"\bofficial\s+(?:live\s+)?records?\b",
-        lowered,
-    ):
-        layers.extend(
-            (
-                LiveResultKind.INCIDENT,
-                LiveResultKind.PERIMETER,
-                LiveResultKind.EVACUATION,
-            )
-        )
-    elif personal_location and re.search(
-        r"\b(?:fires?|wildfires?|burning|perimeter|closest|nearest)\b",
-        lowered,
-    ):
-        layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
-    elif personal_location and re.search(r"\bmap\b", lowered):
-        layers.extend(
-            (
-                LiveResultKind.INCIDENT,
-                LiveResultKind.PERIMETER,
-                LiveResultKind.EVACUATION,
-            )
-        )
-    elif re.search(r"\bincident\b", lowered) and re.search(r"\bperimeter\b", lowered):
         layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
     if any(
         _EVACUATION_TOPIC.search(fragment)
@@ -410,6 +384,7 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
         )
     if (
         not layers
+        and facets.has_current_live_fire
         and (is_fire_geography_analysis(question) or is_fire_record_analysis(question))
         and re.search(
             r"\b(?:fires?|wildfires?|[a-z]{1,12}fires?)\b",
@@ -500,26 +475,33 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     if reviewed_return_condition_intent(processing_question):
         personalized = False
     live = any(re.search(pattern, text) for text in routing_texts for pattern in _LIVE_PATTERNS)
-    live = live or is_fire_geography_analysis(processing_question)
-    live = live or is_fire_record_analysis(processing_question)
     live = live or bool(unsupported_live_topics(processing_question))
-    live = live or facets.has_current_live_fire
+    live = live or any(
+        parse_request_facets(text).has_current_live_fire for text in routing_texts
+    )
     named_location = coarse_location_from_question(processing_question)
     named_live_command = (
         not facets.only_non_current_fire
         and named_location is not None
-        and bool(
-            re.search(
-                r"\b(?:where|show|map|current|latest|right now|rn|today|situation|status|"
-                r"active|burning|happening|alert|alerts?|order|orders?|official|records?|"
-                r"fires?|wildfires?|perimeters?)\b",
-                lowered,
+        and (
+            facets.has_current_live_fire
+            or bool(
+                re.search(
+                    r"\b(?:alert|alerts?|order|orders?|evacuation|perimeters?)\b",
+                    lowered,
+                )
             )
         )
     )
-    personal_live_command = _requires_personal_live_location(processing_question)
+    personal_live_command = _requires_personal_live_location(processing_question) and (
+        facets.has_current_live_fire
+        or bool(re.search(r"\b(?:perimeters?|evacuation|alerts?|orders?)\b", lowered))
+    )
     province_record_command = bool(
-        re.search(r"\b(?:incident|perimeter)\b", lowered)
+        (
+            re.search(r"\bperimeter\b", lowered)
+            or (facets.has_current_live_fire and re.search(r"\bincident\b", lowered))
+        )
         and re.search(r"\b(?:current|latest|show|map|record|records)\b", lowered)
     )
     live = live or named_live_command or personal_live_command or province_record_command

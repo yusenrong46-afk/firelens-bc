@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 _CLAUSE_START = (
-    r"(?:what(?:'s|\s+is)?|where|when|why|how|which|who|"
+    r"(?:what(?:['’]s|\s+is)?|where|when|why|how|which|who|"
     r"is|are|was|were|do|does|did|can|could|may|might|should|would|will|"
     r"has|have|had|there\s+(?:is|are|was|were)|"
     r"give|show|display|list|map|tell|explain|define|describe|compare|"
@@ -48,7 +48,7 @@ _NON_BC_NATIONAL_SCOPE = re.compile(
 )
 
 _FIRE_WORD = re.compile(
-    r"\b(?:(?:wildfires?|fires?)(?!\s+smoke\b)|burning)\b",
+    r"\b(?:(?:wildfires?|fires?)(?!\s+smoke\b)|[a-z]{2,20}fires?|burning)\b",
     re.IGNORECASE,
 )
 _FIRE_AS_CONTEXT = re.compile(
@@ -58,9 +58,41 @@ _FIRE_AS_CONTEXT = re.compile(
     r"\b(?:air quality|aqhi|smoke|wind|weather|roads?|highways?)\b",
     re.IGNORECASE,
 )
+_PRESENT_TIME_TEXT = (
+    r"(?:right\s+now|currently|today|tonight|now|at\s+the\s+moment|"
+    r"at\s+present|this\s+(?:morning|afternoon|evening|week))"
+)
+_FIRE_SUMMARY_TEXT = (
+    r"(?:situation|status|updates?|map|records?|picture|overview|snapshot|counts?)"
+)
+_FIRE_SCOPE_TEXT = r"(?:near|around|round|within|in|across|throughout|by|close\s+to)"
+_FIRE_SUMMARY_TERMINUS_TEXT = (
+    rf"(?=\s*(?:$|[?.,;:]|and\b|plus\b|for\b|of\b|"
+    rf"{_FIRE_SCOPE_TEXT}\b|{_PRESENT_TIME_TEXT}\b|listed\b|reported\b))"
+)
 _CURRENT_INCIDENT_RECORD = re.compile(
-    r"\b(?:active|current|latest|official)\s+(?:wildfire\s+)?incidents?\b|"
-    r"\bincidents?\b.{0,60}\b(?:active|current|latest|today|now)\b",
+    rf"\b(?:active|current|latest|official|reported)\s+"
+    rf"(?:wildfire\s+)?incidents?\b|"
+    rf"\b(?:wildfire\s+)?incidents?\s+"
+    rf"(?:are\s+)?(?:active|current|latest|official|reported|{_PRESENT_TIME_TEXT})\b",
+    re.IGNORECASE,
+)
+_OFFICIAL_FIRE_SERVICE_RECORD = re.compile(
+    rf"\b(?:bcws|bc\s+wildfire\s+service)\b.{{0,50}}"
+    rf"\b(?:posts?|posted|new|updates?|latest|{_PRESENT_TIME_TEXT})\b|"
+    rf"\b(?:what|which)\b.{{0,50}}\b(?:posts?|updates?|records?)\b.{{0,50}}"
+    rf"\b(?:bcws|bc\s+wildfire\s+service)\b",
+    re.IGNORECASE,
+)
+_OFFICIAL_RECORD_COMMAND = re.compile(
+    r"(?:^|[:;])\s*(?:what|which|show|display|list|check|find)\b.{0,40}"
+    r"\bofficial\s+(?:live\s+)?records?\b",
+    re.IGNORECASE,
+)
+_INCIDENT_MAP_COMMAND = re.compile(
+    r"^\s*(?:please\s+)?(?:put|move|focus|centre|center)\s+"
+    r"(?:the\s+)?map\s+(?:on|at|around|near|where)\b|"
+    r"^\s*(?:please\s+)?map\s+(?!of\b)[a-z][a-z .'-]{1,80}?\s*[?!.]*$",
     re.IGNORECASE,
 )
 _CURRENT_TIME = re.compile(
@@ -71,49 +103,175 @@ _CURRENT_TIME = re.compile(
 _FUTURE_OR_HISTORICAL = re.compile(
     r"\b(?:will|forecast|tomorrow|next\s+(?:day|week|month|year)|"
     r"yesterday|last\s+(?:night|week|month|year|season)|histor(?:y|ic|ical)|"
-    r"previous(?:ly)?|formerly|past|burned|burnt)\b",
+    r"previous(?:ly)?|formerly|past)\b",
+    re.IGNORECASE,
+)
+_CURRENT_FIRE_PREDICTION_HANDOFF = re.compile(
+    r"\b(?:will|could|might|can)\s+(?:the|this|that)\s+"
+    r"(?:(?:[a-z0-9.'-]+\s+){0,3})?(?:wildfire|fire)\s+"
+    r"(?:reach|arrive\s+at|threaten|affect|spread\s+to)\b.{0,100}"
+    rf"\b(?:me|us|my|our|home|house|property|neighbou?rhood|community|"
+    rf"{_PRESENT_TIME_TEXT})\b",
     re.IGNORECASE,
 )
 _EXPOSITORY = re.compile(
-    r"^\s*(?:explain|define|describe)\b|"
+    r"^\s*(?:(?:can|could|would|will)\s+you\s+)?(?:please\s+)?"
+    r"(?:explain|define|describe|summari[sz]e)\b|"
     r"\bwhat\s+(?:does|do)\b.{0,80}\bmean\b|"
     r"\bwhat\s+is\s+an?\s+(?:wildfire|fire)\b|"
+    r"^\s*(?:is|are)\s+there\s+(?:an?\s+)?"
+    r"(?:difference|distinction|comparison)\b|"
     r"^\s*how\s+(?:do|does|can)\b.{0,100}"
-    r"\b(?:affect|behave|form|happen|spread|start|work)\b|"
+    r"\b(?:affect|behave|change|form|happen|influence|shape|spread|start|work)\b|"
     r"\b(?:wildfire|fire)\s+(?:ecology|behaviou?r|causes?|science)\b",
     re.IGNORECASE,
 )
 _RECORD_COMMAND = re.compile(
-    r"^\s*(?:please\s+)?(?:"
-    r"(?:give|show|display|list|map|check|find)\b|"
-    r"(?:catch\s+(?:me|us)\s+up|bring\s+(?:me|us)\s+up\s+to\s+date)"
-    r"(?:\s+on)?\b)"
-    # A bare singular ``fire``/``wildfire`` after an imperative is too weak:
-    # it also matches topic commands such as "fire safety education" and
-    # "a map of fire-prone ecosystems".  Singular nouns remain supported
-    # when they own an explicit record-summary noun below, while bare record
-    # commands must name plural incidents or ask what is burning.
-    r".{0,120}\b(?:wildfires|fires|burning|"
-    r"(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?|"
-    r"picture|overview|snapshot))\b",
+    rf"(?:^|[:;])\s*(?:(?:can|could|would|will)\s+you\s+)?(?:please\s+)?(?:"
+    # A record-list command owns a plural fire object directly.  Descriptive
+    # topic nouns cannot sit between the command and that object.
+    rf"(?:give|show|display|list|map|check|find|compare)\s+"
+    rf"(?:(?:me|us)\s+)?(?:(?:the|all|any)\s+)?"
+    rf"(?:(?:active|current|latest|official|reported|today['’]s)\s+)*"
+    rf"(?:(?:bc|b\.c\.|british\s+columbia|provincial)\s+)?"
+    rf"(?:wildfires|fires)\b|"
+    # Singular fire nouns are live only when they own an adjacent record-view
+    # noun.  Up to three non-preposition tokens allow a fronted place or
+    # current/official modifier without accepting "policy about wildfire".
+    rf"(?:give|show|display|list|map|check|find|tell)\s+"
+    rf"(?:(?:me|us)\s+)?(?:(?:the|a|an)\s+)?"
+    rf"(?:(?!about\b|of\b|for\b|on\b|regarding\b)[a-z0-9.'-]+\s+){{0,3}}"
+    rf"(?:wildfire|fire)\s+{_FIRE_SUMMARY_TEXT}\b"
+    rf"{_FIRE_SUMMARY_TERMINUS_TEXT}|"
+    rf"(?:catch\s+(?:me|us)\s+up|bring\s+(?:me|us)\s+up\s+to\s+date)"
+    rf"(?:\s+on)?\s+(?:(?:the|a|an)\s+)?"
+    rf"(?:(?!about\b|of\b|for\b|on\b|regarding\b)[a-z0-9.'-]+\s+){{0,3}}"
+    rf"(?:wildfire|fire)\s+{_FIRE_SUMMARY_TEXT}\b"
+    rf"{_FIRE_SUMMARY_TERMINUS_TEXT})"
+    rf"|^\s*(?:please\s+)?(?:map|show|find|check)\s+what(?:'s|\s+is)\s+burning\b|"
+    rf"^\s*(?:please\s+)?(?:show|display)\s+(?:me\s+)?"
+    rf"[a-z][a-z .'-]{{1,60}}?\s+(?:wildfire|fire)\s+"
+    rf"(?:stuff|details?|information)\s+on\s+(?:the\s+)?map\b|"
+    rf"^\s*(?:please\s+)?(?:check|show|find)\s+"
+    rf"(?:my|our)\s+(?:area|place|location|neighbou?rhood)\s+for\s+"
+    rf"(?:(?:any|active|current|official|reported)\s+)*(?:wildfires|fires)\b|"
+    rf"^\s*(?:i|we)\s+(?:need|want)\s+(?:(?:the|all)\s+)?"
+    rf"(?:(?:active|current|latest|official|reported)\s+)*(?:wildfires|fires)\b",
     re.IGNORECASE,
 )
 _PRESENT_FIRE_QUESTION = re.compile(
-    r"\bwhat(?:'s|\s+is)\s+burning\b|"
-    r"\b(?:what|which)\s+(?:wildfires?|fires?)\s+(?:is|are)\b|"
-    r"\bwhere\s+(?:is|are)\b.{0,50}\b(?:wildfires?|fires?)\b|"
-    r"\b(?:is|are)\s+there\b.{0,60}\b(?:wildfires?|fires?)\b|"
-    r"\b(?:wildfires?|fires?)\s+(?:is|are)\b.{0,60}"
-    r"\b(?:active|burning|current|near|around|within|in|across)\b|"
-    r"\bwhat\s+(?:is|'s)\s+(?:the\s+)?(?:current\s+|latest\s+)?"
-    r"(?:wildfire|fire)\s+(?:situation|status|update|map)\b",
+    r"\bwhat(?:['’]s|\s+is)\s+burning\b|"
+    r"\bwhat(?:['’]s|\s+is)\s+on\s+fire\b|"
+    rf"\b(?:is|are)\s+anything\s+burning\s+{_FIRE_SCOPE_TEXT}\b|"
+    rf"(?:^|:)\s*(?:wildfires|fires)\s+{_FIRE_SCOPE_TEXT}\b|"
+    # Wh-questions own a fire record set directly; they cannot reach forward
+    # through an arbitrary topic phrase to find the word "wildfire".
+    r"\b(?:what|which)\s+"
+    r"(?:(?:active|current|latest|official|reported)\s+)*"
+    rf"(?:wildfires|fires)\s+(?:burning|listed|reported|{_FIRE_SCOPE_TEXT}|"
+    rf"(?:is|are|remain)\s+(?:active|burning|current|listed|reported|"
+    rf"{_FIRE_SCOPE_TEXT}|{_PRESENT_TIME_TEXT}))\b|"
+    r"\bhow\s+many\s+(?:(?:active|current|official|reported)\s+)*"
+    r"(?:wildfires?|fires?)\b|"
+    r"\bwhere\s+are\s+(?:(?:the|any)\s+)?"
+    r"(?:(?:active|current|latest|official|reported)\s+)*"
+    r"(?:wildfires?|fires?)\b|"
+    # A singular where-question must point to the fire itself: either the
+    # noun is followed immediately by a scope/time cue, or it is a named fire
+    # whose final noun is Fire/Wildfire.  "Where is wildfire prevention..."
+    # therefore cannot become a record lookup.
+    rf"\bwhere(?:'s|s|\s+is)\s+(?:(?:the|a|an)\s+)?"
+    rf"(?:[a-z0-9.'-]+\s+){{0,3}}(?:wildfire|fire)\s*"
+    rf"(?=$|[?.,;]|\b(?:{_FIRE_SCOPE_TEXT}|{_PRESENT_TIME_TEXT}|located)\b)|"
+    rf"\bwhere(?:'s|s|\s+is)\s+(?:wildfire|fire)\s+"
+    rf"[a-z]*\d[a-z0-9-]*\b|"
+    rf"\bwhere(?:'s|s|\s+is)\s+(?:the\s+)?(?:nearest|closest)\s+"
+    rf"(?:wildfire|fire|[a-z]{{2,20}}fires?)\s+{_FIRE_SCOPE_TEXT}\b|"
+    # Existential syntax is bounded to the immediate noun phrase.  This is
+    # the key distinction between "Are there active fires near X?" and "Is
+    # there a safe distance from a wildfire?".
+    rf"\b(?:is|are)\s+there\s+"
+    rf"(?:(?:any|more|active|current|latest|official|reported|nearby)\s+)*"
+    rf"(?:wildfires|fires)\b(?=\s*(?:$|[?.,;]|and\b|plus\b|"
+    rf"{_FIRE_SCOPE_TEXT}\b|{_PRESENT_TIME_TEXT}\b|active\b|burning\b|"
+    rf"listed\b|reported\b|called\b|named\b))|"
+    rf"\b(?:is|are)\s+there\s+(?:an?\s+)?"
+    rf"(?:(?!about\b|between\b|for\b|from\b|of\b)[a-z0-9.'-]+\s+){{0,3}}"
+    rf"(?:wildfire|fire)\b(?=\s*(?:$|[?.,;]|and\b|plus\b|"
+    rf"{_FIRE_SCOPE_TEXT}\b|{_PRESENT_TIME_TEXT}\b|active\b|burning\b|"
+    rf"called\b|named\b))|"
+    rf"\b(?:is|are)\s+(?:an?\s+)?(?:wildfire|fire)\s+"
+    rf"(?:active|burning|current|{_FIRE_SCOPE_TEXT})\b|"
+    rf"\b(?:is|are)\s+(?:(?:the|a|an)\s+)?"
+    rf"(?:[a-z0-9.'-]+\s+){{1,4}}(?:wildfire|fire)\s+"
+    rf"(?:active|burning|current|listed|reported|{_PRESENT_TIME_TEXT})\b|"
+    rf"\b(?:is|are)\s+there\s+(?:an?\s+)?[a-z]{{2,20}}fires?\s+"
+    rf"{_FIRE_SCOPE_TEXT}\b|"
+    rf"\b(?:are|were)\s+(?:(?:active|current|official|reported)\s+)*"
+    rf"(?:wildfires|fires)\s+(?:active|burning|current|listed|reported|"
+    rf"{_FIRE_SCOPE_TEXT})\b|"
+    rf"\b(?:do|does)\s+(?:we|you|they|[a-z][a-z'-]+)\s+have\s+"
+    rf"(?:(?:any|active|current|official|reported)\s+)*(?:wildfires|fires)\b|"
+    rf"\b(?:do|does)\s+(?:we|you|they|[a-z][a-z'-]+)\s+have\s+"
+    rf"(?:an?\s+)?(?:(?!about\b|between\b|for\b|from\b|of\b)"
+    rf"[a-z0-9.'-]+\s+){{0,3}}(?:wildfire|fire)\b"
+    rf"(?=\s*(?:$|[?.,;]|{_FIRE_SCOPE_TEXT}\b|{_PRESENT_TIME_TEXT}\b|"
+    rf"active\b|burning\b|called\b|named\b))|"
+    rf"\bany\s+(?:(?:active|current|official|reported)\s+)*"
+    rf"(?:wildfires|fires)\b|"
+    rf"\bwhat\s+(?:is|'s)\s+(?:the\s+)?(?:current\s+|latest\s+)?"
+    rf"(?:wildfire|fire)\s+{_FIRE_SUMMARY_TEXT}\b"
+    rf"{_FIRE_SUMMARY_TERMINUS_TEXT}|"
+    rf"\b(?:what|which)\s+(?:wildfire|fire|[a-z]{{2,20}}fires?)\s+(?:is\s+)?"
+    rf"(?:nearest|closest)\s+to\b|"
+    rf"\b(?:what|which)\s+is\s+(?:the\s+)?(?:nearest|closest)\s+"
+    rf"(?:wildfire|fire)\b|"
+    rf"\bhow\s+(?:far|close)(?:\s+away)?\s+is\s+"
+    rf"(?:(?:this|that|the\s+selected)\s+)?(?:wildfire|fire)\b|"
+    rf"\bdistance\s+from\b.{{1,80}}\b(?:this|that|selected)\s+"
+    rf"(?:wildfire|fire)\b|"
+    rf"\bhow\s+(?:large|big)\s+is\s+(?:(?:this|that|the\s+selected)\s+)?"
+    rf"(?:wildfire|fire)\b",
+    re.IGNORECASE,
+)
+_FIRE_RECORD_ANALYSIS = re.compile(
+    r"\b(?:wildfires?|fires?)\b.{0,80}"
+    r"\b(?:distribution|distributed|geograph(?:y|ic|ically)|"
+    r"concentrat(?:e|ed|ion)|density|each\s+(?:fire[- ]?)?centre|"
+    r"by\s+(?:fire[- ]?)?centre|most|fewest)\b|"
+    r"\b(?:distribution|distributed|geograph(?:y|ic|ically)|"
+    r"concentrat(?:e|ed|ion)|density|most|fewest|how\s+many|counts?)\b"
+    r".{0,80}\b(?:wildfires?|fires?)\b|"
+    r"\b(?:largest|oldest|nearest|closest)\b.{0,80}"
+    r"\b(?:wildfires?|fires?)\b|"
+    r"\b(?:wildfires?|fires?)\b.{0,80}\b(?:largest|oldest|hectares?)\b|"
+    r"\b(?:wildfire|fire)\s+counts?\b|"
+    r"\b(?:break\s+down|group|compare)\b.{0,80}"
+    r"\b(?:current\s+)?(?:wildfires?|fires?)\b.{0,80}"
+    r"\b(?:regions?|areas?|status|fire[- ]?centres?)\b",
+    re.IGNORECASE,
+)
+_TERSE_PLACE_FIRE_RECORD = re.compile(
+    rf"^\s*(?!(?:i\s+heard|tell\s+me|explain|describe|define|summari[sz]e|"
+    rf"is|are|was|were|can|could|would|will|do|does|did|what|where|when|"
+    rf"why|how|which|who)\b)"
+    rf"[a-z][a-z .'-]{{1,60}}?\s+(?:wildfire|fire)\s*"
+    rf"(?:{_PRESENT_TIME_TEXT})?[?!.]*\s*$",
     re.IGNORECASE,
 )
 _CURRENT_FIRE_STATUS = re.compile(
-    r"\b(?:active|burning|current|latest)\b.{0,80}\b(?:wildfires?|fires?)\b|"
-    r"\b(?:wildfires?|fires?)\b.{0,80}\b(?:active|burning|current|latest)\b|"
-    r"\b(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?|"
-    r"picture|overview|snapshot)\b",
+    rf"(?:^|[:,\N{{EM DASH}}\N{{EN DASH}}])\s*"
+    rf"(?:active|current|latest|official|reported)\s+"
+    rf"(?:(?:bc|b\.c\.|british\s+columbia|provincial)\s+)?"
+    rf"(?:(?:wildfires|fires)\b|(?:wildfire|fire)\s+{_FIRE_SUMMARY_TEXT}\b)|"
+    rf"^\s*(?:[a-z][a-z .'-]{{1,80}}?\s+)?(?:wildfires|fires)\s+(?:are\s+)?"
+    rf"(?:active|burning|current|listed|reported|{_PRESENT_TIME_TEXT})\b|"
+    rf"\b(?:wildfire|fire)\s+{_FIRE_SUMMARY_TEXT}"
+    rf"(?:\s+{_FIRE_SUMMARY_TEXT})?\b"
+    rf"{_FIRE_SUMMARY_TERMINUS_TEXT}|"
+    rf"\b(?:wildfire|fire)\s+(?:perimeters?|incidents?)\b|"
+    rf"\b(?:wildfire|fire)\s+{_PRESENT_TIME_TEXT}\b|"
+    rf"\btoday['’]s\s+(?:wildfires?|fires?)\b",
     re.IGNORECASE,
 )
 
@@ -122,6 +280,11 @@ _FRONTED_LOCATION = re.compile(
     r"(?P<place>[a-z][a-z .'-]{1,80}?)\s+"
     r"(?:wildfire|fire)\s+(?:situation|status|updates?|map|records?|"
     r"picture|overview|snapshot)\b",
+    re.IGNORECASE,
+)
+_FRONTED_TIME_LOCATION = re.compile(
+    rf"^\s*(?:{_PRESENT_TIME_TEXT}|latest)\s+in\s+(?:the\s+)?"
+    rf"(?P<place>[a-z][a-z .'-]{{1,80}}?)\s*[,;:]\s*",
     re.IGNORECASE,
 )
 _PLACE_OWNED_FIRE_SUMMARY = re.compile(
@@ -261,18 +424,32 @@ def _fronted_live_scope(text: str) -> str | None:
 def _is_current_live_fire(text: str) -> bool:
     fire_word = bool(_FIRE_WORD.search(text))
     incident_record = bool(_CURRENT_INCIDENT_RECORD.search(text))
-    if not fire_word and not incident_record:
+    official_record = bool(_OFFICIAL_FIRE_SERVICE_RECORD.search(text))
+    official_record = official_record or bool(_OFFICIAL_RECORD_COMMAND.search(text))
+    incident_map = bool(_INCIDENT_MAP_COMMAND.search(text))
+    if not fire_word and not incident_record and not official_record and not incident_map:
         return False
-    if _FUTURE_OR_HISTORICAL.search(text):
+    prediction_handoff = bool(_CURRENT_FIRE_PREDICTION_HANDOFF.search(text))
+    if _FUTURE_OR_HISTORICAL.search(text) and not prediction_handoff:
         return False
-    if _EXPOSITORY.search(text) and not _CURRENT_TIME.search(text):
+    record_command = bool(_RECORD_COMMAND.search(text))
+    present_question = bool(_PRESENT_FIRE_QUESTION.search(text))
+    # Expository ownership remains static even when the topic happens to use
+    # the word "current".  An explicit live question nested in conversational
+    # wording (for example, "Can you tell me which fires are active?") still
+    # qualifies through the positive present-question form.
+    if _EXPOSITORY.search(text) and not present_question:
         return False
     return bool(
-        _RECORD_COMMAND.search(text)
-        or _PRESENT_FIRE_QUESTION.search(text)
+        record_command
+        or present_question
         or _CURRENT_FIRE_STATUS.search(text)
+        or (_FIRE_RECORD_ANALYSIS.search(text) and not _FIRE_AS_CONTEXT.search(text))
+        or _TERSE_PLACE_FIRE_RECORD.search(text)
         or incident_record
-        or (_CURRENT_TIME.search(text) and fire_word)
+        or official_record
+        or incident_map
+        or prediction_handoff
     )
 
 
@@ -288,6 +465,9 @@ def _is_non_current_fire(text: str) -> bool:
 
 
 def _live_location_candidate(text: str) -> str | None:
+    time_fronted = _FRONTED_TIME_LOCATION.search(text)
+    if time_fronted is not None:
+        return time_fronted.group("place").strip()
     scoped = _fronted_live_scope(text)
     if scoped is not None:
         return scoped
@@ -325,7 +505,7 @@ def parse_request_facets(question: str) -> RequestFacets:
         RequestClause(
             text=text,
             current_live_fire=(is_live := _is_current_live_fire(text)),
-            non_current_fire=_is_non_current_fire(text),
+            non_current_fire=not is_live and _is_non_current_fire(text),
             live_location_candidate=_live_location_candidate(text) if is_live else None,
         )
         for text in _request_clauses(question)

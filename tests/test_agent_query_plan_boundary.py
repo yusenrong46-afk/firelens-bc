@@ -231,6 +231,51 @@ def test_agent_plan_rejects_bare_fire_topic_commands_as_live_records(
     assert plan.tool_calls == ()
 
 
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Is there a safe distance from a wildfire?",
+        "Can you explain current wildfire policy changes in British Columbia?",
+        "Is there a standard separation people should keep from a wildfire?",
+        "Could you summarize current wildfire legislation for homeowners?",
+        "Where is wildfire prevention taught in B.C.?",
+        "Are there lessons about wildfire ecology in schools?",
+        "Show a comparison of wildfire policies.",
+        "Research on current wildfires in British Columbia.",
+    ),
+)
+def test_static_fire_topic_families_never_authorize_live_tools(question: str) -> None:
+    """Static wildfire vocabulary cannot substitute for a live-record object."""
+
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert plan.route != QueryRoute.LIVE
+    assert plan.live_layers == ()
+    assert plan.location_label is None
+    assert plan.tool_calls == ()
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Could you show current fires near Nelson?",
+        "Are there any active fires around Quesnel?",
+        "Is there a Pine Creek Fire near Merritt?",
+        "What official fires are listed by BC Wildfire Service?",
+        "Wildfire status for the Okanagan.",
+        "Current fires across British Columbia.",
+    ),
+)
+def test_positive_live_grammar_families_authorize_bounded_fire_tools(
+    question: str,
+) -> None:
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert plan.route == QueryRoute.LIVE
+    assert plan.live_layers
+    assert [call.name.value for call in plan.tool_calls] == ["list_official_fires"]
+
+
 def test_agent_plan_does_not_promote_a_for_audience_to_geography() -> None:
     plan = plan_agent_request(QueryRequest(question="Show current wildfires for students."))
 
