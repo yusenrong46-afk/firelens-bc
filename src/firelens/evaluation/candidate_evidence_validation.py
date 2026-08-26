@@ -143,7 +143,10 @@ def validate_workflow_identity(value: Any, *, commit: str, tree: str) -> dict[st
     if identity["workflow"] != ".github/workflows/candidate.yml" or identity["event"] not in {
         "pull_request",
         "workflow_dispatch",
+        "push",
     }:
+        raise ValueError("workflow-identity evidence names an unsupported workflow or event")
+    if identity["event"] == "push" and identity["ref"] != "refs/heads/main":
         raise ValueError("workflow-identity evidence names an unsupported workflow or event")
     return identity
 

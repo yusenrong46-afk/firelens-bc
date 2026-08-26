@@ -8,6 +8,7 @@ import pytest
 import yaml
 
 from firelens.evaluation.candidate_evidence_common import MATERIAL_PATHS
+from firelens.evaluation.candidate_evidence_validation import validate_workflow_identity
 from firelens.evaluation.common import file_sha256
 from firelens.evaluation.release_promotion import (
     MANIFEST_RELATIVE,
@@ -1115,10 +1116,50 @@ def test_promoted_evidence_binds_and_rehashes_the_promotion_manifest(tmp_path: P
         _verify(root, bundle)
 
 
+def test_main_push_workflow_identity_is_accepted() -> None:
+    validate_workflow_identity(
+        {
+            "schema_version": "firelens.workflow_identity.v1",
+            "repository": "owner/firelens-bc",
+            "workflow": ".github/workflows/candidate.yml",
+            "event": "push",
+            "ref": "refs/heads/main",
+            "commit": COMMIT,
+            "tree": TREE,
+            "run_id": "123",
+            "run_attempt": "1",
+        },
+        commit=COMMIT,
+        tree=TREE,
+    )
+
+
+def test_non_main_push_workflow_identity_is_rejected() -> None:
+    with pytest.raises(ValueError, match="unsupported workflow or event"):
+        validate_workflow_identity(
+            {
+                "schema_version": "firelens.workflow_identity.v1",
+                "repository": "owner/firelens-bc",
+                "workflow": ".github/workflows/candidate.yml",
+                "event": "push",
+                "ref": "refs/heads/fix/v1-6-paid-floor",
+                "commit": COMMIT,
+                "tree": TREE,
+                "run_id": "123",
+                "run_attempt": "1",
+            },
+            commit=COMMIT,
+            tree=TREE,
+        )
+
+
 def test_candidate_workflow_is_exact_head_zero_cost_v2_artifact() -> None:
     workflow_path = Path(__file__).resolve().parents[1] / ".github/workflows/candidate.yml"
     workflow_text = workflow_path.read_text(encoding="utf-8")
-    assert isinstance(yaml.safe_load(workflow_text), dict)
+    loaded = yaml.safe_load(workflow_text)
+    assert isinstance(loaded, dict)
+    triggers = loaded.get("on", loaded.get(True))
+    assert triggers["push"]["branches"] == ["main"]
     assert "github.event.pull_request.head.sha || github.sha" in workflow_text
     assert "scripts/run_hard_probe.py --mode offline" in workflow_text
     assert "--expectation-profile rc2.2" in workflow_text
