@@ -61,6 +61,13 @@ def shout_unexpected(exc: BaseException, *, environment: str) -> UnexpectedProgr
     classified = (
         exc if isinstance(exc, UnexpectedProgrammingError) else UnexpectedProgrammingError()
     )
-    if environment in {"local", "test"}:
-        LOGGER.exception("unexpected programming error in public Ask")
+    LOGGER.error(
+        "unexpected programming error in public request",
+        extra={
+            "call_site": "public_exception_handler",
+            "deployment_environment": environment,
+            "exception_class": type(exc).__name__,
+            "failure_category": classified.public_kind,
+        },
+    )
     return classified

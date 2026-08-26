@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import re
 
+from firelens.answering.request_grammar import (
+    parse_request_facets,
+    requests_non_bc_national_scope,
+)
 from firelens.live_contracts import LocationInput
 
 _PERSONAL_LOCATION = re.compile(
@@ -43,12 +47,29 @@ _MULTI_PLACE_FIRE_COMPARISONS = (
 
 _PLACE_PATTERNS = (
     re.compile(
+        r"\b(?:wildfire|fire|incident|perimeter|evacuation)?\s*"
+        r"(?:map|layer|view|search)\b.{0,50}"
+        r"\b(?:empty|blank|returned?\s+(?:no|zero)|returned?\s+nothing)\b"
+        r".{0,50}\b(?:near|around|in)\s+"
+        r"(?P<place>[a-z0-9][a-z0-9 .'-]{1,80}?)"
+        r"(?=[,;:.?!]|\s+(?:and|but|so)\b|$)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:no|zero)\s+(?:map\s+)?(?:pins?|markers?)\s+"
+        r"(?:are\s+)?(?:show|showing|visible|displayed|present|appearing)\b"
+        r".{0,50}\b(?:near|around|in)\s+"
+        r"(?P<place>[a-z0-9][a-z0-9 .'-]{1,80}?)"
+        r"(?=[,;:.?!]|\s+(?:and|but|so)\b|$)",
+        re.IGNORECASE,
+    ),
+    re.compile(
         r"\b(?:nothing|no\s+(?:matching\s+)?"
         r"(?:results?|fires?|wildfires?|records?)|zero\s+(?:matching\s+)?"
         r"(?:results?|fires?|wildfires?|records?))\b"
         r".{0,50}\b(?:on|in)\s+(?:the\s+)?(?:fire|wildfire)?\s*map\b"
         r".{0,50}\b(?:near|around|in)\s+"
-        r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?P<place>[a-z0-9][a-z0-9 .'-]{1,80}?)"
         r"(?=[,;:.?!]|\s+(?:and|but|so)\b|$)",
         re.IGNORECASE,
     ),
@@ -57,7 +78,7 @@ _PLACE_PATTERNS = (
         r"\b(?:empty|blank|nothing|no\s+(?:results?|fires?|wildfires?|records?)|"
         r"zero\s+(?:results?|fires?|wildfires?|records?))\b"
         r".{0,50}\b(?:near|around|in)\s+"
-        r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?P<place>[a-z0-9][a-z0-9 .'-]{1,80}?)"
         r"(?=[,;:.?!]|\s+(?:and|but|so)\b|$)",
         re.IGNORECASE,
     ),
@@ -222,6 +243,7 @@ _NON_PLACE_ANALYSIS_WORDS = frozenset(
         "geographic",
         "geographically",
         "geography",
+        "status",
         "centre",
         "centres",
     }
@@ -247,6 +269,13 @@ _REJECTED_PLACES = {
     "current",
     "latest",
     "active",
+    "national",
+    "nationwide",
+    "nation",
+    "canadian",
+    "students",
+    "untrusted",
+    "preamble",
     "distance",
     "display",
     "map",
@@ -335,12 +364,6 @@ _WHOLE_COUNTRY_LABELS = frozenset(
     {"canada", "the rest of canada", "united states", "usa", "us", "america"}
 )
 
-_NATIONAL_SCOPE = re.compile(
-    r"\b(?:across|all of|rest of|throughout|in)\s+(?:canada|the\s+(?:us|usa|united states)|america)\b"
-    r"|\bcanada[- ]?wide\b|\bnation[- ]?wide\b|\bevery province\b|\ball provinces\b",
-    re.IGNORECASE,
-)
-
 
 def directional_bc_region_label(question: str) -> str | None:
     """Return a broad directional BC label that must never be geocoded.
@@ -370,6 +393,15 @@ def _clean_place(candidate: str) -> str | None:
     if place.casefold().startswith("the "):
         place = place[4:].strip()
     lowered = place.casefold()
+    province_with_modifier = re.fullmatch(
+        r"(?P<province>bc|b\s*\.?\s*c\s*\.?|british\s+columbia|the\s+province|province)"
+        r"(?:\s+(?:active|current|latest|official|reported))?",
+        lowered,
+    )
+    if province_with_modifier is not None:
+        return None
+    if re.fullmatch(r"b\s*\.?\s*c\s*\.?", lowered):
+        return None
     words = frozenset(re.findall(r"[a-z]+", lowered))
     if (
         len(place) < 2
@@ -439,9 +471,9 @@ def is_out_of_province_label(label: str | None) -> bool:
 
 
 def is_national_scope_question(question: str) -> bool:
-    """True when the question asks about Canada-wide or non-BC national scope."""
+    """True when a current-record request explicitly owns non-BC national scope."""
 
-    return bool(_NATIONAL_SCOPE.search(question))
+    return requests_non_bc_national_scope(question)
 
 
 def is_province_wide_label(label: str | None) -> bool:
@@ -453,6 +485,8 @@ def is_province_wide_label(label: str | None) -> bool:
     for suffix in (", canada", " canada"):
         if normalized.endswith(suffix):
             normalized = normalized[: -len(suffix)].strip(" .,")
+    if re.fullmatch(r"b\s*\.?\s*c\s*\.?", normalized):
+        normalized = "bc"
     return normalized in _PROVINCE_WIDE_LABELS
 
 
@@ -465,26 +499,48 @@ def coarse_location_from_question(question: str) -> LocationInput | None:
         return None
     if any(pattern.search(question) for pattern in _MULTI_PLACE_FIRE_COMPARISONS):
         return None
-    for pattern in _PLACE_PATTERNS:
-        match = pattern.search(question)
-        if match is None:
-            continue
-        place = _clean_place(match.group("place"))
+
+    facets = parse_request_facets(question)
+    if facets.only_non_current_fire:
+        return None
+    for candidate in facets.live_location_candidates:
+        place = _clean_place(candidate)
         if place is None:
             continue
         try:
             return LocationInput(label=place, radius_km=50)
         except ValueError:
             return None
-    for pattern in _CONTEXTUAL_PLACE_PATTERNS:
-        match = pattern.search(question)
-        if match is not None:
+
+    # When the grammar finds a current fire clause, location extraction is
+    # intentionally scoped to that clause. A later guidance clause must not
+    # lend its place phrase to the live lookup.
+    search_texts = (
+        tuple(clause.text for clause in facets.live_clauses)
+        if facets.has_current_live_fire
+        else (question,)
+    )
+    for search_text in search_texts:
+        for pattern in _PLACE_PATTERNS:
+            match = pattern.search(search_text)
+            if match is None:
+                continue
             place = _clean_place(match.group("place"))
-            if place is not None:
-                try:
-                    return LocationInput(label=place, radius_km=50)
-                except ValueError:
-                    return None
+            if place is None:
+                continue
+            try:
+                return LocationInput(label=place, radius_km=50)
+            except ValueError:
+                return None
+        for pattern in _CONTEXTUAL_PLACE_PATTERNS:
+            match = pattern.search(search_text)
+            if match is not None:
+                place = _clean_place(match.group("place"))
+                if place is not None:
+                    try:
+                        return LocationInput(label=place, radius_km=50)
+                    except ValueError:
+                        return None
     return None
 
 

@@ -50,9 +50,13 @@ class LocationInput(FrozenStrictModel):
             " rd ",
             " boulevard",
         )
-        if any(character.isdigit() for character in normalized) or any(
-            term in f" {lowered} " for term in street_terms
-        ):
+        # A small explicit set preserves genuine numeric BC community names
+        # without weakening the default rejection of civic addresses.
+        numeric_bc_communities = frozenset({"100 mile house"})
+        digit_label_is_allowed = lowered in numeric_bc_communities
+        if (
+            any(character.isdigit() for character in normalized) and not digit_label_is_allowed
+        ) or any(term in f" {lowered} " for term in street_terms):
             raise ValueError("use a community or place label, not an exact address")
         return normalized
 

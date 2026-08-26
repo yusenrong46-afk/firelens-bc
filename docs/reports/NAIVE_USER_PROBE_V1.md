@@ -33,9 +33,9 @@ Partially. Retrieval+validation can use a new document when the planner accepts 
 
 Case definitions (tracked):
 
-- [`data/evaluation/naive_user_probe.v1.yaml`](../evaluation/naive_user_probe.v1.yaml)
-- [`data/evaluation/rag_jailbreak_probe.v1.yaml`](../evaluation/rag_jailbreak_probe.v1.yaml)
-- [`data/evaluation/rag_generalization_probe.v1.yaml`](../evaluation/rag_generalization_probe.v1.yaml)
+- [`data/evaluation/naive_user_probe.v1.yaml`](../../data/evaluation/naive_user_probe.v1.yaml)
+- [`data/evaluation/rag_jailbreak_probe.v1.yaml`](../../data/evaluation/rag_jailbreak_probe.v1.yaml)
+- [`data/evaluation/rag_generalization_probe.v1.yaml`](../../data/evaluation/rag_generalization_probe.v1.yaml)
 
 Fixtures (tracked HTML only; indexes under `output/`):
 

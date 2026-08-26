@@ -1,11 +1,15 @@
 import type { AskResponse, ResponseMode } from "../shared/api/api";
 
 const MAP_INTENT = /\b(?:map|mapped|where|location|located|near|nearby|across|distribution|geograph(?:y|ic|ical))\b/i;
-const MAP_FIRST_INTENT = /\b(?:map|mapped|across|distribution|geograph(?:y|ic|ical))\b/i;
-const ANALYSIS_INTENT = /\b(?:across|breakdown|compare|comparison|count|distribution|geograph(?:y|ic|ical)|highest|how many|most|trend|by\s+(?:region|fire centre|status))\b/i;
+const EXPLICIT_MAP_INTENT = /\b(?:map|mapped)\b/i;
+const ANALYSIS_INTENT = /\b(?:breakdown|counts?|distribut(?:ion|ed)|geograph(?:y|ic|ical)|how many|by\s+(?:fire centre|status))\b/i;
 
 export function questionRequestsMap(question: string | undefined): boolean {
   return Boolean(question && MAP_INTENT.test(question));
+}
+
+export function questionExplicitlyRequestsMap(question: string | undefined): boolean {
+  return Boolean(question && EXPLICIT_MAP_INTENT.test(question));
 }
 
 export function questionRequestsAnalysis(question: string | undefined): boolean {
@@ -43,7 +47,7 @@ export function preferredContextSurface({
   mode: ResponseMode | undefined;
   question: string | undefined;
 }): "evidence" | "map" {
-  if ((mode === "live" || mode === "mixed") && question && MAP_FIRST_INTENT.test(question)) {
+  if ((mode === "live" || mode === "mixed") && questionExplicitlyRequestsMap(question)) {
     return "map";
   }
   return "evidence";

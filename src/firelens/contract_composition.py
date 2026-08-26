@@ -17,8 +17,76 @@ BOUNDED_CONFLICT_TEXT = (
 _ALLOWED_CONFLICT_TEXTS = frozenset({DETERMINISTIC_CONFLICT_TEXT, BOUNDED_CONFLICT_TEXT})
 _CONFLICTING_GUIDANCE = "conflicting_guidance"
 _CURRENT_RECORDS = "current_records"
+_GENERAL_BACKGROUND = "general_background"
 _OFFICIAL_HANDOFF = "official_handoff"
+_REVIEWED_GUIDANCE = "reviewed_guidance"
 _UNCERTAINTY = "uncertainty"
+
+
+def canonical_live_or_mixed_answer(sections: Sequence[tuple[str, str]]) -> str | None:
+    """Return one approved top-level answer for validated live or mixed sections."""
+
+    allowed = canonical_live_or_mixed_answers(sections)
+    return allowed[0] if allowed else None
+
+
+def canonical_live_or_mixed_answers(sections: Sequence[tuple[str, str]]) -> tuple[str, ...]:
+    """Return the approved top-level answers for validated live or mixed sections."""
+
+    if not sections:
+        return ()
+    kinds = [kind for kind, _text in sections]
+    texts = [text for _kind, text in sections]
+    suffix = ""
+    if len(kinds) > 2 and kinds[-1] == _OFFICIAL_HANDOFF:
+        suffix = "\n\nRelated official information: " + texts[-1]
+        kinds = kinds[:-1]
+        texts = texts[:-1]
+    rendered = _canonical_core_live_or_mixed_answer(kinds, texts)
+    if rendered is None:
+        return ()
+    return tuple(item + suffix for item in rendered)
+
+
+def _canonical_core_live_or_mixed_answer(
+    kinds: list[str],
+    texts: list[str],
+) -> tuple[str, ...] | None:
+    if kinds == [_CURRENT_RECORDS]:
+        return (texts[0],)
+    if kinds == [_CURRENT_RECORDS, _REVIEWED_GUIDANCE]:
+        return (
+            texts[0] + "\n\n" + texts[1],
+            texts[0] + "\n\nPreparedness guidance: " + texts[1],
+        )
+    if kinds == [_CURRENT_RECORDS, _GENERAL_BACKGROUND]:
+        return (texts[0] + "\n\nGeneral background: " + texts[1],)
+    if kinds in (
+        [_CURRENT_RECORDS, _OFFICIAL_HANDOFF],
+        [_UNCERTAINTY, _OFFICIAL_HANDOFF],
+    ):
+        return (texts[0] + "\n\nRelated official information: " + texts[1],)
+    if kinds in (
+        [_OFFICIAL_HANDOFF, _REVIEWED_GUIDANCE],
+        [_UNCERTAINTY, _REVIEWED_GUIDANCE],
+    ):
+        return (texts[0] + "\n\nPreparedness guidance: " + texts[1],)
+    if kinds in (
+        [_OFFICIAL_HANDOFF, _GENERAL_BACKGROUND],
+        [_UNCERTAINTY, _GENERAL_BACKGROUND],
+    ):
+        return (texts[0] + "\n\nGeneral background: " + texts[1],)
+    if _CONFLICTING_GUIDANCE in kinds:
+        conflict = next(
+            text
+            for kind, text in zip(kinds, texts, strict=True)
+            if kind == _CONFLICTING_GUIDANCE
+        )
+        rendered = _render_sectioned_conflict_answer(
+            tuple(zip(kinds, texts, strict=True)), conflict
+        )
+        return (rendered,) if rendered else None
+    return None
 
 
 def is_canonical_conflict_answer(

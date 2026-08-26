@@ -7,40 +7,35 @@ This never invents official facts; it only restates typed response fields.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any
 
-from pydantic import Field, HttpUrl, model_validator
+from pydantic import HttpUrl
 
+from firelens._publication_authority import (
+    _UNSUPPORTED_PUBLICATION,
+    _bound_publication,
+    _live_publication,
+    _official_live_id_matches,
+    _publication_support_state,
+)
 from firelens.claim_trust import GROUNDED_PUBLIC_WORDING
-from firelens.contract_base import FrozenStrictModel
-from firelens.derivation_policy import derivation_policy_errors
 from firelens.freshness_language import official_records_headline
-from firelens.live_contracts import (
-    DISTANCE_ALGORITHM,
-    DISTANCE_UNIT,
-    GEODESIC_CRS,
-    DistanceDerivation,
+from firelens.live_claim_renderer import render_typed_live_claim
+from firelens.proof_contracts import (
+    AnswerStatusBanner as AnswerStatusBanner,
 )
-from firelens.safety_profile import (
-    PublicationState,
-    TruthClass,
-    bind_proof_profile,
-    verified_critical_metadata_present,
+from firelens.proof_contracts import (
+    ProofCard as ProofCard,
 )
+from firelens.proof_contracts import (
+    SupportState,
+)
+from firelens.proof_contracts import (
+    make_proof_card as make_proof_card,
+)
+from firelens.publication_contracts import PublicationKind
 
 BCWS_MAP_URL = "https://wildfiresituation.nrs.gov.bc.ca/map"
-
-SupportState = Literal[
-    "supported",
-    "structured_reviewed",
-    "official_live_typed",
-    "official_quote_only",
-    "source_linked_explanation",
-    "unknown",
-    "background",
-    "conflict",
-    "live_record",
-]
 
 _HEADLINES: dict[str, str] = {
     "grounded": "Grounded in reviewed official sources",
@@ -67,118 +62,6 @@ _SUPPORT_LABELS: dict[SupportState, str] = {
 }
 
 
-class AnswerStatusBanner(FrozenStrictModel):
-    headline: str = Field(min_length=1, max_length=120)
-    detail: str = Field(min_length=1, max_length=500)
-    freshness_label: str = Field(min_length=1, max_length=80)
-    availability_label: str = Field(min_length=1, max_length=160)
-    retrieval_completed_at: datetime | None = None
-    source_updated_at: datetime | None = None
-    official_escalation_title: str | None = Field(default=None, max_length=120)
-    official_escalation_url: HttpUrl | None = None
-
-
-class ProofCard(FrozenStrictModel):
-    claim_id: str = Field(min_length=1, max_length=200)
-    claim_text: str = Field(min_length=1, max_length=600)
-    support_state: SupportState
-    support_label: str = Field(min_length=1, max_length=120)
-    authority: str = Field(min_length=1, max_length=160)
-    exact_passage: str | None = Field(default=None, max_length=500)
-    source_title: str | None = Field(default=None, max_length=200)
-    source_revision: str | None = Field(default=None, max_length=200)
-    review_state: str = Field(min_length=1, max_length=120)
-    critical_fields_checked: str = Field(min_length=1, max_length=160)
-    freshness: str = Field(min_length=1, max_length=80)
-    conflicts_or_unknowns: list[str] = Field(default_factory=list, max_length=8)
-    official_url: HttpUrl | None = None
-    truth_class: TruthClass
-    publication_state: PublicationState
-    derivation: DistanceDerivation | None = None
-
-    @model_validator(mode="after")
-    def profile_metadata_matches_support_state(self) -> ProofCard:
-        expected_truth, expected_state = bind_proof_profile(
-            self.support_state, freshness=self.freshness
-        )
-        if self.truth_class != expected_truth or self.publication_state != expected_state:
-            raise ValueError(
-                "proof card profile metadata must match support state and freshness"
-            )
-        if (
-            expected_state is PublicationState.VERIFIED
-            and not verified_critical_metadata_present(self)
-        ):
-            raise ValueError("verified proof cards require complete critical metadata")
-        if self.derivation is not None:
-            if self.derivation.truth_class is not TruthClass.DETERMINISTIC_DERIVATION:
-                raise ValueError(
-                    "distance derivation cannot conceal a non-derivation truth class"
-                )
-            if (
-                self.derivation.crs != GEODESIC_CRS
-                or self.derivation.units != DISTANCE_UNIT
-                or self.derivation.algorithm != DISTANCE_ALGORITHM
-            ):
-                raise ValueError("unsupported CRS or units cannot be emitted as supported")
-            policy_errors = derivation_policy_errors(
-                claim_id=self.claim_id,
-                claim_text=self.claim_text,
-                freshness=self.freshness,
-                derivation=self.derivation,
-            )
-            if policy_errors:
-                raise ValueError(policy_errors[0])
-        elif "km geodesic" in self.claim_text.casefold():
-            raise ValueError("distance-bearing claims require derivation binding")
-        return self
-
-
-def make_proof_card(
-    *,
-    claim_id: str,
-    claim_text: str,
-    support_state: SupportState,
-    support_label: str,
-    authority: str,
-    review_state: str,
-    critical_fields_checked: str,
-    freshness: str,
-    exact_passage: str | None = None,
-    source_title: str | None = None,
-    source_revision: str | None = None,
-    conflicts_or_unknowns: list[str] | None = None,
-    official_url: HttpUrl | None = None,
-    rejected: bool = False,
-    derivation: DistanceDerivation | None = None,
-) -> ProofCard:
-    """Construct a proof card with deterministic Safety Profile metadata."""
-
-    if rejected:
-        support_state = "unknown"
-    truth_class, publication_state = bind_proof_profile(
-        support_state, rejected=rejected, freshness=freshness
-    )
-    return ProofCard(
-        claim_id=claim_id,
-        claim_text=claim_text,
-        support_state=support_state,
-        support_label=support_label,
-        authority=authority,
-        exact_passage=exact_passage,
-        source_title=source_title,
-        source_revision=source_revision,
-        review_state=review_state,
-        critical_fields_checked=critical_fields_checked,
-        freshness=freshness,
-        conflicts_or_unknowns=list(conflicts_or_unknowns or []),
-        official_url=official_url,
-        truth_class=truth_class,
-        publication_state=publication_state,
-        derivation=derivation,
-    )
-
-
 def attach_proof_presentation(response: Any) -> None:
     """Fill additive proof fields and neutralize any unestablished cards."""
 
@@ -198,12 +81,26 @@ def attach_proof_presentation(response: Any) -> None:
         results_by_id = {
             result.result_id: result for result in getattr(response, "live_results", None) or []
         }
-        valid_card_ids = set(claims_by_id) or set(results_by_id)
         response.proof_cards = [
             _preserve_existing_card(card, response, claims_by_id, results_by_id)
             for card in existing_cards
-            if card.claim_id in valid_card_ids
+            if _card_has_response_owner(card, claims_by_id, results_by_id)
         ]
+
+
+def _card_has_response_owner(
+    card: Any,
+    claims_by_id: dict[str, Any],
+    results_by_id: dict[str, Any],
+) -> bool:
+    if card.claim_id in claims_by_id or card.claim_id in results_by_id:
+        return True
+    publication = _bound_publication(card)
+    return (
+        getattr(card, "support_state", None) == "official_live_typed"
+        and publication.kind == PublicationKind.OFFICIAL_LIVE_TYPED
+        and publication.typed_live_fact_id in results_by_id
+    )
 
 
 def build_status_banner(response: Any) -> AnswerStatusBanner:
@@ -328,6 +225,7 @@ def _claim_card(response: Any, claim: Any, evidence_by_id: dict[str, Any]) -> Pr
             evidence.canonical_url if evidence is not None else _escalation(response)[1]
         ),
         rejected=state == "unknown" or _validation_rejected(response),
+        publication=_bound_publication(claim),
     )
     return _unknown_card(card) if state == "unknown" else card
 
@@ -339,11 +237,11 @@ def _preserve_existing_card(
     results_by_id: dict[str, Any],
 ) -> ProofCard:
     claim = claims_by_id.get(card.claim_id)
-    expected = _support_state(response, claim) if claim is not None else None
-    if card.support_state == "unknown" or expected == "unknown":
-        return _unknown_card(card)
     if claim is not None:
-        if card.support_state != expected:
+        expected = _support_state(response, claim)
+        if getattr(card, "support_state", None) == "unknown" or expected == "unknown":
+            return _unknown_card(card)
+        if not _proof_card_matches_claim(card, claim, expected):
             return _claim_card(
                 response,
                 claim,
@@ -351,26 +249,53 @@ def _preserve_existing_card(
             )
         return card if isinstance(card, ProofCard) else ProofCard.model_validate(card)
     result = results_by_id.get(card.claim_id)
-    if result is None:
+    card_publication = _bound_publication(card)
+    live_id = getattr(card_publication, "typed_live_fact_id", None)
+    if result is None and live_id:
+        result = results_by_id.get(live_id)
+    is_live_typed = (
+        card_publication.kind == PublicationKind.OFFICIAL_LIVE_TYPED
+        or getattr(card, "support_state", None) == "official_live_typed"
+    )
+    if result is None and not is_live_typed:
         derivation = getattr(card, "derivation", None)
         for source_id in getattr(derivation, "input_source_ids", None) or []:
             result = results_by_id.get(source_id)
             if result is not None:
                 break
-    if result is not None and card.support_state in {"live_record", "official_live_typed"}:
+    if is_live_typed and (
+        result is None or not _official_live_id_matches(card, result=result, claim=None)
+    ):
+        return _unknown_card(card)
+    if result is not None and getattr(card, "support_state", None) in {
+        "live_record",
+        "official_live_typed",
+    }:
         if (
             "km geodesic" in str(card.claim_text).casefold()
             and getattr(result, "distance_derivation", None) is None
         ):
             return _unknown_card(card)
         return _rebind_live_card(card, response, result)
+    if getattr(card, "support_state", None) == "unknown":
+        return _unknown_card(card)
     return card if isinstance(card, ProofCard) else ProofCard.model_validate(card)
 
 
+def _proof_card_matches_claim(card: Any, claim: Any, expected: SupportState) -> bool:
+    return (
+        getattr(card, "support_state", None) == expected
+        and getattr(card, "claim_text", None) == getattr(claim, "text", None)
+        and _bound_publication(card) == _bound_publication(claim)
+        and _official_live_id_matches(card, result=None, claim=claim)
+    )
+
+
 def _rebind_live_card(card: Any, response: Any, result: Any) -> ProofCard:
+    claim_text = _live_result_claim_text(card, result)
     rebound = make_proof_card(
         claim_id=card.claim_id,
-        claim_text=card.claim_text,
+        claim_text=claim_text,
         support_state=card.support_state,
         support_label=card.support_label,
         authority=result.authority,
@@ -386,8 +311,15 @@ def _rebind_live_card(card: Any, response: Any, result: Any) -> ProofCard:
         official_url=result.source_url,
         rejected=_validation_rejected(response),
         derivation=getattr(result, "distance_derivation", None),
+        publication=_live_publication(result),
     )
     return _unknown_card(rebound) if _validation_rejected(response) else rebound
+
+
+def _live_result_claim_text(card: Any, result: Any) -> str:
+    if getattr(card, "support_state", None) == "official_live_typed":
+        return render_typed_live_claim(result)
+    return str(result.name or result.incident_number or result.result_id)
 
 
 def _live_card(response: Any, result: Any) -> ProofCard:
@@ -407,6 +339,7 @@ def _live_card(response: Any, result: Any) -> ProofCard:
         official_url=result.source_url,
         rejected=_validation_rejected(response),
         derivation=getattr(result, "distance_derivation", None),
+        publication=_live_publication(result),
     )
     return _unknown_card(card) if _validation_rejected(response) else card
 
@@ -423,6 +356,7 @@ def _unknown_card(card: Any) -> ProofCard:
         freshness="Freshness not established",
         conflicts_or_unknowns=list(card.conflicts_or_unknowns),
         rejected=True,
+        publication=_UNSUPPORTED_PUBLICATION,
     )
 
 
@@ -536,45 +470,14 @@ def _escalation(response: Any) -> tuple[str | None, HttpUrl | None]:
     return None, None
 
 
-def _publication_kind(claim: Any) -> str:
-    publication = getattr(claim, "publication", None)
-    if publication is None:
-        return ""
-    kind = getattr(publication, "kind", publication)
-    return kind.value if hasattr(kind, "value") else str(kind)
-
-
 def _support_state(response: Any, claim: Any) -> SupportState:
     validation = getattr(response, "validation", None)
     if validation is not None and getattr(validation, "accepted", True) is False:
         return "unknown"
-    trust = claim.trust
-    if trust is not None and trust.critical_field_preservation == "failed":
+    trust = getattr(claim, "trust", None)
+    if trust is not None and getattr(trust, "critical_field_preservation", None) == "failed":
         return "unknown"
-    kind = _publication_kind(claim)
-    if kind == "structured_reviewed":
-        if _mode(response) == "conflict":
-            return "conflict"
-        return "structured_reviewed"
-    if kind == "official_live_typed":
-        return "official_live_typed"
-    if kind == "official_quote_only":
-        return "official_quote_only"
-    if kind == "source_linked_explanation":
-        return "source_linked_explanation"
-    if kind == "general_background":
-        return "background"
-    if kind == "unsupported":
-        return "unknown"
-    if _mode(response) == "conflict":
-        return "conflict"
-    status = claim.evidence_status
-    value = status.value if hasattr(status, "value") else status
-    if value == "general_background":
-        return "background"
-    if claim.supports:
-        return "supported"
-    return "unknown"
+    return _publication_support_state(claim)
 
 
 def _authority(trust: Any, evidence: Any, response: Any) -> str:

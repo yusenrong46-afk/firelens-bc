@@ -50,6 +50,17 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   outline: 3px solid var(--ember-deep);
   outline-offset: 3px;
 }
+.response-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* ---------- Chrome: skip links, top bar, boundary strip ---------- */
 
@@ -1434,6 +1445,18 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   background: var(--forest) !important;
   box-shadow: 0 2px 7px rgba(18, 49, 42, 0.18);
 }
+.context-close {
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  color: var(--forest);
+  background: transparent;
+  border: 1px solid var(--hairline);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.context-close:hover { color: #fff; background: var(--forest); }
 .evidence-inner,
 .evidence-inner--map-first {
   width: 100%;
@@ -1730,6 +1753,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .status-banner > a { grid-column: 1 / -1; width: max-content; }
 
 .answer-context-actions { margin-top: 18px; }
+.analysis-context-actions { margin: 18px 0 0 52px; }
 .answer-context-actions button,
 .claim-evidence > button {
   min-height: 44px;
@@ -2005,7 +2029,16 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .workspace .conversation-scroll { padding: 24px 17px 18px; }
   .workspace .composer { padding-inline: 14px; }
   .status-banner { grid-template-columns: 1fr; }
-  .status-banner__metadata { justify-content: flex-start; }
+  .status-banner__metadata {
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+  }
+  .status-banner__metadata span {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
   .analysis-workspace { padding: 20px 14px; }
   .analysis-workspace--embedded { padding: 16px 0 0; }
   .analysis-workspace--embedded .analysis-tabs { width: 100%; min-width: 0; }
@@ -2013,7 +2046,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .analysis-limitations { margin-left: 0; }
   .conversation-panel--analytical .question-line { grid-template-columns: 34px minmax(0, 1fr); gap: 9px; }
   .conversation-panel--analytical .question-bubble p { font-size: 21px; }
-  .analysis-tabs button { font-size: 14px; }
+  .analysis-tabs button { font-size: 16px; }
+  .analysis-context-actions { margin-left: 0; }
   .analysis-breakdown { padding: 16px 12px; }
   .analysis-breakdown li { grid-template-columns: 24px minmax(100px, 1fr) 42px 38px; }
   .analysis-bar { grid-column: 2 / -1; grid-row: 2; }

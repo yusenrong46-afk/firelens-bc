@@ -133,6 +133,18 @@ def clear_authority_caches() -> None:
     _authority_index.cache_clear()
 
 
+def admitted_corpus_chunk(chunk_id: str, *, root: str | None = None) -> dict[str, str] | None:
+    """Return one admitted static-corpus chunk identity from the cached index."""
+
+    return _load_corpus_chunks(root).get(chunk_id)
+
+
+def admitted_corpus_index(*, root: str | None = None) -> dict[str, dict[str, str]]:
+    """Return the cached admitted static-corpus identity index."""
+
+    return _load_corpus_chunks(root)
+
+
 def _expected_revision_sha(record: TypedClaimRecord) -> str:
     if record.binding_kind == "internal_static":
         return normalized_sha256(record.source_revision)

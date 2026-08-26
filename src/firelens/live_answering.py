@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import re
 from datetime import UTC, datetime
 from uuid import uuid4
 
 from firelens.answering.intent import (
     live_layers_for_question,
     live_query_requires_location,
-    request_fragments,
-    static_guidance_fragment,
     unsupported_live_topics,
 )
 from firelens.answering.live_composition import supported_static_when_live_missing
@@ -30,11 +27,11 @@ from firelens.answering.live_response_support import (
     freshness_limitation,
     unique_limitations,
 )
+from firelens.answering.live_static_request import extract_static_request
 from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
     PUBLIC_ANSWER_MAX_CHARS,
-    AggregateFreshness,
     AnswerSection,
     AnswerSectionKind,
     AskResponse,
@@ -56,29 +53,22 @@ from firelens.contracts import (
 from firelens.live import LiveDataService, LiveDataUnavailable
 
 
+def _section(kind: AnswerSectionKind, heading: str, text: str) -> AnswerSection:
+    return AnswerSection(kind=kind, heading=heading, text=text)
+
+
 class LiveAnswerCoordinator:
     """Own live-source policy and composition independently from HTTP transport."""
 
     def __init__(self, live_service: LiveDataService) -> None:
         self.live_service = live_service
 
-    @staticmethod
-    def is_distance_request(request: QueryRequest) -> bool:
-        return is_distance_request(request)
-
-    @staticmethod
-    def is_selected_live_request(request: QueryRequest) -> bool:
-        return is_selected_live_request(request)
-
-    @staticmethod
-    def is_unsupported_selected_request(request: QueryRequest) -> bool:
-        """Recognize selected-fire asks that available record fields cannot answer."""
-
-        return is_unsupported_selected_request(request)
+    is_distance_request = staticmethod(is_distance_request)
+    is_selected_live_request = staticmethod(is_selected_live_request)
+    is_unsupported_selected_request = staticmethod(is_unsupported_selected_request)
 
     def handles(self, request: QueryRequest) -> bool:
         """Return whether this bounded coordinator owns the request."""
-
         from firelens.answering.intent import plan_query
 
         plan = plan_query(request)
@@ -95,14 +85,6 @@ class LiveAnswerCoordinator:
             or self.is_unsupported_selected_request(request)
             or plan.route == QueryRoute.LIVE
         )
-
-    @staticmethod
-    def _freshness_limitation(state: AggregateFreshness) -> str | None:
-        return freshness_limitation(state)
-
-    @staticmethod
-    def _unique_limitations(*groups: list[str]) -> list[str]:
-        return unique_limitations(*groups)
 
     async def _nearby_records(
         self,
@@ -146,19 +128,11 @@ class LiveAnswerCoordinator:
             if links
             else "Use the responsible emergency authority for current direction."
         )
-        sections = [
-            AnswerSection(
-                kind=AnswerSectionKind.UNCERTAINTY,
-                heading="Safety boundary",
-                text=boundary,
-            )
-        ]
+        sections = [_section(AnswerSectionKind.UNCERTAINTY, "Safety boundary", boundary)]
         if links:
             sections.append(
-                AnswerSection(
-                    kind=AnswerSectionKind.OFFICIAL_HANDOFF,
-                    heading="Related official information",
-                    text=handoff,
+                _section(
+                    AnswerSectionKind.OFFICIAL_HANDOFF, "Related official information", handoff
                 )
             )
         return AskResponse(
@@ -173,51 +147,17 @@ class LiveAnswerCoordinator:
             resolved_location=resolved_location,
         )
 
-    @staticmethod
-    def static_request(request: QueryRequest) -> QueryRequest | None:
-        fragment = static_guidance_fragment(request.question)
-        if fragment is None:
-            fragments = request_fragments(request.question)
-            live_fragments = [
-                item
-                for item in fragments
-                if live_layers_for_question(item)
-                or unsupported_live_topics(item)
-                or (
-                    coarse_location_from_question(item) is not None
-                    and re.search(
-                        r"\b(?:fire|wildfire|map|evacuation|alert|order|perimeter)\b",
-                        item,
-                        re.IGNORECASE,
-                    )
-                )
-            ]
-            non_live_fragments = [item for item in fragments if item not in live_fragments]
-            if live_fragments and non_live_fragments:
-                fragment = " and ".join(non_live_fragments)[:2_000]
-        if fragment is None:
-            return None
-        return QueryRequest(
-            question=fragment,
-            history=request.history,
-            context=request.context,
-        )
-
-    @staticmethod
-    def _location_request(request: QueryRequest) -> AskResponse:
-        return location_request(request)
+    static_request = staticmethod(extract_static_request)
 
     async def answer(
         self, request: QueryRequest, static_result: AskResponse | None
     ) -> AskResponse:
         """Legacy live composer. Public Ask uses FireLensAgent, not this method."""
-
         from firelens.answering.intent import plan_query
 
         plan = plan_query(request)
         if plan.route == QueryRoute.PROHIBITED:
             return await self._prohibited_live_handoff(request, plan)
-
         layers = live_layers_for_question(request.question)
         effective_location = request.location or coarse_location_from_question(request.question)
         selected_request = self.is_selected_live_request(request)
@@ -233,7 +173,6 @@ class LiveAnswerCoordinator:
             }.get(selected_kind, ())
         unsupported_topics = unsupported_live_topics(request.question)
         unsupported_links = related_live_links(unsupported_topics)
-
         if not layers:
             topics = ", ".join(unsupported_topics) or "that live information"
             resolved_location: CoarseResolvedLocation | None = None
@@ -279,14 +218,12 @@ class LiveAnswerCoordinator:
                 related_links=unsupported_links,
                 resolved_location=resolved_location,
             )
-
         if (
             effective_location is None
             and live_query_requires_location(request.question)
             and not unsupported_selected_request
         ):
-            return self._location_request(request)
-
+            return location_request(request)
         try:
             live = (
                 await self._nearby_records(effective_location, layers=layers)
@@ -328,7 +265,7 @@ class LiveAnswerCoordinator:
             if partial is not None:
                 return partial
             if unsupported_links:
-                limitations = self._unique_limitations(
+                limitations = unique_limitations(
                     live.limitations,
                     [
                         "No matching record is not a safety determination.",
@@ -426,10 +363,10 @@ class LiveAnswerCoordinator:
         aggregate_freshness = aggregate_live_freshness(shown)
         assert aggregate_freshness is not None
         live_answer = render_live_record_answer(request, shown, aggregate_freshness)
-        freshness_limitation = self._freshness_limitation(aggregate_freshness)
-        live_limitations = self._unique_limitations(
+        freshness_note = freshness_limitation(aggregate_freshness)
+        live_limitations = unique_limitations(
             live.limitations,
-            [freshness_limitation] if freshness_limitation else [],
+            [freshness_note] if freshness_note else [],
         )
         unsupported_handoff = (
             "FireLens is not connected to an official live source for "
@@ -445,10 +382,10 @@ class LiveAnswerCoordinator:
         )
         unsupported_sections = (
             [
-                AnswerSection(
-                    kind=AnswerSectionKind.OFFICIAL_HANDOFF,
-                    heading="Related official information",
-                    text=unsupported_handoff,
+                _section(
+                    AnswerSectionKind.OFFICIAL_HANDOFF,
+                    "Related official information",
+                    unsupported_handoff,
                 )
             ]
             if unsupported_handoff
@@ -498,15 +435,15 @@ class LiveAnswerCoordinator:
                 response_mode=ResponseMode.MIXED,
                 answer=composed_answer,
                 answer_sections=[
-                    AnswerSection(
-                        kind=AnswerSectionKind.CURRENT_RECORDS,
-                        heading="Current official records",
-                        text=live_answer,
+                    _section(
+                        AnswerSectionKind.CURRENT_RECORDS,
+                        "Current official records",
+                        live_answer,
                     ),
-                    AnswerSection(
-                        kind=AnswerSectionKind.CONFLICTING_GUIDANCE,
-                        heading="Conflicting reviewed sources",
-                        text=conflict_text,
+                    _section(
+                        AnswerSectionKind.CONFLICTING_GUIDANCE,
+                        "Conflicting reviewed sources",
+                        conflict_text,
                     ),
                     *unsupported_sections,
                 ],
@@ -514,7 +451,7 @@ class LiveAnswerCoordinator:
                 evidence=static_result.evidence,
                 live_results=shown,
                 aggregate_freshness=aggregate_freshness,
-                limitations=self._unique_limitations(
+                limitations=unique_limitations(
                     live_limitations,
                     static_result.limitations,
                     unsupported_limitations,
@@ -549,15 +486,15 @@ class LiveAnswerCoordinator:
                     + unsupported_suffix
                 ),
                 answer_sections=[
-                    AnswerSection(
-                        kind=AnswerSectionKind.CURRENT_RECORDS,
-                        heading="Current official records",
-                        text=live_answer,
+                    _section(
+                        AnswerSectionKind.CURRENT_RECORDS,
+                        "Current official records",
+                        live_answer,
                     ),
-                    AnswerSection(
-                        kind=AnswerSectionKind.REVIEWED_GUIDANCE,
-                        heading="Reviewed preparedness guidance",
-                        text=static_text,
+                    _section(
+                        AnswerSectionKind.REVIEWED_GUIDANCE,
+                        "Reviewed preparedness guidance",
+                        static_text,
                     ),
                     *unsupported_sections,
                 ],
@@ -565,7 +502,7 @@ class LiveAnswerCoordinator:
                 evidence=static_result.evidence,
                 live_results=shown,
                 aggregate_freshness=aggregate_freshness,
-                limitations=self._unique_limitations(
+                limitations=unique_limitations(
                     live_limitations,
                     static_result.limitations,
                     unsupported_limitations,
@@ -594,22 +531,20 @@ class LiveAnswerCoordinator:
                     live_answer + "\n\nGeneral background: " + static_text + unsupported_suffix
                 ),
                 answer_sections=[
-                    AnswerSection(
-                        kind=AnswerSectionKind.CURRENT_RECORDS,
-                        heading="Current official records",
-                        text=live_answer,
+                    _section(
+                        AnswerSectionKind.CURRENT_RECORDS,
+                        "Current official records",
+                        live_answer,
                     ),
-                    AnswerSection(
-                        kind=AnswerSectionKind.GENERAL_BACKGROUND,
-                        heading="General background",
-                        text=static_text,
+                    _section(
+                        AnswerSectionKind.GENERAL_BACKGROUND, "General background", static_text
                     ),
                     *unsupported_sections,
                 ],
                 claims=static_result.claims,
                 live_results=shown,
                 aggregate_freshness=aggregate_freshness,
-                limitations=self._unique_limitations(
+                limitations=unique_limitations(
                     live_limitations,
                     [BACKGROUND_LIMITATION],
                     static_result.limitations,
@@ -655,21 +590,21 @@ class LiveAnswerCoordinator:
                 response_mode=ResponseMode.MIXED,
                 answer=composed_answer,
                 answer_sections=[
-                    AnswerSection(
-                        kind=AnswerSectionKind.CURRENT_RECORDS,
-                        heading="Current official records",
-                        text=live_answer,
+                    _section(
+                        AnswerSectionKind.CURRENT_RECORDS,
+                        "Current official records",
+                        live_answer,
                     ),
-                    AnswerSection(
-                        kind=AnswerSectionKind.OFFICIAL_HANDOFF,
-                        heading="Related official information",
-                        text=handoff,
+                    _section(
+                        AnswerSectionKind.OFFICIAL_HANDOFF,
+                        "Related official information",
+                        handoff,
                     ),
                 ],
                 related_links=handoff_links,
                 live_results=shown,
                 aggregate_freshness=aggregate_freshness,
-                limitations=self._unique_limitations(
+                limitations=unique_limitations(
                     live_limitations,
                     static_result.limitations,
                     unsupported_limitations,
@@ -690,16 +625,14 @@ class LiveAnswerCoordinator:
             response_mode=(ResponseMode.MIXED if unsupported_links else ResponseMode.LIVE),
             answer=live_answer + unsupported_suffix,
             answer_sections=[
-                AnswerSection(
-                    kind=AnswerSectionKind.CURRENT_RECORDS,
-                    heading="Current official records",
-                    text=live_answer,
+                _section(
+                    AnswerSectionKind.CURRENT_RECORDS, "Current official records", live_answer
                 ),
                 *unsupported_sections,
             ],
             live_results=shown,
             aggregate_freshness=aggregate_freshness,
-            limitations=self._unique_limitations(
+            limitations=unique_limitations(
                 live_limitations,
                 [
                     *unresolved_static,

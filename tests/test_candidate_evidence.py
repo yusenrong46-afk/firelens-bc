@@ -7,8 +7,15 @@ from pathlib import Path
 import pytest
 import yaml
 
+from firelens.evaluation.candidate_evidence_common import MATERIAL_PATHS
+from firelens.evaluation.common import file_sha256
+from firelens.evaluation.release_promotion import (
+    MANIFEST_RELATIVE,
+    promotion_manifest_document,
+    promotion_material_record,
+)
+from firelens.evaluation.v1_6_standard import STANDARD_RELATIVE
 from scripts.candidate_evidence import (
-    MATERIAL_PATHS,
     REQUIRED_COMMAND_POLICIES,
     SCHEMA_VERSION,
     SUBJECT_FILE,
@@ -564,13 +571,19 @@ def _evidence_inputs(
     return paths
 
 
-def _build(root: Path, bundle: Path, inputs: dict[str, Path]) -> bool:
+def _build(
+    root: Path,
+    bundle: Path,
+    inputs: dict[str, Path],
+    *,
+    release_version: str = "1.6.0-rc.1",
+) -> bool:
     return build_candidate_evidence(
         root,
         bundle,
         commit=COMMIT,
         tree=TREE,
-        release_version="1.6.0-rc.1",
+        release_version=release_version,
         generated_at=GENERATED_AT,
         builder_id="https://github.com/owner/firelens-bc/actions/workflows/candidate.yml",
         invocation_id="123:1",
@@ -622,6 +635,7 @@ def test_v2_bundle_binds_complete_candidate_and_recomputes(tmp_path: Path) -> No
         "data/evaluation/v1_6_user_end_questions_50.json",
         ".github/workflows/candidate.yml",
     }.issubset(material_names)
+    assert MANIFEST_RELATIVE not in material_names
     assert not any("v1_5" in name.casefold() for name in material_names)
     assert {item["name"] for item in manifest["subjects"]} == {SUBJECT_FILE, SUBJECT_TREE}
     qualification = json.loads((bundle / "candidate-qualification-summary.json").read_text())
@@ -895,6 +909,91 @@ def test_release_version_must_match_python_web_and_runtime_subject(tmp_path: Pat
         _build(root, tmp_path / "candidate", _evidence_inputs(tmp_path / "inputs"))
 
 
+def test_promoted_release_version_requires_the_internal_manifest(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path)
+    _write(root / "pyproject.toml", '[project]\nname = "fixture"\nversion = "1.6.0"\n')
+    _json(root / "apps/web/package.json", {"name": "ui", "version": "1.6.0"})
+    _json(
+        root / SUBJECT_FILE,
+        {
+            "schema_version": "firelens.runtime_candidate.v4",
+            "release_version": "1.6.0",
+        },
+    )
+    with pytest.raises(ValueError, match="release-promotion manifest"):
+        _build(
+            root,
+            tmp_path / "candidate",
+            _evidence_inputs(tmp_path / "inputs"),
+            release_version="1.6.0",
+        )
+
+
+def _promoted_fixture_root(tmp_path: Path) -> Path:
+    root = _fixture_root(tmp_path)
+    _write(root / "pyproject.toml", '[project]\nname = "fixture"\nversion = "1.6.0"\n')
+    _json(root / "apps/web/package.json", {"name": "ui", "version": "1.6.0"})
+    lock = json.loads((root / "apps/web/package-lock.json").read_text(encoding="utf-8"))
+    lock["version"] = "1.6.0"
+    lock["packages"][""]["version"] = "1.6.0"
+    _json(root / "apps/web/package-lock.json", lock)
+    _write(root / "src/firelens/config.py", 'DEFAULT_RELEASE_VERSION = "1.6.0"\n')
+    _write(root / "Dockerfile", "ARG FIRELENS_RELEASE_VERSION=1.6.0\n")
+    _write(
+        root / "render.yaml",
+        'services:\n  - envVars:\n      - key: FIRELENS_RELEASE_VERSION\n        value: "1.6.0"\n',
+    )
+    _json(root / "docs/openapi.v1.json", {"info": {"title": "FireLens BC", "version": "1.6.0"}})
+    _write(
+        root / ".github/workflows/candidate.yml",
+        "run: python scripts/candidate_evidence.py --release-version 1.6.0\n",
+    )
+    _json(
+        root / SUBJECT_FILE,
+        {
+            "schema_version": "firelens.runtime_candidate.v4",
+            "release_version": "1.6.0",
+        },
+    )
+    repo = Path(__file__).resolve().parents[1]
+    _write(root / STANDARD_RELATIVE, (repo / STANDARD_RELATIVE).read_text(encoding="utf-8"))
+    _json(
+        root / MANIFEST_RELATIVE,
+        promotion_manifest_document(
+            frozen_standard_sha256=file_sha256(root / STANDARD_RELATIVE),
+            functional_parent_commit="c" * 40,
+            functional_parent_tree="d" * 40,
+        ),
+    )
+    return root
+
+
+def test_promoted_evidence_binds_and_rehashes_the_promotion_manifest(tmp_path: Path) -> None:
+    root = _promoted_fixture_root(tmp_path)
+    bundle = tmp_path / "promoted-candidate"
+    assert (
+        _build(
+            root,
+            bundle,
+            _evidence_inputs(tmp_path / "promoted-inputs"),
+            release_version="1.6.0",
+        )
+        is True
+    )
+    _verify(root, bundle)
+    record = promotion_material_record(root)
+    manifest = json.loads((bundle / "candidate-evidence-manifest.json").read_text())
+    assert record in manifest["materials"]
+    provenance = json.loads((bundle / "candidate-provenance.intoto.json").read_text())
+    assert {
+        "uri": f"file:{record['name']}",
+        "digest": {"sha256": record["sha256"]},
+    } in provenance["predicate"]["buildDefinition"]["resolvedDependencies"]
+    (root / MANIFEST_RELATIVE).write_text("{}\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="release-promotion|material identity"):
+        _verify(root, bundle)
+
+
 def test_candidate_workflow_is_exact_head_zero_cost_v2_artifact() -> None:
     workflow_path = Path(__file__).resolve().parents[1] / ".github/workflows/candidate.yml"
     workflow_text = workflow_path.read_text(encoding="utf-8")
@@ -902,7 +1001,8 @@ def test_candidate_workflow_is_exact_head_zero_cost_v2_artifact() -> None:
     assert "github.event.pull_request.head.sha || github.sha" in workflow_text
     assert "scripts/run_hard_probe.py --mode offline" in workflow_text
     assert "--expectation-profile rc2.1" in workflow_text
-    assert "--release-version 1.6.0-rc.1" in workflow_text
+    assert "--release-version 1.6.0" in workflow_text
+    assert "--release-version 1.6.0-rc.1" not in workflow_text
     assert "--release-version 1.6.0-rc.2" not in workflow_text
     assert "firelens.candidate_evidence.v2" in workflow_text
     assert "--expected-tree" in workflow_text

@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
-from rag_helpers import make_chunk, make_runtime, write_test_corpus
+from rag_helpers import make_chunk, make_runtime
 
 from firelens.agent import AgentTool, FireLensAgent
 from firelens.answering.context import build_evidence_packet
@@ -281,67 +281,80 @@ def test_uq_e03_actual_corpus_retrieval_selects_repaired_checklist_before_pets()
     asyncio.run(run())
 
 
-def test_static_packet_fixtures_preserve_quote_only_conditions_and_supported_bounds(
-    tmp_path: Path,
-) -> None:
+def test_static_packet_fixtures_preserve_quote_only_conditions_and_supported_bounds() -> None:
+    chunks = load_chunk_records(ROOT / "data/processed/firelens_static_corpus.chunks.jsonl")
+    by_id = {chunk.chunk_id: chunk for chunk in chunks}
+    config = FireLensConfig.from_env(ROOT)
     cases = {
         "UQ-E04": (
-            "An evacuation alert means be ready to leave. An evacuation order means you "
-            "are at risk and must leave immediately.",
+            (
+                "preparedbc_wildfire_guide:page:10:chunk:4",
+                "preparedbc_wildfire_guide:page:11:chunk:2",
+            ),
             ("alert", "order"),
+            {ResponseMode.GROUNDED, ResponseMode.PARTIAL},
+            {"structured_reviewed"},
         ),
         "UQ-E06": (
-            "Reduce wildfire smoke exposure by keeping windows and doors closed when "
-            "appropriate. Seek medical advice for symptoms that concern you.",
-            ("smoke", "closed"),
+            ("preparedbc_wildfire_guide:page:13:chunk:2",),
+            ("reviewed structured claim",),
+            {ResponseMode.SCOPE_REDIRECT},
+            set(),
         ),
         "UQ-M10": (
-            "Before leaving during an evacuation order, follow the directions of the "
-            "issuing authority and take your emergency kit.",
-            ("before leaving", "issuing authority"),
+            ("preparedbc_wildfire_guide:page:12:chunk:1",),
+            ("follow instructions", "local authority"),
+            {ResponseMode.PARTIAL},
+            {"official_quote_only"},
         ),
         "UQ-M11": (
-            "Do not shut off natural gas for an evacuation order unless you smell gas "
-            "or the gas authority directs you to do so. If you smell gas, leave "
-            "immediately and call the emergency gas number.",
-            ("unless", "smell gas"),
+            ("preparedbc_wildfire_guide:page:12:chunk:1",),
+            ("natural gas", "evacuation order"),
+            {ResponseMode.PARTIAL},
+            {"official_quote_only"},
         ),
         "UQ-H12": (
-            "If you smell gas, leave immediately and call the emergency gas number. Do "
-            "not shut off natural gas for an evacuation order unless the gas authority "
-            "directs you to do so.",
-            ("smell gas", "leave immediately"),
+            ("preparedbc_wildfire_guide:page:12:chunk:1",),
+            ("gas", "evacuation order"),
+            {ResponseMode.PARTIAL},
+            {"official_quote_only"},
         ),
         "UQ-VH11": (
-            "Store at least four litres of water per person per day for emergency "
-            "planning. Household needs can vary, so this is not a universal prescription.",
-            ("four litres", "household needs can vary"),
+            ("preparedbc_wildfire_guide:page:5:chunk:1",),
+            ("reviewed structured claim",),
+            {ResponseMode.SCOPE_REDIRECT},
+            set(),
         ),
     }
 
     async def run() -> None:
-        for case_id, (source_text, required_text) in cases.items():
-            chunk = make_chunk(case_id.lower(), source_text)
-            config = write_test_corpus(tmp_path / case_id, [chunk])
+        engine = GroundedAnswerEngine(FakeProvider())
+        for case_id, (chunk_ids, required_text, modes, kinds) in cases.items():
+            selected = [by_id[chunk_id] for chunk_id in chunk_ids]
+            hits = [
+                retrieval_hit_from_chunk(chunk, rerank_rank=rank)
+                for rank, chunk in enumerate(selected, start=1)
+            ]
             packet = build_evidence_packet(
                 _question(case_id),
-                [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
-                [chunk],
+                hits,
+                selected,
                 corpus_version="v1-6-e2e-fixture.v1",
                 config=config,
             )
             response = (
-                await GroundedAnswerEngine(FakeProvider()).answer(
-                    _question(case_id), packet, trace_id=f"fixture-{case_id}"
-                )
+                await engine.answer(_question(case_id), packet, trace_id=f"fixture-{case_id}")
             ).response
             answer = (response.answer or "").casefold()
-            assert response.response_mode in {ResponseMode.GROUNDED, ResponseMode.PARTIAL}
-            assert all(fragment in answer for fragment in required_text)
+            assert response.response_mode in modes, case_id
+            assert all(fragment in answer for fragment in required_text), case_id
             assert "prescrib" not in answer
-            if case_id in {"UQ-M11", "UQ-H12", "UQ-VH11"}:
-                assert response.response_mode == ResponseMode.PARTIAL
-                assert "official_quote_only" in _publication_kinds(response)
+            assert _publication_kinds(response) == kinds, case_id
+            if "official_quote_only" in kinds:
+                assert all(
+                    item.primary_chunk_ids and item.primary_chunk_ids[0] in by_id
+                    for item in packet.items
+                )
 
     asyncio.run(run())
 

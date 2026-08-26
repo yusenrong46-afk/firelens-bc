@@ -160,6 +160,15 @@ class LocationContractTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             LocationInput(label="123 Main Street")
 
+    def test_only_allowlisted_numeric_bc_community_is_accepted(self) -> None:
+        self.assertEqual(
+            LocationInput(label="100   Mile House").label,
+            "100 Mile House",
+        )
+        for label in ("99 Mile House", "100 Mile House Road", "42 Example"):
+            with self.subTest(label=label), self.assertRaises(ValidationError):
+                LocationInput(label=label)
+
     def test_live_pagination_rejects_inconsistent_derived_fields(self) -> None:
         with self.assertRaises(ValidationError):
             LivePagination(

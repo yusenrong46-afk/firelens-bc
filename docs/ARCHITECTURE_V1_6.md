@@ -1,11 +1,11 @@
 # FireLens V1.6 architecture
 
 Status: current architecture authority for Ask, trust, packaging, and proof UX.
-Date: 2026-08-17
+Date: 2026-08-25
 
 The RC2 label names the current hardening and qualification campaign. The
-public package, runtime, and OpenAPI identity remains `1.6.0-rc.1` until a
-separately authorized version change; evidence must record that actual identity.
+public package, runtime, and OpenAPI identity is `1.6.0`; evidence must record
+that actual identity.
 
 This document replaces the V1.5 technical handbook for runtime Ask behaviour.
 `docs/TECHNICAL_HANDBOOK.md` is historical (2026-07-30). Qualification evidence
@@ -19,22 +19,28 @@ fire-related evacuations). The map is offered on demand and opens first only for
 explicit map or geographic-analysis requests. FireLens is not an emergency-warning
 system, evacuation router, medical advisor, or open-web agent.
 
-Models may choose bounded tools and propose wording. Deterministic code and
-authorized humans decide what may be published as supported fact.
+The application builds an immutable `AgentQueryPlan` before evidence work. It
+is the sole authority for a request's tools, live layers, geography, and exact
+reviewed-guidance subrequest. Models may propose wording from the resulting
+packet; deterministic code and authorized humans decide what may be published
+as supported fact.
 
 ## Ask path
 
-Public Ask is `FireLensAgent` in `src/firelens/agent/coordinator.py` plus the
-bounded loop in `src/firelens/agent/loop.py` (ADR 0011, ADR 0013).
+Public Ask is `FireLensAgent` in `src/firelens/agent/coordinator.py`, the
+immutable planner in `src/firelens/agent/query_plan.py`, and the bounded loop
+in `src/firelens/agent/loop.py` (ADR 0018, ADR 0017; ADR 0011 and ADR 0013 are
+superseded in part).
 
 ```text
 QueryRequest
   -> input seatbelt (prohibited / medical / jailbreak)
   -> capability overview (local, zero provider inference)
-  -> prefetch official layers and, when warranted, reviewed guidance
+  -> AgentQueryPlan (exact tools, layers, geography, static subrequest, or terminal response)
+  -> execute only plan-authorized official layers and reviewed guidance
   -> pure accepted static: return validated AskResponse (outer_chat_turns = 0)
-  -> ready live / mixed: at most one outer write from the official packet
-  -> unresolved tools: max two rounds + one terminal write
+  -> ready live / mixed: at most one outer write from the authorized packet
+  -> any provider tool request outside the plan: reject; duplicates: reject
   -> output rails; at most one rewrite; typed fallback
   -> compose_response (lanes, freshness, Proof Cards)
 ```
@@ -43,6 +49,33 @@ QueryRequest
 retrieve, support, grounded generate, validate). It is not the public Ask
 brain. Live answering helpers compute geodesic kilometres after fetch; Luna
 must not invent a different distance.
+
+## Deterministic request-plan boundary
+
+Request shape is owned by the typed intent automaton in
+`src/firelens/answering/intent_automaton.py` (ADR 0018). One parse supplies
+clause boundaries, temporal scope, live operations and layers, national scope,
+reviewed-guidance signals, and location candidates. `AgentQueryPlan` authorizes
+tools from that projection. Downstream modules must not re-parse the question
+with an independent phrase grammar. Current-advice and preparedness-checklist
+clauses stay on the reviewed-guidance lane. A preparedness noun does not let
+static documents answer whether an evacuation order or incident is active.
+
+`AgentQueryPlan` is a frozen per-request value. It can authorize only the
+specific fixed tool calls it contains, including normalized arguments. It
+expresses one of five modes: static, live, mixed, selected-record, or a
+deterministic terminal response. Location binding may turn an unresolved
+community into a `requires_input` terminal response, but it cannot add layers,
+replace a selected record, or broaden geography.
+
+The loop prefetches the plan's calls. If a provider later proposes a tool call,
+runtime dispatch compares its exact name and arguments with the plan and rejects
+anything else. A per-request fingerprint also rejects a repeated dispatch. The
+provider therefore cannot convert a local request to province-wide, add an
+evacuation layer, fetch another record, or retrieve a different guidance query.
+Its remaining role is bounded connective prose over reviewed-guidance packets,
+subject to output rails. Live current-record text is rendered from fetched
+typed official records; provider prose cannot become the public live answer.
 
 ## Route budgets
 
@@ -56,7 +89,8 @@ separately from static `grounded_generation`. Frozen budgets live in
 | pure static accepted | outer writes = 0; at most one grounded generation |
 | ready live | at most one outer write; no duplicate tool dispatch |
 | ready mixed | one validated static generation + at most one connective write |
-| unresolved tool loop | two rounds + one terminal write |
+| provider tool request outside the plan | rejected; no dispatch |
+| repeated planned tool request | rejected; no repeat dispatch |
 | rejected output | one rewrite, then deterministic fallback |
 
 ## Retrieval
@@ -93,15 +127,23 @@ Visible development benchmarks are not independent proof.
   are still checker-gated rather than inventory-rendered.
 - High-risk structured publication is deterministic and has zero generation.
   An eligible lower-risk ready packet may use one bounded generation only after
-  deterministic validation. Uncovered high-risk material remains an exact-source
+  deterministic validation.   Uncovered high-risk material remains an exact-source
   quote-only, partial, or handoff response; it is not a reviewed structured
-  claim.
+  claim. Quote-only official wording requires an admitted static-corpus chunk
+  identity and the exact quote in that chunk, not only a gov.bc.ca host and
+  64-hex hash. Alert/order comparison packets reserve a fused candidate for
+  each still-uncovered atomic definition aspect after rerank, without raising
+  default `rerank_top_k`.
 - The permanent hard-probe dataset remains immutable. The named, hash-bound
   `rc2` profile preserves ten safer response-mode migrations. The active
   `rc2.1` profile copies those ten unchanged and appends A01's exact
   `{structured_reviewed, official_quote_only}` mixed-publication contract while
   preserving the historical questions, 105-case roster, and `86/105` floor.
   The effective expectation hash and exact Git identity travel with report v2.
+  A09 and A10 stay on the frozen quote-only-exclusive RC2 migrations. Two-sided
+  packet-bound reviewed structured comparison can fail that overlay as an
+  explained paired regression rather than a product defect to reverse; a later
+  named profile is a separate Codex decision and is not implemented here.
 
 ## Failures, ops, packaging
 
@@ -110,6 +152,13 @@ programming errors become a sanitized public kind, a content-free ops event,
 and a loud local/test failure — never a source outage. Operational events are
 `firelens.operational_event.v3` (no question, answer, history, coordinates,
 evidence text, or secrets).
+
+Local JSON traces apply the same content-minimization boundary by default: they
+contain no question, answer, history, coordinates, evidence text, or query hash.
+`FIRELENS_TRACE_CONTENT=true` is an explicit local-only debugging opt-in that
+may retain the raw question; preview and production reject it during
+configuration validation. This is an executed application boundary, not a
+privacy certification or deployed-sink attestation.
 
 Vercel and Docker share `config/runtime_artifact_allowlist.v1.json`. Source
 Change Radar hashes approved sources and opens a human review packet; it never
@@ -123,7 +172,10 @@ labelled in text, not colour alone. Presentation is a projection of
 `publication.kind`: reviewed structured claims and extraction-only source
 wording are labelled independently, including in mixed answers. Publication
 kind owns that authority; a Proof Card profile is a projection of the owning
-claim, not an independent `verified` source of truth. A stored card that
+claim, not an independent `verified` source of truth. `ProofCard.publication` is
+internal fail-closed constructor authority and is not a public OpenAPI field.
+`PublicClaim.publication` remains optional/nullable on the public contract;
+verified corpus claims still require it internally. A stored card that
 disagrees with `publication.kind` is rebuilt from the claim or fails closed.
 Extraction-only source wording is never strengthened by a legacy status banner.
 Rejected validation forces an unknown presentation even when an older response
@@ -168,7 +220,8 @@ Executable offline traces: `src/firelens/evaluation/golden_traces.py` and
 
 ## Related documents
 
-- ADR 0011 — Luna as Ask brain over a thin application
-- ADR 0013 — evidence-efficient V1.6 agent
+- ADR 0017 — deterministic AgentQueryPlan ownership
+- ADR 0011 — Luna as Ask brain over a thin application (historical, superseded in part)
+- ADR 0013 — evidence-efficient V1.6 agent (historical, superseded in part)
 - `docs/releases/V1_6_RUNBOOK.md`
 - `docs/plans/V1_6_IMPLEMENTATION.md` (frozen before implementation)

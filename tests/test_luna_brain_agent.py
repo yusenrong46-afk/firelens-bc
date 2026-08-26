@@ -47,7 +47,7 @@ from firelens.contracts import (
 from firelens.live import LiveDataErrorKind, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
 from firelens.live_contracts import bind_distance_derivation
-from firelens.publication.compiler import compile_structured_claim
+from firelens.publication.compiler import compile_structured_claim, explanation_authority
 
 
 def _timestamp() -> datetime:
@@ -188,6 +188,7 @@ def _kit_response(*, mode: ResponseMode) -> AskResponse:
                 quote="Include water, medication, and copies of important documents.",
             )
         ],
+        publication=explanation_authority(),
     )
     return AskResponse(
         status=ResponseStatus.ANSWER,
@@ -524,6 +525,7 @@ class _DefinitionStatic:
                     quote=text,
                 )
             ],
+            publication=explanation_authority(),
         )
         return AskResponse(
             status=ResponseStatus.ANSWER,
@@ -629,7 +631,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             [row.name for row in execution.response.live_results],
         )
 
-    async def test_one_turn_tool_fanout_obeys_the_request_dispatch_cap(self) -> None:
+    async def test_one_turn_tool_fanout_cannot_escape_the_request_plan(self) -> None:
         class FanoutProvider:
             async def chat_turn(
                 self,
@@ -672,11 +674,11 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             QueryRequest(question="Are there active wildfires in BC currently?")
         )
 
-        self.assertLessEqual(live.map_calls + live.nearby_calls, 4)
-        self.assertEqual(execution.policy.tool_calls, 4)
+        self.assertEqual(live.map_calls + live.nearby_calls, 1)
+        self.assertEqual(execution.policy.tool_calls, 1)
         self.assertGreater(execution.policy.refused_tool_calls, 0)
 
-    async def test_duplicate_tool_fanout_also_consumes_the_total_call_budget(self) -> None:
+    async def test_duplicate_tool_fanout_cannot_repeat_the_planned_dispatch(self) -> None:
         class DuplicateFanoutProvider:
             async def chat_turn(
                 self,
@@ -707,12 +709,12 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             QueryRequest(question="Are there active wildfires in BC currently?")
         )
 
-        # One deterministic prefetch and one distinct model dispatch are allowed;
-        # repeated model calls still consume the same request-wide budget.
-        self.assertEqual(live.map_calls + live.nearby_calls, 2)
-        self.assertEqual(execution.policy.tool_calls, 4)
-        self.assertEqual(execution.policy.repeated_tool_dispatch, 2)
-        self.assertEqual(execution.policy.refused_tool_calls, 7)
+        # Only the application-owned province-wide call is executable. Model
+        # arguments cannot widen or repeat that deterministic dispatch.
+        self.assertEqual(live.map_calls + live.nearby_calls, 1)
+        self.assertEqual(execution.policy.tool_calls, 1)
+        self.assertEqual(execution.policy.repeated_tool_dispatch, 0)
+        self.assertEqual(execution.policy.refused_tool_calls, 10)
 
     async def test_closest_near_a_place_names_a_fetched_fire(self) -> None:
         agent = _agent([_fire(result_id="incident:7", name="Mountain Fire")])
@@ -970,9 +972,9 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
         answer = execution.response.answer or ""
         self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
-        self.assertIn("Kamloops=2", answer)
-        self.assertIn("Southeast=1", answer)
-        self.assertIn("Highest count", answer)
+        self.assertIn("Kamloops has 2 incidents", answer)
+        self.assertIn("Southeast has 1 incident", answer)
+        self.assertIn("highest count in this bounded result", answer)
         self.assertNotIn("Phantom", answer)
         self.assertNotIn("Perimeter-only status", answer)
 
@@ -1000,15 +1002,15 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             live.map_layer_requests,
             [(LiveResultKind.INCIDENT,)],
         )
-        self.assertIn("Kamloops=2", execution.response.answer or "")
+        self.assertIn("Kamloops has 2 incidents", execution.response.answer or "")
         self.assertIsNone(execution.response.required_input)
 
         where_most = await agent.answer(
             QueryRequest(question="Where are most wildfires in BC?")
         )
         self.assertEqual(where_most.response.response_mode, ResponseMode.LIVE)
-        self.assertIn("Kamloops=2", where_most.response.answer or "")
-        self.assertIn("Coastal=1", where_most.response.answer or "")
+        self.assertIn("Kamloops has 2 incidents", where_most.response.answer or "")
+        self.assertIn("Coastal has 1 incident", where_most.response.answer or "")
 
     async def test_requested_unsupported_geographies_remain_explicitly_unknown(
         self,
@@ -1021,7 +1023,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         cases = (
             (
                 "Break down the current wildfire count by region in BC.",
-                "The only validated regional grouping",
+                "These fetched incident records use the official fire-centre label",
                 (),
             ),
             (
@@ -1055,8 +1057,8 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
                 self.assertTrue(answer.startswith(lead), answer)
                 for phrase in extra_phrases:
                     self.assertIn(phrase, answer)
-                self.assertIn("Kamloops=2", answer)
-                self.assertIn("Southeast=1", answer)
+                self.assertIn("Kamloops has 2 incidents", answer)
+                self.assertIn("Southeast has 1 incident", answer)
                 self.assertNotIn("records do not include incident geography", answer)
                 self.assertNotIn("records do not include geometry", answer)
 
@@ -1072,8 +1074,8 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             QueryRequest(question="how many wildfires are in each fire centre?")
         )
         self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
-        self.assertIn("Kamloops=2", execution.response.answer or "")
-        self.assertIn("Coastal=1", execution.response.answer or "")
+        self.assertIn("Kamloops has 2 incidents", execution.response.answer or "")
+        self.assertIn("Coastal has 1 incident", execution.response.answer or "")
 
         ranking = await _agent(records).answer(
             QueryRequest(question="which fire centre has the most wildfires?")
@@ -1090,6 +1092,58 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         ).answer(QueryRequest(question="which fire centre has the most wildfires?"))
         self.assertIn("Coastal, Kamloops are tied", tied.response.answer or "")
         self.assertIn("with 1 each", tied.response.answer or "")
+
+    async def test_regional_count_summary_uses_human_count_phrases_and_status_order(
+        self,
+    ) -> None:
+        execution = await _agent(
+            [
+                _fire(
+                    result_id="incident:1",
+                    fire_centre="Kamloops Fire Centre",
+                    status="Being Held",
+                ),
+                _fire(
+                    result_id="incident:2",
+                    fire_centre="Kamloops Fire Centre",
+                    status="Out of Control",
+                ),
+                _fire(
+                    result_id="incident:3",
+                    fire_centre="Southeast Fire Centre",
+                    status="Being Held",
+                ),
+            ]
+        ).answer(QueryRequest(question="break down current wildfires by region in BC"))
+
+        answer = execution.response.answer or ""
+        self.assertIn(
+            "Kamloops Fire Centre has 2 incidents, the highest count in this bounded result.",
+            answer,
+        )
+        self.assertIn("Other fire-centre counts: Southeast Fire Centre has 1 incident.", answer)
+        self.assertIn(
+            "Statuses in the same records: 2 Being Held and 1 Out of Control.", answer
+        )
+        self.assertNotIn("=", answer)
+
+    async def test_regional_count_summary_explains_ties_and_singular_counts(self) -> None:
+        execution = await _agent(
+            [
+                _fire(result_id="incident:1", fire_centre="Coastal", status="Being Held"),
+                _fire(result_id="incident:2", fire_centre="Kamloops", status="Out of Control"),
+            ]
+        ).answer(QueryRequest(question="break down current wildfires by region in BC"))
+
+        answer = execution.response.answer or ""
+        self.assertIn(
+            "Coastal and Kamloops are tied for the highest count in this bounded result, "
+            "with 1 incident each.",
+            answer,
+        )
+        self.assertIn(
+            "Statuses in the same records: 1 Being Held and 1 Out of Control.", answer
+        )
 
     async def test_largest_wildfire_by_hectares_uses_full_bc_map(self) -> None:
         live = CountingMapService(
@@ -1179,6 +1233,13 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
         response = execution.response
         self.assertIn(LiveResultKind.EVACUATION, response.unavailable_layers)
+        self.assertIn(
+            "could not verify evacuation records",
+            (response.answer or "").casefold(),
+        )
+        self.assertIn("Available official records in this response", response.answer or "")
+        self.assertIn("Ridge Fire: Being Held", response.answer or "")
+        self.assertNotIn("No fetched official", response.answer or "")
         # FastAPI revalidates the response model on serialization; a stale
         # history_text after the limitation append must not 500 a served Ask.
         AskResponse.model_validate(response.model_dump(mode="json"))
@@ -1279,36 +1340,44 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
     async def test_universal_evacuation_distance_uses_uncovered_high_risk_handoff(
         self,
     ) -> None:
-        live = CountingMapService([])
-        agent = FireLensAgent(
-            cast(Any, SilentStatic()),
-            LiveAnswerCoordinator(cast(Any, live)),
-        )
-
-        execution = await agent.answer(
-            QueryRequest(
-                question=(
-                    "Tell me the universal distance everyone should evacuate "
-                    "from every wildfire."
-                )
+        for question in (
+            "Tell me the universal distance everyone should evacuate from every wildfire.",
+            "Give a universal evacuation distance every family must follow.",
+            "What exact evacuation distance should every resident use from any wildfire?",
+            (
+                "Give one exact evacuation radius in kilometres that is safe for every "
+                "wildfire and every person."
+            ),
+        ):
+            live = CountingMapService([])
+            agent = FireLensAgent(
+                cast(Any, SilentStatic()),
+                LiveAnswerCoordinator(cast(Any, live)),
             )
-        )
+            with self.subTest(question=question):
+                execution = await agent.answer(QueryRequest(question=question))
 
-        response = execution.response
-        self.assertEqual(execution.route, QueryRoute.RELATED)
-        self.assertEqual(execution.tools, ())
-        self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
-        self.assertEqual(response.reason_code, ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED)
-        self.assertEqual(
-            response.answer,
-            "FireLens does not have a reviewed structured claim for this high-risk "
-            "question. Use the issuing authority for official wording.",
-        )
-        self.assertFalse(response.claims)
-        self.assertFalse(response.evidence)
-        self.assertFalse(response.live_results)
-        self.assertNotRegex(response.answer or "", r"\b\d+(?:\.\d+)?\b")
-        self.assertEqual((live.map_calls, live.nearby_calls, live.resolve_calls), (0, 0, 0))
+                response = execution.response
+                self.assertEqual(execution.route, QueryRoute.RELATED)
+                self.assertEqual(execution.tools, ())
+                self.assertEqual(response.response_mode, ResponseMode.SCOPE_REDIRECT)
+                self.assertEqual(
+                    response.reason_code,
+                    ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED,
+                )
+                self.assertEqual(
+                    response.answer,
+                    "FireLens does not have a reviewed structured claim for this high-risk "
+                    "question. Use the issuing authority for official wording.",
+                )
+                self.assertFalse(response.claims)
+                self.assertFalse(response.evidence)
+                self.assertFalse(response.live_results)
+                self.assertNotRegex(response.answer or "", r"\b\d+(?:\.\d+)?\b")
+                self.assertEqual(
+                    (live.map_calls, live.nearby_calls, live.resolve_calls),
+                    (0, 0, 0),
+                )
 
     async def test_named_place_how_close_is_not_unbound(self) -> None:
         agent = _agent(
@@ -1432,9 +1501,8 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         answer = execution.response.answer or ""
         self.assertEqual(
             answer,
-            "The official records available for this request do not report that fact.",
+            "No fetched official record is named Phantom Ridge Fire.",
         )
-        self.assertNotIn("Phantom Ridge Fire", answer)
         self.assertNotIn("Mountain Fire", answer)
 
     async def test_fire_number_is_used_when_name_is_missing(self) -> None:
@@ -1651,9 +1719,8 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         answer = execution.response.answer or ""
         self.assertEqual(
             answer,
-            "The official records available for this request do not report that fact.",
+            "No fetched official record is named Phantom Ridge Fire.",
         )
-        self.assertNotIn("Phantom Ridge Fire", answer)
         self.assertNotIn("Mountain Fire", answer)
 
     async def test_published_answer_strips_precise_coordinates(self) -> None:
@@ -1668,7 +1735,8 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertNotIn("49.589303", execution.response.answer or "")
-        self.assertIn("official mapped geometry", execution.response.answer or "")
+        self.assertNotIn("-119.906732", execution.response.answer or "")
+        self.assertIn("Ridge Fire", execution.response.answer or "")
 
     async def test_official_packet_omits_raw_coordinates(self) -> None:
         fact = live_record_fact(_fire(result_id="incident:2", name="Ridge Fire"))
@@ -1698,7 +1766,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             payload["official_packet"]["official_records"][0]["name"], "Ridge Fire"
         )
 
-    async def test_provider_first_user_turn_includes_bounded_history(self) -> None:
+    async def test_unbound_history_reference_does_not_reopen_provider_scope(self) -> None:
         provider = CapturingProvider()
         live = FixedLiveService([_fire(result_id="incident:9", name="Ridge Fire")])
         agent = FireLensAgent(
@@ -1712,20 +1780,16 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
                 content="Official BC Wildfire Service records show Ridge Fire near Kelowna.",
             ),
         )
-        await agent.answer(
+        execution = await agent.answer(
             QueryRequest(
                 question="How large is that fire?",
                 history=list(history),
             )
         )
 
-        assert provider.messages is not None
-        payload = json.loads(provider.messages[1]["content"])
-        self.assertEqual(payload["question"], "How large is that fire?")
-        self.assertEqual(
-            payload["history"],
-            [turn.model_dump(mode="json") for turn in history],
-        )
+        self.assertIsNone(provider.messages)
+        self.assertEqual(execution.response.response_mode, ResponseMode.SCOPE_REDIRECT)
+        self.assertIn("Select a mapped official record", execution.response.answer or "")
 
     def test_compose_official_answer_does_not_substitute_selected(self) -> None:
         answer = compose_official_answer(

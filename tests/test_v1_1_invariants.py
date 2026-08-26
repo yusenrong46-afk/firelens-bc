@@ -28,6 +28,7 @@ from firelens.contracts import (
     RetrievalTextStrategy,
 )
 from firelens.providers.fake import FakeProvider
+from firelens.publication.compiler import background_authority, explanation_authority
 from firelens.retrieval.embeddings import build_vector_index
 from firelens.retrieval.pipeline import RetrievalPipeline
 from firelens.runtime import load_runtime
@@ -39,6 +40,7 @@ def _verified_claim() -> PublicClaim:
         text="Keep an emergency kit.",
         evidence_status=EvidenceStatus.VERIFIED_CORPUS,
         supports=[ClaimSupport(evidence_id="E1", quote="Keep an emergency kit.")],
+        publication=explanation_authority(),
     )
 
 
@@ -49,6 +51,7 @@ class PublicContractInvariantTests(unittest.TestCase):
                 claim_id="C1",
                 text="Unsupported verified claim.",
                 evidence_status=EvidenceStatus.VERIFIED_CORPUS,
+                publication=explanation_authority(),
             )
         with self.assertRaises(ValidationError):
             PublicClaim(
@@ -56,6 +59,7 @@ class PublicContractInvariantTests(unittest.TestCase):
                 text="Background claim with a citation.",
                 evidence_status=EvidenceStatus.GENERAL_BACKGROUND,
                 supports=[ClaimSupport(evidence_id="E1", quote="Citation leak.")],
+                publication=background_authority(),
             )
 
     def test_response_states_cannot_carry_contradictory_evidence(self) -> None:

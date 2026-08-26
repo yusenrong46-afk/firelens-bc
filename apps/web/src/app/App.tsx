@@ -1,5 +1,5 @@
 import { ArrowSquareOut, Info, MapTrifold, Shield } from "@phosphor-icons/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
@@ -11,7 +11,12 @@ import { useFireLensSession } from "../features/ask/useFireLensSession";
 import { EvidencePanel } from "../features/evidence/EvidencePanel";
 import { LiveAnalysisWorkspace } from "../features/near-me/LiveAnalysisWorkspace";
 import { HowFireLensWorks } from "./HowFireLensWorks";
-import { preferredContextSurface, shouldOfferContextMap, shouldUseAnalyticalWorkspace } from "./workspacePresentation";
+import {
+  preferredContextSurface,
+  questionExplicitlyRequestsMap,
+  shouldOfferContextMap,
+  shouldUseAnalyticalWorkspace,
+} from "./workspacePresentation";
 import "./styles.css";
 
 export function App() {
@@ -20,6 +25,10 @@ export function App() {
   const [idleMapOpen, setIdleMapOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
+  const contextRef = useRef<HTMLElement>(null);
+  const contextTriggerRef = useRef<HTMLElement | null>(null);
+  const mapTriggerRef = useRef<HTMLButtonElement>(null);
+  const restoreContextFocusRef = useRef(false);
   const closeProject = useCallback(() => setProjectOpen(false), []);
   const mapAvailable = shouldOfferContextMap({
     mode: session.mode,
@@ -33,7 +42,7 @@ export function App() {
   });
   const showMap = (session.view.kind === "idle" && idleMapOpen)
     || (!analyticalWorkspace && contextOpen && mapAvailable && contextSurface === "map");
-  const evidenceOpen = !analyticalWorkspace && contextOpen && contextSurface === "evidence";
+  const evidenceOpen = contextOpen && contextSurface === "evidence";
   const showContext = showMap || evidenceOpen;
 
   useEffect(() => {
@@ -48,24 +57,60 @@ export function App() {
       mode: session.mode,
       question: session.visibleQuestion,
     });
+    const shouldOpenPreferredMap = preferred === "map"
+      && !analyticalWorkspace
+      && questionExplicitlyRequestsMap(session.visibleQuestion);
+    if (shouldOpenPreferredMap) contextTriggerRef.current = null;
     setContextSurface(preferred);
-    setContextOpen(false);
-  }, [session.mode, session.response?.trace_id, session.view.kind, session.visibleQuestion]);
+    setContextOpen(shouldOpenPreferredMap);
+  }, [analyticalWorkspace, session.mode, session.response?.trace_id, session.view.kind, session.visibleQuestion]);
+
+  useEffect(() => {
+    if (!showContext) return;
+    contextRef.current?.scrollIntoView?.({ block: "start", inline: "nearest" });
+    contextRef.current?.focus({ preventScroll: true });
+  }, [contextSurface, showContext]);
+
+  useEffect(() => {
+    if (showContext || !restoreContextFocusRef.current) return;
+    restoreContextFocusRef.current = false;
+    const trigger = contextTriggerRef.current?.isConnected
+      ? contextTriggerRef.current
+      : mapTriggerRef.current;
+    contextTriggerRef.current = null;
+    trigger?.focus();
+  }, [showContext]);
 
   useEffect(() => {
     if (!analyticalWorkspace) session.setMapVisible(showMap);
   }, [analyticalWorkspace, session.setMapVisible, showMap]);
 
   function showEvidence() {
+    if (!contextOpen) {
+      contextTriggerRef.current = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    }
     setIdleMapOpen(false);
     setContextSurface("evidence");
     setContextOpen(true);
   }
 
   function showOfficialMap() {
+    if (!contextOpen) {
+      contextTriggerRef.current = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    }
     if (session.view.kind === "idle") setIdleMapOpen(true);
     setContextSurface("map");
     setContextOpen(true);
+  }
+
+  function closeContext() {
+    restoreContextFocusRef.current = true;
+    setIdleMapOpen(false);
+    setContextOpen(false);
   }
 
   return (
@@ -86,10 +131,13 @@ export function App() {
           {(session.view.kind === "idle" || (mapAvailable && !showContext && !analyticalWorkspace)) && (
             <nav className="workspace-jump" aria-label="Choose workspace context">
               <button
+                ref={mapTriggerRef}
                 type="button"
                 className={showMap ? "workspace-jump__active" : ""}
                 onClick={showOfficialMap}
                 aria-pressed={showMap}
+                aria-expanded={showMap}
+                aria-controls="answer-context"
               >
                 <MapTrifold size={17} /> {session.view.kind === "idle" ? "Explore live map" : "Open map"}
               </button>
@@ -112,12 +160,16 @@ export function App() {
           analysisSlot={analyticalWorkspace ? <LiveAnalysisWorkspace session={session} embedded /> : undefined}
           onOpenEvidence={showEvidence}
           onOpenMap={showOfficialMap}
+          contextOpen={showContext}
+          contextSurface={contextSurface}
         />
         {showContext && (
           <EvidencePanel
             session={session}
             surface={showMap ? "map" : "evidence"}
-            mapAvailable={session.view.kind === "idle" || mapAvailable}
+            mapAvailable={!analyticalWorkspace && (session.view.kind === "idle" || mapAvailable)}
+            panelRef={contextRef}
+            onClose={closeContext}
             onSurfaceChange={(surface) => {
               if (surface === "map") showOfficialMap();
               else showEvidence();

@@ -18,6 +18,7 @@ from scripts.run_hard_probe import (
     RC2_MIGRATION_IDS,
     _cost_limit_reached,
     _migration_invariant_checks,
+    _semantic_checks,
     canonical_json_sha256,
     effective_expectations_payload,
     file_sha256,
@@ -381,4 +382,81 @@ class HardProbeDatasetTests(unittest.TestCase):
         )
         self.assertTrue(
             all(check["passed"] for check in row["semantic_checks"]["migration_invariants"])
+        )
+
+    def test_a02_semantic_invariant_rejects_one_sided_grounded_comparison(self) -> None:
+        dataset = load_dataset(self.dataset_path, self.manifest_path)
+        case = next(item for item in dataset.cases if item.id == "A02")
+        one_sided = {
+            "response_mode": "grounded",
+            "status": "answer",
+            "http_status": 200,
+            "answer": "An evacuation order means you are at risk and must leave immediately.",
+            "claims": [
+                {
+                    "evidence_status": "verified_corpus",
+                    "publication": {"typed_claim_id": "TC-EVAC-ORDER-001"},
+                    "supports": [{"evidence_id": "E1", "quote": "leave immediately"}],
+                }
+            ],
+            "evidence": [{"evidence_id": "E1", "primary_text": "leave immediately"}],
+            "limitations": ["Grounded in reviewed official sources."],
+        }
+        issues = _semantic_checks(case, one_sided)
+        self.assertTrue(
+            any("both alert and order definitions" in issue for issue in issues),
+            issues,
+        )
+
+        both_sides = {
+            **one_sided,
+            "answer": (
+                "If you are under an evacuation alert, be ready to leave on short notice. "
+                "An evacuation order means you are at risk and must leave immediately."
+            ),
+            "claims": [
+                {
+                    "evidence_status": "verified_corpus",
+                    "publication": {"typed_claim_id": "TC-EVAC-ALERT-001"},
+                    "supports": [{"evidence_id": "E1", "quote": "short notice"}],
+                },
+                {
+                    "evidence_status": "verified_corpus",
+                    "publication": {"typed_claim_id": "TC-EVAC-ORDER-001"},
+                    "supports": [{"evidence_id": "E2", "quote": "leave immediately"}],
+                },
+            ],
+            "evidence": [
+                {"evidence_id": "E1", "primary_text": "short notice"},
+                {"evidence_id": "E2", "primary_text": "leave immediately"},
+            ],
+        }
+        both_issues = _semantic_checks(case, both_sides)
+        self.assertFalse(
+            any("both alert and order definitions" in issue for issue in both_issues),
+            both_issues,
+        )
+
+        uncovered_only = {
+            **one_sided,
+            "response_mode": "partial",
+            "limitations": [
+                "Some requested high-risk guidance has no reviewed structured claim."
+            ],
+        }
+        uncovered_issues = _semantic_checks(case, uncovered_only)
+        self.assertTrue(
+            any("missing-aspect limitation" in issue for issue in uncovered_issues),
+            uncovered_issues,
+        )
+
+        partial_named = {
+            **one_sided,
+            "response_mode": "partial",
+            "limitations": ["Not supported by selected evidence: evacuation alert meaning"],
+        }
+        partial_issues = _semantic_checks(case, partial_named)
+        self.assertFalse(
+            any("missing-aspect limitation" in issue for issue in partial_issues),
+            partial_issues,
         )

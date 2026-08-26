@@ -15,7 +15,7 @@ function CountTable({ title, rows }: { title: string; rows: AnalysisCount[] }) {
   return (
     <section className="analysis-breakdown" aria-label={title}>
       <div className="analysis-breakdown__heading">
-        <div><h3>{title}</h3><p>Derived from official live records</p></div>
+        <h3>{title}</h3>
       </div>
       <ol>
         {rows.length === 0 && <li className="analysis-empty">This field was not available in the returned records.</li>}
@@ -39,9 +39,9 @@ function RecordsView({ results }: { results: LiveResult[] }) {
   const [showAll, setShowAll] = useState(false);
   const visible = showAll ? results : results.slice(0, 18);
   return (
-    <section className="analysis-records" aria-label="Official incident records">
+    <section className="analysis-records" aria-label="Incident records returned for this request">
       <div className="analysis-records__heading">
-        <div><h3>Official incident records</h3><p>{results.length} records in this answer</p></div>
+        <div><h3>Incident records returned for this request</h3><p>{results.length} records in this answer</p></div>
         {results.length > 18 && (
           <button type="button" onClick={() => setShowAll((current) => !current)} aria-expanded={showAll}>
             {showAll ? "Show fewer" : `Show all ${results.length}`}

@@ -14,6 +14,9 @@ _DISTANCE_PATTERN = re.compile(
     r"\b(?:how far|how close|distance|kilomet(?:er|re)s?|miles?)\b", re.IGNORECASE
 )
 _EXPLICIT_FIRE_PATTERN = re.compile(r"\b(?:fire|wildfire|incident|perimeter)\b", re.IGNORECASE)
+_EXPLICIT_EVACUATION_DISTANCE_PATTERN = re.compile(
+    r"\bevacuation\s+(?:distance|radius)\b", re.IGNORECASE
+)
 _UNIVERSAL_DISTANCE_SCOPE = re.compile(
     r"\b(?:everyone|everybody|every\s+resident|all\s+(?:people|residents?|"
     r"famil(?:y|ies)|households?|communities))\b|"
@@ -26,13 +29,30 @@ _PRESCRIPTIVE_EVACUATION_ACTION = re.compile(
     r"(?:evacuat(?:e|ing)|leave)\b",
     re.IGNORECASE,
 )
+_PRESCRIPTIVE_STANDOFF_ACTION = re.compile(
+    r"\b(?:should|must|need(?:s)?\s+to|ought\s+to)\b"
+    r"(?:\s+(?!(?:not|never)\b)[a-z][a-z'-]*){0,5}\s+"
+    r"(?:live|stay|remain|keep)\b",
+    re.IGNORECASE,
+)
+_PRESCRIPTIVE_DISTANCE_RULE = re.compile(
+    r"\b(?:should|must|need(?:s)?\s+to|ought\s+to)\b"
+    r"(?:\s+(?!(?:not|never)\b)[a-z][a-z'-]*){0,5}\s+"
+    r"(?:follow|keep|maintain|obey|use)\b",
+    re.IGNORECASE,
+)
+_EXACT_UNIVERSAL_DISTANCE_REQUEST = re.compile(
+    r"^\s*(?:give|provide)(?:\s+me)?\s+(?:one|a|the)\s+(?:single\s+)?exact\s+"
+    r"evacuation\s+(?:distance|radius)\b",
+    re.IGNORECASE,
+)
 _SELECTED_ENTITY_PATTERN = re.compile(
     r"\b(?:this|that|selected)\s+(?:fire|wildfire|incident|perimeter|record)\b",
     re.IGNORECASE,
 )
 _SELECTED_ATTRIBUTE_PATTERN = re.compile(
     r"\b(?:status|happening|details?|size|large|big|hectares?|source|publisher|dataset|"
-    r"updated|updates?|update time|update timestamp)\b",
+    r"updated|updates?|update time|update timestamp|perimeter|map|location|position)\b",
     re.IGNORECASE,
 )
 _SELECTED_UNSUPPORTED_PATTERN = re.compile(
@@ -56,10 +76,12 @@ _SELECTED_LIVE_ELLIPTICAL = re.compile(
     r"^\s*(?:"
     r"(?:what|which)\s+(?:source|publisher|dataset)\s+(?:reported|published)\s+it|"
     r"who\s+(?:reported|published)\s+it|"
-    r"what(?:'s|\s+is)\s+its\s+(?:status|size|source)|"
+    r"what(?:'s|\s+is)\s+its\s+"
+    r"(?:(?:present|current|latest)\s+)?(?:status|size|source|perimeter|location)|"
     r"how\s+(?:large|big)\s+is\s+it|"
     r"when\s+was\s+it\s+updated|"
-    r"(?:what|any)\s+updates?(?:\s+on\s+it)?"
+    r"(?:what|any)\s+updates?(?:\s+on\s+it)?|"
+    r"(?:and\s+)?(?:the\s+)?(?:perimeter|map|location)"
     r")[?!.]*\s*$",
     re.IGNORECASE,
 )
@@ -101,9 +123,24 @@ def is_prescriptive_evacuation_distance_request(request: QueryRequest) -> bool:
     question = request.question
     return bool(
         _DISTANCE_PATTERN.search(question)
-        and _EXPLICIT_FIRE_PATTERN.search(question)
         and _UNIVERSAL_DISTANCE_SCOPE.search(question)
-        and _PRESCRIPTIVE_EVACUATION_ACTION.search(question)
+        and (
+            (
+                _EXPLICIT_FIRE_PATTERN.search(question)
+                and _PRESCRIPTIVE_EVACUATION_ACTION.search(question)
+            )
+            or (
+                _EXPLICIT_FIRE_PATTERN.search(question)
+                and _PRESCRIPTIVE_STANDOFF_ACTION.search(question)
+            )
+            or (
+                _EXPLICIT_EVACUATION_DISTANCE_PATTERN.search(question)
+                and (
+                    _PRESCRIPTIVE_DISTANCE_RULE.search(question)
+                    or _EXACT_UNIVERSAL_DISTANCE_REQUEST.search(question)
+                )
+            )
+        )
     )
 
 

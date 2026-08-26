@@ -12,7 +12,10 @@ from firelens.answering.intent import (
     static_guidance_fragment,
     unsupported_live_topics,
 )
-from firelens.answering.intent_safety import is_empty_map_safety_inference
+from firelens.answering.intent_safety import (
+    empty_map_safety_routing,
+    is_empty_map_safety_inference,
+)
 from firelens.answering.live_request_intent import (
     is_distance_request,
     is_prescriptive_evacuation_distance_request,
@@ -22,6 +25,7 @@ from firelens.answering.location_intent import is_out_of_province_label
 from firelens.contracts import (
     ConversationTurn,
     LiveResultKind,
+    MapContext,
     QueryRequest,
     QueryRoute,
     ReasonCode,
@@ -75,6 +79,92 @@ class V3DeterministicIntentTests(unittest.TestCase):
                         LiveResultKind.EVACUATION,
                     ),
                 )
+
+    def test_empty_view_return_and_pin_inferences_are_never_an_all_clear(self) -> None:
+        cases = (
+            (
+                "The wildfire map is blank near Kelowna, so I can return home, correct?",
+                "Kelowna",
+            ),
+            (
+                "The incident map is empty around Vernon; that means we may go back "
+                "home, right?",
+                "Vernon",
+            ),
+            (
+                "No pins are showing near Kamloops. Does that prove there is no danger?",
+                "Kamloops",
+            ),
+            (
+                "Zero map markers are visible around Nelson, so that is an all-clear?",
+                "Nelson",
+            ),
+        )
+        for question, expected_place in cases:
+            with self.subTest(question=question):
+                self.assertTrue(is_empty_map_safety_inference(question))
+                plan = plan_query(QueryRequest(question=question))
+                self.assertEqual(plan.route, QueryRoute.LIVE)
+                self.assertEqual(plan.boundary_reason, ReasonCode.LIVE_DATA_REQUIRED)
+                self.assertIn("not an all-clear", plan.limitations[0])
+                location = coarse_location_from_question(question)
+                self.assertIsNotNone(location)
+                assert location is not None
+                self.assertEqual(location.label, expected_place)
+
+    def test_pin_and_return_phrases_without_empty_operational_view_are_not_corrections(
+        self,
+    ) -> None:
+        for question in (
+            "How do I pin Kamloops on the wildfire map?",
+            "When may evacuated residents return home after officials say it is safe?",
+            "No chart pins are showing in my historical research notebook.",
+            "Does an empty database field create a risk of data loss?",
+        ):
+            with self.subTest(question=question):
+                self.assertFalse(is_empty_map_safety_inference(question))
+
+    def test_empty_operational_views_cannot_become_an_all_clear(self) -> None:
+        """Absence in an incident view triggers the bounded live correction path."""
+
+        cases = (
+            "The incident layer is empty; confirm there is no danger.",
+            "No incidents appeared in the search—does that prove conditions are safe?",
+            "The map did not return records; can I assume there is no risk?",
+            "The incident search returned zero records. Is everything okay?",
+            "The wildfire layer returned nothing today. Is that an all-clear?",
+        )
+        for question in cases:
+            with self.subTest(question=question):
+                self.assertTrue(is_empty_map_safety_inference(question))
+                plan = plan_query(QueryRequest(question=question))
+                self.assertEqual(plan.route, QueryRoute.LIVE)
+                self.assertEqual(plan.boundary_reason, ReasonCode.LIVE_DATA_REQUIRED)
+                self.assertEqual(plan.limitations, ["An empty map view is not an all-clear."])
+                self.assertEqual(
+                    live_layers_for_question(question),
+                    (
+                        LiveResultKind.INCIDENT,
+                        LiveResultKind.PERIMETER,
+                        LiveResultKind.EVACUATION,
+                    ),
+                )
+                _, correction = empty_map_safety_routing(question, question, allow_live=True)
+                self.assertIsNotNone(correction)
+                assert correction is not None
+                self.assertEqual(correction.route, QueryRoute.LIVE)
+                self.assertEqual(correction.boundary_reason, ReasonCode.LIVE_DATA_REQUIRED)
+
+    def test_empty_operational_view_guard_avoids_non_safety_questions(self) -> None:
+        for question in (
+            "How do I search the wildfire map?",
+            "The historical incident layer is empty for 1950; was the province safe then?",
+            "My generic search returned no results. How can I improve the query?",
+            "The map did not return records; how do I report a data bug?",
+            "The wildfire map is blank near Kelowna. Does that mean zero risk of data errors?",
+        ):
+            with self.subTest(question=question):
+                self.assertFalse(is_empty_map_safety_inference(question))
 
     def test_wildfire_risk_questions_without_map_absence_are_not_empty_map_inferences(
         self,
@@ -444,22 +534,49 @@ class V3DeterministicIntentTests(unittest.TestCase):
         )
 
     def test_prescriptive_universal_distance_is_not_a_live_record_distance(self) -> None:
-        question = (
-            "Tell me the universal distance everyone should evacuate from every wildfire."
-        )
-        request = QueryRequest(question=question)
+        for question in (
+            "Tell me the universal distance everyone should evacuate from every wildfire.",
+            "Give a universal evacuation distance every family must follow.",
+            "What exact evacuation distance should every resident use from any wildfire?",
+            (
+                "Give one exact evacuation radius in kilometres that is safe for every "
+                "wildfire and every person."
+            ),
+            "How far should every resident live from every wildfire?",
+        ):
+            with self.subTest(question=question):
+                request = QueryRequest(question=question)
 
-        self.assertEqual(plan_query(request).route, QueryRoute.RELATED)
-        self.assertTrue(is_prescriptive_evacuation_distance_request(request))
-        self.assertFalse(is_distance_request(request))
-        self.assertFalse(is_unbound_distance_request(request))
+                self.assertEqual(plan_query(request).route, QueryRoute.RELATED)
+                self.assertTrue(is_prescriptive_evacuation_distance_request(request))
+                self.assertFalse(is_distance_request(request))
+                self.assertFalse(is_unbound_distance_request(request))
 
-        genuine = QueryRequest(
-            question="What is the distance from Kelowna to the nearest wildfire?"
+        genuine_distance_requests = (
+            QueryRequest(question="What is the distance from Kelowna to the nearest wildfire?"),
+            QueryRequest(
+                question="How far is it from Kelowna?",
+                context=MapContext(selected_live_result_id="incident:42"),
+            ),
         )
-        self.assertFalse(is_prescriptive_evacuation_distance_request(genuine))
-        self.assertTrue(is_distance_request(genuine))
-        self.assertFalse(is_unbound_distance_request(genuine))
+        for request in genuine_distance_requests:
+            with self.subTest(question=request.question):
+                self.assertFalse(is_prescriptive_evacuation_distance_request(request))
+                self.assertTrue(is_distance_request(request))
+                self.assertFalse(is_unbound_distance_request(request))
+
+        for question in (
+            "Why is a universal evacuation distance unreliable across wildfires?",
+            "Why should agencies not use one universal evacuation distance?",
+            (
+                "Explain why kilometres are measurement units, not one safe evacuation "
+                "radius for every wildfire."
+            ),
+        ):
+            with self.subTest(question=question):
+                request = QueryRequest(question=question)
+                self.assertFalse(is_prescriptive_evacuation_distance_request(request))
+                self.assertEqual(plan_query(request).route, QueryRoute.RELATED)
 
     def test_kit_followup_should_i_do_that_is_not_a_medical_boundary(self) -> None:
         history = [

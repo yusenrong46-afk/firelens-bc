@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from urllib.parse import urlparse
+
 from pydantic import HttpUrl
 
 from firelens.answering.risk_policy import RiskTier
@@ -11,6 +13,7 @@ from firelens.contracts import (
     ClaimSupport,
     EvidencePacket,
     EvidenceQuoteCandidate,
+    EvidenceSpan,
     EvidenceStatus,
     PublicClaim,
     PublicEvidence,
@@ -19,7 +22,9 @@ from firelens.contracts import (
     ResponseStatus,
     TemporalClass,
 )
+from firelens.ingestion.acquire import APPROVED_SOURCE_HOSTS
 from firelens.proof_presentation import ProofCard, make_proof_card
+from firelens.publication.records import admitted_corpus_chunk
 from firelens.publication_contracts import (
     QUOTE_RENDERER_ID,
     PublicationAuthority,
@@ -34,6 +39,46 @@ UNCOVERED_LIMITATION = (
     "Some requested high-risk guidance has no reviewed structured claim. "
     "FireLens is showing official wording or a handoff, not an interpreted claim."
 )
+MISSING_ASPECT_LIMITATION_PREFIX = "Not supported by selected evidence: "
+
+
+def admitted_official_quote_source(
+    item: PublicEvidence | EvidenceSpan | None,
+    quote: str = "",
+) -> bool:
+    """Quote-only official wording requires an admitted chunk and exact quote."""
+
+    if item is None or not quote:
+        return False
+    chunk_ids = tuple(getattr(item, "primary_chunk_ids", ()) or ())
+    digest = str(getattr(item, "document_sha256", "") or "")
+    claimed_url = str(getattr(item, "canonical_url", "") or "").rstrip("/")
+    if (
+        not chunk_ids
+        or len(digest) != 64
+        or any(character not in "0123456789abcdef" for character in digest)
+    ):
+        return False
+    for chunk_id in chunk_ids:
+        admitted = admitted_corpus_chunk(str(chunk_id))
+        if admitted is None or admitted["document_sha256"] != digest:
+            continue
+        admitted_url = admitted["canonical_url"].rstrip("/")
+        if admitted_url != claimed_url:
+            continue
+        host = (urlparse(admitted_url).hostname or "").casefold()
+        if host not in APPROVED_SOURCE_HOSTS and not host.endswith(".gov.bc.ca"):
+            continue
+        if _quote_occurs_in_admitted_text(quote, admitted["text"]):
+            return True
+    return False
+
+
+def _quote_occurs_in_admitted_text(quote: str, corpus_text: str) -> bool:
+    if quote in corpus_text:
+        return True
+    normalized_quote = " ".join(quote.split())
+    return bool(normalized_quote) and normalized_quote in " ".join(corpus_text.split())
 
 
 def quote_only_claim(
@@ -84,6 +129,7 @@ def quote_only_claim(
         critical_fields_checked="Exact official wording, not a FireLens interpretation",
         freshness="Stable source wording",
         official_url=evidence.canonical_url,
+        publication=authority,
     )
     return claim, evidence, card
 

@@ -20,9 +20,8 @@ of their recorded identities.
 
 RC2 is the name of this hardening and qualification campaign. The tracked
 Python package, web package, runtime default, Docker configuration, and OpenAPI
-remain `1.6.0-rc.1`. Candidate evidence must use that exact version until a
-separate version change is authorized; a workflow label may not relabel the
-runnable artifact.
+are `1.6.0`. Candidate evidence must use that exact version; a workflow label
+may not relabel the runnable artifact.
 
 ## Candidate preflight
 

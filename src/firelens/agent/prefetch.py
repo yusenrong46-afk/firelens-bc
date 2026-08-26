@@ -11,6 +11,7 @@ from firelens.agent.fallback_brain import (
     should_prefetch_reviewed_guidance,
 )
 from firelens.agent.packet import AgentPacket
+from firelens.agent.query_plan import AgentQueryPlan
 from firelens.agent.runtime_tools import execute_tool
 from firelens.agent.tools import AgentTool
 from firelens.answering.intent import live_query_requires_location
@@ -130,12 +131,25 @@ async def prefetch_evidence(
     live_coordinator: LiveAnswerCoordinator,
     static_service: Any,
     packet: AgentPacket,
+    plan: AgentQueryPlan | None = None,
 ) -> None:
+    if plan is not None:
+        for call in plan.tool_calls:
+            try:
+                await execute_tool(
+                    call.name.value,
+                    call.as_arguments(),
+                    request=request,
+                    live_coordinator=live_coordinator,
+                    static_service=static_service,
+                    packet=packet,
+                )
+            except EXPECTED_TOOL_FAILURES as exc:
+                record_expected_failure(packet, exc)
+        return
     await prefetch_selected(request, live_coordinator, static_service, packet)
-    await asyncio.gather(
-        ensure_official_fetch(request, live_coordinator, static_service, packet),
-        prefetch_reviewed_guidance(request, live_coordinator, static_service, packet),
-    )
+    await ensure_official_fetch(request, live_coordinator, static_service, packet)
+    await prefetch_reviewed_guidance(request, live_coordinator, static_service, packet)
 
 
 async def resolve_place(

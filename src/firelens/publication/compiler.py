@@ -33,8 +33,17 @@ from firelens.contracts import (
     aggregate_live_freshness,
     render_claim_texts,
 )
+from firelens.live_claim_renderer import render_typed_live_claim
 from firelens.live_contracts import LiveResult
 from firelens.proof_presentation import ProofCard, make_proof_card
+from firelens.publication.comparison_targets import (
+    ALERT_ORDER_ATOMIC_TARGET_SET,
+    MISSING_ASPECT_LIMITATION_PREFIX,
+    typed_subject_covers_atomic_target,
+)
+from firelens.publication.comparison_targets import (
+    publication_targets as _publication_targets,
+)
 from firelens.publication.compiled_validation import (
     atomic_quote_overlap as _atomic_quote_overlap,
 )
@@ -56,6 +65,7 @@ from firelens.publication.compiled_validation import (
 from firelens.publication.fallback import (
     QUOTE_ONLY_LIMITATION,
     UNCOVERED_LIMITATION,
+    admitted_official_quote_source,
     official_handoff_response,
     quote_only_claim,
 )
@@ -158,7 +168,7 @@ def compile_structured_claim(
 
 
 def compile_live_fact(result: LiveResult, public_claim_id: str) -> CompiledClaim:
-    text = _live_text(result)
+    text = render_typed_live_claim(result)
     authority = PublicationAuthority(
         kind=PublicationKind.OFFICIAL_LIVE_TYPED,
         typed_live_fact_id=result.result_id,
@@ -190,6 +200,7 @@ def compile_live_fact(result: LiveResult, public_claim_id: str) -> CompiledClaim
         ),
         official_url=result.source_url,
         derivation=result.distance_derivation,
+        publication=authority,
     )
     response = AskResponse(
         status=ResponseStatus.ANSWER,
@@ -248,10 +259,17 @@ def compile_high_risk_answer(
     for candidate in packet.quote_candidates:
         if classify_text(candidate.text) not in {RiskTier.A, RiskTier.B}:
             continue
+        evidence_item = next(
+            (item for item in packet.items if item.evidence_id == candidate.evidence_id),
+            None,
+        )
+        if not admitted_official_quote_source(evidence_item, candidate.text):
+            continue
         matched_targets = tuple(
             target
             for target in uncovered_targets
-            if _quote_candidate_covers_target(candidate.text, target)
+            if target not in ALERT_ORDER_ATOMIC_TARGET_SET
+            and _quote_candidate_covers_target(candidate.text, target)
         )
         if not matched_targets:
             continue
@@ -275,13 +293,20 @@ def compile_high_risk_answer(
         return official_handoff_response(trace_id)
     limitations = list(packet.limitations)
     reason = None
-    if any(
+    has_quote_only = any(
         claim.publication and claim.publication.kind == PublicationKind.OFFICIAL_QUOTE_ONLY
         for claim in claims
-    ):
+    )
+    uncovered_atomic = [t for t in uncovered_targets if t in ALERT_ORDER_ATOMIC_TARGET_SET]
+    if has_quote_only:
         limitations.append(QUOTE_ONLY_LIMITATION)
         limitations.append(UNCOVERED_LIMITATION)
         reason = ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED
+    if uncovered_atomic:
+        if UNCOVERED_LIMITATION not in limitations:
+            limitations.append(UNCOVERED_LIMITATION)
+        limitations.append(MISSING_ASPECT_LIMITATION_PREFIX + "; ".join(uncovered_atomic))
+        reason = reason or ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED
     evidence = _unique_public_evidence(evidence)
     answer = render_claim_texts(claims)
     validation = _validate_compiled_publication(
@@ -302,11 +327,7 @@ def compile_high_risk_answer(
         reason=reason,
         response_mode=(
             ResponseMode.PARTIAL
-            if any(
-                claim.publication
-                and claim.publication.kind == PublicationKind.OFFICIAL_QUOTE_ONLY
-                for claim in claims
-            )
+            if has_quote_only or uncovered_atomic
             else ResponseMode.GROUNDED
         ),
         validation=validation,
@@ -348,14 +369,6 @@ def select_typed_claim_ids(
             ):
                 selected.append(record.claim_id)
     return selected
-
-
-def _publication_targets(question: str, supported_aspects: Sequence[str]) -> tuple[str, ...]:
-    return tuple(
-        dict.fromkeys(
-            target.strip() for target in (question, *supported_aspects) if target.strip()
-        )
-    )
 
 
 def _matches_publication_target(text: str, targets: Sequence[str]) -> bool:
@@ -412,9 +425,27 @@ def _uncovered_publication_targets(
     return tuple(
         target
         for target in targets
-        if support_token_overlap(structured_text, target) < SUPPORT_TOKEN_OVERLAP_FLOOR
-        or (requests_contents(target) and not _supplies_contents(structured_text))
+        if not _structured_covers_publication_target(claims, structured_text, target)
     )
+
+
+def _structured_covers_publication_target(
+    claims: Sequence[PublicClaim], structured_text: str, target: str
+) -> bool:
+    if target in ALERT_ORDER_ATOMIC_TARGET_SET:
+        return any(
+            claim.publication is not None
+            and claim.publication.kind == PublicationKind.STRUCTURED_REVIEWED
+            and claim.publication.typed_claim_id is not None
+            and typed_subject_covers_atomic_target(
+                get_versioned(claim.publication.typed_claim_id).record.subject,
+                target,
+            )
+            for claim in claims
+        )
+    if support_token_overlap(structured_text, target) < SUPPORT_TOKEN_OVERLAP_FLOOR:
+        return False
+    return not requests_contents(target) or _supplies_contents(structured_text)
 
 
 @lru_cache(maxsize=1_024)
@@ -446,6 +477,20 @@ def _typed_record_matches_publication_target(
         for qualifier in _applicability_qualifiers(target)
     ):
         return False
+    atomic_targets = tuple(
+        target for target in targets if target in ALERT_ORDER_ATOMIC_TARGET_SET
+    )
+    if atomic_targets:
+        if current.record.subject in atomic_targets:
+            return True
+        non_atomic = tuple(
+            target for target in targets if target not in ALERT_ORDER_ATOMIC_TARGET_SET
+        )
+        if not non_atomic:
+            return False
+        return _matches_publication_target(
+            f"{current.canonical_text}\n{current.source_span_text}", non_atomic
+        )
     return _matches_publication_target(
         f"{current.canonical_text}\n{current.source_span_text}", targets
     )
@@ -530,22 +575,8 @@ def explanation_authority() -> PublicationAuthority:
     )
 
 
-def _live_text(result: LiveResult) -> str:
-    name = result.name or result.incident_number or result.result_id
-    freshness = (
-        result.freshness.value if hasattr(result.freshness, "value") else result.freshness
-    )
-    parts = [
-        f"{name} status is {result.status} according to {result.authority}.",
-        f"Official source updated {result.source_updated_at.date().isoformat()}.",
-        f"FireLens retrieved this record {result.retrieved_at.isoformat()}.",
-        f"Freshness is {freshness}.",
-    ]
-    if result.distance_km is not None and result.distance_basis is not None:
-        basis = result.distance_basis.replace("_", " ")
-        parts.append(f"Distance {result.distance_km:g} km geodesic to the official {basis}.")
-    parts.append("This is not a safety determination.")
-    return " ".join(parts)
+def background_authority() -> PublicationAuthority:
+    return PublicationAuthority(kind=PublicationKind.GENERAL_BACKGROUND)
 
 
 def _card_from_claim(
@@ -572,6 +603,11 @@ def _card_from_claim(
         else "Exact official wording, not a FireLens interpretation",
         freshness="Stable reviewed guidance",
         official_url=evidence.canonical_url,
+        publication=(
+            authority
+            if authority is not None
+            else PublicationAuthority(kind=PublicationKind.UNSUPPORTED)
+        ),
     )
 
 

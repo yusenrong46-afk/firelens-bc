@@ -6,6 +6,8 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 from firelens.agent import FireLensAgent
+from firelens.answering.intent import live_layers_for_question
+from firelens.answering.intent_automaton import ClauseIntentKind, parse_request_intent
 from firelens.contracts import (
     CoarseResolvedLocation,
     Freshness,
@@ -113,6 +115,25 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
                 self.assertFalse(coordinator.is_selected_live_request(request))
                 self.assertFalse(coordinator.is_distance_request(request))
                 self.assertFalse(coordinator.handles(request))
+
+    def test_official_evacuation_guidance_is_not_hijacked_by_selected_map_context(
+        self,
+    ) -> None:
+        question = "Where can I find official evacuation guidance?"
+        parsed = parse_request_intent(question)
+        coordinator = LiveAnswerCoordinator(cast(Any, UnexpectedLiveService()))
+        request = QueryRequest(
+            question=question,
+            context=MapContext(selected_live_result_id="incident:7"),
+        )
+
+        self.assertEqual(parsed.clauses[0].kind, ClauseIntentKind.REVIEWED_GUIDANCE)
+        self.assertFalse(parsed.has_live_records)
+        self.assertEqual(parsed.live_layers, ())
+        self.assertEqual(live_layers_for_question(question), ())
+        self.assertFalse(coordinator.is_selected_live_request(request))
+        self.assertFalse(coordinator.is_distance_request(request))
+        self.assertFalse(coordinator.handles(request))
 
     async def test_selected_record_detail_phrasings_preserve_map_context(self) -> None:
         timestamp = datetime(2026, 8, 13, tzinfo=UTC)

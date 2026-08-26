@@ -4,12 +4,18 @@ Date: 2026-07-30 (America/Vancouver)
 
 Status: **historical**. This handbook describes the 2026-07-30 V1.5 candidate.
 It is not the V1.6 architecture authority. Current Ask, trust, packaging, and
-proof UX are in `docs/ARCHITECTURE_V1_6.md`, ADR 0011, and ADR 0013.
+proof UX are in `docs/ARCHITECTURE_V1_6.md` and ADR 0017; ADR 0011 and ADR 0013
+are superseded in part for current request execution.
 Qualification evidence remains separate.
 
 > Historical note: the text below still says V1.5 “excludes … agents” and names
 > `src/firelens/answering/service.py` as the orchestrator. Runtime Ask since
-> ADR 0011 is `src/firelens/agent/coordinator.py` plus `loop.py`.
+> ADR 0011 is `src/firelens/agent/coordinator.py` plus `loop.py`. Since ADR
+> 0017, `src/firelens/agent/query_plan.py` is the sole authority for each
+> request's tools, live layers, and geography; models no longer choose them.
+> The historical trace statement below that describes a stored SHA-256 is also
+> superseded: current default traces contain neither request content nor a query
+> hash, and preview/production reject trace-content persistence.
 
 Product state: `principal-remediation candidate, semantic acceptance pending`
 

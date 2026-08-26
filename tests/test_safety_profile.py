@@ -60,6 +60,7 @@ from firelens.live_support import (
 )
 from firelens.proof_presentation import ProofCard, make_proof_card
 from firelens.publication.compiled_validation import validate_compiled_publication
+from firelens.publication.compiler import explanation_authority
 from firelens.publication_contracts import PublicationAuthority, PublicationKind
 from firelens.safety_profile import (
     PublicationState,
@@ -809,6 +810,31 @@ def test_stale_limitations_do_not_call_future_clocks_a_refresh_failure() -> None
     assert not any("later than retrieval" in note for note in cached_notes)
 
 
+def _card_publication(support_state: str, claim_id: str = "C1") -> PublicationAuthority:
+    if support_state == "structured_reviewed":
+        return PublicationAuthority(
+            kind=PublicationKind.STRUCTURED_REVIEWED,
+            typed_claim_id="TC-EVAC-ORDER-001",
+            review_status="approved_static",
+            source_revision_sha256="a" * 64,
+            renderer_id="firelens.structured_renderer.v1",
+            support_provenance="typed_inventory",
+        )
+    if support_state in {"live_record", "official_live_typed"}:
+        return PublicationAuthority(
+            kind=PublicationKind.OFFICIAL_LIVE_TYPED,
+            typed_live_fact_id=claim_id,
+            review_status="official_live_record",
+            renderer_id="firelens.live_typed_renderer.v1",
+            support_provenance="typed_official_live_fact",
+        )
+    if support_state == "official_quote_only":
+        return PublicationAuthority(kind=PublicationKind.OFFICIAL_QUOTE_ONLY)
+    if support_state == "source_linked_explanation":
+        return PublicationAuthority(kind=PublicationKind.SOURCE_LINKED_EXPLANATION)
+    return PublicationAuthority(kind=PublicationKind.UNSUPPORTED)
+
+
 def test_proof_card_model_rejects_inconsistent_or_incomplete_verified_metadata() -> None:
     with pytest.raises(ValidationError, match="profile metadata"):
         ProofCard(
@@ -824,6 +850,7 @@ def test_proof_card_model_rejects_inconsistent_or_incomplete_verified_metadata()
             exact_passage="Keep a grab-and-go bag.",
             truth_class=TruthClass.SOURCE_FACT,
             publication_state=PublicationState.VERIFIED,
+            publication=_card_publication("unknown"),
         )
     with pytest.raises(ValidationError, match="complete critical metadata"):
         make_proof_card(
@@ -835,6 +862,7 @@ def test_proof_card_model_rejects_inconsistent_or_incomplete_verified_metadata()
             review_state="approved_static",
             critical_fields_checked="Compiled from a reviewed typed record",
             freshness="Freshness not established",
+            publication=_card_publication("structured_reviewed"),
         )
     with pytest.raises(ValidationError, match="derivation binding"):
         make_proof_card(
@@ -848,6 +876,7 @@ def test_proof_card_model_rejects_inconsistent_or_incomplete_verified_metadata()
             critical_fields_checked="Not applicable — live record, not a reviewed claim",
             freshness="fresh",
             official_url="https://example.test/live/1",
+            publication=_card_publication("live_record", "incident:1"),
         )
 
 
@@ -864,6 +893,7 @@ def test_verified_critical_cards_have_complete_profile_metadata() -> None:
         critical_fields_checked="Compiled from a reviewed typed record",
         freshness="Stable reviewed guidance",
         official_url="https://example.test/guide",
+        publication=_card_publication("structured_reviewed"),
     )
     live = make_proof_card(
         claim_id="incident:1",
@@ -876,6 +906,7 @@ def test_verified_critical_cards_have_complete_profile_metadata() -> None:
         critical_fields_checked="Not applicable — live record, not a reviewed claim",
         freshness="fresh",
         official_url="https://example.test/live/1",
+        publication=_card_publication("live_record", "incident:1"),
     )
     stale = make_proof_card(
         claim_id="incident:stale",
@@ -888,6 +919,7 @@ def test_verified_critical_cards_have_complete_profile_metadata() -> None:
         critical_fields_checked="Not applicable — live record, not a reviewed claim",
         freshness="stale",
         official_url="https://example.test/live/stale",
+        publication=_card_publication("live_record", "incident:stale"),
     )
     quote = make_proof_card(
         claim_id="C2",
@@ -900,6 +932,7 @@ def test_verified_critical_cards_have_complete_profile_metadata() -> None:
         critical_fields_checked="Exact official wording, not a FireLens interpretation",
         freshness="Stable source wording",
         official_url="https://example.test/quote",
+        publication=_card_publication("official_quote_only"),
     )
     explanation = make_proof_card(
         claim_id="C3",
@@ -912,6 +945,7 @@ def test_verified_critical_cards_have_complete_profile_metadata() -> None:
         critical_fields_checked="Critical fields checked and preserved",
         freshness="Stable reviewed guidance",
         official_url="https://example.test/guide",
+        publication=_card_publication("source_linked_explanation"),
     )
     assert structured.truth_class is TruthClass.SOURCE_FACT
     assert structured.publication_state is PublicationState.VERIFIED
@@ -1255,6 +1289,10 @@ def _profile_card(**overrides: object) -> ProofCard:
         "official_url": "https://example.test/guide",
     }
     payload.update(overrides)
+    if "publication" not in payload:
+        payload["publication"] = _card_publication(
+            str(payload["support_state"]), str(payload["claim_id"])
+        )
     return make_proof_card(**payload)  # type: ignore[arg-type]
 
 
@@ -1297,6 +1335,7 @@ def test_compiled_validation_rejects_elevated_and_incomplete_profile_metadata() 
         text="Keep a grab-and-go bag.",
         evidence_status=EvidenceStatus.VERIFIED_CORPUS,
         supports=[ClaimSupport(evidence_id="E1", quote="Keep a grab-and-go bag.")],
+        publication=explanation_authority(),
     )
     unknown = _profile_card(support_state="unknown")
     elevated = ProofCard.model_construct(
@@ -1364,6 +1403,7 @@ def test_compiled_validation_rejects_elevated_and_incomplete_profile_metadata() 
         freshness="fresh",
         official_url="https://example.test/live/1",
         derivation=derivation,
+        publication=_card_publication("official_live_typed", "incident:1"),
     )
     concealed = ProofCard.model_construct(**{**bound.model_dump(), "derivation": None})
     concealed_report = validate_compiled_publication(
@@ -1454,6 +1494,7 @@ def test_compiled_validation_rejects_forged_invalid_verified_and_mismatched_dist
         freshness="fresh",
         official_url="https://example.test/live/1",
         derivation=derivation,
+        publication=_card_publication("official_live_typed", "incident:1"),
     )
     evidence = PublicEvidence(
         evidence_id="E1",
@@ -1471,15 +1512,21 @@ def test_compiled_validation_rejects_forged_invalid_verified_and_mismatched_dist
         text=distance_text,
         evidence_status=EvidenceStatus.VERIFIED_CORPUS,
         supports=[ClaimSupport(evidence_id="E1", quote=distance_text)],
+        publication=explanation_authority(),
     )
     forged = DistanceDerivation.model_construct(
         **{
-            **derivation.model_dump(),
+            **{field: getattr(derivation, field) for field in DistanceDerivation.model_fields},
             "validation_status": DerivationValidationStatus.INVALID,
             "publication_state": PublicationState.VERIFIED,
         }
     )
-    forged_card = ProofCard.model_construct(**{**bound.model_dump(), "derivation": forged})
+    forged_card = ProofCard.model_construct(
+        **{
+            **{field: getattr(bound, field) for field in ProofCard.model_fields},
+            "derivation": forged,
+        }
+    )
     forged_report = validate_compiled_publication(
         packet=None,
         claims=[claim],
@@ -1505,7 +1552,10 @@ def test_compiled_validation_rejects_forged_invalid_verified_and_mismatched_dist
     )
     mismatch_text = "Distance 999.9 km geodesic to the official incident point."
     mismatch_card = ProofCard.model_construct(
-        **{**bound.model_dump(), "claim_text": mismatch_text}
+        **{
+            **{field: getattr(bound, field) for field in ProofCard.model_fields},
+            "claim_text": mismatch_text,
+        }
     )
     with pytest.raises(ValidationError, match="does not match the bound derivation"):
         ProofCard.model_validate(mismatch_card.model_dump())
@@ -1570,6 +1620,7 @@ def test_future_derivation_calculated_at_cannot_remain_valid_or_verified() -> No
         freshness="fresh",
         official_url="https://example.test/live/1",
         derivation=valid,
+        publication=_card_publication("official_live_typed", "incident:1"),
     )
     future_card = ProofCard.model_construct(
         **{
@@ -1595,6 +1646,7 @@ def test_future_derivation_calculated_at_cannot_remain_valid_or_verified() -> No
         text=distance_text,
         evidence_status=EvidenceStatus.VERIFIED_CORPUS,
         supports=[ClaimSupport(evidence_id="E1", quote=distance_text)],
+        publication=explanation_authority(),
     )
     future_report = validate_compiled_publication(
         packet=None,

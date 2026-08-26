@@ -12,7 +12,6 @@ from typing import Any
 from firelens.config import DEFAULT_RELEASE_VERSION
 from firelens.evaluation.candidate_evidence_common import (
     GENERATED_NAMES,
-    MATERIAL_PATHS,
     RAW_EVIDENCE_NAMES,
     SCHEMA_VERSION,
     STALE_REPORT_PATH,
@@ -28,7 +27,7 @@ from firelens.evaluation.candidate_evidence_common import (
 from firelens.evaluation.candidate_evidence_common import (
     REQUIRED_COMMAND_POLICIES as _REQUIRED_COMMAND_POLICIES,
 )
-from firelens.evaluation.candidate_evidence_documents import documents
+from firelens.evaluation.candidate_evidence_documents import documents, evidence_materials
 from firelens.evaluation.candidate_evidence_validation import exact_object
 
 REQUIRED_COMMAND_POLICIES = _REQUIRED_COMMAND_POLICIES
@@ -59,7 +58,7 @@ def _manifest(
         "security_gate_passed": security_gate_passed,
         "qualification_gate_passed": qualification_gate_passed,
         "limitations": limitations,
-        "materials": [file_record(root, name) for name in MATERIAL_PATHS],
+        "materials": evidence_materials(root, release_version=release_version),
         "subjects": [file_record(root, SUBJECT_FILE), tree_record(root, SUBJECT_TREE)],
         "artifacts": [file_record(bundle, name) for name in artifact_names],
     }
@@ -255,7 +254,9 @@ def verify_candidate_evidence(
     bundle = bundle.resolve()
     manifest = _load_candidate_manifest(bundle, expected_commit, expected_tree)
     _verify_artifact_roster(bundle, manifest)
-    actual_materials = [file_record(root, name) for name in MATERIAL_PATHS]
+    actual_materials = evidence_materials(
+        root, release_version=str(manifest.get("release_version") or "")
+    )
     if manifest.get("materials") != actual_materials:
         raise ValueError("candidate evidence material identity does not recompute")
     actual_subjects = [file_record(root, SUBJECT_FILE), tree_record(root, SUBJECT_TREE)]

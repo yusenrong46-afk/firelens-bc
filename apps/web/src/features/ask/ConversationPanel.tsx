@@ -1,10 +1,4 @@
-import {
-  ArrowSquareOut,
-  Crosshair,
-  Info,
-  UserCircle,
-  WarningCircle,
-} from "@phosphor-icons/react";
+import { ArrowSquareOut, Crosshair, Info, UserCircle, WarningCircle } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { FeedbackControls } from "../feedback/FeedbackControls";
 import { resultDisplayName } from "../near-me/liveResultPresentation";
@@ -23,18 +17,15 @@ import { QuestionComposer } from "./QuestionComposer";
 import { ResponseModeBadge } from "./responseModeBadge";
 import type { FireLensSession } from "./useFireLensSession";
 
-export function ConversationPanel({
-  session,
-  analytical = false,
-  analysisSlot,
-  onOpenEvidence,
-  onOpenMap,
-}: {
+export function ConversationPanel({ session, analytical = false, analysisSlot, onOpenEvidence, onOpenMap,
+  contextOpen = false, contextSurface = "evidence" }: {
   session: FireLensSession;
   analytical?: boolean;
   analysisSlot?: ReactNode;
   onOpenEvidence?: () => void;
   onOpenMap?: () => void;
+  contextOpen?: boolean;
+  contextSurface?: "evidence" | "map";
 }) {
   const {
     assistantText,
@@ -95,10 +86,15 @@ export function ConversationPanel({
 
   return (
     <section className={`conversation-panel ${analytical ? "conversation-panel--analytical" : ""}`} id="conversation" aria-label="Question and answer" tabIndex={-1}>
-      {!analytical && (history.length > 0 || view.kind !== "idle") && (
+      {(history.length > 0 || view.kind !== "idle") && (
         <ConversationToolbar priorTurnCount={earlierTurns.length} onClear={clearHistory} />
       )}
-      <div className="conversation-scroll" aria-live="polite">
+      <div className="conversation-scroll">
+        {view.kind !== "idle" && (
+          <span className="response-announcement" role="status" aria-live="polite" aria-atomic="true">
+            {view.kind === "loading" ? "FireLens is working." : "FireLens response ready."}
+          </span>
+        )}
         {earlierTurns.length > 0 && (
           <div className="history-group" aria-label="Earlier conversation">
             <span className="panel-label">Earlier conversation</span>
@@ -153,11 +149,7 @@ export function ConversationPanel({
               </div>
             )}
             {view.kind === "answer" ? (
-              <AnswerBody
-                response={response}
-                assistantText={assistantText}
-                analytical={analytical}
-              />
+              <AnswerBody response={response} assistantText={assistantText} analytical={analytical} />
             ) : view.kind === "unavailable" || view.kind === "error" ? (
               <ServiceFailureState
                 message={assistantText}
@@ -169,7 +161,7 @@ export function ConversationPanel({
             )}
             {!analytical && (mode === "live" || mode === "mixed") && onOpenMap && (
               <div className="answer-context-actions">
-                <button type="button" onClick={onOpenMap}>View official map context</button>
+                <button type="button" aria-controls="answer-context" aria-expanded={contextOpen && contextSurface === "map"} onClick={onOpenMap}>View official map context</button>
               </div>
             )}
             {(response?.related_links ?? []).length > 0 && (
@@ -182,16 +174,31 @@ export function ConversationPanel({
                 ))}
               </div>
             )}
-            {!analytical && response?.trace_id && <FeedbackControls traceId={response.trace_id} />}
+            {response?.trace_id && <FeedbackControls traceId={response.trace_id} />}
           </div>
         </div>}
 
-        {analytical && analysisSlot}
         {analytical && visibleLimitations.length > 0 && (
           <aside className="analysis-limitations" aria-label="Analysis limitations">
             <Info size={18} aria-hidden="true" />
             <span>{visibleLimitations.join(" ")}</span>
           </aside>
+        )}
+        {analytical && analysisSlot}
+        {analytical && response?.trace_id && onOpenEvidence && (
+          <div className="answer-context-actions analysis-context-actions">
+            <button
+              type="button"
+              aria-controls="answer-context"
+              aria-expanded={contextOpen && contextSurface === "evidence"}
+              onClick={() => {
+                setSelected(0);
+                onOpenEvidence();
+              }}
+            >
+              Open technical evidence
+            </button>
+          </div>
         )}
 
         {requiresLocation && (
@@ -202,6 +209,7 @@ export function ConversationPanel({
             <div className="location-request__actions">
               <input
                 aria-label="BC community for this question"
+                autoFocus
                 value={locationLabel}
                 onChange={(event) => {
                   setLocationLabel(event.target.value);
@@ -281,7 +289,7 @@ export function ConversationPanel({
       </div>
 
       {view.kind !== "idle" && (
-        <QuestionComposer idle={false} loading={view.kind === "loading"} query={query}
+        <QuestionComposer continuationPending={requiresLocation} idle={false} loading={view.kind === "loading"} query={query}
           onQueryChange={setQuery} onSubmit={submit} />
       )}
     </section>

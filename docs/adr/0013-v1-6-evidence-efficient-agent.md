@@ -1,6 +1,6 @@
 # ADR 0013: V1.6 evidence-efficient agent
 
-Status: accepted
+Status: accepted; superseded in part by ADR 0017 (2026-08-25)
 Date: 2026-08-16
 
 ## Context
@@ -22,6 +22,12 @@ Models must not become the authority. They may choose tools and propose
 wording. Code and humans decide what is official fact.
 
 ## Decision
+
+> **Current supersession.** The loop and budget improvements in this ADR remain
+> relevant, but its provider-directed tool-loop framing is superseded. ADR 0017
+> makes immutable `AgentQueryPlan` the sole authorization for tools, layers,
+> geography, and guidance subrequests. A provider cannot widen or repeat that
+> plan and may propose prose only from the resulting packet.
 
 Keep ADR 0011. Change only the wasteful and unbounded parts:
 

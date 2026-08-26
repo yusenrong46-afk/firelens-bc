@@ -147,7 +147,26 @@ export type ProofCardView = {
   truth_class?: TruthClass;
   publication_state?: PublicationState;
   derivation?: DistanceDerivationView | null;
+  publication?: {
+    kind?: string | null;
+    typed_claim_id?: string | null;
+    typed_live_fact_id?: string | null;
+    review_status?: string | null;
+    source_revision_sha256?: string | null;
+    source_span_sha256?: string | null;
+    renderer_id?: string | null;
+    support_provenance?: string | null;
+    risk_tier?: string | null;
+  } | null;
 };
+
+type Claim = NonNullable<AskResponse["claims"]>[number];
+type ApiProofCard = NonNullable<AskResponse["proof_cards"]>[number];
+
+function asProofCardView(card: ApiProofCard): ProofCardView {
+  // Runtime JSON may still carry constructor authority; it is not a public OpenAPI field.
+  return card as ProofCardView;
+}
 
 export function bindProofProfile(
   supportState: SupportState,
@@ -206,6 +225,7 @@ function unknownProofCard(card: ProofCardView): ProofCardView {
     freshness: "Freshness not established",
     official_url: null,
     derivation: null,
+    publication: UNSUPPORTED_PUBLICATION,
   }, true);
 }
 
@@ -240,29 +260,110 @@ const SUPPORT_LABELS: Record<SupportState, string> = {
   live_record: "Official live record as published",
 };
 
-type Claim = NonNullable<AskResponse["claims"]>[number];
+const KIND_SUPPORT_STATE: Record<string, SupportState> = {
+  structured_reviewed: "structured_reviewed",
+  official_live_typed: "official_live_typed",
+  official_quote_only: "official_quote_only",
+  source_linked_explanation: "source_linked_explanation",
+  general_background: "background",
+  unsupported: "unknown",
+};
+
+const UNSUPPORTED_PUBLICATION = {
+  kind: "unsupported",
+  review_status: "none",
+  renderer_id: "none",
+  support_provenance: "none",
+} as const;
+
+function livePublication(resultId: string) {
+  return {
+    kind: "official_live_typed" as const,
+    typed_live_fact_id: resultId,
+    review_status: "official_live_record",
+    renderer_id: "firelens.live_typed_renderer.v1",
+    support_provenance: "typed_official_live_fact",
+    risk_tier: "B",
+  };
+}
+
+function isOfficialLiveTyped(card: ProofCardView): boolean {
+  return card.support_state === "official_live_typed" || card.publication?.kind === "official_live_typed";
+}
+
+function officialLiveIdMatchesBound(
+  card: ProofCardView,
+  boundId: string | null | undefined,
+): boolean {
+  if (!isOfficialLiveTyped(card)) return true;
+  if (boundId == null) return false;
+  const liveId = card.publication?.typed_live_fact_id;
+  if (liveId != null) return liveId === boundId;
+  return card.claim_id === boundId;
+}
+
+type PublicationAuthorityView = NonNullable<ProofCardView["publication"]>;
+
+const PUBLICATION_AUTHORITY_FIELDS = [
+  "kind",
+  "typed_claim_id",
+  "typed_live_fact_id",
+  "review_status",
+  "source_revision_sha256",
+  "source_span_sha256",
+  "renderer_id",
+  "support_provenance",
+  "risk_tier",
+] as const;
+
+type PublicationAuthorityField = (typeof PUBLICATION_AUTHORITY_FIELDS)[number];
+
+function normalizedAuthorityValue(
+  authority: PublicationAuthorityView | null | undefined,
+  field: PublicationAuthorityField,
+): string | null {
+  const value = authority?.[field];
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function hasRecognizedPublicationAuthority(
+  authority: PublicationAuthorityView | null | undefined,
+): authority is PublicationAuthorityView {
+  const kind = normalizedAuthorityValue(authority, "kind");
+  return kind != null && kind in KIND_SUPPORT_STATE;
+}
+
+/**
+ * Publication authority is an identity, not a display category.  A proof card
+ * may reuse a claim's authority only when every field is identical after
+ * normalising absent optional fields to null.  Comparing only `kind` would let
+ * a stale source revision, review decision, or renderer look authoritative.
+ */
+function publicationAuthoritiesEqual(
+  left: PublicationAuthorityView | null | undefined,
+  right: PublicationAuthorityView | null | undefined,
+): boolean {
+  if (!hasRecognizedPublicationAuthority(left) || !hasRecognizedPublicationAuthority(right)) {
+    return false;
+  }
+  return PUBLICATION_AUTHORITY_FIELDS.every(
+    (field) => normalizedAuthorityValue(left, field) === normalizedAuthorityValue(right, field),
+  );
+}
+
+function cardAuthorityMatchesClaim(card: ProofCardView, claim: Claim): boolean {
+  if (!publicationAuthoritiesEqual(card.publication, claim.publication)) return false;
+  if (claim.publication?.kind === "official_live_typed") {
+    return officialLiveIdMatchesBound(card, claim.publication?.typed_live_fact_id ?? claim.claim_id);
+  }
+  return true;
+}
 
 export function getClaimSupportState(response: AskResponse, claim: Claim): SupportState {
   if (response.validation?.accepted === false) return "unknown";
   if (claim.trust?.critical_field_preservation === "failed") return "unknown";
-
-  const kind = claim.publication?.kind;
-  if (kind === "structured_reviewed") {
-    return response.response_mode === "conflict" ? "conflict" : "structured_reviewed";
-  }
-  if (kind === "official_live_typed") return "official_live_typed";
-  if (kind === "official_quote_only") return "official_quote_only";
-  if (kind === "source_linked_explanation") return "source_linked_explanation";
-  if (kind === "general_background") return "background";
-  if (kind === "unsupported") return "unknown";
-
-  // Compatibility for older responses that predate publication authority.
-  if (response.response_mode === "conflict") return "conflict";
-  if (claim.evidence_status === "verified_corpus" && (claim.supports?.length ?? 0) > 0) {
-    return "supported";
-  }
-  if (claim.evidence_status === "general_background") return "background";
-  return "unknown";
+  const kind = String(claim.publication?.kind ?? "");
+  return KIND_SUPPORT_STATE[kind] ?? "unknown";
 }
 
 export function getClaimSupportLabel(response: AskResponse, claim: Claim): string {
@@ -453,11 +554,17 @@ function rebindLiveProofCard(
     return card;
   }
   const byId = liveResults.find((result) => result.result_id === card.claim_id);
-  const byDerivation = liveResults.find((result) =>
-    card.derivation?.input_source_ids.includes(result.result_id),
-  );
-  const live = byId ?? byDerivation;
-  if (!live) return card;
+  const byLiveFact = liveResults.find((result) => result.result_id === card.publication?.typed_live_fact_id);
+  const byDerivation = isOfficialLiveTyped(card)
+    ? undefined
+    : liveResults.find((result) => card.derivation?.input_source_ids?.includes(result.result_id));
+  const live = byId ?? byLiveFact ?? byDerivation;
+  if (!live) {
+    return isOfficialLiveTyped(card) ? unknownProofCard(card) : card;
+  }
+  if (!officialLiveIdMatchesBound(card, live.result_id)) {
+    return unknownProofCard(card);
+  }
   return {
     ...card,
     freshness: live.freshness,
@@ -465,12 +572,80 @@ function rebindLiveProofCard(
     exact_passage: live.status ?? card.exact_passage ?? null,
     authority: live.authority,
     derivation: live.distance_derivation ?? card.derivation ?? null,
+    publication: card.publication ?? livePublication(live.result_id),
   };
+}
+
+function claimProofCard(
+  response: AskResponse,
+  claim: Claim,
+  evidenceById: Map<string, NonNullable<AskResponse["evidence"]>[number]>,
+): ProofCardView {
+  const support = claim.supports?.[0];
+  const evidence = support ? evidenceById.get(support.evidence_id) : undefined;
+  const state = getClaimSupportState(response, claim);
+  const trust = claim.trust;
+  return {
+    claim_id: claim.claim_id,
+    claim_text: claim.text,
+    support_state: state,
+    support_label: SUPPORT_LABELS[state],
+    authority: trust?.source_authority || evidence?.publisher || "FireLens reviewed sources",
+    exact_passage: support?.quote ?? null,
+    source_title: evidence?.title ?? null,
+    source_revision: evidence?.locator ?? null,
+    review_state: state === "official_quote_only"
+      ? "Source extraction only; no structured-claim review"
+      : trust?.human_review_state === "human_verified_repair" || evidence?.review_provenance === "human_verified_repair"
+      ? "Human-verified source transcription"
+      : evidence
+        ? "Native reviewed text"
+        : "No reviewed passage attached",
+    critical_fields_checked: trust?.critical_field_preservation === "preserved"
+      ? "Critical fields checked and preserved"
+      : trust?.critical_field_preservation === "failed"
+        ? "Critical-field check failed"
+        : "Not applicable",
+    freshness: state === "official_quote_only"
+      ? "Stable source wording"
+      : trust?.freshness === "stable_guidance" || !trust
+      ? freshnessLabel(response)
+      : String(trust.freshness),
+    conflicts_or_unknowns: (response.limitations ?? []).slice(0, 4),
+    official_url: evidence?.canonical_url ?? null,
+    publication: claim.publication ?? UNSUPPORTED_PUBLICATION,
+  };
+}
+
+function canRebuildClaimProofCard(
+  response: AskResponse,
+  claim: Claim,
+  evidenceById: Map<string, NonNullable<AskResponse["evidence"]>[number]>,
+): boolean {
+  const publication = claim.publication;
+  if (!hasRecognizedPublicationAuthority(publication) || getClaimSupportState(response, claim) === "unknown") {
+    return false;
+  }
+  if (
+    normalizedAuthorityValue(publication, "review_status") == null
+    || normalizedAuthorityValue(publication, "renderer_id") == null
+    || normalizedAuthorityValue(publication, "support_provenance") == null
+  ) {
+    return false;
+  }
+  if (publication.kind === "official_live_typed") {
+    const liveId = normalizedAuthorityValue(publication, "typed_live_fact_id");
+    return liveId != null && (response.live_results ?? []).some((result) => result.result_id === liveId);
+  }
+  if (publication.kind === "general_background") return true;
+  const support = claim.supports?.[0];
+  return support != null && evidenceById.has(support.evidence_id) && Boolean(support.quote?.trim());
 }
 
 export function getProofCards(response: AskResponse | undefined): ProofCardView[] {
   if (!response) return [];
   const liveResults = response.live_results ?? [];
+  const evidenceById = new Map((response.evidence ?? []).map((item) => [item.evidence_id, item]));
   const projectValidation = (card: ProofCardView) =>
     response.validation?.accepted === false || card.support_state === "unknown"
       ? unknownProofCard(card)
@@ -484,56 +659,37 @@ export function getProofCards(response: AskResponse | undefined): ProofCardView[
         : (response.live_results ?? []).map((result) => result.result_id),
     );
     return (response.proof_cards ?? []).filter((card) => validCardIds.has(card.claim_id)).map((card) => {
-      const claim = claimsById.get(card.claim_id);
-      if (!claim) return projectValidation(card);
+      const view = asProofCardView(card);
+      const claim = claimsById.get(view.claim_id);
+      if (!claim) {
+        const bound = liveResults.find((result) => result.result_id === view.claim_id)
+          ?? liveResults.find((result) => result.result_id === view.publication?.typed_live_fact_id);
+        if (isOfficialLiveTyped(view) && !officialLiveIdMatchesBound(view, bound?.result_id)) {
+          return unknownProofCard(view);
+        }
+        return projectValidation(view);
+      }
       const state = getClaimSupportState(response, claim);
+      if (state === "unknown" || !cardAuthorityMatchesClaim(view, claim)) {
+        return state === "unknown"
+          ? unknownProofCard({ ...view, claim_text: claim.text })
+          : canRebuildClaimProofCard(response, claim, evidenceById)
+            ? projectValidation(claimProofCard(response, claim, evidenceById))
+            : unknownProofCard({ ...view, claim_text: claim.text });
+      }
       return projectValidation({
-        ...card,
+        ...view,
         support_state: state,
         support_label: SUPPORT_LABELS[state],
         review_state: state === "official_quote_only"
           ? "Source extraction only; no structured-claim review"
-          : card.review_state,
-        freshness: state === "official_quote_only" ? "Stable source wording" : card.freshness,
+          : view.review_state,
+        freshness: state === "official_quote_only" ? "Stable source wording" : view.freshness,
+        publication: claim.publication ?? view.publication ?? UNSUPPORTED_PUBLICATION,
       });
     });
   }
-  const evidenceById = new Map((response.evidence ?? []).map((item) => [item.evidence_id, item]));
-  const fromClaims = (response.claims ?? []).map((claim) => {
-    const support = claim.supports?.[0];
-    const evidence = support ? evidenceById.get(support.evidence_id) : undefined;
-    const state = getClaimSupportState(response, claim);
-    const trust = claim.trust;
-    return {
-      claim_id: claim.claim_id,
-      claim_text: claim.text,
-      support_state: state,
-      support_label: SUPPORT_LABELS[state],
-      authority: trust?.source_authority || evidence?.publisher || "FireLens reviewed sources",
-      exact_passage: support?.quote ?? null,
-      source_title: evidence?.title ?? null,
-      source_revision: evidence?.locator ?? null,
-      review_state: state === "official_quote_only"
-        ? "Source extraction only; no structured-claim review"
-        : trust?.human_review_state === "human_verified_repair" || evidence?.review_provenance === "human_verified_repair"
-        ? "Human-verified source transcription"
-        : evidence
-          ? "Native reviewed text"
-          : "No reviewed passage attached",
-      critical_fields_checked: trust?.critical_field_preservation === "preserved"
-        ? "Critical fields checked and preserved"
-        : trust?.critical_field_preservation === "failed"
-          ? "Critical-field check failed"
-          : "Not applicable",
-      freshness: state === "official_quote_only"
-        ? "Stable source wording"
-        : trust?.freshness === "stable_guidance" || !trust
-        ? freshnessLabel(response)
-        : String(trust.freshness),
-      conflicts_or_unknowns: (response.limitations ?? []).slice(0, 4),
-      official_url: evidence?.canonical_url ?? null,
-    } satisfies ProofCardView;
-  });
+  const fromClaims = (response.claims ?? []).map((claim) => claimProofCard(response, claim, evidenceById));
   if (fromClaims.length > 0) return fromClaims.map(projectValidation);
   return (response.live_results ?? []).map((result) => projectValidation({
     claim_id: result.result_id,
@@ -550,5 +706,6 @@ export function getProofCards(response: AskResponse | undefined): ProofCardView[
     conflicts_or_unknowns: [],
     official_url: result.source_url,
     derivation: result.distance_derivation ?? null,
+    publication: livePublication(result.result_id),
   }));
 }

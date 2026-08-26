@@ -23,6 +23,7 @@ from firelens.contracts import (
     SupportStatus,
 )
 from firelens.ingestion.chunking import ChunkRecord
+from firelens.publication.comparison_targets import reserve_fused_atomic_hits
 from firelens.retrieval.bm25 import tokenize
 
 _ASPECT_STOPWORDS = {
@@ -279,9 +280,18 @@ def _select_evidence_hits(
     *,
     limit: int,
     selection_aspects: Sequence[str],
+    coverage_hits: Sequence[RetrievalHit] = (),
 ) -> list[RetrievalHit]:
     """Retain ranked relevance while reserving bounded slots for aspects and sources."""
 
+    reserved = reserve_fused_atomic_hits(
+        reranked_hits,
+        coverage_hits,
+        selection_aspects=selection_aspects,
+        limit=limit,
+    )
+    if reserved is not None:
+        return reserved
     pool = list(reranked_hits[: max(limit * 4, limit)])
     if len(pool) <= limit:
         return pool
@@ -336,6 +346,7 @@ def build_evidence_packet(
     config: FireLensConfig,
     evidence_index: EvidenceIndex | None = None,
     selection_aspects: Sequence[str] = (),
+    coverage_hits: Sequence[RetrievalHit] = (),
 ) -> EvidencePacket:
     index = evidence_index or EvidenceIndex.from_chunks(chunks)
     groups: list[EvidenceGroup] = []
@@ -345,6 +356,7 @@ def build_evidence_packet(
         reranked_hits,
         limit=config.max_evidence_spans,
         selection_aspects=selection_aspects,
+        coverage_hits=coverage_hits,
     )
     for hit in selected_hits:
         neighbor_ids = _candidate_chunk_ids(hit, index.by_parent_index, config.neighbor_window)

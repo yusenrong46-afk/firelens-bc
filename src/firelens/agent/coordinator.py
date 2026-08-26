@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from firelens.agent.budget import RequestExecutionPolicy
 from firelens.agent.loop import run_agent_loop
+from firelens.agent.query_plan import AgentRequestMode, build_agent_query_plan
 from firelens.agent.rails import input_seatbelt
 from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
@@ -16,6 +17,7 @@ from firelens.answering.intent import (
     plan_query,
     reviewed_guidance_intent,
 )
+from firelens.answering.intent_automaton import parse_request_intent
 from firelens.answering.location_intent import (
     asks_for_personal_location,
     coarse_location_from_question,
@@ -139,7 +141,7 @@ def _live_place_correction(request: QueryRequest) -> QueryRequest | None:
                 "location": None,
             }
         )
-    if reviewed_guidance_intent(place):
+    if reviewed_guidance_intent(place) or parse_request_intent(place).has_prefetchable_guidance:
         return None
     parsed_place = coarse_location_from_question(f"map {place}")
     if parsed_place is None or parsed_place.label is None:
@@ -184,22 +186,31 @@ class FireLensAgent:
                 tools=(),
                 policy=policy,
             )
-        plan = plan_query(request)
-        if plan.route == QueryRoute.CAPABILITY:
-            response = await self.static_service.ask(request)
+        effective_request = _live_place_correction(request) or request
+        agent_plan = await build_agent_query_plan(effective_request, self.live_coordinator)
+        if agent_plan.mode == AgentRequestMode.TERMINAL:
+            assert agent_plan.terminal_response is not None
+            return AgentExecution(
+                response=agent_plan.terminal_response,
+                route=agent_plan.route,
+                tools=(),
+                policy=RequestExecutionPolicy(route="requires_input"),
+            )
+        if agent_plan.route == QueryRoute.CAPABILITY:
+            response = await self.static_service.ask(effective_request)
             return AgentExecution(
                 response=response,
                 route=QueryRoute.CAPABILITY,
                 tools=(_static_tool(response),),
                 policy=RequestExecutionPolicy(route="capability"),
             )
-        effective_request = _live_place_correction(request) or request
         provider = getattr(self.static_service, "provider", None)
         response, route, tools, packet = await run_agent_loop(
             effective_request,
             live_coordinator=self.live_coordinator,
             static_service=self.static_service,
             provider=provider if hasattr(provider, "chat_turn") else None,
+            query_plan=agent_plan,
         )
         if response.response_mode == ResponseMode.LIVE:
             route = QueryRoute.LIVE
