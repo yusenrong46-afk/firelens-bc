@@ -98,6 +98,32 @@ collection, and no fallbacks. A model swap is a change to
 `FIRELENS_GENERATION_MODEL`. Tools, rails, and RAG stay. Do not enable
 `ANSWER_GENERAL_BACKGROUND` as a live tool.
 
+## Checked Vercel identity
+
+This runbook still does not authorize push, deploy, or paid runs. When an
+owner later authorizes a Vercel upload, bind identity from a **clean** local
+tree before `.vercelignore` excludes `.git`:
+
+```text
+test -z "$(git status --porcelain)"
+$(PYTHON) scripts/deploy_vercel.py --dry-run
+```
+
+`scripts/deploy_vercel.py` refuses a dirty tree, reads `git rev-parse HEAD`,
+and constructs pinned `npx vercel@58.1.0 deploy --yes` with both `--build-env`
+and `--env` for `FIRELENS_BUILD_COMMIT=<full SHA>` and
+`FIRELENS_RELEASE_VERSION=1.6.0`, so readiness cannot keep a stale project
+`1.6.0-rc.1` after that deploy. Preview is the default. `--prod` is explicit.
+`make vercel-preview` and `make vercel-production` invoke the same wrapper.
+
+After an authorized deploy, `/api/v1/health/ready` must report that exact SHA
+and `release_version=1.6.0`. Product release identity is `1.6.0`; the frozen
+retrieval benchmark prefix may remain `rc2`.
+
+If production still reports `1.6.0-rc.1`, the Vercel project environment
+variable `FIRELENS_RELEASE_VERSION` is overriding the wrapper and must be
+set to `1.6.0` or removed. Do not rename the benchmark identifier to match.
+
 ## After qualification
 
 Any source, corpus, index, prompt, model, threshold, configuration, or code
