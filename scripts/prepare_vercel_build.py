@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -18,20 +19,51 @@ from firelens.runtime_candidate import (
     write_runtime_candidate,
 )
 
+_FULL_COMMIT = re.compile(r"^[0-9a-f]{40}$")
+
+
+class BuildIdentityError(RuntimeError):
+    """Sanitized failure when a Vercel build has no exact Git SHA."""
+
+
+def _validated_commit(value: str | None, *, source: str) -> str | None:
+    if value is None:
+        return None
+    stripped = value.strip()
+    if not stripped:
+        return None
+    if _FULL_COMMIT.fullmatch(stripped) is None:
+        raise BuildIdentityError(
+            f"build commit from {source} is not a full 40-character lowercase SHA"
+        )
+    return stripped
+
 
 def _resolve_build_commit(root: Path) -> str:
-    configured = os.environ.get("VERCEL_GIT_COMMIT_SHA") or os.environ.get(
-        "FIRELENS_BUILD_COMMIT"
+    configured = _validated_commit(
+        os.environ.get("VERCEL_GIT_COMMIT_SHA") or os.environ.get("FIRELENS_BUILD_COMMIT"),
+        source="environment",
     )
-    if configured:
+    if configured is not None:
         return configured
-    return subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=root,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
+    try:
+        resolved = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        raise BuildIdentityError(
+            "build commit is missing: set FIRELENS_BUILD_COMMIT or "
+            "VERCEL_GIT_COMMIT_SHA to a full 40-character lowercase SHA "
+            "before uploading a tree without .git"
+        ) from exc
+    commit = _validated_commit(resolved, source="git")
+    if commit is None:
+        raise BuildIdentityError("git rev-parse HEAD returned an empty commit")
+    return commit
 
 
 def main() -> None:
@@ -43,7 +75,10 @@ def main() -> None:
     subprocess.run(["npm", "ci"], cwd=frontend, check=True)
     subprocess.run(["npm", "run", "build"], cwd=frontend, check=True)
 
-    commit = _resolve_build_commit(root)
+    try:
+        commit = _resolve_build_commit(root)
+    except BuildIdentityError as exc:
+        raise SystemExit(str(exc)) from exc
     candidate = build_runtime_candidate(
         commit=commit,
         benchmark_id=DEFAULT_BENCHMARK_ID,

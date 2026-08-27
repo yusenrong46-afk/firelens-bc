@@ -81,6 +81,24 @@ from firelens.live_support import (
 )
 
 LAYER_URLS = _LAYER_URLS
+_WIRE_BODY_HEADERS = frozenset({"content-encoding", "content-length", "transfer-encoding"})
+
+
+def _decoded_response_headers(headers: httpx.Headers) -> httpx.Headers:
+    """Keep metadata headers, not encodings that applied to the wire bytes.
+
+    ``aiter_bytes()`` already decompresses gzip. Rebuilding a response with the
+    original ``Content-Encoding`` makes httpx decode the JSON a second time and
+    fail closed as an unavailable live layer.
+    """
+
+    return httpx.Headers(
+        [
+            (name, value)
+            for name, value in headers.multi_items()
+            if name.lower() not in _WIRE_BODY_HEADERS
+        ]
+    )
 
 
 class LiveDataService:
@@ -164,7 +182,7 @@ class LiveDataService:
                     chunks.append(chunk)
                 return httpx.Response(
                     response.status_code,
-                    headers=response.headers,
+                    headers=_decoded_response_headers(response.headers),
                     content=b"".join(chunks),
                     request=response.request,
                 )

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import gzip
+import json
 import unittest
 from datetime import UTC, datetime
 
@@ -533,6 +535,70 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
                 await service._get("https://example.test/query", params={})
 
         self.assertEqual(raised.exception.kind, LiveDataErrorKind.BOUNDED_LIMIT)
+
+    def test_decoded_gzip_bytes_are_not_decoded_again(self) -> None:
+        payload = json.dumps({"ok": True}).encode("utf-8")
+        wire_headers = httpx.Headers(
+            {
+                "Content-Type": "application/json",
+                "Content-Encoding": "gzip",
+                "Content-Length": str(len(payload)),
+            }
+        )
+        with self.assertRaises(httpx.DecodingError):
+            httpx.Response(200, headers=wire_headers, content=payload)
+        rebuilt = httpx.Response(
+            200,
+            headers=live_module._decoded_response_headers(wire_headers),
+            content=payload,
+        )
+        self.assertEqual(rebuilt.json(), {"ok": True})
+
+    async def test_gzip_official_responses_remain_readable_after_bounded_buffering(
+        self,
+    ) -> None:
+        metadata = _metadata(LiveResultKind.INCIDENT)
+        collection = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "OBJECTID": 1,
+                        "FIRE_STATUS": "Out of Control",
+                        "FIRE_NUMBER": "K41245",
+                        "INCIDENT_NAME": "Test Fire",
+                    },
+                    "geometry": {"type": "Point", "coordinates": [-119.48, 49.88]},
+                }
+            ],
+        }
+
+        def gzip_json(payload: dict) -> httpx.Response:
+            body = gzip.compress(json.dumps(payload).encode("utf-8"))
+            return httpx.Response(
+                200,
+                headers={
+                    "Content-Type": "application/json",
+                    "Content-Encoding": "gzip",
+                    "Content-Length": str(len(body)),
+                },
+                content=body,
+            )
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if not request.url.path.endswith("/query"):
+                return gzip_json(metadata)
+            return gzip_json(collection)
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client).map_results(
+                layers=(LiveResultKind.INCIDENT,)
+            )
+
+        self.assertEqual(response.unavailable_layers, [])
+        self.assertEqual(len(response.results), 1)
+        self.assertEqual(response.results[0].name, "Test Fire")
 
     async def test_geometry_byte_limits_fail_closed_and_are_visible(self) -> None:
         oversized_feature = {

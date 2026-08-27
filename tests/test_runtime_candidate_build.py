@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
 
 from firelens.config import FireLensConfig
 from firelens.privacy_policy import APPROVED_PRODUCTION_PRIVACY
-from scripts.prepare_vercel_build import _resolve_build_commit
+from scripts.prepare_vercel_build import BuildIdentityError, _resolve_build_commit
 from scripts.write_runtime_candidate import (
     DEFAULT_BENCHMARK_ID,
     build_runtime_candidate,
@@ -163,6 +164,43 @@ def test_vercel_build_accepts_explicit_local_source_identity(
     monkeypatch.delenv("VERCEL_GIT_COMMIT_SHA", raising=False)
     monkeypatch.setenv("FIRELENS_BUILD_COMMIT", COMMIT)
     assert _resolve_build_commit(tmp_path) == COMMIT
+
+
+def test_vercel_build_falls_back_to_git_head(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("VERCEL_GIT_COMMIT_SHA", raising=False)
+    monkeypatch.delenv("FIRELENS_BUILD_COMMIT", raising=False)
+
+    def fake_run(args, **kwargs):
+        assert args == ["git", "rev-parse", "HEAD"]
+        return subprocess.CompletedProcess(args, 0, stdout=f"{COMMIT}\n", stderr="")
+
+    monkeypatch.setattr("scripts.prepare_vercel_build.subprocess.run", fake_run)
+    assert _resolve_build_commit(tmp_path) == COMMIT
+
+
+def test_vercel_build_fails_closed_without_identity(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("VERCEL_GIT_COMMIT_SHA", raising=False)
+    monkeypatch.delenv("FIRELENS_BUILD_COMMIT", raising=False)
+
+    def fake_run(*_args, **_kwargs):
+        raise subprocess.CalledProcessError(128, ["git", "rev-parse", "HEAD"])
+
+    monkeypatch.setattr("scripts.prepare_vercel_build.subprocess.run", fake_run)
+    with pytest.raises(BuildIdentityError, match="build commit is missing"):
+        _resolve_build_commit(tmp_path)
+
+
+def test_vercel_build_rejects_short_environment_sha(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("VERCEL_GIT_COMMIT_SHA", raising=False)
+    monkeypatch.setenv("FIRELENS_BUILD_COMMIT", "deadbeef")
+    with pytest.raises(BuildIdentityError, match="40-character"):
+        _resolve_build_commit(tmp_path)
 
 
 def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> None:
