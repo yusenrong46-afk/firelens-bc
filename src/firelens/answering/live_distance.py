@@ -5,11 +5,10 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import uuid4
 
-from firelens.answering.live_analysis import official_display_name
+from firelens.answering.live_analysis import closest_locatable_result, official_display_name
 from firelens.contracts import (
     AskResponse,
     LiveResult,
-    LiveResultKind,
     QueryRequest,
     ReasonCode,
     RequiredInput,
@@ -57,16 +56,12 @@ def distance_answer(request: QueryRequest, records: Sequence[LiveResult]) -> str
     if selected_id:
         chosen = next((item for item in records if item.result_id == selected_id), None)
     else:
-        pool = list(records)
-        if "perimeter" in request.question.casefold():
-            pool = [item for item in records if item.kind == LiveResultKind.PERIMETER] or pool
-        locatable = [item for item in pool if item.distance_km is not None]
-        if not locatable:
+        chosen = closest_locatable_result(request.question, records)
+        if chosen is None:
             return (
                 "The official records do not include locatable geometry for a "
                 "closest-fire answer."
             )
-        chosen = min(locatable, key=lambda item: item.distance_km or 0.0)
     if chosen is None or chosen.distance_km is None:
         return "The official record does not include locatable geometry for a distance answer."
     basis = (

@@ -8,11 +8,11 @@ import json
 import logging
 from pathlib import Path
 
+import httpx
 import pytest
 from fastapi import FastAPI
 from pydantic import BaseModel, ValidationError
 from rag_helpers import make_runtime
-from starlette.testclient import TestClient
 
 from firelens.agent.failures import shout_unexpected
 from firelens.answering.service import StaticRAGService
@@ -277,31 +277,35 @@ def test_preview_rejects_trace_content_while_production_already_does(
 
 
 def test_request_validation_does_not_echo_submitted_values(tmp_path: Path) -> None:
-    client = TestClient(_app(tmp_path))
-    extra = client.post(
-        "/api/v1/ask",
-        json={"question": PRIVATE_QUESTION, "injected": INPUT_CANARY},
-    )
-    coords = client.post(
-        "/api/v1/ask",
-        json={
-            "question": "Where are the current wildfires in Kelowna?",
-            "location": {
-                "latitude": 49.282749,
-                "longitude": -123.120735,
-                "label": "SECRET-PLACE",
-            },
-        },
-    )
-    valid = client.post("/api/v1/ask", json={"question": PRIVATE_QUESTION})
-    assert extra.status_code == 400
-    assert INPUT_CANARY not in str(extra.json())
-    assert all(set(detail) == {"loc", "type"} for detail in extra.json()["details"])
-    assert coords.status_code == 400
-    assert COORDINATE_CANARY not in str(coords.json())
-    assert "SECRET-PLACE" not in str(coords.json())
-    assert valid.status_code == 200
-    assert valid.json() == {"status": "ok"}
+    async def _run() -> None:
+        transport = httpx.ASGITransport(app=_app(tmp_path))
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            extra = await client.post(
+                "/api/v1/ask",
+                json={"question": PRIVATE_QUESTION, "injected": INPUT_CANARY},
+            )
+            coords = await client.post(
+                "/api/v1/ask",
+                json={
+                    "question": "Where are the current wildfires in Kelowna?",
+                    "location": {
+                        "latitude": 49.282749,
+                        "longitude": -123.120735,
+                        "label": "SECRET-PLACE",
+                    },
+                },
+            )
+            valid = await client.post("/api/v1/ask", json={"question": PRIVATE_QUESTION})
+        assert extra.status_code == 400
+        assert INPUT_CANARY not in str(extra.json())
+        assert all(set(detail) == {"loc", "type"} for detail in extra.json()["details"])
+        assert coords.status_code == 400
+        assert COORDINATE_CANARY not in str(coords.json())
+        assert "SECRET-PLACE" not in str(coords.json())
+        assert valid.status_code == 200
+        assert valid.json() == {"status": "ok"}
+
+    asyncio.run(_run())
 
 
 def test_response_validation_is_consumed_without_echoing_rejected_values(
@@ -318,13 +322,18 @@ def test_response_validation_is_consumed_without_echoing_rejected_values(
     async def malformed_response() -> dict[str, object]:
         return {"status": {"private": PRIVATE_CANARY}}
 
-    caplog.set_level(logging.DEBUG)
-    response = TestClient(app, raise_server_exceptions=True).get("/api/v1/ask")
+    async def _run() -> None:
+        transport = httpx.ASGITransport(app=app, raise_app_exceptions=True)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/api/v1/ask")
 
-    assert response.status_code == 500
-    assert response.json()["error_kind"] == "unexpected_programming_error"
-    assert PRIVATE_CANARY not in response.text
-    assert PRIVATE_CANARY not in caplog.text
+        assert response.status_code == 500
+        assert response.json()["error_kind"] == "unexpected_programming_error"
+        assert PRIVATE_CANARY not in response.text
+        assert PRIVATE_CANARY not in caplog.text
+
+    caplog.set_level(logging.DEBUG)
+    asyncio.run(_run())
 
 
 @pytest.mark.parametrize("environment", ["local", "preview", "production"])

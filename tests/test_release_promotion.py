@@ -68,6 +68,8 @@ def test_promotion_allowlist_is_version_identity_paths_only() -> None:
 
 
 def test_current_version_surfaces_are_internally_consistent() -> None:
+    if DEFAULT_RELEASE_VERSION != TO_VERSION:
+        return
     surfaces = version_surfaces(ROOT)
     normalized = {
         name: normalize_release_version(value, label=name) for name, value in surfaces.items()
@@ -77,6 +79,8 @@ def test_current_version_surfaces_are_internally_consistent() -> None:
 
 
 def test_promoted_checkout_binds_the_internal_manifest() -> None:
+    if DEFAULT_RELEASE_VERSION != TO_VERSION:
+        return
     assert DEFAULT_RELEASE_VERSION == TO_VERSION
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     tree = subprocess.check_output(

@@ -13,9 +13,7 @@ export function revealAssistantMessage(node: HTMLElement | null, active: boolean
 }
 
 export function conversationContextLabel(priorTurnCount: number): string {
-  return priorTurnCount === 0
-    ? "No earlier turns in context"
-    : `${priorTurnCount} of 6 prior turns in context`;
+  return `${priorTurnCount} of 6 prior turns in context`;
 }
 
 export function ConversationToolbar({
@@ -26,15 +24,41 @@ export function ConversationToolbar({
   priorTurnCount: number;
 }) {
   return (
-    <div className="conversation-toolbar">
-      <span
-        title="FireLens keeps your last 3 question-answer pairs in this browser only and re-sends them with your next question. Nothing is stored on a server."
-      >
-        <ChatsCircle size={16} aria-hidden="true" /> {conversationContextLabel(priorTurnCount)}
-      </span>
+    <div className={`conversation-toolbar ${priorTurnCount === 0 ? "conversation-toolbar--clear-only" : ""}`}>
+      {priorTurnCount > 0 && (
+        <span
+          title="FireLens keeps your last 3 question-answer pairs in this browser only and re-sends them with your next question. Nothing is stored on a server."
+        >
+          <ChatsCircle size={16} aria-hidden="true" /> {conversationContextLabel(priorTurnCount)}
+        </span>
+      )}
       <button type="button" onClick={onClear} aria-label="Clear conversation history">
-        <Trash size={15} aria-hidden="true" /> Clear
+        <Trash size={15} aria-hidden="true" /> {priorTurnCount === 0 ? "New conversation" : "Clear"}
       </button>
+    </div>
+  );
+}
+
+export function SuggestedQuestions({
+  disabled,
+  onSelect,
+  suggestions,
+}: {
+  disabled: boolean;
+  onSelect: (question: string) => void;
+  suggestions: string[];
+}) {
+  if (suggestions.length === 0) return null;
+  return (
+    <div className="suggestion-group" aria-label="Suggested questions">
+      <span className="panel-label">Start with an example</span>
+      <div>
+        {suggestions.map((suggestion) => (
+          <button type="button" key={suggestion} onClick={() => onSelect(suggestion)} disabled={disabled}>
+            {suggestion}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

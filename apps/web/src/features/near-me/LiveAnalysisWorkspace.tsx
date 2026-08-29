@@ -1,38 +1,40 @@
 import { ChartBar, Database, ListBullets, MapTrifold, ShieldCheck } from "@phosphor-icons/react";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { LiveResult } from "../../shared/api/api";
 import type { FireLensSession } from "../ask/useFireLensSession";
+import { splitLimitations } from "../ask/limitationsPresentation";
 import { EvidencePlaceholder } from "../evidence/evidencePresentation";
-import { buildLiveAnalysis, type AnalysisCount } from "./liveAnalysis";
-import { formatTimestamp, resultDisplayName, sourceLinkLabel } from "./liveResultPresentation";
+import { buildLiveAnalysis } from "./liveAnalysis";
+import {
+  formatTimestamp,
+  isRenderableGeometry,
+  resultDisplayName,
+  sourceLinkLabel,
+} from "./liveResultPresentation";
+import "./analysisWorkspace.css";
 
 const LiveMap = lazy(() => import("./LiveMap").then((module) => ({ default: module.LiveMap })));
+let analysisChartsModule: ReturnType<typeof importAnalysisCharts> | undefined;
+
+function importAnalysisCharts() {
+  return import("./AnalysisCharts");
+}
+
+export function preloadAnalysisCharts() {
+  analysisChartsModule ??= importAnalysisCharts();
+  return analysisChartsModule;
+}
+
+const AnalysisCharts = lazy(() =>
+  preloadAnalysisCharts().then((module) => ({ default: module.AnalysisCharts })),
+);
 
 type AnalysisSurface = "summary" | "map" | "records";
 
-function CountTable({ title, rows }: { title: string; rows: AnalysisCount[] }) {
-  const maximum = Math.max(1, ...rows.map((row) => row.count));
-  return (
-    <section className="analysis-breakdown" aria-label={title}>
-      <div className="analysis-breakdown__heading">
-        <h3>{title}</h3>
-      </div>
-      <ol>
-        {rows.length === 0 && <li className="analysis-empty">This field was not available in the returned records.</li>}
-        {rows.map((row, index) => (
-          <li key={row.label}>
-            <span className="analysis-rank" aria-hidden="true">{index + 1}</span>
-            <span className="analysis-label">{row.label}</span>
-            <span className="analysis-bar" aria-hidden="true">
-              <span style={{ width: `${Math.max(4, (row.count / maximum) * 100)}%` }} />
-            </span>
-            <strong>{row.count}</strong>
-            <small>{Math.round(row.share * 100)}%</small>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
+function joinLabels(labels: string[]): string {
+  if (labels.length < 2) return labels[0] ?? "";
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
+  return `${labels.slice(0, -1).join(", ")}, and ${labels.at(-1)}`;
 }
 
 function RecordsView({ results }: { results: LiveResult[] }) {
@@ -64,41 +66,73 @@ function RecordsView({ results }: { results: LiveResult[] }) {
   );
 }
 
-export function LiveAnalysisWorkspace({ session, embedded = false }: { session: FireLensSession; embedded?: boolean }) {
-  const [surface, setSurface] = useState<AnalysisSurface>("summary");
+export function LiveAnalysisWorkspace({
+  session,
+  answerIdentity,
+  evidenceOpen = false,
+  initialSurface,
+  onOpenEvidence,
+}: {
+  session: FireLensSession;
+  answerIdentity: string;
+  evidenceOpen?: boolean;
+  initialSurface: "summary" | "map";
+  onOpenEvidence?: (() => void) | undefined;
+}) {
   const results = useMemo(
     () => (session.response?.live_results ?? []).filter((result) => result.kind === "incident"),
     [session.response?.live_results],
   );
   const analysis = useMemo(() => buildLiveAnalysis(results), [results]);
+  const hasUsefulMap = useMemo(() => results.some(isRenderableGeometry), [results]);
+  const resolvedInitialSurface: AnalysisSurface = initialSurface === "map" && hasUsefulMap
+    ? "map"
+    : "summary";
+  const [surface, setSurface] = useState<AnalysisSurface>(resolvedInitialSurface);
+  const previousAnswerIdentity = useRef(answerIdentity);
+  const analysisLimitations = useMemo(() => {
+    const unavailable = session.response?.unavailable_layers ?? [];
+    const unavailableNotice = unavailable.length > 0
+      ? `Some official layers are unavailable: ${unavailable.join(", ")}. This is not an all-clear.`
+      : undefined;
+    const limitations = [unavailableNotice, ...(session.response?.limitations ?? [])]
+      .filter((item): item is string => Boolean(item?.trim()))
+      .map((item) => item.trim());
+    return splitLimitations(Array.from(new Set(limitations)));
+  }, [session.response?.limitations, session.response?.unavailable_layers]);
   const newestSourceTime = results.reduce<string | undefined>((latest, result) => {
     if (!latest) return result.source_updated_at;
     return new Date(result.source_updated_at) > new Date(latest) ? result.source_updated_at : latest;
   }, undefined);
 
   useEffect(() => {
-    session.setMapVisible(surface === "map");
+    session.setMapVisible(hasUsefulMap && surface === "map");
     return () => session.setMapVisible(false);
-  }, [session.setMapVisible, surface]);
+  }, [hasUsefulMap, session.setMapVisible, surface]);
 
   useEffect(() => {
-    setSurface("summary");
-  }, [session.response?.trace_id]);
+    if (!hasUsefulMap && surface === "map") setSurface("summary");
+  }, [hasUsefulMap, surface]);
+
+  useEffect(() => {
+    if (previousAnswerIdentity.current === answerIdentity) return;
+    previousAnswerIdentity.current = answerIdentity;
+    setSurface(resolvedInitialSurface);
+  }, [answerIdentity, resolvedInitialSurface]);
 
   return (
-    <section className={`analysis-workspace ${embedded ? "analysis-workspace--embedded" : ""}`} aria-label="Analysis view">
+    <section className="analysis-workspace" aria-label="Analysis view">
       <div className="analysis-workspace__heading">
-        <div>
-          <span className="panel-label">Analysis view</span>
-          <h2>{embedded ? "Current official records, summarized" : "Current records, summarized"}</h2>
-        </div>
-        <div className="analysis-tabs" role="group" aria-label="Choose analysis view">
+        <h2>Analysis view</h2>
+        <div className={`analysis-tabs ${hasUsefulMap ? "" : "analysis-tabs--two"}`} role="group" aria-label="Choose analysis view">
           <button type="button" className={surface === "summary" ? "analysis-tabs__active" : ""} aria-pressed={surface === "summary"} onClick={() => setSurface("summary")}>
             <ChartBar size={19} /> Summary
           </button>
-          <button type="button" className={surface === "map" ? "analysis-tabs__active" : ""} aria-pressed={surface === "map"} onClick={() => setSurface("map")}>
-            <MapTrifold size={19} /> Map
-          </button>
+          {hasUsefulMap && (
+            <button type="button" className={surface === "map" ? "analysis-tabs__active" : ""} aria-pressed={surface === "map"} onClick={() => setSurface("map")}>
+              <MapTrifold size={19} /> Map
+            </button>
+          )}
           <button type="button" className={surface === "records" ? "analysis-tabs__active" : ""} aria-pressed={surface === "records"} onClick={() => setSurface("records")}>
             <ListBullets size={19} /> Records
           </button>
@@ -107,30 +141,30 @@ export function LiveAnalysisWorkspace({ session, embedded = false }: { session: 
 
       {surface === "summary" && (
         <>
-          <div className="analysis-grid">
-            <CountTable title="Wildfires by fire centre" rows={analysis.byFireCentre} />
-            <CountTable title="Wildfires by status" rows={analysis.byStatus} />
-          </div>
+          <Suspense fallback={<div className="analysis-chart-loading" role="status">Preparing the official-record summary…</div>}>
+            <AnalysisCharts
+              byFireCentre={analysis.byFireCentre}
+              byStatus={analysis.byStatus}
+              total={analysis.total}
+            />
+          </Suspense>
           {analysis.highestFireCentre && (
             <p className="analysis-insight">
               <ChartBar size={20} aria-hidden="true" />
-              <span><strong>{analysis.highestFireCentre.label}</strong> has the highest incident count in this bounded result.</span>
+              <span><strong>Insight:</strong> {analysis.highestFireCentre.label} has the highest number of active wildfires in this result.</span>
             </p>
           )}
-          <details className="analysis-disclosure">
-            <summary><Database size={20} /><strong>Sources and freshness</strong><span>Where the data came from and when it changed</span></summary>
-            <p>These {analysis.total} incident records came from the BC Wildfire Service data returned with this answer.</p>
-            {newestSourceTime && <p>Newest source update in this result: {formatTimestamp(newestSourceTime)}.</p>}
-          </details>
-          <details className="analysis-disclosure">
-            <summary><ShieldCheck size={20} /><strong>Technical evidence</strong><span>How the summary was derived</span></summary>
-            <p>FireLens grouped typed official records by their fire-centre and status fields. The browser calculated these counts deterministically; model prose is not used as data.</p>
-          </details>
+          {!analysis.highestFireCentre && analysis.highestFireCentres.length > 1 && (
+            <p className="analysis-insight">
+              <ChartBar size={20} aria-hidden="true" />
+              <span><strong>Insight:</strong> {joinLabels(analysis.highestFireCentres.map((row) => row.label))} are tied for the highest count in this bounded result, with {analysis.highestFireCentres[0]?.count} each.</span>
+            </p>
+          )}
         </>
       )}
 
       {surface === "map" && (
-        <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading the official map">Preparing map layers…</EvidencePlaceholder>}>
+        <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading map">Preparing map…</EvidencePlaceholder>}>
           <LiveMap
             results={session.mapResults}
             matchingResults={session.mapMatchingResults}
@@ -147,6 +181,39 @@ export function LiveAnalysisWorkspace({ session, embedded = false }: { session: 
       )}
 
       {surface === "records" && <RecordsView results={results} />}
+
+      {analysisLimitations.material.length > 0 && (
+        <aside className="analysis-limitations" aria-label="Analysis limitations">
+          {analysisLimitations.material.join(" ")}
+        </aside>
+      )}
+      {analysisLimitations.boilerplate.length > 0 && (
+        <details className="analysis-disclosure analysis-disclosure--limits">
+          <summary><ShieldCheck size={20} /><strong>About this analysis</strong><span>Boundaries that apply to these records</span></summary>
+          <ul>
+            {analysisLimitations.boilerplate.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </details>
+      )}
+      <details className="analysis-disclosure">
+        <summary><Database size={20} /><strong>Sources and freshness</strong><span>Where this data comes from and when it was updated</span></summary>
+        <p>These {analysis.total} incident records came from the BC Wildfire Service data returned with this answer.</p>
+        {newestSourceTime && <p>Newest source update in this result: {formatTimestamp(newestSourceTime)}.</p>}
+      </details>
+      <details className="analysis-disclosure">
+        <summary><ShieldCheck size={20} /><strong>Technical evidence</strong><span>How this answer was derived and verified</span></summary>
+        <p>FireLens grouped typed official records by their fire-centre and status fields. The browser calculated these counts deterministically; model prose is not used as data.</p>
+        {onOpenEvidence && (
+          <button
+            type="button"
+            aria-controls="answer-context"
+            aria-expanded={evidenceOpen}
+            onClick={onOpenEvidence}
+          >
+            Inspect answer evidence
+          </button>
+        )}
+      </details>
     </section>
   );
 }

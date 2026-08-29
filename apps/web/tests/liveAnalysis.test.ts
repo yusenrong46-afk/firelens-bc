@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { LiveResult } from "../src/shared/api/api";
-import { buildLiveAnalysis } from "../src/features/near-me/liveAnalysis";
+import {
+  analyticalAnswerSummary,
+  buildLiveAnalysis,
+} from "../src/features/near-me/liveAnalysis";
 
 function incident(overrides: {
   result_id?: string;
@@ -41,7 +44,21 @@ describe("live analytical summaries", () => {
       "Under Control",
     ]);
     expect(analysis.highestFireCentre?.label).toBe("Kamloops Fire Centre");
+    expect(analysis.highestFireCentres.map(({ label }) => label)).toEqual(["Kamloops Fire Centre"]);
     expect(analysis.byStatus.reduce((total, row) => total + row.count, 0)).toBe(analysis.total);
+  });
+
+  it("does not turn a deterministic tie into a false single-centre leader", () => {
+    const analysis = buildLiveAnalysis([
+      incident({ result_id: "incident:1", fire_centre: "Kamloops Fire Centre" }),
+      incident({ result_id: "incident:2", fire_centre: "Coastal Fire Centre" }),
+    ]);
+
+    expect(analysis.highestFireCentre).toBeUndefined();
+    expect(analysis.highestFireCentres).toEqual([
+      { label: "Coastal Fire Centre", count: 1, share: 0.5 },
+      { label: "Kamloops Fire Centre", count: 1, share: 0.5 },
+    ]);
   });
 
   it("excludes non-incident records and labels missing group values", () => {
@@ -85,5 +102,26 @@ describe("live analytical summaries", () => {
     expect(buildLiveAnalysis([
       incident({ result_id: "incident:4", fire_centre: null }),
     ]).highestFireCentre).toBeUndefined();
+    expect(buildLiveAnalysis([
+      incident({ result_id: "incident:4", fire_centre: null }),
+    ]).highestFireCentres).toEqual([]);
+  });
+
+  it("creates a concise deterministic lead instead of duplicating every chart row", () => {
+    const summary = analyticalAnswerSummary([
+      incident({ result_id: "incident:1", status: "Out of Control" }),
+      incident({ result_id: "incident:2", status: "Out of Control" }),
+      incident({
+        result_id: "incident:3",
+        fire_centre: "Coastal Fire Centre",
+        status: "Being Held",
+      }),
+    ]);
+
+    expect(summary).toBe(
+      "This answer includes 3 fetched official incident records. "
+      + "Kamloops Fire Centre has the highest fire-centre count (2). "
+      + "Out of Control is the most common reported status (2).",
+    );
   });
 });

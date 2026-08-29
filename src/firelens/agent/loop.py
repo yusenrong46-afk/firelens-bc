@@ -23,9 +23,11 @@ from firelens.agent.fallback_brain import (
 from firelens.agent.loop_support import (
     assign_route,
     assistant_tool_request,
+    missing_location_result,
     pure_static_ready,
     route_for,
     safe_execute,
+    skip_owned_model_write,
     tools_used,
 )
 from firelens.agent.packet import AgentPacket
@@ -41,7 +43,7 @@ from firelens.answering.live_analysis import (
     replace_ungrounded_live_hedge,
     strip_precise_coordinates,
 )
-from firelens.answering.live_distance import distance_answer, location_request
+from firelens.answering.live_distance import distance_answer
 from firelens.answering.live_handoffs import related_live_links
 from firelens.answering.live_request_intent import (
     is_distance_request,
@@ -109,11 +111,7 @@ async def run_agent_loop(
         and not query_plan.live_layers
         and not should_prefetch_reviewed_guidance(request.question)
     ):
-        # An unsupported current-data request is already fully classified by
-        # deterministic code. Do not let a provider choose an adjacent tool,
-        # substitute unrelated wildfire records, or turn a failed draft into
-        # the public answer. Resolve a named BC place only for continuity, then
-        # return the owned official handoff with zero model/tool calls.
+        # Unsupported live topics: owned handoff, no provider or record substitution.
         await resolve_place(live_coordinator, request, packet)
         packet.policy.route = "deterministic_redirect"
         return (
@@ -123,13 +121,7 @@ async def run_agent_loop(
             packet,
         )
     if needs_location(request):
-        packet.policy.route = "missing_location"
-        tool = (
-            AgentTool.GET_OFFICIAL_FIRE
-            if request.context.selected_live_result_id
-            else AgentTool.LIST_OFFICIAL_FIRES
-        )
-        return location_request(request), QueryRoute.LIVE, (tool,), packet
+        return missing_location_result(request, packet)
     if is_unbound_distance_request(request):
         packet.policy.route = "deterministic_redirect"
         return (
@@ -139,7 +131,8 @@ async def run_agent_loop(
             packet,
         )
     await prefetch_evidence(request, live_coordinator, static_service, packet, query_plan)
-    if provider is None:
+    skip_provider = skip_owned_model_write(query_plan, packet)
+    if provider is None or skip_provider:
         answer = await _offline_loop(request, live_coordinator, static_service, packet)
     else:
         try:
@@ -160,9 +153,7 @@ async def run_agent_loop(
             request,
             packet.live_results,
             roster_total=packet.roster_total,
-            static_answer=(
-                packet.static_response.answer if packet.static_response is not None else None
-            ),
+            static_answer=None,
         )
         if analysis:
             answer = analysis

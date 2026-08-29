@@ -470,6 +470,24 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(location, (49.89, -119.5))
 
+    async def test_geocoder_resolves_identical_labels_once_per_service(self) -> None:
+        calls = {"count": 0}
+
+        def handler(_request: httpx.Request) -> httpx.Response:
+            calls["count"] += 1
+            return httpx.Response(
+                200,
+                json={"features": [_locality_feature("Kelowna")]},
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            service = LiveDataService(client=client)
+            first = await service.resolve_location(LocationInput(label="Kelowna"))
+            second = await service.resolve_location(LocationInput(label=" Kelowna "))
+
+        self.assertEqual(first, second)
+        self.assertEqual(calls["count"], 1)
+
     async def test_geocoder_selects_exact_normalized_bc_locality_not_first_guess(
         self,
     ) -> None:

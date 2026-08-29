@@ -1,19 +1,20 @@
 # FireLens BC
 
-**An answer-first, evidence-bound wildfire assistant for British Columbia.**
-FireLens combines official incident records, reviewed preparedness guidance,
-explicit uncertainty, and map context when it is useful. A language model may
-propose wording only from an application-owned evidence packet; it is never the
-authority for what FireLens publishes as fact, which tools run, or which
+**A general conversational assistant with specialized, evidence-bound B.C.
+wildfire capability.** FireLens combines ordinary chat, official incident
+records, reviewed preparedness guidance, explicit uncertainty, and map context
+when it is useful. A language model may propose ordinary background language
+or wording from an application-owned evidence packet; it is never the authority
+for what FireLens publishes as current fact, which tools run, or which
 geography and source layers a request may use.
 
 ![FireLens BC answer-first workspace for asking about a fire, a B.C. place, or preparedness](docs/assets/firelens-v1-6-overview.jpg)
 
 _Deterministic local demonstration data, not a current wildfire or evacuation report. Screenshot captured from this V1.6 candidate (`docs/assets/firelens-v1-6-overview.jpg`), not from the public site._
 
-> **Project status:** the V1.6 RC2 hardening and qualification campaign is
-> integrated in this engineering candidate; the public package and API identity is `1.6.0`.
-> Local or CI success is not deployment or release proof, and the existing
+> **Project status:** this is an uncommitted local V1.6.2 engineering candidate.
+> Its package, runtime, and OpenAPI version is `1.6.2`, but it has
+> not been exact-Git qualified, deployed, or release-qualified. The existing
 > [public site](https://firelens-bc.vercel.app) must not be assumed to match this checkout.
 
 ## What FireLens does
@@ -25,7 +26,7 @@ standards of evidence.
 | --- | --- | --- |
 | Current BC wildfire conditions | Official BC Wildfire Service and EmergencyInfoBC records | Source and retrieval times, record status, map geometry, and freshness |
 | Stable preparedness guidance | A governed local corpus and human-reviewed typed claims | Exact source wording, publication kind, and claim-level Proof Cards |
-| Related low-risk explanation | Clearly labelled general background | No reviewed-corpus or live-source status |
+| Ordinary or related conversation | Clearly labelled general background | Useful chat answer, never presented as reviewed or current evidence |
 
 Try questions such as:
 
@@ -40,6 +41,20 @@ Try questions such as:
 | Explain reviewed preparedness material with visible support | Decide whether you personally are safe, should evacuate, or need medical care |
 | Ask for a coarse BC place when a live lookup needs one | Treat an empty result, failed layer, or stale cache as an all-clear |
 | Hand unsupported current questions to the appropriate official source | Browse the open web or invent a value for a source FireLens does not integrate |
+
+### Broad interpretation, narrow authority
+
+FireLens aims to understand a question before deciding what it can establish.
+An ordinary question can receive labelled general background; a smoke or
+preparedness question can use reviewed guidance; a B.C. current-record question
+can trigger the bounded official layers. The same generosity does **not** turn
+model knowledge into an official source.
+
+Safety-sensitive is not out of scope. For example, “Should I evacuate?” is
+relevant, but FireLens does not make that personal decision. It asks for the
+smallest useful input for an official check or hands the person to the issuing
+authority. See the [Product Constitution](docs/quality/FIRELENS_PRODUCT_CONSTITUTION.md)
+and [V1.6.2 evaluation framework](docs/quality/V1_6_2_EVALUATION_FRAMEWORK.md).
 
 ## Why this is not “just a chatbot”
 
@@ -73,7 +88,7 @@ The governing principle is simple:
 > **Models propose language. Source contracts, deterministic validation, and
 > authorized human decisions determine what may be published.**
 
-## What V1.6 adds
+## What V1.6 and the local V1.6.2 candidate add
 
 - A **26-record, hash-bound typed-claim inventory** for deterministic high-risk
   publication with zero generation.
@@ -105,6 +120,18 @@ The governing principle is simple:
   adversarial prompts, with deterministic end-to-end fixtures.
 - Candidate-evidence v2 for exact-head CI qualification, security evidence, SBOM,
   provenance, and explicit limitations.
+- Higher-recall scope handling for ordinary chat, wildfire guidance, natural
+  place wording, and safety-sensitive requests without broadening factual
+  authority.
+- Exact locality normalization, deterministic closest-record selection, and
+  selected-record follow-up binding rather than an unrelated nearby substitute.
+- Deterministic aggregate summaries for multi-record questions, concurrent
+  mixed-lane prefetch, and a compact answer-first presentation that keeps maps
+  on demand when they add value.
+- Quote-only atomicity: an exact but interleaved multi-stage evacuation-table
+  extraction is omitted rather than repackaged as an answer.
+- A hash-bound ProductBench v2 development contract and a Constitution-led
+  evaluation framework for reproducing, fixing, and re-falsifying user journeys.
 
 These are implementation properties, not a declaration that the system is
 deployed, independently certified, or appropriate for emergency decision-making.
@@ -119,6 +146,7 @@ for every answer.
 | Multi-record or province-wide live analysis | Summary / Map / Records analysis workspace |
 | Named fire or a single official record | Answer first; map and record list only on demand |
 | Reviewed preparedness guidance | Chat with the exact source quotation and Proof Cards |
+| Ordinary conversation or low-risk related question | Chat-first general background, labelled separately from FireLens evidence |
 | Mixed live + guidance | Separate authority-labelled sections, without duplicating the same claim |
 | Missing, stale, partial, or empty official layers | Visible limitations. Never an all-clear |
 
@@ -230,6 +258,8 @@ Useful zero-cost commands:
   --output /tmp/firelens-structured-eval.json
 .venv/bin/python scripts/run_hard_probe.py --mode offline \
   --expectation-profile rc2.2 --output /tmp/firelens-hard-probe.json
+.venv/bin/python scripts/run_productbench.py --mode offline \
+  --output /tmp/firelens-productbench-offline.json
 .venv/bin/python -m pytest -q \
   tests/test_v1_6_user_end_questions.py \
   tests/test_v1_6_user_end_questions_end_to_end.py
@@ -241,6 +271,18 @@ frozen RC2.1, and migrates only A09/A10 to two-sided structured coverage. The
 historical, RC2, and RC2.1 profiles remain unchanged.
 Candidate evidence rejects stale Git identities, changed materials, unexplained
 paired regressions, provider credentials, provider cost, and incomplete artifacts.
+
+ProductBench v2 snapshot-binds the current unsealed raw journey catalog and its
+derived v2 executable contract to a public development manifest; it does not
+claim a pre-v2 immutable source or historical anchor. Its 31
+`offline_fake` cases run through the real in-process API/runtime, using only a
+network-free official-record fixture and FakeProvider, with a fixed `$0`
+ceiling and a per-case response hash/tool trace. The remaining 19 live journeys
+are an opt-in provider run: `make productbench-provider
+MAX_COST_USD=<positive-ceiling>`. It requires a provider-enforced key cap before
+the run and receipt-backed returned costs for every provider call. A command's
+output belongs to the candidate that ran it;
+neither tier is a sealed or release-qualification result.
 
 Automated checks establish structural behavior, source identity, exact quotation,
 typed-field preservation, presentation state, and deterministic routing. They do
@@ -256,6 +298,7 @@ data/               Governed corpus, vectors, typed claims, and evaluation catal
 tests/              Backend, architecture, safety, browser, and qualification tests
 docs/adr/           Immutable architecture decisions
 docs/releases/      Current release gates and operating runbooks
+docs/quality/       Product contracts and V1.6.2 evaluation framework
 docs/reports/       Commit-bound current and historical evidence
 ```
 
@@ -271,7 +314,7 @@ Start here:
   [sanitized evidence-bundle examination prompt](docs/audit/V1_6_GPT_5_6_PRO_OFFLINE_BUNDLE_EXAMINATION_PROMPT.md); it treats missing evidence as unknown rather than inventing it.
 - **Researchers:** the [50-question catalog](docs/reports/V1_6_USER_END_QUESTIONS_50.md),
   [structured-publication report](docs/reports/V1_6_STRUCTURED_PUBLICATION_HARDEN_1_REPORT.md),
-  and [ADRs](docs/adr/).
+  [ProductBench v2 protocol](docs/protocols/PRODUCTBENCH_V2.md), and [ADRs](docs/adr/).
 - **Contributors:** `make verify`, the generated
   [OpenAPI contract](docs/openapi.v1.json), and the
   [GitHub update standard](docs/protocols/V1_6_GITHUB_UPDATE_STANDARD.md).

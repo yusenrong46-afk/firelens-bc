@@ -23,23 +23,30 @@ function RecordRow({
   const displayName = resultDisplayName(result);
   const status = resultStatus(result);
   const sourceLabel = sourceLinkLabel(result);
+  const distance = result.distance_km != null
+    ? `${result.distance_km.toFixed(1)} km`
+    : undefined;
   return (
     <li className={result.result_id === selectedResultId ? "live-list__selected" : ""}>
       <span className={`live-dot live-dot--${result.kind}`} aria-hidden="true" />
-      <button
-        type="button"
-        className="live-list__select"
-        onClick={() => onSelectResult?.(result.result_id)}
-        aria-label={`${displayName} ${status} ${resultKindLabel(result.kind)}, source updated ${formatTimestamp(result.source_updated_at)}`}
-      >
-        <strong>{displayName}</strong>
-        <small>{status} · {result.freshness} · {result.authority}</small>
-        <small>Source updated {formatTimestamp(result.source_updated_at)}</small>
-        <small>Retrieved {formatTimestamp(result.retrieved_at)}</small>
-        {result.distance_km != null && (
-          <small>{result.distance_km.toFixed(1)} km · {result.distance_basis?.replaceAll("_", " ")}</small>
-        )}
-      </button>
+      <div className="live-list__body">
+        <button
+          type="button"
+          className="live-list__select"
+          onClick={() => onSelectResult?.(result.result_id)}
+          aria-label={`${displayName} ${status} ${resultKindLabel(result.kind)}, source updated ${formatTimestamp(result.source_updated_at)}, retrieved ${formatTimestamp(result.retrieved_at)}`}
+        >
+          <strong>{displayName}</strong>
+          <small>{status}{distance ? ` · ${distance}` : ""}</small>
+        </button>
+        <details className="live-list__details">
+          <summary>Record details</summary>
+          <small>{result.freshness} · {result.authority}</small>
+          <small>Source updated {formatTimestamp(result.source_updated_at)}</small>
+          <small>Retrieved {formatTimestamp(result.retrieved_at)}</small>
+          {result.distance_basis && <small>{result.distance_basis.replaceAll("_", " ")}</small>}
+        </details>
+      </div>
       <a
         href={result.source_url}
         target="_blank"

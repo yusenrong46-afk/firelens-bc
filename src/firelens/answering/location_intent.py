@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import re
 
+from firelens.answering import intent_lexicon as lex
+from firelens.answering import intent_spans as spans
 from firelens.answering.request_grammar import (
     parse_request_facets,
     requests_non_bc_national_scope,
@@ -22,6 +24,12 @@ _PERSONAL_LOCATION = re.compile(
 _DIRECTIONAL_BC_REGION = re.compile(
     r"(?<!\w)(?P<direction>north(?:ern)?|south(?:ern)?)\s+"
     r"(?:b\s*\.?\s*c(?:\.)?|british\s+columbia)(?!\w)",
+    re.IGNORECASE,
+)
+_PROVINCE_WIDE_SCOPE = re.compile(
+    r"\b(?:across|throughout|in|of|by|around)\s+"
+    r"(?:the\s+)?(?:province|b\s*\.?\s*c\s*\.?|british\s+columbia)\b"
+    r"|\b(?:province|b\s*\.?\s*c\s*\.?)\s*[- ]wide\b",
     re.IGNORECASE,
 )
 
@@ -121,6 +129,20 @@ _PLACE_PATTERNS = (
     ),
     re.compile(
         r"\b(?:drive|travel|go)\s+to\s+(?P<place>[a-z][a-z .'-]{1,80})",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:can|could|may)\s+(?:i|we)\s+leave\s+"
+        r"(?!(?:work|school|home|early|the\s+office|my\s+office)\b)"
+        r"(?P<place>[a-z][a-z .'-]{1,80}?)\s+"
+        r"(?=right\s+now\b|now\b|today\b|tonight\b)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:(?:should|must)\s+(?:i|we)\s+(?:evacuate|leave)|"
+        r"do\s+(?:i|we)\s+need\s+to\s+(?:evacuate|leave))\s+from\s+"
+        r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?=\s+(?:right\s+now|today|tonight|currently|now)\b|[?!.,]*$)",
         re.IGNORECASE,
     ),
     re.compile(
@@ -232,7 +254,13 @@ _TRAILING_SELECTED_REFERENCE = re.compile(
     re.IGNORECASE,
 )
 _TRAILING_ANALYSIS = re.compile(
-    r"\s+by\s+(?:hectares?|size|status|fire[- ]?centres?|geography|distribution)$",
+    r"\s+by\s+(?:hectares?|size|status|regions?|fire[- ]?centres?|geography|distribution)"
+    r"(?:\s*(?:/|and)\s*(?:status|regions?|fire[- ]?centres?))*$",
+    re.IGNORECASE,
+)
+_TRAILING_CLOSEST_COMPARISON = re.compile(
+    r"\s+is\s+(?:the\s+)?(?:closest|nearest)"
+    r"(?:\s+to\s+(?:the\s+)?(?:city|town|community|place))?$",
     re.IGNORECASE,
 )
 _NON_PLACE_ANALYSIS_WORDS = frozenset(
@@ -289,6 +317,13 @@ _REJECTED_PLACES = {
     "mountain",
     "mountains",
     "moutain",
+    "one",
+    "it",
+    "closest",
+    "nearest",
+    "first",
+    "second",
+    "third",
     "mountian",
     "forest",
     "bush",
@@ -387,7 +422,11 @@ def _clean_place(candidate: str) -> str | None:
     place = _TRAILING_SELECTED_REFERENCE.sub("", place)
     place = _TRAILING_LIVE_NOUNS.sub("", place)
     place = _TRAILING_ANALYSIS.sub("", place)
+    place = _TRAILING_CLOSEST_COMPARISON.sub("", place)
     place = place.strip(" .?!'\"")
+    modifier = lex.LOCALITY_MODIFIER_PREFIX.match(place)
+    if modifier is not None:
+        place = modifier.group("place").strip(" .?!'\"")
     if place.casefold().startswith(("on ", "to ", "at ", "near ", "around ", "by ")):
         place = place.split(maxsplit=1)[1].strip()
     if place.casefold().startswith("the "):
@@ -490,6 +529,12 @@ def is_province_wide_label(label: str | None) -> bool:
     return normalized in _PROVINCE_WIDE_LABELS
 
 
+def is_province_wide_question(question: str) -> bool:
+    """Return whether a current question explicitly asks for BC-wide scope."""
+
+    return bool(_PROVINCE_WIDE_SCOPE.search(question))
+
+
 def coarse_location_from_question(question: str) -> LocationInput | None:
     """Return only a user-stated place label; never infer personal coordinates."""
 
@@ -499,6 +544,28 @@ def coarse_location_from_question(question: str) -> LocationInput | None:
         return None
     if any(pattern.search(question) for pattern in _MULTI_PLACE_FIRE_COMPARISONS):
         return None
+
+    normalized = lex.normalize_text(question)
+    implicit_place = spans.implicit_nearby_location(normalized)
+    if implicit_place is not None:
+        place = _clean_place(implicit_place)
+        if place is not None:
+            try:
+                return LocationInput(label=place, radius_km=50)
+            except ValueError:
+                return None
+
+    radius = lex.RADIUS_SCOPE.search(normalized)
+    if radius is not None:
+        place = _clean_place(radius.group("place"))
+        if place is not None:
+            try:
+                return LocationInput(
+                    label=place,
+                    radius_km=float(radius.group("radius")),
+                )
+            except ValueError:
+                return None
 
     facets = parse_request_facets(question)
     if facets.only_non_current_fire:

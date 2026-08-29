@@ -25,6 +25,12 @@ from firelens.evaluation.product_question_cases import (
     build_product_question_regression_cases,
     build_v1_6_user_end_cases,
 )
+from firelens.evaluation.productbench import (
+    attach_tool_capture,
+    load_productbench_cases,
+    productbench_extra_issues,
+    productbench_result_fields,
+)
 from firelens.live import LiveDataService
 from firelens.runtime import load_runtime
 
@@ -387,6 +393,7 @@ async def run_probe(
     catalog_cases: list[ProductQuestionCase] | None = None,
     dataset_version: str = "product_question_probe.v1",
     dataset_role: str = "exploratory_development_not_sealed_qualification",
+    require_spend_verification: bool = True,
 ) -> dict[str, Any]:
     config = FireLensConfig.from_env(ROOT).model_copy(
         update={"anonymous_rate_limit": max(1_000, len(cases) * 4)}
@@ -400,7 +407,8 @@ async def run_probe(
     results: list[dict[str, Any]] = []
     started = time.perf_counter()
     stopped_for_budget = False
-    budget_verification_failed = usage_before is None
+    budget_verification_failed = require_spend_verification and usage_before is None
+    logger, tool_capture = attach_tool_capture()
     try:
         async with httpx.AsyncClient(
             transport=transport,
@@ -408,13 +416,14 @@ async def run_probe(
             timeout=config.public_request_deadline_seconds + 5,
         ) as client:
             for index, case in enumerate(cases, start=1):
-                current_usage = await _key_usage(config)
-                if usage_before is None or current_usage is None:
-                    budget_verification_failed = True
-                    break
-                if current_usage - usage_before >= max_cost_usd:
-                    stopped_for_budget = True
-                    break
+                if require_spend_verification:
+                    current_usage = await _key_usage(config)
+                    if usage_before is None or current_usage is None:
+                        budget_verification_failed = True
+                        break
+                    if current_usage - usage_before >= max_cost_usd:
+                        stopped_for_budget = True
+                        break
                 body: dict[str, Any] = {
                     "question": case.question,
                     "history": list(case.history),
@@ -460,15 +469,30 @@ async def run_probe(
                     response=payload,
                     selected_result_id=case_selected_result_id,
                 )
+                extra = productbench_extra_issues(
+                    case,
+                    payload,
+                    latency_ms=round((time.perf_counter() - case_started) * 1_000, 1),
+                )
+                if extra:
+                    issues = [*issues, *extra]
+                    passed = False
+                latency_ms = round((time.perf_counter() - case_started) * 1_000, 1)
                 results.append(
                     {
                         **case.as_dict(),
                         "passed": passed,
                         "issues": issues,
                         "http_status": response_status,
-                        "latency_ms": round((time.perf_counter() - case_started) * 1_000, 1),
+                        "latency_ms": latency_ms,
                         "selected_result_fixture": case_selected_result_id,
                         "response": payload,
+                        **productbench_result_fields(
+                            payload,
+                            tool_names=tool_capture.by_trace.get(
+                                str(payload.get("trace_id") or ""), []
+                            ),
+                        ),
                     }
                 )
                 print(
@@ -477,6 +501,7 @@ async def run_probe(
                     flush=True,
                 )
     finally:
+        logger.removeHandler(tool_capture)
         await runtime.aclose()
         await live_service.aclose()
 
@@ -516,7 +541,9 @@ async def run_probe(
         "requested_case_count": len(cases),
         "case_count": len(results),
         "execution_complete": execution_complete,
-        "complete": execution_complete and selection_is_full and spend_verified,
+        "complete": execution_complete
+        and selection_is_full
+        and (spend_verified or not require_spend_verification),
         "passed": sum(1 for row in results if row["passed"]),
         "failed": sum(1 for row in results if not row["passed"]),
         "stopped_for_budget": stopped_for_budget,
@@ -544,9 +571,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-cost-usd", type=float, default=0.75)
     parser.add_argument(
         "--suite",
-        choices=("v1", "v3-regression", "v1-6-user-end", "combined"),
+        choices=("v1", "v3-regression", "v1-6-user-end", "combined", "productbench"),
         default="v1",
-        help="Select the frozen exploratory catalog, V3 structural regressions, the 50-case V1.6 end-user catalog, or both legacy suites.",
+        help="Select a catalog: frozen v1, V3 regressions, V1.6 end-user, combined, or ProductBench.",
     )
     parser.add_argument("--dump-only", action="store_true")
     args = parser.parse_args(argv)
@@ -571,6 +598,9 @@ def main(argv: list[str] | None = None) -> int:
     elif args.suite == "v1-6-user-end":
         suite_cases = user_end_cases
         dataset_version = "firelens_v1_6_user_end_questions.v1"
+    elif args.suite == "productbench":
+        suite_cases = load_productbench_cases()
+        dataset_version = "firelens.productbench_journeys.v1"
     else:
         suite_cases = [*v1_cases, *regression_cases]
         dataset_version = "product_question_probe.v1+regression.v3"
@@ -596,6 +626,7 @@ def main(argv: list[str] | None = None) -> int:
             catalog_cases=suite_cases,
             dataset_version=dataset_version,
             dataset_role="exploratory_development_not_sealed_qualification",
+            require_spend_verification=args.suite != "productbench",
         )
     )
     DEFAULT_OUT.mkdir(parents=True, exist_ok=True)

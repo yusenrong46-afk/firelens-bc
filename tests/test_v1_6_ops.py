@@ -4,6 +4,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
+import pytest
 from rag_helpers import make_chunk
 
 from firelens.agent.failures import classify_failure, record_expected_failure
@@ -42,11 +43,23 @@ def test_unexpected_failure_is_never_reported_as_source_outage() -> None:
     assert packet.policy.fallback_reason is None
 
 
-def test_value_error_is_typed_tool_input() -> None:
+def test_explicit_tool_input_error_is_an_expected_tool_failure() -> None:
     packet = AgentPacket()
-    payload = record_expected_failure(packet, ValueError("tool is not allowlisted: x"))
+    payload = record_expected_failure(packet, ToolInputError())
     assert payload == {"error": "tool_input_error"}
     assert packet.policy.fallback_reason == ToolInputError.public_kind
+
+
+@pytest.mark.parametrize(
+    "error", [ValueError("bad value"), TypeError("bad type"), AttributeError("missing")]
+)
+def test_raw_programming_errors_are_never_treated_as_tool_input(error: Exception) -> None:
+    packet = AgentPacket()
+
+    with pytest.raises(UnexpectedProgrammingError):
+        record_expected_failure(packet, error)
+
+    assert packet.policy.fallback_reason is None
 
 
 def test_source_change_radar_quarantines_without_publishing(tmp_path: Path) -> None:

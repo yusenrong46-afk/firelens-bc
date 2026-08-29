@@ -9,15 +9,22 @@ import { ConnectionStatus } from "../features/ask/ConnectionStatus";
 import { ConversationPanel } from "../features/ask/ConversationPanel";
 import { useFireLensSession } from "../features/ask/useFireLensSession";
 import { EvidencePanel } from "../features/evidence/EvidencePanel";
-import { LiveAnalysisWorkspace } from "../features/near-me/LiveAnalysisWorkspace";
+import {
+  LiveAnalysisWorkspace,
+  preloadAnalysisCharts,
+} from "../features/near-me/LiveAnalysisWorkspace";
 import { HowFireLensWorks } from "./HowFireLensWorks";
 import {
+  preferredAnalyticalSurface,
   preferredContextSurface,
   questionExplicitlyRequestsMap,
   shouldOfferContextMap,
   shouldUseAnalyticalWorkspace,
 } from "./workspacePresentation";
 import "./styles.css";
+
+const ANALYTICAL_QUERY =
+  /\b(?:distribution|distributed|by\s+(?:status|region|fire[- ]?centre)|fire[- ]?centre\s+counts?|where\s+are\s+the\s+most)\b/i;
 
 export function App() {
   const session = useFireLensSession();
@@ -36,6 +43,10 @@ export function App() {
     response: session.response,
   });
   const analyticalWorkspace = shouldUseAnalyticalWorkspace({
+    mode: session.mode,
+    response: session.response,
+  });
+  const analyticalInitialSurface = preferredAnalyticalSurface({
     mode: session.mode,
     question: session.visibleQuestion,
     response: session.response,
@@ -85,6 +96,15 @@ export function App() {
     if (!analyticalWorkspace) session.setMapVisible(showMap);
   }, [analyticalWorkspace, session.setMapVisible, showMap]);
 
+  useEffect(() => {
+    if (
+      session.view.kind === "loading"
+      && ANALYTICAL_QUERY.test(session.visibleQuestion ?? "")
+    ) {
+      void preloadAnalysisCharts();
+    }
+  }, [session.view.kind, session.visibleQuestion]);
+
   function showEvidence() {
     if (!contextOpen) {
       contextTriggerRef.current = document.activeElement instanceof HTMLElement
@@ -123,10 +143,17 @@ export function App() {
           <span><strong>FireLens</strong> BC <small>V1.6</small></span>
         </a>
         <div className="topbar-actions">
-          <a className="topbar-anchor" href="#conversation">Ask</a>
-          <button className="topbar-project" type="button" aria-label="How FireLens works" onClick={() => setProjectOpen(true)}>
+          <button
+            className="topbar-project"
+            type="button"
+            aria-label="How FireLens works"
+            aria-expanded={projectOpen}
+            aria-controls="how-firelens-works"
+            onClick={() => setProjectOpen((open) => !open)}
+          >
             <Info size={18} />
-            <span><strong>How FireLens works</strong></span>
+            <span className="topbar-project__detail"><strong>How FireLens works</strong><small>For employers &amp; evaluators</small></span>
+            <span className="topbar-project__compact-label">How it works</span>
           </button>
           {(session.view.kind === "idle" || (mapAvailable && !showContext && !analyticalWorkspace)) && (
             <nav className="workspace-jump" aria-label="Choose workspace context">
@@ -151,13 +178,25 @@ export function App() {
       <ConnectionStatus />
       <div className="boundary">
         <Shield size={17} />
-        <span>Not an emergency-warning service. Follow current instructions from official authorities.</span>
+        <span>Not an emergency-warning service. Official live records, reviewed guidance, and general background stay visibly separate.</span>
       </div>
+      <HowFireLensWorks open={projectOpen} onClose={closeProject} />
       <main className={`workspace ${showContext ? "workspace--split" : "workspace--solo"} ${showMap ? "workspace--map" : "workspace--evidence"}`}>
         <ConversationPanel
           session={session}
           analytical={analyticalWorkspace}
-          analysisSlot={analyticalWorkspace ? <LiveAnalysisWorkspace session={session} embedded /> : undefined}
+          analysisSlot={analyticalWorkspace ? (
+            <LiveAnalysisWorkspace
+              session={session}
+              answerIdentity={session.response?.trace_id ?? ""}
+              evidenceOpen={showContext && contextSurface === "evidence"}
+              initialSurface={analyticalInitialSurface}
+              onOpenEvidence={() => {
+                session.setSelected(0);
+                showEvidence();
+              }}
+            />
+          ) : undefined}
           onOpenEvidence={showEvidence}
           onOpenMap={showOfficialMap}
           contextOpen={showContext}
@@ -177,7 +216,6 @@ export function App() {
           />
         )}
       </main>
-      <HowFireLensWorks open={projectOpen} onClose={closeProject} />
     </div>
   );
 }

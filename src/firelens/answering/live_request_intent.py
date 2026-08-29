@@ -5,7 +5,9 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
+from firelens.answering.intent import continues_prior_live_place
 from firelens.answering.live_analysis import official_display_name
+from firelens.answering.live_named_fire import requested_fire_identity
 from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import AggregateFreshness, LiveResult, LiveResultKind, QueryRequest
 from firelens.freshness_language import official_information_prefix
@@ -77,12 +79,23 @@ _SELECTED_LIVE_ELLIPTICAL = re.compile(
     r"(?:what|which)\s+(?:source|publisher|dataset)\s+(?:reported|published)\s+it|"
     r"who\s+(?:reported|published)\s+it|"
     r"what(?:'s|\s+is)\s+its\s+"
-    r"(?:(?:present|current|latest)\s+)?(?:status|size|source|perimeter|location)|"
+    r"(?:(?:present|current|latest)\s+)?(?:status|size|source|perimeter|location)"
+    r"(?:\s+and\s+(?:(?:present|current|latest)\s+)?"
+    r"(?:status|size|source|perimeter|location))?|"
     r"how\s+(?:large|big)\s+is\s+it|"
-    r"when\s+was\s+it\s+updated|"
+    r"when\s+was\s+(?:it|that\s+information)(?:\s+last)?\s+updated|"
     r"(?:what|any)\s+updates?(?:\s+on\s+it)?|"
     r"(?:and\s+)?(?:the\s+)?(?:perimeter|map|location)"
     r")[?!.]*\s*$",
+    re.IGNORECASE,
+)
+_SELECTED_DEICTIC_STATUS = re.compile(
+    r"^\s*is\s+it\s+(?:still\s+)?(?:burning|active)[?!.]*\s*$",
+    re.IGNORECASE,
+)
+_SELECTED_DEICTIC_OFFICIAL_DETAILS = re.compile(
+    r"^\s*what\s+official\s+(?:details?|information)\s+(?:are|is)\s+"
+    r"(?:on|for)\s+it[?!.]*\s*$",
     re.IGNORECASE,
 )
 _SELECTED_DISTANCE_ELLIPTICAL = re.compile(
@@ -105,6 +118,26 @@ _UPDATED_PATTERN = re.compile(
 _SIZE_PATTERN = re.compile(r"\b(?:how (?:large|big)|size|hectares?|ha)\b", re.I)
 _COUNT_PATTERN = re.compile(
     r"\bhow many\b.{0,60}\b(?:fires?|wildfires?)(?:\s+records?)?\b",
+    re.IGNORECASE,
+)
+_ORDINAL_RECORD_PATTERN = re.compile(
+    r"\b(?:the\s+)?(?:first|second|third|1st|2nd|3rd)\s+"
+    r"(?:one|fire|wildfire|incident|record)\b",
+    re.IGNORECASE,
+)
+_CLOSEST_RECORD_PATTERN = re.compile(r"\b(?:closest|nearest)\b", re.IGNORECASE)
+_SINGULAR_STATUS_PATTERN = re.compile(
+    r"\b(?:what(?:'s|\s+is)|is)\s+(?:the\s+)?status\s+(?:of\s+)?"
+    r"(?:this|that|the|a|an|it|its)\s+(?:fire|wildfire|incident|record)\b|"
+    r"\b(?:this|that|the|a|an)\s+(?:fire|wildfire|incident|record)\s+status\b|"
+    r"\bwhat(?:'s|\s+is)\s+its\s+status\b",
+    re.IGNORECASE,
+)
+_SINGULAR_SIZE_PATTERN = re.compile(
+    r"\b(?:how\s+(?:large|big)\s+is|what(?:'s|\s+is)\s+(?:the\s+)?size\s+of)\s+"
+    r"(?:this|that|the|a|an|it|its)\s+(?:fire|wildfire|incident|record)\b|"
+    r"\bhow\s+(?:large|big)\s+is\s+it\b|"
+    r"\bwhat(?:'s|\s+is)\s+its\s+size\b",
     re.IGNORECASE,
 )
 
@@ -151,6 +184,8 @@ def is_unbound_distance_request(request: QueryRequest) -> bool:
         return False
     if request.context.selected_live_result_id:
         return False
+    if requested_fire_identity(request) or continues_prior_live_place(request):
+        return False
     if _DEICTIC_DISTANCE.search(request.question):
         return True
     if not is_distance_request(request):
@@ -192,6 +227,8 @@ def is_selected_live_request(request: QueryRequest) -> bool:
                 and not _SELECTED_UNSUPPORTED_PATTERN.search(request.question)
             )
             or _SELECTED_LIVE_ELLIPTICAL.match(request.question)
+            or _SELECTED_DEICTIC_STATUS.match(request.question)
+            or _SELECTED_DEICTIC_OFFICIAL_DETAILS.match(request.question)
         )
     )
 
@@ -207,6 +244,34 @@ def is_unsupported_selected_request(request: QueryRequest) -> bool:
                 and _SELECTED_UNSUPPORTED_PATTERN.search(request.question)
             )
             or _SELECTED_PRONOUN_UNSUPPORTED_PATTERN.match(request.question)
+        )
+    )
+
+
+def uses_selected_live_binding(request: QueryRequest) -> bool:
+    """Keep an existing map selection authoritative for explicit record asks."""
+
+    if not request.context.selected_live_result_id:
+        return False
+    return bool(
+        is_selected_live_request(request)
+        or is_unsupported_selected_request(request)
+        or is_distance_request(request)
+        or requested_fire_identity(request)
+        or _CLOSEST_RECORD_PATTERN.search(request.question)
+        or _ORDINAL_RECORD_PATTERN.search(request.question)
+    )
+
+
+def requires_selected_live_record(request: QueryRequest) -> bool:
+    """Do not infer which record a singular size or status question names."""
+
+    return bool(
+        not request.context.selected_live_result_id
+        and requested_fire_identity(request) is None
+        and (
+            _SINGULAR_STATUS_PATTERN.search(request.question)
+            or _SINGULAR_SIZE_PATTERN.search(request.question)
         )
     )
 
@@ -239,11 +304,18 @@ def render_live_record_answer(
     if selected_request and _SIZE_PATTERN.search(request.question):
         selected = shown[0]
         display_name = official_display_name(selected)
+        status = (
+            f" Its official status is {selected.status}."
+            if re.search(r"\bstatus\b", request.question, re.IGNORECASE)
+            else ""
+        )
         return (
             f"The official record reports {display_name} at "
-            f"{selected.size_hectares:g} hectares."
+            f"{selected.size_hectares:g} hectares.{status}"
             if selected.size_hectares is not None
-            else f"The official record for {display_name} does not provide a size value."
+            else (
+                f"The official record for {display_name} does not provide a size value.{status}"
+            )
         )
     if _COUNT_PATTERN.search(request.question):
         incident_count = sum(item.kind == LiveResultKind.INCIDENT for item in shown)

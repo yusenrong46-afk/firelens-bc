@@ -34,13 +34,13 @@ class ProductQuestionCase:
     required_capabilities: tuple[Capability, ...] = ()
     required_live_kinds: tuple[str, ...] = ()
     empty_live_results_allowed: bool = False
+    latency_band: str | None = None
+    safety_disposition: str | None = None
 
     def as_dict(self) -> dict[str, object]:
         payload = asdict(self)
         payload["expected_modes"] = list(self.expected_modes)
         payload["history"] = list(self.history)
-        # Keep the frozen v1 catalog byte-compatible unless a development case
-        # explicitly opts into a structural capability assertion.
         if self.required_capabilities:
             payload["required_capabilities"] = list(self.required_capabilities)
         else:
@@ -51,6 +51,10 @@ class ProductQuestionCase:
             payload.pop("required_live_kinds", None)
         if not self.empty_live_results_allowed:
             payload.pop("empty_live_results_allowed", None)
+        if not self.latency_band:
+            payload.pop("latency_band", None)
+        if not self.safety_disposition:
+            payload.pop("safety_disposition", None)
         return payload
 
 

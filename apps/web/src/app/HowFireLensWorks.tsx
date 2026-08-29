@@ -3,7 +3,6 @@ import { useEffect, useRef } from "react";
 
 export function HowFireLensWorks({ open, onClose }: { open: boolean; onClose: () => void }) {
   const closeButton = useRef<HTMLButtonElement>(null);
-  const dialog = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -11,20 +10,6 @@ export function HowFireLensWorks({ open, onClose }: { open: boolean; onClose: ()
     closeButton.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
-      if (event.key !== "Tab" || !dialog.current) return;
-      const focusable = Array.from(dialog.current.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      ));
-      if (focusable.length === 0) return;
-      const first = focusable[0]!;
-      const last = focusable.at(-1)!;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
@@ -35,10 +20,13 @@ export function HowFireLensWorks({ open, onClose }: { open: boolean; onClose: ()
 
   if (!open) return null;
   return (
-    <div className="project-dialog-backdrop" onMouseDown={(event) => {
-      if (event.currentTarget === event.target) onClose();
-    }}>
-      <section ref={dialog} className="project-dialog" role="dialog" aria-modal="true" aria-labelledby="project-dialog-title" aria-describedby="project-dialog-description">
+      <section
+        id="how-firelens-works"
+        className="project-explainer"
+        role="region"
+        aria-labelledby="project-dialog-title"
+        aria-describedby="project-dialog-description"
+      >
         <div className="project-dialog__header">
           <div>
             <span className="panel-label">FireLens BC V1.6</span>
@@ -69,6 +57,5 @@ export function HowFireLensWorks({ open, onClose }: { open: boolean; onClose: ()
         </div>
         <p className="project-dialog__limit">Engineering evidence is not emergency advice, independent certification, or a release approval.</p>
       </section>
-    </div>
   );
 }

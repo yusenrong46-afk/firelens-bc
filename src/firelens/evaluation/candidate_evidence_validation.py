@@ -10,6 +10,7 @@ from typing import Any
 
 import yaml
 
+from firelens.evaluation import candidate_evidence_productbench
 from firelens.evaluation.candidate_evidence_common import (
     HARD_PROBE_ACTIVE_QUOTE_ONLY_IDS,
     HARD_PROBE_FROZEN_RC2_1_PROFILE_MANIFEST_PATH,
@@ -118,6 +119,24 @@ def validate_command_outcomes(value: Any) -> dict[str, Any]:
     return document
 
 
+def validate_productbench_deterministic(
+    value: Any,
+    *,
+    root: Path,
+    commit: str,
+    tree: str,
+) -> dict[str, Any]:
+    return candidate_evidence_productbench.validate_productbench_deterministic(
+        value,
+        root=root,
+        commit=commit,
+        tree=tree,
+        exact_object=exact_object,
+        nonempty_string=nonempty_string,
+        validate_timestamp=validate_timestamp,
+    )
+
+
 def validate_workflow_identity(value: Any, *, commit: str, tree: str) -> dict[str, Any]:
     identity = exact_object(
         value,
@@ -199,37 +218,7 @@ def validate_credential_absence(value: Any) -> dict[str, Any]:
 
 
 def validate_structured_eval(value: Any, *, root: Path) -> dict[str, Any]:
-    if not isinstance(value, dict):
-        raise ValueError("structured-publication evidence must be an object")
-    structural = value.get("structural_gates")
-    architecture = value.get("architecture")
-    if value.get("evidence_class") != "EXECUTED" or value.get("structural_pass") is not True:
-        raise ValueError("structured-publication evidence did not pass")
-    if (
-        not isinstance(structural, dict)
-        or not structural
-        or any(
-            not isinstance(item, int) or isinstance(item, bool) or item != 0
-            for item in structural.values()
-        )
-    ):
-        raise ValueError("structured-publication structural leak counters are invalid")
-    if (
-        not isinstance(architecture, dict)
-        or architecture.get("compiler_exclusivity_offenders") != []
-        or architecture.get("serving_broad_exception") != []
-    ):
-        raise ValueError("structured-publication architecture evidence did not pass")
-    hashes = value.get("hashes")
-    expected_hashes = {
-        "hard_probe": file_record(root, "data/evaluation/hard_probe.v1.yaml")["sha256"],
-        "typed_inventory": file_record(root, "data/typed_claims/high_risk_v1.yaml")["sha256"],
-    }
-    if not isinstance(hashes, dict) or any(
-        hashes.get(name) != expected for name, expected in expected_hashes.items()
-    ):
-        raise ValueError("structured-publication evidence artifact hashes are invalid")
-    return value
+    return candidate_evidence_productbench.validate_structured_eval(value, root=root)
 
 
 _PROFILE_FIELDS = {

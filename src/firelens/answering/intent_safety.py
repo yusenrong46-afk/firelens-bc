@@ -32,7 +32,8 @@ _LIVE_VIEW_REFERENCE = re.compile(
 )
 _MAP_ABSENCE = re.compile(
     r"\b(?:empty|blank|nothing|no\s+(?:matching\s+)?"
-    r"(?:results?|incidents?|fires?|wildfires?|records?)|zero\s+(?:matching\s+)?"
+    r"(?:(?:evacuation\s+)?(?:alerts?|orders?)|results?|incidents?|fires?|wildfires?|records?)|"
+    r"zero\s+(?:matching\s+)?"
     r"(?:results?|incidents?|fires?|wildfires?|records?)|"
     r"(?:returned|return(?:ed)?)\s+(?:zero|no)\s+"
     r"(?:matching\s+)?(?:results?|incidents?|fires?|wildfires?|records?)|"

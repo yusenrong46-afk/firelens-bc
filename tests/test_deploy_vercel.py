@@ -32,7 +32,7 @@ def test_preview_command_binds_exact_sha_and_product_release() -> None:
         "--env",
         f"FIRELENS_RELEASE_VERSION={DEFAULT_RELEASE_VERSION}",
     ]
-    assert DEFAULT_RELEASE_VERSION == "1.6.0"
+    assert DEFAULT_RELEASE_VERSION == "1.6.2"
     assert "--prod" not in command
 
 
@@ -92,5 +92,5 @@ def test_dry_run_prints_command_and_does_not_invoke_vercel(
     rendered = capsys.readouterr().out.strip()
     assert PINNED_VERCEL_CLI in rendered
     assert f"FIRELENS_BUILD_COMMIT={COMMIT}" in rendered
-    assert "FIRELENS_RELEASE_VERSION=1.6.0" in rendered
+    assert "FIRELENS_RELEASE_VERSION=1.6.2" in rendered
     assert "--prod" not in rendered.split()

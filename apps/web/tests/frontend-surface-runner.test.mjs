@@ -15,8 +15,13 @@ import {
   loadProtocol,
   p75NearestRank,
   recomputeMapListParity,
+  surfaceReadyTextCoverageIssues,
+  surfaceInteractionContract,
+  SurfaceQualificationTimeoutError,
   surfaceMatrixComplete,
+  requiresOnDemandMapContext,
   validateReportStructure,
+  withQualificationTimeout,
 } from "../scripts/qualify-frontend-surface.mjs";
 
 const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -26,6 +31,47 @@ const installedAxeCoreVersion = JSON.parse(await readFile(
   path.join(frontendRoot, "node_modules/axe-core/package.json"),
   "utf8",
 )).version;
+
+test("a stalled surface phase fails promptly with its exact phase label", async () => {
+  const startedAt = performance.now();
+  await assert.rejects(
+    withQualificationTimeout(
+      "surface state live viewport desktop screenshot",
+      20,
+      () => new Promise(() => {}),
+    ),
+    (error) => (
+      error instanceof SurfaceQualificationTimeoutError
+      && error.timeoutMs === 20
+      && error.label === "surface state live viewport desktop screenshot"
+      && /timed out after 20ms during surface state live viewport desktop screenshot/.test(
+        error.message,
+      )
+    ),
+  );
+  assert.ok(performance.now() - startedAt < 300, "timeout test must remain bounded");
+});
+
+test("provisional protocol ready text matches the current fixture UI expectations", async () => {
+  const protocol = await loadProtocol(protocolPath);
+  assert.deepEqual(surfaceReadyTextCoverageIssues(protocol), []);
+});
+
+test("surface harness opens context only through the chat-first controls", async () => {
+  const protocol = await loadProtocol(protocolPath);
+  assert.equal(surfaceInteractionContract.map_control_name, "View official map context");
+  assert.equal(surfaceInteractionContract.evidence_control_name, "Review technical evidence");
+  assert.deepEqual(
+    surfaceInteractionContract.map_state_ids,
+    protocol.map_parity.applicable_state_ids.filter((id) => id !== "no_result"),
+  );
+  for (const state of protocol.states) {
+    assert.equal(
+      requiresOnDemandMapContext(state.id),
+      surfaceInteractionContract.map_state_ids.includes(state.id),
+    );
+  }
+});
 
 function mapEvidenceForState(protocol, state) {
   if (!protocol.map_parity.applicable_state_ids.includes(state.id)) {

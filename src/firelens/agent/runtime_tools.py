@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -14,9 +15,10 @@ from firelens.answering.intent import (
 )
 from firelens.answering.live_analysis import (
     annotate_live_results,
-    extracted_located_fire_name,
     filter_requested_named_fire_results,
 )
+from firelens.answering.live_named_fire import extracted_located_fire_name
+from firelens.answering.live_record_intent import is_fire_geography_analysis
 from firelens.answering.location_intent import (
     coarse_location_from_question,
     is_national_scope_question,
@@ -29,8 +31,16 @@ from firelens.contracts import (
     LocationInput,
     QueryRequest,
 )
+from firelens.errors import ToolInputError
 from firelens.live import LiveDataErrorKind, LiveDataService, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
+
+_EXPLICIT_PROVINCE_SCOPE = re.compile(
+    r"\b(?:across|throughout|in|of|by|around)\s+"
+    r"(?:the\s+)?(?:province|b\s*\.?\s*c\s*\.?|british\s+columbia)\b"
+    r"|\b(?:province|b\s*\.?\s*c\s*\.?)\s*[- ]wide\b",
+    re.IGNORECASE,
+)
 
 
 async def execute_tool(
@@ -141,7 +151,7 @@ async def execute_tool(
                 "claim_count": len(response.claims),
             }
         )
-    raise ValueError(f"tool is not allowlisted: {name}")
+    raise ToolInputError()
 
 
 def _extend_unique(packet: AgentPacket, results: list[Any]) -> None:
@@ -187,6 +197,27 @@ def _annotation_location(
     return candidate
 
 
+def _question_explicitly_requests_province_scope(question: str) -> bool:
+    """Return whether the user, rather than analysis classification, chose BC scope."""
+
+    return bool(_EXPLICIT_PROVINCE_SCOPE.search(question))
+
+
+def _first_non_province_location(
+    *candidates: LocationInput | None,
+) -> LocationInput | None:
+    """Return an explicit community or regional label without inventing one."""
+
+    return next(
+        (
+            candidate
+            for candidate in candidates
+            if candidate is not None and not is_province_wide_label(candidate.label)
+        ),
+        None,
+    )
+
+
 async def _fetch_layers(
     live_service: LiveDataService,
     request: QueryRequest,
@@ -202,13 +233,37 @@ async def _fetch_layers(
         if isinstance(place_label, str) and place_label.strip()
         else None
     )
-    bound_location = request.location or coarse_location_from_question(request.question)
-    province_wide = bool(
-        bound_location is not None and is_province_wide_label(bound_location.label)
+    question_location = coarse_location_from_question(request.question)
+    proposed_location = (
+        LocationInput(label=proposed_label)
+        if proposed_label is not None and not is_province_wide_label(proposed_label)
+        else None
     )
+    # An analysis intent (for example, "distribution") is not a geography
+    # instruction.  Preserve a concrete question, request, or planned place so
+    # regional analytics cannot silently substitute the provincial roster.  An
+    # explicit BC/province scope still takes precedence over retained UI state.
+    question_requests_province = _question_explicitly_requests_province_scope(
+        request.question
+    ) or (question_location is not None and is_province_wide_label(question_location.label))
+    any_explicit_province = bool(
+        question_requests_province
+        or (request.location is not None and is_province_wide_label(request.location.label))
+        or (proposed_label is not None and is_province_wide_label(proposed_label))
+    )
+    bound_location = _first_non_province_location(
+        question_location,
+        request.location,
+        proposed_location,
+    )
+    province_wide = bool(
+        question_requests_province
+        or (any_explicit_province and bound_location is None)
+        or (bound_location is None and is_fire_geography_analysis(request.question))
+    )
+    if province_wide:
+        bound_location = None
     location = None if province_wide else bound_location
-    if bound_location is None and is_province_wide_label(proposed_label):
-        province_wide = True
     if location is not None and is_out_of_province_label(location.label):
         _note_topic(packet, "out_of_province_place")
         return [], None, None
@@ -234,7 +289,7 @@ async def _fetch_layers(
                 roster_total,
             )
         mapped = await live_service.map_results(layers=layers)
-        resolved_location = _annotation_location(request, None)
+        resolved_location = None if province_wide else _annotation_location(request, None)
         resolved = (
             await _resolve(live_service, resolved_location)
             if resolved_location is not None
@@ -282,6 +337,6 @@ async def _resolve(
 ) -> CoarseResolvedLocation | None:
     try:
         latitude, longitude = await live_service.resolve_location(location)
-    except (LiveDataUnavailable, AttributeError, TypeError, ValueError):
+    except LiveDataUnavailable:
         return None
     return CoarseResolvedLocation(latitude=latitude, longitude=longitude)

@@ -11,6 +11,7 @@ from pydantic import HttpUrl, ValidationError
 
 from firelens.agent import FireLensAgent
 from firelens.agent.chat import ChatTurn
+from firelens.answering.live_analysis import compose_official_answer
 from firelens.contracts import (
     AnswerSection,
     AnswerSectionKind,
@@ -20,6 +21,7 @@ from firelens.contracts import (
     Freshness,
     LiveResult,
     LiveResultKind,
+    LocationInput,
     PublicClaim,
     PublicEvidence,
     QueryRequest,
@@ -31,6 +33,7 @@ from firelens.contracts import (
 )
 from firelens.live_answering import LiveAnswerCoordinator
 from firelens.publication.fallback import explanation_authority
+from firelens.publication_response_binding import live_answer_binding_error
 
 
 def _timestamp() -> datetime:
@@ -56,9 +59,12 @@ def _mountain_held() -> LiveResult:
 class _FixedLiveService:
     def __init__(self, results: list[LiveResult]) -> None:
         self.results = results
+        self.map_calls = 0
+        self.nearby_calls = 0
 
     async def map_results(self, *args: Any, **kwargs: Any) -> Any:
         del args, kwargs
+        self.map_calls += 1
         return type(
             "Map",
             (),
@@ -74,6 +80,7 @@ class _FixedLiveService:
 
     async def nearby_page(self, location: Any, *args: Any, **kwargs: Any) -> Any:
         del location, args, kwargs
+        self.nearby_calls += 1
         return type(
             "Nearby",
             (),
@@ -94,6 +101,28 @@ class _SilentStatic:
     async def ask(self, *args: Any, **kwargs: Any) -> AskResponse:
         del args, kwargs
         raise AssertionError("live prose binding must not call static RAG")
+
+
+class _RejectedStatic:
+    def __init__(self, provider: Any) -> None:
+        self.provider = provider
+
+    async def ask(self, *args: Any, **kwargs: Any) -> AskResponse:
+        del args, kwargs
+        return AskResponse(
+            status=ResponseStatus.ANSWER,
+            trace_id="r" * 32,
+            response_mode=ResponseMode.SCOPE_REDIRECT,
+            answer="The reviewed clause was not established.",
+            limitations=["The reviewed clause was not established."],
+            validation=ValidationReport(
+                accepted=False,
+                citation_ids_valid=True,
+                quotes_exact=True,
+                claim_support_valid=False,
+                policy_valid=True,
+            ),
+        )
 
 
 class _FixedProseProvider:
@@ -155,10 +184,129 @@ def test_provider_live_prose_cannot_contradict_fetched_records(prose: str) -> No
     assert "Being Held" in answer
 
 
+def test_rejected_static_mixed_request_cannot_publish_provider_prose() -> None:
+    class Provider:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        async def chat_turn(
+            self,
+            messages: list[dict[str, Any]],
+            *,
+            tools: list[dict[str, Any]] | None = None,
+        ) -> ChatTurn:
+            del messages, tools
+            self.calls += 1
+            return ChatTurn(content="Provider prose must not appear in this live answer.")
+
+    provider = Provider()
+    record = _mountain_held()
+    agent = FireLensAgent(
+        cast(Any, _RejectedStatic(provider)),
+        LiveAnswerCoordinator(cast(Any, _FixedLiveService([record]))),
+    )
+
+    execution = asyncio.run(
+        agent.answer(
+            QueryRequest(
+                question=(
+                    "What official fires are near Kelowna, and what belongs in an emergency kit?"
+                )
+            )
+        )
+    )
+
+    answer = execution.response.answer or ""
+    assert provider.calls == 0
+    assert execution.response.response_mode == ResponseMode.LIVE
+    assert "Provider prose must not appear" not in answer
+    assert "Mountain Fire" in answer
+    assert any("non-live clause" in item for item in execution.response.limitations)
+
+
 @pytest.mark.parametrize("prose", UNBOUND_LIVE_PROSE)
 def test_live_contract_rejects_unbound_prose_over_typed_records(prose: str) -> None:
     with pytest.raises(ValidationError):
         _live_response(answer=prose, result=_mountain_held())
+
+
+def test_bound_luna_prose_is_published_when_it_matches_fetched_records() -> None:
+    record = _mountain_held()
+    agent = FireLensAgent(
+        cast(Any, _SilentStatic(_FixedProseProvider("Mountain Fire is Being Held."))),
+        LiveAnswerCoordinator(cast(Any, _FixedLiveService([record]))),
+    )
+
+    execution = asyncio.run(
+        agent.answer(QueryRequest(question="What official fires are near Kelowna?"))
+    )
+
+    answer = execution.response.answer or ""
+    assert execution.response.response_mode == ResponseMode.LIVE
+    assert "Mountain Fire" in answer
+    assert "Being Held" in answer
+
+
+def test_fire_of_note_distribution_is_not_misread_as_a_total_fire_count() -> None:
+    records = [
+        _mountain_held().model_copy(update={"status": "Fire of Note"}),
+        _mountain_held().model_copy(
+            update={"result_id": "incident:8", "name": "Ridge Fire", "status": "Fire of Note"}
+        ),
+        _mountain_held().model_copy(update={"result_id": "incident:9", "name": "Valley Fire"}),
+    ]
+    answer = compose_official_answer(
+        QueryRequest(question="Give me a distribution of the current wildfire in BC"),
+        records,
+    )
+
+    assert "2 Fire of Note" in answer
+    assert live_answer_binding_error(answer, records) is None
+    response = AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id="distribution-fire-of-note",
+        response_mode=ResponseMode.LIVE,
+        answer=answer,
+        live_results=records,
+        aggregate_freshness=aggregate_live_freshness(records),
+    )
+    assert response.answer == answer
+
+
+def test_province_distribution_ignores_retained_community_location() -> None:
+    live = _FixedLiveService(
+        [
+            _mountain_held().model_copy(
+                update={"status": "Fire of Note", "fire_centre": "Southeast Fire Centre"}
+            ),
+            _mountain_held().model_copy(
+                update={
+                    "result_id": "incident:8",
+                    "name": "Coastal Fire",
+                    "fire_centre": "Coastal Fire Centre",
+                }
+            ),
+        ]
+    )
+    agent = FireLensAgent(
+        cast(Any, _SilentStatic(_FixedProseProvider("unused"))),
+        LiveAnswerCoordinator(cast(Any, live)),
+    )
+
+    execution = asyncio.run(
+        agent.answer(
+            QueryRequest(
+                question="Give me a distribution of the current wildfire in BC",
+                location=LocationInput(label="Kelowna"),
+            )
+        )
+    )
+
+    assert execution.response.response_mode == ResponseMode.LIVE
+    assert "regional grouping" in (execution.response.answer or "")
+    assert execution.response.resolved_location is None
+    assert live.map_calls >= 1
+    assert live.nearby_calls == 0
 
 
 def test_live_contract_accepts_record_bound_status() -> None:

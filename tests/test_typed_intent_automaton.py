@@ -13,18 +13,25 @@ from pydantic import HttpUrl
 
 from firelens.agent import FireLensAgent
 from firelens.agent.query_plan import AgentGeography, AgentRequestMode, plan_agent_request
-from firelens.answering.intent import live_layers_for_question, static_guidance_fragment
+from firelens.answering.intent import (
+    live_layers_for_question,
+    plan_query,
+    prefers_general_background,
+    static_guidance_fragment,
+)
 from firelens.answering.intent_automaton import (
     ClauseIntentKind,
     TemporalScope,
     parse_request_intent,
 )
+from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import (
     AnswerSectionKind,
     AskResponse,
     ClaimSupport,
     CoarseResolvedLocation,
+    ConversationTurn,
     EvidenceStatus,
     Freshness,
     LiveMapResponse,
@@ -33,6 +40,7 @@ from firelens.contracts import (
     PublicClaim,
     PublicEvidence,
     QueryRequest,
+    QueryRoute,
     ResponseMode,
     ResponseStatus,
     TemporalClass,
@@ -91,6 +99,27 @@ def test_noncurrent_time_dominates_record_command(
     assert parsed.temporal_scope == TemporalScope.NONCURRENT
     assert live_layers_for_question(question) == ()
     assert plan_agent_request(QueryRequest(question=question)).mode == AgentRequestMode.STATIC
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "What is the most common mistake to make when wildfire is coming?",
+        "What are the most common mistakes people make before a wildfire?",
+    ),
+)
+def test_general_wildfire_discussion_does_not_become_a_live_record_lookup(
+    question: str,
+) -> None:
+    parsed = parse_request_intent(question)
+
+    assert not parsed.has_live_records
+    assert live_layers_for_question(question) == ()
+    assert all(clause.kind != ClauseIntentKind.LIVE_RECORDS for clause in parsed.clauses)
+    plan = plan_agent_request(QueryRequest(question=question))
+    assert plan.mode == AgentRequestMode.STATIC
+    assert plan.geography == AgentGeography.NONE
+    assert plan.tool_calls == ()
 
 
 @pytest.mark.parametrize(
@@ -458,6 +487,45 @@ def test_packing_and_prepare_pivots_are_reviewed_guidance_not_live(question: str
     assert plan.static_subrequest
 
 
+def test_what_is_an_evacuation_alert_is_reviewed_guidance_not_live_alerts() -> None:
+    question = "What's an evacuation alert?"
+    parsed = parse_request_intent(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert parsed.has_reviewed_guidance
+    assert not parsed.has_live_records
+    assert live_layers_for_question(question) == ()
+    assert plan.mode == AgentRequestMode.STATIC
+
+
+def test_tell_me_about_an_explicit_named_fire_is_a_live_incident_lookup() -> None:
+    question = "Tell me about Bald Range Fire"
+    parsed = parse_request_intent(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert live_layers_for_question(question) == (LiveResultKind.INCIDENT,)
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.route == QueryRoute.LIVE
+    assert parsed.has_live_records or live_layers_for_question(question)
+
+
+def test_guidance_where_questions_are_not_named_fire_lookups() -> None:
+    assert extracted_located_fire_name("Where is wildfire prevention taught in B.C.?") is None
+    assert extracted_located_fire_name("Tell me about wildfire smoke in plain English") is None
+    assert extracted_located_fire_name("Tell me about Northern B.C. wildfire history.") is None
+    assert extracted_located_fire_name("Tell me about Bald Range") is None
+    assert extracted_located_fire_name("Tell me about Bald Range Fire") == "Bald Range"
+    assert extracted_located_fire_name("Tell me about K12345") == "K12345"
+
+
+def test_bare_tell_me_about_subject_never_authorizes_live_incident_lookup() -> None:
+    plan = plan_agent_request(QueryRequest(question="Tell me about Bald Range"))
+
+    assert live_layers_for_question("Tell me about Bald Range") == ()
+    assert plan.mode == AgentRequestMode.STATIC
+    assert plan.route != QueryRoute.LIVE
+
+
 def test_audience_and_location_free_questions_do_not_invent_live_scope() -> None:
     question = "What belongs in a grab-and-go bag?"
     parsed = parse_request_intent(question)
@@ -467,6 +535,92 @@ def test_audience_and_location_free_questions_do_not_invent_live_scope() -> None
     assert parsed.live_location_candidates == ()
     assert coarse_location_from_question(question) is None
     assert live_layers_for_question(question) == ()
+
+
+def test_exclusionary_bag_followup_stays_general_without_inheriting_review_authority() -> None:
+    request = QueryRequest(
+        question="what are something that's not needed for the bag",
+        history=[
+            ConversationTurn(role="user", content="What belongs in a grab-and-go bag?"),
+            ConversationTurn(role="assistant", content="Pack water and food."),
+        ],
+    )
+
+    public_plan = plan_query(request)
+    agent_plan = plan_agent_request(request)
+
+    assert public_plan.route == QueryRoute.TANGENT
+    assert agent_plan.mode == AgentRequestMode.STATIC
+    assert agent_plan.route == QueryRoute.TANGENT
+    assert agent_plan.tool_calls == ()
+    assert agent_plan.live_layers == ()
+    assert agent_plan.location_label is None
+
+
+def test_explicit_exclusionary_grab_and_go_question_stays_general_background() -> None:
+    request = QueryRequest(
+        question="what are some things that are not needed for a grab-and-go bag?"
+    )
+
+    public_plan = plan_query(request)
+    agent_plan = plan_agent_request(request)
+
+    assert prefers_general_background(request)
+    assert public_plan.route == QueryRoute.TANGENT
+    assert agent_plan.mode == AgentRequestMode.STATIC
+    assert agent_plan.tool_calls == ()
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "What caused the 2023 BC wildfire season?",
+        "Why was the 2023 wildfire season so severe?",
+        "Tell me the history of wildfire in BC.",
+    ),
+)
+def test_broad_noncurrent_wildfire_history_stays_general_background(question: str) -> None:
+    request = QueryRequest(question=question)
+    parsed = parse_request_intent(question)
+
+    assert parsed.temporal_scope == TemporalScope.NONCURRENT
+    assert prefers_general_background(request)
+    assert plan_query(request).route == QueryRoute.TANGENT
+    assert plan_agent_request(request).mode == AgentRequestMode.STATIC
+
+
+@pytest.mark.parametrize(
+    "query_request",
+    (
+        QueryRequest(
+            question="According to the PreparedBC guide, what is not needed for a grab-and-go bag?"
+        ),
+        QueryRequest(question="What does SRC-01 say about wildfire history?"),
+        QueryRequest(question="Tell me the history of Mountain Fire."),
+        QueryRequest(question="What caused the current wildfire season?"),
+        QueryRequest(
+            question="How large is it?", context={"selected_live_result_id": "incident:1"}
+        ),
+    ),
+)
+def test_source_current_named_and_deictic_requests_do_not_use_general_background(
+    query_request: QueryRequest,
+) -> None:
+    assert not prefers_general_background(query_request)
+
+
+def test_named_individual_fire_question_uses_live_record_boundary() -> None:
+    request = QueryRequest(question="What caused Mountain Fire?")
+
+    assert not prefers_general_background(request)
+    assert plan_query(request).route == QueryRoute.LIVE
+    assert plan_agent_request(request).mode == AgentRequestMode.TERMINAL
+
+
+def test_agency_name_is_not_misread_as_a_named_fire_record() -> None:
+    request = QueryRequest(question="What does BC Wildfire Service do?")
+
+    assert plan_query(request).route != QueryRoute.LIVE
 
 
 @pytest.mark.parametrize(

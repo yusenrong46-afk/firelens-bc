@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
@@ -10,26 +11,33 @@ from uuid import uuid4
 from firelens.agent.fallback_brain import planned_static_subrequest
 from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
+    continues_prior_live_place,
+    conversation_planning_question,
     live_layers_for_question,
     live_query_requires_location,
     plan_query,
+    prefers_general_background,
+    prior_anchor_user_question,
     unsupported_live_topics,
 )
 from firelens.answering.intent_automaton import parse_request_intent
-from firelens.answering.live_handoffs import related_live_links
+from firelens.answering.intent_safety import is_empty_map_safety_inference
+from firelens.answering.live_handoffs import official_safety_links, related_live_links
+from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.live_request_intent import (
-    is_distance_request,
-    is_selected_live_request,
-    is_unsupported_selected_request,
+    requires_selected_live_record,
+    uses_selected_live_binding,
 )
 from firelens.answering.location_intent import (
     coarse_location_from_question,
     is_out_of_province_label,
     is_province_wide_label,
+    is_province_wide_question,
 )
 from firelens.contracts import (
     AskResponse,
     LiveResultKind,
+    LocationInput,
     QueryRequest,
     QueryRoute,
     ReasonCode,
@@ -185,6 +193,29 @@ def _location_prompt(request: QueryRequest, *, unresolved: bool) -> AskResponse:
     )
 
 
+def _empty_map_location_prompt(request: QueryRequest) -> AskResponse:
+    return AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id=uuid4().hex,
+        response_mode=ResponseMode.REQUIRES_INPUT,
+        answer=(
+            "No. No evacuation orders shown on a map does not mean you are safe, "
+            "and it is not an all-clear. Enter a BC community so FireLens can check "
+            "bounded official evacuation records."
+        ),
+        required_input=RequiredInput(
+            kind=RequiredInputKind.LOCATION,
+            prompt="Enter a BC community FireLens can check for official evacuation records.",
+            continuation_question=("Show current evacuation alerts and orders near my place."),
+        ),
+        reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+        related_links=official_safety_links(),
+        limitations=[
+            "An empty or filtered map view is not an all-clear and cannot establish safety."
+        ],
+    )
+
+
 def _scope_redirect(request: QueryRequest, topics: tuple[str, ...]) -> AskResponse:
     del request
     links = related_live_links(topics)
@@ -226,6 +257,20 @@ def _unbound_live_redirect(request: QueryRequest) -> AskResponse:
     )
 
 
+def _selection_prompt(request: QueryRequest) -> AskResponse:
+    return AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id=uuid4().hex,
+        response_mode=ResponseMode.SCOPE_REDIRECT,
+        answer=(
+            "Select a mapped official record before asking for one record's size or "
+            "status. FireLens will not choose a nearby record for you."
+        ),
+        reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+        limitations=["No official record was fetched because no exact record was selected."],
+    )
+
+
 def _call(name: AgentTool, **arguments: str) -> PlannedToolCall:
     return PlannedToolCall(name=name, arguments=tuple(sorted(arguments.items())))
 
@@ -253,12 +298,18 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     """Create the deterministic plan projection before external place resolution."""
 
     public_plan = plan_query(request)
+    if public_plan.route == QueryRoute.TANGENT and prefers_general_background(request):
+        return AgentQueryPlan(
+            route=QueryRoute.TANGENT,
+            mode=AgentRequestMode.STATIC,
+            live_layers=(),
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=None,
+            tool_calls=(),
+        )
     selected = request.context.selected_live_result_id
-    if selected and (
-        is_selected_live_request(request)
-        or is_unsupported_selected_request(request)
-        or is_distance_request(request)
-    ):
+    if selected and uses_selected_live_binding(request):
         return AgentQueryPlan(
             route=QueryRoute.LIVE,
             mode=AgentRequestMode.SELECTED,
@@ -269,14 +320,66 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             tool_calls=(_call(AgentTool.GET_OFFICIAL_FIRE, result_id=selected),),
         )
 
-    topics = unsupported_live_topics(request.question)
-    layers = live_layers_for_question(request.question)
-    parsed_intent = parse_request_intent(request.question)
+    if requires_selected_live_record(request):
+        return AgentQueryPlan(
+            route=QueryRoute.LIVE,
+            mode=AgentRequestMode.TERMINAL,
+            live_layers=(),
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=None,
+            tool_calls=(),
+            scope_result=AgentScopeResult.SCOPE_REDIRECT,
+            terminal_response=_selection_prompt(request),
+        )
+
+    planning_question = conversation_planning_question(request)
+    topics = unsupported_live_topics(planning_question)
+    layers = live_layers_for_question(planning_question)
+    parsed_intent = parse_request_intent(planning_question)
     supported_live_clause = parsed_intent.has_live_records
     if topics and not supported_live_clause:
         layers = ()
-    static_query = planned_static_subrequest(request.question)
-    location = request.location or coarse_location_from_question(request.question)
+    static_query = planned_static_subrequest(planning_question)
+    question_location = coarse_location_from_question(request.question)
+    if is_province_wide_question(request.question):
+        # A current, explicit BC-wide ask outranks retained map state.  Decide
+        # that before geocoding so a stale unresolved community cannot turn a
+        # valid provincial analysis into a location prompt.
+        location = None
+    elif question_location is not None:
+        # A current explicit community also outranks stale retained state.
+        location = question_location
+    else:
+        location = request.location
+    if (
+        location is None
+        and not is_province_wide_question(request.question)
+        and continues_prior_live_place(request)
+    ):
+        prior = prior_anchor_user_question(request)
+        if prior:
+            location = coarse_location_from_question(prior)
+    if location is None and not is_province_wide_question(request.question):
+        location = coarse_location_from_question(planning_question)
+    if is_empty_map_safety_inference(planning_question) and location is None:
+        return AgentQueryPlan(
+            route=QueryRoute.LIVE,
+            mode=AgentRequestMode.TERMINAL,
+            live_layers=layers,
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=None,
+            tool_calls=(),
+            scope_result=AgentScopeResult.REQUIRES_INPUT,
+            terminal_response=_empty_map_location_prompt(request),
+        )
+    named = extracted_located_fire_name(planning_question)
+    if named and location is not None and location.label is not None:
+        named_key = " ".join(re.sub(r"[^a-z0-9]+", " ", named.casefold()).split())
+        place_key = " ".join(re.sub(r"[^a-z0-9]+", " ", location.label.casefold()).split())
+        if named_key == place_key or named_key in place_key or place_key in named_key:
+            location = None
     actual_live_request = bool(
         layers
         or parsed_intent.has_live_records
@@ -361,7 +464,9 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     )
     location_label = (
         location.label
-        if location is not None and geography == AgentGeography.LOCATION_RADIUS
+        if location is not None
+        and location.label is not None
+        and geography == AgentGeography.LOCATION_RADIUS
         else None
     )
 
@@ -393,16 +498,18 @@ async def build_agent_query_plan(
         or plan.location_label is None
     ):
         return plan
-    location = request.location or coarse_location_from_question(request.question)
-    if location is None:
-        return plan
+    question_location = coarse_location_from_question(request.question)
+    if question_location is not None and question_location.label == plan.location_label:
+        location = question_location
+    elif request.location is not None and request.location.label == plan.location_label:
+        location = request.location
+    else:
+        location = LocationInput(label=plan.location_label)
     try:
         await live_coordinator.live_service.resolve_location(location)
     except LiveDataUnavailable as exc:
         if exc.kind != LiveDataErrorKind.NOT_FOUND:
             return plan
-    except (AttributeError, TypeError, ValueError):
-        pass
     else:
         return plan
     if plan.mode == AgentRequestMode.MIXED:

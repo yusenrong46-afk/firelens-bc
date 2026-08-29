@@ -1,0 +1,220 @@
+{
+  "schema_version": "firelens.v1_6_2_patch_promotion.v1",
+  "from_version": "1.6.0",
+  "to_version": "1.6.2",
+  "base_commit": "b09e0402143f4c4a0602f542504507d40786fdc0",
+  "base_tree": "dc22981a24bf4648ee850b56a801f3bf43eee6eb",
+  "frozen_standard_path": "data/evaluation/firelens_v1_6_upgrade_standard.yaml",
+  "frozen_standard_sha256": "55e16b86960d51fb732970691a0c00850f6c56eb258cd363fd74a418b34d1bef",
+  "historical_promotion_materials": [
+    {
+      "name": "src/firelens/evaluation/release_promotion.py",
+      "sha256": "31bb68474dd6dfbe220b51a600ea2668fe4dc2ef4c2b8166a03f3de40de2c5de",
+      "size_bytes": 14416
+    },
+    {
+      "name": "config/firelens.v1_6_release_promotion.v1.json",
+      "sha256": "f90259567010edc1d31167f0ccb0e9284616b3550c9012c07dbc1955ee6292db",
+      "size_bytes": 2313
+    }
+  ],
+  "governed_materials": [
+    {
+      "name": "data/processed/firelens_static_corpus.manifest.json",
+      "sha256": "2d0d6b9b445f5ab0ef59e7f19bd0dce058a93f3a93b9599338702b95058ed687",
+      "size_bytes": 5082
+    },
+    {
+      "name": "data/processed/firelens_static_corpus.chunks.jsonl",
+      "sha256": "d5fcd794f9ec0486a256ae511366fde982254342b7d07b9c83a21ea8ead291eb",
+      "size_bytes": 222141
+    },
+    {
+      "name": "data/index/firelens_vectors.manifest.json",
+      "sha256": "437181a2a9aa03498b4bb4de2445d0e0b0bf3fe1c4d4fa76a50019d31f3f1046",
+      "size_bytes": 9447
+    },
+    {
+      "name": "data/index/firelens_vectors.npy",
+      "sha256": "fd0b171488809c5a87f3aee5c912b07358231cac6478bb621f6d2fc79d41efb7",
+      "size_bytes": 1044608
+    },
+    {
+      "name": "data/typed_claims/high_risk_v1.yaml",
+      "sha256": "75a183631a19dafbac9022ead6fd8dc3ba964eb7274981d17f4d479386673f38",
+      "size_bytes": 36341
+    },
+    {
+      "name": "data/typed_claims/candidates_pending_v1.yaml",
+      "sha256": "008274a5cda237473697b5ddd9c8c04d3a42a8738c560d594ea682ed74344f9c",
+      "size_bytes": 81689
+    },
+    {
+      "name": "data/typed_claims/candidate_preparation_seed_v2.yaml",
+      "sha256": "d033267dc865a4a65deb6b7ac53255051e8d51b7f67676353d2e58e96ea2088f",
+      "size_bytes": 19614
+    },
+    {
+      "name": "data/typed_claims/prepared_candidates_v2.yaml",
+      "sha256": "d1e085fd7c495e18ee8f9cf6602832e128ec9a3d4a1de4ed6caa62ab9a410dfd",
+      "size_bytes": 47698
+    },
+    {
+      "name": "data/typed_claims/source_repair_scope_template_v1.yaml",
+      "sha256": "59330bda03ecec0090b1731820f1a2dd6ed06225f77c57cff51e34093b92f61d",
+      "size_bytes": 2470
+    },
+    {
+      "name": "docs/reports/V1_6_TYPED_CLAIM_PREPARATION_MANIFEST.json",
+      "sha256": "d2b82c7d84009b152e53c02067bca7641ca8983c0da2842953d0f4c1cb31060d",
+      "size_bytes": 673
+    },
+    {
+      "name": "docs/reports/V1_6_TYPED_CLAIM_REVIEW_BATCH_1_DECISIONS.yaml",
+      "sha256": "fe5ea4ec75569234255b9b5da5aa40f2e3ddb4d9a6e99acb09710e1dca2c20a7",
+      "size_bytes": 6410
+    },
+    {
+      "name": "docs/reports/V1_6_TYPED_CLAIM_REVIEW_BATCH_2_DECISIONS.yaml",
+      "sha256": "550a6b226a7fc6c2bbbf5baef3c9916f3040a7f5af7ede24986f886ebe8d798b",
+      "size_bytes": 7263
+    },
+    {
+      "name": "docs/reports/V1_6_TYPED_CLAIM_REVIEW_BATCH_3_DECISIONS.yaml",
+      "sha256": "c3a0e10be4ee0ce85311d4f1b2f000e08543d329e7c0f74487f3ec01d4bdf129",
+      "size_bytes": 7552
+    },
+    {
+      "name": "docs/reports/V1_6_SOURCE_REPAIR_SCOPE_DECISIONS.yaml",
+      "sha256": "31e8b5ef8d2717bccd94b2a63283c94cade6ab05cb3710b451356e4b4b4c3ff5",
+      "size_bytes": 1229
+    },
+    {
+      "name": "data/evaluation/hard_probe.v1.yaml",
+      "sha256": "ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035",
+      "size_bytes": 26604
+    },
+    {
+      "name": "data/evaluation/hard_probe.v1.manifest.json",
+      "sha256": "7f051c79169b7a31fae8c6d6e71dd064cbd501280794d62467e114e6635404d5",
+      "size_bytes": 466
+    },
+    {
+      "name": "data/evaluation/hard_probe_rc2_expectations.v1.yaml",
+      "sha256": "780bad373528270b3b79ed1efb92c0539b9e4eea5467ff206b89611afb684adb",
+      "size_bytes": 4452
+    },
+    {
+      "name": "data/evaluation/hard_probe_rc2_expectations.v1.manifest.json",
+      "sha256": "cf875daa40b559bc1008b6e3d69243285f391dca92ca5fca3b4b89aa1845b0dc",
+      "size_bytes": 461
+    },
+    {
+      "name": "data/evaluation/hard_probe_rc2_1_expectations.v1.yaml",
+      "sha256": "b285d3028e0e74b8ec928bcfb545ce5ef6ee8220d8811d89ef2089d428c1c013",
+      "size_bytes": 4954
+    },
+    {
+      "name": "data/evaluation/hard_probe_rc2_1_expectations.v1.manifest.json",
+      "sha256": "7be712bab83c89fd3ddf21a7a293367906dbf73e5c0a36554ae4398aeece5a5c",
+      "size_bytes": 474
+    },
+    {
+      "name": "data/evaluation/hard_probe_rc2_2_expectations.v1.yaml",
+      "sha256": "17d73575e894395df2b6193c62ebfdcffb2cd3b892b79e233fb99a0f22fd8904",
+      "size_bytes": 5024
+    },
+    {
+      "name": "data/evaluation/hard_probe_rc2_2_expectations.v1.manifest.json",
+      "sha256": "269c62f1da25f9be6d11fe8b116c816cbe3130278c72e137e53a2452beddaca2",
+      "size_bytes": 474
+    },
+    {
+      "name": "data/evaluation/v1_6_user_end_questions_50.json",
+      "sha256": "3cb3964f329071b5f805af4d360fbc59cd834e903ba33796e628cff059c7d85d",
+      "size_bytes": 37357
+    },
+    {
+      "name": "data/evaluation/v1_6_user_end_questions_50.manifest.json",
+      "sha256": "c14a1f800d91056b7c261675d9db6f1498278181e54b0255d5b2ae11626ec8c0",
+      "size_bytes": 668
+    },
+    {
+      "name": "docs/reports/V1_6_STRUCTURED_PUBLICATION_HARD_PROBE.json",
+      "sha256": "c21fafc3d7ea95279147cf0b72a1811378814e0579f1a218d9f64a91a8fffc39",
+      "size_bytes": 1230211
+    }
+  ],
+  "public_claim_fields": [
+    "claim_id",
+    "evidence_status",
+    "publication",
+    "supports",
+    "text",
+    "trust"
+  ],
+  "claim_support_fields": [
+    "evidence_id",
+    "quote"
+  ],
+  "proof_card_fields": [
+    "authority",
+    "claim_id",
+    "claim_text",
+    "conflicts_or_unknowns",
+    "critical_fields_checked",
+    "derivation",
+    "exact_passage",
+    "freshness",
+    "official_url",
+    "publication",
+    "publication_state",
+    "review_state",
+    "source_revision",
+    "source_title",
+    "support_label",
+    "support_state",
+    "truth_class"
+  ],
+  "evidence_status_values": [
+    "general_background",
+    "verified_corpus"
+  ],
+  "response_mode_values": [
+    "abstention",
+    "background",
+    "capability",
+    "conflict",
+    "grounded",
+    "live",
+    "mixed",
+    "partial",
+    "requires_input",
+    "scope_redirect"
+  ],
+  "publication_kind_values": [
+    "general_background",
+    "official_live_typed",
+    "official_quote_only",
+    "source_linked_explanation",
+    "structured_reviewed",
+    "unsupported"
+  ],
+  "support_state_values": [
+    "background",
+    "conflict",
+    "live_record",
+    "official_live_typed",
+    "official_quote_only",
+    "source_linked_explanation",
+    "structured_reviewed",
+    "supported",
+    "unknown"
+  ],
+  "qualification": {
+    "status": "NOT_EXECUTED",
+    "candidate_commit": null,
+    "candidate_tree": null,
+    "reason": "Exact clean committed V1.6.2 candidate identity is not yet available."
+  }
+}

@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from functools import lru_cache
 
 from pydantic import HttpUrl
 
@@ -67,34 +66,22 @@ from firelens.publication.fallback import (
     QUOTE_ONLY_LIMITATION,
     UNCOVERED_LIMITATION,
     admitted_official_quote_source,
+    is_atomic_official_quote_only,
     official_handoff_response,
     quote_only_claim,
 )
 from firelens.publication.records import get_versioned
+from firelens.publication.relevance import (
+    applicability_qualifiers,
+    most_relevant_competing_typed_claims,
+    typed_record_matches_publication_target,
+)
 from firelens.publication_contracts import (
     LIVE_RENDERER_ID,
     RENDERER_ID,
     PublicationAuthority,
     PublicationKind,
     StructuredReviewedClaimBlock,
-)
-
-_APPLICABILITY_QUALIFIERS = (
-    re.compile(
-        r"\bif\s+(?:i|we|you|someone|a person|people)\s+"
-        r"(?:am|are|is|have|has)\s+(?P<scope>[^?.,;]+)",
-        re.IGNORECASE,
-    ),
-    re.compile(
-        r"\b(?:for|about)\s+(?:a\s+)?(?:person|people|someone|residents?|individuals?)\s+"
-        r"(?:who\s+(?:is|are|have|has)|with)\s+(?P<scope>[^?.,;]+)",
-        re.IGNORECASE,
-    ),
-    re.compile(
-        r"\bas\s+(?:a|an)\s+(?P<scope>[^?.,;]{1,60}?)\s+"
-        r"(?:person|resident|individual)\b",
-        re.IGNORECASE,
-    ),
 )
 
 
@@ -260,6 +247,8 @@ def compile_high_risk_answer(
     for candidate in packet.quote_candidates:
         if classify_text(candidate.text) not in {RiskTier.A, RiskTier.B}:
             continue
+        if not is_atomic_official_quote_only(candidate.text):
+            continue
         evidence_item = next(
             (item for item in packet.items if item.evidence_id == candidate.evidence_id),
             None,
@@ -363,7 +352,7 @@ def select_typed_claim_ids(
             versioned = get_versioned(record.claim_id)
             if (
                 versioned.available_for_structured_support
-                and _typed_record_matches_publication_target(
+                and typed_record_matches_publication_target(
                     record.claim_id,
                     versioned.approved_surface_sha256,
                     versioned.source_span_sha256,
@@ -372,13 +361,7 @@ def select_typed_claim_ids(
                 and record.claim_id not in selected
             ):
                 selected.append(record.claim_id)
-    return selected
-
-
-def _matches_publication_target(text: str, targets: Sequence[str]) -> bool:
-    return any(
-        support_token_overlap(text, target) >= SUPPORT_TOKEN_OVERLAP_FLOOR for target in targets
-    )
+    return most_relevant_competing_typed_claims(selected, targets)
 
 
 def _quote_candidate_covers_target(text: str, target: str) -> bool:
@@ -386,7 +369,7 @@ def _quote_candidate_covers_target(text: str, target: str) -> bool:
         return False
     if any(
         support_token_overlap(text, qualifier) < 1.0
-        for qualifier in _applicability_qualifiers(target)
+        for qualifier in applicability_qualifiers(target)
     ):
         return False
     return not requests_contents(target) or _supplies_contents(text)
@@ -450,80 +433,6 @@ def _structured_covers_publication_target(
     if support_token_overlap(structured_text, target) < SUPPORT_TOKEN_OVERLAP_FLOOR:
         return False
     return not requests_contents(target) or _supplies_contents(structured_text)
-
-
-@lru_cache(maxsize=1_024)
-def _typed_record_matches_publication_target(
-    claim_id: str,
-    approved_surface_sha256: str,
-    source_span_sha256: str,
-    targets: tuple[str, ...],
-) -> bool:
-    current = get_versioned(claim_id)
-    if (
-        current.approved_surface_sha256 != approved_surface_sha256
-        or current.source_span_sha256 != source_span_sha256
-    ):
-        return False
-    scope_text = "\n".join(
-        value
-        for value in (
-            current.record.subject,
-            current.record.status_stage,
-            *current.record.conditions,
-            *current.record.applies_to,
-        )
-        if value
-    )
-    if any(
-        qualifier and support_token_overlap(scope_text, qualifier) < 1.0
-        for target in targets
-        for qualifier in _applicability_qualifiers(target)
-    ):
-        return False
-    atomic_targets = tuple(
-        target for target in targets if target in ALERT_ORDER_ATOMIC_TARGET_SET
-    )
-    if atomic_targets:
-        if current.record.subject in atomic_targets:
-            return True
-        non_atomic = tuple(
-            target for target in targets if target not in ALERT_ORDER_ATOMIC_TARGET_SET
-        )
-        if not non_atomic:
-            return False
-        return _matches_publication_target(
-            f"{current.canonical_text}\n{current.source_span_text}", non_atomic
-        )
-    return _matches_publication_target(
-        f"{current.canonical_text}\n{current.source_span_text}", targets
-    )
-
-
-@lru_cache(maxsize=2_048)
-def _applicability_qualifiers(target: str) -> tuple[str, ...]:
-    """Extract user-stated applicability constraints without a domain phrase list.
-
-    A broad topic overlap must not let a reviewed claim about one population
-    answer a question explicitly scoped to another. The qualifier is compared
-    only with the claim's reviewed typed scope fields, and every qualifier token
-    must be represented there before structured publication is allowed.
-    """
-
-    action_boundary = re.compile(
-        r"\b(?:do not|don't|should|must|can|could|may|will|would)\b",
-        re.IGNORECASE,
-    )
-    return tuple(
-        qualifier
-        for pattern in _APPLICABILITY_QUALIFIERS
-        if (match := pattern.search(target)) is not None
-        if (
-            qualifier := " ".join(
-                action_boundary.split(match.group("scope"), maxsplit=1)[0].split()
-            )
-        )
-    )
 
 
 def packet_requires_structured(packet: EvidencePacket, question: str = "") -> bool:

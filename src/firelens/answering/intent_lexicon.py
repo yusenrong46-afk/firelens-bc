@@ -146,6 +146,8 @@ EXPOSITORY_WORDS = frozenset(
         "influence",
         "legislation",
         "meaning",
+        "mistake",
+        "mistakes",
         "policy",
         "prevention",
         "research",
@@ -153,6 +155,11 @@ EXPOSITORY_WORDS = frozenset(
         "safety",
         "science",
         "shape",
+        "story",
+        "stories",
+        "poem",
+        "poems",
+        "fiction",
         "training",
     }
 )
@@ -189,6 +196,7 @@ DEFINITION_WORDS = frozenset(
         "different",
         "distinction",
         "mean",
+        "means",
         "meaning",
         "versus",
         "vs",
@@ -410,6 +418,65 @@ TRAILING_SCOPE = re.compile(
     r"\b(?:near|around|round|within|in|across|throughout|from|"
     r"close(?:st)?\s+to|nearest\s+to)\s+(?:the\s+)?"
     r"(?P<place>[a-z][a-z .'-]{1,100})",
+    re.IGNORECASE,
+)
+RADIUS_SCOPE = re.compile(
+    r"\bwithin\s+(?P<radius>\d+(?:\.\d+)?)\s*"
+    r"(?:km|kilomet(?:er|re)s?)\s+of\s+(?:the\s+)?"
+    r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+    r"(?=[,;:.?!]|\s+(?:and|but|then)\b|$)",
+    re.IGNORECASE,
+)
+CLOSEST_NEAR_SCOPE = re.compile(
+    r"\b(?:which|what)\s+(?:official\s+)?"
+    r"(?:wildfire|fire|incident|perimeter)\s+"
+    r"near\s+(?:the\s+)?(?P<place>[a-z][a-z .'-]{1,80}?)\s+"
+    r"is\s+(?:the\s+)?(?:closest|nearest)\s+to\s+(?:the\s+)?"
+    r"(?:city|town|community|place)\b|"
+    r"\b(?:which|what)\s+(?:official\s+)?"
+    r"(?:wildfire|fire|incident|perimeter)\s+"
+    r"near\s+(?:the\s+)?(?P<bare_place>[a-z][a-z .'-]{1,80}?)\s+"
+    r"is\s+(?:the\s+)?(?:closest|nearest)(?=[?.,;]|$)",
+    re.IGNORECASE,
+)
+NEAREST_FIRE_TO_SCOPE = re.compile(
+    r"\b(?:what|which)\s+(?:is\s+)?(?:the\s+)?(?:nearest|closest)\s+"
+    r"(?:official\s+)?(?:wildfire|fire|incident|perimeter)\s+"
+    r"(?:to|from|near)\s+(?:the\s+)?(?P<place>[a-z][a-z .'-]{1,80}?)"
+    r"(?=[,;:.?!]|\s+(?:and|but|then)\b|$)",
+    re.IGNORECASE,
+)
+FIRE_NEAREST_TO_SCOPE = re.compile(
+    r"\b(?:which|what)\s+(?:official\s+)?"
+    r"(?:wildfire|fire|incident|perimeter)\s+is\s+"
+    r"(?:the\s+)?(?:nearest|closest)\s+(?:to|from|near)\s+"
+    r"(?:the\s+)?(?P<place>[a-z][a-z .'-]{1,80}?)"
+    r"(?=[,;:.?!]|\s+(?:and|but|then)\b|$)",
+    re.IGNORECASE,
+)
+FIRST_PERSON_PLACE = re.compile(
+    r"\b(?:i(?:['’]m|\s+am)|we(?:['’]re|\s+are))\s+"
+    r"(?:currently\s+)?in\s+(?P<place>[a-z][a-z .'-]{1,80}?)"
+    r"(?=[,;:.?!]|$)",
+    re.IGNORECASE,
+)
+NEARBY_INFORMATION_REQUEST = re.compile(
+    r"\b(?:anything|something|what(?:['’]s|\s+is))\s+"
+    r"(?:happening\s+)?nearby\b",
+    re.IGNORECASE,
+)
+NEAR_PLACE_INFORMATION_REQUEST = re.compile(
+    r"\b(?:"
+    r"(?:is\s+there\s+)?(?:anything|something)\s+"
+    r"(?:(?:i|we)\s+should\s+)?(?:know\s+about|happening|going\s+on)|"
+    r"what(?:['’]s|\s+is)\s+(?:happening|going\s+on)"
+    r")\s+(?:near|around)\s+(?:the\s+)?"
+    r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+    r"(?=[,;:.?!]|$)",
+    re.IGNORECASE,
+)
+LOCALITY_MODIFIER_PREFIX = re.compile(
+    r"^\s*downtown\s+(?P<place>[a-z][a-z .'-]{1,80})\s*$",
     re.IGNORECASE,
 )
 NEAREST_BARE_SCOPE = re.compile(

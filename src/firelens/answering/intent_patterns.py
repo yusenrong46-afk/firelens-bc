@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+import re
+
 _PROHIBITED_PATTERNS = (
     r"\b(safest|best)\s+(?:(?:evacuation|escape)\s+)?(road|route|way|highway)\b",
     r"\bwhich\s+(road|route)\s+should\s+(?:i|we)\s+take\b",
+    r"\bwhat\s+(?:road|route|way|highway)\s+should\s+"
+    r"(?:(?:my|our)\s+)?(?:family|household|i|we)\s+take\b",
     r"\b(am i|are we|is it)\s+safe\b",
     r"\bis\s+(?:my|our)\s+.{0,40}\bsafe\b",
     r"\bshould\s+(?:i|we)\s+(stay|leave|evacuate|return)\b",
+    r"\b(?:can|could|may)\s+(?:i|we)\s+leave\s+"
+    r"(?!(?:work|school|home|early|the\s+office|my\s+office)\b)"
+    r"[a-z][a-z .'-]{1,60}?\s+(?:right\s+now|now|today|tonight)\b",
     r"\b(?:can|could|may)\s+(?:i|we)\s+safely\s+(?:stay|leave|evacuate|return)\b",
     r"\bwhether\s+(?:my|our)\s+.{0,40}\bsafe\b",
     r"\btell me\s+whether\s+to\s+evacuate\b",
@@ -43,6 +50,22 @@ _PROHIBITED_PATTERNS = (
     r"\b(?:am i|are we)\s+under\b",
     r"\bwhich one\s+am i\s+under\b",
 )
+
+_PERSONALIZED_ROUTE_REQUEST = re.compile(
+    r"\b(?:safest|best)\s+(?:(?:evacuation|escape)\s+)?"
+    r"(?:road|route|way|highway)\b|"
+    r"\bwhich\s+(?:road|route)\s+should\s+(?:i|we)\s+take\b|"
+    r"\bwhat\s+(?:road|route|way|highway)\s+should\s+"
+    r"(?:(?:my|our)\s+)?(?:family|household|i|we)\s+take\b",
+    re.IGNORECASE,
+)
+
+
+def is_personalized_route_request(question: str) -> bool:
+    """True when the user asks FireLens to choose an evacuation route."""
+
+    return _PERSONALIZED_ROUTE_REQUEST.search(question) is not None
+
 
 _REVIEWED_RETURN_CONDITION_PATTERNS = (
     r"^\s*(?:can|could|may)\s+(?:i|we)\s+(?:return|go back)\s+home\s+"

@@ -392,18 +392,28 @@ class V3DeterministicIntentTests(unittest.TestCase):
                 self.assertIsNone(coarse_location_from_question(question))
 
     def test_unsupported_handoffs_require_a_current_information_intent(self) -> None:
-        explanatory = (
-            "Explain what drives wildfire spread.",
-            "What does AQHI mean?",
-            "Explain the weather cycle.",
-            "How do firefighting aircraft work?",
-        )
-        for question in explanatory:
+        explanatory = {
+            "Explain what drives wildfire spread.": QueryRoute.RELATED,
+            "What does AQHI mean?": QueryRoute.RELATED,
+            "Explain the weather cycle.": QueryRoute.RELATED,
+            "How do firefighting aircraft work?": QueryRoute.RELATED,
+            "How do road closures work during wildfires?": QueryRoute.RELATED,
+            "What causes wildfire road closures?": QueryRoute.RELATED,
+            "What is the history of wildfire road closures in BC?": QueryRoute.TANGENT,
+            "How do road closures work during a snowstorm?": QueryRoute.RELATED,
+            "What causes road closures at marathons?": QueryRoute.RELATED,
+            "Can you find out why Highway 97 is closed?": QueryRoute.RELATED,
+            "What are road closures?": QueryRoute.RELATED,
+            "What are the effects of road closures?": QueryRoute.RELATED,
+            "What are wildfire road closure policies?": QueryRoute.RELATED,
+            "Are road closures common during winter?": QueryRoute.RELATED,
+        }
+        for question, expected_route in explanatory.items():
             with self.subTest(question=question):
                 self.assertEqual(unsupported_live_topics(question), ())
                 self.assertEqual(
                     plan_query(QueryRequest(question=question)).route,
-                    QueryRoute.RELATED,
+                    expected_route,
                 )
 
         current = {
@@ -412,6 +422,19 @@ class V3DeterministicIntentTests(unittest.TestCase):
             "What is the current weather in Kelowna?": "weather or smoke forecast",
             "Where are the firefighting aircraft right now?": "firefighting aircraft",
             "Are Highway 97 road closures active now?": "road conditions",
+            "Is Highway 97 open?": "road conditions",
+            "Are roads closed near Kelowna?": "road conditions",
+            "Are there road closures near Kelowna?": "road conditions",
+            "Which roads are closed near Kelowna?": "road conditions",
+            "Which roads are closed?": "road conditions",
+            "Where are roads blocked?": "road conditions",
+            "List road closures.": "road conditions",
+            "Show road closures.": "road conditions",
+            "Find road closures.": "road conditions",
+            "Check road closures.": "road conditions",
+            "Check whether Highway 97 is open.": "road conditions",
+            "Can you find out if the route is blocked?": "road conditions",
+            "Show current road closures.": "road conditions",
         }
         for question, topic in current.items():
             with self.subTest(question=question):

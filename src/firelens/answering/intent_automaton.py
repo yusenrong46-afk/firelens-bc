@@ -15,6 +15,7 @@ from functools import lru_cache
 
 from firelens.answering import intent_lexicon as lex
 from firelens.answering import intent_spans as spans
+from firelens.answering.intent_guidance import is_evac_definition, is_guidance
 from firelens.contracts import LiveResultKind
 
 
@@ -76,38 +77,6 @@ def _temporal_scope(tokens: tuple[str, ...], text: str) -> TemporalScope:
     return TemporalScope.UNSPECIFIED
 
 
-def _is_guidance(tokens: tuple[str, ...]) -> bool:
-    token_set = frozenset(tokens)
-    if lex.has_any_phrase(tokens, lex.GUIDANCE_PHRASES):
-        return True
-    if token_set & lex.STRONG_GUIDANCE_TOPICS:
-        return True
-    if token_set & lex.DEFINITION_WORDS and token_set & lex.EVACUATION_WORDS:
-        return True
-    generic_guidance = token_set & (lex.GUIDANCE_WORDS - lex.STRONG_GUIDANCE_TOPICS)
-    governed_topic = bool(token_set & lex.GOVERNED_GUIDANCE_TOPICS)
-    if generic_guidance and governed_topic:
-        if token_set & lex.DEFINITION_WORDS:
-            return True
-        explicit_guidance_noun = bool(
-            token_set & {"advice", "guidance", "tips", "checklist", "preparedness", "readiness"}
-        )
-        if explicit_guidance_noun:
-            return True
-        if token_set & lex.CURRENT_WORDS or lex.has_any_phrase(tokens, lex.CURRENT_PHRASES):
-            return False
-        return True
-    if token_set & lex.GUIDANCE_ACTIONS and token_set & lex.GOVERNED_GUIDANCE_TOPICS:
-        return True
-    if (
-        "smoke" in token_set
-        and token_set & {"home", "house", "property"}
-        and token_set & {"can", "do", "how", "what"}
-    ):
-        return True
-    return bool(token_set & {"meaning", "mean"} and lex.has_fire(tokens))
-
-
 def _is_universal_distance(tokens: tuple[str, ...]) -> bool:
     token_set = frozenset(tokens)
     return bool(
@@ -148,7 +117,7 @@ def _looks_like_clause(text: str) -> bool:
     }
     return bool(
         tokens[0] in lex.REQUEST_STARTERS
-        or (tokens[0] in guidance_heads and _is_guidance(tokens[:12]))
+        or (tokens[0] in guidance_heads and is_guidance(tokens[:12]))
     )
 
 
@@ -249,7 +218,7 @@ def _is_record_analysis(tokens: tuple[str, ...]) -> bool:
 def _guidance_blocks_live(tokens: tuple[str, ...], temporal: TemporalScope) -> bool:
     """Reviewed guidance may share a clause with a live ask; only block live then."""
 
-    if not _is_guidance(tokens):
+    if not is_guidance(tokens):
         return False
     token_set = frozenset(tokens)
     if token_set & lex.DEFINITION_WORDS:
@@ -378,7 +347,7 @@ def _current_fire_operation(
 
 def _current_evacuation(tokens: tuple[str, ...], temporal: TemporalScope) -> bool:
     token_set = frozenset(tokens)
-    if _is_universal_distance(tokens) or token_set & lex.DEFINITION_WORDS:
+    if _is_universal_distance(tokens) or is_evac_definition(tokens):
         return False
     emergency_service = bool(
         "emergencyinfobc" in token_set or ("emergencyinfo" in token_set and "bc" in token_set)
@@ -531,7 +500,7 @@ def _parse_clause(text: str) -> ParsedClauseIntent:
     token_set = frozenset(tokens)
     temporal = _temporal_scope(tokens, text)
     product_help = _is_product_help(tokens)
-    guidance = _is_guidance(tokens)
+    guidance = is_guidance(tokens)
     fire_operation = _current_fire_operation(tokens, temporal)
     evacuation = _current_evacuation(tokens, temporal)
     layers: list[LiveResultKind] = []
@@ -583,6 +552,26 @@ def parse_request_intent(question: str) -> ParsedRequestIntent:
     """Parse one question once into immutable typed request intent."""
 
     normalized = lex.normalize_text(question)
+    implicit_location = spans.implicit_nearby_location(normalized)
+    if implicit_location is not None:
+        clause = ParsedClauseIntent(
+            text=normalized.strip(" ,.?;+"),
+            tokens=lex.tokenize(normalized),
+            kind=ClauseIntentKind.LIVE_RECORDS,
+            temporal_scope=TemporalScope.UNSPECIFIED,
+            operation=RecordOperation.LIST,
+            live_layers=(
+                LiveResultKind.INCIDENT,
+                LiveResultKind.PERIMETER,
+                LiveResultKind.EVACUATION,
+            ),
+            live_location_candidate=implicit_location,
+        )
+        return ParsedRequestIntent(
+            original_question=question,
+            clauses=(clause,),
+            requests_non_bc_scope=spans.requests_non_bc_scope(clause.tokens),
+        )
     texts = _split_clauses(normalized)
     clauses = [_parse_clause(text) for text in texts]
     fronted_scope = spans.fronted_scope_for_question(normalized)

@@ -9,18 +9,18 @@
     "require_every_state_viewport_pair_once": true
   },
   "states": [
-    {"id": "idle", "question": null, "ready_text": "Select a fire or ask anything"},
-    {"id": "grounded", "question": "surface:grounded", "ready_text": "Sources supporting this answer"},
+    {"id": "idle", "question": null, "ready_text": "Ask about a fire, a B.C. place, or preparedness."},
+    {"id": "grounded", "question": "surface:grounded", "ready_text": "Answer evidence and support"},
     {"id": "partial", "question": "surface:partial", "ready_text": "Partially supported"},
-    {"id": "background", "question": "surface:background", "ready_text": "General background — no corpus evidence attached"},
+    {"id": "background", "question": "surface:background", "ready_text": "General background"},
     {"id": "requires_input", "question": "surface:requires-location", "ready_text": "One detail needed"},
-    {"id": "abstention", "question": "surface:abstention", "ready_text": "No evidence-backed answer"},
-    {"id": "provider_failure", "question": "surface:unavailable", "ready_text": "Local service unavailable"},
-    {"id": "live", "question": "surface:live-fresh", "ready_text": "Current BC wildfire information"},
-    {"id": "mixed", "question": "surface:mixed", "ready_text": "Preparedness sources"},
-    {"id": "stale", "question": "surface:live-stale", "ready_text": "BC wildfire information — includes stale records"},
-    {"id": "no_result", "question": "surface:no-result", "ready_text": "No evidence-backed answer"},
-    {"id": "partial_layer", "question": "surface:partial-layer", "ready_text": "Some official layers are unavailable: evacuation. The records below do not represent those missing layers."}
+    {"id": "abstention", "question": "surface:abstention", "ready_text": "FireLens did not generate guidance"},
+    {"id": "provider_failure", "question": "surface:unavailable", "ready_text": "We couldn't complete this question"},
+    {"id": "live", "question": "surface:live-fresh", "ready_text": "Official records returned"},
+    {"id": "mixed", "question": "surface:mixed", "ready_text": "Answer evidence and support"},
+    {"id": "stale", "question": "surface:live-stale", "ready_text": "Official cached records"},
+    {"id": "no_result", "question": "surface:no-result", "ready_text": "FireLens did not generate guidance"},
+    {"id": "partial_layer", "question": "surface:partial-layer", "ready_text": "Official records returned"}
   ],
   "viewports": [
     {"id": "mobile", "width": 390, "height": 844, "device_scale_factor": 1, "is_mobile": true},

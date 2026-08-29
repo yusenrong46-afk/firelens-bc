@@ -20,12 +20,7 @@ from firelens.answering.execution import (
     ExecutionObserver,
     SearchExecution,
 )
-from firelens.answering.generate import (
-    background_messages,
-    background_schema,
-)
 from firelens.answering.grounded import (
-    GenerationObservation,
     GroundedAnswerEngine,
     compile_without_generation,
 )
@@ -39,12 +34,10 @@ from firelens.answering.intent import (
     reviewed_guidance_plan,
     skips_provider_planning,
 )
+from firelens.answering.live_request_intent import uses_selected_live_binding
 from firelens.answering.planner import planning_messages, planning_schema
 from firelens.answering.responses import (
     conflict_response as _conflict_response,
-)
-from firelens.answering.responses import (
-    provider_abstention as _provider_abstention,
 )
 from firelens.answering.responses import (
     safe_abstention as _safe_abstention,
@@ -59,23 +52,22 @@ from firelens.answering.scope import (
     candidate_source_reference_present as _candidate_source_reference_present,
 )
 from firelens.answering.scope import (
-    corpus_identifiers,
-)
-from firelens.answering.scope import (
     mixed_scope_request as _mixed_scope_request,
 )
-from firelens.answering.validate import (
-    validate_background_draft,
+from firelens.answering.service_support import (
+    StaticRAGSupport,
+    is_personalized_conditional_request,
 )
+from firelens.answering.service_support import (
+    with_support_limitations as _with_support_limitations,
+)
+from firelens.answering.typed_snapshot import extract_snapshot
 from firelens.claim_trust import GROUNDED_PUBLIC_WORDING
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     AskResponse,
-    BackgroundDraft,
     EvidencePacket,
-    EvidenceStatus,
     PlanningResponse,
-    PublicClaim,
     QueryPlan,
     QueryRelation,
     QueryRequest,
@@ -85,20 +77,19 @@ from firelens.contracts import (
     ResponseStatus,
     RetrievalBundle,
     SearchResponse,
+    SupportDecision,
     SupportStatus,
-    render_claim_texts,
 )
 from firelens.errors import ProviderError
 from firelens.ingestion.chunking import ChunkRecord
-from firelens.operational_logging import log_operation
 from firelens.providers.base import AIProvider
-from firelens.publication.fallback import background_authority
+from firelens.publication.fallback import official_handoff_response
 from firelens.retrieval.bm25 import BM25Index
 from firelens.retrieval.pipeline import RetrievalPipeline
-from firelens.traces import TraceRecorder, project_ask_trace_details
+from firelens.traces import TraceRecorder
 
 
-class StaticRAGService:
+class StaticRAGService(StaticRAGSupport):
     def __init__(
         self,
         chunks: Sequence[ChunkRecord],
@@ -123,32 +114,6 @@ class StaticRAGService:
             include_content=config.trace_content,
             max_files=config.trace_max_files,
             max_bytes=config.trace_max_bytes,
-        )
-
-    def _planning_candidates(self, question: str) -> list[dict[str, str]]:
-        """Expose bounded corpus vocabulary without treating snippets as evidence."""
-
-        candidates: list[dict[str, str]] = []
-        for result in self.planning_index.search(question, top_k=5):
-            snippet = " ".join(result.text.split())[:360]
-            candidates.append(
-                {
-                    "chunk_id": result.chunk_id,
-                    "source_id": result.source_id,
-                    "title": result.title,
-                    "publisher": result.publisher,
-                    "section": result.section_title or "",
-                    "snippet": snippet,
-                }
-            )
-        return candidates
-
-    def _planning_identifier_present(self, question: str) -> bool:
-        identifiers = corpus_identifiers(question)
-        return any(
-            identifier in result.text.casefold()
-            for identifier in identifiers
-            for result in self.planning_index.search(question, top_k=5)
         )
 
     async def _retrieve_for_plan(
@@ -190,73 +155,6 @@ class StaticRAGService:
             )
             return refined.bundle, refined.packet
         return bundle, packet
-
-    async def _record_ask(
-        self,
-        request: QueryRequest,
-        response: AskResponse,
-        *,
-        route: str,
-        **details: object,
-    ) -> AskResponse:
-        trace_details = project_ask_trace_details(details)
-        operation = self._active_operations.pop(response.trace_id, None)
-        if operation is not None:
-            started, provider_models = operation
-            visible_models = list(provider_models)
-            visible_stages: list[str] = []
-            if self.config.embedding_model in provider_models:
-                visible_stages.append("query_embedding")
-            if self.config.rerank_model in provider_models:
-                visible_stages.append("rerank")
-            if details.get("model"):
-                visible_models.append(str(details["model"]))
-                visible_stages.append(
-                    "background_generation"
-                    if response.response_mode == ResponseMode.BACKGROUND
-                    else "grounded_generation"
-                )
-            if isinstance(details.get("repair_count"), int) and details["repair_count"]:
-                visible_stages.append("grounded_repair")
-            log_operation(
-                trace_id=response.trace_id,
-                route=route,
-                response_mode=response.response_mode.value,
-                status=response.status.value,
-                latency_ms=(perf_counter() - started) * 1_000,
-                provider_stages=visible_stages,
-                provider_models=visible_models,
-                error_category=response.error_kind,
-                evidence_count=len(response.evidence),
-                claim_count=len(response.claims),
-                live_result_count=len(response.live_results),
-                validation_disposition=(
-                    "accepted"
-                    if response.validation is not None and response.validation.accepted
-                    else "rejected"
-                    if response.validation is not None
-                    else "not_applicable"
-                ),
-                corpus_version=self.corpus_version,
-                release_version=self.config.release_version,
-                build_commit=self.config.build_commit,
-                deployment_environment=self.config.deployment_environment,
-            )
-        await self.trace_recorder.record(
-            response.trace_id,
-            question=request.question,
-            payload={
-                "operation": "ask",
-                "route": route,
-                "status": response.status.value,
-                "response_mode": response.response_mode.value,
-                "reason_code": response.reason_code,
-                "error_kind": response.error_kind,
-                "history_turn_count": len(request.history),
-                **trace_details,
-            },
-        )
-        return response
 
     async def execute_search(
         self,
@@ -443,143 +341,6 @@ class StaticRAGService:
     ) -> SearchResponse:
         return (await self.execute_search(request, trace_id=trace_id)).public_response
 
-    async def _background_answer(
-        self,
-        request: QueryRequest,
-        *,
-        trace_id: str,
-        route: str,
-        limitations: Sequence[str],
-        observer: ExecutionObserver | None,
-        evidence_packet: EvidencePacket | None = None,
-    ) -> AskResponse:
-        started = perf_counter()
-        try:
-            generated = await self.provider.generate_background(
-                background_messages(request), output_schema=background_schema()
-            )
-        except ProviderError as exc:
-            if observer is not None:
-                observer.generations.append(
-                    GenerationObservation(
-                        stage="background_generation",
-                        model=None,
-                        usage={},
-                        attempts=0,
-                        latency_ms=(perf_counter() - started) * 1_000,
-                        error_kind=exc.kind.value,
-                    )
-                )
-            response = (
-                self.grounded_answers.source_handoff(
-                    trace_id,
-                    evidence_packet,
-                    answer=(
-                        "FireLens found reviewed sources related to this question, but the "
-                        "language service is temporarily unavailable. Open the reviewed "
-                        "sources below for more information."
-                    ),
-                    reason_code=ReasonCode.GENERATION_UNAVAILABLE,
-                    error_kind=exc.kind.value,
-                    extra_limitation=(
-                        "No generated general-knowledge claim was published while the "
-                        "language service was unavailable."
-                    ),
-                )
-                if evidence_packet is not None
-                else _provider_abstention(
-                    trace_id,
-                    reason_code=ReasonCode.GENERATION_UNAVAILABLE,
-                    error_kind=exc.kind.value,
-                    limitations=limitations,
-                )
-            )
-            return await self._record_ask(request, response, route=route)
-        generation_ms = (perf_counter() - started) * 1_000
-        if not isinstance(generated.draft, BackgroundDraft):
-            if observer is not None:
-                observer.generations.append(
-                    GenerationObservation(
-                        stage="background_generation",
-                        model=generated.model,
-                        usage=generated.usage,
-                        attempts=generated.attempts,
-                        latency_ms=generation_ms,
-                    )
-                )
-            response = _safe_abstention(
-                trace_id,
-                answer="The background answer did not match the required FireLens format.",
-                reason_code=ReasonCode.DRAFT_VALIDATION_FAILED,
-                limitations=limitations,
-            )
-            return await self._record_ask(request, response, route=route)
-        validation = validate_background_draft(generated.draft)
-        if observer is not None:
-            observer.generations.append(
-                GenerationObservation(
-                    stage="background_generation",
-                    model=generated.model,
-                    usage=generated.usage,
-                    attempts=generated.attempts,
-                    latency_ms=generation_ms,
-                    validation=validation,
-                )
-            )
-        if not validation.accepted:
-            response = (
-                self.grounded_answers.source_handoff(
-                    trace_id,
-                    evidence_packet,
-                    answer=(
-                        "FireLens found reviewed sources related to this question, but the "
-                        "general-knowledge summary did not pass safety validation. Open the "
-                        "reviewed sources below instead of relying on the rejected draft."
-                    ),
-                    reason_code=ReasonCode.DRAFT_VALIDATION_FAILED,
-                    validation=validation,
-                    extra_limitation=(
-                        "No generated general-knowledge claim was published from the rejected "
-                        "draft."
-                    ),
-                )
-                if evidence_packet is not None
-                else _safe_abstention(
-                    trace_id,
-                    answer="The generated background answer did not pass FireLens validation.",
-                    reason_code=ReasonCode.DRAFT_VALIDATION_FAILED,
-                    limitations=generated.draft.limitations,
-                ).model_copy(update={"validation": validation})
-            )
-            return await self._record_ask(request, response, route=route)
-        claims = [
-            PublicClaim(
-                claim_id=f"C{index}",
-                text=claim.text,
-                evidence_status=EvidenceStatus.GENERAL_BACKGROUND,
-                publication=background_authority(),
-            )
-            for index, claim in enumerate(generated.draft.claims, start=1)
-        ]
-        response = AskResponse(
-            status=ResponseStatus.ANSWER,
-            trace_id=trace_id,
-            response_mode=ResponseMode.BACKGROUND,
-            answer=render_claim_texts(claims),
-            claims=claims,
-            limitations=generated.draft.limitations,
-            validation=validation,
-        )
-        return await self._record_ask(
-            request,
-            response,
-            route=route,
-            model=generated.model,
-            generation_ms=generation_ms,
-            generation_usage=generated.usage,
-            generation_attempts=generated.attempts,
-        )
-
     async def ask(
         self,
         request: QueryRequest,
@@ -610,6 +371,38 @@ class StaticRAGService:
         prefer_reviewed_quotes: bool = False,
     ) -> AskResponse:
         operation_started = perf_counter()
+        question = publication_question(request)
+        unknown_identifiers = self._unknown_corpus_identifiers(question)
+        if unknown_identifiers:
+            plan = plan_query(request, allow_live=allow_live)
+            bundle = RetrievalBundle()
+            support = SupportDecision(
+                status=SupportStatus.INSUFFICIENT_EVIDENCE,
+                reason_code=ReasonCode.NO_APPROVED_EVIDENCE,
+                explanation=(
+                    "The requested source identifier is not in the approved reviewed-source "
+                    "collection."
+                ),
+            )
+            self._active_operations[trace_id] = (operation_started, ())
+            if observer is not None:
+                observer.search = SearchExecution(
+                    public_response=SearchResponse(
+                        trace_id=trace_id,
+                        plan=plan,
+                        retrieval=bundle,
+                        support=support,
+                    ),
+                    evidence_packet=None,
+                    observation=ExecutionObservation(planning=None, retrieval=bundle),
+                )
+            response = self._unknown_source_identifier_response(
+                trace_id,
+                unknown_identifiers,
+                plan.limitations,
+            )
+            return await self._record_ask(request, response, route=plan.route.value)
+
         execution = await self.execute_search(request, trace_id=trace_id, allow_live=allow_live)
         self._active_operations[trace_id] = (
             operation_started,
@@ -619,6 +412,9 @@ class StaticRAGService:
             observer.search = execution
         search = execution.public_response
         route = search.plan.route
+        publication_packet = _with_support_limitations(
+            execution.evidence_packet, search.support
+        )
 
         if route == QueryRoute.CAPABILITY:
             topics = ", ".join(topic for topic, _example in TOPIC_CATALOGUE)
@@ -677,17 +473,55 @@ class StaticRAGService:
             )
             return await self._record_ask(request, response, route=route.value)
 
+        question = publication_question(request)
+        snapshot = extract_snapshot(question)
+        current_request = snapshot.freshness_live
+        selected_live_request = uses_selected_live_binding(request)
+        personalized_conditional_request = is_personalized_conditional_request(question)
+        explicit_corpus_request = self._explicit_corpus_request(question)
+        # Only an actual conflicting EvidencePacket may take precedence over
+        # an ordinary Tier-C explanation.  ``SupportDecision`` is separately
+        # testable and may be injected as CONFLICT without source conflicts;
+        # that metadata alone cannot manufacture a conflict response.
+        if (
+            search.support.status == SupportStatus.CONFLICT
+            and execution.evidence_packet is not None
+            and execution.evidence_packet.conflicts
+        ):
+            response = _conflict_response(trace_id, execution.evidence_packet)
+            return await self._record_ask(request, response, route=route.value)
+        if self._allows_general_background_fallback(
+            request,
+            search.plan,
+            search.support,
+            explicit_corpus_request=explicit_corpus_request,
+        ):
+            return await self._background_answer(
+                request,
+                trace_id=trace_id,
+                route=route.value,
+                limitations=search.plan.limitations,
+                observer=observer,
+            )
+
         # Until direct-support calibration is complete, an adjacent classification
         # is intentionally background-only. Dense retrieval always returns nearby
         # chunks, so packet presence by itself is not proof of semantic support.
         # An explicit reviewed-guidance tool call may keep quote-ready support.
-        if search.plan.relation == QueryRelation.ADJACENT and not (
-            prefer_reviewed_quotes
-            and search.support.status in {SupportStatus.ANSWERABLE, SupportStatus.PARTIAL}
+        if (
+            search.plan.relation == QueryRelation.ADJACENT
+            and not explicit_corpus_request
+            and not current_request
+            and not selected_live_request
+            and not personalized_conditional_request
+            and not (
+                prefer_reviewed_quotes
+                and search.support.status in {SupportStatus.ANSWERABLE, SupportStatus.PARTIAL}
+            )
         ):
             compiled = compile_without_generation(
                 publication_question(request),
-                execution.evidence_packet,
+                publication_packet,
                 trace_id=trace_id,
                 supported_aspects=search.support.supported_aspects,
             )
@@ -702,7 +536,7 @@ class StaticRAGService:
             )
 
         if search.support.status == SupportStatus.CONFLICT:
-            if execution.evidence_packet is None:
+            if execution.evidence_packet is None or not execution.evidence_packet.conflicts:
                 response = _safe_abstention(
                     trace_id,
                     answer=(
@@ -716,9 +550,20 @@ class StaticRAGService:
             return await self._record_ask(request, response, route=route.value)
 
         if search.support.status not in {SupportStatus.ANSWERABLE, SupportStatus.PARTIAL}:
+            if explicit_corpus_request:
+                response = self._unsupported_source_request_response(
+                    trace_id=trace_id,
+                    packet=publication_packet,
+                    support=search.support,
+                    limitations=search.plan.limitations,
+                )
+                return await self._record_ask(request, response, route=route.value)
+            if personalized_conditional_request or current_request or selected_live_request:
+                response = official_handoff_response(trace_id)
+                return await self._record_ask(request, response, route=route.value)
             compiled = compile_without_generation(
                 publication_question(request),
-                execution.evidence_packet,
+                publication_packet,
                 trace_id=trace_id,
                 supported_aspects=search.support.supported_aspects,
                 force_partial=True,
@@ -731,10 +576,10 @@ class StaticRAGService:
                 route=route.value,
                 limitations=search.plan.limitations,
                 observer=observer,
-                evidence_packet=execution.evidence_packet,
+                evidence_packet=publication_packet,
             )
 
-        packet = execution.evidence_packet
+        packet = publication_packet
         if packet is None:
             return await self._background_answer(
                 request,
@@ -743,17 +588,6 @@ class StaticRAGService:
                 limitations=search.plan.limitations,
                 observer=observer,
             )
-        if search.support.status == SupportStatus.PARTIAL:
-            packet = packet.model_copy(
-                update={
-                    "limitations": [
-                        *packet.limitations,
-                        "Not supported by selected evidence: "
-                        + "; ".join(search.support.missing_aspects),
-                    ]
-                }
-            )
-
         generation_question = publication_question(request)
         outcome = await self.grounded_answers.answer(
             generation_question,

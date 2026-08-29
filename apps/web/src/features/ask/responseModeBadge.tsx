@@ -1,5 +1,6 @@
 import type { AskResponse, ResponseMode } from "../../shared/api/api";
 import { abstentionPresentation } from "./abstentionPresentation";
+import { isReviewedSourceHandoff } from "./proofPresentation";
 import type { AggregateFreshness } from "./responseModel";
 
 export function ResponseModeBadge({
@@ -7,16 +8,18 @@ export function ResponseModeBadge({
   aggregateFreshness,
   answerSectionKinds = [],
   reasonCode,
+  response,
 }: {
   mode: ResponseMode;
   aggregateFreshness?: AggregateFreshness | undefined;
   answerSectionKinds?: string[] | undefined;
   reasonCode?: AskResponse["reason_code"] | undefined;
+  response?: Pick<AskResponse, "response_mode" | "reason_code" | "related_links"> | undefined;
 }) {
   const labels: Record<ResponseMode, string> = {
     grounded: "Reviewed sources",
     partial: "Partially supported",
-    background: "General background",
+    background: "General knowledge",
     capability: "FireLens topics",
     scope_redirect: "Related official service",
     abstention: "Could not complete",
@@ -26,6 +29,9 @@ export function ResponseModeBadge({
     requires_input: "One detail needed",
   };
   if (mode === "abstention") labels.abstention = abstentionPresentation(reasonCode).badge;
+  if (mode === "scope_redirect" && reasonCode === "no_approved_evidence") {
+    labels.scope_redirect = isReviewedSourceHandoff(response) ? "Reviewed source handoff" : "Coverage limit";
+  }
   if (mode === "mixed" && answerSectionKinds.includes("conflicting_guidance")) {
     labels.mixed = "Live records + conflicting sources";
   } else if (mode === "mixed" && answerSectionKinds.includes("general_background")) {

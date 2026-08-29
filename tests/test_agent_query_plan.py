@@ -16,7 +16,9 @@ from firelens.agent.query_plan import (
 )
 from firelens.agent.tools import AgentTool
 from firelens.contracts import (
+    ConversationTurn,
     LiveResultKind,
+    LocationInput,
     MapContext,
     QueryRequest,
     QueryRoute,
@@ -127,6 +129,74 @@ def test_province_plan_has_one_explicit_scope_and_no_default_static_call() -> No
     assert plan.tool_calls[0].as_arguments() == {}
 
 
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Give me a distribution of the current wildfires in BC by region and status.",
+        "Give current wildfires in B.C. by region/status",
+        "Give current wildfires in British Columbia by fire centre and status.",
+    ),
+)
+def test_province_analysis_axes_are_not_misread_as_a_place(question: str) -> None:
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.geography == AgentGeography.PROVINCE_WIDE
+    assert plan.location_label is None
+    assert len(plan.tool_calls) == 1
+    assert plan.tool_calls[0].as_arguments() == {}
+
+
+def test_explicit_province_analysis_overrides_stale_retained_location_before_resolution() -> (
+    None
+):
+    resolver = Resolver(found=False)
+    request = QueryRequest(
+        question="Give me a distribution of the current wildfires in BC by region and status.",
+        location=LocationInput(label="Kelowna"),
+    )
+
+    plan = asyncio.run(build_agent_query_plan(request, Coordinator(resolver)))  # type: ignore[arg-type]
+
+    assert resolver.labels == []
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.geography == AgentGeography.PROVINCE_WIDE
+    assert plan.location_label is None
+    assert plan.tool_calls[0].as_arguments() == {}
+
+
+@pytest.mark.parametrize(
+    ("question", "place"),
+    (
+        ("Give current wildfires near Kelowna by region and status", "Kelowna"),
+        ("Give current wildfires in Okanagan by fire centre and status", "Okanagan"),
+    ),
+)
+def test_regional_analysis_retains_a_real_location(question: str, place: str) -> None:
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == place
+    assert plan.tool_calls[0].as_arguments() == {"place_label": place}
+
+
+def test_explicit_question_location_overrides_stale_retained_location_for_resolution() -> None:
+    resolver = Resolver()
+    request = QueryRequest(
+        question="Give current wildfires near Vernon by region and status.",
+        location=LocationInput(label="Kelowna"),
+    )
+
+    plan = asyncio.run(build_agent_query_plan(request, Coordinator(resolver)))  # type: ignore[arg-type]
+
+    assert resolver.labels == ["Vernon"]
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == "Vernon"
+    assert plan.tool_calls[0].as_arguments() == {"place_label": "Vernon"}
+
+
 def test_selected_record_plan_owns_exact_record_identifier() -> None:
     plan = _plan(
         "What is the status of this fire?",
@@ -142,6 +212,68 @@ def test_selected_record_plan_owns_exact_record_identifier() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "question",
+    ("Is it still burning?", "What official details are on it?"),
+)
+def test_selected_record_binds_narrow_supported_deictic_followups(question: str) -> None:
+    plan = plan_agent_request(
+        QueryRequest(
+            question=question,
+            context=MapContext(selected_live_result_id="incident:7"),
+        )
+    )
+
+    assert plan.mode == AgentRequestMode.SELECTED
+    assert plan.geography == AgentGeography.SELECTED_RECORD
+    assert plan.tool_calls[0].name == AgentTool.GET_OFFICIAL_FIRE
+    assert plan.tool_calls[0].as_arguments() == {"result_id": "incident:7"}
+
+
+@pytest.mark.parametrize("question", ("Why do people leave it too late?", "What is it?"))
+def test_selected_record_does_not_overbind_general_or_ambiguous_pronouns(question: str) -> None:
+    plan = plan_agent_request(
+        QueryRequest(
+            question=question,
+            context=MapContext(selected_live_result_id="incident:7"),
+        )
+    )
+
+    assert plan.mode != AgentRequestMode.SELECTED
+    assert all(call.name != AgentTool.GET_OFFICIAL_FIRE for call in plan.tool_calls)
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Tell me about Bald Range Fire",
+        "Which fire is closest to Kelowna?",
+        "What about the second fire?",
+    ),
+)
+def test_existing_selection_binds_named_closest_and_ordinal_requests(question: str) -> None:
+    plan = _plan(question, selected="incident:7")
+
+    assert plan.mode == AgentRequestMode.SELECTED
+    assert plan.geography == AgentGeography.SELECTED_RECORD
+    assert len(plan.tool_calls) == 1
+    assert plan.tool_calls[0].name == AgentTool.GET_OFFICIAL_FIRE
+    assert plan.tool_calls[0].as_arguments() == {"result_id": "incident:7"}
+
+
+@pytest.mark.parametrize(
+    "question",
+    ("How large is the fire?", "What is the status of this fire?"),
+)
+def test_singular_size_or_status_requires_an_explicit_selection(question: str) -> None:
+    plan = _plan(question)
+
+    assert plan.mode == AgentRequestMode.TERMINAL
+    assert plan.tool_calls == ()
+    assert plan.terminal_response is not None
+    assert "Select a mapped official record" in (plan.terminal_response.answer or "")
+
+
 def test_explicit_unresolved_region_is_resumable_and_fetch_free() -> None:
     plan = _plan("What's burning in Okanagan today?", found=False)
     assert plan.mode == AgentRequestMode.TERMINAL
@@ -155,6 +287,20 @@ def test_explicit_unresolved_region_is_resumable_and_fetch_free() -> None:
         plan.terminal_response.required_input.continuation_question
         == "What's burning in Okanagan today?"
     )
+
+
+def test_resolver_programming_error_is_not_relabelled_as_an_unresolved_place() -> None:
+    class BrokenResolver:
+        async def resolve_location(self, _location: object) -> tuple[float, float]:
+            raise TypeError("resolver contract drift")
+
+    with pytest.raises(TypeError, match="resolver contract drift"):
+        asyncio.run(
+            build_agent_query_plan(
+                QueryRequest(question="What's burning in Kelowna today?"),
+                Coordinator(BrokenResolver()),  # type: ignore[arg-type]
+            )
+        )
 
 
 @pytest.mark.parametrize(
@@ -326,6 +472,33 @@ def test_non_current_or_non_live_questions_do_not_gain_live_tools(question: str)
         }
         for call in plan.tool_calls
     )
+
+
+def test_closest_one_follow_up_keeps_the_prior_named_place() -> None:
+    history = [
+        ConversationTurn(role="user", content="What official fires are near Kelowna?"),
+        ConversationTurn(role="assistant", content="Current official information: Bald Range."),
+    ]
+    plan = plan_agent_request(
+        QueryRequest(question="How far is the closest one?", history=history)
+    )
+    assert plan.location_label == "Kelowna"
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.tool_calls[0].as_arguments() == {"place_label": "Kelowna"}
+
+
+def test_second_fire_after_closest_still_keeps_the_named_place() -> None:
+    history = [
+        ConversationTurn(role="user", content="What official fires are near Kelowna?"),
+        ConversationTurn(role="assistant", content="Current official information: Bald Range."),
+        ConversationTurn(role="user", content="How far is the closest one?"),
+        ConversationTurn(role="assistant", content="K51402 is the closest official record."),
+    ]
+    plan = plan_agent_request(
+        QueryRequest(question="What about the second fire?", history=history)
+    )
+    assert plan.location_label == "Kelowna"
+    assert plan.tool_calls[0].as_arguments() == {"place_label": "Kelowna"}
 
 
 def test_provider_arguments_cannot_widen_a_location_bound_plan() -> None:

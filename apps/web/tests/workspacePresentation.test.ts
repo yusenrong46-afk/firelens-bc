@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  preferredAnalyticalSurface,
   preferredContextSurface,
   questionExplicitlyRequestsMap,
-  questionRequestsAnalysis,
   questionRequestsMap,
   shouldOfferContextMap,
   shouldUseAnalyticalWorkspace,
@@ -59,6 +59,17 @@ describe("task-first workspace presentation", () => {
       question: "Where is Mountain Fire?",
       response: { ...spatialResponse, response_mode: "requires_input", live_results: [] },
     })).toBe(false);
+    expect(shouldOfferContextMap({
+      mode: "live",
+      question: "What is the current status?",
+      response: {
+        ...spatialResponse,
+        live_results: [{
+          ...spatialResponse.live_results[0]!,
+          geometry: { type: "Point", coordinates: [] },
+        }],
+      },
+    })).toBe(false);
   });
 
   it("defaults answers to evidence and opens the map first only for explicit map analysis", () => {
@@ -69,7 +80,32 @@ describe("task-first workspace presentation", () => {
     expect(preferredContextSurface({ mode: "mixed", question: "What should I prepare?" })).toBe("evidence");
   });
 
-  it("reserves the analytical workspace for multi-record analytical questions", () => {
+  it("opens a multi-record map only for a literal map request", () => {
+    const multiRecordResponse = {
+      ...spatialResponse,
+      live_results: [
+        spatialResponse.live_results[0]!,
+        { ...spatialResponse.live_results[0]!, result_id: "incident:2" },
+      ],
+    };
+    expect(preferredAnalyticalSurface({
+      mode: "live",
+      question: "Map wildfire distribution by status across B.C.",
+      response: multiRecordResponse,
+    })).toBe("map");
+    expect(preferredAnalyticalSurface({
+      mode: "live",
+      question: "Show wildfire distribution by status across B.C.",
+      response: multiRecordResponse,
+    })).toBe("summary");
+    expect(preferredAnalyticalSurface({
+      mode: "live",
+      question: "Where are the most active wildfires?",
+      response: multiRecordResponse,
+    })).toBe("summary");
+  });
+
+  it("uses the analytical workspace whenever a live answer returns multiple incidents", () => {
     const firstResult = spatialResponse.live_results[0]!;
     const multiRecordResponse = {
       ...spatialResponse,
@@ -78,22 +114,20 @@ describe("task-first workspace presentation", () => {
         { ...firstResult, result_id: "incident:2", status: "Out of Control" },
       ],
     };
-    expect(questionRequestsAnalysis("Show the wildfire distribution by status across B.C.")).toBe(true);
-    expect(questionRequestsAnalysis("How are wildfires distributed across BC right now?")).toBe(true);
-    expect(questionRequestsAnalysis("What is the status of Mountain Fire?")).toBe(false);
     expect(shouldUseAnalyticalWorkspace({
       mode: "live",
-      question: "How many wildfires are there by status?",
       response: multiRecordResponse,
     })).toBe(true);
     expect(shouldUseAnalyticalWorkspace({
       mode: "live",
-      question: "What is the status of Mountain Fire?",
-      response: multiRecordResponse,
+      response: spatialResponse,
+    })).toBe(false);
+    expect(shouldUseAnalyticalWorkspace({
+      mode: "live",
+      response: { ...multiRecordResponse, selected_live_result_id: "incident:1" },
     })).toBe(false);
     expect(shouldUseAnalyticalWorkspace({
       mode: "grounded",
-      question: "Compare preparedness steps",
       response: { ...multiRecordResponse, response_mode: "grounded" },
     })).toBe(false);
   });
@@ -108,7 +142,6 @@ describe("task-first workspace presentation", () => {
     })).toBe(true);
     expect(shouldUseAnalyticalWorkspace({
       mode: "live",
-      question: namedQuestion,
       response: spatialResponse,
     })).toBe(false);
 
@@ -123,7 +156,6 @@ describe("task-first workspace presentation", () => {
     };
     expect(shouldUseAnalyticalWorkspace({
       mode: "live",
-      question: "Show wildfire distribution by status across B.C.",
       response: distributionResponse,
     })).toBe(true);
     expect(preferredContextSurface({
@@ -138,7 +170,6 @@ describe("task-first workspace presentation", () => {
     })).toBe(false);
     expect(shouldUseAnalyticalWorkspace({
       mode: "grounded",
-      question: "What belongs in a grab-and-go bag?",
       response: { ...spatialResponse, response_mode: "grounded", live_results: [] },
     })).toBe(false);
     expect(preferredContextSurface({

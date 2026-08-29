@@ -3,8 +3,10 @@ import type { ProofCardView, StatusBannerView } from "./proofPresentation";
 
 export function StatusBanner({
   banner,
+  compact = false,
 }: {
   banner: StatusBannerView;
+  compact?: boolean;
 }) {
   const availability = banner.availability_label.toLowerCase();
   const availabilityWarning = availability.includes("unavailable")
@@ -14,10 +16,10 @@ export function StatusBanner({
   const freshnessWarning = freshness.includes("stale") || freshness.includes("mixed");
 
   return (
-    <div className="status-banner" role="status" aria-label="Answer status">
+    <div className={`status-banner${compact ? " status-banner--compact" : ""}`} role="status" aria-label="Answer status">
       <div className="status-banner__summary">
         <strong>{banner.headline}</strong>
-        <p>{banner.detail}</p>
+        {!compact && <p>{banner.detail}</p>}
       </div>
       <div className="status-banner__metadata">
         <span className={freshnessWarning ? "status-banner__warning" : undefined}>
@@ -32,7 +34,7 @@ export function StatusBanner({
           </span>
         )}
       </div>
-      {banner.official_escalation_url && (
+      {banner.official_escalation_url && !compact && (
         <a href={banner.official_escalation_url} target="_blank" rel="noreferrer">
           {banner.official_escalation_title ?? "Open official source"}
         </a>

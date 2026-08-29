@@ -114,6 +114,26 @@ def _validation_failure(message: str) -> ValidationReport:
     )
 
 
+def _force_partial_response(response: AskResponse) -> AskResponse:
+    """Rebuild a compiled response when support coverage is known to be partial.
+
+    ``AskResponse`` derives ``history_text`` from the public response mode and
+    limitations.  Pydantic's ``model_copy`` deliberately skips validation, so
+    changing the mode in place could leave a grounded authority label in the
+    next-turn history.  Clear that derived field and run the complete public
+    contract again instead.
+    """
+
+    if response.response_mode != ResponseMode.GROUNDED:
+        return response
+    payload = response.model_dump(mode="python")
+    payload.update(
+        response_mode=ResponseMode.PARTIAL,
+        history_text=None,
+    )
+    return AskResponse.model_validate(payload)
+
+
 def compile_without_generation(
     question: str,
     packet: EvidencePacket | None,
@@ -138,9 +158,7 @@ def compile_without_generation(
         trace_id=trace_id,
         supported_aspects=supported_aspects,
     )
-    if force_partial and response.response_mode == ResponseMode.GROUNDED:
-        return response.model_copy(update={"response_mode": ResponseMode.PARTIAL})
-    return response
+    return _force_partial_response(response) if force_partial else response
 
 
 class GroundedAnswerEngine:
@@ -247,8 +265,8 @@ class GroundedAnswerEngine:
                 trace_id=trace_id,
                 supported_aspects=supported_aspects,
             )
-            if force_partial and response.response_mode == ResponseMode.GROUNDED:
-                response = response.model_copy(update={"response_mode": ResponseMode.PARTIAL})
+            if force_partial:
+                response = _force_partial_response(response)
             return self._outcome(
                 response,
                 observations,

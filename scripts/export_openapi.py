@@ -6,13 +6,24 @@ import json
 from pathlib import Path
 
 from firelens.api import create_app
-from firelens.config import FireLensConfig
+from firelens.config import DEFAULT_RELEASE_VERSION, FireLensConfig
 from firelens.storage import atomic_text_writer
+
+
+def build_export_config(root: Path) -> FireLensConfig:
+    """Build a reproducible schema config independent of local runtime overrides."""
+
+    return FireLensConfig.from_env(root).model_copy(
+        update={
+            "frontend_dist_path": None,
+            "release_version": DEFAULT_RELEASE_VERSION,
+        }
+    )
 
 
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
-    config = FireLensConfig.from_env(root).model_copy(update={"frontend_dist_path": None})
+    config = build_export_config(root)
     schema = create_app(config).openapi()
     output = root / "docs/openapi.v1.json"
     with atomic_text_writer(output) as stream:

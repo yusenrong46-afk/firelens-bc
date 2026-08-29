@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Coroutine
 from typing import Any
 
+from firelens.agent.budget import tool_fingerprint
 from firelens.agent.failures import EXPECTED_TOOL_FAILURES, record_expected_failure
 from firelens.agent.fallback_brain import (
     heuristic_tool_calls,
@@ -134,22 +136,100 @@ async def prefetch_evidence(
     plan: AgentQueryPlan | None = None,
 ) -> None:
     if plan is not None:
+        workers: list[Coroutine[Any, Any, AgentPacket]] = []
         for call in plan.tool_calls:
-            try:
-                await execute_tool(
-                    call.name.value,
-                    call.as_arguments(),
-                    request=request,
-                    live_coordinator=live_coordinator,
-                    static_service=static_service,
-                    packet=packet,
-                )
-            except EXPECTED_TOOL_FAILURES as exc:
-                record_expected_failure(packet, exc)
+            arguments = call.as_arguments()
+            fingerprint = tool_fingerprint(call.name.value, arguments)
+            if fingerprint in packet.tool_fingerprints:
+                packet.policy.repeated_tool_dispatch += 1
+                continue
+            if not packet.policy.consume_tool_call():
+                continue
+            packet.tool_fingerprints.append(fingerprint)
+
+            async def _run_planned_call(
+                name: str = call.name.value,
+                call_arguments: dict[str, Any] = arguments,
+            ) -> AgentPacket:
+                isolated = AgentPacket(query_plan=plan)
+                isolated.policy.deadline = packet.policy.deadline
+                isolated.policy.cancelled = packet.policy.cancelled
+                try:
+                    await execute_tool(
+                        name,
+                        call_arguments,
+                        request=request,
+                        live_coordinator=live_coordinator,
+                        static_service=static_service,
+                        packet=isolated,
+                    )
+                except EXPECTED_TOOL_FAILURES as exc:
+                    record_expected_failure(isolated, exc)
+                return isolated
+
+            workers.append(_run_planned_call())
+
+        for isolated in await _gather_cancel_on_error(workers):
+            _merge_isolated_packet(packet, isolated)
         return
     await prefetch_selected(request, live_coordinator, static_service, packet)
     await ensure_official_fetch(request, live_coordinator, static_service, packet)
     await prefetch_reviewed_guidance(request, live_coordinator, static_service, packet)
+
+
+async def _gather_cancel_on_error(
+    workers: list[Coroutine[Any, Any, AgentPacket]],
+) -> list[AgentPacket]:
+    """Run independent plan calls together and cancel siblings on interruption."""
+
+    tasks = [asyncio.create_task(worker) for worker in workers]
+    if not tasks:
+        return []
+    try:
+        return list(await asyncio.gather(*tasks))
+    except BaseException:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        raise
+
+
+def _merge_isolated_packet(packet: AgentPacket, isolated: AgentPacket) -> None:
+    """Merge concurrent tool results in immutable plan order."""
+
+    seen_results = {item.result_id for item in packet.live_results}
+    for result in isolated.live_results:
+        if result.result_id not in seen_results:
+            packet.live_results.append(result)
+            seen_results.add(result.result_id)
+    if isolated.static_response is not None:
+        packet.static_response = isolated.static_response
+    packet.tool_names.extend(isolated.tool_names)
+    for topic in isolated.unknown_topics:
+        if topic not in packet.unknown_topics:
+            packet.unknown_topics.append(topic)
+    if isolated.resolved_location is not None:
+        packet.resolved_location = isolated.resolved_location
+    for link in isolated.related_links:
+        if link not in packet.related_links:
+            packet.related_links.append(link)
+    if isolated.roster_total is not None:
+        packet.roster_total = max(packet.roster_total or 0, isolated.roster_total)
+    packet.mark_unavailable(isolated.unavailable_layers)
+    if isolated.retrieved_at is not None and (
+        packet.retrieved_at is None or isolated.retrieved_at > packet.retrieved_at
+    ):
+        packet.retrieved_at = isolated.retrieved_at
+    for _ in range(isolated.policy.retrieval_cycles):
+        packet.policy.consume_retrieval_cycle()
+    for _ in range(isolated.policy.grounded_generations):
+        packet.policy.consume_grounded_generation()
+    if isolated.policy.fallback_reason is not None:
+        packet.policy.fallback_reason = isolated.policy.fallback_reason
+    if isolated.policy.cache_used is not None:
+        packet.policy.cache_used = isolated.policy.cache_used
+    for stage in isolated.policy.provider_stages:
+        packet.policy.record_stage(stage)
 
 
 async def resolve_place(
@@ -162,6 +242,6 @@ async def resolve_place(
         return
     try:
         latitude, longitude = await live_coordinator.live_service.resolve_location(location)
-    except (LiveDataUnavailable, AttributeError, TypeError, ValueError):
+    except LiveDataUnavailable:
         return
     packet.resolved_location = CoarseResolvedLocation(latitude=latitude, longitude=longitude)

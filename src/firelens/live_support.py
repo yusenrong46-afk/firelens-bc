@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from types import MappingProxyType
 from typing import Any, Literal
+from weakref import WeakKeyDictionary
 
 import httpx
 from pydantic import HttpUrl
@@ -400,6 +401,34 @@ def _exact_bc_locality(features: list[object], label: str) -> dict[str, Any] | N
     return None
 
 
+_RESOLVED_LABELS: WeakKeyDictionary[object, dict[str, tuple[float, float]]] = (
+    WeakKeyDictionary()
+)
+_RESOLVED_LABEL_LIMIT = 64
+
+
+def _resolved_label_cache(get: _HttpGet) -> dict[str, tuple[float, float]]:
+    owner = getattr(get, "__self__", get)
+    try:
+        cache = _RESOLVED_LABELS.get(owner)
+        if cache is None:
+            cache = {}
+            _RESOLVED_LABELS[owner] = cache
+        return cache
+    except TypeError:
+        return {}
+
+
+def _remember_resolved_label(
+    cache: dict[str, tuple[float, float]], label: str, coords: tuple[float, float]
+) -> None:
+    if label in cache:
+        return
+    if len(cache) >= _RESOLVED_LABEL_LIMIT:
+        cache.pop(next(iter(cache)))
+    cache[label] = coords
+
+
 async def resolve_bc_location(get: _HttpGet, location: LocationInput) -> tuple[float, float]:
     """Resolve a coarse label to rounded BC coordinates, failing closed."""
 
@@ -407,9 +436,16 @@ async def resolve_bc_location(get: _HttpGet, location: LocationInput) -> tuple[f
         return location.latitude, location.longitude
     if location.label is None:
         raise LiveDataUnavailable("a coarse location is required for a nearby query")
+    label_key = " ".join(location.label.casefold().split())
+    cache = _resolved_label_cache(get)
+    cached = cache.get(label_key)
+    if cached is not None:
+        return cached
     region = bc_region_entry(location.label)
     if region is not None:
-        return round(region.latitude, 2), round(region.longitude, 2)
+        coords = (round(region.latitude, 2), round(region.longitude, 2))
+        _remember_resolved_label(cache, label_key, coords)
+        return coords
     try:
         response = await get(
             BC_GEOCODER_URL,
@@ -482,7 +518,9 @@ async def resolve_bc_location(get: _HttpGet, location: LocationInput) -> tuple[f
             "the official place service returned coordinates outside British Columbia",
             kind=LiveDataErrorKind.INVALID_RESPONSE,
         )
-    return round(latitude, 2), round(longitude, 2)
+    coords = (round(latitude, 2), round(longitude, 2))
+    _remember_resolved_label(cache, label_key, coords)
+    return coords
 
 
 def _geodesic_km(first: tuple[float, float], second: tuple[float, float]) -> float:

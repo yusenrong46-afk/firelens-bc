@@ -10,8 +10,10 @@ from test_luna_brain_agent import (
     CountingMapService,
     CountingStatic,
     KitStatic,
+    RecordingStatic,
     SilentStatic,
     _agent,
+    _background_response,
     _fire,
 )
 
@@ -136,29 +138,50 @@ class GoldenTraceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(trace.outer_chat_turns, 0)
         self.assertEqual(trace.grounded_generations, 0)
         self.assertEqual(trace.evidence_lane, "none")
-        self.assertEqual(trace.response_mode, ResponseMode.ABSTENTION.value)
+        self.assertEqual(trace.response_mode, ResponseMode.REQUIRES_INPUT.value)
         self.assertIn("personalized_safety_decision", trace.refused_inferences)
         self.assertEqual(provider.calls, 0)
-        self.assertIn("cannot provide", (execution.response.answer or "").casefold())
+        self.assertIn("cannot decide", (execution.response.answer or "").casefold())
+        self.assertIsNotNone(execution.response.required_input)
+        self.assertGreaterEqual(len(execution.response.related_links), 2)
 
-    async def test_stanley_cup_is_a_scope_redirect(self) -> None:
+    async def test_stanley_cup_is_labelled_general_background(self) -> None:
         question = GOLDEN_TRACE_QUESTIONS[4]
-        agent = _agent([], static=SilentStatic())
+        agent = _agent([], static=RecordingStatic(_background_response()))
         execution = await agent.answer(QueryRequest(question=question))
         trace = record_golden_trace(
             case_id="stanley_cup", question=question, execution=execution
         )
 
         self.assertEqual(trace.route, QueryRoute.RELATED.value)
+        self.assertEqual(trace.policy_route, "static_service")
         self.assertEqual(trace.input_rail, "none")
-        self.assertEqual(trace.tools, ())
+        self.assertEqual(trace.tools, (AgentTool.ANSWER_GENERAL_BACKGROUND.value,))
         self.assertEqual(trace.provider_stages, ())
         self.assertEqual(trace.retrieval_cycles, 0)
         self.assertEqual(trace.outer_chat_turns, 0)
         self.assertEqual(trace.evidence_lane, "none")
-        self.assertEqual(trace.response_mode, ResponseMode.SCOPE_REDIRECT.value)
-        self.assertIn("scope_redirect", trace.refused_inferences)
-        self.assertNotRegex(
-            (execution.response.answer or "").casefold(),
-            r"stanley cup|montreal|edmonton|champion",
+        self.assertEqual(trace.response_mode, ResponseMode.BACKGROUND.value)
+        self.assertNotIn("scope_redirect", trace.refused_inferences)
+
+    async def test_stanley_cup_and_kelowna_skip_chat_turn_with_a_provider(self) -> None:
+        provider = CapturingProvider()
+        kelowna_agent = FireLensAgent(
+            cast(Any, CountingStatic(provider)),
+            LiveAnswerCoordinator(
+                cast(
+                    Any, CountingMapService([_fire(result_id="incident:7", name="Ridge Fire")])
+                )
+            ),
         )
+        kelowna = await kelowna_agent.answer(QueryRequest(question=GOLDEN_TRACE_QUESTIONS[1]))
+        self.assertEqual(provider.calls, 0)
+        self.assertEqual(kelowna.policy.outer_chat_turns, 0)
+        self.assertEqual(kelowna.response.response_mode, ResponseMode.LIVE)
+
+        off_topic = await _agent([], static=RecordingStatic(_background_response())).answer(
+            QueryRequest(question=GOLDEN_TRACE_QUESTIONS[4])
+        )
+        self.assertEqual(provider.calls, 0)
+        self.assertEqual(off_topic.policy.outer_chat_turns, 0)
+        self.assertEqual(off_topic.response.response_mode, ResponseMode.BACKGROUND)

@@ -21,6 +21,20 @@ from firelens.contracts import (
 )
 
 _RELATED_LIVE_LINKS = {
+    "wildfire records": RelatedLink(
+        title="BC Wildfire Service map",
+        url=HttpUrl("https://wildfiresituation.nrs.gov.bc.ca/map"),
+        description=(
+            "Official current wildfire incidents, perimeters, notices, and source updates."
+        ),
+    ),
+    "evacuation information": RelatedLink(
+        title="EmergencyInfoBC",
+        url=HttpUrl("https://www.emergencyinfobc.gov.bc.ca/"),
+        description=(
+            "Official provincial emergency information and links to issuing local authorities."
+        ),
+    ),
     "air quality": RelatedLink(
         title="Current B.C. AQHI",
         url=HttpUrl("https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html"),
@@ -95,6 +109,17 @@ def related_live_links(topics: tuple[str, ...]) -> list[RelatedLink]:
         ],
         static_handoff_links=[],
     )
+
+
+def official_safety_links(*, include_road_conditions: bool = False) -> list[RelatedLink]:
+    """Return deterministic official next steps for a blocked safety decision."""
+
+    topics = (
+        ("road conditions", "evacuation information")
+        if include_road_conditions
+        else ("wildfire records", "evacuation information")
+    )
+    return related_live_links(topics)
 
 
 def unsupported_live_no_result_response(

@@ -155,7 +155,7 @@ export function EvidencePanel({
       <div className="evidence-inner">
         {surface === "map" ? (
           <>
-        <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading the official map">Preparing map layers…</EvidencePlaceholder>}>
+        <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading map">Preparing map…</EvidencePlaceholder>}>
           <LiveMap
             results={mapResults}
             matchingResults={mapMatchingResults}
@@ -169,7 +169,7 @@ export function EvidencePanel({
             onAskAboutResult={askAboutResult}
           />
         </Suspense>
-        {mapLoading && <p className="map-surface-status" role="status">Loading official wildfire layers…</p>}
+        {mapLoading && <p className="map-surface-status" role="status">Loading map…</p>}
         {mapMessage && <p className="live-map__warning" role="status">{mapMessage} Ask a question or use the official BCWS map while this layer recovers.</p>}
           </>
         ) : (
@@ -235,7 +235,7 @@ export function EvidencePanel({
           </EvidencePlaceholder>
         ) : view.kind === "loading" ? (
           <EvidencePlaceholder icon={<span className="spinner" />} title="FireLens is working">
-            The agent is selecting between official live tools, reviewed retrieval, and labelled general knowledge.
+            Preparing your response…
           </EvidencePlaceholder>
         ) : view.kind === "abstention" ? (
           <EvidencePlaceholder

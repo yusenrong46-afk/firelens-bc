@@ -56,5 +56,7 @@ jobs:
           .venv/bin/python scripts/check_actions_pinned.py
       - name: Run complete zero-cost verification
         run: make verify
+      - name: Run ProductBench v2 deterministic offline contract
+        run: make productbench-deterministic
       - name: Reject generated-file drift
         run: git diff --exit-code

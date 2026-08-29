@@ -8,6 +8,7 @@ from typing import Any
 from firelens.agent.packet import AgentPacket
 from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
+    conversation_planning_question,
     live_layers_for_question,
     reviewed_guidance_intent,
     unsupported_live_topics,
@@ -48,7 +49,9 @@ def planned_static_subrequest(question: str) -> str | None:
     parsed = parse_request_intent(question)
     layers = live_layers_for_question(question)
     if layers or parsed.has_live_records:
-        return parsed.static_subrequest_text
+        if parsed.has_reviewed_guidance or parsed.has_prefetchable_guidance:
+            return parsed.reviewed_guidance_text or parsed.static_subrequest_text
+        return None
     if unsupported_live_topics(question):
         return parsed.reviewed_guidance_text
     if should_prefetch_reviewed_guidance(question):
@@ -59,7 +62,7 @@ def planned_static_subrequest(question: str) -> str | None:
 def heuristic_tool_calls(request: QueryRequest) -> list[dict[str, Any]]:
     """Offline tool choice for tests without a provider chat loop."""
 
-    question = request.question
+    question = conversation_planning_question(request)
     calls: list[dict[str, Any]] = []
     location = request.location or coarse_location_from_question(question)
     place = location.label if location is not None else None

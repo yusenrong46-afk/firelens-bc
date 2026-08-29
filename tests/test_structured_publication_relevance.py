@@ -173,6 +173,45 @@ def test_question_relevance_omits_unrelated_packet_claim() -> None:
     assert response.validation is not None and response.validation.accepted
 
 
+def test_sprinkler_action_does_not_publish_adjacent_gas_instruction() -> None:
+    packet = _bound_packet(
+        "Should I turn on my sprinkler system while evacuating?",
+        "TC-SPRINKLER-001",
+        "TC-GAS-001",
+    )
+
+    response = compile_high_risk_answer(
+        packet.question,
+        packet,
+        trace_id="sprinkler-only",
+    )
+
+    assert _typed_ids(response) == {"TC-SPRINKLER-001"}
+    assert "natural gas" not in (response.answer or "").casefold()
+    assert response.validation is not None and response.validation.accepted
+
+
+def test_order_definition_does_not_publish_other_evacuation_stages() -> None:
+    packet = _bound_packet(
+        "What does an evacuation order mean?",
+        "TC-EVAC-ORDER-001",
+        "TC-EVAC-ALERT-001",
+        "TC-EVAC-RESCIND-001",
+    )
+
+    response = compile_high_risk_answer(
+        packet.question,
+        packet,
+        trace_id="order-stage-only",
+    )
+
+    assert _typed_ids(response) == {"TC-EVAC-ORDER-001"}
+    answer = (response.answer or "").casefold()
+    assert "short notice" not in answer
+    assert "return home" not in answer
+    assert response.validation is not None and response.validation.accepted
+
+
 def test_supported_aspects_preserve_real_multi_aspect_coverage() -> None:
     packet = _bound_packet(
         "Explain both topics.",
@@ -498,10 +537,9 @@ def test_service_ask_does_not_ground_one_sided_alert_order_comparison(tmp_path: 
         assert response.response_mode != ResponseMode.GROUNDED
         assert "TC-EVAC-ALERT-001" not in _typed_ids(response)
         if response.response_mode == ResponseMode.PARTIAL:
-            assert (
-                "not supported by selected evidence"
-                in " ".join(response.limitations).casefold()
-            )
+            limitations = " ".join(response.limitations).casefold()
+            assert "not supported by selected evidence" in limitations
+            assert "evacuation alert meaning" in limitations
 
     asyncio.run(run())
 
