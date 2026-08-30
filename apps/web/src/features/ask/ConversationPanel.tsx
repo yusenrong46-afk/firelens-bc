@@ -1,5 +1,5 @@
 import { ArrowSquareOut, Crosshair, UserCircle, WarningCircle } from "@phosphor-icons/react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { FeedbackControls } from "../feedback/FeedbackControls";
 import { resultDisplayName } from "../near-me/liveResultPresentation";
 import { AnswerBody } from "./AnswerBody";
@@ -17,7 +17,9 @@ import {
 import { getClaimSupportLabel, getClaimSupportState } from "./proofPresentation";
 import { QuestionComposer } from "./QuestionComposer";
 import { ResponseModeBadge } from "./responseModeBadge";
+import { announcementForState, type ConversationState } from "./conversationAnnouncements";
 import type { FireLensSession } from "./useFireLensSession";
+import "./conversationAccessibility.css";
 
 export function ConversationPanel({ session, analytical = false, analysisSlot, onOpenEvidence, onOpenMap,
   contextOpen = false, contextSurface = "evidence" }: {
@@ -72,23 +74,31 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
   const selectedRecord = [...mapResults, ...(response?.live_results ?? [])].find(
     (item) => item.result_id === selectedLiveResultId,
   );
+  const previousState = useRef<ConversationState>(view.kind);
+  const [announcement, setAnnouncement] = useState("");
+
+  useEffect(() => {
+    const priorState = previousState.current;
+    if (priorState === view.kind) return;
+    previousState.current = view.kind;
+    setAnnouncement(announcementForState(view.kind, priorState));
+  }, [view.kind]);
+
   return (
     <section className={`conversation-panel ${analytical ? "conversation-panel--analytical" : ""}`} id="conversation" aria-label="Question and answer" tabIndex={-1}>
       {view.kind !== "idle" && (
         <ConversationToolbar priorTurnCount={earlierTurns.length} onClear={clearHistory} />
       )}
       <div className="conversation-scroll">
-        {view.kind !== "idle" && (
-          <span
-            className="response-announcement"
-            data-surface-visually-hidden="true"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-          >
-            {view.kind === "loading" ? "FireLens is working." : "FireLens response ready."}
-          </span>
-        )}
+        <span
+          className="response-announcement"
+          data-surface-visually-hidden="true"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {announcement}
+        </span>
         {earlierTurns.length > 0 && (
           <div className="history-group" aria-label="Earlier conversation">
             <span className="panel-label">Earlier conversation</span>
@@ -205,7 +215,7 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
             </div>
           </form>
         )}
-        {locationMessage && <p className="location-message" role="status">{locationMessage}</p>}
+        {locationMessage && <p className="location-message" role="status" aria-live="polite" aria-atomic="true">{locationMessage}</p>}
 
         {view.kind === "answer" && mode !== "background" && claims.length > 0 && (
           <div className="claim-group">
@@ -262,11 +272,13 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
           </div>
         )}
 
-        <SuggestedQuestions
-          disabled={view.kind === "loading"}
-          onSelect={(question) => void submitQuestion(question)}
-          suggestions={suggestions}
-        />
+        {view.kind !== "idle" && (
+          <SuggestedQuestions
+            disabled={view.kind === "loading"}
+            onSelect={(question) => void submitQuestion(question)}
+            suggestions={suggestions}
+          />
+        )}
       </div>
 
       {view.kind !== "idle" && (

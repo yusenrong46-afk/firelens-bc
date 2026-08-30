@@ -5,22 +5,17 @@ const DEFAULT_PLACE = "Kelowna, BC";
 const INTENTS = [
   {
     id: "fires",
-    label: "Fires near a place",
+    label: "Fires near this place?",
     question: (place: string) => `What official fires are near ${place}?`,
   },
   {
-    id: "evacuations",
-    label: "Evacuations",
-    question: (place: string) => `Are there fire-related evacuation orders or alerts near ${place}?`,
-  },
-  {
-    id: "map",
-    label: "B.C. map",
-    question: () => "Show current official wildfires across British Columbia",
+    id: "distribution",
+    label: "Wildfire distribution?",
+    question: () => "Show current wildfire distribution by fire centre across B.C.",
   },
   {
     id: "preparedness",
-    label: "Preparedness",
+    label: "What to pack?",
     question: () => "What belongs in a wildfire grab-and-go bag?",
   },
 ] as const;
@@ -46,7 +41,7 @@ export function AskStartPanel({
         general background.
       </p>
       <label className="ask-start-panel__place">
-        <span>Place</span>
+        <span>Place (optional)</span>
         <input
           aria-label="BC community for a nearby lookup"
           value={locationLabel}
@@ -58,7 +53,7 @@ export function AskStartPanel({
       <button type="button" className="ask-start-panel__approx" onClick={onUseApproximateLocation}>
         <Crosshair size={16} aria-hidden="true" /> Use approximate location — not stored
       </button>
-      <div className="ask-start-panel__intents" aria-label="Start with an intent">
+      <div className="ask-start-panel__intents" role="group" aria-label="Start with an intent">
         {INTENTS.map((intent) => (
           <button
             type="button"

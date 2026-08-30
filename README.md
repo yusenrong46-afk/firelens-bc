@@ -10,12 +10,13 @@ geography and source layers a request may use.
 
 ![FireLens BC answer-first workspace for asking about a fire, a B.C. place, or preparedness](docs/assets/firelens-v1-6-overview.jpg)
 
-_Deterministic local demonstration data, not a current wildfire or evacuation report. Screenshot captured from this V1.6 candidate (`docs/assets/firelens-v1-6-overview.jpg`), not from the public site._
+_Deterministic local demonstration data, not a current wildfire or evacuation report. Screenshot captured from deterministic local Playwright fixtures for this V1.6.2 candidate (`docs/assets/firelens-v1-6-overview.jpg`), not from the public site._
 
-> **Project status:** this is an uncommitted local V1.6.2 engineering candidate.
-> Its package, runtime, and OpenAPI version is `1.6.2`, but it has
-> not been exact-Git qualified, deployed, or release-qualified. The existing
-> [public site](https://firelens-bc.vercel.app) must not be assumed to match this checkout.
+> **Project status:** this is a local V1.6.2 engineering candidate from the
+> current working tree. Its package, runtime, and OpenAPI version is `1.6.2`,
+> but it has not been exact-Git qualified, deployed, or release-qualified. The
+> existing [public site](https://firelens-bc.vercel.app) must not be assumed to
+> match this checkout.
 
 ## What FireLens does
 
@@ -102,10 +103,11 @@ The governing principle is simple:
   because they share a larger source chunk.
 - Explicit `structured_reviewed`, `official_quote_only`, live, background, and
   unknown presentation throughout the API-derived UI.
-- An **adaptive, answer-first workspace**: province-wide and multi-record live
-  questions open deterministic Summary/Map/Records analysis; named-fire and
-  single-record questions keep the answer primary with map context on demand;
-  preparedness questions remain conversational with exact quotations.
+- An **adaptive, answer-first workspace**: multi-record live responses open
+  deterministic Summary/Map/Records analysis; named-fire, nearby, or single-
+  record responses keep the answer primary and offer map context when spatial
+  evidence or map intent makes it useful; preparedness questions remain
+  conversational with exact quotations.
 - Human-readable service failures that state when no wildfire status was shown
   or inferred, preserve retry semantics, and link directly to the official map.
 - Empty-map behavior that states uncertainty and never turns “no returned records”
@@ -138,17 +140,22 @@ deployed, independently certified, or appropriate for emergency decision-making.
 
 ## Adaptive views
 
-The workspace chooses a presentation from the request, not a single chat layout
-for every answer.
+The workspace chooses one presentation shell from the routed response, rather
+than forcing every answer into the same chat layout.
 
-| Request | What you see |
+| Response | What you see |
 | --- | --- |
-| Multi-record or province-wide live analysis | Summary / Map / Records analysis workspace |
-| Named fire or a single official record | Answer first; map and record list only on demand |
-| Reviewed preparedness guidance | Chat with the exact source quotation and Proof Cards |
-| Ordinary conversation or low-risk related question | Chat-first general background, labelled separately from FireLens evidence |
-| Mixed live + guidance | Separate authority-labelled sections, without duplicating the same claim |
-| Missing, stale, partial, or empty official layers | Visible limitations. Never an all-clear |
+| General knowledge or reviewed guidance | Focused Chat view with optional quote/source disclosure; no map |
+| Multi-record live response | Analysis workspace with Summary / Map / Records; Summary opens first |
+| Named incident, nearby, or closest-fire live response | Spatial answer/record rail with map context when useful |
+| Mixed live and guidance | Chat summary plus only the necessary analysis or map context, with authority labels |
+| Unknown, error, or clarification | Compact Chat state with one primary next action |
+
+Live or mixed responses offer map context only when a location, renderable
+geometry, or map wording supports it. A literal map request can open the map
+first; otherwise evidence remains the default analytical surface. Missing,
+stale, partial, or empty official layers stay visible and never imply an
+all-clear.
 
 The typed intent automaton owns request shape (clauses, time, layers, national
 scope, guidance, and place *candidates*) before `AgentQueryPlan` authorizes any

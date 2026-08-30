@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useId, useRef, useState, type KeyboardEvent } from "react";
 import type { AnalysisCount } from "./liveAnalysis";
 
 const STATUS_COLOURS = ["#c96950", "#d9a13b", "#315f4a", "#c7cbc9", "#82968c"];
@@ -27,21 +28,11 @@ function percentage(value: number): string {
   return `${Math.round(value * 100)}%`;
 }
 
-function ChartSourceLine({ ranked = false }: { ranked?: boolean }) {
-  return (
-    <p className="analysis-chart__source">
-      Derived from official live records
-      {ranked && <span>Ranked</span>}
-    </p>
-  );
-}
-
 export function FireCentreChart({ rows }: { rows: AnalysisCount[] }) {
   const data = rows.map((row) => ({ ...row, shortLabel: conciseFireCentre(row.label) }));
   return (
-    <section className="analysis-chart-card" aria-label="Active wildfires by fire centre">
-      <h3>Active wildfires by fire centre</h3>
-      <ChartSourceLine ranked />
+    <section className="analysis-chart-card" aria-label="Incident records by fire centre">
+      <h3>Incident records by fire centre</h3>
       {data.length === 0 ? (
         <p className="analysis-empty">Fire-centre fields were not available in these records.</p>
       ) : (
@@ -51,7 +42,7 @@ export function FireCentreChart({ rows }: { rows: AnalysisCount[] }) {
               <CartesianGrid horizontal={false} stroke="#e2e5df" />
               <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cfd5cf" }} />
               <YAxis dataKey="shortLabel" type="category" width={104} tickLine={false} axisLine={false} />
-              <Tooltip formatter={(value) => [`${String(value)} active wildfires`, "Count"]} />
+              <Tooltip formatter={(value) => [`${String(value)} incident records`, "Count"]} />
               <Bar dataKey="count" fill="#c96950" radius={[0, 3, 3, 0]} isAnimationActive={false}>
                 <LabelList dataKey="count" position="right" fill="#1a2b26" />
               </Bar>
@@ -59,15 +50,15 @@ export function FireCentreChart({ rows }: { rows: AnalysisCount[] }) {
           </ResponsiveContainer>
         </div>
       )}
+      {data.length > 0 && <ul className="analysis-chart-data" aria-label="Fire-centre record totals">{data.map((row) => <li key={row.label}><span>{row.shortLabel}</span><strong>{row.count}</strong><small>{percentage(row.share)}</small></li>)}</ul>}
     </section>
   );
 }
 
 export function StatusChart({ rows, total }: { rows: AnalysisCount[]; total: number }) {
   return (
-    <section className="analysis-chart-card" aria-label="Active wildfires by status">
-      <h3>Active wildfires by status</h3>
-      <ChartSourceLine />
+    <section className="analysis-chart-card" aria-label="Incident records by status">
+      <h3>Incident records by status</h3>
       {rows.length === 0 ? (
         <p className="analysis-empty">Status fields were not available in these records.</p>
       ) : (
@@ -75,7 +66,7 @@ export function StatusChart({ rows, total }: { rows: AnalysisCount[]; total: num
           <div className="analysis-chart analysis-chart--donut" role="img" aria-label={rows.map((row) => `${row.label}: ${row.count}, ${percentage(row.share)}`).join(", ")}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Tooltip formatter={(value) => [`${String(value)} active wildfires`, "Count"]} />
+                <Tooltip formatter={(value) => [`${String(value)} incident records`, "Count"]} />
                 <Pie
                   data={rows}
                   dataKey="count"
@@ -95,17 +86,17 @@ export function StatusChart({ rows, total }: { rows: AnalysisCount[]; total: num
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="analysis-status-legend" aria-label="Wildfire status totals">
+            <div className="analysis-status-legend" aria-label="Incident status totals">
             <ul>
               {rows.map((row, index) => (
                 <li key={row.label}>
                   <span className="analysis-status-legend__swatch" style={{ backgroundColor: statusColour(index) }} aria-hidden="true" />
                   <span>{row.label}</span>
-                  <strong>{row.count}</strong>
+                  <strong>{row.count} <small>{percentage(row.share)}</small></strong>
                 </li>
               ))}
             </ul>
-            <p><span>Total active wildfires</span><strong>{total}</strong></p>
+            <p><span>Total incident records</span><strong>{total}</strong></p>
           </div>
         </div>
       )}
@@ -118,10 +109,90 @@ export function AnalysisCharts({ byFireCentre, byStatus, total }: {
   byStatus: AnalysisCount[];
   total: number;
 }) {
+  const [view, setView] = useState<"charts" | "table">("charts");
+  const chartsId = useId();
+  const tableId = useId();
+  const chartTab = useRef<HTMLButtonElement>(null);
+  const tableTab = useRef<HTMLButtonElement>(null);
+  const setDisplay = (next: "charts" | "table") => {
+    setView(next);
+    requestAnimationFrame(() => (next === "charts" ? chartTab.current : tableTab.current)?.focus());
+  };
+  const onDisplayKey = (event: KeyboardEvent<HTMLButtonElement>, current: "charts" | "table") => {
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft" || event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      const next = event.key === "Home"
+        ? "charts"
+        : event.key === "End"
+          ? "table"
+          : event.key === "ArrowRight"
+            ? (current === "charts" ? "table" : "charts")
+            : (current === "table" ? "charts" : "table");
+      setDisplay(next);
+    }
+  };
   return (
-    <div className="analysis-grid">
-      <FireCentreChart rows={byFireCentre} />
-      <StatusChart rows={byStatus} total={total} />
+    <div>
+      <div className="analysis-chart-switch" role="tablist" aria-label="Analysis display">
+        <button
+          type="button"
+          role="tab"
+          id={`${chartsId}-tab`}
+          aria-controls={chartsId}
+          aria-selected={view === "charts"}
+          tabIndex={view === "charts" ? 0 : -1}
+          ref={chartTab}
+          onKeyDown={(event) => onDisplayKey(event, "charts")}
+          onClick={() => setDisplay("charts")}
+        >Charts</button>
+        <button
+          type="button"
+          role="tab"
+          id={`${tableId}-tab`}
+          aria-controls={tableId}
+          aria-selected={view === "table"}
+          tabIndex={view === "table" ? 0 : -1}
+          ref={tableTab}
+          onKeyDown={(event) => onDisplayKey(event, "table")}
+          onClick={() => setDisplay("table")}
+        >Table</button>
+      </div>
+      <div
+        id={chartsId}
+        role="tabpanel"
+        aria-labelledby={`${chartsId}-tab`}
+        className="analysis-grid"
+        hidden={view !== "charts"}
+      >
+        {view === "charts" && (
+          <>
+          <FireCentreChart rows={byFireCentre} />
+          <StatusChart rows={byStatus} total={total} />
+          </>
+        )}
+      </div>
+      <div
+        id={tableId}
+        role="tabpanel"
+        aria-labelledby={`${tableId}-tab`}
+        className="analysis-table-wrap"
+        hidden={view !== "table"}
+      >
+        {view === "table" && (
+          <table>
+            <caption>Incident records grouped by field</caption>
+            <thead><tr><th scope="col">Group</th><th scope="col">Category</th><th scope="col">Records</th><th scope="col">Share</th></tr></thead>
+            <tbody>
+              {byFireCentre.map((row) => (
+                <tr key={`centre-${row.label}`}><th scope="row">Fire centre</th><td>{row.label}</td><td>{row.count}</td><td>{percentage(row.share)}</td></tr>
+              ))}
+              {byStatus.map((row) => (
+                <tr key={`status-${row.label}`}><th scope="row">Status</th><td>{row.label}</td><td>{row.count}</td><td>{percentage(row.share)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }

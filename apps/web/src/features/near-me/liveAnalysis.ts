@@ -14,6 +14,8 @@ export type LiveAnalysis = {
   highestFireCentre?: AnalysisCount | undefined;
 };
 
+export type AnalysisSort = "default" | "newest" | "largest" | "nearest";
+
 const NOT_REPORTED = "Not reported";
 
 function countBy(
@@ -49,6 +51,40 @@ export function buildLiveAnalysis(results: LiveResult[]): LiveAnalysis {
     highestFireCentres,
     highestFireCentre: highestFireCentres.length === 1 ? highestFireCentres[0] : undefined,
   };
+}
+
+/**
+ * A sort is offered only when it would be meaningful for nearly every record
+ * in the current snapshot. Missing values are never silently treated as zero.
+ */
+export function availableAnalysisSorts(results: LiveResult[]): AnalysisSort[] {
+  const incidents = results.filter((result) => result.kind === "incident");
+  const sorts: AnalysisSort[] = ["default"];
+  if (incidents.length === 0) return sorts;
+  const hasAtLeast = (valueFor: (result: LiveResult) => number | null | undefined) =>
+    incidents.filter((result) => valueFor(result) != null && Number.isFinite(valueFor(result))).length / incidents.length >= 0.8;
+  if (incidents.filter((result) => Number.isFinite(Date.parse(result.source_updated_at))).length / incidents.length >= 0.8) {
+    sorts.push("newest");
+  }
+  if (hasAtLeast((result) => result.size_hectares)) sorts.push("largest");
+  if (hasAtLeast((result) => result.distance_km)) sorts.push("nearest");
+  return sorts;
+}
+
+export function sortAnalysisResults(results: LiveResult[], sort: AnalysisSort): LiveResult[] {
+  if (sort === "default") return results;
+  const ordered = [...results];
+  const timestamp = (result: LiveResult) => {
+    const value = Date.parse(result.source_updated_at);
+    return Number.isFinite(value) ? value : Number.NEGATIVE_INFINITY;
+  };
+  if (sort === "newest") {
+    return ordered.sort((left, right) => timestamp(right) - timestamp(left) || left.result_id.localeCompare(right.result_id));
+  }
+  if (sort === "largest") {
+    return ordered.sort((left, right) => (right.size_hectares ?? Number.NEGATIVE_INFINITY) - (left.size_hectares ?? Number.NEGATIVE_INFINITY) || left.result_id.localeCompare(right.result_id));
+  }
+  return ordered.sort((left, right) => (left.distance_km ?? Number.POSITIVE_INFINITY) - (right.distance_km ?? Number.POSITIVE_INFINITY) || left.result_id.localeCompare(right.result_id));
 }
 
 function joinLabels(labels: string[]): string {

@@ -1,0 +1,28 @@
+/* Accessibility rules that apply across the response and evidence surfaces.
+   Keep these separate from visual layout so keyboard and motion behaviour does
+   not get lost when the Civic Intelligence Desk presentation evolves. */
+
+.conversation-panel :is(button, a, input, summary):focus-visible,
+.analysis-workspace :is(button, a, summary):focus-visible,
+.leaflet-container :is(a, button, [tabindex]):focus-visible {
+  outline: 3px solid var(--ember-deep);
+  outline-offset: 3px;
+}
+
+.analysis-workspace summary:focus-visible,
+.leaflet-control-zoom a:focus-visible,
+.leaflet-control-attribution a:focus-visible {
+  box-shadow: 0 0 0 3px var(--paper), 0 0 0 6px var(--ember-deep);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversation-panel *,
+  .analysis-workspace *,
+  .leaflet-container,
+  .leaflet-container * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

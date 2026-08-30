@@ -20,6 +20,7 @@ import {
   questionExplicitlyRequestsMap,
   shouldOfferContextMap,
   shouldUseAnalyticalWorkspace,
+  workspaceLayout,
 } from "./workspacePresentation";
 import "./styles.css";
 
@@ -55,6 +56,7 @@ export function App() {
     || (!analyticalWorkspace && contextOpen && mapAvailable && contextSurface === "map");
   const evidenceOpen = contextOpen && contextSurface === "evidence";
   const showContext = showMap || evidenceOpen;
+  const layout = workspaceLayout({ analytical: analyticalWorkspace, spatial: showMap });
 
   useEffect(() => {
     if (session.view.kind === "idle") {
@@ -181,7 +183,7 @@ export function App() {
         <span>Not an emergency-warning service. Official live records, reviewed guidance, and general background stay visibly separate.</span>
       </div>
       <HowFireLensWorks open={projectOpen} onClose={closeProject} />
-      <main className={`workspace ${showContext ? "workspace--split" : "workspace--solo"} ${showMap ? "workspace--map" : "workspace--evidence"}`}>
+      <main className={`workspace workspace--${layout} ${showContext ? "workspace--split" : "workspace--solo"} ${showMap ? "workspace--map" : "workspace--evidence"}`}>
         <ConversationPanel
           session={session}
           analytical={analyticalWorkspace}

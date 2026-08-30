@@ -6,9 +6,21 @@ const OFFICIAL_BCWS_MAP_URL = "https://wildfiresituation.nrs.gov.bc.ca/map";
 
 export function revealAssistantMessage(node: HTMLElement | null, active: boolean) {
   if (!node || !active) return;
-  node.scrollIntoView?.({ block: "start", inline: "nearest" });
   const scroller = node.closest(".conversation-scroll");
   if (!(scroller instanceof HTMLElement)) return;
+
+  // The analytical workspace is a two-column grid inside this scroller. The
+  // normal chat behavior intentionally follows the newest assistant message,
+  // but doing that here moves both the answer rail and the analysis canvas so
+  // their question/KPI content starts below the first viewport. A new
+  // analytical answer already has its own Summary default, so keep its shared
+  // scroller at the top and let ordinary conversations retain auto-follow.
+  if (node.closest(".conversation-panel--analytical")) {
+    scroller.scrollTop = 0;
+    return;
+  }
+
+  node.scrollIntoView?.({ block: "start", inline: "nearest" });
   scroller.scrollTop += node.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
 }
 

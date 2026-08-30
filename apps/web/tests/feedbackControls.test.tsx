@@ -15,8 +15,8 @@ describe("FeedbackControls", () => {
     const user = userEvent.setup();
     render(<FeedbackControls traceId="trace-feedback" />);
 
-    expect(screen.getByText(/not a written message/i)).toBeInTheDocument();
-    const issueButton = screen.getByRole("button", { name: "Choose an issue" });
+    const issueButton = screen.getByRole("button", { name: "Report" });
+    expect(screen.getByText(/does not change the answer/i)).toBeInTheDocument();
     expect(issueButton).toHaveAttribute("aria-expanded", "false");
     await user.click(issueButton);
     expect(issueButton).toHaveAttribute("aria-expanded", "true");
@@ -40,6 +40,6 @@ describe("FeedbackControls", () => {
 
     expect(await screen.findByRole("button", { name: "Helpful" })).toBeInTheDocument();
     expect(screen.queryByText("Feedback received")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Choose an issue" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Report" })).toHaveAttribute("aria-expanded", "false");
   });
 });

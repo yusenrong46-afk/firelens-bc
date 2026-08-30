@@ -6,6 +6,7 @@ import {
   questionRequestsMap,
   shouldOfferContextMap,
   shouldUseAnalyticalWorkspace,
+  workspaceLayout,
 } from "../src/app/workspacePresentation";
 
 const spatialResponse = {
@@ -176,5 +177,11 @@ describe("task-first workspace presentation", () => {
       mode: "grounded",
       question: "What belongs in a grab-and-go bag?",
     })).toBe("evidence");
+  });
+
+  it("maps routed responses to one of the three presentation shells", () => {
+    expect(workspaceLayout({ analytical: false, spatial: false })).toBe("chat");
+    expect(workspaceLayout({ analytical: true, spatial: true })).toBe("analysis");
+    expect(workspaceLayout({ analytical: false, spatial: true })).toBe("spatial");
   });
 });

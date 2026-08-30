@@ -110,9 +110,9 @@ test("uses the real API response to render an Okanagan distribution analysis", a
   const analysis = page.getByRole("region", { name: "Analysis view" });
   await expect(analysis).toBeVisible();
   await expect(analysis.getByRole("heading", { name: "Analysis view" })).toBeVisible();
-  await expect(analysis.getByLabel("Wildfires by status")).toContainText("Out of Control");
-  await expect(analysis.getByLabel("Wildfires by status")).toContainText("Being Held");
-  await expect(analysis.getByLabel("Wildfires by status")).toContainText("Under Control");
+  await expect(analysis.getByLabel("Incident records by status")).toContainText("Out of Control");
+  await expect(analysis.getByLabel("Incident records by status")).toContainText("Being Held");
+  await expect(analysis.getByLabel("Incident records by status")).toContainText("Under Control");
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toHaveCount(0);
   expect(attemptedExternal).toEqual([]);
 });
@@ -175,7 +175,7 @@ test("names an unavailable evacuation layer while preserving an available incide
   const conversation = page.getByLabel("Question and answer");
   const analysis = page.getByRole("region", { name: "Analysis view" });
   await expect(analysis).toBeVisible();
-  await analysis.getByRole("button", { name: "Records", exact: true }).click();
+  await analysis.getByRole("tab", { name: "Records", exact: true }).click();
   await expect(analysis.getByText("Mountain Fire", { exact: true })).toBeVisible();
   await expect(page.getByText(/Some official layers are unavailable: evacuation/)).toBeVisible();
   await expect(conversation).toContainText(/not an all-clear/i);
@@ -394,7 +394,7 @@ test("binds an explicit map selection and asks for selection when a singular fol
   expect(initial.response.selected_live_result_id ?? null).toBeNull();
 
   const analysis = page.getByRole("region", { name: "Analysis view" });
-  await analysis.getByRole("button", { name: "Map", exact: true }).click();
+  await analysis.getByRole("tab", { name: "Map", exact: true }).click();
   await analysis.getByRole("button", { name: /Mountain Fire/ }).click();
   const selected = await askWithExchange(page, "What is the current status of this fire?");
   expect(selected.request.context?.selected_live_result_id).toBe("incident:mountain");

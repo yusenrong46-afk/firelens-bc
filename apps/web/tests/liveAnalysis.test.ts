@@ -2,13 +2,17 @@ import { describe, expect, it } from "vitest";
 import type { LiveResult } from "../src/shared/api/api";
 import {
   analyticalAnswerSummary,
+  availableAnalysisSorts,
   buildLiveAnalysis,
+  sortAnalysisResults,
 } from "../src/features/near-me/liveAnalysis";
 
 function incident(overrides: {
   result_id?: string;
   status?: string;
   fire_centre?: string | null;
+  size_hectares?: number | null;
+  distance_km?: number | null;
 } = {}): LiveResult {
   return {
     result_id: "incident:base",
@@ -22,6 +26,8 @@ function incident(overrides: {
     status: "Being Held",
     fire_centre: "Kamloops Fire Centre",
     geometry: { type: "Point", coordinates: [-119.5, 49.9] },
+    size_hectares: 10,
+    distance_km: 5,
     ...overrides,
   };
 }
@@ -123,5 +129,26 @@ describe("live analytical summaries", () => {
       + "Kamloops Fire Centre has the highest fire-centre count (2). "
       + "Out of Control is the most common reported status (2).",
     );
+  });
+});
+
+describe("snapshot-safe analysis controls", () => {
+  it("offers numeric sorts only when at least 80 percent of incident records have values", () => {
+    const complete = Array.from({ length: 5 }, (_, index) => incident({ result_id: `incident:${index}`, size_hectares: index, distance_km: index }));
+    expect(availableAnalysisSorts(complete)).toEqual(["default", "newest", "largest", "nearest"]);
+    const incomplete = complete.map((item, index) => index === 0 ? { ...item, size_hectares: null, distance_km: null } : item);
+    expect(availableAnalysisSorts(incomplete)).toEqual(["default", "newest", "largest", "nearest"]);
+    const belowFloor = incomplete.map((item, index) => index < 2 ? { ...item, size_hectares: null, distance_km: null } : item);
+    expect(availableAnalysisSorts(belowFloor)).toEqual(["default", "newest"]);
+  });
+
+  it("sorts a snapshot deterministically and keeps missing numeric values last", () => {
+    const results = [
+      incident({ result_id: "incident:b", size_hectares: null, distance_km: null }),
+      incident({ result_id: "incident:a", size_hectares: 4, distance_km: 2 }),
+      incident({ result_id: "incident:c", size_hectares: 8, distance_km: 9 }),
+    ];
+    expect(sortAnalysisResults(results, "largest").map((item) => item.result_id)).toEqual(["incident:c", "incident:a", "incident:b"]);
+    expect(sortAnalysisResults(results, "nearest").map((item) => item.result_id)).toEqual(["incident:a", "incident:c", "incident:b"]);
   });
 });

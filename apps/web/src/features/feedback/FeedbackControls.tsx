@@ -1,4 +1,4 @@
-import { Check, ThumbsUp } from "@phosphor-icons/react";
+import { Check, Flag, ThumbsUp } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 
 import { FeedbackCategory, submitFeedback } from "../../shared/api/api";
@@ -16,6 +16,7 @@ export function FeedbackControls({ traceId }: { traceId: string }) {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [showIssues, setShowIssues] = useState(false);
   const issueListId = `feedback-categories-${traceId}`;
+  const feedbackHelpId = `feedback-help-${traceId}`;
 
   useEffect(() => {
     setStatus("idle");
@@ -44,8 +45,15 @@ export function FeedbackControls({ traceId }: { traceId: string }) {
 
   return (
     <div className="feedback-controls" aria-label="Response feedback" aria-busy={status === "sending"}>
-      <span>Was this useful?</span>
-      <button type="button" disabled={status === "sending"} onClick={() => void send("helpful")}>
+      <span id={feedbackHelpId} className="response-announcement">
+        Send anonymous feedback about this answer. Feedback does not change the answer.
+      </span>
+      <button
+        type="button"
+        disabled={status === "sending"}
+        onClick={() => void send("helpful")}
+        aria-describedby={feedbackHelpId}
+      >
         <ThumbsUp size={15} /> Helpful
       </button>
       <button
@@ -54,11 +62,12 @@ export function FeedbackControls({ traceId }: { traceId: string }) {
         onClick={() => setShowIssues(!showIssues)}
         aria-expanded={showIssues}
         aria-controls={issueListId}
+        aria-describedby={feedbackHelpId}
       >
-        Choose an issue
+        <Flag size={15} /> Report
       </button>
       {showIssues && (
-        <div className="feedback-issues" id={issueListId} aria-label="Choose feedback category">
+        <div className="feedback-issues" id={issueListId} role="group" aria-label="Report reason">
           {ISSUE_CATEGORIES.map((category) => (
             <button key={category.value} type="button" disabled={status === "sending"} onClick={() => void send(category.value)}>
               {category.label}
@@ -66,9 +75,6 @@ export function FeedbackControls({ traceId }: { traceId: string }) {
           ))}
         </div>
       )}
-      <p className="feedback-disclosure">
-        Sends only the selected category and response ID—not a written message.
-      </p>
       {status === "sending" && <p className="feedback-status" role="status">Sending feedback…</p>}
       {status === "error" && <p className="feedback-error" role="alert">Feedback could not be sent. Try again.</p>}
     </div>

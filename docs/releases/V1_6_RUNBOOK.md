@@ -19,7 +19,7 @@ Round 1, Round 2, Round 3, and structured-publication reports remain snapshots
 of their recorded identities.
 
 The tracked Python package, web package, runtime default, Docker configuration,
-and OpenAPI are `1.6.2`. This is an uncommitted local engineering candidate,
+and OpenAPI are `1.6.2`. This is a local V1.6.2 engineering candidate,
 not a qualified release. Candidate evidence may bind `1.6.2` only after a clean
 commit exists; a workflow label may not relabel the runnable artifact.
 

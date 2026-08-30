@@ -36,7 +36,7 @@ export function QuestionComposer({
       {continuationPending ? (
         <p><Info size={16} /> Use the community field above to continue this task. Type here only to start a new question.</p>
       ) : (
-        <p><Info size={16} /> Sources and status boundaries appear with each answer.</p>
+        <p className={idle ? "response-announcement" : undefined}><Info size={16} /> Sources and status boundaries appear with each answer.</p>
       )}
     </form>
   );

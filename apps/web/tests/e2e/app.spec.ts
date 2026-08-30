@@ -297,7 +297,7 @@ test("opens the employer explainer in flow without covering FireLens", async ({ 
   await trigger.click();
 
   const explainer = page.getByRole("region", {
-    name: "How FireLens earns the right to publish",
+    name: "How FireLens works",
   });
   await expect(explainer).toBeVisible();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
@@ -439,8 +439,8 @@ test("uses neutral live-summary copy and exposes category-only feedback", async 
   const conversation = page.getByLabel("Question and answer");
   await expect(conversation.getByText("Official records returned", { exact: true })).toBeVisible();
   await expect(conversation.getByText(/BC Wildfire Service · source updated 2026-07-28T11:55:00Z/)).toBeVisible();
-  await expect(conversation.getByText(/not a written message/i)).toBeVisible();
-  const issueButton = conversation.getByRole("button", { name: "Choose an issue" });
+  await expect(conversation.getByText(/does not change the answer/i)).toHaveCount(1);
+  const issueButton = conversation.getByRole("button", { name: "Report" });
   await expect(issueButton).toHaveAttribute("aria-expanded", "false");
   await issueButton.click();
   await expect(issueButton).toHaveAttribute("aria-expanded", "true");
@@ -603,10 +603,10 @@ test("shows summary map and records for analytical live questions", async ({ pag
   await page.getByLabel("Send question").click();
   await expect(page.getByRole("region", { name: "Analysis view" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Analysis view" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Active wildfires by fire centre" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Summary", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("button", { name: "Map", exact: true })).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByRole("button", { name: "Records", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("heading", { name: "Incident records by fire centre" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Summary", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "Map", exact: true })).toHaveAttribute("aria-selected", "false");
+  await expect(page.getByRole("tab", { name: "Records", exact: true })).toHaveAttribute("aria-selected", "false");
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "View official map context" })).toHaveCount(0);
   const overflowX = await page.evaluate(
@@ -615,28 +615,30 @@ test("shows summary map and records for analytical live questions", async ({ pag
   expect(overflowX).toBeLessThanOrEqual(0);
 });
 
-test("uses an explicit map request for the initial analytical surface and resets only for a new answer", async ({ page }) => {
+test("opens analytical answers on Summary and resets the selected surface for a new answer", async ({ page }) => {
   await page.goto("/");
   const question = page.getByLabel("Ask FireLens a question");
   await question.fill("Map wildfire distribution by status across B.C.");
   await page.getByLabel("Send question").click();
 
-  const map = page.getByRole("button", { name: "Map", exact: true });
-  const summary = page.getByRole("button", { name: "Summary", exact: true });
-  const records = page.getByRole("button", { name: "Records", exact: true });
-  await expect(map).toHaveAttribute("aria-pressed", "true");
-  await expect(summary).toHaveAttribute("aria-pressed", "false");
+  const map = page.getByRole("tab", { name: "Map", exact: true });
+  const summary = page.getByRole("tab", { name: "Summary", exact: true });
+  const records = page.getByRole("tab", { name: "Records", exact: true });
+  await expect(map).toHaveAttribute("aria-selected", "false");
+  await expect(summary).toHaveAttribute("aria-selected", "true");
 
+  await map.click();
+  await expect(map).toHaveAttribute("aria-selected", "true");
   await records.click();
-  await expect(records).toHaveAttribute("aria-pressed", "true");
+  await expect(records).toHaveAttribute("aria-selected", "true");
   await page.getByText("Technical evidence", { exact: true }).click();
   await page.getByRole("button", { name: "Inspect answer evidence" }).click();
-  await expect(records).toHaveAttribute("aria-pressed", "true");
+  await expect(records).toHaveAttribute("aria-selected", "true");
 
   await question.fill("Show a new distribution by status across B.C.");
   await page.getByLabel("Send question").click();
-  await expect(summary).toHaveAttribute("aria-pressed", "true");
-  await expect(map).toHaveAttribute("aria-pressed", "false");
+  await expect(summary).toHaveAttribute("aria-selected", "true");
+  await expect(map).toHaveAttribute("aria-selected", "false");
 });
 
 test("offers retry for a transient provider outage", async ({ page }) => {

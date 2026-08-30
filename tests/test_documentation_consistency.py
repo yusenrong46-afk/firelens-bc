@@ -28,7 +28,7 @@ def test_current_documentation_preserves_v1_6_rc2_authority_boundaries() -> None
     assert "## Adaptive views" in readme
     assert "## Quick start" in readme
     assert "## Verification and evidence" in readme
-    assert "uncommitted local V1.6.2 engineering candidate" in readme
+    assert "local V1.6.2 engineering candidate" in readme
     assert "not been exact-Git qualified, deployed, or release-qualified" in readme
     assert "general conversational assistant with specialized, evidence-bound B.C." in readme
     assert "Broad interpretation, narrow authority" in readme
