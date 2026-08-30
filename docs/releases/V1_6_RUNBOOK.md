@@ -117,13 +117,16 @@ $(PYTHON) scripts/deploy_vercel.py --dry-run
 `scripts/deploy_vercel.py` refuses a dirty tree, reads `git rev-parse HEAD`,
 and constructs pinned `npx vercel@58.1.0 deploy --yes` with both `--build-env`
 and `--env` for `FIRELENS_BUILD_COMMIT=<full SHA>` and
-`FIRELENS_RELEASE_VERSION=1.6.2`, so readiness cannot keep a stale project
-`1.6.0-rc.1` after that deploy. Preview is the default. `--prod` is explicit.
+`FIRELENS_RELEASE_VERSION=1.6.2`, plus
+`FIRELENS_BENCHMARK_ID=firelens_v1_6_2`, so readiness cannot keep a stale
+project `1.6.0-rc.1` after that deploy. Preview is the default. `--prod` is
+explicit.
 `make vercel-preview` and `make vercel-production` invoke the same wrapper.
 
 After an authorized deploy, `/api/v1/health/ready` must report that exact SHA
-and `release_version=1.6.2`. The candidate identity is `1.6.2`; the frozen
-retrieval benchmark prefix may remain `rc2`.
+and `release_version=1.6.2`. The generated candidate identity is
+`firelens-v1-6-2:<full SHA>`; historical callers that do not set
+`FIRELENS_BENCHMARK_ID` retain the legacy `rc2` default.
 
 If production still reports `1.6.0-rc.1` or another version, the Vercel project environment
 variable `FIRELENS_RELEASE_VERSION` is overriding the wrapper and must be

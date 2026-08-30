@@ -17,10 +17,12 @@ WORKDIR /app
 ARG RENDER_GIT_COMMIT
 ARG FIRELENS_BUILD_COMMIT
 ARG FIRELENS_RELEASE_VERSION=1.6.2
+ARG FIRELENS_BENCHMARK_ID=firelens_v1_6_2
 ARG FIRELENS_RERANK_MODEL=cohere/rerank-4-pro
 ARG FIRELENS_GENERATION_MODEL=openai/gpt-5.6-luna
 ENV FIRELENS_BUILD_COMMIT=$FIRELENS_BUILD_COMMIT \
     FIRELENS_RELEASE_VERSION=$FIRELENS_RELEASE_VERSION \
+    FIRELENS_BENCHMARK_ID=$FIRELENS_BENCHMARK_ID \
     FIRELENS_EMBEDDING_ZDR=required \
     FIRELENS_RERANKING_ZDR=optional \
     FIRELENS_GENERATION_ZDR=required \
@@ -45,6 +47,7 @@ COPY --from=frontend-build /build/apps/web/dist/client ./apps/web/dist/client
 RUN python scripts/write_runtime_candidate.py \
     --output config/runtime_candidate.v1.json \
     --commit "${FIRELENS_BUILD_COMMIT:-$RENDER_GIT_COMMIT}" \
+    --benchmark-id "$FIRELENS_BENCHMARK_ID" \
     --release-version "$FIRELENS_RELEASE_VERSION"
 
 RUN mkdir -p output/traces \
