@@ -172,7 +172,7 @@ export function AnalysisCharts({ byFireCentre, byStatus, total }: {
         )}
       </div>
       {view === "charts" && byFireCentre.length > 0 && (
-        <section className="analysis-ranked-table" aria-label="Current snapshot by fire centre">
+        <section className="analysis-ranked-table" aria-label="Current snapshot by fire centre" tabIndex={0}>
           <h3>Current snapshot by fire centre</h3>
           <table>
             <thead><tr><th scope="col">Rank</th><th scope="col">Fire centre</th><th scope="col">Incident records</th><th scope="col">Share</th></tr></thead>

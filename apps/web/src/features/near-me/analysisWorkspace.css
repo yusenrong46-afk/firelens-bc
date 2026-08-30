@@ -269,6 +269,12 @@
   .analysis-chart--donut { height: 200px; }
   .analysis-ranked-table table,
   .analysis-table-wrap table { table-layout: fixed; }
+  .analysis-ranked-table {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+  }
+  .analysis-ranked-table table { min-width: 500px; table-layout: auto; }
   .analysis-ranked-table th,
   .analysis-ranked-table td,
   .analysis-table-wrap th,

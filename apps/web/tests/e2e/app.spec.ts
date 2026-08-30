@@ -635,6 +635,16 @@ test("keeps analytical answers usable at narrow mobile viewports", async ({ page
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(tableOverflow, "horizontal overflow in analytical table at 320px").toBeLessThanOrEqual(0);
+  await page.getByRole("tab", { name: "Charts", exact: true }).click();
+  const ranked = page.getByRole("region", { name: "Current snapshot by fire centre" });
+  await expect(ranked).toHaveAttribute("tabindex", "0");
+  const rankedScroll = await ranked.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(rankedScroll.scrollWidth).toBeGreaterThan(rankedScroll.clientWidth);
+  await ranked.evaluate((element) => { element.scrollLeft = element.scrollWidth; });
+  expect(await ranked.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
 });
 
 test("opens analytical answers on Summary and resets the selected surface for a new answer", async ({ page }) => {
