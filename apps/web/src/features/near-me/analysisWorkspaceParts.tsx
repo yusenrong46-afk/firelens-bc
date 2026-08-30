@@ -50,7 +50,7 @@ export function AnalysisFilters({
   const sorts = availableAnalysisSorts(results);
   if (results.length <= 12) return null;
   return (
-    <div className="analysis-filters" aria-label="Filter incident records">
+    <div className="analysis-filters" role="group" aria-label="Filter incident records">
       <label>Fire centre<select value={fireCentre} onChange={(event) => onFireCentre(event.target.value)}><option value="">All fire centres</option>{centres.map((value) => <option key={value} value={value}>{value.replace(/\s+Fire\s+Centre$/i, "")}</option>)}</select></label>
       <label>Status<select value={status} onChange={(event) => onStatus(event.target.value)}><option value="">All statuses</option>{statuses.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
       <label>Sort<select value={sort} onChange={(event) => onSort(event.target.value as AnalysisSort)}><option value="default">Original order</option>{sorts.includes("newest") && <option value="newest">Newest source update</option>}{sorts.includes("largest") && <option value="largest">Largest first</option>}{sorts.includes("nearest") && <option value="nearest">Nearest first</option>}</select></label>

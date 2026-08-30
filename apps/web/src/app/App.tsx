@@ -144,6 +144,7 @@ export function App() {
           <img src="/assets/firelens-mark.png" alt="" />
           <span><strong>FireLens</strong> BC <small>V1.6</small></span>
         </a>
+        <span className="topbar-lockup" aria-label="Civic Intelligence Desk">Civic Intelligence Desk</span>
         <div className="topbar-actions">
           <button
             className="topbar-project"
@@ -157,6 +158,11 @@ export function App() {
             <span className="topbar-project__detail"><strong>How FireLens works</strong><small>For employers &amp; evaluators</small></span>
             <span className="topbar-project__compact-label">How it works</span>
           </button>
+          {analyticalWorkspace && (
+            <a className="topbar-anchor" href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
+              <MapTrifold size={17} /> Explore live map
+            </a>
+          )}
           {(session.view.kind === "idle" || (mapAvailable && !showContext && !analyticalWorkspace)) && (
             <nav className="workspace-jump" aria-label="Choose workspace context">
               <button

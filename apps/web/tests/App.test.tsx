@@ -128,6 +128,11 @@ describe("FireLens Source Lens", () => {
     expect(screen.getByText("FireLens response ready.")).toBeInTheDocument();
     expect(screen.getByLabelText("Clear conversation history")).toHaveTextContent("New conversation");
     expect(screen.getByLabelText("Response feedback")).toBeInTheDocument();
+    expect(screen.getByLabelText("Civic Intelligence Desk")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Explore live map/i })).toHaveAttribute(
+      "href",
+      "https://wildfiresituation.nrs.gov.bc.ca/map",
+    );
     expect(screen.queryByRole("button", { name: "View official map context" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Open map" })).not.toBeInTheDocument();
     const analysisView = screen.getByRole("region", { name: "Analysis view" });

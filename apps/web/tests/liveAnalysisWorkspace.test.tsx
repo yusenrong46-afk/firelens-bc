@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LiveResult } from "../src/shared/api/api";
@@ -120,6 +120,12 @@ describe("LiveAnalysisWorkspace", () => {
     });
     expect(chartPanels.filter((panel) => !panel.hidden)).toHaveLength(1);
     expect(charts).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("group", { name: "Filter incident records" })).toBeInTheDocument();
+    const snapshot = screen.getByRole("region", { name: "Current snapshot by fire centre" });
+    expect(within(snapshot).getAllByRole("row")).toHaveLength(3);
+    expect(within(snapshot).getByRole("row", { name: /1 Kamloops Fire Centre 7 54%/ })).toBeInTheDocument();
+    expect(within(snapshot).getByRole("row", { name: /2 Coastal Fire Centre 6 46%/ })).toBeInTheDocument();
+    expect(snapshot).not.toHaveTextContent(/change since last update|historical/i);
     charts.focus();
     await user.keyboard("{ArrowRight}");
     await waitFor(() => expect(table).toHaveFocus());

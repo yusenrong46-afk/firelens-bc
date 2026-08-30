@@ -171,6 +171,17 @@ export function AnalysisCharts({ byFireCentre, byStatus, total }: {
           </>
         )}
       </div>
+      {view === "charts" && byFireCentre.length > 0 && (
+        <section className="analysis-ranked-table" aria-label="Current snapshot by fire centre">
+          <h3>Current snapshot by fire centre</h3>
+          <table>
+            <thead><tr><th scope="col">Rank</th><th scope="col">Fire centre</th><th scope="col">Incident records</th><th scope="col">Share</th></tr></thead>
+            <tbody>{byFireCentre.map((row, index) => (
+              <tr key={`ranked-${row.label}`}><td>{index + 1}</td><th scope="row">{row.label}</th><td>{row.count}</td><td>{percentage(row.share)}</td></tr>
+            ))}</tbody>
+          </table>
+        </section>
+      )}
       <div
         id={tableId}
         role="tabpanel"

@@ -11,7 +11,10 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - Starting tree: `70bbfcbabe07e6cef2274e1392687a82c0c0fa62`
 - Working branch: `codex/v1-6-2-full-qualification`
 - Package/version: `1.6.2`
-- Starting state: clean at the recorded commit; current candidate has uncommitted patch groups.
+- Last exact qualified parent: commit `6642d276fd9d2ec54c9d8034f257c033d186d7f5`,
+  tree `26ed664588f5de756c0e4fd072cfb58661bb0d97`.
+- Current state: the new Civic Intelligence Desk visual patch is uncommitted and
+  therefore has no candidate qualification identity yet.
 
 ## Ownership and routing
 
@@ -36,13 +39,16 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
   focus restoration, DOM chart equivalents, and reduced-motion treatment.
 - CSS consolidation: analytical grid/rail behavior, map/list parity styling,
   and corrected authority/freshness wrapping at desktop and mobile widths.
+- Civic Intelligence Desk visual pass: forest answer rail, warm-paper snapshot
+  canvas, mono data hierarchy, ranked current-snapshot table, grouped filters,
+  analysis-only official map link, and compact desktop/mobile composition.
 - README: reader-first V1.6.2 project explanation, architecture, verification,
   limitations, and explicit external-gate disclosures.
 
 ## Executed local evidence
 
-- Backend qualification: `1782` tests, `10` skipped, `672` warnings recorded
-  by the current local run; no release claim is inferred from warning count.
+- Backend qualification on the last exact parent: `1783` tests, `10` skipped,
+  and `672` subtests.
 - Frontend unit suite: `148` passing tests.
 - Tooling checks: `6` passing.
 - Sites checks: `4` passing.
@@ -54,9 +60,10 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - Package verification: passed.
 - Bundle-size deltas: captured for the candidate; no presentation provider
   calls were introduced.
-- Design QA: desktop/mobile responsive capture and selected Civic Intelligence
-  Desk comparison passed; analytical first viewport and metadata legibility
-  were repaired and rechecked.
+- Design QA: four browser-rendered correction rounds at `1440 x 1000` and
+  `390 x 844`; header/rail containment, metadata contrast, composer placement,
+  and mobile paper transition were repaired and rechecked. Current report says
+  `final result: passed` for the bounded visual scope.
 
 ## Evidence boundaries and blockers
 

@@ -12,11 +12,12 @@ geography and source layers a request may use.
 
 _Deterministic local demonstration data, not a current wildfire or evacuation report. Screenshot captured from deterministic local Playwright fixtures for this V1.6.2 candidate (`docs/assets/firelens-v1-6-overview.jpg`), not from the public site._
 
-> **Project status:** this is a local V1.6.2 engineering candidate from the
-> current working tree. Its package, runtime, and OpenAPI version is `1.6.2`,
-> but it has not been exact-Git qualified, deployed, or release-qualified. The
-> existing [public site](https://firelens-bc.vercel.app) must not be assumed to
-> match this checkout.
+> **Project status:** this repository describes the local V1.6.2 engineering candidate.
+> Qualification belongs to an exact commit/tree and its attached CI
+> evidence—not to this README. This working candidate has not been exact-Git qualified, deployed, or release-qualified. The existing
+> [public site](https://firelens-bc.vercel.app) must not be assumed to match the
+> current checkout until preview, release and production gates identify the
+> same artifact.
 
 ## What FireLens does
 
@@ -108,6 +109,9 @@ The governing principle is simple:
   record responses keep the answer primary and offer map context when spatial
   evidence or map intent makes it useful; preparedness questions remain
   conversational with exact quotations.
+- A restrained **Civic Intelligence Desk** presentation: a forest answer rail,
+  warm-paper analytical canvas, mono data labels, accessible current-snapshot
+  ranking, and mobile stacking without inventing historical trends.
 - Human-readable service failures that state when no wildfire status was shown
   or inferred, preserve retry semantics, and link directly to the official map.
 - Empty-map behavior that states uncertainty and never turns “no returned records”
