@@ -85,7 +85,7 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
   }, [view.kind]);
 
   return (
-    <section className={`conversation-panel ${analytical ? "conversation-panel--analytical" : ""}`} id="conversation" aria-label="Question and answer" tabIndex={-1}>
+    <section className={`conversation-panel ${analytical ? "conversation-panel--analytical" : ""} ${view.kind === "idle" ? "conversation-panel--idle" : ""}`} id="conversation" aria-label="Question and answer" tabIndex={-1}>
       {view.kind !== "idle" && (
         <ConversationToolbar priorTurnCount={earlierTurns.length} onClear={clearHistory} />
       )}

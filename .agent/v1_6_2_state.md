@@ -48,6 +48,8 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - Civic Intelligence Desk visual pass: forest answer rail, warm-paper snapshot
   canvas, mono data hierarchy, ranked current-snapshot table, grouped filters,
   analysis-only official map link, and compact desktop/mobile composition.
+- Density refinement: field-console idle state, narrower analytical answer rail,
+  wider chart/table canvas, and separated mobile primary/display tab rows.
 - README: reader-first V1.6.2 project explanation, architecture, verification,
   limitations, and explicit external-gate disclosures.
 
@@ -59,7 +61,8 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - Frontend unit suite: `148` passing tests.
 - Tooling checks: `6` passing.
 - Sites checks: `4` passing.
-- Playwright: `39` passing, `1` skipped.
+- Playwright after the density refinement: `41` passing, `1` expected
+  desktop-only skip on mobile.
 - Real/provider-backed local journey set: `19` cases recorded.
 - ProductBench deterministic tier: `31/31`, zero provider calls and zero cost.
 - Offline hard probe: `91/105`, zero cost; frozen threshold remains `86/105`.
@@ -67,10 +70,10 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - Package verification: passed.
 - Bundle-size deltas: captured for the candidate; no presentation provider
   calls were introduced.
-- Design QA: four browser-rendered correction rounds at `1440 x 1000` and
-  `390 x 844`; header/rail containment, metadata contrast, composer placement,
-  and mobile paper transition were repaired and rechecked. Current report says
-  `final result: passed` for the bounded visual scope.
+- Design QA: reference and implementation were compared together at
+  `1488 x 1058`, with separate `390 x 844` start and analysis checks. The
+  answer-rail density and mobile nested-tab collision were repaired. Current
+  report says `final result: passed` for the bounded visual scope.
 
 ## Evidence boundaries and blockers
 
