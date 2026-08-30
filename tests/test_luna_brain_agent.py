@@ -12,6 +12,7 @@ from pydantic import HttpUrl
 from firelens.agent import AgentTool, FireLensAgent
 from firelens.agent.chat import ChatToolCall, ChatTurn
 from firelens.agent.compose import compose_response
+from firelens.agent.loop_support import pure_static_ready
 from firelens.agent.packet import AgentPacket, live_record_fact
 from firelens.agent.rails import output_rail_errors
 from firelens.agent.runtime_tools import execute_tool
@@ -1827,7 +1828,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("geometry", fact)
         self.assertEqual(fact["source_updated_at"], "2026-08-15T00:00:00+00:00")
 
-    async def test_provider_first_user_turn_uses_content_key_with_packet(self) -> None:
+    async def test_mixed_prefetch_does_not_construct_discarded_provider_packet(self) -> None:
         provider = CapturingProvider()
 
         class KitWithChat(KitStatic):
@@ -1839,7 +1840,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             cast(Any, KitWithChat(provider)),
             LiveAnswerCoordinator(cast(Any, live)),
         )
-        await agent.answer(
+        execution = await agent.answer(
             QueryRequest(
                 question=(
                     "What official fires are near Kelowna, and what belongs in a grab-and-go bag?"
@@ -1847,17 +1848,12 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             )
         )
 
-        assert provider.messages is not None
-        user = provider.messages[1]
-        self.assertEqual(user["role"], "user")
-        self.assertIn("content", user)
-        self.assertNotIn("            content", user)
-        payload = json.loads(user["content"])
-        self.assertIn("Kelowna", payload["question"])
-        self.assertEqual(payload["history"], [])
-        self.assertIn("official_packet", payload)
+        self.assertIsNone(provider.messages)
+        self.assertEqual(provider.calls, 0)
+        self.assertEqual(execution.response.response_mode, ResponseMode.MIXED)
         self.assertEqual(
-            payload["official_packet"]["official_records"][0]["name"], "Ridge Fire"
+            execution.response.answer_sections[1].text,
+            "Include water, medication, and copies of important documents.",
         )
 
     async def test_unbound_history_reference_does_not_reopen_provider_scope(self) -> None:
@@ -2975,6 +2971,51 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertLessEqual(execution.policy.grounded_generations, 1)
         self.assertEqual(execution.response.response_mode, ResponseMode.GROUNDED)
         self.assertEqual(execution.response.answer, execution.response.claims[0].text)
+
+    def test_pure_static_ready_keeps_original_minimum_acceptance(self) -> None:
+        packet = AgentPacket(static_response=_kit_response(mode=ResponseMode.GROUNDED))
+
+        self.assertTrue(pure_static_ready(packet))
+
+    async def test_mixed_packet_skips_discarded_outer_write_and_keeps_sections(self) -> None:
+        provider = CapturingProvider()
+
+        class KitStaticWithProvider(KitStatic):
+            def __init__(self, chat_provider: Any) -> None:
+                self.provider = chat_provider
+
+        agent = FireLensAgent(
+            cast(Any, KitStaticWithProvider(provider)),
+            LiveAnswerCoordinator(
+                cast(
+                    Any,
+                    FixedLiveService([_fire(result_id="incident:9", name="Ridge Fire")]),
+                )
+            ),
+        )
+
+        execution = await agent.answer(
+            QueryRequest(
+                question=(
+                    "Are there active wildfires in BC currently, and what belongs "
+                    "in an emergency kit?"
+                )
+            )
+        )
+
+        response = execution.response
+        self.assertEqual(provider.calls, 0)
+        self.assertEqual(provider.tools_seen, [])
+        self.assertEqual(execution.policy.outer_chat_turns, 0)
+        self.assertEqual(response.response_mode, ResponseMode.MIXED)
+        self.assertEqual(
+            response.answer_sections[1].text,
+            "Include water, medication, and copies of important documents.",
+        )
+        self.assertIn("Ridge Fire", response.answer or "")
+        self.assertIn(response.answer_sections[1].text, response.answer or "")
+        self.assertEqual([claim.claim_id for claim in response.claims], ["C1"])
+        self.assertEqual([item.evidence_id for item in response.evidence], ["E1"])
 
     async def test_public_ask_seatbelt_does_not_use_legacy_live_composer(self) -> None:
         class ForbiddenCoordinator(LiveAnswerCoordinator):

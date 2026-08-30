@@ -25,6 +25,12 @@ def skip_owned_model_write(query_plan: AgentQueryPlan, packet: AgentPacket) -> b
         return True
     if query_plan.mode == AgentRequestMode.MIXED:
         static = packet.static_response
+        if packet.live_results and accepted_reviewed_publication(packet):
+            # The public mixed composer renders the official-record and reviewed
+            # sections from this packet. An outer model turn cannot affect that
+            # published result, so avoid paying for prose that is discarded.
+            packet.policy.route = "ready_mixed"
+            return True
         if packet.live_results and (
             static is None or static.validation is None or not static.validation.accepted
         ):
@@ -42,6 +48,20 @@ def skip_owned_model_write(query_plan: AgentQueryPlan, packet: AgentPacket) -> b
     elif skip and not packet.live_results:
         packet.policy.route = packet.policy.route or "deterministic_redirect"
     return skip
+
+
+def accepted_reviewed_publication(packet: AgentPacket) -> bool:
+    """Return whether the packet can render reviewed guidance without model prose."""
+
+    static = packet.static_response
+    return bool(
+        static is not None
+        and static.response_mode.value in {"grounded", "partial"}
+        and static.claims
+        and static.evidence
+        and static.validation is not None
+        and static.validation.accepted
+    )
 
 
 def missing_location_result(

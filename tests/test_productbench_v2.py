@@ -510,7 +510,7 @@ def test_counting_provider_reports_numeric_per_method_activity() -> None:
     }
 
 
-def test_counting_provider_preserves_the_real_agent_chat_path() -> None:
+def test_counting_provider_records_avoided_mixed_outer_write() -> None:
     class ChatDelegate:
         def __init__(self) -> None:
             self.turns = 0
@@ -542,8 +542,8 @@ def test_counting_provider_preserves_the_real_agent_chat_path() -> None:
 
     turns, calls = asyncio.run(exercise())
 
-    assert turns == 1
-    assert calls["chat_turn"] == 1
+    assert turns == 0
+    assert calls["chat_turn"] == 0
 
 
 @pytest.mark.parametrize(
