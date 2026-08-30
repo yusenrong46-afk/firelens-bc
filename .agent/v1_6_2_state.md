@@ -13,8 +13,12 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - Package/version: `1.6.2`
 - Last exact qualified parent: commit `6642d276fd9d2ec54c9d8034f257c033d186d7f5`,
   tree `26ed664588f5de756c0e4fd072cfb58661bb0d97`.
-- Current state: the new Civic Intelligence Desk visual patch is uncommitted and
-  therefore has no candidate qualification identity yet.
+- Visual implementation parent examined before this repair: commit
+  `345aaab2bef2fb3f580401dd79303a6b840fc88a`, tree
+  `8d098103468fe26eed7578ce6a8e1c7a67b1e0cf` (Thomas-authored Civic
+  Intelligence Desk candidate). The final exact candidate identity must be
+  recomputed after this repair is committed. Neither identity is a release
+  approval, deployment proof, or completed qualification.
 
 ## Ownership and routing
 
@@ -47,8 +51,10 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 ## Executed local evidence
 
-- Backend qualification on the last exact parent: `1783` tests, `10` skipped,
-  and `672` subtests.
+- Exact-head local engineering qualification: `1783` Python tests, `10`
+  skipped, and `672` subtests; frontend `148`; tooling `6`; Sites `4`;
+  Playwright `39` passing with `1` intentional skip; and real local journeys
+  `19/19`.
 - Frontend unit suite: `148` passing tests.
 - Tooling checks: `6` passing.
 - Sites checks: `4` passing.
@@ -67,10 +73,11 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 ## Evidence boundaries and blockers
 
-- H8 performance evidence refused on the dirty tree: the candidate identity is
-  not immutable while uncommitted files remain, so a candidate-bound comparison
-  would be stale or self-invalidating. Commit the exact candidate first, then
-  rerun H8 from isolated clean worktrees.
+- Candidate-bound H8 was rerun for this committed identity. It recorded an
+  `83.3333%` generation-call reduction and zero pure-static generation, but
+  four microbenchmark routes exceeded the frozen relative p95 guard. The report
+  is `NEEDS_HUMAN_TRADEOFF_ACCEPTANCE`; this ledger does not accept that
+  tradeoff on Thomas's behalf.
 - H4 sealed independent package remains outstanding; sealed labels are not
   inspected or exposed.
 - Provider-backed ProductBench requires final exact-identity rerun and its
@@ -94,7 +101,7 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 ## Next exact action
 
-Commit the fully accounted-for candidate with Thomas authorship, then rerun
-candidate-bound H8, ProductBench provider evidence, package/evidence hashes,
-and the final clean-tree qualification sequence. Do not describe the project
-as fully qualified, deployed, or release-ready until those external gates pass.
+Finish CI and independent exact-head review, then bind candidate evidence and
+complete the outstanding paid, preview, human, VoiceOver, firewall, rollback,
+and release-decision gates. Do not describe the project as fully qualified,
+deployed, or release-ready until those gates pass.

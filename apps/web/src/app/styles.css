@@ -162,7 +162,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   color: #f4f2e9;
   background: var(--forest-deep);
   border-bottom: 1px solid rgba(167, 184, 102, .35);
-  font: 500 13px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font: 500 16px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   letter-spacing: .015em;
   text-transform: uppercase;
 }

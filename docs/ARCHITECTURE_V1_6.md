@@ -3,10 +3,13 @@
 Status: current architecture authority for Ask, trust, packaging, and proof UX.
 Date: 2026-08-28
 
-The V1.6.2 patch is an uncommitted local engineering candidate. The tracked
-package, runtime, Docker, and OpenAPI identity is `1.6.2`, but that version is
-not a deployment or release statement. Exact-Git qualification can begin only
-after a clean candidate commit exists.
+The V1.6.2 branch candidate is committed. Its exact current HEAD and tree are
+bound only through matching CI candidate evidence; this architecture document
+does not embed a self-referential commit identifier. The tracked package,
+runtime, Docker, and OpenAPI identity is `1.6.2`, but that identity is not a
+deployment or release statement. Exact-Git qualification evidence remains
+separate and incomplete until its required local, CI, independent, paid,
+preview, and human gates are recorded.
 
 The RC1/RC2 standards and their recorded reports remain historical, frozen
 materials. V1.6.2 is a separate patch promotion: it must bind a new exact

@@ -25,9 +25,11 @@
 
 - PB15-style source-extraction defects remain source-repair work. An unreadable
   exact span is omitted or handed off; it is not converted into FireLens advice.
-- This section describes an uncommitted local engineering candidate. Exact Git
-  qualification, paid evaluation, human review, live/production verification,
-  and release authorization are not established here.
+- This section describes a committed local engineering candidate. Its exact
+  current HEAD and tree are bound through matching CI candidate evidence rather
+  than embedded in this changelog. Exact-Git qualification, paid evaluation,
+  human review, live/production verification, and release authorization are
+  not established here.
 
 ## Unreleased — V1.6 RC2
 
