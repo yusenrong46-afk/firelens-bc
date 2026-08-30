@@ -120,7 +120,7 @@ describe("LiveAnalysisWorkspace", () => {
     });
     expect(chartPanels.filter((panel) => !panel.hidden)).toHaveLength(1);
     expect(charts).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("group", { name: "Filter incident records" })).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Filter incident records" })).not.toBeInTheDocument();
     const snapshot = screen.getByRole("region", { name: "Current snapshot by fire centre" });
     expect(within(snapshot).getAllByRole("row")).toHaveLength(3);
     expect(within(snapshot).getByRole("row", { name: /1 Kamloops Fire Centre 7 54%/ })).toBeInTheDocument();
@@ -138,16 +138,18 @@ describe("LiveAnalysisWorkspace", () => {
     const user = userEvent.setup();
     const results = Array.from({ length: 13 }, (_, index) => incident(index));
     const view = render(<LiveAnalysisWorkspace session={session(results)} answerIdentity="one" initialSurface="summary" />);
+    await user.click(screen.getByRole("tab", { name: "Records" }));
     const centre = screen.getAllByLabelText("Fire centre").find((element) => element.tagName === "SELECT")!;
     expect(screen.getByRole("option", { name: "Largest first" })).toBeInTheDocument();
     await user.selectOptions(centre, "Coastal Fire Centre");
-    await user.click(screen.getByRole("tab", { name: "Records" }));
     expect(screen.getByText("6 of 13 records shown")).toBeInTheDocument();
     await user.click(screen.getAllByText("Record details")[0]!);
     expect(screen.getByText("Size 2 hectares")).toBeInTheDocument();
 
     view.rerender(<LiveAnalysisWorkspace session={session(results)} answerIdentity="two" initialSurface="summary" />);
-    await waitFor(() => expect(screen.getAllByLabelText("Fire centre").find((element) => element.tagName === "SELECT")).toHaveValue(""));
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Summary" })).toHaveAttribute("aria-selected", "true"));
+    await user.click(screen.getByRole("tab", { name: "Records" }));
+    expect(screen.getAllByLabelText("Fire centre").find((element) => element.tagName === "SELECT")).toHaveValue("");
   });
 
   it("opens every new analytical answer on Summary, including map-oriented requests", () => {
@@ -161,6 +163,7 @@ describe("LiveAnalysisWorkspace", () => {
     const incidents = Array.from({ length: 13 }, (_, index) => incident(index));
     const evacuation: LiveResult = { ...incident(99), result_id: "evacuation:1", kind: "evacuation", status: "Order" };
     render(<LiveAnalysisWorkspace session={session(incidents, [...incidents, evacuation])} answerIdentity="one" initialSurface="summary" />);
+    await user.click(screen.getByRole("tab", { name: "Records" }));
     const centre = screen.getAllByLabelText("Fire centre").find((element) => element.tagName === "SELECT")!;
     await user.selectOptions(centre, "Coastal Fire Centre");
     await user.click(screen.getByRole("tab", { name: "Map" }));

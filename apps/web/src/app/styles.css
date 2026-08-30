@@ -1489,15 +1489,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .conversation-panel--analytical .question-block { margin: 0; }
 .conversation-panel--analytical .question-block > .panel-label { display: block; margin-bottom: 10px; }
 .conversation-panel--analytical .question-line {
-  display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
-  gap: 12px;
-  align-items: start;
+  display: block;
 }
-.conversation-panel--analytical .question-line > svg { grid-column: 1; grid-row: 1; color: var(--ember); }
+.conversation-panel--analytical .question-line > svg { display: none; }
 .conversation-panel--analytical .question-bubble {
-  grid-column: 2;
-  grid-row: 1;
   width: auto;
   min-width: 0;
   max-width: none;
@@ -1514,7 +1509,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .conversation-panel--analytical .question-bubble small { display: none; }
 .conversation-panel--analytical .assistant-message {
   display: block;
-  margin: 16px 0 0 52px;
+  margin: 16px 0 0;
   padding: 16px 0 0;
   border-top: 0;
 }
@@ -1523,6 +1518,19 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .conversation-panel--analytical .response-badge { display: none; }
 .conversation-panel--analytical .analytical-short-answer { display: block; margin-bottom: 7px; }
 .conversation-panel--analytical .answer-lead { margin: 0; max-width: 1060px; }
+.conversation-panel--analytical .analytical-takeaway {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin-top: 17px;
+  padding: 16px 0;
+  border-top: 1px dotted rgba(167, 184, 102, .55);
+  border-bottom: 1px dotted rgba(167, 184, 102, .55);
+}
+.conversation-panel--analytical .analytical-takeaway > svg { color: var(--ember); }
+.conversation-panel--analytical .analytical-takeaway .panel-label { color: var(--ember); }
+.conversation-panel--analytical .analytical-takeaway p { margin: 2px 0 0; font: 600 20px/1.35 "Newsreader", Georgia, serif; }
 .conversation-panel--analytical .status-banner {
   grid-template-columns: minmax(0, 1fr);
   margin: 14px 0 0;
@@ -1849,6 +1857,13 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .workspace--analysis .conversation-panel--analytical .status-banner__metadata { color: #dfe7d4; }
 .workspace--analysis .conversation-panel--analytical .status-banner__metadata span { color: #a7b866; }
 .workspace--analysis .conversation-panel--analytical .status-banner__metadata .status-banner__warning { color: #ffc2a3; }
+.workspace--analysis .conversation-panel--analytical .status-banner__summary strong::before {
+  content: "Authority  ";
+  color: #a7b866;
+  font: 600 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
 
 @media (min-width: 1120px) {
   .workspace {
@@ -1958,7 +1973,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
     min-width: 0;
     align-self: start;
     margin: 0;
-    padding: 30px clamp(28px, 3.3vw, 52px) 50px;
+    padding: 29px clamp(28px, 3.3vw, 52px) 44px;
     background: var(--paper);
     height: 100%;
     max-height: 100%;
@@ -1981,7 +1996,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
     border-radius: 0;
   }
   .workspace--analysis .composer > p { color: #a7b866; }
-  .workspace--analysis .analysis-workspace__heading h2 { font-size: 27px; }
+  .workspace--analysis .composer > p { display: none; }
   .workspace--analysis .analysis-tabs { width: min(100%, 520px); }
 }
 
@@ -2080,5 +2095,4 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .location-request__actions button:last-child { grid-column: 1; }
   .workspace { padding-inline: 10px; }
   .workspace--analysis .conversation-scroll > .analysis-workspace { padding-top: 0; }
-  .workspace--analysis .analysis-workspace__heading h2 { font-size: 24px; }
 }

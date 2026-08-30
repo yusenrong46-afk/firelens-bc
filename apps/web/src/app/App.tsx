@@ -186,7 +186,7 @@ export function App() {
       <ConnectionStatus />
       <div className="boundary">
         <Shield size={17} />
-        <span>Not an emergency-warning service. Official live records, reviewed guidance, and general background stay visibly separate.</span>
+        <span>Official-source data. Not a safety assessment.</span>
       </div>
       <HowFireLensWorks open={projectOpen} onClose={closeProject} />
       <main className={`workspace workspace--${layout} ${showContext ? "workspace--split" : "workspace--solo"} ${showMap ? "workspace--map" : "workspace--evidence"}`}>

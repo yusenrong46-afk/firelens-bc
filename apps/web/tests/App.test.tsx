@@ -137,13 +137,13 @@ describe("FireLens Source Lens", () => {
     expect(screen.queryByRole("button", { name: "Open map" })).not.toBeInTheDocument();
     const analysisView = screen.getByRole("region", { name: "Analysis view" });
     expect(within(analysisView).getByLabelText("Analysis limitations")).toHaveTextContent("FireLens could not verify evacuation records for this request.");
-    expect(within(analysisView).getByRole("heading", { name: "Analysis view" })).toBeInTheDocument();
+    expect(within(analysisView).getByRole("heading", { name: "Analysis view" })).toHaveAttribute("data-surface-visually-hidden", "true");
     expect(screen.getByRole("tab", { name: "Summary" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: "Map" })).toHaveAttribute("aria-selected", "false");
     expect(screen.getByRole("tab", { name: "Records" })).toHaveAttribute("aria-selected", "false");
     expect(await screen.findByRole("heading", { name: "Incident records by fire centre" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Official wildfire records map" })).not.toBeInTheDocument();
-    await user.click(screen.getByText("Technical evidence"));
+    await user.click(screen.getByText("Method", { exact: true }));
     const technicalEvidence = screen.getByRole("button", { name: "Inspect answer evidence" });
     await user.click(technicalEvidence);
     const answerContext = screen.getByRole("complementary", { name: "Evidence for the selected claim" });
@@ -200,7 +200,7 @@ describe("FireLens Source Lens", () => {
     expect(within(analysisView).getByRole("tab", { name: "Records" })).toBeInTheDocument();
     expect(within(analysisView).getByText(/are tied for the highest count/i)).toHaveTextContent("1 each");
     expect(within(analysisView).queryByLabelText("Analysis limitations")).not.toBeInTheDocument();
-    expect(within(analysisView).getByText("About this analysis")).toBeInTheDocument();
+    expect(within(analysisView).getByText("Limits", { exact: true })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "View official map context" })).not.toBeInTheDocument();
   });
 
@@ -260,7 +260,7 @@ describe("FireLens Source Lens", () => {
     expect(screen.getByRole("button", { name: "What to pack?" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "How FireLens works" })).toBeInTheDocument();
     expect(screen.getByText("For employers & evaluators")).toBeInTheDocument();
-    expect(screen.getByText("Not an emergency-warning service. Official live records, reviewed guidance, and general background stay visibly separate.")).toBeInTheDocument();
+    expect(screen.getByText("Official-source data. Not a safety assessment.")).toBeInTheDocument();
     expect(screen.getByText("Sources and status boundaries appear with each answer.")).toHaveClass("response-announcement");
     expect(screen.queryByText("Start with an example")).not.toBeInTheDocument();
     expect(screen.queryByText("0 of 6 turns in context")).not.toBeInTheDocument();

@@ -109,7 +109,7 @@ test("uses the real API response to render an Okanagan distribution analysis", a
   await ask(page, "Show the current wildfire distribution by status across the Okanagan.");
   const analysis = page.getByRole("region", { name: "Analysis view" });
   await expect(analysis).toBeVisible();
-  await expect(analysis.getByRole("heading", { name: "Analysis view" })).toBeVisible();
+  await expect(analysis.getByRole("heading", { name: "Analysis view" })).toHaveAttribute("data-surface-visually-hidden", "true");
   await expect(analysis.getByLabel("Incident records by status")).toContainText("Out of Control");
   await expect(analysis.getByLabel("Incident records by status")).toContainText("Being Held");
   await expect(analysis.getByLabel("Incident records by status")).toContainText("Under Control");
@@ -340,7 +340,7 @@ test("summarizes province-wide BC geographic distribution in the analysis worksp
   await ask(page, "How are wildfires distributed across BC right now?");
   const analysis = page.getByRole("region", { name: "Analysis view" });
   await expect(analysis).toBeVisible();
-  await expect(analysis.getByRole("heading", { name: "Analysis view" })).toBeVisible();
+  await expect(analysis.getByRole("heading", { name: "Analysis view" })).toHaveAttribute("data-surface-visually-hidden", "true");
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toHaveCount(0);
   expect(attemptedExternal).toEqual([]);
 });

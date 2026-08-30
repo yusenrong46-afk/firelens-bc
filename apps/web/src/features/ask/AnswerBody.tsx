@@ -1,6 +1,6 @@
-import { WarningCircle } from "@phosphor-icons/react";
+import { ChartBar, WarningCircle } from "@phosphor-icons/react";
 import type { AskResponse } from "../../shared/api/api";
-import { analyticalAnswerSummary } from "../near-me/liveAnalysis";
+import { analyticalAnswerSummary, buildLiveAnalysis } from "../near-me/liveAnalysis";
 import { AnswerMarkdown } from "./AnswerMarkdown";
 import { answerSectionAuthority, getAnswerSections } from "./answerSections";
 import { splitLimitations } from "./limitationsPresentation";
@@ -26,6 +26,7 @@ export function AnswerBody({
   const lead = (
     analytical ? analyticalAnswerSummary(response?.live_results ?? []) : undefined
   ) ?? response?.answer?.trim() ?? assistantText;
+  const analysis = analytical ? buildLiveAnalysis(response?.live_results ?? []) : undefined;
   const banner = getStatusBanner(response);
   const backgroundMode = response?.response_mode === "background";
   const compactOfficialHandoff = response?.reason_code === "high_risk_claim_not_structured";
@@ -54,7 +55,7 @@ export function AnswerBody({
 
   return (
     <>
-      {analytical && <span className="panel-label analytical-short-answer">Short answer</span>}
+      {analytical && <span className="panel-label analytical-short-answer">FireLens answer</span>}
       {!hasAnswerSections && lead && <AnswerMarkdown className="answer-lead">{lead}</AnswerMarkdown>}
       {hasAnswerSections && (
         <div className="answer-sections" aria-label="Authority-labelled answer">
@@ -83,6 +84,17 @@ export function AnswerBody({
         <p className="answer-provenance" role="note">
           General model knowledge · not checked against FireLens sources
         </p>
+      )}
+      {analytical && analysis?.highestFireCentre && (
+        <div className="analytical-takeaway" role="note" aria-label="Key takeaway">
+          <ChartBar size={24} aria-hidden="true" />
+          <div>
+            <span className="panel-label">Key takeaway</span>
+            <p>
+              {analysis.highestFireCentre.label.replace(/\s+Fire\s+Centre$/i, "")} has the most incident records in this returned snapshot ({analysis.highestFireCentre.count}).
+            </p>
+          </div>
+        </div>
       )}
       {analytical && banner && <StatusBanner banner={banner} compact />}
       {!analytical

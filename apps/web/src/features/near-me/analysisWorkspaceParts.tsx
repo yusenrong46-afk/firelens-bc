@@ -4,9 +4,7 @@ import { RecordRow } from "./LiveRecordLists";
 import {
   availableAnalysisSorts,
   type AnalysisSort,
-  type LiveAnalysis,
 } from "./liveAnalysis";
-import { formatTimestamp } from "./liveResultPresentation";
 
 export function joinAnalysisLabels(labels: string[]): string {
   if (labels.length < 2) return labels[0] ?? "";
@@ -55,20 +53,5 @@ export function AnalysisFilters({
       <label>Status<select value={status} onChange={(event) => onStatus(event.target.value)}><option value="">All statuses</option>{statuses.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
       <label>Sort<select value={sort} onChange={(event) => onSort(event.target.value as AnalysisSort)}><option value="default">Original order</option>{sorts.includes("newest") && <option value="newest">Newest source update</option>}{sorts.includes("largest") && <option value="largest">Largest first</option>}{sorts.includes("nearest") && <option value="nearest">Nearest first</option>}</select></label>
     </div>
-  );
-}
-
-export function AnalysisKpis({ results, analysis }: { results: LiveResult[]; analysis: LiveAnalysis }) {
-  const newest = results.map((result) => result.source_updated_at).map((value) => ({ value, time: Date.parse(value) })).filter(({ time }) => Number.isFinite(time)).sort((left, right) => right.time - left.time).at(0)?.value;
-  const reportedStatuses = analysis.byStatus.filter((row) => row.label !== "Not reported");
-  const dominantCount = reportedStatuses[0]?.count;
-  const dominantStatuses = dominantCount === undefined ? [] : reportedStatuses.filter((row) => row.count === dominantCount);
-  return (
-    <dl className="analysis-kpis" aria-label="Incident record summary">
-      <div><dt>Incident records</dt><dd>{results.length}</dd></div>
-      <div><dt>Leading fire centre</dt><dd>{analysis.highestFireCentre?.label?.replace(/\s+Fire\s+Centre$/i, "") ?? "Tie or unavailable"}</dd></div>
-      <div><dt>Dominant status</dt><dd>{dominantStatuses.length === 1 ? dominantStatuses[0]?.label : dominantStatuses.length > 1 ? "Tie" : "Unavailable"}</dd></div>
-      <div><dt>Newest source update</dt><dd>{newest ? formatTimestamp(newest) : "Unavailable"}</dd></div>
-    </dl>
   );
 }

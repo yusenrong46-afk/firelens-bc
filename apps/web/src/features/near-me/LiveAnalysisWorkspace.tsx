@@ -15,7 +15,6 @@ import {
 } from "./liveResultPresentation";
 import {
   AnalysisFilters,
-  AnalysisKpis,
   joinAnalysisLabels,
   RecordsView,
 } from "./analysisWorkspaceParts";
@@ -142,7 +141,7 @@ export function LiveAnalysisWorkspace({
   return (
     <section className="analysis-workspace" aria-label="Analysis view">
       <div className="analysis-workspace__heading">
-        <h2>Analysis view</h2>
+        <h2 data-surface-visually-hidden="true">Analysis view</h2>
         <div className={`analysis-tabs ${hasUsefulMap ? "" : "analysis-tabs--two"}`} role="tablist" aria-label="Choose analysis view">
           <button type="button" role="tab" id="analysis-tab-summary" aria-controls="analysis-panel-summary" className={surface === "summary" ? "analysis-tabs__active" : ""} aria-selected={surface === "summary"} tabIndex={surface === "summary" ? 0 : -1} ref={(node) => { tabRefs.current.summary = node; }} onKeyDown={(event) => handleTabKey(event, "summary")} onClick={() => setSurface("summary")}>
             <ChartBar size={19} /> Summary
@@ -167,8 +166,6 @@ export function LiveAnalysisWorkspace({
       >
         {surface === "summary" && (
           <>
-          <AnalysisKpis results={filteredResults} analysis={analysis} />
-          <AnalysisFilters results={results} fireCentre={fireCentreFilter} status={statusFilter} sort={sort} onFireCentre={setFireCentreFilter} onStatus={setStatusFilter} onSort={setSort} />
           <Suspense fallback={<div className="analysis-chart-loading" role="status">Preparing the official-record summary…</div>}>
             <AnalysisCharts
               byFireCentre={analysis.byFireCentre}
@@ -234,38 +231,40 @@ export function LiveAnalysisWorkspace({
         )}
       </div>
 
-      {analysisLimitations.material.length > 0 && (
-        <aside className="analysis-limitations" aria-label="Analysis limitations">
-          {analysisLimitations.material.join(" ")}
-        </aside>
-      )}
-      {analysisLimitations.boilerplate.length > 0 && (
-        <details className="analysis-disclosure analysis-disclosure--limits">
-          <summary><ShieldCheck size={20} /><strong>About this analysis</strong><span>Boundaries that apply to these records</span></summary>
-          <ul>
-            {analysisLimitations.boilerplate.map((item) => <li key={item}>{item}</li>)}
-          </ul>
-        </details>
-      )}
-      <details className="analysis-disclosure">
-        <summary><Database size={20} /><strong>Sources and freshness</strong><span>Where this data comes from and when it was updated</span></summary>
-        <p>These {results.length} incident records came from the official data returned with this answer.</p>
-        {newestSourceTime && <p>Newest source update in this result: {formatTimestamp(newestSourceTime)}.</p>}
-      </details>
-      <details className="analysis-disclosure">
-        <summary><ShieldCheck size={20} /><strong>Technical evidence</strong><span>How this answer was derived and verified</span></summary>
-        <p>FireLens grouped typed official records by their fire-centre and status fields. The browser calculated these counts deterministically; model prose is not used as data.</p>
-        {onOpenEvidence && (
-          <button
-            type="button"
-            aria-controls="answer-context"
-            aria-expanded={evidenceOpen}
-            onClick={onOpenEvidence}
-          >
-            Inspect answer evidence
-          </button>
+      <div className="analysis-evidence-rail">
+        {analysisLimitations.material.length > 0 && (
+          <aside className="analysis-limitations" aria-label="Analysis limitations">
+            {analysisLimitations.material.join(" ")}
+          </aside>
         )}
-      </details>
+        {analysisLimitations.boilerplate.length > 0 && (
+          <details className="analysis-disclosure analysis-disclosure--limits">
+            <summary><ShieldCheck size={20} /><strong>Limits</strong><span>Boundaries</span></summary>
+            <ul>
+              {analysisLimitations.boilerplate.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </details>
+        )}
+        <details className="analysis-disclosure">
+          <summary><Database size={20} /><strong>Sources</strong><span>Official records</span></summary>
+          <p>These {results.length} incident records came from the official data returned with this answer.</p>
+          {newestSourceTime && <p>Newest source update in this result: {formatTimestamp(newestSourceTime)}.</p>}
+        </details>
+        <details className="analysis-disclosure">
+          <summary><ShieldCheck size={20} /><strong>Method</strong><span>Deterministic counts</span></summary>
+          <p>FireLens grouped typed official records by their fire-centre and status fields. The browser calculated these counts deterministically; model prose is not used as data.</p>
+          {onOpenEvidence && (
+            <button
+              type="button"
+              aria-controls="answer-context"
+              aria-expanded={evidenceOpen}
+              onClick={onOpenEvidence}
+            >
+              Inspect answer evidence
+            </button>
+          )}
+        </details>
+      </div>
     </section>
   );
 }

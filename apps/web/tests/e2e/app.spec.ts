@@ -602,7 +602,7 @@ test("shows summary map and records for analytical live questions", async ({ pag
   await page.getByLabel("Ask FireLens a question").fill("Show wildfire distribution by status across B.C.");
   await page.getByLabel("Send question").click();
   await expect(page.getByRole("region", { name: "Analysis view" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Analysis view" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Analysis view" })).toHaveAttribute("data-surface-visually-hidden", "true");
   await expect(page.getByRole("heading", { name: "Incident records by fire centre" })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Summary", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("tab", { name: "Map", exact: true })).toHaveAttribute("aria-selected", "false");
@@ -663,7 +663,7 @@ test("opens analytical answers on Summary and resets the selected surface for a 
   await expect(map).toHaveAttribute("aria-selected", "true");
   await records.click();
   await expect(records).toHaveAttribute("aria-selected", "true");
-  await page.getByText("Technical evidence", { exact: true }).click();
+  await page.getByText("Method", { exact: true }).click();
   await page.getByRole("button", { name: "Inspect answer evidence" }).click();
   await expect(records).toHaveAttribute("aria-selected", "true");
 
