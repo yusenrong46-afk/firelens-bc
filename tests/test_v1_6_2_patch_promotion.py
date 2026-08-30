@@ -19,6 +19,7 @@ from firelens.evaluation.v1_6_2_patch_promotion import (
     HISTORICAL_PROMOTION_PATHS,
     HISTORICAL_PROMOTION_SHA256,
     MANIFEST_RELATIVE,
+    STATIC_QUALIFICATION_REASON,
     TO_VERSION,
     patch_promotion_manifest_document,
     validate_patch_manifest,
@@ -69,7 +70,7 @@ def test_patch_manifest_binds_base_standard_governed_and_historical_materials() 
         "status": "NOT_EXECUTED",
         "candidate_commit": None,
         "candidate_tree": None,
-        "reason": "Exact clean committed V1.6.2 candidate identity is not yet available.",
+        "reason": STATIC_QUALIFICATION_REASON,
     }
     assert [item["name"] for item in manifest["governed_materials"]] == list(
         GOVERNED_MATERIAL_PATHS

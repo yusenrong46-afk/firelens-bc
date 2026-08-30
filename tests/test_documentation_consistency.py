@@ -41,7 +41,8 @@ def test_current_documentation_preserves_v1_6_rc2_authority_boundaries() -> None
     assert "production-ready" not in readme.casefold()
     assert "current architecture authority" in architecture
     assert "V1.6.2 branch candidate is committed" in architecture
-    assert "bound only through matching CI candidate evidence" in architecture
+    assert "required in the external current candidate-evidence record" in architecture
+    assert "does not affirm that matching CI evidence already exists" in architecture
     assert "345aaab2bef2fb3f580401dd79303a6b840fc88a" not in architecture
     assert (
         "RC1/RC2 standards and their recorded reports remain historical, frozen" in architecture
@@ -70,7 +71,8 @@ def test_current_documentation_preserves_v1_6_rc2_authority_boundaries() -> None
     assert "## Unreleased — V1.6.2" in changelog
     assert "PB15-style source-extraction defects remain source-repair work" in changelog
     assert "committed local engineering candidate" in changelog
-    assert "bound through matching CI candidate evidence" in changelog
+    assert "must be bound by external current candidate evidence" in changelog
+    assert "does not affirm that such evidence exists" in changelog
     assert "345aaab2bef2fb3f580401dd79303a6b840fc88a" not in changelog
     assert "## Unreleased — V1.6 RC2" in changelog
     assert "independently hash-bound RC2.1 profile" in changelog

@@ -51,10 +51,9 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 ## Executed local evidence
 
-- Exact-head local engineering qualification: `1783` Python tests, `10`
-  skipped, and `672` subtests; frontend `148`; tooling `6`; Sites `4`;
-  Playwright `39` passing with `1` intentional skip; and real local journeys
-  `19/19`.
+- Local engineering qualification was recorded before the final candidate
+  identity. It must be rerun and bound to the final HEAD/tree before it is
+  treated as exact-head evidence.
 - Frontend unit suite: `148` passing tests.
 - Tooling checks: `6` passing.
 - Sites checks: `4` passing.
@@ -73,11 +72,10 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 ## Evidence boundaries and blockers
 
-- Candidate-bound H8 was rerun for this committed identity. It recorded an
-  `83.3333%` generation-call reduction and zero pure-static generation, but
-  four microbenchmark routes exceeded the frozen relative p95 guard. The report
-  is `NEEDS_HUMAN_TRADEOFF_ACCEPTANCE`; this ledger does not accept that
-  tradeoff on Thomas's behalf.
+- Prior H8 performance evidence predates the final candidate identity and is
+  not exact-head evidence. Rerun H8 after the final candidate commit, retain
+  its raw report, and require the applicable human decision if the frozen guard
+  requires one. This ledger does not accept a tradeoff on Thomas's behalf.
 - H4 sealed independent package remains outstanding; sealed labels are not
   inspected or exposed.
 - Provider-backed ProductBench requires final exact-identity rerun and its
@@ -101,7 +99,8 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 ## Next exact action
 
-Finish CI and independent exact-head review, then bind candidate evidence and
-complete the outstanding paid, preview, human, VoiceOver, firewall, rollback,
-and release-decision gates. Do not describe the project as fully qualified,
-deployed, or release-ready until those gates pass.
+Recompute the final candidate commit/tree after this repair is committed, rerun
+local qualification and H8, and bind the results in external current
+candidate-evidence. Then complete the outstanding paid, preview, human,
+VoiceOver, firewall, rollback, and release-decision gates. Do not describe the
+project as fully qualified, deployed, or release-ready until those gates pass.

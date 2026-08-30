@@ -215,6 +215,6 @@
     "status": "NOT_EXECUTED",
     "candidate_commit": null,
     "candidate_tree": null,
-    "reason": "Exact clean committed V1.6.2 candidate identity is not yet available."
+    "reason": "Static tracked manifest deliberately does not self-bind a mutable Git HEAD; exact qualification is bound by external current candidate evidence after execution."
   }
 }

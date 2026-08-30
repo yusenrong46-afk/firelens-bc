@@ -27,6 +27,10 @@ FROZEN_STANDARD_SHA256 = "55e16b86960d51fb732970691a0c00850f6c56eb258cd363fd74a4
 BASE_COMMIT = "b09e0402143f4c4a0602f542504507d40786fdc0"
 BASE_TREE = "dc22981a24bf4648ee850b56a801f3bf43eee6eb"
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+STATIC_QUALIFICATION_REASON = (
+    "Static tracked manifest deliberately does not self-bind a mutable Git HEAD; "
+    "exact qualification is bound by external current candidate evidence after execution."
+)
 
 HISTORICAL_PROMOTION_PATHS: tuple[str, ...] = (
     "src/firelens/evaluation/release_promotion.py",
@@ -107,7 +111,7 @@ def patch_promotion_manifest_document(root: Path) -> dict[str, Any]:
             "status": "NOT_EXECUTED",
             "candidate_commit": None,
             "candidate_tree": None,
-            "reason": "Exact clean committed V1.6.2 candidate identity is not yet available.",
+            "reason": STATIC_QUALIFICATION_REASON,
         },
     }
 

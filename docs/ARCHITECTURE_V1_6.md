@@ -3,11 +3,12 @@
 Status: current architecture authority for Ask, trust, packaging, and proof UX.
 Date: 2026-08-28
 
-The V1.6.2 branch candidate is committed. Its exact current HEAD and tree are
-bound only through matching CI candidate evidence; this architecture document
-does not embed a self-referential commit identifier. The tracked package,
-runtime, Docker, and OpenAPI identity is `1.6.2`, but that identity is not a
-deployment or release statement. Exact-Git qualification evidence remains
+The V1.6.2 branch candidate is committed. Exact current HEAD/tree identity is
+required in the external current candidate-evidence record after execution;
+this architecture document does not embed a self-referential commit identifier
+and does not affirm that matching CI evidence already exists. The tracked
+package, runtime, Docker, and OpenAPI identity is `1.6.2`, but that identity is
+not a deployment or release statement. Exact-Git qualification evidence remains
 separate and incomplete until its required local, CI, independent, paid,
 preview, and human gates are recorded.
 
