@@ -160,6 +160,8 @@
 .analysis-table-wrap thead th { color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 .analysis-ranked-table {
   margin-top: 20px;
+  min-width: 0;
+  overflow: hidden;
   background: transparent;
   border: 1px solid #cbc5b5;
 }
@@ -265,6 +267,20 @@
   .analysis-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .analysis-filters label, .analysis-filters select { width: 100%; }
   .analysis-chart--donut { height: 200px; }
+  .analysis-ranked-table table,
+  .analysis-table-wrap table { table-layout: fixed; }
+  .analysis-ranked-table th,
+  .analysis-ranked-table td,
+  .analysis-table-wrap th,
+  .analysis-table-wrap td { overflow-wrap: anywhere; word-break: break-word; }
+  .analysis-ranked-table th,
+  .analysis-ranked-table td { padding-inline: 7px; }
+  .analysis-ranked-table th:first-child,
+  .analysis-ranked-table td:first-child { width: 12%; }
+  .analysis-ranked-table th:nth-child(3),
+  .analysis-ranked-table td:nth-child(3),
+  .analysis-ranked-table th:nth-child(4),
+  .analysis-ranked-table td:nth-child(4) { width: 22%; }
   .analysis-disclosure summary { grid-template-columns: 24px 1fr; padding-block: 9px; }
   .analysis-disclosure summary span { grid-column: 2; }
   .analysis-workspace .leaflet-container { height: 52dvh; min-height: 320px; }

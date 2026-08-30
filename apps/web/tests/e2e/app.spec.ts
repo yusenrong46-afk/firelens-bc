@@ -615,6 +615,28 @@ test("shows summary map and records for analytical live questions", async ({ pag
   expect(overflowX).toBeLessThanOrEqual(0);
 });
 
+test("keeps analytical answers usable at narrow mobile viewports", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto("/");
+  await page.getByLabel("Ask FireLens a question").fill("Show wildfire distribution by status across B.C.");
+  await page.getByLabel("Send question").click();
+  await expect(page.getByRole("region", { name: "Analysis view" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Incident records by fire centre" })).toBeVisible();
+  for (const width of [320, 340, 390]) {
+    await page.setViewportSize({ width, height: 640 });
+    const overflowX = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflowX, `horizontal overflow at ${width}px`).toBeLessThanOrEqual(0);
+  }
+  await page.getByRole("tab", { name: "Table", exact: true }).click();
+  await page.setViewportSize({ width: 320, height: 640 });
+  const tableOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(tableOverflow, "horizontal overflow in analytical table at 320px").toBeLessThanOrEqual(0);
+});
+
 test("opens analytical answers on Summary and resets the selected surface for a new answer", async ({ page }) => {
   await page.goto("/");
   const question = page.getByLabel("Ask FireLens a question");
