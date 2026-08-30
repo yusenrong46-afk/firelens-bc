@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from firelens.evaluation import candidate_evidence_documents
+from firelens.evaluation import candidate_evidence_documents, productbench_v2_report
 from firelens.evaluation.candidate_evidence_common import MATERIAL_PATHS
 from firelens.evaluation.candidate_evidence_validation import validate_workflow_identity
 from firelens.evaluation.common import file_sha256
@@ -525,6 +525,23 @@ def _productbench_deterministic(*, tree: str = TREE) -> dict[str, object]:
             "reported_cost_usd": 0.0,
             "ceiling_exceeded": False,
         },
+        # This is the report shape emitted by productbench_v2_report.build(),
+        # including the canonical activity counters added in ProductBench v2.
+        # Candidate evidence must bind it rather than reject a complete offline
+        # run for carrying the report's required provenance.
+        "provider_activity": {
+            "call_counts": {
+                "plan": 2,
+                "embed": 9,
+                "rerank": 9,
+                "generate": 2,
+                "generate_grounded": 0,
+                "generate_background": 2,
+                "generate_contexts": 0,
+                "chat_turn": 0,
+            },
+            "total_calls": 22,
+        },
         "results": [
             {
                 "id": case_id,
@@ -540,6 +557,10 @@ def _productbench_deterministic(*, tree: str = TREE) -> dict[str, object]:
                         "embed": 0,
                         "rerank": 0,
                         "generate": 0,
+                        "generate_grounded": 0,
+                        "generate_background": 0,
+                        "generate_contexts": 0,
+                        "chat_turn": 0,
                     },
                 },
                 "scope_evidence": {
@@ -1000,6 +1021,58 @@ def test_productbench_evidence_must_be_present_current_and_complete(tmp_path: Pa
             root,
             tmp_path / "failed-candidate",
             _evidence_inputs(tmp_path / "failed", productbench_deterministic=failed),
+        )
+
+
+def test_productbench_report_emitter_shape_is_candidate_evidence_compatible(
+    tmp_path: Path,
+) -> None:
+    """A complete runner report must not be rejected for its own v2 provenance."""
+
+    root = _fixture_root(tmp_path)
+    template = _productbench_deterministic()
+    manifest = json.loads(
+        (root / "data/evaluation/productbench_v2.manifest.json").read_text(encoding="utf-8")
+    )
+    report = productbench_v2_report.build(
+        manifest,
+        "offline_fake",
+        template["results"],
+        max_cost_usd=0.0,
+        provider_boundary="offline_fake",
+        identity=lambda _: template["identity"],
+        offline_execution=template["offline_execution"],
+        provider_call_counts=template["provider_activity"]["call_counts"],
+    )
+
+    _build(
+        root,
+        tmp_path / "emitted-candidate",
+        _evidence_inputs(tmp_path / "emitted-inputs", productbench_deterministic=report),
+    )
+
+    mismatched_activity = _productbench_deterministic()
+    mismatched_activity["provider_activity"]["total_calls"] = 0  # type: ignore[index]
+    with pytest.raises(ValueError, match="provider activity is invalid"):
+        _build(
+            root,
+            tmp_path / "mismatched-activity-candidate",
+            _evidence_inputs(
+                tmp_path / "mismatched-activity-inputs",
+                productbench_deterministic=mismatched_activity,
+            ),
+        )
+
+    unverified_cost = _productbench_deterministic()
+    unverified_cost["cost"]["cost_unverified"] = False  # type: ignore[index]
+    with pytest.raises(ValueError, match="cost evidence fields are invalid"):
+        _build(
+            root,
+            tmp_path / "unverified-cost-candidate",
+            _evidence_inputs(
+                tmp_path / "unverified-cost-inputs",
+                productbench_deterministic=unverified_cost,
+            ),
         )
 
 

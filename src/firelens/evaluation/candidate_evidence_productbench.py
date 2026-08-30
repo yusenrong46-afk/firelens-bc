@@ -10,6 +10,34 @@ from typing import Any
 
 from firelens.evaluation.candidate_evidence_common import file_record, load_json, strict_file
 
+# ProductBench reports preserve the legacy aggregate ``generate`` counter for
+# observability and also record the concrete generation paths.  Candidate
+# evidence must bind the complete v2 shape so a report cannot hide a new call
+# class by omitting it.
+_PROVIDER_CALL_COUNTERS = frozenset(
+    {
+        "plan",
+        "embed",
+        "rerank",
+        "generate",
+        "generate_contexts",
+        "generate_grounded",
+        "generate_background",
+        "chat_turn",
+    }
+)
+_CANONICAL_BILLABLE_COUNTERS = frozenset(
+    {
+        "plan",
+        "embed",
+        "rerank",
+        "generate_contexts",
+        "generate_grounded",
+        "generate_background",
+        "chat_turn",
+    }
+)
+
 
 def _nonnegative_number(value: Any, label: str) -> float:
     if not isinstance(value, (int, float)) or isinstance(value, bool) or value < 0:
@@ -41,6 +69,7 @@ def validate_productbench_deterministic(
             "failed",
             "case_count",
             "cost",
+            "provider_activity",
             "results",
             "offline_execution",
         },
@@ -123,6 +152,25 @@ def validate_productbench_deterministic(
         or report["failed"] != 0
     ):
         raise ValueError("ProductBench deterministic execution did not pass")
+    provider_activity = exact_object(
+        report["provider_activity"],
+        {"call_counts", "total_calls"},
+        "ProductBench provider activity",
+    )
+    call_counts = provider_activity["call_counts"]
+    if (
+        not isinstance(call_counts, dict)
+        or set(call_counts) != _PROVIDER_CALL_COUNTERS
+        or any(
+            not isinstance(count, int) or isinstance(count, bool) or count < 0
+            for count in call_counts.values()
+        )
+        or call_counts["generate"]
+        != call_counts["generate_grounded"] + call_counts["generate_background"]
+        or provider_activity["total_calls"]
+        != sum(call_counts[name] for name in _CANONICAL_BILLABLE_COUNTERS)
+    ):
+        raise ValueError("ProductBench deterministic provider activity is invalid")
     cost = exact_object(
         report["cost"],
         {"max_cost_usd", "reported_cost_usd", "ceiling_exceeded"},
@@ -206,11 +254,14 @@ def validate_productbench_deterministic(
             )
             or call_evidence["tool_attempts"] != len(call_evidence["tool_names"])
             or not isinstance(call_evidence["provider_calls"], dict)
-            or set(call_evidence["provider_calls"]) != {"plan", "embed", "rerank", "generate"}
+            or set(call_evidence["provider_calls"]) != _PROVIDER_CALL_COUNTERS
             or any(
                 not isinstance(count, int) or isinstance(count, bool) or count < 0
                 for count in call_evidence["provider_calls"].values()
             )
+            or call_evidence["provider_calls"]["generate"]
+            != call_evidence["provider_calls"]["generate_grounded"]
+            + call_evidence["provider_calls"]["generate_background"]
         ):
             raise ValueError(
                 f"ProductBench deterministic execution evidence is invalid: {case_id}"
