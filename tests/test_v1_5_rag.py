@@ -136,7 +136,7 @@ class V15RoutingTests(unittest.TestCase):
     def test_live_intents_use_only_supported_official_layers(self) -> None:
         self.assertEqual(
             live_layers_for_question("What active wildfires are in BC today?"),
-            (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER),
+            (LiveResultKind.INCIDENT,),
         )
         self.assertEqual(live_layers_for_question("What is the current air quality?"), ())
         self.assertEqual(

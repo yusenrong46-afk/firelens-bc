@@ -315,6 +315,16 @@ def test_typed_operations_select_only_owned_live_layers(
     assert live_layers_for_question(question) == expected_layers
 
 
+def test_province_active_roster_avoids_unrequested_perimeter_geometry() -> None:
+    question = "Are there active wildfires in BC currently?"
+
+    assert parse_request_intent(question).live_layers == (
+        LiveResultKind.INCIDENT,
+        LiveResultKind.PERIMETER,
+    )
+    assert live_layers_for_question(question) == (LiveResultKind.INCIDENT,)
+
+
 @given(place=PLACES, time=CURRENT_CUES, template=LIVE_FORMS)
 def test_case_and_punctuation_do_not_change_live_ownership(
     place: str, time: str, template: str

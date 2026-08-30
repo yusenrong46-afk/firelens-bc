@@ -10,7 +10,11 @@ from __future__ import annotations
 import re
 
 from firelens.answering.capability_intent import is_capability_question
-from firelens.answering.intent_automaton import TemporalScope, parse_request_intent
+from firelens.answering.intent_automaton import (
+    RecordOperation,
+    TemporalScope,
+    parse_request_intent,
+)
 from firelens.answering.intent_conversation import (
     _DEICTIC_FOLLOWUP,
     _deictic_action_boundary,
@@ -42,6 +46,7 @@ from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.location_intent import (
     asks_for_personal_location,
     coarse_location_from_question,
+    is_province_wide_label,
 )
 from firelens.answering.request_facets import contents_request_facet
 from firelens.answering.request_grammar import parse_request_facets
@@ -269,6 +274,19 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
         # Deictic attributes must bind to a selected ID, never a province list.
         return ()
     layers = list(parsed.live_layers)
+    if (
+        named is None
+        and (
+            (original_location is not None and is_province_wide_label(original_location.label))
+            or any(is_province_wide_label(label) for label in parsed.live_location_candidates)
+        )
+        and any(clause.operation == RecordOperation.LIST for clause in parsed.clauses)
+        and set(layers) == {LiveResultKind.INCIDENT, LiveResultKind.PERIMETER}
+    ):
+        # A province-wide active-fire roster is owned by the incident layer.
+        # Perimeter geometry remains available for explicit perimeter, distance,
+        # map-focus, named-record, and multi-layer official-record requests.
+        layers = [LiveResultKind.INCIDENT]
     if named is not None and LiveResultKind.INCIDENT not in layers:
         layers.insert(0, LiveResultKind.INCIDENT)
     if is_empty_map_safety_inference(question):
