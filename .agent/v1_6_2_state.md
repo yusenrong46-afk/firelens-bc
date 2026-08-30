@@ -16,9 +16,11 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - Visual implementation parent examined before this repair: commit
   `345aaab2bef2fb3f580401dd79303a6b840fc88a`, tree
   `8d098103468fe26eed7578ce6a8e1c7a67b1e0cf` (Thomas-authored Civic
-  Intelligence Desk candidate). The final exact candidate identity must be
-  recomputed after this repair is committed. Neither identity is a release
-  approval, deployment proof, or completed qualification.
+  Intelligence Desk candidate). The current branch HEAD is the unqualified
+  candidate. Its exact commit/tree must be read from matching current CI or
+  candidate evidence; any post-evidence change invalidates that evidence.
+  Neither identity is a release approval, deployment proof, or completed
+  qualification.
 
 ## Ownership and routing
 
@@ -51,9 +53,9 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 ## Executed local evidence
 
-- Local engineering qualification was recorded before the final candidate
-  identity. It must be rerun and bound to the final HEAD/tree before it is
-  treated as exact-head evidence.
+- Local engineering qualification was recorded before the current branch HEAD
+  was bound to candidate evidence. It must be rerun and bound to the current
+  candidate evidence before it is treated as exact-head evidence.
 - Frontend unit suite: `148` passing tests.
 - Tooling checks: `6` passing.
 - Sites checks: `4` passing.
@@ -72,9 +74,9 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 ## Evidence boundaries and blockers
 
-- Prior H8 performance evidence predates the final candidate identity and is
-  not exact-head evidence. Rerun H8 after the final candidate commit, retain
-  its raw report, and require the applicable human decision if the frozen guard
+- Prior H8 performance evidence predates the current candidate evidence and is
+  not exact-head evidence. Rerun H8 for the current branch HEAD, retain its raw
+  report, and require the applicable human decision if the frozen guard
   requires one. This ledger does not accept a tradeoff on Thomas's behalf.
 - H4 sealed independent package remains outstanding; sealed labels are not
   inspected or exposed.
@@ -99,8 +101,9 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 ## Next exact action
 
-Recompute the final candidate commit/tree after this repair is committed, rerun
-local qualification and H8, and bind the results in external current
-candidate-evidence. Then complete the outstanding paid, preview, human,
-VoiceOver, firewall, rollback, and release-decision gates. Do not describe the
-project as fully qualified, deployed, or release-ready until those gates pass.
+Read the current branch HEAD/tree from matching current CI or candidate evidence,
+rerun local qualification and H8, and bind the results in external current
+candidate-evidence. Any post-evidence change invalidates those results. Then
+complete the outstanding paid, preview, human, VoiceOver, firewall, rollback,
+and release-decision gates. Do not describe the project as fully qualified,
+deployed, or release-ready until those gates pass.
