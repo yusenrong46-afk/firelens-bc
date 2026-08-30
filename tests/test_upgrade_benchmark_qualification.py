@@ -566,9 +566,7 @@ def test_preview_parser_rejects_response_count_hash_and_support_mutations() -> N
 
 def test_preview_parser_rejects_unsafe_scope_redirect_payload() -> None:
     unsafe = _preview_report()
-    unsupported = next(
-        row for row in unsafe["requests"] if row["case_id"] == "unsupported"
-    )
+    unsupported = next(row for row in unsafe["requests"] if row["case_id"] == "unsupported")
     unsupported["response"]["claim_count"] = 1
 
     with pytest.raises(ValueError, match="checks differ from raw"):

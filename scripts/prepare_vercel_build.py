@@ -73,15 +73,11 @@ def _resolve_build_benchmark_id() -> str:
     configured = os.environ.get("FIRELENS_BENCHMARK_ID")
     benchmark_id = configured.strip() if configured is not None else DEFAULT_BENCHMARK_ID
     if BENCHMARK_ID.fullmatch(benchmark_id) is None:
-        raise BuildIdentityError(
-            "build benchmark ID from FIRELENS_BENCHMARK_ID is invalid"
-        )
+        raise BuildIdentityError("build benchmark ID from FIRELENS_BENCHMARK_ID is invalid")
     return benchmark_id
 
 
-def _build_candidate(
-    root: Path, *, commit: str, benchmark_id: str
-) -> dict[str, str]:
+def _build_candidate(root: Path, *, commit: str, benchmark_id: str) -> dict[str, str]:
     """Build the deployment candidate from one already-validated identity."""
 
     return build_runtime_candidate(

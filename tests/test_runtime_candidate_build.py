@@ -258,7 +258,7 @@ def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> N
         "FIRELENS_GENERATION_MODEL",
         "ARG FIRELENS_RELEASE_VERSION=1.6.2",
         "ARG FIRELENS_BENCHMARK_ID=firelens_v1_6_2",
-        "--benchmark-id \"$FIRELENS_BENCHMARK_ID\"",
+        '--benchmark-id "$FIRELENS_BENCHMARK_ID"',
     ):
         assert required in dockerfile
     assert (ROOT / "data/repairs/text_overrides.yaml").is_file()

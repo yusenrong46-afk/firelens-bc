@@ -450,8 +450,7 @@ def _preview(
         for row in live_rows["live"]
     }
     map_pairs = {
-        (str(row["result_id"]), str(row["kind"]), str(row["status"]))
-        for row in map_rows
+        (str(row["result_id"]), str(row["kind"]), str(row["status"])) for row in map_rows
     }
     live_metadata_complete = bool(live_rows["live"])
     mixed_metadata_complete = bool(live_rows["mixed"])

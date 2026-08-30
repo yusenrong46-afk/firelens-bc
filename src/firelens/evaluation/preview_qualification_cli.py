@@ -193,9 +193,7 @@ async def qualify_preview(
     live_pairs = {
         (row.get("result_id"), row.get("kind"), row.get("status")) for row in live_rows
     }
-    map_pairs = {
-        (row.get("result_id"), row.get("kind"), row.get("status")) for row in map_rows
-    }
+    map_pairs = {(row.get("result_id"), row.get("kind"), row.get("status")) for row in map_rows}
     dynamic_latencies = [row["latency_ms"] for row in requests if row["path"] == "/api/v1/ask"]
     checks = {
         "homepage_anonymous": homepage.status_code == 200
