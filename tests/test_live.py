@@ -862,6 +862,32 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(max_active, 2)
         self.assertEqual(response.unavailable_layers, [])
 
+    async def test_layer_metadata_and_first_page_share_the_upstream_budget(self) -> None:
+        active = 0
+        max_active = 0
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal active, max_active
+            active += 1
+            max_active = max(max_active, active)
+            await asyncio.sleep(0.01)
+            active -= 1
+            if request.url.path.endswith("/query"):
+                return httpx.Response(
+                    200,
+                    json={"type": "FeatureCollection", "features": []},
+                )
+            return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(
+                client=client,
+                max_upstream_concurrency=2,
+            ).map_results(layers=(LiveResultKind.INCIDENT,))
+
+        self.assertEqual(max_active, 2)
+        self.assertEqual(response.unavailable_layers, [])
+
     async def test_layer_definition_can_be_injected_without_code_path_duplication(self) -> None:
         definition = live_module.LayerDefinition(
             url="https://official.example.test/custom-layer/0",
