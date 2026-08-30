@@ -155,12 +155,12 @@ def test_runtime_candidate_cli_fails_closed_without_commit(tmp_path: Path) -> No
     assert main(["--output", str(tmp_path / "candidate.json"), "--commit", ""]) == 2
 
 
-def test_runtime_candidate_cli_defaults_to_current_rc2_identity(tmp_path: Path) -> None:
+def test_runtime_candidate_cli_defaults_to_current_v1_6_2_identity(tmp_path: Path) -> None:
     output = tmp_path / "candidate.json"
     assert main(["--output", str(output), "--commit", COMMIT]) == 0
     candidate = json.loads(output.read_text(encoding="utf-8"))
-    assert DEFAULT_BENCHMARK_ID == "firelens_v1_6_rc2"
-    assert candidate["candidate_id"] == f"firelens-v1-6-rc2:{COMMIT}"
+    assert DEFAULT_BENCHMARK_ID == "firelens_v1_6_2"
+    assert candidate["candidate_id"] == f"firelens-v1-6-2:{COMMIT}"
 
 
 def test_vercel_build_accepts_explicit_local_source_identity(
