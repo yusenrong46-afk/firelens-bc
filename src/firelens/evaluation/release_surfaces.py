@@ -99,7 +99,6 @@ def _preview_exact_support(
         raise ValueError(f"{context} claims and evidence must be lists")
     if len(claims) != expected_claim_count or len(evidence) != expected_evidence_count:
         raise ValueError(f"{context} roster differs from the response counts")
-
     evidence_lengths: dict[str, int] = {}
     for index, row in enumerate(evidence):
         row_context = f"{context} evidence {index}"
@@ -268,29 +267,19 @@ def _preview(
     requests = report.get("requests")
     if not isinstance(requests, list) or len(requests) != 8:
         raise ValueError("preview report must contain all eight canonical requests")
-
+    ask_path = "/api/v1/ask"
     expected_protocol = [
         ("homepage", "GET", "/", {}),
         ("liveness", "GET", "/api/v1/health/live", {}),
         ("readiness", "GET", "/api/v1/health/ready", {}),
-        (
-            "static",
-            "POST",
-            "/api/v1/ask",
-            {"question": "What belongs in an emergency kit?"},
-        ),
+        ("static", "POST", ask_path, {"question": "What belongs in an emergency kit?"}),
         (
             "unsupported",
             "POST",
             "/api/v1/ask",
             {"question": ("What is the current air quality in Vancouver from wildfire smoke?")},
         ),
-        (
-            "live",
-            "POST",
-            "/api/v1/ask",
-            {"question": "Are there active wildfires in BC currently?"},
-        ),
+        ("live", "POST", ask_path, {"question": "Are there active wildfires in BC currently?"}),
         (
             "mixed",
             "POST",
