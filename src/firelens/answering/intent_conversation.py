@@ -211,17 +211,31 @@ def prefers_general_background(request: QueryRequest) -> bool:
         return False
     if _selected_or_deictic_record_request(request, current):
         return False
-    if _PACKING_EXCLUSION.search(current) is not None:
-        context = " ".join(
-            [current, *(turn.content for turn in request.history[-4:] if turn.role == "user")]
-        )
-        if _PACKING_CONTEXT.search(context) is not None:
-            return True
+    if is_packing_exclusion_question(request):
+        return True
     if reviewed_guidance_intent(current):
         return False
     if _historical_wildfire_explanation(current, temporal_scope=parsed.temporal_scope):
         return True
     return _GENERAL_MISTAKE_DISCUSSION.search(current) is not None
+
+
+def is_packing_exclusion_question(request: QueryRequest) -> bool:
+    """Recognize an omission request only when it is anchored to a bag or kit.
+
+    The phrasing "what should I leave out of an emergency bag" contains the
+    evacuation-shaped substring "should I leave".  This helper keeps that
+    narrow, ordinary packing question out of the personalized evacuation
+    boundary without weakening real requests such as "should I leave home?".
+    """
+
+    current = focused_question(request.question)
+    if _PACKING_EXCLUSION.search(current) is None:
+        return False
+    context = " ".join(
+        [current, *(turn.content for turn in request.history[-4:] if turn.role == "user")]
+    )
+    return _PACKING_CONTEXT.search(context) is not None
 
 
 def skips_provider_planning(request: QueryRequest) -> bool:

@@ -18,12 +18,33 @@ class StaticGuidanceSubject(StrEnum):
 
     EMERGENCY_KIT = "emergency_kit"
     PET_GRAB_AND_GO = "pet_grab_and_go"
+    WILDFIRE_SMOKE = "wildfire_smoke"
 
 
 _KIT_GUIDANCE_TOKENS = frozenset({"kit", "kits"})
 _BAG_GUIDANCE_TOKENS = frozenset({"bag", "bags"})
 _BAG_GUIDANCE_QUALIFIERS = frozenset({"emergency", "evacuation", "grab", "go"})
 _PET_GUIDANCE_TOKENS = frozenset({"pet", "pets", "animal", "animals"})
+_SMOKE_GUIDANCE_TOKENS = frozenset({"smoke", "smoky"})
+_SMOKE_EFFECT_TOKENS = frozenset(
+    {"effect", "effects", "health", "harm", "harmful", "impact", "impacts"}
+)
+_SMOKE_SPECIFIC_TOKENS = frozenset(
+    {
+        "baby",
+        "babies",
+        "child",
+        "children",
+        "home",
+        "house",
+        "indoor",
+        "indoors",
+        "infant",
+        "infants",
+        "older",
+        "pregnant",
+    }
+)
 
 
 def static_guidance_subject(question: str) -> StaticGuidanceSubject | None:
@@ -36,6 +57,8 @@ def static_guidance_subject(question: str) -> StaticGuidanceSubject | None:
     """
 
     tokens = frozenset(lex.tokenize(question))
+    if tokens & _SMOKE_GUIDANCE_TOKENS and "wildfire" in tokens:
+        return StaticGuidanceSubject.WILDFIRE_SMOKE
     kit_subject = bool(tokens & _KIT_GUIDANCE_TOKENS) or bool(
         tokens & _BAG_GUIDANCE_TOKENS and tokens & _BAG_GUIDANCE_QUALIFIERS
     )
@@ -54,11 +77,22 @@ def static_guidance_retrieval_query(question: str) -> str | None:
         # A retrieval target, not a generated recommendation: exact source
         # passage selection and quote-only publication remain mandatory.
         return "pets emergency kit grab-and-go bag food water leashes carriers"
-    # Preserve a user's explicit container wording; request_facets owns that
-    # more precise syntax. The typed subject only supplies a target where the
-    # request says "kit guidance" rather than what it wants inside the kit.
-    if contents_request_facet(question) is not None:
-        return None
+    if subject == StaticGuidanceSubject.WILDFIRE_SMOKE:
+        # Prefer the clean governed BCCDC protection section over adjacent PDF
+        # fragments whose extraction order and bullet glyphs are unsuitable as
+        # a reader-facing answer. Publication still requires an admitted exact
+        # quotation from the returned evidence packet.
+        tokens = frozenset(lex.tokenize(question))
+        if tokens & _SMOKE_SPECIFIC_TOKENS:
+            return " ".join(question.split())
+        if tokens & _SMOKE_EFFECT_TOKENS:
+            return "wildfire smoke health effects"
+        return "protect yourself from wildfire smoke"
     if subject == StaticGuidanceSubject.EMERGENCY_KIT:
+        contents = contents_request_facet(question)
+        if contents is not None:
+            # Preserve the user's container while preventing a model-proposed
+            # query from inheriting an unrelated subject from conversation.
+            return contents.retrieval_query
         return "emergency kit contents checklist"
     return None

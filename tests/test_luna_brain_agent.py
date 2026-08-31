@@ -2732,6 +2732,28 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(kwargs["allow_live"])
         self.assertTrue(kwargs["prefer_reviewed_quotes"])
 
+    async def test_leave_out_of_emergency_bag_uses_general_background_not_evacuation(
+        self,
+    ) -> None:
+        static = RecordingStatic(_background_response())
+        live = CountingMapService([])
+        agent = FireLensAgent(
+            cast(Any, static),
+            LiveAnswerCoordinator(cast(Any, live)),
+        )
+        question = "What should I leave out of an emergency bag?"
+
+        execution = await agent.answer(QueryRequest(question=question))
+
+        self.assertEqual(execution.response.response_mode, ResponseMode.BACKGROUND)
+        self.assertNotEqual(
+            execution.response.reason_code,
+            ReasonCode.PERSONALIZED_SAFETY_DECISION,
+        )
+        self.assertEqual(execution.tools, (AgentTool.ANSWER_GENERAL_BACKGROUND,))
+        self.assertEqual(live.map_calls, 0)
+        self.assertEqual(live.nearby_calls, 0)
+
     async def test_answer_mismatch_correction_retries_the_previous_user_question(
         self,
     ) -> None:
@@ -2779,7 +2801,30 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(execution.tools, (AgentTool.SEARCH_REVIEWED_GUIDANCE,))
         self.assertEqual(len(static.calls), 1)
         request, kwargs = static.calls[0]
-        self.assertEqual(request.question, "What should I know about wildfire smoke?")
+        self.assertEqual(request.question, "protect yourself from wildfire smoke")
+        self.assertFalse(kwargs["allow_live"])
+        self.assertTrue(kwargs["prefer_reviewed_quotes"])
+
+    async def test_current_bag_subject_cannot_inherit_pet_query_from_history(self) -> None:
+        static = RecordingStatic(_kit_response(mode=ResponseMode.GROUNDED))
+        agent = FireLensAgent(
+            cast(Any, static),
+            LiveAnswerCoordinator(cast(Any, FixedLiveService([]))),
+        )
+        request = QueryRequest(
+            question="What should I pack in an emergency bag?",
+            history=[
+                ConversationTurn(role="user", content="What should I pack for my pets?"),
+                ConversationTurn(role="assistant", content="Earlier pet guidance."),
+            ],
+        )
+
+        execution = await agent.answer(request)
+
+        self.assertEqual(execution.tools, (AgentTool.SEARCH_REVIEWED_GUIDANCE,))
+        self.assertEqual(len(static.calls), 1)
+        static_request, kwargs = static.calls[0]
+        self.assertEqual(static_request.question, "emergency bag contents checklist")
         self.assertFalse(kwargs["allow_live"])
         self.assertTrue(kwargs["prefer_reviewed_quotes"])
 

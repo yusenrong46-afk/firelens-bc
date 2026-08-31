@@ -176,7 +176,11 @@ describe("proof-carrying answer surface", () => {
     expect(screen.getByText(
       "FireLens is showing an exact source quotation. It has not been approved as a structured FireLens claim.",
     )).toBeInTheDocument();
+    expect(screen.getByText("Exact official source wording")).toBeInTheDocument();
     expect(screen.getAllByText("Exact source wording — not a structured FireLens claim").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Keep water and food in a grab-and-go bag.")).toHaveLength(1);
+    expect(screen.queryByText("Preparedness sources")).not.toBeInTheDocument();
+    expect(screen.getByText("Official source excerpt")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Keep water and food in a grab-and-go bag\./ }));
     expect(screen.getAllByText("Source extraction only; no structured-claim review").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Stable source wording").length).toBeGreaterThan(0);

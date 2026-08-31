@@ -131,6 +131,7 @@ export function ClaimEvidence({
   onReviewEvidence: () => void;
 }) {
   const quote = showSource ? claim.supports?.[0]?.quote?.trim() : undefined;
+  const quoteOnly = claim.publication?.kind === "official_quote_only";
   const reviewLabel = claim.publication?.kind === "official_quote_only"
     ? "Source extraction only; no structured-claim review"
     : evidence?.review_provenance === "human_verified_repair"
@@ -143,9 +144,12 @@ export function ClaimEvidence({
     >
       <div className="claim-evidence__statement">
         <span className="claim-number">{index + 1}</span>
-        <div><strong>{claim.text}</strong><small>{supportLabel}</small></div>
+        <div>
+          <strong>{quoteOnly ? "Official source excerpt" : claim.text}</strong>
+          <small>{supportLabel}</small>
+        </div>
       </div>
-      {quote && (
+      {quote && !quoteOnly && (
         <blockquote>
           <span>Exact source wording</span>
           <p><mark>{quote}</mark></p>
@@ -154,7 +158,18 @@ export function ClaimEvidence({
           )}
         </blockquote>
       )}
-      <button type="button" aria-label={`Review technical evidence for ${claim.text}`} onClick={onReviewEvidence}>Review technical evidence</button>
+      {quoteOnly && evidence && (
+        <p className="claim-evidence__source">
+          <a href={evidence.canonical_url} target="_blank" rel="noreferrer">
+            {evidence.publisher} · {evidence.title}
+            <ArrowSquareOut size={15} aria-hidden="true" />
+          </a>
+          {reviewLabel && <small>{reviewLabel}</small>}
+        </p>
+      )}
+      <button type="button" aria-label={`Review technical evidence for ${claim.text}`} onClick={onReviewEvidence}>
+        {quoteOnly ? "Review source details" : "Review technical evidence"}
+      </button>
     </article>
   );
 }

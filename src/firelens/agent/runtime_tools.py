@@ -139,7 +139,16 @@ async def execute_tool(
         # while giving static RAG its typed subject as the bounded publication
         # question. This lets generic kit guidance and contextual pet follow-
         # ups reach only the material that the reviewed pipeline can admit.
-        static_question = static_guidance_retrieval_query(query) or query
+        # The current user turn owns a recognized reviewed-guidance subject.
+        # A planner query may narrow an untyped request, but it must not replace
+        # a typed current-turn subject with an unrelated concept remembered
+        # from conversation history (for example a pet fragment for a general
+        # emergency-bag question).
+        static_question = (
+            static_guidance_retrieval_query(request.question)
+            or static_guidance_retrieval_query(query)
+            or query
+        )
         static_request = QueryRequest(
             question=static_question,
             history=request.history,

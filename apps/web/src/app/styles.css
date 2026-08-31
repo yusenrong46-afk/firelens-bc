@@ -636,6 +636,18 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 .proof-card a { color: var(--forest); font-size: 16px; font-weight: 600; }
 
+.answer-source-kicker { display: block; margin: 0 0 8px; color: var(--forest); }
+.claim-evidence__source { display: grid; gap: 4px; margin: 0; }
+.claim-evidence__source a {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  gap: 6px;
+  color: var(--forest);
+  font-weight: 650;
+}
+.claim-evidence__source small { color: var(--muted); }
+
 .answer-limitations {
   display: grid;
   grid-template-columns: 22px 1fr;

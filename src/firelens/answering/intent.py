@@ -24,6 +24,7 @@ from firelens.answering.intent_conversation import (
     conversation_planning_question,
     explicit_corpus_attribution,
     focused_question,
+    is_packing_exclusion_question,
     prefers_general_background,
     prior_anchor_user_question,
     publication_question,
@@ -374,6 +375,8 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
         for pattern in _PROHIBITED_PATTERNS
     )
     if reviewed_return_condition_intent(processing_question):
+        personalized = False
+    if is_packing_exclusion_question(request):
         personalized = False
     general_background = prefers_general_background(request)
     live = bool(unsupported_live_topics(processing_question))

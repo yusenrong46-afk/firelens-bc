@@ -514,7 +514,7 @@ def test_public_agent_keeps_accepted_background_with_live_records() -> None:
     assert live.nearby_calls == 1
     assert live.map_calls == 0
     assert (live.nearby_label or "").casefold() == "kelowna"
-    assert static.questions == ["what belongs in an emergency kit"]
+    assert static.questions == ["emergency kit contents checklist"]
 
 
 def test_public_agent_keeps_rejected_static_clause_visible_as_a_limitation() -> None:
@@ -542,7 +542,7 @@ def test_public_agent_keeps_rejected_static_clause_visible_as_a_limitation() -> 
 
     assert response.response_mode == ResponseMode.LIVE
     assert any("non-live clause" in item for item in response.limitations)
-    assert static.questions == ["what belongs in an emergency kit"]
+    assert static.questions == ["emergency kit contents checklist"]
 
 
 def test_mixed_answer_keeps_reviewed_claim_out_of_current_record_section() -> None:

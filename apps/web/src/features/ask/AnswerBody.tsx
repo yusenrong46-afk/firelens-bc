@@ -32,6 +32,10 @@ export function AnswerBody({
     ?? assistantText;
   const banner = getStatusBanner(response);
   const backgroundMode = response?.response_mode === "background";
+  const quoteOnlyAnswer = Boolean(
+    (response?.claims?.length ?? 0) > 0
+    && response?.claims?.every((claim) => claim.publication?.kind === "official_quote_only"),
+  );
   const compactOfficialHandoff = response?.reason_code === "high_risk_claim_not_structured";
   const hasAnswerSections = answerSections.length > 0;
   const liveSummary = Boolean(
@@ -59,6 +63,9 @@ export function AnswerBody({
   return (
     <>
       {analytical && <span className="panel-label analytical-short-answer">FireLens answer</span>}
+      {!analytical && quoteOnlyAnswer && (
+        <span className="panel-label answer-source-kicker">Exact official source wording</span>
+      )}
       {!hasAnswerSections && lead && <AnswerMarkdown className="answer-lead">{lead}</AnswerMarkdown>}
       {hasAnswerSections && (
         <div className="answer-sections" aria-label="Authority-labelled answer">

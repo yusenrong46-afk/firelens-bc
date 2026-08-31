@@ -7,7 +7,7 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 ## Current identity
 
 - Repository worktree: `/private/tmp/firelens-v1-6-2-layout-balance`
-- Working branch: `codex/v1-6-2-layout-balance`
+- Working branch: `codex/v1-6-2-production-journey-repairs`
 - Current HEAD and tree: read from `git rev-parse HEAD^{commit}` and
   `git rev-parse HEAD^{tree}`. This ledger deliberately does not embed a
   self-referential candidate hash.
@@ -67,6 +67,11 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
   three boundaries.
 - Layout integration: the wider chat surface and full-height analytical canvas
   are preserved in the branch parent commit.
+- Production-journey repair: exclusionary emergency-bag wording no longer
+  collides with the personalized evacuation boundary; the current turn owns
+  typed kit and smoke retrieval so earlier conversation cannot substitute an
+  unrelated pet or PDF fragment; exact quote-only answers render once with a
+  compact source/review affordance instead of repeating the full passage.
 
 ## Evidence status
 
@@ -81,6 +86,11 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - No local result in this ledger establishes deployed identity, continuous
   official-feed availability, semantic completeness, participant comprehension,
   or release readiness.
+- Exact repair checkout verification passed 1,930 Python tests with 10 expected
+  skips and 672 subtests, 156 frontend tests, the production build, Sites tests,
+  and 41/42 browser cases with the documented mobile-only popup skip. RC2.2
+  hard probe remained 91/105 at $0.00, all five structural leak counters stayed
+  zero, and ProductBench deterministic remained 31/31 at zero provider calls.
 
 ## Evidence boundaries and blockers
 
@@ -111,7 +121,7 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 ## Next exact action
 
-Commit the reconciliation, then run the complete zero-cost backend, frontend,
-ProductBench, structured-publication, and unchanged RC2.2 gates on the exact
-combined head. Regenerate the examination package only after those gates pass.
-Any post-evidence change invalidates the result.
+Commit the production-journey repair, deploy that exact commit to a Vercel
+preview, and replay the repaired bag, smoke, live-analysis, named-fire, and
+follow-up journeys in real browsers. Promote only that inspected artifact;
+any post-evidence change invalidates the result.

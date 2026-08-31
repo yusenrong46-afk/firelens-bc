@@ -71,6 +71,8 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
   const visibleLimitations = Array.from(
     new Set((response?.limitations ?? []).map((item) => item.trim()).filter(Boolean)),
   );
+  const allClaimsQuoteOnly = claims.length > 0
+    && claims.every((claim) => claim.publication?.kind === "official_quote_only");
   const selectedRecord = [...mapResults, ...(response?.live_results ?? [])].find(
     (item) => item.result_id === selectedLiveResultId,
   );
@@ -258,7 +260,9 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
           </div>
         )}
 
-        {view.kind === "answer" && <PreparednessSources evidence={presentableEvidence} />}
+        {view.kind === "answer" && !allClaimsQuoteOnly && (
+          <PreparednessSources evidence={presentableEvidence} />
+        )}
 
         {view.kind === "abstention" && (
           <div className="abstention-card">

@@ -1015,6 +1015,8 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             runtime, _, _ = await make_runtime(
                 Path(directory), provider=provider, chunks=[chunk]
             )
+            initial_embed_calls = provider.embed_calls
+            initial_rerank_calls = provider.rerank_calls
             for question in questions:
                 with self.subTest(question=question):
                     before = (
@@ -1029,11 +1031,17 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
 
                     self.assertIsNone(execution.planning_decision)
                     self.assertEqual(provider.plan_calls, before[0])
-                    self.assertGreater(provider.embed_calls, before[1])
-                    self.assertGreater(provider.rerank_calls, before[2])
+                    # Semantically equivalent smoke prompts share the bounded
+                    # canonical retrieval target. A warm cache may therefore
+                    # avoid another provider call without leaving the reviewed
+                    # evidence lane.
+                    self.assertGreaterEqual(provider.embed_calls, before[1])
+                    self.assertGreaterEqual(provider.rerank_calls, before[2])
                     self.assertNotEqual(
                         execution.response.response_mode, ResponseMode.BACKGROUND
                     )
+            self.assertGreater(provider.embed_calls, initial_embed_calls)
+            self.assertGreater(provider.rerank_calls, initial_rerank_calls)
             await runtime.aclose()
 
     async def test_ask_builds_the_evidence_packet_once(self) -> None:

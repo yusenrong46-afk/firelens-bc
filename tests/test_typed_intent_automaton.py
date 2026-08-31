@@ -53,6 +53,7 @@ from firelens.contracts import (
     PublicEvidence,
     QueryRequest,
     QueryRoute,
+    ReasonCode,
     ResponseMode,
     ResponseStatus,
     TemporalClass,
@@ -86,6 +87,26 @@ LIVE_FORMS = st.sampled_from(
             "Regarding an emergency kit, what about pets?",
             StaticGuidanceSubject.PET_GRAB_AND_GO,
             "pets emergency kit grab-and-go bag food water leashes carriers",
+        ),
+        (
+            "What should I pack in an emergency bag?",
+            StaticGuidanceSubject.EMERGENCY_KIT,
+            "emergency bag contents checklist",
+        ),
+        (
+            "What should I know about wildfire smoke?",
+            StaticGuidanceSubject.WILDFIRE_SMOKE,
+            "protect yourself from wildfire smoke",
+        ),
+        (
+            "What are the health effects of wildfire smoke?",
+            StaticGuidanceSubject.WILDFIRE_SMOKE,
+            "wildfire smoke health effects",
+        ),
+        (
+            "What are practical ways to keep wildfire smoke out of my home?",
+            StaticGuidanceSubject.WILDFIRE_SMOKE,
+            "What are practical ways to keep wildfire smoke out of my home?",
         ),
         ("Put a bag in the trunk before work.", None, None),
         ("How should I pack a backpack for travel?", None, None),
@@ -718,6 +739,35 @@ def test_explicit_exclusionary_grab_and_go_question_stays_general_background() -
     assert public_plan.route == QueryRoute.TANGENT
     assert agent_plan.mode == AgentRequestMode.STATIC
     assert agent_plan.tool_calls == ()
+
+
+def test_leave_out_of_emergency_bag_is_not_an_evacuation_decision() -> None:
+    request = QueryRequest(question="What should I leave out of an emergency bag?")
+
+    public_plan = plan_query(request)
+    agent_plan = plan_agent_request(request)
+
+    assert prefers_general_background(request)
+    assert public_plan.route == QueryRoute.TANGENT
+    assert public_plan.boundary_reason is None
+    assert agent_plan.mode == AgentRequestMode.STATIC
+    assert agent_plan.route == QueryRoute.TANGENT
+    assert agent_plan.tool_calls == ()
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Should I leave Kelowna right now?",
+        "Should I leave my home now?",
+        "Should we leave the neighbourhood tonight?",
+    ),
+)
+def test_real_personalized_leave_requests_keep_the_safety_boundary(question: str) -> None:
+    plan = plan_query(QueryRequest(question=question))
+
+    assert plan.route == QueryRoute.PROHIBITED
+    assert plan.boundary_reason == ReasonCode.PERSONALIZED_SAFETY_DECISION
 
 
 @pytest.mark.parametrize(
