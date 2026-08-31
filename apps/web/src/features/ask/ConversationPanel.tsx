@@ -183,7 +183,6 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
           </div>
         </div>}
 
-        {analytical && analysisSlot}
         {analytical && response?.trace_id && (
           <div className="analysis-feedback"><FeedbackControls traceId={response.trace_id} /></div>
         )}
@@ -280,6 +279,10 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
           />
         )}
       </div>
+
+      {analytical && analysisSlot && (
+        <div className="analysis-surface-slot">{analysisSlot}</div>
+      )}
 
       {view.kind !== "idle" && (
         <QuestionComposer continuationPending={requiresLocation} idle={false} loading={view.kind === "loading"} query={query}

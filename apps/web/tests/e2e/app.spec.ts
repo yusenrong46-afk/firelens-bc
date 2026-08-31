@@ -284,6 +284,16 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
   await expect(page.getByRole("button", { name: "View official map context" })).toHaveCount(0);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
+  if ((page.viewportSize()?.width ?? 0) >= 1120) {
+    const desktopChat = await page.evaluate(() => {
+      const viewportWidth = document.documentElement.clientWidth;
+      const panel = document.querySelector(".conversation-panel")!.getBoundingClientRect();
+      const answer = document.querySelector(".assistant-message")!.getBoundingClientRect();
+      return { panelRatio: panel.width / viewportWidth, answerWidth: answer.width };
+    });
+    expect(desktopChat.panelRatio).toBeGreaterThanOrEqual(0.84);
+    expect(desktopChat.answerWidth).toBeLessThanOrEqual(960);
+  }
 });
 
 test("opens the employer explainer in flow without covering FireLens", async ({ page }) => {
@@ -658,6 +668,21 @@ test("opens analytical answers on Summary and resets the selected surface for a 
   const records = page.getByRole("tab", { name: "Records", exact: true });
   await expect(map).toHaveAttribute("aria-selected", "false");
   await expect(summary).toHaveAttribute("aria-selected", "true");
+
+  if ((page.viewportSize()?.width ?? 0) >= 1120) {
+    const desktopColumns = await page.evaluate(() => {
+      const panel = document.querySelector(".conversation-panel")!.getBoundingClientRect();
+      const canvas = document.querySelector(".analysis-surface-slot")!.getBoundingClientRect();
+      const composer = document.querySelector(".composer")!.getBoundingClientRect();
+      return {
+        panelBottom: panel.bottom,
+        canvasBottom: canvas.bottom,
+        composerBottom: composer.bottom,
+      };
+    });
+    expect(Math.abs(desktopColumns.panelBottom - desktopColumns.canvasBottom)).toBeLessThanOrEqual(1);
+    expect(Math.abs(desktopColumns.composerBottom - desktopColumns.canvasBottom)).toBeLessThanOrEqual(1);
+  }
 
   await map.click();
   await expect(map).toHaveAttribute("aria-selected", "true");

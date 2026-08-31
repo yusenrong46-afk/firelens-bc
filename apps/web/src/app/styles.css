@@ -1476,6 +1476,12 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   box-shadow: none;
 }
 
+.analysis-surface-slot {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
 .workspace .conversation-panel {
   display: flex;
   flex-direction: column;
@@ -2041,7 +2047,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   }
 
   .workspace--chat:not(.workspace--split) .conversation-panel {
-    width: min(880px, 100%);
+    width: min(1180px, 100%);
     justify-self: center;
   }
   .workspace--chat:not(.workspace--split) .conversation-panel--idle {
@@ -2057,6 +2063,20 @@ button:focus-visible, a:focus-visible, input:focus-visible {
     scrollbar-width: thin;
   }
 
+  .workspace--chat:not(.workspace--split) .conversation-scroll > .history-group,
+  .workspace--chat:not(.workspace--split) .conversation-scroll > .question-block,
+  .workspace--chat:not(.workspace--split) .conversation-scroll > .assistant-message,
+  .workspace--chat:not(.workspace--split) .conversation-scroll > .location-request,
+  .workspace--chat:not(.workspace--split) .conversation-scroll > .claim-group,
+  .workspace--chat:not(.workspace--split) .conversation-scroll > .answer-sources,
+  .workspace--chat:not(.workspace--split) .conversation-scroll > .abstention-card,
+  .workspace--chat:not(.workspace--split) .conversation-scroll > .suggestion-group,
+  .workspace--chat:not(.workspace--split) .composer > * {
+    width: min(960px, 100%);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   .workspace--spatial .evidence-panel,
   .workspace--chat.workspace--split .evidence-panel {
     display: flex;
@@ -2067,9 +2087,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
     overflow-y: auto;
   }
 
-  /* Analysis is a 320–360px answer rail beside the existing snapshot canvas. */
+  /* Analysis is a persistent answer rail beside one full-height snapshot canvas. */
   .workspace--analysis .conversation-panel {
-    --analysis-rail-width: clamp(340px, 25vw, 380px);
+    --analysis-rail-width: clamp(380px, 30vw, 440px);
     position: relative;
     display: grid;
     grid-template-columns: var(--analysis-rail-width) minmax(0, 1fr);
@@ -2080,52 +2100,42 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   }
   .workspace--analysis .analysis-workspace { border-radius: 0; }
   .workspace--analysis .conversation-toolbar--clear-only {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: var(--analysis-rail-width);
-    grid-column: 1 / -1;
+    position: static;
+    width: 100%;
+    grid-column: 1;
     grid-row: 1;
     justify-content: flex-start;
     padding-inline: clamp(28px, 3vw, 46px);
   }
   .workspace--analysis .conversation-scroll {
-    grid-column: 1 / -1;
+    grid-column: 1;
     grid-row: 2;
     display: block;
-    position: relative;
-    grid-template-columns: none;
-    align-content: start;
-    gap: 0;
     min-height: 0;
     overflow-y: auto;
-    padding: 0;
+    padding: 0 30px 24px;
   }
-  .workspace--analysis .conversation-scroll > :not(.analysis-workspace) {
-    width: var(--analysis-rail-width);
-    min-width: 0;
-    padding-left: 30px;
-    padding-right: 30px;
-  }
-  .workspace--analysis .conversation-scroll > .question-block { padding-top: 64px; }
+  .workspace--analysis .conversation-scroll > .question-block { padding-top: 20px; }
   .workspace--analysis .conversation-panel--analytical .assistant-message { margin-left: 0; }
-  .workspace--analysis .conversation-scroll > .analysis-workspace {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: calc(100% - var(--analysis-rail-width));
-    min-height: 100%;
+  .workspace--analysis .analysis-surface-slot {
+    grid-column: 2;
+    grid-row: 1 / -1;
     min-width: 0;
-    align-self: start;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--paper);
+    border-left: 1px solid rgba(167, 184, 102, .28);
+  }
+  .workspace--analysis .analysis-surface-slot > .analysis-workspace {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
     margin: 0;
     padding: 38px clamp(40px, 4.2vw, 72px) 58px;
     background: var(--paper);
-    height: 100%;
-    max-height: 100%;
     overflow-y: auto;
-  }
-  .workspace--analysis .conversation-scroll > .analysis-limitations {
-    margin-left: 0;
   }
   .workspace--analysis .composer,
   .workspace--analysis .analysis-feedback {
@@ -2144,8 +2154,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .workspace--analysis .composer > p { display: none; }
   .workspace--analysis .analysis-tabs { width: min(100%, 520px); }
   .workspace--analysis .analysis-workspace > [role="tabpanel"] {
-    height: 657px;
-    overflow-y: auto;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
   }
   .workspace--analysis .analysis-workspace .leaflet-container {
     height: 400px;
@@ -2165,8 +2176,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 
 @media (min-width: 1120px) and (max-width: 1320px) {
-  .workspace--analysis .conversation-panel { --analysis-rail-width: 340px; }
-  .workspace--analysis .conversation-scroll > .analysis-workspace { padding-inline: 34px; }
+  .workspace--analysis .conversation-panel { --analysis-rail-width: 380px; }
+  .workspace--analysis .analysis-surface-slot > .analysis-workspace { padding-inline: 34px; }
 }
 
 /* Compact desktop/tablet: keep the answer above its analytical or spatial
@@ -2185,7 +2196,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   }
   .workspace--analysis .conversation-panel { display: flex; }
   .workspace--analysis .conversation-scroll { display: block; }
-  .workspace--analysis .conversation-scroll > .analysis-workspace {
+  .workspace--analysis .analysis-surface-slot > .analysis-workspace {
     margin: 18px 0 0;
     width: 100%;
     padding: 24px clamp(18px, 4vw, 42px) 34px;
@@ -2232,7 +2243,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .evidence-inner { overflow: visible; }
   .evidence-panel--map .leaflet-container { height: 54vh; min-height: 390px; }
   .workspace--analysis .conversation-scroll { display: block; }
-  .workspace--analysis .conversation-scroll > .analysis-workspace {
+  .workspace--analysis .analysis-surface-slot > .analysis-workspace {
     margin: 18px 0 0;
     width: 100%;
     padding: 24px clamp(18px, 4vw, 42px) 34px;
@@ -2275,7 +2286,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .location-request__actions button,
   .location-request__actions button:last-child { grid-column: 1; }
   .workspace { padding-inline: 10px; }
-  .workspace--analysis .conversation-scroll > .analysis-workspace { padding-top: 0; }
+  .workspace--analysis .analysis-surface-slot > .analysis-workspace { padding-top: 0; }
   .ask-start-panel__intro { padding: 32px 22px 36px; }
   .ask-start-panel__intro h1 { margin-top: 14px; font-size: 38px; }
   .ask-start-panel__intro p { font-size: 16px; }

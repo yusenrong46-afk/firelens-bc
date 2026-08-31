@@ -281,7 +281,7 @@
 .analysis-records li a { flex: 0 0 auto; color: var(--forest); font-size: 14px; }
 .analysis-feedback { width: calc(100% - 52px); margin: 12px 0 0 52px; }
 
-@media (max-width: 1320px) {
+@media (max-width: 1240px) {
   .analysis-grid { grid-template-columns: 1fr; }
   .analysis-chart-card,
   .analysis-chart-card + .analysis-chart-card { padding: 18px 0; border-left: 0; border-top: 1px solid rgba(184, 177, 159, .7); }

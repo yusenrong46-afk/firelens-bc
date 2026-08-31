@@ -189,6 +189,8 @@ describe("FireLens Source Lens", () => {
     );
     const analysisRegion = screen.getByRole("region", { name: "Analysis view" });
     expect(shortAnswer.compareDocumentPosition(analysisRegion) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(analysisRegion.closest(".analysis-surface-slot")).toBeInTheDocument();
+    expect(analysisRegion.closest(".conversation-scroll")).not.toBeInTheDocument();
     expect(document.querySelector(".conversation-scroll")).not.toHaveAttribute("aria-live");
     expect(screen.getByText("FireLens response ready.")).toBeInTheDocument();
     expect(screen.getByLabelText("Clear conversation history")).toHaveTextContent("New conversation");
