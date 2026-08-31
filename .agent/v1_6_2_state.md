@@ -6,8 +6,8 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 ## Current identity
 
-- Repository: `/Users/thomas/Documents/firelens-v1-6-integration-20260826T003225Z`
-- Working branch: `codex/v1-6-2-productbench100-repair`
+- Repository worktree: `/private/tmp/firelens-v1-6-2-layout-balance`
+- Working branch: `codex/v1-6-2-layout-balance`
 - Current HEAD and tree: read from `git rev-parse HEAD^{commit}` and
   `git rev-parse HEAD^{tree}`. This ledger deliberately does not embed a
   self-referential candidate hash.
@@ -59,20 +59,25 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - Final presentation repair: the first question stays visible, the conversation
   toolbar cannot overlap it, duplicate analytical insight copy was removed, and
   the unused map-default presentation branch was deleted.
-- Current repair campaign: the two last real-corpus continuity defects are
-  implemented on this branch: mixed live records plus generic kit guidance
-  omitted the static clause, and `What about pets?` after kit guidance
-  redirected instead of continuing grounded quote-only guidance. These repairs
-  still require exact-head verification and preview replay.
+- Final examination repair: singular personal-proximity fire requests now use
+  the existing live location-required lane; imperative current road-status
+  requests use the existing responsible-service handoff; `/api/v1/ask`
+  operational logs now bind `candidate_id` to the runtime candidate rather than
+  the corpus version. Focused provider-free and privacy regressions cover all
+  three boundaries.
+- Layout integration: the wider chat surface and full-height analytical canvas
+  are preserved in the branch parent commit.
 
 ## Evidence status
 
-- Earlier local engineering, ProductBench, hard-probe, package, browser, and
-  real-feed results predate the current HEAD or are not bound to its final tree.
-  They are historical development evidence, not exact-head qualification.
-- The two current real-corpus continuity repairs are branch-local until exact-head
-  verification and preview replay produce matching artifacts. Selected-record
-  and refresh/location continuity were earlier committed repairs.
+- Focused repair verification passed 383 tests on the functional repair commit.
+- Unchanged RC2.2 execution on functional commit
+  `5e4c8a897f346f02a4c165493cceb058b7904d3f` passed 91/105 against the frozen
+  86/105 minimum at $0.00. The 14 remaining cases are classified in
+  `docs/reports/V1_6_2_HARD_PROBE_RECONCILIATION.md`.
+- Earlier local engineering, ProductBench, package, browser, and real-feed
+  results predate the final documentation commit or are not bound to its final
+  tree. They remain historical development evidence until exact-head reruns.
 - No local result in this ledger establishes deployed identity, continuous
   official-feed availability, semantic completeness, participant comprehension,
   or release readiness.
@@ -106,8 +111,7 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 ## Next exact action
 
-Freeze and commit the current repair, push the branch, and require matching CI
-and candidate evidence before merge or deployment. Any post-evidence change
-invalidates those results. Human, sealed, preview, firewall, rollback, and
-release artifacts must be attached to the same identity before they are claimed
-as completed; verbal completion is not a substitute for candidate-bound proof.
+Commit the reconciliation, then run the complete zero-cost backend, frontend,
+ProductBench, structured-publication, and unchanged RC2.2 gates on the exact
+combined head. Regenerate the examination package only after those gates pass.
+Any post-evidence change invalidates the result.

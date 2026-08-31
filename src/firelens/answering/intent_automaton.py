@@ -1,10 +1,4 @@
-"""Typed deterministic request parser for FireLens-owned execution decisions.
-
-The parser recognizes a small grammar of operations and objects.  It does not
-resolve a place against a gazetteer, decide whether evidence supports an
-answer, or grant publication authority.  Its output is the shared input to
-routing, layer selection, location scoping, and mixed-lane planning.
-"""
+"""Typed request parser for operations; it never grants publication authority."""
 
 from __future__ import annotations
 
@@ -276,27 +270,11 @@ def _current_fire_operation(
         return None
     if _is_product_help(tokens) or _guidance_blocks_live(tokens, temporal):
         return None
-    personal_reference = any(
-        lex.has_phrase(tokens, phrase)
-        for phrase in (
-            ("near", "me"),
-            ("near", "us"),
-            ("near", "my"),
-            ("near", "our"),
-            ("nearby", "me"),
-            ("nearby", "us"),
-            ("to", "me"),
-            ("to", "us"),
-            ("from", "me"),
-            ("from", "us"),
-        )
-    )
-    personal_proximity = bool(
+    if (
         fire
         and token_set & {"near", "nearby", "closest", "nearest"}
-        and personal_reference
-    )
-    if personal_proximity:
+        and re.search(r"\b(?:near|nearby|to|from)\s+(?:me|us|my|our)\b", " ".join(tokens))
+    ):
         return RecordOperation.LOCATE
     current = temporal == TemporalScope.CURRENT
     command = bool(token_set & lex.RECORD_COMMANDS)

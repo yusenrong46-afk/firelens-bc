@@ -301,9 +301,7 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
             with tempfile.TemporaryDirectory() as directory:
                 runtime, _, config = await make_runtime(Path(directory))
                 runtime.corpus_version = "firelens_static_corpus.v1"
-                runtime.bound_candidate = {
-                    "candidate_id": "firelens-v1-6-2:" + "b" * 40
-                }
+                runtime.bound_candidate = {"candidate_id": "firelens-v1-6-2:" + "b" * 40}
                 app = create_app(config, runtime=runtime)
                 async with httpx.AsyncClient(
                     transport=httpx.ASGITransport(app=app), base_url="http://test"
