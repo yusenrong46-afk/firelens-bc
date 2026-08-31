@@ -5,7 +5,7 @@ import { cleanup } from "@testing-library/react";
 import { App } from "../src/app/App";
 import { getProofCards, getClaimSupportState, getStatusBanner, bindProofProfile, bindDistanceDerivation, CANONICAL_DISTANCE_DERIVATION, freshnessToken } from "../src/features/ask/proofPresentation";
 import { StatusBanner } from "../src/features/ask/StatusBanner";
-import { TileFailureWarning } from "../src/features/near-me/OfficialBasemap";
+import { ResponseModeBadge } from "../src/features/ask/responseModeBadge";
 import { MatchingRecordList } from "../src/features/near-me/LiveRecordLists";
 import type { AskResponse, LiveResult } from "../src/shared/api/api";
 
@@ -819,22 +819,165 @@ describe("proof-carrying answer surface", () => {
     });
   });
 
-  it("keeps official records listed when map tiles fail", () => {
+  it("does not call an unbound follow-up outside FireLens live sources", () => {
+    expect(getStatusBanner({
+      status: "answer",
+      response_mode: "scope_redirect",
+      reason_code: "live_data_required",
+      trace_id: "trace-unbound",
+      answer: "Select a mapped official record or name a British Columbia community.",
+      claims: [],
+      evidence: [],
+      limitations: [],
+      live_results: [],
+      status_banner: {
+        headline: "Outside FireLens live sources",
+        detail: "Use the related official service for information FireLens does not ingest live.",
+        freshness_label: "Freshness not applicable",
+        availability_label: "Sources required for this request were available.",
+      },
+    } as unknown as AskResponse)).toMatchObject({
+      headline: "Select an official record to continue",
+      detail: "Click a fire on the map or name a British Columbia community, then ask again.",
+    });
+  });
+
+  it("presents a reviewed-source handoff instead of a missing-live-data redirect", () => {
+    const response = {
+      status: "answer",
+      response_mode: "scope_redirect",
+      reason_code: "no_approved_evidence",
+      trace_id: "trace-reviewed-source-handoff",
+      answer: "PreparedBC has related wording, but no reviewed claim directly answers this request.",
+      claims: [],
+      evidence: [],
+      limitations: [],
+      related_links: [{
+        title: "PreparedBC grab-and-go bag guidance",
+        url: "https://example.test/preparedbc-bag",
+      }],
+      status_banner: {
+        headline: "Outside FireLens live sources",
+        detail: "Use the related official service for information FireLens does not ingest live.",
+        freshness_label: "Freshness not applicable",
+        availability_label: "Sources required for this request were available.",
+      },
+    } as unknown as AskResponse;
+
+    expect(getStatusBanner(response)).toMatchObject({
+      headline: "The reviewed source does not directly answer this",
+      detail: "Open the source for its exact wording.",
+    });
+    render(<ResponseModeBadge mode="scope_redirect" reasonCode="no_approved_evidence" response={response} />);
+    expect(screen.getByText("Reviewed source handoff")).toBeInTheDocument();
+  });
+
+  it("uses neutral coverage-limit wording when a reviewed-source handoff has no usable link", () => {
+    const noLink = {
+      response_mode: "scope_redirect",
+      reason_code: "no_approved_evidence",
+      related_links: [],
+    } as unknown as AskResponse;
+    const malformedLink = {
+      response_mode: "scope_redirect",
+      reason_code: "no_approved_evidence",
+      related_links: [{ title: "PreparedBC guidance", url: "not a URL" }],
+    } as unknown as AskResponse;
+
     const { rerender } = render(
-      <>
-        <TileFailureWarning failed={false} />
-        <MatchingRecordList results={[record]} />
-      </>,
+      <ResponseModeBadge mode="scope_redirect" reasonCode="no_approved_evidence" response={noLink} />,
     );
-    expect(screen.queryByText(/Map tiles failed to load/)).not.toBeInTheDocument();
-    expect(screen.getByRole("list", { name: "Matching this question" })).toHaveTextContent("Listed Fire");
-    rerender(
-      <>
-        <TileFailureWarning failed />
-        <MatchingRecordList results={[record]} />
-      </>,
-    );
-    expect(screen.getByRole("status")).toHaveTextContent("Official records remain listed below");
+    expect(screen.getByText("Coverage limit")).toBeInTheDocument();
+    rerender(<ResponseModeBadge mode="scope_redirect" reasonCode="no_approved_evidence" response={malformedLink} />);
+    expect(screen.getByText("Coverage limit")).toBeInTheDocument();
+  });
+
+  it("requires the canonical related link to be valid before calling it a reviewed-source handoff", () => {
+    const response = {
+      status: "answer",
+      response_mode: "scope_redirect",
+      reason_code: "no_approved_evidence",
+      trace_id: "trace-broken-canonical-link",
+      answer: "PreparedBC has related wording, but no reviewed claim directly answers this request.",
+      claims: [],
+      evidence: [],
+      limitations: [],
+      related_links: [
+        { title: "PreparedBC guidance", url: "not a URL" },
+        { title: "PreparedBC grab-and-go bag guidance", url: "https://example.test/preparedbc-bag" },
+      ],
+      status_banner: {
+        headline: "Outside FireLens live sources",
+        detail: "Use the related official service for information FireLens does not ingest live.",
+        freshness_label: "Freshness not applicable",
+        availability_label: "Sources required for this request were available.",
+      },
+    } as unknown as AskResponse;
+
+    expect(getStatusBanner(response)).toMatchObject({
+      headline: "Outside FireLens live sources",
+      detail: "Use the related official service for information FireLens does not ingest live.",
+      official_escalation_title: null,
+      official_escalation_url: null,
+    });
+    render(<ResponseModeBadge mode="scope_redirect" reasonCode="no_approved_evidence" response={response} />);
+    expect(screen.getByText("Coverage limit")).toBeInTheDocument();
+  });
+
+  it("retains the official-service redirect for missing live data", () => {
+    const response = {
+      status: "answer",
+      response_mode: "scope_redirect",
+      reason_code: "scope_redirect",
+      trace_id: "trace-live-service",
+      answer: "Use the official road service for current road conditions.",
+      claims: [],
+      evidence: [],
+      limitations: [],
+      related_links: [{ title: "DriveBC", url: "https://example.test/drivebc" }],
+      status_banner: {
+        headline: "Outside FireLens live sources",
+        detail: "Use the related official service for information FireLens does not ingest live.",
+        freshness_label: "Freshness not applicable",
+        availability_label: "Sources required for this request were available.",
+      },
+    } as unknown as AskResponse;
+
+    expect(getStatusBanner(response)).toMatchObject({
+      headline: "Outside FireLens live sources",
+      detail: "Use the related official service for information FireLens does not ingest live.",
+    });
+    render(<ResponseModeBadge mode="scope_redirect" reasonCode="scope_redirect" />);
+    expect(screen.getByText("Related official service")).toBeInTheDocument();
+  });
+
+  it("does not call an unknown source identifier a reviewed-source handoff", () => {
+    const response = {
+      status: "answer",
+      response_mode: "scope_redirect",
+      reason_code: "no_approved_evidence",
+      trace_id: "trace-unknown-source-id",
+      answer: "FireLens could not find an admitted source with that identifier.",
+      claims: [],
+      evidence: [],
+      limitations: [],
+      related_links: [],
+      status_banner: {
+        headline: "Outside FireLens live sources",
+        detail: "Use the related official service for information FireLens does not ingest live.",
+        freshness_label: "Freshness not applicable",
+        availability_label: "Sources required for this request were available.",
+      },
+    } as unknown as AskResponse;
+
+    expect(getStatusBanner(response)).toMatchObject({
+      headline: "Outside FireLens live sources",
+      detail: "Use the related official service for information FireLens does not ingest live.",
+    });
+  });
+
+  it("keeps official records available independently of the street basemap", () => {
+    render(<MatchingRecordList results={[record]} />);
     expect(screen.getByRole("list", { name: "Matching this question" })).toHaveTextContent("Listed Fire");
   });
 

@@ -6,11 +6,13 @@ import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
+from typing import Any, cast
 from unittest.mock import patch
 
 from pydantic import ValidationError
 from rag_helpers import make_chunk, make_runtime, write_test_corpus
 
+from firelens.agent import AgentTool, FireLensAgent
 from firelens.answering.context import build_evidence_packet
 from firelens.answering.generate import draft_schema
 from firelens.answering.intent import plan_query
@@ -37,6 +39,7 @@ from firelens.contracts import (
     RetrievalTextStrategy,
 )
 from firelens.errors import IndexValidationError, ProviderError, ProviderErrorKind
+from firelens.live_answering import LiveAnswerCoordinator
 from firelens.providers.fake import FakeProvider
 from firelens.rag_evaluate import run_diagnostic
 from firelens.retrieval.embeddings import build_vector_index
@@ -782,6 +785,50 @@ class BlockingGroundedProvider(FakeProvider):
 
 
 class ServiceTests(unittest.IsolatedAsyncioTestCase):
+    async def test_general_wildfire_discussion_bypasses_planner_retrieval_and_compiler(
+        self,
+    ) -> None:
+        """A broad discussion cannot inherit Tier A/B authority from a nearby hit."""
+
+        class OvereagerPlanner(FakeProvider):
+            async def plan(self, messages, *, output_schema):
+                del messages, output_schema
+                self.plan_calls += 1
+                raise AssertionError("general discussion must not invoke the retrieval planner")
+
+        questions = (
+            "What is the most common mistake to make when wildfire is coming?",
+            "What are the most common mistakes people make before a wildfire?",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            provider = OvereagerPlanner()
+            runtime, _, _ = await make_runtime(Path(directory), provider=provider)
+            agent = FireLensAgent(
+                runtime.service,
+                LiveAnswerCoordinator(cast(Any, object())),
+            )
+            for question in questions:
+                with self.subTest(question=question):
+                    before = (
+                        provider.plan_calls,
+                        provider.embed_calls,
+                        provider.rerank_calls,
+                        provider.generate_calls,
+                    )
+                    execution = await agent.answer(QueryRequest(question=question))
+
+                    self.assertEqual(execution.response.response_mode, ResponseMode.BACKGROUND)
+                    self.assertEqual(execution.tools, (AgentTool.ANSWER_GENERAL_BACKGROUND,))
+                    self.assertTrue(
+                        execution.response.validation and execution.response.validation.accepted
+                    )
+                    self.assertEqual(
+                        (provider.plan_calls, provider.embed_calls, provider.rerank_calls),
+                        before[:3],
+                    )
+                    self.assertEqual(provider.generate_calls, before[3] + 1)
+            await runtime.aclose()
+
     async def test_active_operations_clear_after_success_and_provider_failure(self) -> None:
         for provider in (FakeProvider(), FailingGroundedProvider()):
             with self.subTest(provider=type(provider).__name__):
@@ -950,6 +997,45 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertGreater(provider.embed_calls, 0)
         self.assertGreater(provider.rerank_calls, 0)
 
+    async def test_broad_smoke_questions_use_reviewed_retrieval_not_background(self) -> None:
+        """Source-backed smoke guidance keeps priority over the general-chat lane."""
+
+        chunk = make_chunk(
+            "smoke-guidance",
+            "Wildfire smoke can be harmful to health; reducing exposure can help protect health.",
+            authority="provincial_public_health",
+        )
+        questions = (
+            "What should I know about wildfire smoke?",
+            "Tell me about wildfire smoke in plain English.",
+            "What should I know about protecting children from wildfire smoke?",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            provider = FailingPlanner()
+            runtime, _, _ = await make_runtime(
+                Path(directory), provider=provider, chunks=[chunk]
+            )
+            for question in questions:
+                with self.subTest(question=question):
+                    before = (
+                        provider.plan_calls,
+                        provider.embed_calls,
+                        provider.rerank_calls,
+                        provider.generate_calls,
+                    )
+                    execution = await runtime.service.execute_ask(
+                        QueryRequest(question=question)
+                    )
+
+                    self.assertIsNone(execution.planning_decision)
+                    self.assertEqual(provider.plan_calls, before[0])
+                    self.assertGreater(provider.embed_calls, before[1])
+                    self.assertGreater(provider.rerank_calls, before[2])
+                    self.assertNotEqual(
+                        execution.response.response_mode, ResponseMode.BACKGROUND
+                    )
+            await runtime.aclose()
+
     async def test_ask_builds_the_evidence_packet_once(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             runtime, _, _ = await make_runtime(Path(directory))
@@ -963,7 +1049,7 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(response.status, ResponseStatus.ANSWER)
             self.assertEqual(builder.call_count, 1)
 
-    async def test_multi_query_batches_embeddings_and_exposes_typed_observation(self) -> None:
+    async def test_deterministic_guidance_retrieval_skips_provider_planner(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             provider = MultiQueryProvider()
             runtime, _, _ = await make_runtime(Path(directory), provider=provider)
@@ -973,15 +1059,17 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             )
             self.assertEqual(provider.embed_calls, initial_embed_calls + 1)
             self.assertEqual(provider.rerank_calls, 1)
-            self.assertIsNotNone(execution.planning_decision)
-            self.assertEqual(len(execution.planning_decision.retrieval_queries), 2)
-            self.assertIn("bm25:2", execution.retrieval.rankings)
-            self.assertIn("vector:2", execution.retrieval.rankings)
+            # The deterministic reviewed-guidance plan intentionally bypasses
+            # the provider planner and uses one bounded retrieval query.
+            self.assertEqual(provider.plan_calls, 0)
+            self.assertIsNone(execution.planning_decision)
+            self.assertIn("bm25:1", execution.retrieval.rankings)
+            self.assertIn("vector:1", execution.retrieval.rankings)
             self.assertTrue(
-                any(len(hit.matched_queries) == 2 for hit in execution.retrieval.fused_hits)
+                any(len(hit.matched_queries) == 1 for hit in execution.retrieval.fused_hits)
             )
-            self.assertEqual(len(execution.generations), 1)
-            self.assertEqual(execution.response.response_mode, ResponseMode.GROUNDED)
+            self.assertEqual(len(execution.generations), 0)
+            self.assertEqual(execution.response.response_mode, ResponseMode.SCOPE_REDIRECT)
 
     async def test_adjacent_questions_are_visibly_background_until_calibrated(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

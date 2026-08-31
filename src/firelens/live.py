@@ -40,6 +40,7 @@ from firelens.live_support import (
     _BBox,
     _CacheKey,
     bc_region_entry,
+    regional_lookup_limitations,
 )
 from firelens.live_support import (
     GEOCODER_ACCEPTED_PRECISIONS as GEOCODER_ACCEPTED_PRECISIONS,
@@ -207,7 +208,6 @@ class LiveDataService:
         cache lookup therefore cannot hide a boundary record that an exact upstream query would
         have returned.
         """
-
         if bbox is None:
             return None
         west, south, east, north = bbox
@@ -325,14 +325,18 @@ class LiveDataService:
         *,
         bbox: tuple[float, float, float, float] | None,
     ) -> _CacheEntry:
-        source_updated_at = await self._source_metadata(kind)
+        source_updated_at, (page, exceeded) = await asyncio.gather(
+            self._source_metadata(kind),
+            self._fetch_page(kind, offset=0, bbox=bbox),
+        )
         features: list[dict[str, Any]] = []
         seen_feature_ids: set[str] = set()
         seen_pages: set[tuple[str, ...]] = set()
         geometry_bytes = 0
         offset = 0
-        for _page_number in range(self.max_pages):
-            page, exceeded = await self._fetch_page(kind, offset=offset, bbox=bbox)
+        for page_number in range(self.max_pages):
+            if page_number:
+                page, exceeded = await self._fetch_page(kind, offset=offset, bbox=bbox)
             page_ids = tuple(self._feature_identity(kind, feature) for feature in page)
             if page and page_ids in seen_pages:
                 raise LiveDataUnavailable(f"{kind.value} source repeated a result page")
@@ -554,7 +558,6 @@ class LiveDataService:
                 str(exc),
                 False,
             )
-
         results: list[LiveResult] = []
         skipped_invalid = False
         for feature in entry.features:
@@ -700,11 +703,9 @@ class LiveDataService:
                 continue
             if relation in {GeometryRelation.INSIDE, GeometryRelation.NEARBY}:
                 related.append(result.model_copy(update={"geometry_relation": relation}))
-        limitations = list(response.limitations)
-        if unknown_located:
-            limitations.append(
-                "Some official records could not be located spatially; check them directly with the issuing authority."
-            )
+        limitations = regional_lookup_limitations(
+            location, response.limitations, unknown_located=unknown_located
+        )
         related_response = response.model_copy(
             update={
                 "results": related,
@@ -745,7 +746,6 @@ class LiveDataService:
         page_size: int = 100,
     ) -> NearMeResponse:
         """Return a bounded, explicit page for the map and accessible record list."""
-
         if page < 1 or not 1 <= page_size <= 200:
             raise ValueError("near-me pagination is outside the public bounds")
         requested_layers = tuple(dict.fromkeys(layers))

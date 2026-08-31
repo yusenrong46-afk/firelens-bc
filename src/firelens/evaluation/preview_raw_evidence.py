@@ -19,6 +19,7 @@ from firelens.evaluation.common import sha256_json as _sha256_json
 
 LIVE_METADATA_FIELDS = (
     "result_id",
+    "kind",
     "authority",
     "source_url",
     "source_updated_at",

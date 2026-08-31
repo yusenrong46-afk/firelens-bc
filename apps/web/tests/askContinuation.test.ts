@@ -23,6 +23,9 @@ describe("selectedResultIdForQuestion", () => {
     expect(selectedResultIdForQuestion("how large?", "incident:7")).toBe("incident:7");
     expect(selectedResultIdForQuestion("What is the source?", "incident:7")).toBe("incident:7");
     expect(selectedResultIdForQuestion("what's its size", "incident:7")).toBe("incident:7");
+    expect(
+      selectedResultIdForQuestion("Give me the answer first, then the evidence.", "incident:7"),
+    ).toBe("incident:7");
   });
 
   it("does not hijack broad-subject questions with a stale selection", () => {

@@ -160,7 +160,10 @@ async def qualify_preview(
             },
         )
         map_response = await call(
-            "map", "GET", "/api/v1/live/map", params={"layers": "incidents"}
+            "map",
+            "GET",
+            "/api/v1/live/map",
+            params={"layers": "incidents,perimeters"},
         )
 
     payloads: dict[str, dict[str, Any]] = {}
@@ -187,8 +190,10 @@ async def qualify_preview(
     live_rows = payloads["live"].get("live_results", [])
     mixed_rows = payloads["mixed"].get("live_results", [])
     map_rows = payloads["map"].get("results", [])
-    live_pairs = {(row.get("result_id"), row.get("status")) for row in live_rows}
-    map_pairs = {(row.get("result_id"), row.get("status")) for row in map_rows}
+    live_pairs = {
+        (row.get("result_id"), row.get("kind"), row.get("status")) for row in live_rows
+    }
+    map_pairs = {(row.get("result_id"), row.get("kind"), row.get("status")) for row in map_rows}
     dynamic_latencies = [row["latency_ms"] for row in requests if row["path"] == "/api/v1/ask"]
     checks = {
         "homepage_anonymous": homepage.status_code == 200
@@ -203,8 +208,10 @@ async def qualify_preview(
         and payloads["static"].get("response_mode") in {"grounded", "partial", "conflict"}
         and _exact_support(payloads["static"]),
         "unsupported_fails_closed": unsupported.status_code == 200
-        and payloads["unsupported"].get("status") == "abstention"
+        and payloads["unsupported"].get("status") == "answer"
+        and payloads["unsupported"].get("response_mode") == "scope_redirect"
         and not payloads["unsupported"].get("claims")
+        and not payloads["unsupported"].get("evidence")
         and not payloads["unsupported"].get("live_results"),
         "live_metadata_complete": live.status_code == 200
         and payloads["live"].get("response_mode") == "live"
@@ -213,7 +220,11 @@ async def qualify_preview(
         and payloads["mixed"].get("response_mode") == "mixed"
         and _live_metadata_complete(mixed_rows)
         and _exact_support(payloads["mixed"]),
-        "chat_map_records_match": bool(live_pairs) and live_pairs.issubset(map_pairs),
+        "chat_map_records_match": (
+            bool(live_pairs)
+            and all(row.get("kind") in {"incident", "perimeter"} for row in map_rows)
+            and live_pairs.issubset(map_pairs)
+        ),
         "static_p95_within_target": _p95(dynamic_latencies) <= p95_target_ms,
     }
     report = {

@@ -9,6 +9,8 @@ from uuid import uuid4
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
+from starlette.datastructures import MutableHeaders
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from firelens.agent.failures import shout_unexpected
 from firelens.api.responses import error_response
@@ -35,6 +37,143 @@ _UNEXPECTED_ROUTE_LABELS = {
     "/api/v1/health/ready": "health_ready",
     "/": "frontend",
 }
+
+
+class BoundedAnonymousRequestMiddleware:
+    """Bound guarded request bodies before replaying them to the application.
+
+    The public API accepts a small set of anonymous write routes.  Buffering
+    their body here lets the size guard reject a chunked request at the first
+    overflowing frame, while the replay ``receive`` callable gives FastAPI a
+    normal ASGI body stream.  In particular, this does not rely on Starlette's
+    private ``Request._body`` cache, whose implementation is not an API
+    contract for middleware.
+    """
+
+    def __init__(self, app: ASGIApp, *, request_guard: AnonymousRequestGuard) -> None:
+        self.app = app
+        self.request_guard = request_guard
+
+    @staticmethod
+    async def _send_error(
+        response: JSONResponse,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
+        await response(scope, receive, send)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or scope["path"] not in _GUARDED_ROUTES:
+            await self.app(scope, receive, send)
+            return
+
+        request = Request(scope)
+        declared_length = request.headers.get("content-length")
+        if declared_length is not None:
+            try:
+                declared_bytes = int(declared_length)
+            except ValueError:
+                await self._send_error(
+                    error_response(
+                        400,
+                        trace_id=uuid4().hex,
+                        error_kind="invalid_request",
+                        message="The Content-Length header was invalid.",
+                    ),
+                    scope,
+                    receive,
+                    send,
+                )
+                return
+            if declared_bytes < 0 or declared_bytes > self.request_guard.max_body_bytes:
+                await self._send_error(
+                    error_response(
+                        413,
+                        trace_id=uuid4().hex,
+                        error_kind="request_too_large",
+                        message="The request exceeded the FireLens public API size limit.",
+                    ),
+                    scope,
+                    receive,
+                    send,
+                )
+                return
+
+        decision = await self.request_guard.check(self.request_guard.anonymous_key(request))
+        if not decision.allowed:
+            limited = error_response(
+                429,
+                trace_id=uuid4().hex,
+                error_kind="rate_limit",
+                message="The anonymous FireLens request limit was reached. Try again shortly.",
+                retryable=True,
+            )
+            limited.headers["Retry-After"] = str(decision.retry_after_seconds)
+            limited.headers["X-RateLimit-Limit"] = str(self.request_guard.limit)
+            limited.headers["X-RateLimit-Remaining"] = "0"
+            limited.headers["X-RateLimit-Scope"] = "instance-local"
+            await self._send_error(limited, scope, receive, send)
+            return
+
+        bounded_body = bytearray()
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                # Preserve ASGI's disconnect signal rather than presenting a
+                # truncated body to the downstream request parser.
+                await self.app(scope, _disconnecting_receive, send)
+                return
+            if message["type"] != "http.request":
+                continue
+            chunk = message.get("body", b"")
+            if len(bounded_body) + len(chunk) > self.request_guard.max_body_bytes:
+                await self._send_error(
+                    error_response(
+                        413,
+                        trace_id=uuid4().hex,
+                        error_kind="request_too_large",
+                        message="The request exceeded the FireLens public API size limit.",
+                    ),
+                    scope,
+                    receive,
+                    send,
+                )
+                return
+            bounded_body.extend(chunk)
+            if not message.get("more_body", False):
+                break
+
+        replay_receive = _body_replay_receive(bytes(bounded_body))
+
+        async def send_with_rate_limit_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                headers["X-RateLimit-Limit"] = str(self.request_guard.limit)
+                headers["X-RateLimit-Remaining"] = str(decision.remaining)
+                headers["X-RateLimit-Scope"] = "instance-local"
+            await send(message)
+
+        await self.app(scope, replay_receive, send_with_rate_limit_headers)
+
+
+async def _disconnecting_receive() -> Message:
+    return {"type": "http.disconnect"}
+
+
+def _body_replay_receive(body: bytes) -> Receive:
+    """Return a one-shot ASGI receive callable for an already bounded body."""
+
+    sent = False
+
+    async def receive() -> Message:
+        nonlocal sent
+        if not sent:
+            sent = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        return {"type": "http.disconnect"}
+
+    return receive
 
 
 def _apply_security_headers(request: Request, response: Response) -> Response:
@@ -65,61 +204,7 @@ def install_middlewares(
     app: FastAPI,
     request_guard: AnonymousRequestGuard,
 ) -> None:
-    @app.middleware("http")
-    async def bounded_anonymous_requests(
-        request: Request,
-        call_next: Callable[[Request], Awaitable[Response]],
-    ) -> Response:
-        if request.url.path not in _GUARDED_ROUTES:
-            return await call_next(request)
-        declared_length = request.headers.get("content-length")
-        if declared_length is not None:
-            try:
-                declared_bytes = int(declared_length)
-            except ValueError:
-                return error_response(
-                    400,
-                    trace_id=uuid4().hex,
-                    error_kind="invalid_request",
-                    message="The Content-Length header was invalid.",
-                )
-            if declared_bytes < 0 or declared_bytes > request_guard.max_body_bytes:
-                return error_response(
-                    413,
-                    trace_id=uuid4().hex,
-                    error_kind="request_too_large",
-                    message="The request exceeded the FireLens public API size limit.",
-                )
-        decision = await request_guard.check(request_guard.anonymous_key(request))
-        if not decision.allowed:
-            limited = error_response(
-                429,
-                trace_id=uuid4().hex,
-                error_kind="rate_limit",
-                message="The anonymous FireLens request limit was reached. Try again shortly.",
-                retryable=True,
-            )
-            limited.headers["Retry-After"] = str(decision.retry_after_seconds)
-            limited.headers["X-RateLimit-Limit"] = str(request_guard.limit)
-            limited.headers["X-RateLimit-Remaining"] = "0"
-            limited.headers["X-RateLimit-Scope"] = "instance-local"
-            return limited
-        bounded_body = bytearray()
-        async for chunk in request.stream():
-            if len(bounded_body) + len(chunk) > request_guard.max_body_bytes:
-                return error_response(
-                    413,
-                    trace_id=uuid4().hex,
-                    error_kind="request_too_large",
-                    message="The request exceeded the FireLens public API size limit.",
-                )
-            bounded_body.extend(chunk)
-        request._body = bytes(bounded_body)
-        guarded = await call_next(request)
-        guarded.headers["X-RateLimit-Limit"] = str(request_guard.limit)
-        guarded.headers["X-RateLimit-Remaining"] = str(decision.remaining)
-        guarded.headers["X-RateLimit-Scope"] = "instance-local"
-        return guarded
+    app.add_middleware(BoundedAnonymousRequestMiddleware, request_guard=request_guard)
 
     @app.middleware("http")
     async def security_headers(

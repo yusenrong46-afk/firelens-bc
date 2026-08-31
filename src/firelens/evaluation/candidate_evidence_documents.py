@@ -30,14 +30,24 @@ from firelens.evaluation.candidate_evidence_validation import (
     validate_credential_absence,
     validate_hard_probe,
     validate_limitations,
+    validate_productbench_deterministic,
     validate_structured_eval,
     validate_timestamp,
     validate_workflow_identity,
 )
 from firelens.evaluation.release_promotion import (
-    TO_VERSION,
+    TO_VERSION as HISTORICAL_PROMOTED_VERSION,
+)
+from firelens.evaluation.release_promotion import (
     promotion_material_record,
     validate_release_promotion,
+)
+from firelens.evaluation.v1_6_2_patch_promotion import (
+    TO_VERSION as PATCH_PROMOTED_VERSION,
+)
+from firelens.evaluation.v1_6_2_patch_promotion import (
+    patch_promotion_material_record,
+    validate_patch_promotion,
 )
 
 
@@ -236,11 +246,11 @@ def _security_document(
 
 def evidence_materials(root: Path, *, release_version: str) -> list[dict[str, object]]:
     materials = [file_record(root, name) for name in MATERIAL_PATHS]
-    if (
-        _normalized_release_version(release_version, label="requested release version")
-        == TO_VERSION
-    ):
+    normalized = _normalized_release_version(release_version, label="requested release version")
+    if normalized == HISTORICAL_PROMOTED_VERSION:
         materials.append(promotion_material_record(root))
+    elif normalized == PATCH_PROMOTED_VERSION:
+        materials.append(patch_promotion_material_record(root))
     return materials
 
 
@@ -264,6 +274,7 @@ def documents(
     structured_eval: Any,
     hard_probe: Any,
     hard_probe_baseline: Any,
+    productbench_deterministic: Any,
     limitations: list[str],
     evidence_hashes: dict[str, str],
 ) -> dict[str, dict[str, object]]:
@@ -289,19 +300,33 @@ def documents(
             "candidate evidence builder/invocation does not match workflow identity"
         )
     validate_structured_eval(structured_eval, root=root)
-    if (
-        _normalized_release_version(release_version, label="requested release version")
-        == TO_VERSION
-    ):
+    normalized_release = _normalized_release_version(
+        release_version, label="requested release version"
+    )
+    if normalized_release == HISTORICAL_PROMOTED_VERSION:
         validate_release_promotion(
             root,
             commit=commit,
             tree=tree,
             release_version=release_version,
         )
+    elif normalized_release == PATCH_PROMOTED_VERSION:
+        validate_patch_promotion(
+            root,
+            commit=commit,
+            tree=tree,
+            release_version=release_version,
+            clean_starting_state_bound=True,
+        )
     _, hard_probe_summary = validate_hard_probe(
         hard_probe,
         hard_probe_baseline,
+        root=root,
+        commit=commit,
+        tree=tree,
+    )
+    productbench_summary = validate_productbench_deterministic(
+        productbench_deterministic,
         root=root,
         commit=commit,
         tree=tree,
@@ -396,6 +421,7 @@ def documents(
             "structural_leaks": 0,
         },
         "hard_probe": hard_probe_summary,
+        "productbench_deterministic": productbench_summary,
         "credentials": {
             "required_credentials_absent": True,
             "provider_calls": credentials["provider_calls"],

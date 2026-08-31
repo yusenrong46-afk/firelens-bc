@@ -2273,7 +2273,7 @@
   "info": {
     "description": "Evidence-bound wildfire guidance plus bounded official incident, perimeter, and evacuation records. Not emergency direction.",
     "title": "FireLens BC",
-    "version": "1.6.0"
+    "version": "1.6.2"
   },
   "openapi": "3.1.0",
   "paths": {

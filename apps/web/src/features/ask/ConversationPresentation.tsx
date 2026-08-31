@@ -6,16 +6,30 @@ const OFFICIAL_BCWS_MAP_URL = "https://wildfiresituation.nrs.gov.bc.ca/map";
 
 export function revealAssistantMessage(node: HTMLElement | null, active: boolean) {
   if (!node || !active) return;
-  node.scrollIntoView?.({ block: "start", inline: "nearest" });
   const scroller = node.closest(".conversation-scroll");
   if (!(scroller instanceof HTMLElement)) return;
-  scroller.scrollTop += node.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+
+  // The analytical workspace is a two-column grid inside this scroller. The
+  // normal chat behavior intentionally follows the newest assistant message,
+  // but doing that here moves both the answer rail and the analysis canvas so
+  // their question/KPI content starts below the first viewport. A new
+  // analytical answer already has its own Summary default, so keep its shared
+  // scroller at the top and let ordinary conversations retain auto-follow.
+  if (node.closest(".conversation-panel--analytical")) {
+    scroller.scrollTop = 0;
+    return;
+  }
+
+  const previous = node.previousElementSibling;
+  const target = previous instanceof HTMLElement && previous.classList.contains("question-block")
+    ? previous
+    : node;
+  target.scrollIntoView?.({ block: "start", inline: "nearest" });
+  scroller.scrollTop += target.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
 }
 
 export function conversationContextLabel(priorTurnCount: number): string {
-  return priorTurnCount === 0
-    ? "No earlier turns in context"
-    : `${priorTurnCount} of 6 prior turns in context`;
+  return `${priorTurnCount} of 6 prior turns in context`;
 }
 
 export function ConversationToolbar({
@@ -26,15 +40,41 @@ export function ConversationToolbar({
   priorTurnCount: number;
 }) {
   return (
-    <div className="conversation-toolbar">
-      <span
-        title="FireLens keeps your last 3 question-answer pairs in this browser only and re-sends them with your next question. Nothing is stored on a server."
-      >
-        <ChatsCircle size={16} aria-hidden="true" /> {conversationContextLabel(priorTurnCount)}
-      </span>
+    <div className={`conversation-toolbar ${priorTurnCount === 0 ? "conversation-toolbar--clear-only" : ""}`}>
+      {priorTurnCount > 0 && (
+        <span
+          title="FireLens keeps your last 3 question-answer pairs in this browser only and re-sends them with your next question. Nothing is stored on a server."
+        >
+          <ChatsCircle size={16} aria-hidden="true" /> {conversationContextLabel(priorTurnCount)}
+        </span>
+      )}
       <button type="button" onClick={onClear} aria-label="Clear conversation history">
-        <Trash size={15} aria-hidden="true" /> Clear
+        <Trash size={15} aria-hidden="true" /> {priorTurnCount === 0 ? "New conversation" : "Clear"}
       </button>
+    </div>
+  );
+}
+
+export function SuggestedQuestions({
+  disabled,
+  onSelect,
+  suggestions,
+}: {
+  disabled: boolean;
+  onSelect: (question: string) => void;
+  suggestions: string[];
+}) {
+  if (suggestions.length === 0) return null;
+  return (
+    <div className="suggestion-group" aria-label="Suggested questions">
+      <span className="panel-label">Start with an example</span>
+      <div>
+        {suggestions.map((suggestion) => (
+          <button type="button" key={suggestion} onClick={() => onSelect(suggestion)} disabled={disabled}>
+            {suggestion}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

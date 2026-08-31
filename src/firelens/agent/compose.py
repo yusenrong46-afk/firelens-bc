@@ -5,16 +5,21 @@ from __future__ import annotations
 from typing import Any
 from uuid import uuid4
 
+from firelens.agent.live_scope import packet_scope_limitations
+from firelens.agent.live_selection import (
+    selected_live_result_id,
+    selected_official_handoff,
+)
 from firelens.agent.packet import AgentPacket
 from firelens.answering.intent import live_layers_for_question
 from firelens.answering.intent_safety import is_empty_map_safety_inference
 from firelens.answering.live_analysis import (
     compose_official_answer,
-    extracted_located_fire_name,
     official_display_name,
 )
 from firelens.answering.live_composition import supported_static_when_live_missing
 from firelens.answering.live_distance import distance_answer
+from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.live_request_intent import (
     is_distance_request,
     is_selected_live_request,
@@ -126,6 +131,15 @@ def _with_packet_fields(
 ) -> AskResponse:
     updates: dict[str, Any] = {}
     limitations = list(response.limitations)
+    degraded = "Official records loaded successfully. AI explanation is temporarily limited."
+    if (
+        packet.live_results
+        and packet.policy.fallback_reason in {"provider_error", "rewrite_provider_error"}
+        and degraded not in limitations
+    ):
+        limitations.append(degraded)
+        updates["limitations"] = limitations
+        updates["history_text"] = None
     if packet.unavailable_layers:
         updates["unavailable_layers"] = list(packet.unavailable_layers)
         names = ", ".join(
@@ -137,9 +151,14 @@ def _with_packet_fields(
         if layer_unavailable not in limitations:
             limitations.append(layer_unavailable)
             updates["limitations"] = limitations
-            # history_text embeds limitations; clear it so the contract
-            # validator derives it again instead of serving a stale value
-            # that fails response-model revalidation.
+            updates["history_text"] = None
+    scope_limitations = [*packet.live_limitations, *packet_scope_limitations(request, packet)]
+    for limitation in scope_limitations:
+        if limitation not in limitations:
+            limitations.append(limitation)
+            updates["limitations"] = limitations
+            # `history_text` is a derived public-contract field. Any visible
+            # limitation changes the answer history representation too.
             updates["history_text"] = None
     if request.context.selected_live_result_id and not response.selected_live_result_id:
         updates["selected_live_result_id"] = request.context.selected_live_result_id
@@ -305,7 +324,12 @@ def _build_ask_response(
 ) -> AskResponse:
     static = packet.static_response
     live = packet.live_results
-    links = packet.related_links
+    selected_handoff = selected_official_handoff(request, live)
+    links = list(packet.related_links)
+    if selected_handoff is not None and all(
+        str(link.url) != str(selected_handoff.url) for link in links
+    ):
+        links.insert(0, selected_handoff)
     if live and (packet.unavailable_layers or is_empty_map_safety_inference(request.question)):
         # The false-inference correction is application-owned. A model may not
         # soften it or turn returned records into a personalized safety claim.
@@ -421,7 +445,7 @@ def _build_ask_response(
                 [*static.limitations, BACKGROUND_LIMITATION],
             ),
             validation=static.validation,
-            selected_live_result_id=request.context.selected_live_result_id,
+            selected_live_result_id=selected_live_result_id(request, live),
             resolved_location=packet.resolved_location,
         )
     if (
@@ -470,13 +494,18 @@ def _build_ask_response(
             aggregate_freshness=freshness,
             limitations=_live_limitations(freshness, list(static.limitations)),
             validation=static.validation,
-            selected_live_result_id=request.context.selected_live_result_id,
+            selected_live_result_id=selected_live_result_id(request, live),
             resolved_location=packet.resolved_location,
         )
     if live and links:
         freshness = aggregate_live_freshness(live)
         live_text = _published_live_text(request, packet)
-        handoff = handoff_answer(packet)
+        handoff = (
+            "Open the selected official record for its official source details and "
+            "published source-update timestamp: Selected official record."
+            if selected_handoff is not None
+            else handoff_answer(packet)
+        )
         return AskResponse(
             status=ResponseStatus.ANSWER,
             trace_id=uuid4().hex,
@@ -498,7 +527,7 @@ def _build_ask_response(
             aggregate_freshness=freshness,
             related_links=links,
             resolved_location=packet.resolved_location,
-            selected_live_result_id=request.context.selected_live_result_id,
+            selected_live_result_id=selected_live_result_id(request, live),
             limitations=_live_limitations(
                 freshness,
                 ["This uses official records and is not a safety assessment."],
@@ -513,7 +542,7 @@ def _build_ask_response(
             answer=_published_live_text(request, packet),
             live_results=live,
             aggregate_freshness=freshness,
-            selected_live_result_id=request.context.selected_live_result_id,
+            selected_live_result_id=selected_live_result_id(request, live),
             resolved_location=packet.resolved_location,
             limitations=_live_limitations(
                 freshness,

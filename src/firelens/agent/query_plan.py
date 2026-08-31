@@ -2,44 +2,77 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
-from uuid import uuid4
 
 from firelens.agent.fallback_brain import planned_static_subrequest
+from firelens.agent.query_plan_boundaries import (
+    absence_all_clear_boundary as _absence_all_clear_boundary,
+)
+from firelens.agent.query_plan_boundaries import (
+    empty_map_location_prompt as _empty_map_location_prompt,
+)
+from firelens.agent.query_plan_boundaries import (
+    evacuation_alert_distance_boundary as _evacuation_alert_distance_boundary,
+)
+from firelens.agent.query_plan_boundaries import (
+    location_prompt as _location_prompt,
+)
+from firelens.agent.query_plan_boundaries import (
+    multi_place_comparison_limit as _multi_place_comparison_limit,
+)
+from firelens.agent.query_plan_boundaries import (
+    scope_redirect as _scope_redirect,
+)
+from firelens.agent.query_plan_boundaries import (
+    selection_prompt as _selection_prompt,
+)
+from firelens.agent.query_plan_boundaries import (
+    travel_or_fuel_boundary as _travel_or_fuel_boundary,
+)
+from firelens.agent.query_plan_boundaries import (
+    unbound_live_redirect as _unbound_live_redirect,
+)
 from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
+    continues_prior_live_place,
+    conversation_planning_question,
     live_layers_for_question,
     live_query_requires_location,
     plan_query,
+    prefers_general_background,
+    prior_anchor_user_question,
     unsupported_live_topics,
 )
 from firelens.answering.intent_automaton import parse_request_intent
-from firelens.answering.live_handoffs import related_live_links
+from firelens.answering.intent_safety import is_empty_map_safety_inference
+from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.live_request_intent import (
-    is_distance_request,
-    is_selected_live_request,
-    is_unsupported_selected_request,
+    requires_selected_live_record,
+    uses_selected_live_binding,
 )
 from firelens.answering.location_intent import (
     coarse_location_from_question,
+    is_multi_place_fire_comparison,
     is_out_of_province_label,
     is_province_wide_label,
+    is_province_wide_question,
 )
 from firelens.contracts import (
     AskResponse,
     LiveResultKind,
+    LocationInput,
     QueryRequest,
     QueryRoute,
-    ReasonCode,
-    RequiredInput,
-    RequiredInputKind,
-    ResponseMode,
-    ResponseStatus,
 )
 from firelens.live import LiveDataErrorKind, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
+from firelens.live_support import (
+    official_fire_centre_from_question,
+    official_fire_centre_label,
+)
 
 
 class AgentRequestMode(StrEnum):
@@ -67,6 +100,52 @@ class AgentScopeResult(StrEnum):
     READY = "ready"
     REQUIRES_INPUT = "requires_input"
     SCOPE_REDIRECT = "scope_redirect"
+
+
+_VISIBLE_ORDINAL = re.compile(
+    r"\b(?:the\s+)?(?P<rank>first|second|third|1st|2nd|3rd)\s+"
+    r"(?:one|fire|wildfire|incident|record)\b",
+    re.IGNORECASE,
+)
+_VISIBLE_ORDINAL_INDEX = {
+    "first": 0,
+    "1st": 0,
+    "second": 1,
+    "2nd": 1,
+    "third": 2,
+    "3rd": 2,
+}
+
+# These questions use wildfire language as a metaphor, not as a request for
+# current incident records.  Keep this small and explicit: a generic mention
+# of "market" must not override a genuine current-fire request.
+_FINANCE_FIRE_METAPHOR = re.compile(
+    r"\b(?:stock(?:[-\s]?market)?|share(?:s| price)?|portfolio|trading|investing)\b"
+    r".{0,80}\b(?:wildfire|fire)\b|"
+    r"\b(?:wildfire|fire)\b.{0,80}"
+    r"\b(?:stock(?:[-\s]?market)?|share(?:s| price)?|portfolio|trading|investing)\b",
+    re.IGNORECASE,
+)
+
+# A distance-free premise about apparent absence is not evidence that an area
+# is safe.  It is handled before live dispatch so an unsupported all-clear
+# inference cannot turn into an unrelated province-wide roster.
+_ABSENCE_ALL_CLEAR_PREMISE = re.compile(
+    r"\b(?:no|zero)\s+(?:active\s+)?(?:fires?|wildfires?|incidents?)\b.{0,100}"
+    r"\b(?:nothing\s+to\s+worry\s+about|safe|all[-\s]?clear|no\s+(?:risk|danger|threat))\b",
+    re.IGNORECASE,
+)
+
+# This recognizes an individual travel/fuel decision in a wildfire context.
+# It deliberately leaves non-personal preparedness questions (for example,
+# "what should a go-bag contain?") to the guidance/background lane.
+_PERSONAL_TRAVEL_OR_FUEL_DECISION = re.compile(
+    r"\b(?:can|could|should|may)\s+(?:i|we)\s+(?:drive|travel|go)\b.{0,120}"
+    r"\b(?:wildfire|fire|evacuat(?:ion|e))\b|"
+    r"\b(?:wildfire|fire|evacuat(?:ion|e))\b.{0,120}"
+    r"\b(?:can|could|should|may)\s+(?:i|we)\s+(?:drive|travel|go)\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,81 +232,17 @@ class AgentQueryPlan:
         }
 
 
-def _location_prompt(request: QueryRequest, *, unresolved: bool) -> AskResponse:
-    if unresolved:
-        answer = (
-            "FireLens could not match that place to a British Columbia community. "
-            "Enter a BC community name (for example Kelowna or Prince George) or "
-            "share an approximate location to continue."
-        )
-        limitation = (
-            "The place label did not resolve to a BC community, so no official "
-            "records were fetched."
-        )
-    else:
-        answer = (
-            "A BC community or approximate location is needed before FireLens can "
-            "look up current official records for this request."
-        )
-        limitation = "No official records were fetched because a location is required."
-    return AskResponse(
-        status=ResponseStatus.ANSWER,
-        trace_id=uuid4().hex,
-        response_mode=ResponseMode.REQUIRES_INPUT,
-        answer=answer,
-        required_input=RequiredInput(
-            kind=RequiredInputKind.LOCATION,
-            prompt="Enter a BC community FireLens can look up.",
-            continuation_question=request.question,
-        ),
-        reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-        limitations=[limitation],
-    )
-
-
-def _scope_redirect(request: QueryRequest, topics: tuple[str, ...]) -> AskResponse:
-    del request
-    links = related_live_links(topics)
-    if topics:
-        answer = (
-            "FireLens is not connected to an official live source for "
-            f"{', '.join(topics)}. Open the related official service for the current value."
-        )
-        limitations = ["FireLens did not substitute unrelated wildfire records."]
-    else:
-        answer = (
-            "FireLens reads official British Columbia wildfire sources only. Use the "
-            "relevant jurisdiction's official wildfire or emergency service for current records."
-        )
-        limitations = ["FireLens covers official British Columbia layers only."]
-    return AskResponse(
-        status=ResponseStatus.ANSWER,
-        trace_id=uuid4().hex,
-        response_mode=ResponseMode.SCOPE_REDIRECT,
-        answer=answer,
-        reason_code=ReasonCode.SCOPE_REDIRECT,
-        related_links=links,
-        limitations=limitations,
-    )
-
-
-def _unbound_live_redirect(request: QueryRequest) -> AskResponse:
-    del request
-    return AskResponse(
-        status=ResponseStatus.ANSWER,
-        trace_id=uuid4().hex,
-        response_mode=ResponseMode.SCOPE_REDIRECT,
-        answer=(
-            "Select a mapped official record or name a British Columbia community "
-            "before asking about that current fire. FireLens did not substitute a record."
-        ),
-        reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-        limitations=["No current record was fetched for an unbound reference."],
-    )
-
-
 def _call(name: AgentTool, **arguments: str) -> PlannedToolCall:
     return PlannedToolCall(name=name, arguments=tuple(sorted(arguments.items())))
+
+
+def _visible_ordinal_result_id(request: QueryRequest) -> str | None:
+    match = _VISIBLE_ORDINAL.search(request.question)
+    if match is None:
+        return None
+    index = _VISIBLE_ORDINAL_INDEX[match.group("rank").casefold()]
+    visible = request.context.visible_live_result_ids
+    return visible[index] if index < len(visible) else None
 
 
 def _live_calls(
@@ -252,13 +267,82 @@ def _live_calls(
 def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     """Create the deterministic plan projection before external place resolution."""
 
+    question = request.question
+    if _FINANCE_FIRE_METAPHOR.search(question):
+        return AgentQueryPlan(
+            route=QueryRoute.TANGENT,
+            mode=AgentRequestMode.STATIC,
+            live_layers=(),
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=None,
+            tool_calls=(),
+        )
+    # A stated community is a request to check that bounded live layer, not a
+    # license to assume an all-clear.  The response rail still corrects the
+    # inference after the official lookup.  Without a location, stop before a
+    # province-wide roster could be misread as a local safety determination.
+    absence_location = coarse_location_from_question(question) or request.location
+    if _ABSENCE_ALL_CLEAR_PREMISE.search(question) and absence_location is None:
+        return AgentQueryPlan(
+            route=QueryRoute.LIVE,
+            mode=AgentRequestMode.TERMINAL,
+            live_layers=(),
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=None,
+            tool_calls=(),
+            scope_result=AgentScopeResult.SCOPE_REDIRECT,
+            terminal_response=_absence_all_clear_boundary(),
+        )
+    if re.search(r"\bignore\b.{0,60}\bevacuation\s+alert\b", question, re.IGNORECASE):
+        return AgentQueryPlan(
+            route=QueryRoute.LIVE,
+            mode=AgentRequestMode.TERMINAL,
+            live_layers=(),
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=None,
+            tool_calls=(),
+            scope_result=AgentScopeResult.SCOPE_REDIRECT,
+            terminal_response=_evacuation_alert_distance_boundary(),
+        )
+    if _PERSONAL_TRAVEL_OR_FUEL_DECISION.search(question):
+        return AgentQueryPlan(
+            route=QueryRoute.LIVE,
+            mode=AgentRequestMode.TERMINAL,
+            live_layers=(),
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=None,
+            tool_calls=(),
+            scope_result=AgentScopeResult.SCOPE_REDIRECT,
+            terminal_response=_travel_or_fuel_boundary(),
+        )
     public_plan = plan_query(request)
+    if public_plan.route == QueryRoute.TANGENT and prefers_general_background(request):
+        return AgentQueryPlan(
+            route=QueryRoute.TANGENT,
+            mode=AgentRequestMode.STATIC,
+            live_layers=(),
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=None,
+            tool_calls=(),
+        )
     selected = request.context.selected_live_result_id
-    if selected and (
-        is_selected_live_request(request)
-        or is_unsupported_selected_request(request)
-        or is_distance_request(request)
-    ):
+    ordinal_selected = _visible_ordinal_result_id(request)
+    if selected is None and ordinal_selected is not None:
+        return AgentQueryPlan(
+            route=QueryRoute.LIVE,
+            mode=AgentRequestMode.SELECTED,
+            live_layers=(),
+            geography=AgentGeography.SELECTED_RECORD,
+            location_label=None,
+            static_subrequest=None,
+            tool_calls=(_call(AgentTool.GET_OFFICIAL_FIRE, result_id=ordinal_selected),),
+        )
+    if selected and uses_selected_live_binding(request):
         return AgentQueryPlan(
             route=QueryRoute.LIVE,
             mode=AgentRequestMode.SELECTED,
@@ -269,14 +353,90 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             tool_calls=(_call(AgentTool.GET_OFFICIAL_FIRE, result_id=selected),),
         )
 
-    topics = unsupported_live_topics(request.question)
-    layers = live_layers_for_question(request.question)
-    parsed_intent = parse_request_intent(request.question)
+    if requires_selected_live_record(request):
+        return AgentQueryPlan(
+            route=QueryRoute.LIVE,
+            mode=AgentRequestMode.TERMINAL,
+            live_layers=(),
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=None,
+            tool_calls=(),
+            scope_result=AgentScopeResult.SCOPE_REDIRECT,
+            terminal_response=_selection_prompt(),
+        )
+
+    planning_question = conversation_planning_question(request)
+    topics = unsupported_live_topics(planning_question)
+    layers = live_layers_for_question(planning_question)
+    parsed_intent = parse_request_intent(planning_question)
     supported_live_clause = parsed_intent.has_live_records
     if topics and not supported_live_clause:
         layers = ()
-    static_query = planned_static_subrequest(request.question)
-    location = request.location or coarse_location_from_question(request.question)
+    static_query = planned_static_subrequest(planning_question)
+    multi_place_comparison = is_multi_place_fire_comparison(request.question)
+    if multi_place_comparison and request.location is None:
+        return AgentQueryPlan(
+            route=QueryRoute.LIVE,
+            mode=AgentRequestMode.TERMINAL,
+            live_layers=layers,
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=static_query,
+            tool_calls=(),
+            scope_result=AgentScopeResult.REQUIRES_INPUT,
+            terminal_response=_multi_place_comparison_limit(request),
+        )
+    question_location = coarse_location_from_question(request.question)
+    explicit_fire_centre = official_fire_centre_from_question(request.question)
+    if explicit_fire_centre is not None:
+        # An official Fire Centre is an administrative source field, not a
+        # community. Preserve it for the exact roster filter and never ask the
+        # community geocoder to resolve it.
+        location = LocationInput(label=explicit_fire_centre)
+    elif is_province_wide_question(request.question):
+        # A current, explicit BC-wide ask outranks retained map state.  Decide
+        # that before geocoding so a stale unresolved community cannot turn a
+        # valid provincial analysis into a location prompt.
+        location = None
+    elif multi_place_comparison:
+        # The continuation control carries the single community the user chose.
+        # It must outrank the two place names in the original comparison or the
+        # unchanged continuation would loop back into the same terminal plan.
+        location = request.location
+    elif question_location is not None:
+        # A current explicit community also outranks stale retained state.
+        location = question_location
+    else:
+        location = request.location
+    if (
+        location is None
+        and not is_province_wide_question(request.question)
+        and continues_prior_live_place(request)
+    ):
+        prior = prior_anchor_user_question(request)
+        if prior:
+            location = coarse_location_from_question(prior)
+    if location is None and not is_province_wide_question(request.question):
+        location = coarse_location_from_question(planning_question)
+    if is_empty_map_safety_inference(planning_question) and location is None:
+        return AgentQueryPlan(
+            route=QueryRoute.LIVE,
+            mode=AgentRequestMode.TERMINAL,
+            live_layers=layers,
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=None,
+            tool_calls=(),
+            scope_result=AgentScopeResult.REQUIRES_INPUT,
+            terminal_response=_empty_map_location_prompt(request),
+        )
+    named = extracted_located_fire_name(planning_question)
+    if named and location is not None and location.label is not None:
+        named_key = " ".join(re.sub(r"[^a-z0-9]+", " ", named.casefold()).split())
+        place_key = " ".join(re.sub(r"[^a-z0-9]+", " ", location.label.casefold()).split())
+        if named_key == place_key or named_key in place_key or place_key in named_key:
+            location = None
     actual_live_request = bool(
         layers
         or parsed_intent.has_live_records
@@ -297,7 +457,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             static_subrequest=static_query,
             tool_calls=(),
             scope_result=AgentScopeResult.SCOPE_REDIRECT,
-            terminal_response=_scope_redirect(request, ()),
+            terminal_response=_scope_redirect(()),
         )
     if not layers:
         if topics and static_query is not None:
@@ -322,9 +482,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
                 tool_calls=(),
                 scope_result=AgentScopeResult.SCOPE_REDIRECT,
                 terminal_response=(
-                    _scope_redirect(request, topics)
-                    if topics
-                    else _unbound_live_redirect(request)
+                    _scope_redirect(topics) if topics else _unbound_live_redirect()
                 ),
             )
         return AgentQueryPlan(
@@ -361,7 +519,9 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     )
     location_label = (
         location.label
-        if location is not None and geography == AgentGeography.LOCATION_RADIUS
+        if location is not None
+        and location.label is not None
+        and geography == AgentGeography.LOCATION_RADIUS
         else None
     )
 
@@ -393,16 +553,20 @@ async def build_agent_query_plan(
         or plan.location_label is None
     ):
         return plan
-    location = request.location or coarse_location_from_question(request.question)
-    if location is None:
+    if official_fire_centre_label(plan.location_label) is not None:
         return plan
+    question_location = coarse_location_from_question(request.question)
+    if question_location is not None and question_location.label == plan.location_label:
+        location = question_location
+    elif request.location is not None and request.location.label == plan.location_label:
+        location = request.location
+    else:
+        location = LocationInput(label=plan.location_label)
     try:
         await live_coordinator.live_service.resolve_location(location)
     except LiveDataUnavailable as exc:
         if exc.kind != LiveDataErrorKind.NOT_FOUND:
             return plan
-    except (AttributeError, TypeError, ValueError):
-        pass
     else:
         return plan
     if plan.mode == AgentRequestMode.MIXED:

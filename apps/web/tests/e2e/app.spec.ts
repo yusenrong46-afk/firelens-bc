@@ -199,7 +199,7 @@ test.beforeEach(async ({ page }) => {
         body: JSON.stringify({
           status: "answer",
           response_mode: "live",
-          trace_id: "analysis-trace",
+          trace_id: question.includes("new distribution") ? "analysis-trace-next" : "analysis-trace",
           answer: "Three official incident records are in this bounded result.",
           suggested_questions: [],
           claims: [],
@@ -286,16 +286,57 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
   expect(overflow).toBe(false);
 });
 
+test("opens the employer explainer in flow without covering FireLens", async ({ page }) => {
+  await page.setViewportSize({ width: 920, height: 800 });
+  await page.goto("/");
+  const trigger = page.getByRole("button", { name: "How FireLens works", exact: true });
+  await expect(page.getByText("How it works", { exact: true })).toBeVisible();
+  const triggerBox = await trigger.boundingBox();
+  expect(triggerBox?.width).toBeGreaterThanOrEqual(44);
+  expect(triggerBox?.height).toBeGreaterThanOrEqual(44);
+  await trigger.click();
+
+  const explainer = page.getByRole("region", {
+    name: "How FireLens works",
+  });
+  await expect(explainer).toBeVisible();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  const geometry = await page.evaluate(() => {
+    const panel = document.querySelector("#how-firelens-works")!;
+    const workspace = document.querySelector("main")!;
+    const panelRect = panel.getBoundingClientRect();
+    const workspaceRect = workspace.getBoundingClientRect();
+    return {
+      position: getComputedStyle(panel).position,
+      panelBottom: panelRect.bottom,
+      workspaceTop: workspaceRect.top,
+    };
+  });
+  expect(geometry.position).toBe("static");
+  expect(geometry.workspaceTop).toBeGreaterThanOrEqual(geometry.panelBottom);
+
+  const ask = page.getByLabel("Ask FireLens a question");
+  await ask.fill("The workspace remains usable");
+  await expect(ask).toHaveValue("The workspace remains usable");
+  await page.keyboard.press("Escape");
+  await expect(explainer).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
 test("labels general background and exposes no evidence control", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("Why can embers be dangerous?");
   await page.getByLabel("Send question").click();
   await expect(
-    page.getByLabel("Question and answer").getByText("General background", { exact: true }),
+    page.getByLabel("Question and answer").getByText("General knowledge", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText(
-    "This is labelled general background and has no reviewed source support attached.",
+    "General model knowledge · not checked against FireLens sources",
   )).toBeVisible();
+  await expect(page.getByText("Answer evidence and support")).toHaveCount(0);
+  await expect(page.getByText("Important limits")).toHaveCount(0);
   await expect(page.getByText("Source passage")).toHaveCount(0);
 });
 
@@ -303,7 +344,7 @@ test("sends bounded conversation context and can clear it", async ({ page }) => 
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("What should I pack?");
   await page.getByLabel("Send question").click();
-  await expect(page.getByText("No earlier turns in context")).toBeVisible();
+  await expect(page.getByLabel("Clear conversation history")).toContainText("New conversation");
 
   await page.getByLabel("Ask FireLens a question").fill("Why does that matter?");
   await page.getByLabel("Send question").click();
@@ -364,11 +405,12 @@ test("keeps a live answer primary and opens its map on demand", async ({ page },
   await expect(page.getByRole("region", { name: "Analysis view" })).toHaveCount(0);
   await page.getByRole("button", { name: "View official map context" }).click();
   await expect(page.getByText("Current BC wildfire information")).toBeVisible();
-  const testFire = page.getByRole("button", { name: /Test Fire Out of Control/ });
+  const testFire = page
+    .getByRole("list", { name: "Matching this question" })
+    .getByRole("button", { name: /Test Fire Out of Control/ });
   await expect(testFire).toBeVisible();
   await expect(page.getByText(/Some official layers are unavailable: evacuation/)).toBeVisible();
-  await expect(testFire.getByText(/Source updated/)).toBeVisible();
-  await expect(testFire.getByText(/Retrieved/)).toBeVisible();
+  await expect(testFire).toHaveAccessibleName(/source updated/i);
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toBeVisible();
   const marker = page.locator(".live-map__record-geometry").first();
   await expect(marker).toBeVisible();
@@ -377,17 +419,32 @@ test("keeps a live answer primary and opens its map on demand", async ({ page },
     await expect(page.locator(".leaflet-popup").getByText("Test Fire", { exact: true })).toBeVisible();
   } else {
     await testFire.press("Enter");
-    await expect(testFire.locator("..")).toHaveClass(/live-list__selected/);
+    await expect(testFire.locator("..").locator("..")).toHaveClass(/live-list__selected/);
   }
-  await expect(
-    page.getByLabel("Answer limitations")
-      .getByText("No matching record is not a safety determination.", { exact: true }),
-  ).toBeVisible();
+  const limitations = page.getByLabel("Answer limitations");
+  await limitations.getByText("Why does FireLens say this?").click();
+  await expect(limitations.getByText("No matching record is not a safety determination.", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("region", { name: "Official wildfire records map" })
       .getByText(/The map is not a safety determination/),
   ).toBeVisible();
   await expect(page.getByText("Answer evidence and support")).toHaveCount(0);
+});
+
+test("uses neutral live-summary copy and exposes category-only feedback", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Ask FireLens a question").fill("Is there an active wildfire near me right now?");
+  await page.getByLabel("Send question").click();
+
+  const conversation = page.getByLabel("Question and answer");
+  await expect(conversation.getByText("Official records returned", { exact: true })).toBeVisible();
+  await expect(conversation.getByText(/BC Wildfire Service · source updated 2026-07-28T11:55:00Z/)).toBeVisible();
+  await expect(conversation.getByText(/does not change the answer/i)).toHaveCount(1);
+  const issueButton = conversation.getByRole("button", { name: "Report" });
+  await expect(issueButton).toHaveAttribute("aria-expanded", "false");
+  await issueButton.click();
+  await expect(issueButton).toHaveAttribute("aria-expanded", "true");
+  await expect(conversation.getByRole("button", { name: "Stale or wrong live data" })).toBeVisible();
 });
 
 test("closes an open map popup cleanly while repeatedly changing answer context", async ({ page }, testInfo) => {
@@ -414,7 +471,7 @@ test("closes an open map popup cleanly while repeatedly changing answer context"
   expect(pageErrors.map((error) => error.stack ?? error.message)).toEqual([]);
 });
 
-test("uses an OSM street basemap with required attribution", async ({ page }) => {
+test("shows street context with attributed OpenStreetMap tiles", async ({ page }) => {
   const osmTileRequests: string[] = [];
   page.on("request", (request) => {
     if (request.url().includes("tile.openstreetmap.org")) osmTileRequests.push(request.url());
@@ -426,8 +483,9 @@ test("uses an OSM street basemap with required attribution", async ({ page }) =>
   await expect(page.getByLabel("Question and answer").getByText("Current official information: Test Fire is Out of Control.")).toBeVisible();
   await page.getByRole("button", { name: "View official map context" }).click();
   await expect(page.getByRole("button", { name: /Test Fire Out of Control/ })).toBeVisible();
-  await expect(page.getByText(/Tile requests go to OpenStreetMap/)).toBeVisible();
+  await expect(page.getByText(/Tile requests go directly to OpenStreetMap/)).toBeVisible();
   await expect(page.getByRole("link", { name: "OpenStreetMap" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Government of BC provincial boundary" })).toBeVisible();
   expect(osmTileRequests.length).toBeGreaterThan(0);
 });
 
@@ -442,11 +500,16 @@ test("shows stale and partial-layer state without hiding records", async ({ page
   const staleWarning = page.getByRole("status").filter({ hasText: "Cached official records; refresh failed" });
   await expect(staleWarning).toBeVisible();
   await expect(page.getByText("Current BC wildfire information")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /Cached Test Fire Out of Control/ })).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Matching this question" })
+      .getByRole("button", { name: /Cached Test Fire Out of Control/ }),
+  ).toBeVisible();
   expect(await staleWarning.evaluate((warning) => Boolean(
     warning.compareDocumentPosition(document.querySelector(".live-list")!) & Node.DOCUMENT_POSITION_FOLLOWING,
   ))).toBe(true);
-  await expect(page.getByText(/Out of Control · stale · BC Wildfire Service/)).toBeVisible();
+  const staleRecord = page.getByRole("list", { name: "Matching this question" });
+  await staleRecord.getByText("Record details").click();
+  await expect(staleRecord.getByText(/stale · BC Wildfire Service/)).toBeVisible();
   await expect(page.getByText(/Some official layers are unavailable: evacuation/)).toBeVisible();
 });
 
@@ -454,6 +517,11 @@ test("keeps the workspace usable at a 320px viewport", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto("/");
   await expect(page.getByLabel("Ask FireLens a question")).toBeVisible();
+  await expect(page.getByText("How it works", { exact: true })).toBeVisible();
+  const employerControl = page.getByRole("button", { name: "How FireLens works", exact: true });
+  const employerControlBox = await employerControl.boundingBox();
+  expect(employerControlBox?.width).toBeGreaterThanOrEqual(44);
+  expect(employerControlBox?.height).toBeGreaterThanOrEqual(44);
   await expect(page.getByLabel("Official wildfire records map")).toHaveCount(0);
   await page.getByRole("button", { name: "Explore live map" }).click();
   await expect(page.getByLabel("Official wildfire records map")).toBeVisible();
@@ -529,16 +597,80 @@ test("opens an official source link with keyboard activation", async ({ page }) 
 });
 
 test("shows summary map and records for analytical live questions", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("Show wildfire distribution by status across B.C.");
   await page.getByLabel("Send question").click();
   await expect(page.getByRole("region", { name: "Analysis view" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Current official records, summarized" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Summary", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("button", { name: "Map", exact: true })).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByRole("button", { name: "Records", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("heading", { name: "Analysis view" })).toHaveAttribute("data-surface-visually-hidden", "true");
+  await expect(page.getByRole("heading", { name: "Incident records by fire centre" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Summary", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "Map", exact: true })).toHaveAttribute("aria-selected", "false");
+  await expect(page.getByRole("tab", { name: "Records", exact: true })).toHaveAttribute("aria-selected", "false");
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "View official map context" })).toHaveCount(0);
+  const overflowX = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflowX).toBeLessThanOrEqual(0);
+});
+
+test("keeps analytical answers usable at narrow mobile viewports", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto("/");
+  await page.getByLabel("Ask FireLens a question").fill("Show wildfire distribution by status across B.C.");
+  await page.getByLabel("Send question").click();
+  await expect(page.getByRole("region", { name: "Analysis view" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Incident records by fire centre" })).toBeVisible();
+  for (const width of [320, 340, 390]) {
+    await page.setViewportSize({ width, height: 640 });
+    const overflowX = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflowX, `horizontal overflow at ${width}px`).toBeLessThanOrEqual(0);
+  }
+  await page.getByRole("tab", { name: "Table", exact: true }).click();
+  await page.setViewportSize({ width: 320, height: 640 });
+  const tableOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(tableOverflow, "horizontal overflow in analytical table at 320px").toBeLessThanOrEqual(0);
+  await page.getByRole("tab", { name: "Charts", exact: true }).click();
+  const ranked = page.getByRole("region", { name: "Current snapshot by fire centre" });
+  await expect(ranked).toHaveAttribute("tabindex", "0");
+  const rankedScroll = await ranked.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(rankedScroll.scrollWidth).toBeGreaterThan(rankedScroll.clientWidth);
+  await ranked.evaluate((element) => { element.scrollLeft = element.scrollWidth; });
+  expect(await ranked.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+});
+
+test("opens analytical answers on Summary and resets the selected surface for a new answer", async ({ page }) => {
+  await page.goto("/");
+  const question = page.getByLabel("Ask FireLens a question");
+  await question.fill("Map wildfire distribution by status across B.C.");
+  await page.getByLabel("Send question").click();
+
+  const map = page.getByRole("tab", { name: "Map", exact: true });
+  const summary = page.getByRole("tab", { name: "Summary", exact: true });
+  const records = page.getByRole("tab", { name: "Records", exact: true });
+  await expect(map).toHaveAttribute("aria-selected", "false");
+  await expect(summary).toHaveAttribute("aria-selected", "true");
+
+  await map.click();
+  await expect(map).toHaveAttribute("aria-selected", "true");
+  await records.click();
+  await expect(records).toHaveAttribute("aria-selected", "true");
+  await page.getByText("Method", { exact: true }).click();
+  await page.getByRole("button", { name: "Inspect answer evidence" }).click();
+  await expect(records).toHaveAttribute("aria-selected", "true");
+
+  await question.fill("Show a new distribution by status across B.C.");
+  await page.getByLabel("Send question").click();
+  await expect(summary).toHaveAttribute("aria-selected", "true");
+  await expect(map).toHaveAttribute("aria-selected", "false");
 });
 
 test("offers retry for a transient provider outage", async ({ page }) => {

@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased — V1.6.2
+
+### Changed
+
+- Improved scope recall without broadening factual authority: ordinary
+  conversation remains labelled general background, wildfire guidance reaches
+  its reviewed lane, and safety-sensitive questions receive a bounded official
+  check or handoff instead of an unrelated-record response.
+- Normalized qualified B.C. locality wording before live resolution, bound
+  closest/ordinal results to a selected official record ID, and kept unrelated
+  typed claims out of a requested aspect.
+- Added deterministic multi-record summaries, concurrent mixed-lane prefetch,
+  and answer-first presentation that opens analysis or map views only when they
+  serve the request.
+- Rejected quote-only spans that interleave headed evacuation alert, order, and
+  rescind stages. They now fall back to the existing official handoff rather
+  than being rewritten or published as a single proposition.
+- Added ProductBench v2's executable development contract and the V1.6.2
+  Product Constitution/evaluation framework for contract-based repair and
+  falsification.
+
+### Known limits
+
+- PB15-style source-extraction defects remain source-repair work. An unreadable
+  exact span is omitted or handed off; it is not converted into FireLens advice.
+- This section describes a committed local engineering candidate. Its exact
+  current HEAD and tree must be bound by external current candidate evidence;
+  this changelog does not affirm that such evidence exists. Exact-Git
+  qualification, paid evaluation, human review, live/production verification,
+  and release authorization are not established here.
+
 ## Unreleased — V1.6 RC2
 
 ### Changed

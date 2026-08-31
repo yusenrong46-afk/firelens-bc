@@ -13,6 +13,7 @@ from firelens.answering.location_intent import (
 )
 from firelens.contracts import (
     AskResponse,
+    CoarseResolvedLocation,
     Freshness,
     LiveMapResponse,
     LiveResult,
@@ -22,6 +23,7 @@ from firelens.contracts import (
     ResponseMode,
     aggregate_live_freshness,
 )
+from firelens.live import LiveDataErrorKind, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
 
 
@@ -76,6 +78,46 @@ class _NoStatic:
     async def ask(self, *args: Any, **kwargs: Any) -> AskResponse:
         del args, kwargs
         raise AssertionError("a live regional query must not call static retrieval")
+
+
+class _RegionService:
+    def __init__(self, results: list[LiveResult], *, location_found: bool = True) -> None:
+        self.results = results
+        self.location_found = location_found
+        self.map_calls = 0
+        self.nearby_calls = 0
+        self.resolve_calls = 0
+
+    async def map_results(self, *, layers: tuple[LiveResultKind, ...]) -> LiveMapResponse:
+        del layers
+        self.map_calls += 1
+        return LiveMapResponse(
+            generated_at=datetime(2026, 8, 24, tzinfo=UTC),
+            results=self.results,
+            aggregate_freshness=aggregate_live_freshness(self.results),
+        )
+
+    async def nearby_page(self, location: Any, *args: Any, **kwargs: Any) -> Any:
+        del args, kwargs
+        self.nearby_calls += 1
+        return type(
+            "Nearby",
+            (),
+            {
+                "results": self.results,
+                "resolved_location": CoarseResolvedLocation(latitude=49.88, longitude=-119.49),
+                "pagination": None,
+                "limitations": [],
+                "unavailable_layers": [],
+            },
+        )()
+
+    async def resolve_location(self, *args: Any, **kwargs: Any) -> tuple[float, float]:
+        del args, kwargs
+        self.resolve_calls += 1
+        if not self.location_found:
+            raise LiveDataUnavailable("not found", kind=LiveDataErrorKind.NOT_FOUND)
+        return 49.88, -119.49
 
 
 class RegionalFireQueryTests(unittest.IsolatedAsyncioTestCase):
@@ -167,6 +209,93 @@ class RegionalFireQueryTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Prince George Fire Centre has 2 incidents", answer)
         self.assertIn("Coastal Fire Centre has 1 incident", answer)
         self.assertNotIn("A BC place is needed", answer)
+
+    async def test_cariboo_uses_the_official_fire_centre_filter(self) -> None:
+        service = _RegionService(
+            [
+                _incident("incident:cariboo", "Cariboo Fire Centre"),
+                _incident("incident:coastal", "Coastal Fire Centre"),
+            ],
+            location_found=False,
+        )
+        agent = FireLensAgent(
+            cast(Any, _NoStatic()),
+            LiveAnswerCoordinator(cast(Any, service)),
+        )
+
+        execution = await agent.answer(
+            QueryRequest(question="Show current fires in the Cariboo.")
+        )
+
+        self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
+        self.assertEqual(service.map_calls, 1)
+        self.assertEqual(service.nearby_calls, 0)
+        self.assertEqual(service.resolve_calls, 0)
+        self.assertEqual(
+            [item.result_id for item in execution.response.live_results],
+            ["incident:cariboo"],
+        )
+        self.assertNotIn("incident:coastal", execution.response.answer or "")
+        self.assertIsNone(execution.response.resolved_location)
+        self.assertIsNone(execution.response.live_results[0].distance_km)
+        self.assertIn(
+            "Results are filtered to the official BC Wildfire Service Cariboo Fire Centre label.",
+            execution.response.limitations,
+        )
+        # Revalidate exactly as the API response model does. Scope limitations
+        # must force the derived history field to be rebuilt.
+        AskResponse.model_validate(execution.response.model_dump(mode="python"))
+
+    async def test_explicit_official_fire_centre_bypasses_community_geocoding(self) -> None:
+        service = _RegionService(
+            [
+                _incident("incident:cariboo", "Cariboo Fire Centre"),
+                _incident("incident:coastal", "Coastal Fire Centre"),
+            ],
+            location_found=False,
+        )
+        agent = FireLensAgent(
+            cast(Any, _NoStatic()),
+            LiveAnswerCoordinator(cast(Any, service)),
+        )
+
+        execution = await agent.answer(
+            QueryRequest(question="Show current fires in the Cariboo Fire Centre.")
+        )
+
+        self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
+        self.assertEqual(service.map_calls, 1)
+        self.assertEqual(service.nearby_calls, 0)
+        self.assertEqual(service.resolve_calls, 0)
+        self.assertEqual(
+            [item.result_id for item in execution.response.live_results],
+            ["incident:cariboo"],
+        )
+        self.assertIsNone(execution.response.resolved_location)
+        self.assertIsNone(execution.response.live_results[0].distance_km)
+        self.assertIn(
+            "Results are filtered to the official BC Wildfire Service Cariboo Fire Centre label.",
+            execution.response.limitations,
+        )
+
+    async def test_okanagan_remains_a_bounded_radius_lookup_with_a_visible_limit(self) -> None:
+        service = _RegionService([_incident("incident:okanagan", "Kamloops Fire Centre")])
+        agent = FireLensAgent(
+            cast(Any, _NoStatic()),
+            LiveAnswerCoordinator(cast(Any, service)),
+        )
+
+        execution = await agent.answer(
+            QueryRequest(question="Show current fires in the Okanagan.")
+        )
+
+        self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
+        self.assertEqual(service.map_calls, 0)
+        self.assertEqual(service.nearby_calls, 1)
+        self.assertIn(
+            "This regional lookup uses a bounded radius from the named region's reference point, not an administrative-boundary filter.",
+            execution.response.limitations,
+        )
 
 
 if __name__ == "__main__":

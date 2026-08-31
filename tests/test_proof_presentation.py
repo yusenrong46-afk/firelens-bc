@@ -15,6 +15,7 @@ from firelens.contracts import (
     LiveResultKind,
     PublicClaim,
     PublicEvidence,
+    ReasonCode,
     ResponseMode,
     ResponseStatus,
     ValidationReport,
@@ -551,6 +552,28 @@ def test_rejected_no_claim_response_replaces_strengthening_banner() -> None:
     assert str(response.status_banner.official_escalation_url) == (
         "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html"
     )
+
+
+def test_unbound_record_redirect_asks_to_select_a_record() -> None:
+    response = AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id="trace-unbound-record",
+        response_mode=ResponseMode.SCOPE_REDIRECT,
+        answer=(
+            "Select a mapped official record or name a British Columbia community "
+            "before asking about that current fire. FireLens did not substitute a record."
+        ),
+        reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+        claims=[],
+        evidence=[],
+        limitations=["No current record was fetched for an unbound reference."],
+        validation=_VALIDATION,
+    )
+
+    assert response.status_banner is not None
+    assert response.status_banner.headline == "Select an official record to continue"
+    assert "name a British Columbia community" in response.status_banner.detail
+    assert "Outside FireLens live sources" not in response.status_banner.headline
 
 
 def test_failed_critical_field_preservation_is_not_listed_as_supported() -> None:

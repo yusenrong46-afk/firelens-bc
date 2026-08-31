@@ -54,6 +54,7 @@ class AgentPacket:
     related_links: list[RelatedLink] = field(default_factory=list)
     roster_total: int | None = None
     unavailable_layers: list[LiveResultKind] = field(default_factory=list)
+    live_limitations: list[str] = field(default_factory=list)
     retrieved_at: datetime | None = None
     policy: RequestExecutionPolicy = field(default_factory=RequestExecutionPolicy)
     tool_fingerprints: list[tuple[str, str]] = field(default_factory=list)
@@ -65,6 +66,12 @@ class AgentPacket:
         for kind in layers:
             if kind not in self.unavailable_layers:
                 self.unavailable_layers.append(kind)
+
+    def add_live_limitation(self, limitation: str | None) -> None:
+        """Retain a bounded, source-owned live-query qualification."""
+
+        if limitation and limitation not in self.live_limitations:
+            self.live_limitations.append(limitation)
 
     def allowed_names(self) -> set[str]:
         from firelens.answering.live_analysis import official_display_name

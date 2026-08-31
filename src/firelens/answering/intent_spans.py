@@ -107,6 +107,9 @@ def _noisy_place(candidate: str) -> bool:
 def _finalize_place(candidate: str) -> str | None:
     candidate = lex.TIME_TAIL.sub("", candidate).strip(" ,.?;+'")
     candidate = re.sub(r"^(?:a|an|the)\s+", "", candidate, flags=re.IGNORECASE)
+    modifier = lex.LOCALITY_MODIFIER_PREFIX.match(candidate)
+    if modifier is not None:
+        candidate = modifier.group("place").strip(" ,.?;+'").strip()
     if not candidate:
         return None
     if _noisy_place(candidate):
@@ -125,6 +128,53 @@ def _finalize_place(candidate: str) -> str | None:
 
 
 def _named_place_from_text(text: str) -> str | None:
+    compact_radius = lex.COMPACT_RADIUS_SCOPE.search(text)
+    if compact_radius is not None:
+        candidate = _finalize_place(compact_radius.group("place"))
+        if candidate:
+            return candidate
+    radius = lex.RADIUS_SCOPE.search(text)
+    if radius is not None:
+        candidate = _finalize_place(radius.group("place"))
+        if candidate:
+            return candidate
+    closest_fire = lex.CLOSEST_FIRE_TO_SCOPE.search(text)
+    if closest_fire is not None:
+        candidate = _finalize_place(closest_fire.group("place"))
+        if candidate:
+            return candidate
+    live_records_closest = lex.LIVE_RECORDS_CLOSEST_SCOPE.search(text)
+    if live_records_closest is not None:
+        candidate = _finalize_place(live_records_closest.group("place"))
+        if candidate:
+            return candidate
+    fire_on_scope = lex.FIRE_ON_SCOPE.search(text)
+    if fire_on_scope is not None:
+        candidate = _finalize_place(fire_on_scope.group("place"))
+        if candidate:
+            return candidate
+    qualified_place_fire = lex.QUALIFIED_PLACE_FIRE_SCOPE.search(text)
+    if qualified_place_fire is not None:
+        candidate = _finalize_place(qualified_place_fire.group("place"))
+        if candidate:
+            return candidate
+    closest = lex.CLOSEST_NEAR_SCOPE.search(text)
+    if closest is not None:
+        candidate = _finalize_place(
+            closest.groupdict().get("place") or closest.group("bare_place")
+        )
+        if candidate:
+            return candidate
+    nearest_to = lex.NEAREST_FIRE_TO_SCOPE.search(text)
+    if nearest_to is not None:
+        candidate = _finalize_place(nearest_to.group("place"))
+        if candidate:
+            return candidate
+    fire_nearest_to = lex.FIRE_NEAREST_TO_SCOPE.search(text)
+    if fire_nearest_to is not None:
+        candidate = _finalize_place(fire_nearest_to.group("place"))
+        if candidate:
+            return candidate
     alerted = lex.UNDER_ALERT_SCOPE.search(text)
     if alerted is not None:
         candidate = _finalize_place(alerted.group("place"))
@@ -172,6 +222,30 @@ def _named_place_from_text(text: str) -> str | None:
         if finalized:
             return finalized
     return None
+
+
+def implicit_nearby_location(question: str) -> str | None:
+    """Return a stated place for a bounded FireLens-context nearby request."""
+
+    nearby_place = lex.NEAR_PLACE_INFORMATION_REQUEST.search(question)
+    if nearby_place is not None:
+        return _finalize_place(nearby_place.group("place"))
+    if lex.NEARBY_INFORMATION_REQUEST.search(question) is None:
+        return None
+    match = lex.FIRST_PERSON_PLACE.search(question) or lex.THIRD_PARTY_PLACE.search(question)
+    if match is None:
+        return None
+    return _finalize_place(match.group("place"))
+
+
+def is_context_location_declaration(text: str) -> bool:
+    """Return whether a clause only supplies a place for a nearby follow-up."""
+
+    normalized = text.strip(" ,.?;+")
+    return bool(
+        lex.FIRST_PERSON_PLACE.fullmatch(normalized)
+        or lex.THIRD_PARTY_PLACE.fullmatch(normalized)
+    )
 
 
 def location_candidate(text: str, *, is_live: bool) -> str | None:

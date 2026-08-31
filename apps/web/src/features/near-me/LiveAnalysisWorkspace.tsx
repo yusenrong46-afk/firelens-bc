@@ -1,152 +1,253 @@
 import { ChartBar, Database, ListBullets, MapTrifold, ShieldCheck } from "@phosphor-icons/react";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { LiveResult } from "../../shared/api/api";
 import type { FireLensSession } from "../ask/useFireLensSession";
+import { splitLimitations } from "../ask/limitationsPresentation";
 import { EvidencePlaceholder } from "../evidence/evidencePresentation";
-import { buildLiveAnalysis, type AnalysisCount } from "./liveAnalysis";
-import { formatTimestamp, resultDisplayName, sourceLinkLabel } from "./liveResultPresentation";
+import {
+  buildLiveAnalysis,
+  sortAnalysisResults,
+  type AnalysisSort,
+} from "./liveAnalysis";
+import {
+  isRenderableGeometry,
+  formatTimestamp,
+} from "./liveResultPresentation";
+import {
+  AnalysisFilters,
+  RecordsView,
+} from "./analysisWorkspaceParts";
+import "./analysisWorkspace.css";
 
 const LiveMap = lazy(() => import("./LiveMap").then((module) => ({ default: module.LiveMap })));
+let analysisChartsModule: ReturnType<typeof importAnalysisCharts> | undefined;
+
+function importAnalysisCharts() {
+  return import("./AnalysisCharts");
+}
+
+export function preloadAnalysisCharts() {
+  analysisChartsModule ??= importAnalysisCharts();
+  return analysisChartsModule;
+}
+
+const AnalysisCharts = lazy(() =>
+  preloadAnalysisCharts().then((module) => ({ default: module.AnalysisCharts })),
+);
 
 type AnalysisSurface = "summary" | "map" | "records";
 
-function CountTable({ title, rows }: { title: string; rows: AnalysisCount[] }) {
-  const maximum = Math.max(1, ...rows.map((row) => row.count));
-  return (
-    <section className="analysis-breakdown" aria-label={title}>
-      <div className="analysis-breakdown__heading">
-        <h3>{title}</h3>
-      </div>
-      <ol>
-        {rows.length === 0 && <li className="analysis-empty">This field was not available in the returned records.</li>}
-        {rows.map((row, index) => (
-          <li key={row.label}>
-            <span className="analysis-rank" aria-hidden="true">{index + 1}</span>
-            <span className="analysis-label">{row.label}</span>
-            <span className="analysis-bar" aria-hidden="true">
-              <span style={{ width: `${Math.max(4, (row.count / maximum) * 100)}%` }} />
-            </span>
-            <strong>{row.count}</strong>
-            <small>{Math.round(row.share * 100)}%</small>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-function RecordsView({ results }: { results: LiveResult[] }) {
-  const [showAll, setShowAll] = useState(false);
-  const visible = showAll ? results : results.slice(0, 18);
-  return (
-    <section className="analysis-records" aria-label="Incident records returned for this request">
-      <div className="analysis-records__heading">
-        <div><h3>Incident records returned for this request</h3><p>{results.length} records in this answer</p></div>
-        {results.length > 18 && (
-          <button type="button" onClick={() => setShowAll((current) => !current)} aria-expanded={showAll}>
-            {showAll ? "Show fewer" : `Show all ${results.length}`}
-          </button>
-        )}
-      </div>
-      <ul>
-        {visible.map((result) => (
-          <li key={result.result_id}>
-            <div>
-              <strong>{resultDisplayName(result)}</strong>
-              <span>{result.fire_centre ?? "Fire centre unavailable"} · {result.status}</span>
-              <small>Updated {formatTimestamp(result.source_updated_at)}</small>
-            </div>
-            <a href={result.source_url} target="_blank" rel="noreferrer">{sourceLinkLabel(result)}</a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-export function LiveAnalysisWorkspace({ session, embedded = false }: { session: FireLensSession; embedded?: boolean }) {
-  const [surface, setSurface] = useState<AnalysisSurface>("summary");
+export function LiveAnalysisWorkspace({
+  session,
+  answerIdentity,
+  evidenceOpen = false,
+  onOpenEvidence,
+}: {
+  session: FireLensSession;
+  answerIdentity: string;
+  evidenceOpen?: boolean;
+  onOpenEvidence?: (() => void) | undefined;
+}) {
   const results = useMemo(
     () => (session.response?.live_results ?? []).filter((result) => result.kind === "incident"),
     [session.response?.live_results],
   );
-  const analysis = useMemo(() => buildLiveAnalysis(results), [results]);
+  const hasUsefulMap = useMemo(() => results.some(isRenderableGeometry), [results]);
+  // Every new analytical answer opens on the compact overview. The map remains
+  // a deliberate secondary surface, so the first viewport retains the answer.
+  const resolvedInitialSurface: AnalysisSurface = "summary";
+  const [surface, setSurface] = useState<AnalysisSurface>(resolvedInitialSurface);
+  const [fireCentreFilter, setFireCentreFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sort, setSort] = useState<AnalysisSort>("default");
+  const previousAnswerIdentity = useRef(answerIdentity);
+  const tabRefs = useRef<Partial<Record<AnalysisSurface, HTMLButtonElement | null>>>({});
+  const filteredResults = useMemo(() => {
+    const filtered = results.filter((result) =>
+      (!fireCentreFilter || result.fire_centre?.trim() === fireCentreFilter)
+      && (!statusFilter || result.status?.trim() === statusFilter),
+    );
+    return sortAnalysisResults(filtered, sort);
+  }, [fireCentreFilter, results, sort, statusFilter]);
+  const analysis = useMemo(() => buildLiveAnalysis(filteredResults), [filteredResults]);
+  const mapFilterActive = Boolean(fireCentreFilter || statusFilter);
+  const applyMapFilters = (mapResults: LiveResult[]) => {
+    if (!mapFilterActive) return mapResults;
+    return mapResults.filter((result) => result.kind !== "incident"
+      || ((!fireCentreFilter || result.fire_centre?.trim() === fireCentreFilter)
+        && (!statusFilter || result.status?.trim() === statusFilter)));
+  };
+  const filteredMapResults = useMemo(() => {
+    return applyMapFilters(session.mapResults);
+  }, [fireCentreFilter, mapFilterActive, session.mapResults, statusFilter]);
+  const filteredMapMatchingResults = useMemo(() => {
+    return applyMapFilters(session.mapMatchingResults);
+  }, [fireCentreFilter, mapFilterActive, session.mapMatchingResults, statusFilter]);
+  const filteredMapProvinceResults = useMemo(() => {
+    return applyMapFilters(session.mapProvinceResults);
+  }, [fireCentreFilter, mapFilterActive, session.mapProvinceResults, statusFilter]);
+  const analysisLimitations = useMemo(() => {
+    const unavailable = session.response?.unavailable_layers ?? [];
+    const unavailableNotice = unavailable.length > 0
+      ? `Some official layers are unavailable: ${unavailable.join(", ")}. This is not an all-clear.`
+      : undefined;
+    const limitations = [unavailableNotice, ...(session.response?.limitations ?? [])]
+      .filter((item): item is string => Boolean(item?.trim()))
+      .map((item) => item.trim());
+    return splitLimitations(Array.from(new Set(limitations)));
+  }, [session.response?.limitations, session.response?.unavailable_layers]);
   const newestSourceTime = results.reduce<string | undefined>((latest, result) => {
     if (!latest) return result.source_updated_at;
     return new Date(result.source_updated_at) > new Date(latest) ? result.source_updated_at : latest;
   }, undefined);
 
   useEffect(() => {
-    session.setMapVisible(surface === "map");
+    session.setMapVisible(hasUsefulMap && surface === "map");
     return () => session.setMapVisible(false);
-  }, [session.setMapVisible, surface]);
+  }, [hasUsefulMap, session.setMapVisible, surface]);
 
   useEffect(() => {
-    setSurface("summary");
-  }, [session.response?.trace_id]);
+    if (!hasUsefulMap && surface === "map") setSurface("summary");
+  }, [hasUsefulMap, surface]);
+
+  useEffect(() => {
+    if (previousAnswerIdentity.current === answerIdentity) return;
+    previousAnswerIdentity.current = answerIdentity;
+    setSurface(resolvedInitialSurface);
+    setFireCentreFilter("");
+    setStatusFilter("");
+    setSort("default");
+  }, [answerIdentity, resolvedInitialSurface]);
+
+  const surfaces = (hasUsefulMap ? ["summary", "map", "records"] : ["summary", "records"]) as AnalysisSurface[];
+  const moveTab = (index: number) => {
+    const next = surfaces[(index + surfaces.length) % surfaces.length] ?? "summary";
+    setSurface(next);
+    requestAnimationFrame(() => tabRefs.current[next]?.focus());
+  };
+  const handleTabKey = (event: KeyboardEvent<HTMLButtonElement>, current: AnalysisSurface) => {
+    const index = surfaces.indexOf(current);
+    if (event.key === "ArrowRight") { event.preventDefault(); moveTab(index + 1); }
+    if (event.key === "ArrowLeft") { event.preventDefault(); moveTab(index - 1); }
+    if (event.key === "Home") { event.preventDefault(); moveTab(0); }
+    if (event.key === "End") { event.preventDefault(); moveTab(surfaces.length - 1); }
+  };
 
   return (
-    <section className={`analysis-workspace ${embedded ? "analysis-workspace--embedded" : ""}`} aria-label="Analysis view">
+    <section className="analysis-workspace" aria-label="Analysis view">
       <div className="analysis-workspace__heading">
-        <div>
-          <span className="panel-label">Analysis view</span>
-          <h2>{embedded ? "Current official records, summarized" : "Current records, summarized"}</h2>
-        </div>
-        <div className="analysis-tabs" role="group" aria-label="Choose analysis view">
-          <button type="button" className={surface === "summary" ? "analysis-tabs__active" : ""} aria-pressed={surface === "summary"} onClick={() => setSurface("summary")}>
+        <h2 data-surface-visually-hidden="true">Analysis view</h2>
+        <div className={`analysis-tabs ${hasUsefulMap ? "" : "analysis-tabs--two"}`} role="tablist" aria-label="Choose analysis view">
+          <button type="button" role="tab" id="analysis-tab-summary" aria-controls="analysis-panel-summary" className={surface === "summary" ? "analysis-tabs__active" : ""} aria-selected={surface === "summary"} tabIndex={surface === "summary" ? 0 : -1} ref={(node) => { tabRefs.current.summary = node; }} onKeyDown={(event) => handleTabKey(event, "summary")} onClick={() => setSurface("summary")}>
             <ChartBar size={19} /> Summary
           </button>
-          <button type="button" className={surface === "map" ? "analysis-tabs__active" : ""} aria-pressed={surface === "map"} onClick={() => setSurface("map")}>
-            <MapTrifold size={19} /> Map
-          </button>
-          <button type="button" className={surface === "records" ? "analysis-tabs__active" : ""} aria-pressed={surface === "records"} onClick={() => setSurface("records")}>
+          {hasUsefulMap && (
+            <button type="button" role="tab" id="analysis-tab-map" aria-controls="analysis-panel-map" className={surface === "map" ? "analysis-tabs__active" : ""} aria-selected={surface === "map"} tabIndex={surface === "map" ? 0 : -1} ref={(node) => { tabRefs.current.map = node; }} onKeyDown={(event) => handleTabKey(event, "map")} onClick={() => setSurface("map")}>
+              <MapTrifold size={19} /> Map
+            </button>
+          )}
+          <button type="button" role="tab" id="analysis-tab-records" aria-controls="analysis-panel-records" className={surface === "records" ? "analysis-tabs__active" : ""} aria-selected={surface === "records"} tabIndex={surface === "records" ? 0 : -1} ref={(node) => { tabRefs.current.records = node; }} onKeyDown={(event) => handleTabKey(event, "records")} onClick={() => setSurface("records")}>
             <ListBullets size={19} /> Records
           </button>
         </div>
       </div>
 
-      {surface === "summary" && (
-        <>
-          <div className="analysis-grid">
-            <CountTable title="Wildfires by fire centre" rows={analysis.byFireCentre} />
-            <CountTable title="Wildfires by status" rows={analysis.byStatus} />
-          </div>
-          {analysis.highestFireCentre && (
-            <p className="analysis-insight">
-              <ChartBar size={20} aria-hidden="true" />
-              <span><strong>{analysis.highestFireCentre.label}</strong> has the highest incident count in this bounded result.</span>
-            </p>
+      <div
+        id="analysis-panel-summary"
+        role="tabpanel"
+        aria-labelledby="analysis-tab-summary"
+        tabIndex={0}
+        hidden={surface !== "summary"}
+      >
+        {surface === "summary" && (
+          <>
+          <Suspense fallback={<div className="analysis-chart-loading" role="status">Preparing the official-record summary…</div>}>
+            <AnalysisCharts
+              byFireCentre={analysis.byFireCentre}
+              byStatus={analysis.byStatus}
+              total={analysis.total}
+            />
+          </Suspense>
+          </>
+        )}
+      </div>
+
+      {hasUsefulMap && (
+        <div
+          id="analysis-panel-map"
+          role="tabpanel"
+          aria-labelledby="analysis-tab-map"
+          tabIndex={0}
+          hidden={surface !== "map"}
+        >
+          {surface === "map" && (
+          <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading map">Preparing map…</EvidencePlaceholder>}>
+            <LiveMap
+              results={filteredMapResults}
+              matchingResults={filteredMapMatchingResults}
+              provinceResults={filteredMapProvinceResults}
+              aggregateFreshness={session.mapAggregateFreshness}
+              unavailableLayers={session.mapUnavailableLayers}
+              focus={session.mapFocus}
+              focusResults={session.mapFocusResults}
+              selectedResultId={session.selectedLiveResultId}
+              onSelectResult={session.setSelectedLiveResultId}
+              onAskAboutResult={session.askAboutResult}
+            />
+          </Suspense>
           )}
-          <details className="analysis-disclosure">
-            <summary><Database size={20} /><strong>Sources and freshness</strong><span>Where the data came from and when it changed</span></summary>
-            <p>These {analysis.total} incident records came from the BC Wildfire Service data returned with this answer.</p>
-            {newestSourceTime && <p>Newest source update in this result: {formatTimestamp(newestSourceTime)}.</p>}
-          </details>
-          <details className="analysis-disclosure">
-            <summary><ShieldCheck size={20} /><strong>Technical evidence</strong><span>How the summary was derived</span></summary>
-            <p>FireLens grouped typed official records by their fire-centre and status fields. The browser calculated these counts deterministically; model prose is not used as data.</p>
-          </details>
-        </>
+        </div>
       )}
 
-      {surface === "map" && (
-        <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading the official map">Preparing map layers…</EvidencePlaceholder>}>
-          <LiveMap
-            results={session.mapResults}
-            matchingResults={session.mapMatchingResults}
-            provinceResults={session.mapProvinceResults}
-            aggregateFreshness={session.mapAggregateFreshness}
-            unavailableLayers={session.mapUnavailableLayers}
-            focus={session.mapFocus}
-            focusResults={session.mapFocusResults}
-            selectedResultId={session.selectedLiveResultId}
-            onSelectResult={session.setSelectedLiveResultId}
-            onAskAboutResult={session.askAboutResult}
-          />
-        </Suspense>
-      )}
+      <div
+        id="analysis-panel-records"
+        role="tabpanel"
+        aria-labelledby="analysis-tab-records"
+        tabIndex={0}
+        hidden={surface !== "records"}
+      >
+        {surface === "records" && (
+          <>
+          <AnalysisFilters results={results} fireCentre={fireCentreFilter} status={statusFilter} sort={sort} onFireCentre={setFireCentreFilter} onStatus={setStatusFilter} onSort={setSort} />
+          <RecordsView results={filteredResults} totalResults={results.length} />
+          </>
+        )}
+      </div>
 
-      {surface === "records" && <RecordsView results={results} />}
+      <div className="analysis-evidence-rail">
+        {analysisLimitations.material.length > 0 && (
+          <aside className="analysis-limitations" aria-label="Analysis limitations">
+            {analysisLimitations.material.join(" ")}
+          </aside>
+        )}
+        {analysisLimitations.boilerplate.length > 0 && (
+          <details className="analysis-disclosure analysis-disclosure--limits">
+            <summary><ShieldCheck size={20} /><strong>Limits</strong><span>Boundaries</span></summary>
+            <ul>
+              {analysisLimitations.boilerplate.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </details>
+        )}
+        <details className="analysis-disclosure">
+          <summary><Database size={20} /><strong>Sources</strong><span>Official records</span></summary>
+          <p>These {results.length} incident records came from the official data returned with this answer.</p>
+          {newestSourceTime && <p>Newest source update in this result: {formatTimestamp(newestSourceTime)}.</p>}
+        </details>
+        <details className="analysis-disclosure">
+          <summary><ShieldCheck size={20} /><strong>Method</strong><span>Deterministic counts</span></summary>
+          <p>FireLens grouped typed official records by their fire-centre and status fields. The browser calculated these counts deterministically; model prose is not used as data.</p>
+          {onOpenEvidence && (
+            <button
+              type="button"
+              aria-controls="answer-context"
+              aria-expanded={evidenceOpen}
+              onClick={onOpenEvidence}
+            >
+              Inspect answer evidence
+            </button>
+          )}
+        </details>
+      </div>
     </section>
   );
 }

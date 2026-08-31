@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import math
 from datetime import UTC, datetime
+from hashlib import sha256
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -17,7 +18,10 @@ from typing import Any
 from firelens.api import create_app
 from firelens.config import FireLensConfig
 from firelens.contracts import (
+    BACKGROUND_LIMITATION,
+    AskResponse,
     CoarseResolvedLocation,
+    EvidenceStatus,
     Freshness,
     LiveLayerStatus,
     LiveMapResponse,
@@ -27,10 +31,14 @@ from firelens.contracts import (
     LocationInput,
     MapViewport,
     NearMeResponse,
+    PublicClaim,
     QueryRequest,
+    ResponseMode,
+    ResponseStatus,
     aggregate_live_freshness,
 )
 from firelens.publication.compiler import compile_structured_claim
+from firelens.publication.fallback import background_authority
 from firelens.runtime import Runtime
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -260,16 +268,43 @@ class DeterministicLiveService:
 
 
 class DeterministicStaticService:
-    """Return a real compiled reviewed claim; never invoke a model provider."""
+    """Return question-bound fixture answers; never invoke a model provider."""
 
     def __init__(self) -> None:
-        compiled = compile_structured_claim(
+        evacuation = compile_structured_claim(
             typed_claim_id="TC-EVAC-ALERT-001",
             public_claim_id="C1",
             root=str(ROOT),
         ).response
-        assert compiled is not None
-        self.compiled = compiled
+        smoke = compile_structured_claim(
+            typed_claim_id="TC-SMOKE-014-01",
+            public_claim_id="C1",
+            root=str(ROOT),
+        ).response
+        assert evacuation is not None
+        assert smoke is not None
+        self.evacuation = evacuation
+        self.smoke = smoke
+
+    @staticmethod
+    def _background(question: str) -> AskResponse:
+        claim = PublicClaim(
+            claim_id="C1",
+            text=(
+                "This deterministic test fixture returns a general-background "
+                "example, not reviewed FireLens guidance."
+            ),
+            evidence_status=EvidenceStatus.GENERAL_BACKGROUND,
+            publication=background_authority(),
+        )
+        return AskResponse(
+            status=ResponseStatus.ANSWER,
+            trace_id=sha256(question.encode()).hexdigest()[:32],
+            response_mode=ResponseMode.BACKGROUND,
+            answer=claim.text,
+            claims=[claim],
+            limitations=[BACKGROUND_LIMITATION],
+        )
 
     async def ask(
         self,
@@ -279,8 +314,17 @@ class DeterministicStaticService:
         prefer_reviewed_quotes: bool = False,
     ) -> Any:
         del allow_live, prefer_reviewed_quotes
-        if "malformed publication fixture" not in request.question.casefold():
-            return self.compiled
+        question = request.question.casefold()
+        if "malformed publication fixture" not in question:
+            if "evacuation alert" in question:
+                return self.evacuation
+            if "wildfire smoke" in question:
+                return self.smoke
+            # The production service may publish validated and visibly labelled
+            # background for an ordinary non-live question. The fixture models
+            # that lane without pretending every question matched the one
+            # reviewed evacuation claim it happens to compile.
+            return self._background(request.question)
 
         # A deliberate test-only defect: all outer fields are shaped like an
         # AskResponse, but the nested public claim lacks PublicationAuthority.
@@ -288,10 +332,10 @@ class DeterministicStaticService:
         # validation to exercise the wire boundary instead of trusting a model
         # instance built inside the fixture.
         fields = {
-            name: getattr(self.compiled, name) for name in type(self.compiled).model_fields
+            name: getattr(self.evacuation, name) for name in type(self.evacuation).model_fields
         }
         fields["claims"] = [
-            self.compiled.claims[0].model_dump(mode="python", exclude={"publication"})
+            self.evacuation.claims[0].model_dump(mode="python", exclude={"publication"})
         ]
         fields["proof_cards"] = []
         return SimpleNamespace(**fields)

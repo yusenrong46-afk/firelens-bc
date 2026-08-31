@@ -16,6 +16,11 @@ from pathlib import Path
 
 from firelens.config import DEFAULT_RELEASE_VERSION
 
+# The current product candidate deliberately differs from the legacy runtime
+# writer default. Keep that default for historical callers, but make every
+# deploy prepared by this wrapper explicit and platform-consistent.
+CURRENT_BENCHMARK_ID = "firelens_v1_6_2"
+
 ROOT = Path(__file__).resolve().parents[1]
 PINNED_VERCEL_CLI = "vercel@58.1.0"
 _FULL_COMMIT = re.compile(r"^[0-9a-f]{40}$")
@@ -58,6 +63,7 @@ def resolve_local_commit(root: Path) -> str:
 def build_vercel_command(*, commit: str, production: bool) -> list[str]:
     commit_env = f"FIRELENS_BUILD_COMMIT={commit}"
     release_env = f"FIRELENS_RELEASE_VERSION={DEFAULT_RELEASE_VERSION}"
+    benchmark_env = f"FIRELENS_BENCHMARK_ID={CURRENT_BENCHMARK_ID}"
     command = [
         "npx",
         PINNED_VERCEL_CLI,
@@ -67,10 +73,14 @@ def build_vercel_command(*, commit: str, production: bool) -> list[str]:
         commit_env,
         "--build-env",
         release_env,
+        "--build-env",
+        benchmark_env,
         "--env",
         commit_env,
         "--env",
         release_env,
+        "--env",
+        benchmark_env,
     ]
     if production:
         command.append("--prod")

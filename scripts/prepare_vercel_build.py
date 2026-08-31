@@ -14,6 +14,7 @@ from firelens.privacy_policy import (
     resolve_openrouter_privacy_from_env,
 )
 from firelens.runtime_candidate import (
+    BENCHMARK_ID,
     DEFAULT_BENCHMARK_ID,
     build_runtime_candidate,
     write_runtime_candidate,
@@ -66,6 +67,33 @@ def _resolve_build_commit(root: Path) -> str:
     return commit
 
 
+def _resolve_build_benchmark_id() -> str:
+    """Read the deploy-bound benchmark identity, preserving legacy builds."""
+
+    configured = os.environ.get("FIRELENS_BENCHMARK_ID")
+    benchmark_id = configured.strip() if configured is not None else DEFAULT_BENCHMARK_ID
+    if BENCHMARK_ID.fullmatch(benchmark_id) is None:
+        raise BuildIdentityError("build benchmark ID from FIRELENS_BENCHMARK_ID is invalid")
+    return benchmark_id
+
+
+def _build_candidate(root: Path, *, commit: str, benchmark_id: str) -> dict[str, str]:
+    """Build the deployment candidate from one already-validated identity."""
+
+    return build_runtime_candidate(
+        commit=commit,
+        benchmark_id=benchmark_id,
+        release_version=os.environ.get("FIRELENS_RELEASE_VERSION") or DEFAULT_RELEASE_VERSION,
+        corpus_manifest_path=(root / "data/processed/firelens_static_corpus.manifest.json"),
+        vector_manifest_path=root / "data/index/firelens_vectors.manifest.json",
+        rerank_model=os.environ.get("FIRELENS_RERANK_MODEL"),
+        generation_model=os.environ.get("FIRELENS_GENERATION_MODEL"),
+        privacy=resolve_openrouter_privacy_from_env(
+            os.environ.get, default=APPROVED_PRODUCTION_PRIVACY
+        ),
+    )
+
+
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
     frontend = root / "apps/web"
@@ -77,20 +105,10 @@ def main() -> None:
 
     try:
         commit = _resolve_build_commit(root)
+        benchmark_id = _resolve_build_benchmark_id()
     except BuildIdentityError as exc:
         raise SystemExit(str(exc)) from exc
-    candidate = build_runtime_candidate(
-        commit=commit,
-        benchmark_id=DEFAULT_BENCHMARK_ID,
-        release_version=os.environ.get("FIRELENS_RELEASE_VERSION") or DEFAULT_RELEASE_VERSION,
-        corpus_manifest_path=(root / "data/processed/firelens_static_corpus.manifest.json"),
-        vector_manifest_path=root / "data/index/firelens_vectors.manifest.json",
-        rerank_model=os.environ.get("FIRELENS_RERANK_MODEL"),
-        generation_model=os.environ.get("FIRELENS_GENERATION_MODEL"),
-        privacy=resolve_openrouter_privacy_from_env(
-            os.environ.get, default=APPROVED_PRODUCTION_PRIVACY
-        ),
-    )
+    candidate = _build_candidate(root, commit=commit, benchmark_id=benchmark_id)
     write_runtime_candidate(root / "config/runtime_candidate.v1.json", candidate)
 
     if public.exists():

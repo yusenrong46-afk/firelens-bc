@@ -1,8 +1,9 @@
-import { ArrowSquareOut, Crosshair, Info, UserCircle, WarningCircle } from "@phosphor-icons/react";
-import type { ReactNode } from "react";
+import { ArrowSquareOut, Crosshair, UserCircle, WarningCircle } from "@phosphor-icons/react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { FeedbackControls } from "../feedback/FeedbackControls";
 import { resultDisplayName } from "../near-me/liveResultPresentation";
 import { AnswerBody } from "./AnswerBody";
+import { AskStartPanel } from "./AskStartPanel";
 import { getAnswerSections } from "./answerSections";
 import {
   ClaimEvidence,
@@ -11,11 +12,14 @@ import {
   PreparednessSources,
   revealAssistantMessage,
   ServiceFailureState,
+  SuggestedQuestions,
 } from "./ConversationPresentation";
 import { getClaimSupportLabel, getClaimSupportState } from "./proofPresentation";
 import { QuestionComposer } from "./QuestionComposer";
 import { ResponseModeBadge } from "./responseModeBadge";
+import { announcementForState, type ConversationState } from "./conversationAnnouncements";
 import type { FireLensSession } from "./useFireLensSession";
+import "./conversationAccessibility.css";
 
 export function ConversationPanel({ session, analytical = false, analysisSlot, onOpenEvidence, onOpenMap,
   contextOpen = false, contextSurface = "evidence" }: {
@@ -33,7 +37,6 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
     clearHistory,
     clearManualLocation,
     earlierTurns,
-    history,
     locationLabel,
     locationMessage,
     mode,
@@ -71,30 +74,31 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
   const selectedRecord = [...mapResults, ...(response?.live_results ?? [])].find(
     (item) => item.result_id === selectedLiveResultId,
   );
-  const suggestionGroup = suggestions.length > 0 && (
-    <div className="suggestion-group" aria-label="Suggested questions">
-      <span className="panel-label">Start with an example</span>
-      <div>
-        {suggestions.map((suggestion) => (
-          <button type="button" key={suggestion} onClick={() => void submitQuestion(suggestion)} disabled={view.kind === "loading"}>
-            {suggestion}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+  const previousState = useRef<ConversationState>(view.kind);
+  const [announcement, setAnnouncement] = useState("");
+
+  useEffect(() => {
+    const priorState = previousState.current;
+    if (priorState === view.kind) return;
+    previousState.current = view.kind;
+    setAnnouncement(announcementForState(view.kind, priorState));
+  }, [view.kind]);
 
   return (
-    <section className={`conversation-panel ${analytical ? "conversation-panel--analytical" : ""}`} id="conversation" aria-label="Question and answer" tabIndex={-1}>
-      {(history.length > 0 || view.kind !== "idle") && (
+    <section className={`conversation-panel ${analytical ? "conversation-panel--analytical" : ""} ${view.kind === "idle" ? "conversation-panel--idle" : ""}`} id="conversation" aria-label="Question and answer" tabIndex={-1}>
+      {view.kind !== "idle" && (
         <ConversationToolbar priorTurnCount={earlierTurns.length} onClear={clearHistory} />
       )}
       <div className="conversation-scroll">
-        {view.kind !== "idle" && (
-          <span className="response-announcement" role="status" aria-live="polite" aria-atomic="true">
-            {view.kind === "loading" ? "FireLens is working." : "FireLens response ready."}
-          </span>
-        )}
+        <span
+          className="response-announcement"
+          data-surface-visually-hidden="true"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {announcement}
+        </span>
         {earlierTurns.length > 0 && (
           <div className="history-group" aria-label="Earlier conversation">
             <span className="panel-label">Earlier conversation</span>
@@ -117,15 +121,15 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
         )}
 
         {view.kind === "idle" && (
-          <div className="conversation-intro">
-            <span className="panel-label">British Columbia wildfire information</span>
-            <h1>Ask about a fire, a B.C. place, or preparedness.</h1>
-            <p>FireLens shows what came from official live records, reviewed sources, or clearly labelled general background.</p>
-          </div>
-        )}
-        {view.kind === "idle" && (
-          <QuestionComposer idle loading={false} query={query}
-            onQueryChange={setQuery} onSubmit={submit} />
+          <>
+            <AskStartPanel
+              locationLabel={locationLabel}
+              onLocationChange={(value) => { setLocationLabel(value); clearManualLocation(); }}
+              onUseApproximateLocation={useApproximateLocation}
+              onAsk={(question) => void submitQuestion(question)}
+            />
+            <QuestionComposer idle loading={false} query={query} onQueryChange={setQuery} onSubmit={submit} />
+          </>
         )}
 
         {view.kind !== "idle" && <div className={`assistant-message assistant-message--${view.kind}`} ref={(node) => revealAssistantMessage(node, true)}>
@@ -138,6 +142,7 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
                 aggregateFreshness={response?.aggregate_freshness ?? undefined}
                 answerSectionKinds={answerSections.map((section) => section.kind)}
                 reasonCode={response?.reason_code ?? undefined}
+                response={response}
               />
             )}
             {selectedRecord && (
@@ -149,7 +154,7 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
               </div>
             )}
             {view.kind === "answer" ? (
-              <AnswerBody response={response} assistantText={assistantText} analytical={analytical} />
+              <AnswerBody response={response} assistantText={assistantText} analytical={analytical} onSelectLiveResult={setSelectedLiveResultId} />
             ) : view.kind === "unavailable" || view.kind === "error" ? (
               <ServiceFailureState
                 message={assistantText}
@@ -174,31 +179,13 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
                 ))}
               </div>
             )}
-            {response?.trace_id && <FeedbackControls traceId={response.trace_id} />}
+            {!analytical && response?.trace_id && <FeedbackControls traceId={response.trace_id} />}
           </div>
         </div>}
 
-        {analytical && visibleLimitations.length > 0 && (
-          <aside className="analysis-limitations" aria-label="Analysis limitations">
-            <Info size={18} aria-hidden="true" />
-            <span>{visibleLimitations.join(" ")}</span>
-          </aside>
-        )}
         {analytical && analysisSlot}
-        {analytical && response?.trace_id && onOpenEvidence && (
-          <div className="answer-context-actions analysis-context-actions">
-            <button
-              type="button"
-              aria-controls="answer-context"
-              aria-expanded={contextOpen && contextSurface === "evidence"}
-              onClick={() => {
-                setSelected(0);
-                onOpenEvidence();
-              }}
-            >
-              Open technical evidence
-            </button>
-          </div>
+        {analytical && response?.trace_id && (
+          <div className="analysis-feedback"><FeedbackControls traceId={response.trace_id} /></div>
         )}
 
         {requiresLocation && (
@@ -228,9 +215,9 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
             </div>
           </form>
         )}
-        {locationMessage && <p className="location-message" role="status">{locationMessage}</p>}
+        {locationMessage && <p className="location-message" role="status" aria-live="polite" aria-atomic="true">{locationMessage}</p>}
 
-        {view.kind === "answer" && claims.length > 0 && (
+        {view.kind === "answer" && mode !== "background" && claims.length > 0 && (
           <div className="claim-group">
             <span className="panel-label">Answer evidence and support</span>
             <div className="claim-list">
@@ -285,7 +272,13 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
           </div>
         )}
 
-        {suggestionGroup}
+        {view.kind !== "idle" && (
+          <SuggestedQuestions
+            disabled={view.kind === "loading"}
+            onSelect={(question) => void submitQuestion(question)}
+            suggestions={suggestions}
+          />
+        )}
       </div>
 
       {view.kind !== "idle" && (

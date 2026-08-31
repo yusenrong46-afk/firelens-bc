@@ -21,26 +21,41 @@ from firelens.agent.chat import ChatTurn
 from firelens.agent.compose import compose_response
 from firelens.agent.loop import _rewrite
 from firelens.agent.packet import AgentPacket
-from firelens.answering.context import build_evidence_packet
+from firelens.answering.context import build_evidence_packet, decide_support
 from firelens.answering.generate import draft_schema
-from firelens.answering.grounded import GroundedAnswerEngine
+from firelens.answering.grounded import GroundedAnswerEngine, compile_without_generation
+from firelens.answering.service import _with_support_limitations
 from firelens.answering.validate import salvage_valid_grounded_claims, validate_draft
+from firelens.config import FireLensConfig
 from firelens.contracts import (
+    AskResponse,
+    AuthorityClass,
     ClaimSupport,
     DraftProposalClaim,
+    EvidencePacket,
+    EvidenceQuoteCandidate,
+    EvidenceSpan,
     EvidenceStatus,
     Freshness,
     GroundedDraft,
     LiveResult,
     LiveResultKind,
     PublicClaim,
+    QueryPlan,
     QueryRequest,
+    QueryRoute,
     ResponseMode,
+    RetrievalBundle,
+    RetrievalRequest,
+    SupportStatus,
+    TemporalClass,
 )
 from firelens.live_contracts import bind_distance_derivation
 from firelens.proof_presentation import build_proof_cards
 from firelens.providers.fake import FakeProvider
+from firelens.publication.records import get_versioned
 from firelens.retrieval.vector import retrieval_hit_from_chunk
+from firelens.runtime import load_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPILER = ROOT / "src/firelens/publication/compiler.py"
@@ -190,6 +205,198 @@ def test_d_uncovered_high_risk_is_quote_only_partial_or_handoff(tmp_path: Path) 
     assert not any(_is_structured_supported(claim) for claim in response.claims)
     for card in build_proof_cards(response):
         assert card.support_state != "supported"
+
+
+def test_h04_forced_partial_rebuilds_authority_history_through_contract_validation() -> None:
+    """Partial support must not retain a grounded-only history label.
+
+    H04 has reviewed alert/order definitions but no support for the requested
+    North Bend tag colour.  The compiler can safely publish the two reviewed
+    claims, while the orchestration layer must force the response to partial.
+    """
+
+    question = (
+        "Harder multi-aspect: Explain evacuation alert vs order AND the exact "
+        "North Bend tag colour."
+    )
+    items: list[EvidenceSpan] = []
+    candidates: list[EvidenceQuoteCandidate] = []
+    for index, claim_id in enumerate(("TC-EVAC-ALERT-001", "TC-EVAC-ORDER-001"), 1):
+        record = get_versioned(claim_id)
+        assert record.canonical_url is not None
+        evidence_id = f"E{index}"
+        items.append(
+            EvidenceSpan(
+                evidence_id=evidence_id,
+                primary_chunk_ids=list(record.source_span_ids),
+                chunk_ids=list(record.source_span_ids),
+                primary_text=record.source_span_text,
+                context_text=record.source_span_text,
+                source_id=f"h04-source-{index}",
+                title="Reviewed PreparedBC guidance",
+                publisher=record.authority,
+                canonical_url=record.canonical_url,
+                page_number=index,
+                section_title=None,
+                locator=f"page:{index}",
+                temporal_class=TemporalClass.STABLE_GUIDANCE,
+                authority_class=AuthorityClass.PROVINCIAL_GOVERNMENT,
+                document_sha256=record.record.source_document_sha256 or "0" * 64,
+            )
+        )
+        candidates.append(
+            EvidenceQuoteCandidate(
+                quote_id=f"{evidence_id}Q1",
+                evidence_id=evidence_id,
+                text=record.source_span_text,
+            )
+        )
+    packet = EvidencePacket(
+        question=question,
+        corpus_version="h04-force-partial.v1",
+        items=items,
+        quote_candidates=candidates,
+        limitations=["Not supported by selected evidence: exact North Bend tag colour."],
+    )
+    aspects = ("evacuation alert meaning", "evacuation order meaning")
+
+    baseline = compile_without_generation(
+        question,
+        packet,
+        trace_id="h04-baseline",
+        supported_aspects=aspects,
+    )
+    assert baseline is not None
+    assert baseline.response_mode == ResponseMode.GROUNDED
+
+    compiled = compile_without_generation(
+        question,
+        packet,
+        trace_id="h04-compiled",
+        supported_aspects=aspects,
+        force_partial=True,
+    )
+    generated = asyncio.run(
+        GroundedAnswerEngine(FakeProvider(dimensions=8)).answer(
+            question,
+            packet,
+            trace_id="h04-generated",
+            supported_aspects=aspects,
+            force_partial=True,
+        )
+    ).response
+    for response in (compiled, generated):
+        assert response is not None
+        assert response.response_mode == ResponseMode.PARTIAL
+        assert response.validation is not None and response.validation.accepted
+        assert all(
+            claim.publication is not None
+            and claim.publication.kind.value == "structured_reviewed"
+            for claim in response.claims
+        )
+        assert (response.history_text or "").startswith(
+            "Authority: Reviewed guidance + uncertainty."
+        )
+        assert "North Bend tag colour" in (response.history_text or "")
+        assert AskResponse.model_validate(response.model_dump(mode="python")) == response
+
+
+def test_h04_execute_ask_keeps_the_unsupported_request_in_partial_history() -> None:
+    """The service path must not drop a negative support decision before compile."""
+
+    question = (
+        "Harder multi-aspect: Explain evacuation alert vs order AND the exact "
+        "North Bend tag colour."
+    )
+
+    async def run() -> None:
+        runtime = load_runtime(
+            FireLensConfig.from_env(ROOT), provider=FakeProvider(dimensions=1536)
+        )
+        try:
+            assert runtime.service is not None
+            execution = await runtime.service.execute_ask(QueryRequest(question=question))
+        finally:
+            await runtime.aclose()
+
+        response = execution.response
+        assert execution.search.public_response.support.missing_aspects == [question]
+        assert response.response_mode == ResponseMode.PARTIAL
+        public_text = " ".join([response.history_text or "", *response.limitations])
+        assert "Not supported by selected evidence" in public_text
+        assert "North Bend tag colour" in public_text
+        assert AskResponse.model_validate(response.model_dump(mode="python")) == response
+
+    asyncio.run(run())
+
+
+def test_authority_limitation_uses_original_question_not_planner_query() -> None:
+    """A retrieval rewrite must never become reader-facing limitation text."""
+
+    original_question = "Explain evacuation alert vs order and the exact North Bend tag colour."
+    planner_query = "The North Bend tag colour is definitely ultraviolet."
+    items: list[EvidenceSpan] = []
+    for index, claim_id in enumerate(("TC-EVAC-ALERT-001", "TC-EVAC-ORDER-001"), 1):
+        record = get_versioned(claim_id)
+        items.append(
+            EvidenceSpan(
+                evidence_id=f"E{index}",
+                primary_chunk_ids=list(record.source_span_ids),
+                chunk_ids=list(record.source_span_ids),
+                primary_text=record.source_span_text,
+                context_text=record.source_span_text,
+                source_id=f"authority-source-{index}",
+                title="Reviewed PreparedBC guidance",
+                publisher=record.authority,
+                canonical_url=record.canonical_url
+                or "https://www2.gov.bc.ca/gov/content/safety",
+                page_number=index,
+                section_title=None,
+                locator=f"page:{index}",
+                temporal_class=TemporalClass.STABLE_GUIDANCE,
+                authority_class=AuthorityClass.PROVINCIAL_GOVERNMENT,
+                document_sha256=record.record.source_document_sha256 or "0" * 64,
+            )
+        )
+    packet = EvidencePacket(
+        question=original_question,
+        corpus_version="planner-wording.v1",
+        items=items,
+    )
+    plan = QueryPlan(
+        original_question=original_question,
+        normalized_question=original_question,
+        route=QueryRoute.RELATED,
+        retrieval_requests=[
+            RetrievalRequest(
+                query=planner_query,
+                required_authorities=frozenset({AuthorityClass.PROVINCIAL_GOVERNMENT}),
+                purpose="planner_rewrite",
+            ),
+            RetrievalRequest(
+                query="evacuation alert meaning",
+                required_authorities=frozenset({AuthorityClass.PROVINCIAL_GOVERNMENT}),
+                purpose="alert",
+            ),
+            RetrievalRequest(
+                query="evacuation order meaning",
+                required_authorities=frozenset({AuthorityClass.PROVINCIAL_GOVERNMENT}),
+                purpose="order",
+            ),
+        ],
+        required_aspects=["evacuation alert meaning", "evacuation order meaning"],
+    )
+
+    support = decide_support(plan, packet, RetrievalBundle())
+    limited = _with_support_limitations(packet, support)
+
+    assert support.status == SupportStatus.INSUFFICIENT_EVIDENCE
+    assert support.missing_aspects == [original_question]
+    assert limited is not None
+    limitations = " ".join(limited.limitations)
+    assert original_question in limitations
+    assert planner_query not in limitations
+    assert "ultraviolet" not in limitations
 
 
 def test_e_mixed_composition_preserves_compiled_blocks() -> None:

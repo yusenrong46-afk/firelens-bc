@@ -9,10 +9,23 @@ const playwrightConfig = await readFile(
   new URL("../playwright.config.ts", import.meta.url),
   "utf8",
 );
+const realPlaywrightConfig = await readFile(
+  new URL("../playwright.real.config.ts", import.meta.url),
+  "utf8",
+);
 const makefile = await readFile(new URL("../../../Makefile", import.meta.url), "utf8");
 
 test("Playwright refuses to reuse an unrelated server on the test port", () => {
   assert.match(playwrightConfig, /reuseExistingServer:\s*false/);
+});
+
+test("the real-stack harness has a dedicated test rate budget", async () => {
+  const runtimeConfig = await readFile(
+    new URL("../../../src/firelens/config.py", import.meta.url),
+    "utf8",
+  );
+  assert.match(realPlaywrightConfig, /FIRELENS_RATE_LIMIT=1000/);
+  assert.match(runtimeConfig, /anonymous_rate_limit: int = Field\(default=30,/);
 });
 
 test("local setup installs the browser required by the end-to-end suite", () => {

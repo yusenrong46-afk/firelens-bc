@@ -470,6 +470,24 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(location, (49.89, -119.5))
 
+    async def test_geocoder_resolves_identical_labels_once_per_service(self) -> None:
+        calls = {"count": 0}
+
+        def handler(_request: httpx.Request) -> httpx.Response:
+            calls["count"] += 1
+            return httpx.Response(
+                200,
+                json={"features": [_locality_feature("Kelowna")]},
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            service = LiveDataService(client=client)
+            first = await service.resolve_location(LocationInput(label="Kelowna"))
+            second = await service.resolve_location(LocationInput(label=" Kelowna "))
+
+        self.assertEqual(first, second)
+        self.assertEqual(calls["count"], 1)
+
     async def test_geocoder_selects_exact_normalized_bc_locality_not_first_guess(
         self,
     ) -> None:
@@ -840,6 +858,32 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
                 client=client,
                 max_upstream_concurrency=2,
             ).map_results(layers=tuple(LiveResultKind))
+
+        self.assertEqual(max_active, 2)
+        self.assertEqual(response.unavailable_layers, [])
+
+    async def test_layer_metadata_and_first_page_share_the_upstream_budget(self) -> None:
+        active = 0
+        max_active = 0
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal active, max_active
+            active += 1
+            max_active = max(max_active, active)
+            await asyncio.sleep(0.01)
+            active -= 1
+            if request.url.path.endswith("/query"):
+                return httpx.Response(
+                    200,
+                    json={"type": "FeatureCollection", "features": []},
+                )
+            return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(
+                client=client,
+                max_upstream_concurrency=2,
+            ).map_results(layers=(LiveResultKind.INCIDENT,))
 
         self.assertEqual(max_active, 2)
         self.assertEqual(response.unavailable_layers, [])

@@ -21,7 +21,7 @@ _KILOMETRE = re.compile(
     re.IGNORECASE,
 )
 _FIRE_COUNT = re.compile(
-    r"\b(\d+)\s+(?:active\s+)?(?:wildfires?|fires?)\b",
+    r"\b(\d+)\s+(?:active\s+)?(?:wildfires?|fires?)\b(?!\s+of\s+note\b)",
     re.IGNORECASE,
 )
 

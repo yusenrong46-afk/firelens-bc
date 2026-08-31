@@ -38,11 +38,65 @@ const requiredMapParityStateIds = [
   "no_result",
   "partial_layer",
 ];
+const performanceQuestion = "Show wildfire distribution by status across B.C.";
 
-const transparentPng = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
-  "base64",
-);
+// Qualification is evidence, not a best-effort background task. A renderer that
+// stops making progress must fail the run rather than leaving a CI worker (and
+// its preview server) alive indefinitely. These are harness safeguards only;
+// they do not alter the frozen protocol, sampled states, or acceptance limits.
+const qualificationTimeouts = Object.freeze({
+  surfacePhaseMs: 30_000,
+  journeyMs: 30_000,
+  performanceSampleMs: 30_000,
+  // The full 36-row matrix includes browser setup, accessibility scans, and
+  // sixteen throttled performance samples. This is a last-resort guard, not a
+  // substitute for the per-state/per-journey limits above.
+  campaignMs: 30 * 60_000,
+});
+
+export class SurfaceQualificationTimeoutError extends Error {
+  constructor(label, timeoutMs) {
+    super(`frontend surface qualification timed out after ${timeoutMs}ms during ${label}`);
+    this.name = "SurfaceQualificationTimeoutError";
+    this.label = label;
+    this.timeoutMs = timeoutMs;
+  }
+}
+
+/**
+ * Bound one renderer phase. Callers close their page/context in finally, so a
+ * timed-out Playwright operation cannot keep the qualification process alive.
+ */
+export async function withQualificationTimeout(label, timeoutMs, operation) {
+  if (typeof label !== "string" || label.trim() === "") {
+    throw new Error("frontend surface timeout label is required");
+  }
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1) {
+    throw new Error("frontend surface timeout must be a positive integer");
+  }
+  if (typeof operation !== "function") {
+    throw new Error("frontend surface timeout operation must be a function");
+  }
+
+  let timer = null;
+  try {
+    return await Promise.race([
+      Promise.resolve().then(operation),
+      new Promise((_, reject) => {
+        timer = setTimeout(
+          () => reject(new SurfaceQualificationTimeoutError(label, timeoutMs)),
+          timeoutMs,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer !== null) clearTimeout(timer);
+  }
+}
+
+function isQualificationTimeoutMessage(value) {
+  return String(value ?? "").includes("SurfaceQualificationTimeoutError");
+}
 
 const groundedResponse = {
   status: "answer",
@@ -55,6 +109,10 @@ const groundedResponse = {
       claim_id: "C1",
       text: "Prepare water, food, and medication.",
       evidence_status: "verified_corpus",
+      publication: {
+        kind: "structured_reviewed",
+        review_status: "approved",
+      },
       supports: [{ evidence_id: "E1", quote: "Food & water" }],
     },
   ],
@@ -256,6 +314,47 @@ const responseFixtures = {
     unavailable_layers: ["evacuation"],
   },
 };
+
+// These strings are rendered by the current UI fixtures. The provisional
+// protocol intentionally records observations of that UI; it does not freeze
+// product wording or release semantics.
+export const surfaceStateReadyText = Object.freeze({
+  idle: "Ask about a fire, a B.C. place, or preparedness.",
+  grounded: "Answer evidence and support",
+  partial: "Partially supported",
+  background: "General knowledge",
+  requires_input: "One detail needed",
+  abstention: "FireLens did not generate guidance",
+  provider_failure: "We couldn't complete this question",
+  live: "Analysis view",
+  mixed: "Answer evidence and support",
+  stale: "Official cached records",
+  no_result: "FireLens did not generate guidance",
+  partial_layer: "Official records returned",
+});
+
+// The product is deliberately chat-first. Only these answered live states
+// expose a map after the user explicitly asks for its context; reviewed
+// evidence likewise opens through the claim-level technical-evidence control.
+export const surfaceInteractionContract = Object.freeze({
+  map_state_ids: ["live", "mixed", "stale", "partial_layer"],
+  map_control_name: "View official map context",
+  evidence_control_name: "Review technical evidence",
+});
+
+export function requiresOnDemandMapContext(stateId) {
+  return surfaceInteractionContract.map_state_ids.includes(stateId);
+}
+
+export function surfaceReadyTextCoverageIssues(protocol) {
+  return protocol.states.flatMap((state) => {
+    const expected = surfaceStateReadyText[state.id];
+    if (typeof expected !== "string") return [`missing ready-text expectation ${state.id}`];
+    return state.ready_text === expected
+      ? []
+      : [`ready-text expectation mismatch ${state.id}`];
+  });
+}
 
 function sha256Bytes(value) {
   return createHash("sha256").update(value).digest("hex");
@@ -532,7 +631,9 @@ function fixtureForQuestion(question) {
       },
     };
   }
-  const body = responseFixtures[question] ?? groundedResponse;
+  const body = question === performanceQuestion
+    ? responseFixtures["surface:live-fresh"]
+    : responseFixtures[question] ?? groundedResponse;
   return { statusCode: 200, body };
 }
 
@@ -545,7 +646,17 @@ async function installDeterministicRoutes(page) {
     releaseLoading = resolve;
   });
   await page.route("https://*.tile.openstreetmap.org/**", async (route) => {
-    await route.fulfill({ status: 200, contentType: "image/png", body: transparentPng });
+    // Qualification measures the application, not availability of the public
+    // basemap CDN. Keep tile rendering deterministic while retaining the real
+    // request origin in the network evidence roster.
+    await route.fulfill({
+      status: 200,
+      contentType: "image/png",
+      body: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL7WQAAAABJRU5ErkJggg==",
+        "base64",
+      ),
+    });
   });
   await page.route("**/api/v1/live/map*", async (route) => {
     await route.fulfill({
@@ -608,6 +719,28 @@ async function waitForText(page, text) {
   await page.getByText(text, { exact: true }).first().waitFor({ state: "visible" });
 }
 
+async function openOfficialMapContext(page) {
+  const disclosure = page.getByRole("button", {
+    name: surfaceInteractionContract.map_control_name,
+  });
+  if (await disclosure.count()) {
+    await disclosure.click();
+  } else {
+    // Multi-record analytical answers expose Map as a workspace tab instead
+    // of duplicating the chat disclosure control.
+    await page.getByRole("tab", { name: "Map", exact: true }).click();
+  }
+  await page.getByRole("region", { name: "Official wildfire records map" }).waitFor();
+  await page.locator(".leaflet-container").waitFor();
+}
+
+async function openTechnicalEvidenceContext(page) {
+  await page.getByRole("button", {
+    name: new RegExp(`^${surfaceInteractionContract.evidence_control_name} for `),
+  }).first().click();
+  await page.locator("button.source-toggle").first().waitFor();
+}
+
 async function driveState(page, state) {
   await page.goto("/", { waitUntil: "networkidle" });
   if (state.question) {
@@ -615,10 +748,7 @@ async function driveState(page, state) {
     await page.getByLabel("Ask FireLens a question").press("Enter");
   }
   await waitForText(page, state.ready_text);
-  if (["live", "mixed", "stale", "partial_layer"].includes(state.id)) {
-    await page.getByRole("region", { name: "Official wildfire records map" }).waitFor();
-    await page.locator(".leaflet-container").waitFor();
-  }
+  if (requiresOnDemandMapContext(state.id)) await openOfficialMapContext(page);
   await page.evaluate(async () => {
     if (document.fonts?.ready) await document.fonts.ready;
   });
@@ -696,7 +826,7 @@ function recomputeMapDetailIntegrity(mapEvidence, expectedRecords) {
       && detail.canonical_source_url === canonicalHttpUrl(expected.source_url)
       && detail.source_url_observed_in_popup === false
       && detail.geometry_type === expected.geometry?.type
-      && detail.resolution === "unique_popup_name"
+      && ["unique_popup_name", "bound_marker_metadata"].includes(detail.resolution)
     );
   });
   return (
@@ -865,9 +995,47 @@ async function inspectMapEvidence(page, state, protocol) {
       ".leaflet-overlay-pane .leaflet-interactive",
     );
     const mapElementCount = await mapElements.count();
+    // Capture positions before opening popups. Leaflet may pan the map to keep
+    // a popup in view, so post-click positions would measure popup behavior
+    // rather than whether the initially rendered markers overlap.
+    const initialMarkerObservations = await Promise.all(
+      Array.from({ length: mapElementCount }, async (_, index) => {
+        const element = mapElements.nth(index);
+        const bounds = await element.boundingBox();
+        return {
+          element_tag: await element.evaluate((node) => node.tagName.toLowerCase()),
+          observed_visible: await element.isVisible(),
+          observed_center_css_px: bounds ? {
+            x: Number((bounds.x + (bounds.width / 2)).toFixed(3)),
+            y: Number((bounds.y + (bounds.height / 2)).toFixed(3)),
+          } : null,
+        };
+      }),
+    );
     for (let index = 0; index < mapElementCount; index += 1) {
       const element = mapElements.nth(index);
+      const initialObservation = initialMarkerObservations[index];
       try {
+        const boundResultId = await element.getAttribute("data-result-id");
+        if (boundResultId) {
+          const expected = expectedRecords.find((record) => record.result_id === boundResultId);
+          const rendered = {
+            dom_index: index,
+            rendered_popup_name: await element.getAttribute("data-record-name"),
+            element_tag: initialObservation?.element_tag ?? await element.evaluate((node) => node.tagName.toLowerCase()),
+            record_id: expected?.result_id ?? null,
+            geometry_type: await element.getAttribute("data-geometry-type"),
+            canonical_source_url: canonicalHttpUrl(await element.getAttribute("data-source-url")),
+            source_url_observed_in_popup: false,
+            observed_visible: initialObservation?.observed_visible ?? false,
+            observed_center_css_px: initialObservation?.observed_center_css_px ?? null,
+            resolution: expected ? "bound_marker_metadata" : "unresolved",
+          };
+          evidence.rendered_map_feature_or_marker_records.push(rendered);
+          if (expected) evidence.rendered_map_feature_or_marker_record_ids.push(expected.result_id);
+          else evidence.unresolved_map_feature_or_marker_entries.push(rendered);
+          continue;
+        }
         await element.evaluate((node) => {
           node.dispatchEvent(new MouseEvent("click", {
             bubbles: true,
@@ -879,21 +1047,16 @@ async function inspectMapEvidence(page, state, protocol) {
         await popup.waitFor({ state: "visible", timeout: 2_000 });
         const name = (await popup.locator("strong").first().innerText()).trim();
         const record = resolveUniqueRecord(expectedRecords, { name });
-        const bounds = await element.boundingBox();
-        const observedCenter = bounds ? {
-          x: Number((bounds.x + (bounds.width / 2)).toFixed(3)),
-          y: Number((bounds.y + (bounds.height / 2)).toFixed(3)),
-        } : null;
         const rendered = {
           dom_index: index,
           rendered_popup_name: name,
-          element_tag: await element.evaluate((node) => node.tagName.toLowerCase()),
+          element_tag: initialObservation?.element_tag ?? await element.evaluate((node) => node.tagName.toLowerCase()),
           record_id: record?.result_id ?? null,
           geometry_type: record?.geometry?.type ?? null,
           canonical_source_url: record ? canonicalHttpUrl(record.source_url) : null,
           source_url_observed_in_popup: false,
-          observed_visible: await element.isVisible(),
-          observed_center_css_px: observedCenter,
+          observed_visible: initialObservation?.observed_visible ?? false,
+          observed_center_css_px: initialObservation?.observed_center_css_px ?? null,
           resolution: record ? "unique_popup_name" : "unresolved",
         };
         evidence.rendered_map_feature_or_marker_records.push(rendered);
@@ -1000,13 +1163,32 @@ async function inspectLayoutAndCss(page, thresholds) {
     const undersizedTextElements = [];
     for (const element of document.querySelectorAll("body *")) {
       if (!(element instanceof HTMLElement) || !visible(element)) continue;
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      // The response announcement is intentionally exposed only to assistive
+      // technology. It is explicitly annotated by the component and must
+      // retain the screen-reader-only geometry below; ordinary clipped text is
+      // still treated as a surface failure.
+      const describedHelp = element.id !== "" && document.querySelector(
+        `[aria-describedby~="${CSS.escape(element.id)}"]`,
+      ) !== null;
+      const semanticHeading = /^(?:H1|H2|H3|H4|H5|H6)$/.test(element.tagName);
+      const intentionallyScreenReaderOnly = (
+        element.dataset.surfaceVisuallyHidden === "true"
+        && (element.getAttribute("role") === "status" || describedHelp || semanticHeading)
+        && style.position === "absolute"
+        && rect.width <= 1
+        && rect.height <= 1
+        && ["hidden", "clip"].includes(style.overflowX)
+        && ["hidden", "clip"].includes(style.overflowY)
+      );
+      if (intentionallyScreenReaderOnly) continue;
       const directText = [...element.childNodes]
         .filter((node) => node.nodeType === Node.TEXT_NODE)
         .map((node) => node.textContent?.trim() ?? "")
         .join(" ")
         .trim();
       if (!directText) continue;
-      const style = getComputedStyle(element);
       const secondary = (
         element.matches("small, .panel-label, .assistant-name, .selected-kicker")
         || element.closest("small") !== null
@@ -1022,6 +1204,7 @@ async function inspectLayoutAndCss(page, thresholds) {
           font_size_px: observedFontSize,
           required_font_size_px: requiredFontSize,
           category: secondary ? "secondary" : "body",
+          text: directText,
         });
       }
       const clipsX = ["hidden", "clip"].includes(style.overflowX)
@@ -1036,6 +1219,7 @@ async function inspectLayoutAndCss(page, thresholds) {
           overflow_y: style.overflowY,
           clipped_x_px: Math.max(0, element.scrollWidth - element.clientWidth),
           clipped_y_px: Math.max(0, element.scrollHeight - element.clientHeight),
+          text: directText,
         });
       }
     }
@@ -1285,15 +1469,40 @@ async function captureSurfaceRow({
   let mapEvidence = protocol.map_parity.applicable_state_ids.includes(state.id)
     ? initialApplicableMapEvidence(state, protocol)
     : notApplicableMapEvidence();
+  const stateLabel = `surface state ${state.id} viewport ${viewport.id}`;
   try {
-    await driveState(page, state);
-    mapEvidence = await inspectMapEvidence(page, state, protocol);
-    await page.waitForLoadState("networkidle");
-    await page.addStyleTag({
-      content: "*,*::before,*::after{animation:none!important;transition:none!important;}",
-    });
-    const axe = await runAxe(page);
-    const layout = await inspectLayoutAndCss(page, protocol.surface_thresholds);
+    await withQualificationTimeout(
+      `${stateLabel} drive`,
+      qualificationTimeouts.surfacePhaseMs,
+      () => driveState(page, state),
+    );
+    mapEvidence = await withQualificationTimeout(
+      `${stateLabel} map evidence`,
+      qualificationTimeouts.surfacePhaseMs,
+      () => inspectMapEvidence(page, state, protocol),
+    );
+    await withQualificationTimeout(
+      `${stateLabel} network settle`,
+      qualificationTimeouts.surfacePhaseMs,
+      () => page.waitForLoadState("networkidle"),
+    );
+    await withQualificationTimeout(
+      `${stateLabel} stable rendering`,
+      qualificationTimeouts.surfacePhaseMs,
+      () => page.addStyleTag({
+        content: "*,*::before,*::after{animation:none!important;transition:none!important;}",
+      }),
+    );
+    const axe = await withQualificationTimeout(
+      `${stateLabel} accessibility scan`,
+      qualificationTimeouts.surfacePhaseMs,
+      () => runAxe(page),
+    );
+    const layout = await withQualificationTimeout(
+      `${stateLabel} layout inspection`,
+      qualificationTimeouts.surfacePhaseMs,
+      () => inspectLayoutAndCss(page, protocol.surface_thresholds),
+    );
     const consoleClassification = classifyConsoleErrors(
       runtime.consoleErrors,
       routes.expectedHttpFailures,
@@ -1302,13 +1511,22 @@ async function captureSurfaceRow({
       runtime.requestEvents,
       protocol.surface_thresholds,
     );
-    const screenshotBytes = await page.screenshot({
-      path: screenshotPath,
-      fullPage: true,
-      animations: "disabled",
-    });
-    const screenshotStat = await stat(screenshotPath);
-    const screenshotMetadata = await sharp(screenshotBytes).metadata();
+    const { screenshotBytes, screenshotStat, screenshotMetadata } = await withQualificationTimeout(
+      `${stateLabel} screenshot`,
+      qualificationTimeouts.surfacePhaseMs,
+      async () => {
+        const screenshotBytes = await page.screenshot({
+          path: screenshotPath,
+          fullPage: true,
+          animations: "disabled",
+        });
+        return {
+          screenshotBytes,
+          screenshotStat: await stat(screenshotPath),
+          screenshotMetadata: await sharp(screenshotBytes).metadata(),
+        };
+      },
+    );
     const assessment = surfaceChecks({
       axe,
       layout,
@@ -1397,14 +1615,15 @@ async function runSurfaceMatrix(browser, protocol, outputDirectory, baseUrl) {
   const rows = [];
   for (const state of protocol.states) {
     for (const viewport of protocol.viewports) {
-      rows.push(await captureSurfaceRow({
+      const row = await captureSurfaceRow({
         browser,
         protocol,
         state,
         viewport,
         outputDirectory,
         baseUrl,
-      }));
+      });
+      rows.push(row);
     }
   }
   return rows;
@@ -1433,6 +1652,7 @@ async function keyboardJourney(browser, protocol, baseUrl) {
     checks.question_submitted_with_enter = true;
     await waitForText(page, "Answer evidence and support");
     checks.grounded_answer_visible = true;
+    await openTechnicalEvidenceContext(page);
     const toggle = page.locator("button.source-toggle").first();
     let reached = false;
     for (let index = 0; index < 30; index += 1) {
@@ -1799,11 +2019,11 @@ async function privacyJourney(browser, protocol, baseUrl) {
     await page.getByLabel("Ask FireLens a question").press("Enter");
     await waitForText(page, "One detail needed");
     await page.getByRole("button", { name: "Use approximate location" }).click();
-    await waitForText(page, "Approximate location ready for this request.");
+    await waitForText(page, "Approximate location ready for this conversation.");
     const geolocationAfterOptIn = await page.evaluate(
       () => window.__surfaceGeolocationCalls,
     );
-    await waitForText(page, "Current BC wildfire information");
+    await waitForText(page, "Analysis view");
     await page.waitForLoadState("networkidle");
     const browserSurfaces = await inspectPrivacyBrowserSurfaces(
       page,
@@ -1870,15 +2090,15 @@ async function historyJourney(browser, protocol, baseUrl) {
     await input.press("Enter");
     await waitForText(
       page,
-      "This is labelled general background and has no reviewed source support attached.",
+      "General model knowledge · not checked against FireLens sources",
     );
     checks.bounded_history_sent = routes.requestBodies[1]?.history?.length === 2;
     await page.getByLabel("Clear conversation history").click();
-    await waitForText(page, "Select a fire or ask anything");
+    await waitForText(page, "Ask about a fire, a B.C. place, or preparedness.");
     checks.clear_returns_idle = true;
     await input.fill("surface:capability");
     await input.press("Enter");
-    await waitForText(page, "Explore the FireLens collection");
+    await waitForText(page, "FireLens topics");
     checks.next_request_history_empty = routes.requestBodies[2]?.history?.length === 0;
   } catch (error) {
     errors.push(String(error?.stack ?? error));
@@ -1898,11 +2118,36 @@ async function historyJourney(browser, protocol, baseUrl) {
 }
 
 async function runFunctionalJourneys(browser, protocol, baseUrl) {
-  return [
-    await keyboardJourney(browser, protocol, baseUrl),
-    await privacyJourney(browser, protocol, baseUrl),
-    await historyJourney(browser, protocol, baseUrl),
+  const captureJourney = async (id, operation) => {
+    try {
+      return await withQualificationTimeout(
+        `functional journey ${id}`,
+        qualificationTimeouts.journeyMs,
+        operation,
+      );
+    } catch (error) {
+      const timeoutEvidence = id === "location_privacy_boundary" ? { evidence: null } : {};
+      return {
+        id,
+        checks: {},
+        ...timeoutEvidence,
+        errors: [String(error?.stack ?? error)],
+        qualified: false,
+      };
+    }
+  };
+  const definitions = [
+    ["keyboard_evidence_navigation", () => keyboardJourney(browser, protocol, baseUrl)],
+    ["location_privacy_boundary", () => privacyJourney(browser, protocol, baseUrl)],
+    ["history_clear_boundary", () => historyJourney(browser, protocol, baseUrl)],
   ];
+  const journeys = [];
+  for (const [id, operation] of definitions) {
+    const journey = await captureJourney(id, operation);
+    journeys.push(journey);
+    if (journey.errors.some(isQualificationTimeoutMessage)) return journeys;
+  }
+  return journeys;
 }
 
 function p75NearestRank(values) {
@@ -1915,7 +2160,12 @@ export { p75NearestRank };
 
 async function configurePerformancePage(page, protocol) {
   await page.addInitScript(() => {
-    window.__surfaceVitals = { lcp_ms: null, cls: 0, inp_interaction_proxy_ms: null };
+    window.__surfaceVitals = {
+      lcp_ms: null,
+      cls: 0,
+      inp_interaction_proxy_ms: null,
+      layout_shift_entries: [],
+    };
     try {
       new PerformanceObserver((list) => {
         const entries = list.getEntries();
@@ -1928,7 +2178,20 @@ async function configurePerformancePage(page, protocol) {
     try {
       new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          if (!entry.hadRecentInput) window.__surfaceVitals.cls += entry.value;
+          if (entry.hadRecentInput) continue;
+          window.__surfaceVitals.cls += entry.value;
+          if (window.__surfaceVitals.layout_shift_entries.length >= 20) continue;
+          window.__surfaceVitals.layout_shift_entries.push({
+            start_time_ms: entry.startTime,
+            value: entry.value,
+            sources: [...(entry.sources ?? [])].slice(0, 8).map((source) => ({
+              tag: source.node?.tagName?.toLowerCase() ?? null,
+              class_name: source.node?.className || null,
+              text: source.node?.textContent?.trim().slice(0, 120) ?? null,
+              previous_rect: source.previousRect,
+              current_rect: source.currentRect,
+            })),
+          });
         }
       }).observe({ type: "layout-shift", buffered: true });
     } catch {
@@ -1984,14 +2247,15 @@ async function performanceSample(
   try {
     await configurePerformancePage(page, protocol);
     await page.goto("/", { waitUntil: "networkidle" });
-    await waitForText(page, "Select a fire or ask anything");
+    await waitForText(page, "Ask about a fire, a B.C. place, or preparedness.");
     await page.waitForTimeout(250);
     const beforeInteraction = await page.evaluate(() => ({ ...window.__surfaceVitals }));
     const input = page.getByLabel("Ask FireLens a question");
-    await input.fill("surface:live-fresh");
-    const interactionStarted = await page.evaluate(() => performance.now());
+    await input.fill(performanceQuestion);
     await input.press("Enter");
-    await page.getByRole("region", { name: "Official wildfire records map" }).waitFor();
+    await waitForText(page, "Analysis view");
+    const interactionStarted = await page.evaluate(() => performance.now());
+    await openOfficialMapContext(page);
     await page.locator(".leaflet-interactive").first().waitFor();
     await page.waitForFunction(
       () => Number.isFinite(window.__surfaceVitals.inp_interaction_proxy_ms),
@@ -2002,6 +2266,7 @@ async function performanceSample(
     }));
     result.lcp_ms = beforeInteraction.lcp_ms;
     result.cls = afterInteraction.vitals.cls;
+    result.layout_shift_entries = afterInteraction.vitals.layout_shift_entries;
     result.inp_interaction_proxy_ms = afterInteraction.vitals.inp_interaction_proxy_ms;
     result.map_ready_after_interaction_ms = afterInteraction.now - interactionStarted;
     result.status = [
@@ -2027,14 +2292,32 @@ async function runPerformanceProfile(browser, protocol, viewport, baseUrl) {
     const sampleIndex = phase === "warmup"
       ? index + 1
       : index - protocol.performance.warmup_samples + 1;
-    samples.push(await performanceSample(
-      browser,
-      protocol,
-      viewport,
-      phase,
-      sampleIndex,
-      baseUrl,
-    ));
+    try {
+      samples.push(await withQualificationTimeout(
+        `performance sample ${viewport.id} ${phase} ${sampleIndex}`,
+        qualificationTimeouts.performanceSampleMs,
+        () => performanceSample(
+          browser,
+          protocol,
+          viewport,
+          phase,
+          sampleIndex,
+          baseUrl,
+        ),
+      ));
+    } catch (error) {
+      samples.push({
+        phase,
+        sample_index: sampleIndex,
+        lcp_ms: null,
+        cls: null,
+        inp_interaction_proxy_ms: null,
+        map_ready_after_interaction_ms: null,
+        status: "error",
+        error: String(error?.stack ?? error),
+      });
+      if (isQualificationTimeoutMessage(error?.stack ?? error)) break;
+    }
   }
   const cold = samples.filter((sample) => sample.phase === "cold");
   const p75 = {
@@ -2862,68 +3145,74 @@ async function main() {
   const browser = await chromium.launch({ headless: true });
   let report;
   try {
-    const surfaceRows = await runSurfaceMatrix(
-      browser,
-      protocol,
-      options.outputDirectory,
-      options.baseUrl,
-    );
-    const functionalJourneys = await runFunctionalJourneys(
-      browser,
-      protocol,
-      options.baseUrl,
-    );
-    const performance = await runPerformance(browser, protocol, options.baseUrl);
-    report = {
-      schema_version: "firelens.frontend_surface_report.v1",
-      generated_at: new Date().toISOString(),
-      protocol_id: protocol.protocol_id,
-      protocol_sha256: await fileSha256(options.protocolPath),
-      protocol_status: protocol.status,
-      protocol_frozen_at: protocol.frozen_at,
-      base_url: options.baseUrl,
-      execution_environment: await executionEnvironment(protocol, browser),
-      browser: {
-        name: "chromium",
-        version: browser.version(),
+    await withQualificationTimeout(
+      "qualification campaign",
+      qualificationTimeouts.campaignMs,
+      async () => {
+        const surfaceRows = await runSurfaceMatrix(
+          browser,
+          protocol,
+          options.outputDirectory,
+          options.baseUrl,
+        );
+        const functionalJourneys = await runFunctionalJourneys(
+          browser,
+          protocol,
+          options.baseUrl,
+        );
+        const performance = await runPerformance(browser, protocol, options.baseUrl);
+        report = {
+          schema_version: "firelens.frontend_surface_report.v1",
+          generated_at: new Date().toISOString(),
+          protocol_id: protocol.protocol_id,
+          protocol_sha256: await fileSha256(options.protocolPath),
+          protocol_status: protocol.status,
+          protocol_frozen_at: protocol.frozen_at,
+          base_url: options.baseUrl,
+          execution_environment: await executionEnvironment(protocol, browser),
+          browser: {
+            name: "chromium",
+            version: browser.version(),
+          },
+          build: await buildIdentity(),
+          surface_rows: surfaceRows,
+          functional_journeys: functionalJourneys,
+          performance,
+        };
+        const structureIssues = validateReportStructure(report, protocol);
+        const matrixComplete = surfaceMatrixComplete(surfaceRows, protocol);
+        const surfaceQualified = matrixComplete && surfaceRows.every((row) => row.qualified);
+        const journeysQualified = functionalJourneys.every((journey) => journey.qualified);
+        report.summary = {
+          protocol_ratified: protocol.status === "ratified" && Boolean(protocol.frozen_at),
+          expected_surface_rows: protocol.matrix.expected_rows,
+          executed_surface_rows: surfaceRows.length,
+          matrix_complete: matrixComplete,
+          qualified_surface_rows: surfaceRows.filter((row) => row.qualified).length,
+          functional_journeys_qualified: journeysQualified,
+          performance_qualified: performance.qualified,
+          structure_issues: structureIssues,
+          qualified: (
+            protocol.status === "ratified"
+            && Boolean(protocol.frozen_at)
+            && structureIssues.length === 0
+            && surfaceQualified
+            && journeysQualified
+            && performance.qualified
+          ),
+        };
+        const output = await writeReport(report, options.outputDirectory);
+        process.stdout.write(`${JSON.stringify({
+          output: relativeArtifact(output),
+          ...report.summary,
+        }, null, 2)}\n`);
       },
-      build: await buildIdentity(),
-      surface_rows: surfaceRows,
-      functional_journeys: functionalJourneys,
-      performance,
-    };
-    const structureIssues = validateReportStructure(report, protocol);
-    const matrixComplete = surfaceMatrixComplete(surfaceRows, protocol);
-    const surfaceQualified = matrixComplete && surfaceRows.every((row) => row.qualified);
-    const journeysQualified = functionalJourneys.every((journey) => journey.qualified);
-    report.summary = {
-      protocol_ratified: protocol.status === "ratified" && Boolean(protocol.frozen_at),
-      expected_surface_rows: protocol.matrix.expected_rows,
-      executed_surface_rows: surfaceRows.length,
-      matrix_complete: matrixComplete,
-      qualified_surface_rows: surfaceRows.filter((row) => row.qualified).length,
-      functional_journeys_qualified: journeysQualified,
-      performance_qualified: performance.qualified,
-      structure_issues: structureIssues,
-      qualified: (
-        protocol.status === "ratified"
-        && Boolean(protocol.frozen_at)
-        && structureIssues.length === 0
-        && surfaceQualified
-        && journeysQualified
-        && performance.qualified
-      ),
-    };
-    const output = await writeReport(report, options.outputDirectory);
-    process.stdout.write(`${JSON.stringify({
-      output: relativeArtifact(output),
-      ...report.summary,
-    }, null, 2)}\n`);
+    );
   } finally {
     await browser.close();
     await stopPreview(server);
   }
-  process.exitCode = report.summary.qualified ? 0 : 2;
+  if (report) process.exitCode = report.summary.qualified ? 0 : 2;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

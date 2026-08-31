@@ -123,15 +123,16 @@ def build_status_banner(response: Any) -> AnswerStatusBanner:
         if publication_presentation is not None
         else _freshness_label(response)
     )
-    headline = (
-        publication_presentation[0]
-        if publication_presentation
-        else (
-            official_records_headline(response.aggregate_freshness)
-            if mode == "live"
-            else _HEADLINES.get(mode, "FireLens response")
-        )
-    )
+    reason = getattr(response, "reason_code", None)
+    reason_value = getattr(reason, "value", reason)
+    if publication_presentation:
+        headline = publication_presentation[0]
+    elif mode == "live":
+        headline = official_records_headline(response.aggregate_freshness)
+    elif mode == "scope_redirect" and reason_value == "live_data_required":
+        headline = "Select an official record to continue"
+    else:
+        headline = _HEADLINES.get(mode, "FireLens response")
     title, url = _escalation(response)
     return AnswerStatusBanner(
         headline=headline,
@@ -424,6 +425,12 @@ def _banner_detail(response: Any, mode: str) -> str:
             "this live request."
         )
     if mode == "scope_redirect":
+        reason = getattr(response, "reason_code", None)
+        reason_value = getattr(reason, "value", reason)
+        if reason_value == "live_data_required":
+            return (
+                "Click a fire on the map or name a British Columbia community, then ask again."
+            )
         return "Use the related official service for information FireLens does not ingest live."
     if response.answer:
         return _clip(str(response.answer), 500)

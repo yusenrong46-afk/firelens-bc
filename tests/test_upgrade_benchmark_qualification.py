@@ -564,6 +564,71 @@ def test_preview_parser_rejects_response_count_hash_and_support_mutations() -> N
         _preview(wrong_support_offset)
 
 
+def test_preview_parser_rejects_unsafe_scope_redirect_payload() -> None:
+    unsafe = _preview_report()
+    unsupported = next(row for row in unsafe["requests"] if row["case_id"] == "unsupported")
+    unsupported["response"]["claim_count"] = 1
+
+    with pytest.raises(ValueError, match="checks differ from raw"):
+        _preview(unsafe)
+
+
+def test_preview_parser_rejects_non_incident_map_records() -> None:
+    non_incident = _preview_report()
+    map_request = next(row for row in non_incident["requests"] if row["case_id"] == "map")
+    map_request["response"]["records"] = [
+        dict(record) for record in map_request["response"]["records"]
+    ]
+    map_request["response"]["records"][0] = {
+        **map_request["response"]["records"][0],
+        "kind": "perimeter",
+    }
+
+    with pytest.raises(ValueError, match="checks differ from raw"):
+        _preview(non_incident)
+
+
+def test_preview_parser_rejects_incident_status_mismatch_between_chat_and_map() -> None:
+    mismatch = _preview_report()
+    map_request = next(row for row in mismatch["requests"] if row["case_id"] == "map")
+    map_request["response"]["records"] = [
+        dict(record) for record in map_request["response"]["records"]
+    ]
+    map_request["response"]["records"][0] = {
+        **map_request["response"]["records"][0],
+        "status": "Being Held",
+    }
+
+    with pytest.raises(ValueError, match="checks differ from raw"):
+        _preview(mismatch)
+
+
+def test_preview_parser_rejects_missing_perimeter_from_map() -> None:
+    missing = _preview_report()
+    map_request = next(row for row in missing["requests"] if row["case_id"] == "map")
+    records = map_request["response"]["records"][:-1]
+    map_request["response"]["records"] = records
+    map_request["response"]["record_count"] = len(records)
+
+    with pytest.raises(ValueError, match="checks differ from raw"):
+        _preview(missing)
+
+
+def test_preview_parser_rejects_perimeter_status_mismatch_between_chat_and_map() -> None:
+    mismatch = _preview_report()
+    map_request = next(row for row in mismatch["requests"] if row["case_id"] == "map")
+    map_request["response"]["records"] = [
+        dict(record) for record in map_request["response"]["records"]
+    ]
+    map_request["response"]["records"][-1] = {
+        **map_request["response"]["records"][-1],
+        "status": "Retired",
+    }
+
+    with pytest.raises(ValueError, match="checks differ from raw"):
+        _preview(mismatch)
+
+
 def test_preview_parser_rejects_summary_flag_and_cost_mutations() -> None:
     wrong_check = _preview_report()
     wrong_check["checks"]["static_grounded"] = False

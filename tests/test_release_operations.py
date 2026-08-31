@@ -93,6 +93,7 @@ def test_preview_qualification_requires_identity_evidence_and_exact_support(
     }
     live_result = {
         "result_id": "incident:1",
+        "kind": "incident",
         "authority": "BC Wildfire Service",
         "source_url": (
             "https://example.test/source?latitude="
@@ -154,8 +155,8 @@ def test_preview_qualification_requires_identity_evidence_and_exact_support(
         if "air quality" in question:
             return json_response(
                 {
-                    "status": "abstention",
-                    "response_mode": "abstention",
+                    "status": "answer",
+                    "response_mode": "scope_redirect",
                     "answer": answer_canary,
                     "claims": [],
                 }
@@ -219,7 +220,7 @@ def test_preview_qualification_requires_identity_evidence_and_exact_support(
         "map",
     }
     assert requests["static"]["request"] == {"question": "What belongs in an emergency kit?"}
-    assert requests["map"]["request"] == {"layers": ["incidents"]}
+    assert requests["map"]["request"] == {"layers": ["incidents", "perimeters"]}
     assert [row["response_body_sha256"] for row in report["requests"]] == raw_response_digests
     assert [row["response_content_type"] for row in report["requests"]] == [
         "text/html",
@@ -249,6 +250,7 @@ def test_preview_qualification_requires_identity_evidence_and_exact_support(
         key: live_result[key]
         for key in (
             "result_id",
+            "kind",
             "authority",
             "source_url",
             "source_updated_at",

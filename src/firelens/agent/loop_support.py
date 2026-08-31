@@ -8,11 +8,72 @@ from typing import Any
 from firelens.agent.chat import ChatToolCall
 from firelens.agent.failures import EXPECTED_TOOL_FAILURES, record_expected_failure
 from firelens.agent.packet import AgentPacket
+from firelens.agent.query_plan import AgentQueryPlan, AgentRequestMode
 from firelens.agent.rails import execution_allowed
 from firelens.agent.runtime_tools import execute_tool
 from firelens.agent.tools import AgentTool
-from firelens.contracts import QueryRequest, QueryRoute
+from firelens.answering.live_distance import location_request
+from firelens.contracts import AskResponse, QueryRequest, QueryRoute
 from firelens.live_answering import LiveAnswerCoordinator
+
+
+def skip_owned_model_write(query_plan: AgentQueryPlan, packet: AgentPacket) -> bool:
+    """Skip Luna when official records already own the answer."""
+
+    if query_plan.mode in {AgentRequestMode.LIVE, AgentRequestMode.SELECTED}:
+        packet.policy.route = "ready_live"
+        return True
+    if query_plan.mode == AgentRequestMode.MIXED:
+        static = packet.static_response
+        if packet.live_results and accepted_reviewed_publication(packet):
+            # The public mixed composer renders the official-record and reviewed
+            # sections from this packet. An outer model turn cannot affect that
+            # published result, so avoid paying for prose that is discarded.
+            packet.policy.route = "ready_mixed"
+            return True
+        if packet.live_results and (
+            static is None or static.validation is None or not static.validation.accepted
+        ):
+            # A rejected reviewed clause must not trigger an ungrounded outer
+            # write. Keep the fetched official records and the visible
+            # non-live-clause limitation, but deterministically publish live.
+            packet.policy.route = "ready_live"
+            return True
+        return False
+    skip = bool(packet.live_results and packet.static_response is None) or (
+        not query_plan.tool_calls and packet.static_response is None
+    )
+    if skip and packet.live_results and packet.static_response is None:
+        packet.policy.route = "ready_live"
+    elif skip and not packet.live_results:
+        packet.policy.route = packet.policy.route or "deterministic_redirect"
+    return skip
+
+
+def accepted_reviewed_publication(packet: AgentPacket) -> bool:
+    """Return whether the packet can render reviewed guidance without model prose."""
+
+    static = packet.static_response
+    return bool(
+        static is not None
+        and static.response_mode.value in {"grounded", "partial"}
+        and static.claims
+        and static.evidence
+        and static.validation is not None
+        and static.validation.accepted
+    )
+
+
+def missing_location_result(
+    request: QueryRequest, packet: AgentPacket
+) -> tuple[AskResponse, QueryRoute, tuple[AgentTool, ...], AgentPacket]:
+    packet.policy.route = "missing_location"
+    tool = (
+        AgentTool.GET_OFFICIAL_FIRE
+        if request.context.selected_live_result_id
+        else AgentTool.LIST_OFFICIAL_FIRES
+    )
+    return location_request(request), QueryRoute.LIVE, (tool,), packet
 
 
 def pure_static_ready(packet: AgentPacket) -> bool:

@@ -84,6 +84,7 @@ def build_candidate_evidence(
     workflow_identity_path: Path,
     structured_eval_path: Path,
     hard_probe_path: Path,
+    productbench_deterministic_path: Path,
     limitations: list[str],
 ) -> bool:
     """Create a closed candidate bundle and return its complete gate disposition."""
@@ -109,6 +110,7 @@ def build_candidate_evidence(
             root,
             "docs/reports/V1_6_STRUCTURED_PUBLICATION_HARD_PROBE.json",
         ),
+        "inputs/productbench-deterministic.json": productbench_deterministic_path,
     }
     raw_values = {name: load_json(path, name) for name, path in inputs.items()}
     raw_bytes = {name: path.read_bytes() for name, path in inputs.items()}
@@ -132,6 +134,7 @@ def build_candidate_evidence(
         structured_eval=raw_values["inputs/structured-publication-eval.json"],
         hard_probe=raw_values["inputs/hard-probe.json"],
         hard_probe_baseline=raw_values["inputs/hard-probe-baseline.json"],
+        productbench_deterministic=raw_values["inputs/productbench-deterministic.json"],
         limitations=limitations,
         evidence_hashes=evidence_hashes,
     )
@@ -293,6 +296,7 @@ def verify_candidate_evidence(
         structured_eval=raw_values["inputs/structured-publication-eval.json"],
         hard_probe=raw_values["inputs/hard-probe.json"],
         hard_probe_baseline=raw_values["inputs/hard-probe-baseline.json"],
+        productbench_deterministic=raw_values["inputs/productbench-deterministic.json"],
         limitations=limitations,
         evidence_hashes={name: str(value) for name, value in evidence_hashes.items()},
     )
@@ -338,6 +342,7 @@ def _parser() -> argparse.ArgumentParser:
     build.add_argument("--workflow-identity", type=Path, required=True)
     build.add_argument("--structured-eval", type=Path, required=True)
     build.add_argument("--hard-probe", type=Path, required=True)
+    build.add_argument("--productbench-deterministic", type=Path, required=True)
     build.add_argument("--limitation", action="append", required=True)
     verify = subparsers.add_parser("verify")
     verify.add_argument("--project-root", type=Path, default=Path("."))
@@ -370,6 +375,7 @@ def main(argv: list[str] | None = None) -> int:
                 workflow_identity_path=args.workflow_identity,
                 structured_eval_path=args.structured_eval,
                 hard_probe_path=args.hard_probe,
+                productbench_deterministic_path=args.productbench_deterministic,
                 limitations=args.limitation,
             )
             print(args.output_dir)

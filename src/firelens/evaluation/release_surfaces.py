@@ -99,7 +99,6 @@ def _preview_exact_support(
         raise ValueError(f"{context} claims and evidence must be lists")
     if len(claims) != expected_claim_count or len(evidence) != expected_evidence_count:
         raise ValueError(f"{context} roster differs from the response counts")
-
     evidence_lengths: dict[str, int] = {}
     for index, row in enumerate(evidence):
         row_context = f"{context} evidence {index}"
@@ -268,29 +267,19 @@ def _preview(
     requests = report.get("requests")
     if not isinstance(requests, list) or len(requests) != 8:
         raise ValueError("preview report must contain all eight canonical requests")
-
+    ask_path = "/api/v1/ask"
     expected_protocol = [
         ("homepage", "GET", "/", {}),
         ("liveness", "GET", "/api/v1/health/live", {}),
         ("readiness", "GET", "/api/v1/health/ready", {}),
-        (
-            "static",
-            "POST",
-            "/api/v1/ask",
-            {"question": "What belongs in an emergency kit?"},
-        ),
+        ("static", "POST", ask_path, {"question": "What belongs in an emergency kit?"}),
         (
             "unsupported",
             "POST",
             "/api/v1/ask",
             {"question": ("What is the current air quality in Vancouver from wildfire smoke?")},
         ),
-        (
-            "live",
-            "POST",
-            "/api/v1/ask",
-            {"question": "Are there active wildfires in BC currently?"},
-        ),
+        ("live", "POST", ask_path, {"question": "Are there active wildfires in BC currently?"}),
         (
             "mixed",
             "POST",
@@ -302,7 +291,7 @@ def _preview(
                 )
             },
         ),
-        ("map", "GET", "/api/v1/live/map", {"layers": ["incidents"]}),
+        ("map", "GET", "/api/v1/live/map", {"layers": ["incidents", "perimeters"]}),
     ]
     request_keys = {
         "case_id",
@@ -413,7 +402,9 @@ def _preview(
             )
         if case_id in {"live", "mixed"}:
             live_rows[case_id] = _validated_public_live_rows(
-                response["live_records"], context=f"preview {case_id} live records"
+                response["live_records"],
+                context=f"preview {case_id} live records",
+                include_kind=True,
             )
             if live_result_count != len(live_rows[case_id]):
                 raise ValueError(
@@ -426,7 +417,7 @@ def _preview(
         map_response, {"record_count", "records"}, context="preview map response"
     )
     map_rows = _validated_public_live_rows(
-        map_response.get("records"), context="preview map records"
+        map_response.get("records"), context="preview map records", include_kind=True
     )
     if _strict_int(map_response, "record_count", "preview map response", minimum=0) != len(
         map_rows
@@ -443,8 +434,13 @@ def _preview(
         raise ValueError("preview ask p95 differs from raw request latencies")
     p95_target = _strict_number(report, "p95_target_ms", "preview report", minimum=0.0000001)
 
-    live_pairs = {(str(row["result_id"]), str(row["status"])) for row in live_rows["live"]}
-    map_pairs = {(str(row["result_id"]), str(row["status"])) for row in map_rows}
+    live_pairs = {
+        (str(row["result_id"]), str(row["kind"]), str(row["status"]))
+        for row in live_rows["live"]
+    }
+    map_pairs = {
+        (str(row["result_id"]), str(row["kind"]), str(row["status"])) for row in map_rows
+    }
     live_metadata_complete = bool(live_rows["live"])
     mixed_metadata_complete = bool(live_rows["mixed"])
     recomputed_checks = {
@@ -474,8 +470,8 @@ def _preview(
         ),
         "unsupported_fails_closed": (
             rows_by_case["unsupported"]["status_code"] == 200
-            and ask_evidence["unsupported"].get("status") == "abstention"
-            and ask_evidence["unsupported"].get("response_mode") == "abstention"
+            and ask_evidence["unsupported"].get("status") == "answer"
+            and ask_evidence["unsupported"].get("response_mode") == "scope_redirect"
             and ask_evidence["unsupported"]["claim_count"] == 0
             and ask_evidence["unsupported"]["evidence_count"] == 0
             and ask_evidence["unsupported"]["live_result_count"] == 0
@@ -495,7 +491,11 @@ def _preview(
             and mixed_metadata_complete
             and exact_support["mixed"]
         ),
-        "chat_map_records_match": bool(live_pairs) and live_pairs.issubset(map_pairs),
+        "chat_map_records_match": (
+            bool(live_pairs)
+            and all(row["kind"] in {"incident", "perimeter"} for row in map_rows)
+            and live_pairs.issubset(map_pairs)
+        ),
         "static_p95_within_target": ask_p95 <= p95_target,
     }
     if checks != recomputed_checks:

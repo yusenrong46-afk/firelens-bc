@@ -7,6 +7,8 @@ const BROAD_SUBJECT =
   /\b(?:fires|wildfires|perimeters|evacuations?|orders|alerts|province|province-wide|bc|british columbia|near|around|map)\b/i;
 const SHORT_ATTRIBUTE_FOLLOW_UP =
   /^(?:and\s+)?(?:what(?:'s|\s+is)\s+(?:the\s+)?)?(?:status|size|source|how\s+(?:large|big|far|close|old))\b[\s\S]{0,30}$/i;
+const REFORMAT_FOLLOW_UP =
+  /^\s*(?:please\s+)?(?:give|show|put)\s+(?:me\s+)?(?:the\s+)?answer\s+first(?:,?\s+then\s+(?:the\s+)?evidence)?[.!?]*\s*$/i;
 
 export function selectedResultIdForQuestion(
   question: string,
@@ -17,6 +19,7 @@ export function selectedResultIdForQuestion(
   if (!selectedId) return undefined;
   const trimmed = question.trim();
   if (DEICTIC_FOLLOW_UP.test(trimmed)) return selectedId;
+  if (REFORMAT_FOLLOW_UP.test(trimmed)) return selectedId;
   if (BROAD_SUBJECT.test(trimmed)) return undefined;
   return SHORT_ATTRIBUTE_FOLLOW_UP.test(trimmed) ? selectedId : undefined;
 }

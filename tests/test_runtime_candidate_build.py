@@ -9,7 +9,12 @@ import pytest
 
 from firelens.config import FireLensConfig
 from firelens.privacy_policy import APPROVED_PRODUCTION_PRIVACY
-from scripts.prepare_vercel_build import BuildIdentityError, _resolve_build_commit
+from scripts.prepare_vercel_build import (
+    BuildIdentityError,
+    _build_candidate,
+    _resolve_build_benchmark_id,
+    _resolve_build_commit,
+)
 from scripts.write_runtime_candidate import (
     DEFAULT_BENCHMARK_ID,
     build_runtime_candidate,
@@ -166,6 +171,40 @@ def test_vercel_build_accepts_explicit_local_source_identity(
     assert _resolve_build_commit(tmp_path) == COMMIT
 
 
+def test_vercel_build_uses_deploy_bound_benchmark_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("FIRELENS_BENCHMARK_ID", "firelens_v1_6_2")
+    assert _resolve_build_benchmark_id() == "firelens_v1_6_2"
+
+
+def test_vercel_build_binds_the_deploy_benchmark_id_into_candidate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("FIRELENS_BENCHMARK_ID", "firelens_v1_6_2")
+    candidate = _build_candidate(
+        ROOT,
+        commit=COMMIT,
+        benchmark_id=_resolve_build_benchmark_id(),
+    )
+    assert candidate["candidate_id"] == f"firelens-v1-6-2:{COMMIT}"
+
+
+def test_vercel_build_preserves_legacy_benchmark_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("FIRELENS_BENCHMARK_ID", raising=False)
+    assert _resolve_build_benchmark_id() == DEFAULT_BENCHMARK_ID
+
+
+def test_vercel_build_rejects_invalid_deploy_bound_benchmark_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("FIRELENS_BENCHMARK_ID", "firelens v1.6.2")
+    with pytest.raises(BuildIdentityError, match="benchmark ID"):
+        _resolve_build_benchmark_id()
+
+
 def test_vercel_build_falls_back_to_git_head(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -217,14 +256,16 @@ def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> N
         "FIRELENS_GENERATION_ZDR=required",
         "FIRELENS_RERANK_MODEL",
         "FIRELENS_GENERATION_MODEL",
-        "ARG FIRELENS_RELEASE_VERSION=1.6.0",
+        "ARG FIRELENS_RELEASE_VERSION=1.6.2",
+        "ARG FIRELENS_BENCHMARK_ID=firelens_v1_6_2",
+        '--benchmark-id "$FIRELENS_BENCHMARK_ID"',
     ):
         assert required in dockerfile
     assert (ROOT / "data/repairs/text_overrides.yaml").is_file()
     assert "1.5.0-rc.1" not in dockerfile
     render = (ROOT / "render.yaml").read_text(encoding="utf-8")
     assert "FIRELENS_RELEASE_VERSION" in render
-    assert 'value: "1.6.0"' in render
+    assert 'value: "1.6.2"' in render
     assert "1.5.0-rc.1" not in render
     writer = (ROOT / "scripts/write_runtime_candidate.py").read_text(encoding="utf-8")
     vercel_prep = (ROOT / "scripts/prepare_vercel_build.py").read_text(encoding="utf-8")
@@ -233,8 +274,9 @@ def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> N
     assert "DEFAULT_RELEASE_VERSION" in writer
     assert "DEFAULT_RELEASE_VERSION" in vercel_prep
     assert "DEFAULT_BENCHMARK_ID" in vercel_prep
+    assert "FIRELENS_BENCHMARK_ID" in vercel_prep
     assert "FIRELENS_BUILD_COMMIT" in vercel_prep
-    assert FireLensConfig.model_fields["release_version"].default == "1.6.0"
+    assert FireLensConfig.model_fields["release_version"].default == "1.6.2"
     vercel = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
     include = vercel["services"]["firelens"]["functions"]["**/*.py"]["includeFiles"]
     assert include != "data/**"

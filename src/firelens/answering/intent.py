@@ -10,7 +10,27 @@ from __future__ import annotations
 import re
 
 from firelens.answering.capability_intent import is_capability_question
-from firelens.answering.intent_automaton import TemporalScope, parse_request_intent
+from firelens.answering.intent_automaton import (
+    RecordOperation,
+    TemporalScope,
+    parse_request_intent,
+)
+from firelens.answering.intent_conversation import (
+    _DEICTIC_FOLLOWUP,
+    _deictic_action_boundary,
+    _named_individual_fire_request,
+    _routing_texts,
+    continues_prior_live_place,
+    conversation_planning_question,
+    explicit_corpus_attribution,
+    focused_question,
+    prefers_general_background,
+    prior_anchor_user_question,
+    publication_question,
+    resolved_user_question,
+    reviewed_guidance_intent,
+    skips_provider_planning,
+)
 from firelens.answering.intent_patterns import (
     _CORPUS_REFERENCE_PATTERNS,
     _PERSONALIZED_MEDICAL_PATTERNS,
@@ -22,9 +42,11 @@ from firelens.answering.intent_safety import (
     is_empty_map_safety_inference,
     trust_explanation_limitations,
 )
+from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.location_intent import (
     asks_for_personal_location,
     coarse_location_from_question,
+    is_province_wide_label,
 )
 from firelens.answering.request_facets import contents_request_facet
 from firelens.answering.request_grammar import parse_request_facets
@@ -41,6 +63,19 @@ from firelens.contracts import (
     RetrievalRequest,
 )
 from firelens.publication.comparison_targets import alert_order_comparison_targets
+
+__all__ = (
+    "conversation_planning_question",
+    "continues_prior_live_place",
+    "explicit_corpus_attribution",
+    "focused_question",
+    "prefers_general_background",
+    "prior_anchor_user_question",
+    "publication_question",
+    "resolved_user_question",
+    "reviewed_guidance_intent",
+    "skips_provider_planning",
+)
 
 STATIC_LIMITATION = "This answer uses stable guidance and does not provide current status."
 
@@ -91,11 +126,38 @@ _UNSUPPORTED_LIVE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "road conditions",
         re.compile(
-            r"\b(?:roads?|highways?|routes?)\b.{0,40}"
-            r"\b(?:open|closed|closures?|blocked|conditions?)\b|"
-            r"\b(?:open|closed|closures?|blocked|conditions?)\b.{0,40}"
-            r"\b(?:roads?|highways?|routes?)\b|"
-            r"\bsafe\s+to\s+(?:drive|travel)\b",
+            # Live road handoffs need an operational status request, not a
+            # road noun plus an adjacent explanatory word.  Personalized
+            # safe-driving questions are handled separately by safety routing.
+            r"\b(?:is|are)\s+(?:the\s+)?(?:roads?|highways?|routes?)\b"
+            r"(?:\s+[a-z0-9.'-]+){0,4}\s+\b(?:open|closed|blocked)\b|"
+            r"\bare\s+there\s+(?:any\s+)?(?:road|highway|route)\s+"
+            r"(?:closures?|blocks?)\b.{0,30}\b(?:near|around|in|on|at)\b|"
+            r"\bwhich\s+(?:roads?|highways?|routes?)\s+(?:are\s+)?"
+            r"(?:currently\s+|now\s+)?(?:open|closed|blocked)\b|"
+            r"\bwhere\s+(?:are\s+)?(?:roads?|highways?|routes?)\s+"
+            r"(?:open|closed|blocked)\b|"
+            r"\b(?:list|show|display|find|locate|check)\b.{0,20}"
+            r"\b(?:road|highway|route)\s+(?:closures?|conditions?|blocks?)\b|"
+            r"\b(?:check|find\s+out)\s+(?:if|whether)\s+(?:the\s+)?"
+            r"(?:roads?|highways?|routes?)\b(?:\s+[a-z0-9.'-]+){0,4}\s+"
+            r"(?:is|are)\s+(?:open|closed|blocked)\b|"
+            # A mixed request can omit the leading action verb: "show fires
+            # around Prince George and whether Highway 97 is closed" still
+            # asks for an operational road-status lookup, not a definition.
+            r"\b(?:if|whether)\s+(?:the\s+)?(?:roads?|highways?|routes?)\b"
+            r"(?:\s+[a-z0-9.'-]+){0,4}\s+(?:is|are)\s+"
+            r"(?:open|closed|blocked)\b|"
+            # A request for a personal driving-safety decision is prohibited,
+            # but the live coordinator must still own it so it can link the
+            # responsible road-conditions service rather than dropping it as
+            # an unrelated topic.
+            r"\b(?:is\s+it|tell\s+me\s+(?:if|whether))\s+.{0,30}"
+            r"\bsafe\s+to\s+(?:drive|travel|go)\b|"
+            r"\b(?:current|latest|today|now|right\s+now)\b.{0,35}"
+            r"\b(?:road|highway|route)\s+(?:closures?|conditions?|blocks?)\b|"
+            r"\b(?:road|highway|route)\s+(?:closures?|conditions?|blocks?)\b"
+            r".{0,35}\b(?:current|latest|today|now|right\s+now)\b",
             re.IGNORECASE,
         ),
     ),
@@ -124,90 +186,19 @@ _UNSUPPORTED_LIVE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
 )
 
+_ROAD_EXPLANATORY_INTENT = re.compile(
+    r"\b(?:what\s+are\s+(?:the\s+)?(?:road|highway|route)\s+"
+    r"(?:closures?|conditions?)|caus(?:e|es|ed|ing)|effect(?:s)?|"
+    r"polic(?:y|ies)|common(?:ness)?|frequen(?:cy|t|tly)|histor(?:y|ical)|"
+    r"explain(?:ed|ing)?)\b",
+    re.IGNORECASE,
+)
+
 
 def request_fragments(question: str) -> tuple[str, ...]:
     """Split top-level request clauses without breaking alert/order definitions."""
 
     return parse_request_facets(question).clause_texts
-
-
-_DEICTIC_FOLLOWUP = re.compile(
-    r"\b(?:it|that|this|they|them|there|those|these|the (?:first|second|third|other) one|"
-    r"that (?:guidance|system|advice|status)|right now|what about)\b"
-)
-
-
-def focused_question(question: str) -> str:
-    """Remove a long obvious preamble while preserving the final explicit question.
-
-    This is deliberately structural rather than topic-aware: it cannot introduce
-    vocabulary or choose an answer, and it leaves ordinary multi-sentence requests
-    untouched.
-    """
-
-    if len(question) < 500:
-        return question
-    sentences = [part.strip() for part in re.split(r"(?<=[.!?])\s+", question)]
-    explicit = [part for part in sentences if part.endswith("?") and len(part.split()) >= 4]
-    if explicit and len(explicit[-1]) <= 500:
-        return explicit[-1]
-    return question
-
-
-def resolved_user_question(request: QueryRequest) -> str:
-    """Name the previous user subject for a genuinely elliptical follow-up."""
-
-    current = focused_question(request.question)
-    if len(current.split()) > 16 or not _DEICTIC_FOLLOWUP.search(current.casefold()):
-        return current
-    previous = [turn.content for turn in request.history if turn.role == "user"]
-    if not previous:
-        return current
-    return f"Regarding the earlier question '{previous[-1]}', {current}"[:2_000]
-
-
-def _routing_texts(request: QueryRequest) -> tuple[str, ...]:
-    """Use history only for a genuinely elliptical current question."""
-
-    current = focused_question(request.question).lower()
-    if len(current.split()) > 16 or not _DEICTIC_FOLLOWUP.search(current):
-        return (current,)
-    previous = [turn.content for turn in request.history if turn.role == "user"]
-    return (current, f"{previous[-1].lower()} {current}") if previous else (current,)
-
-
-def _deictic_action_boundary(request: QueryRequest) -> ReasonCode | None:
-    """Resolve only a narrow "should I do that" high-risk antecedent."""
-
-    lowered = request.question.lower()
-    if not re.search(
-        r"\bshould\s+(?:i|we)\s+(?:do|follow|take|use)\s+(?:that|this|it)\b|"
-        r"\bshould\s+(?:i|we)\s+take\s+(?:that|this|the)\s+(?:road|route|way)\b|"
-        r"\b(?:can|could|may)\s+(?:i|we)\s+return\b|"
-        r"\bis it safe to do that\b",
-        lowered,
-    ):
-        return None
-    antecedent = " ".join(turn.content.lower() for turn in request.history[-2:])
-    if any(
-        term in antecedent for term in ("dose", "inhaler", "medication", "prescribe", "diagnos")
-    ):
-        return ReasonCode.PERSONALIZED_MEDICAL_ADVICE
-    if any(
-        term in antecedent
-        for term in (
-            "leave",
-            "evacuat",
-            "return",
-            "stay",
-            "route",
-            "road",
-            "alert",
-            "order",
-        )
-    ):
-        return ReasonCode.PERSONALIZED_SAFETY_DECISION
-    return None
 
 
 def required_authorities(question: str) -> frozenset[AuthorityClass]:
@@ -264,9 +255,11 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
     parsed = parse_request_intent(question)
     if not parsed.has_live_records and parsed.temporal_scope == TemporalScope.NONCURRENT:
         return ()
+    named = extracted_located_fire_name(question)
     original_location = coarse_location_from_question(question)
     if (
-        original_location is None
+        named is None
+        and original_location is None
         and re.search(
             r"\b(?:this|that|selected)\s+(?:fire|wildfire|incident|record)\b",
             question,
@@ -281,6 +274,21 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
         # Deictic attributes must bind to a selected ID, never a province list.
         return ()
     layers = list(parsed.live_layers)
+    if (
+        named is None
+        and (
+            (original_location is not None and is_province_wide_label(original_location.label))
+            or any(is_province_wide_label(label) for label in parsed.live_location_candidates)
+        )
+        and any(clause.operation == RecordOperation.LIST for clause in parsed.clauses)
+        and set(layers) == {LiveResultKind.INCIDENT, LiveResultKind.PERIMETER}
+    ):
+        # A province-wide active-fire roster is owned by the incident layer.
+        # Perimeter geometry remains available for explicit perimeter, distance,
+        # map-focus, named-record, and multi-layer official-record requests.
+        layers = [LiveResultKind.INCIDENT]
+    if named is not None and LiveResultKind.INCIDENT not in layers:
+        layers.insert(0, LiveResultKind.INCIDENT)
     if is_empty_map_safety_inference(question):
         # Empty-map all-clear attempts are a safety overlay on the typed parse:
         # fetch every owned official layer so the response can expose the lookup
@@ -303,6 +311,13 @@ def unsupported_live_topics(question: str) -> tuple[str, ...]:
         if any(
             pattern.search(fragment)
             and not (
+                label == "road conditions"
+                and (
+                    parse_request_intent(fragment).temporal_scope == TemporalScope.NONCURRENT
+                    or _ROAD_EXPLANATORY_INTENT.search(fragment)
+                )
+            )
+            and not (
                 _EXPLANATORY_UNSUPPORTED.search(fragment) and not _CURRENT_CUE.search(fragment)
             )
             for fragment in fragments
@@ -320,32 +335,6 @@ def static_guidance_fragment(question: str) -> str | None:
     """Keep the user's own stable-guidance clause for a mixed live/static request."""
 
     return parse_request_intent(question).reviewed_guidance_text
-
-
-def reviewed_guidance_intent(question: str) -> bool:
-    """Recognize only topics represented by the reviewed static collection."""
-
-    return bool(
-        reviewed_return_condition_intent(question)
-        or parse_request_intent(question).has_reviewed_guidance
-    )
-
-
-def skips_provider_planning(request: QueryRequest) -> bool:
-    """Skip provider planning when reviewed guidance is already determined."""
-
-    if reviewed_guidance_intent(request.question):
-        return True
-    resolved = resolved_user_question(request)
-    return resolved != focused_question(request.question) and reviewed_guidance_intent(resolved)
-
-
-def publication_question(request: QueryRequest) -> str:
-    """Compile against the current ask, not a retrieved earlier subject."""
-
-    if skips_provider_planning(request):
-        return focused_question(request.question)
-    return resolved_user_question(request)
 
 
 def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
@@ -373,9 +362,13 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     )
     if reviewed_return_condition_intent(processing_question):
         personalized = False
+    general_background = prefers_general_background(request)
     live = bool(unsupported_live_topics(processing_question))
     live = live or parsed_intent.has_live_records
     live = live or any(parse_request_intent(text).has_live_records for text in routing_texts)
+    live = live or _named_individual_fire_request(processing_question)
+    if general_background:
+        live = False
     manipulation = any(
         re.search(pattern, text)
         for text in safety_texts
@@ -418,6 +411,14 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
             route=QueryRoute.LIVE,
             boundary_reason=ReasonCode.LIVE_DATA_REQUIRED,
             limitations=["The static corpus cannot establish current wildfire conditions."],
+        )
+    if general_background:
+        return QueryPlan(
+            original_question=question,
+            normalized_question=processing_question,
+            route=QueryRoute.TANGENT,
+            relation=QueryRelation.TANGENT,
+            limitations=[STATIC_LIMITATION],
         )
     if is_capability_question(lowered):
         return QueryPlan(
@@ -512,6 +513,12 @@ def reviewed_guidance_plan(plan: QueryPlan) -> QueryPlan:
         if contents_facet is not None
         else plan.normalized_question
     )
+    if (
+        contents_facet is None
+        and re.search(r"\bpack(?:ing|ed)?\b", plan.original_question, re.IGNORECASE)
+        and re.search(r"\bwhat\b", plan.original_question, re.IGNORECASE)
+    ):
+        retrieval_query = "What belongs in an emergency kit?"
     if len(plan.original_question) <= 160:
         required_aspect = plan.original_question
     elif contents_facet is not None:

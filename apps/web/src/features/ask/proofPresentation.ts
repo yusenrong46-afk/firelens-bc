@@ -233,13 +233,48 @@ const HEADLINES: Record<string, string> = {
   grounded: "Grounded in reviewed official sources",
   partial: "Partially supported by reviewed sources",
   conflict: "Reviewed sources conflict",
-  background: "General background — not corpus-checked",
+  background: "General knowledge",
   mixed: "Official records plus reviewed guidance",
   capability: "What you can ask FireLens",
   scope_redirect: "Outside FireLens live sources",
   abstention: "FireLens could not establish this",
   requires_input: "A BC place is needed to continue",
 };
+
+function isValidRelatedLink(link: unknown): boolean {
+  if (typeof link !== "object" || link === null) return false;
+  const { title, url } = link as { title?: unknown; url?: unknown };
+  if (typeof title !== "string" || title.trim().length === 0 || typeof url !== "string") return false;
+  const trimmedUrl = url.trim();
+  if (!trimmedUrl || /[\u0000-\u0020\u007f-\u009f]/.test(trimmedUrl)) return false;
+  try {
+    const parsed = new URL(trimmedUrl);
+    return parsed.protocol === "https:" && Boolean(parsed.hostname) && !parsed.username && !parsed.password;
+  } catch {
+    return false;
+  }
+}
+
+function canonicalRelatedLink(
+  response: Pick<AskResponse, "related_links"> | undefined,
+): { title: string; url: string } | null {
+  const link = response?.related_links?.[0];
+  if (!isValidRelatedLink(link)) return null;
+  if (link == null) return null;
+  return {
+    title: link.title.trim(),
+    url: link.url.trim(),
+  };
+}
+
+export function isReviewedSourceHandoff(
+  response: Pick<AskResponse, "response_mode" | "reason_code" | "related_links"> | undefined,
+): boolean {
+  return response != null
+    && response.response_mode === "scope_redirect"
+    && response.reason_code === "no_approved_evidence"
+    && canonicalRelatedLink(response) !== null;
+}
 
 function liveHeadline(freshness: string | null | undefined): string {
   if (freshness === "stale") return "Official cached records";
@@ -454,8 +489,8 @@ function availabilityLabel(response: AskResponse): string {
 }
 
 function escalation(response: AskResponse): { title?: string; url?: string } {
-  const link = response.related_links?.[0];
-  if (link) return { title: link.title, url: link.url };
+  const link = canonicalRelatedLink(response);
+  if (link) return link;
   const evidence = response.evidence?.[0];
   if (evidence) return { title: "Open official source", url: evidence.canonical_url };
   if ((response.live_results ?? []).length > 0) {
@@ -486,6 +521,12 @@ function bannerDetail(response: AskResponse): string {
     return "FireLens needs a BC community or approximate location to continue this live request.";
   }
   if (mode === "scope_redirect") {
+    if (response.reason_code === "live_data_required") {
+      return "Click a fire on the map or name a British Columbia community, then ask again.";
+    }
+    if (isReviewedSourceHandoff(response)) {
+      return "Open the source for its exact wording.";
+    }
     return "Use the related official service for information FireLens does not ingest live.";
   }
   if (response.answer) return clip(response.answer, 500);
@@ -513,10 +554,24 @@ export function getStatusBanner(response: AskResponse | undefined): StatusBanner
     };
   }
   const authority = publicationBanner(response);
+  const selectionNeeded =
+    response.response_mode === "scope_redirect"
+    && response.reason_code === "live_data_required";
+  const reviewedSourceHandoff = isReviewedSourceHandoff(response);
   if (api?.headline && api.detail) {
     return {
-      headline: authority?.headline ?? api.headline,
-      detail: authority?.detail ?? api.detail,
+      headline: authority?.headline
+        ?? (selectionNeeded
+          ? "Select an official record to continue"
+          : reviewedSourceHandoff
+            ? "The reviewed source does not directly answer this"
+            : api.headline),
+      detail: authority?.detail
+        ?? (selectionNeeded
+          ? "Click a fire on the map or name a British Columbia community, then ask again."
+          : reviewedSourceHandoff
+            ? "Open the source for its exact wording."
+            : api.detail),
       freshness_label: authority?.freshness_label ?? api.freshness_label,
       availability_label: api.availability_label,
       retrieval_completed_at: api.retrieval_completed_at ?? null,
@@ -530,7 +585,11 @@ export function getStatusBanner(response: AskResponse | undefined): StatusBanner
   const headline =
     mode === "live"
       ? liveHeadline(response.aggregate_freshness)
-      : HEADLINES[mode] ?? "FireLens response";
+      : mode === "scope_redirect" && response.reason_code === "live_data_required"
+        ? "Select an official record to continue"
+        : reviewedSourceHandoff
+          ? "The reviewed source does not directly answer this"
+        : HEADLINES[mode] ?? "FireLens response";
   const official = escalation(response);
   const retrieved = response.live_results?.map((item) => item.retrieved_at).filter(Boolean).sort().at(-1);
   const updated = response.live_results?.map((item) => item.source_updated_at).filter(Boolean).sort().at(-1);

@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from firelens.evaluation import candidate_evidence_documents, productbench_v2_report
 from firelens.evaluation.candidate_evidence_common import MATERIAL_PATHS
 from firelens.evaluation.candidate_evidence_validation import validate_workflow_identity
 from firelens.evaluation.common import file_sha256
@@ -14,6 +15,9 @@ from firelens.evaluation.release_promotion import (
     MANIFEST_RELATIVE,
     promotion_manifest_document,
     promotion_material_record,
+)
+from firelens.evaluation.v1_6_2_patch_promotion import (
+    MANIFEST_RELATIVE as PATCH_MANIFEST_RELATIVE,
 )
 from firelens.evaluation.v1_6_standard import STANDARD_RELATIVE
 from scripts.candidate_evidence import (
@@ -196,6 +200,26 @@ EFFECTIVE_EXPECTATIONS_SHA256 = hashlib.sha256(
         ensure_ascii=False,
     ).encode()
 ).hexdigest()
+PRODUCTBENCH_IDS = ["PB-04", "PB-05"]
+PRODUCTBENCH_CATALOG = {
+    "schema_version": "firelens.productbench_journeys.v1",
+    "catalog_id": "fixture-productbench",
+    "case_count": len(PRODUCTBENCH_IDS),
+    "status": "development_unsealed",
+    "cases": [{"id": case_id} for case_id in PRODUCTBENCH_IDS],
+}
+PRODUCTBENCH_CATALOG_BYTES = (json.dumps(PRODUCTBENCH_CATALOG) + "\n").encode()
+PRODUCTBENCH_CATALOG_SHA256 = hashlib.sha256(PRODUCTBENCH_CATALOG_BYTES).hexdigest()
+PRODUCTBENCH_MANIFEST = {
+    "schema_version": "firelens.productbench_manifest.v2",
+    "raw_catalog_sha256": PRODUCTBENCH_CATALOG_SHA256,
+    "contract_sha256": "c" * 64,
+    "executable_catalog_sha256": "d" * 64,
+    "status": "development_unsealed",
+    "tiers": {"offline_fake": PRODUCTBENCH_IDS, "provider_manual": []},
+}
+PRODUCTBENCH_MANIFEST_BYTES = (json.dumps(PRODUCTBENCH_MANIFEST) + "\n").encode()
+PRODUCTBENCH_MANIFEST_SHA256 = hashlib.sha256(PRODUCTBENCH_MANIFEST_BYTES).hexdigest()
 
 
 def _passing_invariants(names: list[str]) -> list[dict[str, object]]:
@@ -468,6 +492,97 @@ def _baseline_hard_probe(*, passed_ids: set[str] | None = None) -> dict[str, obj
     }
 
 
+def _productbench_deterministic(*, tree: str = TREE) -> dict[str, object]:
+    return {
+        "schema_version": "firelens.productbench_report.v2",
+        "generated_at": GENERATED_AT,
+        "identity": {
+            "commit": COMMIT,
+            "tree": tree,
+            "catalog_path": "data/evaluation/productbench_journeys_50.json",
+            "manifest_path": "data/evaluation/productbench_v2.manifest.json",
+            "raw_catalog_sha256": PRODUCTBENCH_CATALOG_SHA256,
+            "manifest_sha256": PRODUCTBENCH_MANIFEST_SHA256,
+            "contract_sha256": "c" * 64,
+            "executable_catalog_sha256": "d" * 64,
+            "schema_version": "firelens.productbench_manifest.v2",
+            "tier": "offline_fake",
+            "status": "development_unsealed",
+            "case_ids": PRODUCTBENCH_IDS,
+            "git_clean": True,
+            "status_sha256": hashlib.sha256(b"").hexdigest(),
+            "tracked_diff_sha256": hashlib.sha256(b"").hexdigest(),
+            "untracked_content_sha256": hashlib.sha256(b"[]").hexdigest(),
+            "untracked_file_count": 0,
+        },
+        "provider_boundary": "offline_fake",
+        "execution_complete": True,
+        "passed": len(PRODUCTBENCH_IDS),
+        "failed": 0,
+        "case_count": len(PRODUCTBENCH_IDS),
+        "cost": {
+            "max_cost_usd": 0.0,
+            "reported_cost_usd": 0.0,
+            "ceiling_exceeded": False,
+        },
+        # This is the report shape emitted by productbench_v2_report.build(),
+        # including the canonical activity counters added in ProductBench v2.
+        # Candidate evidence must bind it rather than reject a complete offline
+        # run for carrying the report's required provenance.
+        "provider_activity": {
+            "call_counts": {
+                "plan": 2,
+                "embed": 9,
+                "rerank": 9,
+                "generate": 2,
+                "generate_grounded": 0,
+                "generate_background": 2,
+                "generate_contexts": 0,
+                "chat_turn": 0,
+            },
+            "total_calls": 22,
+        },
+        "results": [
+            {
+                "id": case_id,
+                "passed": True,
+                "issues": [],
+                "contract": {},
+                "latency_ms": 1.0,
+                "call_evidence": {
+                    "tool_names": [],
+                    "tool_attempts": 0,
+                    "provider_calls": {
+                        "plan": 0,
+                        "embed": 0,
+                        "rerank": 0,
+                        "generate": 0,
+                        "generate_grounded": 0,
+                        "generate_background": 0,
+                        "generate_contexts": 0,
+                        "chat_turn": 0,
+                    },
+                },
+                "scope_evidence": {
+                    "observed_location_labels": [],
+                    "selected_result_id": None,
+                },
+                "trace": {
+                    "trace_id": f"trace-{case_id}",
+                    "tool_names": [],
+                    "response_sha256": "e" * 64,
+                },
+                "cost_usd": 0.0,
+            }
+            for case_id in PRODUCTBENCH_IDS
+        ],
+        "offline_execution": {
+            "live_fixture": "productbench_official_record_double.v1",
+            "fake_provider_calls": {"plan": 0, "embed": 0, "rerank": 0, "generate": 0},
+        },
+    }
+
+
 def _fixture_root(tmp_path: Path) -> Path:
     root = tmp_path / "repo"
     for relative in MATERIAL_PATHS:
@@ -477,6 +592,8 @@ def _fixture_root(tmp_path: Path) -> Path:
         root / "data/evaluation/hard_probe.v1.manifest.json",
         {"dataset_sha256": BASE_DATASET_SHA256, "case_count": 105},
     )
+    _write(root / "data/evaluation/productbench_journeys_50.json", PRODUCTBENCH_CATALOG_BYTES)
+    _write(root / "data/evaluation/productbench_v2.manifest.json", PRODUCTBENCH_MANIFEST_BYTES)
     _write(
         root / "data/evaluation/hard_probe_rc2_expectations.v1.yaml",
         RC2_PROFILE_BYTES,
@@ -566,6 +683,7 @@ def _evidence_inputs(
     npm_critical: int = 0,
     prohibited: list[str] | None = None,
     hard_probe: dict[str, object] | None = None,
+    productbench_deterministic: dict[str, object] | None = None,
     clean: bool = True,
 ) -> dict[str, Path]:
     inputs = tmp_path / "inputs"
@@ -663,6 +781,8 @@ def _evidence_inputs(
             },
         },
         "hard_probe": hard_probe or _hard_probe(),
+        "productbench_deterministic": productbench_deterministic
+        or _productbench_deterministic(),
     }
     paths: dict[str, Path] = {}
     for name, value in values.items():
@@ -698,6 +818,7 @@ def _build(
         workflow_identity_path=inputs["workflow_identity"],
         structured_eval_path=inputs["structured_eval"],
         hard_probe_path=inputs["hard_probe"],
+        productbench_deterministic_path=inputs["productbench_deterministic"],
         limitations=LIMITATIONS,
     )
 
@@ -746,6 +867,13 @@ def test_v2_bundle_binds_complete_candidate_and_recomputes(tmp_path: Path) -> No
     assert qualification["hard_probe"]["paired_regressions"] == []
     assert qualification["hard_probe"]["expectation_profile"] == "rc2.2"
     assert qualification["hard_probe"]["migrated_case_ids"] == sorted(MIGRATED_IDS)
+    assert qualification["productbench_deterministic"] == {
+        "tier": "offline_fake",
+        "case_count": len(PRODUCTBENCH_IDS),
+        "passed": len(PRODUCTBENCH_IDS),
+        "catalog_sha256": PRODUCTBENCH_CATALOG_SHA256,
+        "manifest_sha256": PRODUCTBENCH_MANIFEST_SHA256,
+    }
     assert qualification["credentials"]["provider_calls"] == 0
     assert not (bundle / "CURRENT_EVIDENCE.json").exists()
 
@@ -855,6 +983,95 @@ def test_unclean_start_and_hard_probe_regression_are_rejected(tmp_path: Path) ->
             _evidence_inputs(
                 tmp_path / "regressed-inputs",
                 hard_probe=_hard_probe(passed_ids=regressed_ids),
+            ),
+        )
+
+
+def test_productbench_evidence_must_be_present_current_and_complete(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path)
+    missing = _evidence_inputs(tmp_path / "missing")
+    missing["productbench_deterministic"].unlink()
+    with pytest.raises(ValueError, match="regular JSON file"):
+        _build(root, tmp_path / "missing-candidate", missing)
+
+    stale = _productbench_deterministic(tree="c" * 40)
+    with pytest.raises(ValueError, match="stale or mismatched"):
+        _build(
+            root,
+            tmp_path / "stale-candidate",
+            _evidence_inputs(tmp_path / "stale", productbench_deterministic=stale),
+        )
+
+    dirty = _productbench_deterministic()
+    dirty["identity"]["git_clean"] = False  # type: ignore[index]
+    with pytest.raises(ValueError, match="stale or mismatched"):
+        _build(
+            root,
+            tmp_path / "dirty-candidate",
+            _evidence_inputs(tmp_path / "dirty", productbench_deterministic=dirty),
+        )
+
+    failed = _productbench_deterministic()
+    failed["results"][0]["passed"] = False  # type: ignore[index]
+    failed["results"][0]["issues"] = ["predicate_failed"]  # type: ignore[index]
+    failed["passed"] = len(PRODUCTBENCH_IDS) - 1
+    failed["failed"] = 1
+    with pytest.raises(ValueError, match="execution did not pass"):
+        _build(
+            root,
+            tmp_path / "failed-candidate",
+            _evidence_inputs(tmp_path / "failed", productbench_deterministic=failed),
+        )
+
+
+def test_productbench_report_emitter_shape_is_candidate_evidence_compatible(
+    tmp_path: Path,
+) -> None:
+    """A complete runner report must not be rejected for its own v2 provenance."""
+
+    root = _fixture_root(tmp_path)
+    template = _productbench_deterministic()
+    manifest = json.loads(
+        (root / "data/evaluation/productbench_v2.manifest.json").read_text(encoding="utf-8")
+    )
+    report = productbench_v2_report.build(
+        manifest,
+        "offline_fake",
+        template["results"],
+        max_cost_usd=0.0,
+        provider_boundary="offline_fake",
+        identity=lambda _: template["identity"],
+        offline_execution=template["offline_execution"],
+        provider_call_counts=template["provider_activity"]["call_counts"],
+    )
+
+    _build(
+        root,
+        tmp_path / "emitted-candidate",
+        _evidence_inputs(tmp_path / "emitted-inputs", productbench_deterministic=report),
+    )
+
+    mismatched_activity = _productbench_deterministic()
+    mismatched_activity["provider_activity"]["total_calls"] = 0  # type: ignore[index]
+    with pytest.raises(ValueError, match="provider activity is invalid"):
+        _build(
+            root,
+            tmp_path / "mismatched-activity-candidate",
+            _evidence_inputs(
+                tmp_path / "mismatched-activity-inputs",
+                productbench_deterministic=mismatched_activity,
+            ),
+        )
+
+    unverified_cost = _productbench_deterministic()
+    unverified_cost["cost"]["cost_unverified"] = False  # type: ignore[index]
+    with pytest.raises(ValueError, match="cost evidence fields are invalid"):
+        _build(
+            root,
+            tmp_path / "unverified-cost-candidate",
+            _evidence_inputs(
+                tmp_path / "unverified-cost-inputs",
+                productbench_deterministic=unverified_cost,
             ),
         )
 
@@ -1116,6 +1333,55 @@ def test_promoted_evidence_binds_and_rehashes_the_promotion_manifest(tmp_path: P
         _verify(root, bundle)
 
 
+def test_v1_6_2_evidence_selects_patch_validator_and_material(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _fixture_root(tmp_path)
+    _write(root / "pyproject.toml", '[project]\nname = "fixture"\nversion = "1.6.2"\n')
+    _json(root / "apps/web/package.json", {"name": "ui", "version": "1.6.2"})
+    _json(root / PATCH_MANIFEST_RELATIVE, {"fixture": "patch material"})
+    _json(
+        root / SUBJECT_FILE,
+        {
+            "schema_version": "firelens.runtime_candidate.v4",
+            "release_version": "1.6.2",
+        },
+    )
+    calls: list[dict[str, object]] = []
+
+    def record_patch_validation(*args: object, **kwargs: object) -> dict[str, object]:
+        calls.append({"args": args, **kwargs})
+        return {"qualification": {"status": "EXECUTED"}}
+
+    monkeypatch.setattr(
+        candidate_evidence_documents,
+        "validate_patch_promotion",
+        record_patch_validation,
+    )
+    monkeypatch.setattr(
+        candidate_evidence_documents,
+        "validate_release_promotion",
+        lambda *args, **kwargs: pytest.fail("historical validator selected for V1.6.2"),
+    )
+    bundle = tmp_path / "patch-candidate"
+
+    assert (
+        _build(
+            root,
+            bundle,
+            _evidence_inputs(tmp_path / "patch-inputs"),
+            release_version="1.6.2",
+        )
+        is True
+    )
+    assert calls and calls[0]["release_version"] == "1.6.2"
+    assert calls[0]["clean_starting_state_bound"] is True
+    manifest = json.loads((bundle / "candidate-evidence-manifest.json").read_text())
+    material_names = {item["name"] for item in manifest["materials"]}
+    assert PATCH_MANIFEST_RELATIVE in material_names
+    assert MANIFEST_RELATIVE not in material_names
+
+
 def test_main_push_workflow_identity_is_accepted() -> None:
     validate_workflow_identity(
         {
@@ -1162,10 +1428,23 @@ def test_candidate_workflow_is_exact_head_zero_cost_v2_artifact() -> None:
     assert triggers["push"]["branches"] == ["main"]
     assert "github.event.pull_request.head.sha || github.sha" in workflow_text
     assert "scripts/run_hard_probe.py --mode offline" in workflow_text
+    assert "make productbench-deterministic" in workflow_text
+    assert (
+        "--productbench-deterministic candidate-inputs/productbench-deterministic.json"
+        in workflow_text
+    )
+    assert workflow_text.index("Execute deterministic ProductBench") < workflow_text.index(
+        "mkdir -p candidate-inputs"
+    )
+    assert (
+        'productbench_deterministic="${{ steps.productbench.outputs.exit_code }}"'
+        in workflow_text
+    )
     assert "--expectation-profile rc2.2" in workflow_text
-    assert "--release-version 1.6.0" in workflow_text
+    assert "--release-version 1.6.2" in workflow_text
     assert "--release-version 1.6.0-rc.1" not in workflow_text
     assert "--release-version 1.6.0-rc.2" not in workflow_text
+    assert "config/firelens.v1_6_2_patch_promotion.v1.json" in workflow_text
     assert "firelens.candidate_evidence.v2" in workflow_text
     assert "--expected-tree" in workflow_text
     assert "CURRENT_EVIDENCE" not in workflow_text

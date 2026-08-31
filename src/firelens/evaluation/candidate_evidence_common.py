@@ -77,6 +77,8 @@ MATERIAL_PATHS = (
     HARD_PROBE_PROFILE_MANIFEST_PATH,
     "data/evaluation/v1_6_user_end_questions_50.json",
     "data/evaluation/v1_6_user_end_questions_50.manifest.json",
+    "data/evaluation/productbench_journeys_50.json",
+    "data/evaluation/productbench_v2.manifest.json",
     "docs/reports/V1_6_STRUCTURED_PUBLICATION_HARD_PROBE.json",
     "docs/reports/V1_6_TYPED_CLAIM_REVIEW_BATCH_1_DECISIONS.yaml",
     "docs/reports/V1_6_TYPED_CLAIM_REVIEW_BATCH_2_DECISIONS.yaml",
@@ -98,6 +100,7 @@ RAW_EVIDENCE_NAMES = (
     "inputs/structured-publication-eval.json",
     "inputs/hard-probe.json",
     "inputs/hard-probe-baseline.json",
+    "inputs/productbench-deterministic.json",
 )
 GENERATED_NAMES = (
     "candidate-sbom.cdx.json",
@@ -116,6 +119,7 @@ REQUIRED_COMMAND_POLICIES: dict[str, frozenset[int]] = {
     # The permanent runner returns one when any of 105 cases fail. The v2
     # qualification validator owns the frozen 86/no-regression gate.
     "hard_probe_offline": frozenset({0, 1}),
+    "productbench_deterministic": frozenset({0}),
     "python_audit": frozenset({0, 1}),
     "npm_audit": frozenset({0, 1}),
     "dependency_licenses": frozenset({0}),

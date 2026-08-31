@@ -61,6 +61,7 @@ class Runtime:
     ] = "not_required"
     bound_candidate: dict[str, str] | None = None
     candidate_binding_applied: bool = False
+    provider_preflight_succeeded: bool = False
 
     def __post_init__(self) -> None:
         if self.config.privacy.any_zdr_required and self.zdr_policy_state == "disabled":
@@ -76,6 +77,7 @@ class Runtime:
         *,
         failed: bool,
     ) -> None:
+        self.provider_preflight_succeeded = report is not None and not failed
         self.zdr_policy_state = "failed" if failed else "required_stages_eligible"
         if report is None:
             self.embedding_zdr_state = (
@@ -107,13 +109,6 @@ class Runtime:
     def health(self) -> HealthResponse:
         corpus_ready = bool(self.chunks and self.corpus_version)
         index_ready = self.service is not None
-        production_zdr_ready = (
-            self.config.deployment_environment != "production"
-            or self.zdr_policy_state == "required_stages_eligible"
-        )
-        ready = (
-            corpus_ready and index_ready and self.provider_configured and production_zdr_ready
-        )
         provider_state: Literal[
             "not_configured",
             "configured_unprobed",
@@ -133,6 +128,29 @@ class Runtime:
                     "circuit_open",
                 }:
                     provider_state = observed_state
+            if (
+                provider_state == "configured_unprobed"
+                and self.config.deployment_environment == "production"
+                and self.provider_preflight_succeeded
+            ):
+                # The authenticated GET /endpoints/zdr startup preflight is a
+                # successful, content-free provider observation. It does not
+                # invoke a model or incur generation cost.
+                provider_state = "available"
+        production_zdr_ready = (
+            self.config.deployment_environment != "production"
+            or self.zdr_policy_state == "required_stages_eligible"
+        )
+        production_provider_ready = (
+            self.config.deployment_environment != "production" or provider_state == "available"
+        )
+        ready = (
+            corpus_ready
+            and index_ready
+            and self.provider_configured
+            and production_zdr_ready
+            and production_provider_ready
+        )
         candidate = self.bound_candidate
         return HealthResponse(
             status="ready" if ready else "not_ready",

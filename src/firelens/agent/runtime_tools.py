@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -14,9 +15,11 @@ from firelens.answering.intent import (
 )
 from firelens.answering.live_analysis import (
     annotate_live_results,
-    extracted_located_fire_name,
     filter_requested_named_fire_results,
 )
+from firelens.answering.live_analysis_distance import ranked_live_results_for_request
+from firelens.answering.live_named_fire import extracted_located_fire_name
+from firelens.answering.live_record_intent import is_fire_geography_analysis
 from firelens.answering.location_intent import (
     coarse_location_from_question,
     is_national_scope_question,
@@ -29,8 +32,20 @@ from firelens.contracts import (
     LocationInput,
     QueryRequest,
 )
+from firelens.errors import ToolInputError
 from firelens.live import LiveDataErrorKind, LiveDataService, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
+from firelens.live_support import (
+    official_fire_centre_label,
+    regional_reference_point_limitation,
+)
+
+_EXPLICIT_PROVINCE_SCOPE = re.compile(
+    r"\b(?:across|throughout|in|of|by|around)\s+"
+    r"(?:the\s+)?(?:province|b\s*\.?\s*c\s*\.?|british\s+columbia)\b"
+    r"|\b(?:province|b\s*\.?\s*c\s*\.?)\s*[- ]wide\b",
+    re.IGNORECASE,
+)
 
 
 async def execute_tool(
@@ -141,7 +156,7 @@ async def execute_tool(
                 "claim_count": len(response.claims),
             }
         )
-    raise ValueError(f"tool is not allowlisted: {name}")
+    raise ToolInputError()
 
 
 def _extend_unique(packet: AgentPacket, results: list[Any]) -> None:
@@ -187,6 +202,27 @@ def _annotation_location(
     return candidate
 
 
+def _question_explicitly_requests_province_scope(question: str) -> bool:
+    """Return whether the user, rather than analysis classification, chose BC scope."""
+
+    return bool(_EXPLICIT_PROVINCE_SCOPE.search(question))
+
+
+def _first_non_province_location(
+    *candidates: LocationInput | None,
+) -> LocationInput | None:
+    """Return an explicit community or regional label without inventing one."""
+
+    return next(
+        (
+            candidate
+            for candidate in candidates
+            if candidate is not None and not is_province_wide_label(candidate.label)
+        ),
+        None,
+    )
+
+
 async def _fetch_layers(
     live_service: LiveDataService,
     request: QueryRequest,
@@ -202,18 +238,45 @@ async def _fetch_layers(
         if isinstance(place_label, str) and place_label.strip()
         else None
     )
-    bound_location = request.location or coarse_location_from_question(request.question)
-    province_wide = bool(
-        bound_location is not None and is_province_wide_label(bound_location.label)
+    question_location = coarse_location_from_question(request.question)
+    proposed_location = (
+        LocationInput(label=proposed_label)
+        if proposed_label is not None and not is_province_wide_label(proposed_label)
+        else None
     )
+    # An analysis intent (for example, "distribution") is not a geography
+    # instruction.  Preserve a concrete question, request, or planned place so
+    # regional analytics cannot silently substitute the provincial roster.  An
+    # explicit BC/province scope still takes precedence over retained UI state.
+    question_requests_province = _question_explicitly_requests_province_scope(
+        request.question
+    ) or (question_location is not None and is_province_wide_label(question_location.label))
+    any_explicit_province = bool(
+        question_requests_province
+        or (request.location is not None and is_province_wide_label(request.location.label))
+        or (proposed_label is not None and is_province_wide_label(proposed_label))
+    )
+    bound_location = _first_non_province_location(
+        question_location,
+        request.location,
+        proposed_location,
+    )
+    province_wide = bool(
+        question_requests_province
+        or (any_explicit_province and bound_location is None)
+        or (bound_location is None and is_fire_geography_analysis(request.question))
+    )
+    if province_wide:
+        bound_location = None
     location = None if province_wide else bound_location
-    if bound_location is None and is_province_wide_label(proposed_label):
-        province_wide = True
     if location is not None and is_out_of_province_label(location.label):
         _note_topic(packet, "out_of_province_place")
         return [], None, None
+    fire_centre = official_fire_centre_label(location.label) if location is not None else None
+    if location is not None:
+        packet.add_live_limitation(regional_reference_point_limitation(location))
     try:
-        if location is not None:
+        if location is not None and fire_centre is None:
             page = await live_service.nearby_page(
                 location, layers=layers, page=1, page_size=100
             )
@@ -224,7 +287,10 @@ async def _fetch_layers(
             if roster_total is None:
                 roster_total = len(page.results)
             annotated = annotate_live_results(list(page.results), resolved)
-            filtered = filter_requested_named_fire_results(request, annotated)
+            filtered = ranked_live_results_for_request(
+                request.question,
+                filter_requested_named_fire_results(request, annotated),
+            )
             if extracted_located_fire_name(request.question) is not None and not filtered:
                 _note_topic(packet, "named_fire_not_found")
             _record_successful_live_response(packet, page)
@@ -234,18 +300,46 @@ async def _fetch_layers(
                 roster_total,
             )
         mapped = await live_service.map_results(layers=layers)
-        resolved_location = _annotation_location(request, None)
+        # A BCWS fire-centre label is an administrative source field, not a
+        # geocodable origin.  Do not attach distances from an unrelated place
+        # returned by a gazetteer lookup.
+        resolved_location = (
+            None
+            if province_wide or fire_centre is not None
+            else _annotation_location(request, None)
+        )
         resolved = (
             await _resolve(live_service, resolved_location)
             if resolved_location is not None
             else None
         )
         annotated = annotate_live_results(list(mapped.results), resolved)
-        filtered = filter_requested_named_fire_results(request, annotated)
+        centre_filtered = (
+            [
+                item
+                for item in annotated
+                if item.fire_centre is not None
+                and item.fire_centre.casefold() == fire_centre.casefold()
+            ]
+            if fire_centre is not None
+            else annotated
+        )
+        if fire_centre is not None:
+            packet.add_live_limitation(
+                f"Results are filtered to the official BC Wildfire Service {fire_centre} label."
+            )
+        filtered = ranked_live_results_for_request(
+            request.question,
+            filter_requested_named_fire_results(request, centre_filtered),
+        )
         if extracted_located_fire_name(request.question) is not None and not filtered:
             _note_topic(packet, "named_fire_not_found")
         _record_successful_live_response(packet, mapped)
-        return filtered, resolved, len(mapped.results)
+        return (
+            filtered,
+            resolved,
+            len(filtered) if fire_centre is not None else len(mapped.results),
+        )
     except LiveDataUnavailable as exc:
         _remember_retrieval(packet, datetime.now(UTC))
         if exc.kind == LiveDataErrorKind.NOT_FOUND:
@@ -282,6 +376,6 @@ async def _resolve(
 ) -> CoarseResolvedLocation | None:
     try:
         latitude, longitude = await live_service.resolve_location(location)
-    except (LiveDataUnavailable, AttributeError, TypeError, ValueError):
+    except LiveDataUnavailable:
         return None
     return CoarseResolvedLocation(latitude=latitude, longitude=longitude)

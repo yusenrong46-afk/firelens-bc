@@ -46,12 +46,23 @@ def _preview_report() -> dict:
 
     live_record = {
         "result_id": "incident:1",
+        "kind": "incident",
         "authority": "BC Wildfire Service",
         "source_url": "https://official.example.test/incident",
         "source_updated_at": generated_at,
         "retrieved_at": generated_at,
         "status": "Active",
     }
+    perimeter_record = {
+        "result_id": "perimeter:1",
+        "kind": "perimeter",
+        "authority": "BC Wildfire Service",
+        "source_url": "https://official.example.test/perimeter",
+        "source_updated_at": generated_at,
+        "retrieved_at": generated_at,
+        "status": "Active",
+    }
+    live_records = [live_record, perimeter_record]
     protocol = [
         ("homepage", "GET", "/", {}, {}),
         ("liveness", "GET", "/api/v1/health/live", {}, {"status": "alive"}),
@@ -88,8 +99,8 @@ def _preview_report() -> dict:
             "/api/v1/ask",
             {"question": ("What is the current air quality in Vancouver from wildfire smoke?")},
             {
-                "status": "abstention",
-                "response_mode": "abstention",
+                "status": "answer",
+                "response_mode": "scope_redirect",
                 "claim_count": 0,
                 "evidence_count": 0,
                 "live_result_count": 0,
@@ -105,8 +116,8 @@ def _preview_report() -> dict:
                 "response_mode": "live",
                 "claim_count": 0,
                 "evidence_count": 0,
-                "live_result_count": 1,
-                "live_records": [live_record],
+                "live_result_count": 2,
+                "live_records": live_records,
             },
         ),
         (
@@ -124,17 +135,17 @@ def _preview_report() -> dict:
                 "response_mode": "mixed",
                 "claim_count": 1,
                 "evidence_count": 1,
-                "live_result_count": 1,
+                "live_result_count": 2,
                 "exact_support": support_proof(),
-                "live_records": [live_record],
+                "live_records": live_records,
             },
         ),
         (
             "map",
             "GET",
             "/api/v1/live/map",
-            {"layers": ["incidents"]},
-            {"record_count": 1, "records": [live_record]},
+            {"layers": ["incidents", "perimeters"]},
+            {"record_count": 2, "records": live_records},
         ),
     ]
     requests = []

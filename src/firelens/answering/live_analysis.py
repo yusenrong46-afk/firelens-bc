@@ -8,10 +8,42 @@ from collections.abc import Sequence
 
 from firelens import freshness_language
 from firelens.answering.intent_safety import is_empty_map_safety_inference
+from firelens.answering.live_analysis_distance import (
+    closest_locatable_result as closest_locatable_result,
+)
+from firelens.answering.live_analysis_distance import (
+    closest_three_facts as _closest_three_facts,
+)
+from firelens.answering.live_analysis_distance import (
+    freshness_summary as _freshness_summary,
+)
+from firelens.answering.live_analysis_distance import (
+    is_closest_live_question as is_closest_live_question,
+)
+from firelens.answering.live_analysis_distance import (
+    is_freshness_question as is_freshness_question,
+)
+from firelens.answering.live_analysis_distance import (
+    is_ranked_distance_question as is_ranked_distance_question,
+)
+from firelens.answering.live_analysis_distance import (
+    is_three_fact_closest_question as is_three_fact_closest_question,
+)
+from firelens.answering.live_analysis_distance import (
+    official_display_name as official_display_name,
+)
+from firelens.answering.live_analysis_distance import (
+    ranked_distance_answer as _ranked_by_distance,
+)
+from firelens.answering.live_analysis_distance import size_roster as _size_roster
 from firelens.answering.live_analysis_regional import geography_answer
 from firelens.answering.live_evacuation import (
     evacuation_answer,
     is_evacuation_record_question,
+)
+from firelens.answering.live_named_fire import (
+    extracted_located_fire_name,
+    requested_fire_identity,
 )
 from firelens.answering.live_record_intent import is_fire_geography_analysis
 from firelens.contracts import (
@@ -27,7 +59,11 @@ from firelens.live_support import (
 
 _NEARBY_RADIUS_KM = 50.0
 
-_PLACEHOLDER_NAME = "unnamed official record"
+_EXPLICIT_FIRE_LOOKUP = re.compile(
+    r"\b(?:current\s+)?(?:fires?|wildfires?)\s+(?:near|around|in)\b",
+    re.IGNORECASE,
+)
+
 _EXISTENCE = re.compile(
     r"\b(?:is there|are there|does there exist)\b.{0,80}\b(?:called|named)\s+"
     r"[\"']?(?P<name>[A-Za-z][A-Za-z0-9'’.-]*(?:\s+[A-Za-z0-9'’.-]*){0,6})[\"']?",
@@ -53,30 +89,22 @@ _HEDGE = re.compile(
     r"i(?:'m| am) not sure what you(?:'re| are) referring to",
     re.IGNORECASE,
 )
+_SIZE_ASK = re.compile(r"\b(?:how (?:large|big)|size|hectares?|ha)\b", re.IGNORECASE)
+_CLOSEST_RATIONALE_ASK = re.compile(
+    r"\bwhy\b.{0,100}\b(?:closest|nearest)\b",
+    re.IGNORECASE,
+)
+_UNKNOWN_SELECTED_ASK = re.compile(
+    r"\b(?:uncertain|not\s+certain|unknown|not\s+known)\b",
+    re.IGNORECASE,
+)
 _PRECISE_COORD = re.compile(r"\b-?\d{1,3}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}\b")
-_LOCATED_NAMED_FIRE = re.compile(
-    r"\bwhere(?:\s+is|['’]s)\s+(?:the\s+)?"
-    r"(?P<name>[A-Za-z0-9'’.-]+(?:\s+[A-Za-z0-9'’.-]+){0,5}?)\s+"
-    r"(?:fire|wildfire)\s+(?:near|around|by|in|within)\b",
+_ORDINAL_FIRE = re.compile(
+    r"\b(?:the\s+)?(?P<rank>first|second|third|1st|2nd|3rd)\s+"
+    r"(?:one|fire|wildfire|incident|record)\b",
     re.IGNORECASE,
 )
-_PREFIXED_NAMED_FIRE = re.compile(
-    r"\bwhere(?:\s+is|['’]s)\s+(?:the\s+)?(?:fire|wildfire|incident)\s+"
-    r"(?P<name>[A-Za-z0-9'’.-]+(?:\s+[A-Za-z0-9'’.-]+){0,5}?)"
-    r"(?=\s+(?:right\s+now|today|tonight|currently|now)\b|[?!.]|$)",
-    re.IGNORECASE,
-)
-_BCWS_INCIDENT_NUMBER = re.compile(
-    r"(?<![A-Za-z0-9])(?P<number>[A-Za-z]\d{4,6})(?![A-Za-z0-9])"
-)
-_FIRE_FOLLOW_UP = re.compile(
-    r"\b(?:it|its|that\s+(?:fire|wildfire|incident)|this\s+(?:fire|wildfire|incident)|"
-    r"the\s+(?:fire|wildfire|incident)|same\s+(?:fire|wildfire|incident))\b",
-    re.IGNORECASE,
-)
-_GENERIC_LOCATED_NAMES = frozenset(
-    {"a", "active", "any", "closest", "current", "local", "nearest", "the"}
-)
+_ORDINAL_RANK = {"first": 0, "1st": 0, "second": 1, "2nd": 1, "third": 2, "3rd": 2}
 
 
 def official_information_prefix(records: Sequence[LiveResult]) -> str:
@@ -85,18 +113,6 @@ def official_information_prefix(records: Sequence[LiveResult]) -> str:
     return freshness_language.official_information_prefix(
         freshness_language.aggregate_freshness_from_records(list(records))
     )
-
-
-def official_display_name(result: LiveResult) -> str:
-    """Prefer a real name, then the fire number, then the result id."""
-
-    name = (result.name or "").strip()
-    if name and name.casefold() != _PLACEHOLDER_NAME:
-        return name
-    number = (result.incident_number or "").strip()
-    if number:
-        return number
-    return result.result_id
 
 
 def annotate_live_results(
@@ -163,43 +179,6 @@ def record_matches_name(result: LiveResult, queried: str) -> bool:
     return False
 
 
-def extracted_located_fire_name(question: str) -> str | None:
-    """Extract a specifically named fire from a where-in-place question."""
-
-    incident_number = _BCWS_INCIDENT_NUMBER.search(question)
-    if incident_number is not None and re.search(
-        r"\b(?:fire|wildfire|incident)\b", question, re.IGNORECASE
-    ):
-        return incident_number.group("number").upper()
-    prefixed = _PREFIXED_NAMED_FIRE.search(question)
-    if prefixed is not None:
-        name = " ".join(prefixed.group("name").split()).strip(" ?.!'\"")
-        return name or None
-    match = _LOCATED_NAMED_FIRE.search(question)
-    if match is None:
-        return None
-    base = " ".join(match.group("name").split()).strip(" ?.!'\"")
-    if not base or base.casefold().split()[0] in _GENERIC_LOCATED_NAMES:
-        return None
-    return f"{base} Fire"
-
-
-def _requested_fire_identity(request: QueryRequest) -> str | None:
-    direct = extracted_located_fire_name(request.question)
-    if direct is not None:
-        return direct
-    if not _FIRE_FOLLOW_UP.search(request.question):
-        return None
-    for turn in reversed(request.history):
-        incident_number = _BCWS_INCIDENT_NUMBER.search(turn.content)
-        if incident_number is not None:
-            return incident_number.group("number").upper()
-        prior = extracted_located_fire_name(turn.content)
-        if prior is not None:
-            return prior
-    return None
-
-
 def _normalized_record_name(value: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9]+", " ", value.casefold()).split())
 
@@ -235,7 +214,7 @@ def filter_requested_named_fire_results(
 ) -> list[LiveResult]:
     """Keep unrelated nearby records out of a specifically named-fire response."""
 
-    queried = _requested_fire_identity(request)
+    queried = requested_fire_identity(request)
     if queried is None:
         return list(records)
     normalized_query = _normalized_record_name(queried)
@@ -295,7 +274,13 @@ def official_analysis_answer(
             "a safety determination."
         )
     located_name = extracted_located_fire_name(request.question)
+    selected_binding = bool(request.context.selected_live_result_id)
     if located_name is not None:
+        if selected_binding:
+            # The visible map selection is an explicit user binding. Do not
+            # claim that it matches a separately named record; the selected
+            # record composer below will identify the exact fetched result.
+            return None
         if not records:
             return f"No fetched official record matched the named fire {located_name}."
         matched = records[0]
@@ -330,7 +315,19 @@ def official_analysis_answer(
                 f"{official_display_name(matched)}, status {matched.status}."
             )
         return f"No fetched official record is named {queried}."
-    if is_evacuation_record_question(request.question):
+    ordinal = _ORDINAL_FIRE.search(request.question)
+    if ordinal is not None:
+        if selected_binding:
+            return None
+        return _ordinal_record(records, ordinal.group("rank"))
+    has_incident_records = any(item.kind == LiveResultKind.INCIDENT for item in records)
+    has_evacuation_records = any(item.kind == LiveResultKind.EVACUATION for item in records)
+    mixed_fire_lookup = bool(
+        has_incident_records
+        and not has_evacuation_records
+        and _EXPLICIT_FIRE_LOOKUP.search(request.question)
+    )
+    if is_evacuation_record_question(request.question) and not mixed_fire_lookup:
         return evacuation_answer(
             request,
             records,
@@ -346,14 +343,20 @@ def official_analysis_answer(
         return _two_largest(records)
     if _FIRE_CENTRE_MOST.search(request.question):
         return _most_fire_centre(records)
-    if (
-        "hectare" in lowered
-        or "most burned" in lowered
-        or ("largest" in lowered and "compare" not in lowered)
-    ):
+    if "most burned" in lowered or ("largest" in lowered and "compare" not in lowered):
         return _max_hectares(records)
-    if "closest" in lowered or "nearest" in lowered or "how close" in lowered:
+    if is_freshness_question(request.question) and not selected_binding:
+        return _freshness_summary(records)
+    if is_ranked_distance_question(request.question):
+        return _ranked_by_distance(records)
+    if is_three_fact_closest_question(request.question):
+        return _closest_three_facts(request, records)
+    if is_closest_live_question(request.question):
+        if selected_binding:
+            return None
         return _closest(request, records)
+    if _SIZE_ASK.search(request.question) and not request.context.selected_live_result_id:
+        return _size_roster(records)
     if is_fire_geography_analysis(request.question):
         return geography_answer(request.question, records)
     if _COUNT.search(request.question):
@@ -404,34 +407,109 @@ def compose_official_answer(
                 "Select a mapped fire or perimeter before asking about a specific record. "
                 "FireLens will not substitute a different nearby record."
             )
+        if _CLOSEST_RATIONALE_ASK.search(request.question):
+            if selected.distance_km is None or selected.distance_basis is None:
+                return (
+                    "The selected official record does not include a bound distance, so "
+                    "FireLens cannot re-establish why it ranked closest."
+                )
+            basis = selected.distance_basis.replace("_", " ")
+            return (
+                f"FireLens kept {official_display_name(selected)} selected because the "
+                f"preceding deterministic lookup ranked its {selected.distance_km:g} km "
+                f"geodesic distance to the official {basis}. The model did not choose "
+                "the record."
+            )
+        if _UNKNOWN_SELECTED_ASK.search(request.question):
+            return (
+                f"The fetched official record establishes {official_display_name(selected)}'s "
+                f"reported status ({selected.status}) and source timestamp. It does not "
+                "establish the fire's cause, future spread, local safety, or a personal "
+                "evacuation decision."
+            )
+        if is_freshness_question(request.question):
+            return (
+                f"Freshness: the official source updated {official_display_name(selected)} at "
+                f"{selected.source_updated_at.isoformat()}. FireLens retrieved that record "
+                f"at {selected.retrieved_at.isoformat()}. These are separate clocks."
+            )
         if (
             "source" in lowered
             or "reported" in lowered
             or "published" in lowered
             or "updated" in lowered
         ):
+            timestamp = selected.source_updated_at.isoformat()
+            freshness = freshness_language.freshness_value(selected.freshness)
+            freshness_clause = (
+                f" Record freshness: {freshness}." if freshness is not None else ""
+            )
             return (
                 f"Official source for {official_display_name(selected)}: "
                 f"{selected.authority}. The official record timestamp is "
-                f"{selected.source_updated_at.isoformat()}."
+                f"{timestamp}.{freshness_clause}"
             )
         if "size" in lowered or "hectare" in lowered or "how large" in lowered:
+            status_clause = (
+                f" Its official status is {selected.status}." if "status" in lowered else ""
+            )
             if selected.size_hectares is None:
                 return (
                     f"The official record for {official_display_name(selected)} "
-                    "does not provide a size value."
+                    f"does not provide a size value.{status_clause}"
                 )
             return (
                 f"The official record reports {official_display_name(selected)} at "
-                f"{selected.size_hectares:g} hectares."
+                f"{selected.size_hectares:g} hectares.{status_clause}"
             )
         return (
             f"{official_display_name(selected)}: {selected.status}. "
             "Open the selected official record for the fields its publishing "
             "authority provides."
         )
-    summary = "; ".join(f"{official_display_name(item)}: {item.status}" for item in records[:8])
-    return official_information_prefix(records) + summary
+    parts: list[str] = []
+    for item in records[:8]:
+        line = f"{official_display_name(item)}: {item.status}"
+        if item.size_hectares is not None:
+            line += f", {item.size_hectares:g} ha"
+        if item.distance_km is not None:
+            line += f", {item.distance_km:g} km"
+        parts.append(line)
+    prefix = official_information_prefix(records)
+    if len(records) <= 8:
+        return prefix + "; ".join(parts)
+    distribution = Counter(item.status or "Status not reported" for item in records)
+    distribution_text = "; ".join(
+        f"{status}: {count}"
+        for status, count in sorted(distribution.items(), key=lambda item: item[0].casefold())
+    )
+    return (
+        f"{prefix}{len(records)} fetched official records. "
+        f"Status distribution in the fetched records: {distribution_text}. "
+        f"Showing a sample of 8 of {len(records)} fetched records: " + "; ".join(parts)
+    )
+
+
+def _ordinal_record(records: Sequence[LiveResult], rank: str) -> str:
+    incidents = [item for item in records if item.kind == LiveResultKind.INCIDENT] or list(
+        records
+    )
+    index = _ORDINAL_RANK[rank.casefold()]
+    if index >= len(incidents):
+        return (
+            "Select a mapped official record before asking about that position in the "
+            "list. FireLens will not substitute a different nearby record."
+        )
+    chosen = incidents[index]
+    distance = (
+        f" It is {chosen.distance_km:g} km geodesic from the stated community."
+        if chosen.distance_km is not None
+        else ""
+    )
+    return (
+        f"{official_display_name(chosen)} is the {rank.casefold()} official incident "
+        f"in this lookup, status {chosen.status}.{distance}"
+    )
 
 
 def replace_ungrounded_live_hedge(answer: str, replacement: str) -> str:
@@ -474,18 +552,26 @@ def _two_largest(records: Sequence[LiveResult]) -> str:
 
 
 def _closest(request: QueryRequest, records: Sequence[LiveResult]) -> str:
-    pool = list(records)
-    if "perimeter" in request.question.casefold():
-        pool = [item for item in records if item.kind == LiveResultKind.PERIMETER] or pool
-    locatable = [item for item in pool if item.distance_km is not None]
-    if not locatable:
+    chosen = closest_locatable_result(request.question, records)
+    if chosen is None:
         return (
             "The official records do not include locatable geometry for a closest-fire answer."
         )
-    chosen = min(locatable, key=lambda item: item.distance_km or 0.0)
     basis = (
         "incident point" if chosen.distance_basis == "incident_point" else "perimeter boundary"
     )
+    if _SIZE_ASK.search(request.question):
+        size = (
+            f"The official area is {chosen.size_hectares:g} hectares."
+            if chosen.size_hectares is not None
+            else "The official record does not report an area."
+        )
+        return (
+            f"{official_display_name(chosen)} is the closest official record among "
+            f"fetched locatable records, {chosen.distance_km:g} km geodesic measured "
+            f"to the official {basis}. {size} This is not driving distance or a safety "
+            "assessment."
+        )
     return (
         f"{official_display_name(chosen)} is the closest official record among "
         f"fetched locatable records, {chosen.distance_km:g} km geodesic measured "

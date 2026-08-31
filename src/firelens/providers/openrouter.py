@@ -14,28 +14,29 @@ from pydantic import ValidationError
 from firelens.agent.chat import ChatTurn
 from firelens.config import FireLensConfig
 from firelens.contracts import (
-    DocumentContextDraft,
     DocumentContextResponse,
     EmbeddingResponse,
     GenerationResponse,
-    PlanningDecision,
     PlanningResponse,
     RerankResponse,
     RerankResult,
 )
 from firelens.errors import ProviderError, ProviderErrorKind
-from firelens.privacy_policy import ZdrPreflightReport, evaluate_zdr_preflight
+from firelens.privacy_policy import ZdrPreflightReport
+from firelens.providers import (
+    openrouter_generation,
+    openrouter_operations,
+    openrouter_productbench,
+    openrouter_zdr,
+)
 from firelens.providers.openrouter_support import (
     CHAT_STAGES,
     PROVIDER_STAGES,
     CircuitState,
     ProviderStage,
     StagePressureState,
-    locally_type_draft,
     model_identity_matches,
     parse_chat_turn,
-    strict_wire_schema,
-    wire_draft_schema,
 )
 from firelens.providers.openrouter_support import (
     retry_after_seconds as parse_retry_after_seconds,
@@ -48,6 +49,7 @@ class OpenRouterProvider:
         config: FireLensConfig,
         *,
         client: httpx.AsyncClient | None = None,
+        capture_productbench_receipts: bool = False,
     ) -> None:
         if config.provider_adaptive_min_concurrency > config.provider_max_concurrency:
             raise ValueError("provider adaptive minimum cannot exceed maximum concurrency")
@@ -61,6 +63,9 @@ class OpenRouterProvider:
             stage: StagePressureState(limit=config.provider_max_concurrency)
             for stage in PROVIDER_STAGES
         }
+        self._productbench_receipts: list[dict[str, object]] | None = (
+            [] if capture_productbench_receipts else None
+        )
 
     async def aclose(self) -> None:
         """Close only the client created by this provider."""
@@ -68,22 +73,51 @@ class OpenRouterProvider:
         if self._owns_client:
             await self._client.aclose()
 
-    def _headers(self) -> dict[str, str]:
-        if self.config.openrouter_api_key is None:
+    @staticmethod
+    def _headers_for_config(config: FireLensConfig) -> dict[str, str]:
+        if config.openrouter_api_key is None:
             raise ProviderError(
                 ProviderErrorKind.AUTHENTICATION,
                 "OpenRouter API key is not configured.",
                 status_code=401,
             )
         return {
-            "Authorization": (f"Bearer {self.config.openrouter_api_key.get_secret_value()}"),
+            "Authorization": (f"Bearer {config.openrouter_api_key.get_secret_value()}"),
             "Content-Type": "application/json",
             "HTTP-Referer": "https://firelens.local",
             "X-Title": "FireLens BC",
         }
 
+    def _headers(self) -> dict[str, str]:
+        return self._headers_for_config(self.config)
+
+    @classmethod
+    async def require_productbench_key_cap(
+        cls,
+        config: FireLensConfig,
+        *,
+        max_cost_usd: float,
+        client: httpx.AsyncClient | None = None,
+    ) -> dict[str, object]:
+        owns_client = client is None
+        current_client = client or httpx.AsyncClient(timeout=config.request_timeout_seconds)
+        try:
+            return await openrouter_productbench.require_productbench_key_cap(
+                client=current_client,
+                base_url=config.openrouter_base_url,
+                headers=cls._headers_for_config(config),
+                max_cost_usd=max_cost_usd,
+            )
+        finally:
+            if owns_client:
+                await current_client.aclose()
+
+    def productbench_receipts(self) -> list[dict[str, object]] | None:
+        receipts = self._productbench_receipts
+        return None if receipts is None else [dict(receipt) for receipt in receipts]
+
     def _generation_model_id(self) -> str:
-        return self.config.generation_model.split(":", maxsplit=1)[0]
+        return openrouter_generation.model_id(self.config)
 
     def _provider_preferences(self, stage: ProviderStage) -> dict[str, Any]:
         """Return stage privacy prefs, omitting Luna chat `require_parameters`.
@@ -100,112 +134,26 @@ class OpenRouterProvider:
         return preferences
 
     def _generation_sampling_parameters(self) -> dict[str, float]:
-        """Return only sampling parameters supported by the configured model."""
-
-        if self._generation_model_id() == "openai/gpt-5.6-luna":
-            return {}
-        return {"temperature": self.config.generation_temperature}
+        return openrouter_generation.sampling_parameters(self.config)
 
     def _generation_output_schema(self, output_schema: dict[str, Any]) -> dict[str, Any]:
-        if self._generation_model_id() == "openai/gpt-5.6-luna":
-            return strict_wire_schema(output_schema)
-        return output_schema
+        return openrouter_generation.output_schema(self.config, output_schema)
 
     async def preflight_zdr_models(self) -> tuple[str, ...]:
-        """Fail closed unless every ZDR-required model has a current ZDR endpoint.
+        """Fail closed unless every ZDR-required model has an eligible endpoint."""
 
-        OpenRouter documents ``GET /endpoints/zdr`` as the programmatic endpoint
-        roster affected by the caller's account, key, and guardrails. The check
-        complements request-level ``provider.zdr=true``; it does not replace it.
-        Optional stages are classified but do not block production.
-        """
-
-        await self.preflight_zdr()
-        required: list[str] = []
-        if self.config.privacy.embedding_zdr == "required":
-            required.append(self.config.embedding_model)
-        if self.config.privacy.reranking_zdr == "required":
-            required.append(self.config.rerank_model)
-        if self.config.privacy.generation_zdr == "required":
-            required.append(self.config.generation_model)
-        return tuple(required)
+        return await openrouter_zdr.required_models(
+            config=self.config, client=self._client, headers=self._headers()
+        )
 
     async def preflight_zdr(self) -> ZdrPreflightReport:
-        """Return the stage report or raise if a required stage is ineligible."""
-
-        if not self.config.privacy.any_zdr_required:
-            raise ProviderError(
-                ProviderErrorKind.INVALID_REQUEST,
-                "OpenRouter ZDR preflight requires a ZDR-required stage.",
-            )
-        try:
-            response = await self._client.get(
-                f"{self.config.openrouter_base_url}/endpoints/zdr",
-                headers=self._headers(),
-            )
-        except httpx.TimeoutException as exc:
-            raise ProviderError(
-                ProviderErrorKind.TIMEOUT,
-                "OpenRouter ZDR endpoint preflight timed out.",
-                retryable=True,
-            ) from exc
-        except httpx.HTTPError as exc:
-            raise ProviderError(
-                ProviderErrorKind.UNAVAILABLE,
-                "OpenRouter ZDR endpoint preflight was unavailable.",
-                retryable=True,
-            ) from exc
-        if response.status_code == 401:
-            raise ProviderError(
-                ProviderErrorKind.AUTHENTICATION,
-                "OpenRouter rejected the ZDR endpoint preflight credentials.",
-                status_code=401,
-            )
-        if response.status_code >= 400:
-            raise ProviderError(
-                ProviderErrorKind.UNAVAILABLE,
-                "OpenRouter could not verify the ZDR endpoint roster.",
-                status_code=response.status_code,
-                retryable=response.status_code >= 500,
-            )
-        try:
-            payload = response.json()
-        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-            raise ProviderError(
-                ProviderErrorKind.INVALID_RESPONSE,
-                "OpenRouter returned an invalid ZDR endpoint roster.",
-            ) from exc
-        if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
-            raise ProviderError(
-                ProviderErrorKind.INVALID_RESPONSE,
-                "OpenRouter returned an invalid ZDR endpoint roster.",
-            )
-        eligible_models = {
-            endpoint.get("model_id")
-            for endpoint in payload["data"]
-            if isinstance(endpoint, dict) and isinstance(endpoint.get("model_id"), str)
-        }
-        report = evaluate_zdr_preflight(
-            self.config.privacy,
-            embedding_model=self.config.embedding_model,
-            rerank_model=self.config.rerank_model,
-            generation_model=self.config.generation_model,
-            eligible_models={model for model in eligible_models if isinstance(model, str)},
+        return await openrouter_zdr.preflight(
+            config=self.config, client=self._client, headers=self._headers()
         )
-        if report.missing_required_models:
-            error = ProviderError(
-                ProviderErrorKind.MODEL_UNAVAILABLE,
-                "One or more required stages have no eligible OpenRouter ZDR endpoint.",
-                zdr_report=report,
-            )
-            raise error
-        return report
 
     def operational_state(
         self,
     ) -> Literal["configured_unprobed", "available", "degraded", "circuit_open"]:
-        """Return a content-free local provider state for readiness diagnostics."""
-
         now = monotonic()
         states = tuple(self._circuits.values())
         if any(state.open_until_monotonic > now for state in states):
@@ -309,8 +257,6 @@ class OpenRouterProvider:
             pressure.condition.notify_all()
 
     def backpressure_limits(self) -> dict[str, int]:
-        """Return content-free local limits for diagnostics and verification."""
-
         return {stage: state.limit for stage, state in self._stage_pressure.items()}
 
     async def _record_stage_failure(
@@ -452,6 +398,15 @@ class OpenRouterProvider:
         for attempt in range(1, self.config.provider_max_attempts + 1):
             try:
                 body = await self._post_attempt(stage, endpoint, payload)
+                if self._productbench_receipts is not None:
+                    self._productbench_receipts.append(
+                        openrouter_productbench.receipt(
+                            stage=stage,
+                            endpoint=endpoint,
+                            body=body,
+                            attempts=attempt,
+                        )
+                    )
                 return body, attempt
             except ProviderError as exc:
                 last_error = exc
@@ -615,46 +570,14 @@ class OpenRouterProvider:
         max_tokens: int,
         stage: ProviderStage,
     ) -> tuple[dict[str, Any], str, dict[str, Any], int]:
-        body, attempts = await self._post(
-            stage,
-            "chat/completions",
-            {
-                "model": self.config.generation_model,
-                "messages": list(messages),
-                "stream": False,
-                "max_tokens": max_tokens,
-                **self._generation_sampling_parameters(),
-                "provider": self._provider_preferences(stage),
-                "response_format": {
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": schema_name,
-                        "strict": True,
-                        "schema": self._generation_output_schema(output_schema),
-                    },
-                },
-            },
+        return await openrouter_operations.chat_json(
+            self,
+            messages,
+            output_schema=output_schema,
+            schema_name=schema_name,
+            max_tokens=max_tokens,
+            stage=stage,
         )
-        try:
-            if not model_identity_matches(self.config.generation_model, body.get("model")):
-                raise ValueError("generation model mismatch")
-            content = body["choices"][0]["message"]["content"]
-            payload = json.loads(content) if isinstance(content, str) else content
-            if not isinstance(payload, dict):
-                raise ValueError("structured response is not an object")
-            return (
-                payload,
-                str(body.get("model", self.config.generation_model)),
-                body.get("usage") or {},
-                attempts,
-            )
-        except (IndexError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
-            error = ProviderError(
-                ProviderErrorKind.INVALID_RESPONSE,
-                "OpenRouter returned invalid structured JSON.",
-            )
-            await self._record_stage_failure(stage, error)
-            raise error from exc
 
     async def plan(
         self,
@@ -662,27 +585,7 @@ class OpenRouterProvider:
         *,
         output_schema: dict[str, Any],
     ) -> PlanningResponse:
-        payload, model, usage, attempts = await self._chat_json(
-            messages,
-            output_schema=output_schema,
-            schema_name="firelens_query_plan",
-            max_tokens=500,
-            stage="planning",
-        )
-        try:
-            decision = PlanningDecision.model_validate(payload)
-        except ValidationError as exc:
-            error = ProviderError(
-                ProviderErrorKind.INVALID_RESPONSE,
-                "OpenRouter returned an invalid structured plan.",
-            )
-            await self._record_stage_failure("planning", error)
-            raise error from exc
-        response = PlanningResponse(
-            model=model, decision=decision, usage=usage, attempts=attempts
-        )
-        await self._record_stage_success("planning")
-        return response
+        return await openrouter_operations.plan(self, messages, output_schema=output_schema)
 
     async def generate_contexts(
         self,
@@ -690,27 +593,9 @@ class OpenRouterProvider:
         *,
         output_schema: dict[str, Any],
     ) -> DocumentContextResponse:
-        payload, model, usage, attempts = await self._chat_json(
-            messages,
-            output_schema=output_schema,
-            schema_name="firelens_document_context",
-            max_tokens=1_800,
-            stage="context_generation",
+        return await openrouter_operations.generate_contexts(
+            self, messages, output_schema=output_schema
         )
-        try:
-            draft = DocumentContextDraft.model_validate(payload)
-        except ValidationError as exc:
-            error = ProviderError(
-                ProviderErrorKind.INVALID_RESPONSE,
-                "OpenRouter returned invalid document contexts.",
-            )
-            await self._record_stage_failure("context_generation", error)
-            raise error from exc
-        response = DocumentContextResponse(
-            model=model, draft=draft, usage=usage, attempts=attempts
-        )
-        await self._record_stage_success("context_generation")
-        return response
 
     async def generate_grounded(
         self,
@@ -718,25 +603,9 @@ class OpenRouterProvider:
         *,
         output_schema: dict[str, Any],
     ) -> GenerationResponse:
-        payload, model, usage, attempts = await self._chat_json(
-            messages,
-            output_schema=wire_draft_schema(output_schema),
-            schema_name="firelens_grounded_answer",
-            max_tokens=1_200,
-            stage="grounded_generation",
+        return await openrouter_operations.generate_grounded(
+            self, messages, output_schema=output_schema
         )
-        try:
-            draft = locally_type_draft(payload, answer_type="grounded")
-        except (ValidationError, ValueError) as exc:
-            error = ProviderError(
-                ProviderErrorKind.INVALID_RESPONSE,
-                "OpenRouter returned an invalid grounded answer.",
-            )
-            await self._record_stage_failure("grounded_generation", error)
-            raise error from exc
-        response = GenerationResponse(model=model, draft=draft, usage=usage, attempts=attempts)
-        await self._record_stage_success("grounded_generation")
-        return response
 
     async def generate_background(
         self,
@@ -744,25 +613,9 @@ class OpenRouterProvider:
         *,
         output_schema: dict[str, Any],
     ) -> GenerationResponse:
-        payload, model, usage, attempts = await self._chat_json(
-            messages,
-            output_schema=wire_draft_schema(output_schema),
-            schema_name="firelens_background_answer",
-            max_tokens=500,
-            stage="background_generation",
+        return await openrouter_operations.generate_background(
+            self, messages, output_schema=output_schema
         )
-        try:
-            draft = locally_type_draft(payload, answer_type="background")
-        except (ValidationError, ValueError) as exc:
-            error = ProviderError(
-                ProviderErrorKind.INVALID_RESPONSE,
-                "OpenRouter returned an invalid background answer.",
-            )
-            await self._record_stage_failure("background_generation", error)
-            raise error from exc
-        response = GenerationResponse(model=model, draft=draft, usage=usage, attempts=attempts)
-        await self._record_stage_success("background_generation")
-        return response
 
     async def chat_turn(
         self,

@@ -11,35 +11,53 @@ import {
 
 const INITIAL_LIST_LIMIT = 12;
 
-function RecordRow({
+export function RecordRow({
   result,
   selectedResultId,
   onSelectResult,
+  variant = "map",
 }: {
   result: LiveResult;
   selectedResultId?: string | undefined;
   onSelectResult?: ((resultId: string) => void) | undefined;
+  variant?: "map" | "analysis";
 }) {
   const displayName = resultDisplayName(result);
   const status = resultStatus(result);
   const sourceLabel = sourceLinkLabel(result);
+  const distance = result.distance_km != null
+    ? `${result.distance_km.toFixed(1)} km`
+    : undefined;
   return (
-    <li className={result.result_id === selectedResultId ? "live-list__selected" : ""}>
-      <span className={`live-dot live-dot--${result.kind}`} aria-hidden="true" />
-      <button
-        type="button"
-        className="live-list__select"
-        onClick={() => onSelectResult?.(result.result_id)}
-        aria-label={`${displayName} ${status} ${resultKindLabel(result.kind)}, source updated ${formatTimestamp(result.source_updated_at)}`}
-      >
-        <strong>{displayName}</strong>
-        <small>{status} · {result.freshness} · {result.authority}</small>
-        <small>Source updated {formatTimestamp(result.source_updated_at)}</small>
-        <small>Retrieved {formatTimestamp(result.retrieved_at)}</small>
-        {result.distance_km != null && (
-          <small>{result.distance_km.toFixed(1)} km · {result.distance_basis?.replaceAll("_", " ")}</small>
+    <li className={`${result.result_id === selectedResultId ? "live-list__selected " : ""}${variant === "analysis" ? "analysis-records__item" : ""}`}>
+      {variant === "map" && <span className={`live-dot live-dot--${result.kind}`} aria-hidden="true" />}
+      <div className={variant === "analysis" ? "analysis-records__body" : "live-list__body"}>
+        {variant === "analysis" ? (
+          <div className="analysis-records__select">
+            <strong>{displayName}</strong>
+            <small>{status}{distance ? ` · ${distance}` : ""}</small>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="live-list__select"
+            onClick={() => onSelectResult?.(result.result_id)}
+            aria-label={`${displayName} ${status} ${resultKindLabel(result.kind)}, source updated ${formatTimestamp(result.source_updated_at)}, retrieved ${formatTimestamp(result.retrieved_at)}`}
+          >
+            <strong>{displayName}</strong>
+            <small>{status}{distance ? ` · ${distance}` : ""}</small>
+          </button>
         )}
-      </button>
+        <details className={variant === "analysis" ? "analysis-records__details" : "live-list__details"}>
+          <summary>Record details</summary>
+          <small>{result.freshness} · {result.issuer ?? result.authority}</small>
+          <small>Source updated {formatTimestamp(result.source_updated_at)}</small>
+          <small>Retrieved {formatTimestamp(result.retrieved_at)}</small>
+          {result.distance_basis && <small>{result.distance_basis.replaceAll("_", " ")}</small>}
+          {result.size_hectares != null && <small>Size {result.size_hectares.toLocaleString()} hectares</small>}
+          {result.fire_zone && <small>Fire zone {result.fire_zone}</small>}
+        </details>
+      </div>
       <a
         href={result.source_url}
         target="_blank"

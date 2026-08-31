@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from urllib.parse import urlparse
 
 from pydantic import HttpUrl
@@ -31,6 +32,15 @@ from firelens.publication_contracts import (
     PublicationKind,
 )
 
+# A table-extraction artifact in the admitted PreparedBC PDF interleaves the
+# three mutually exclusive evacuation stages on one line.  It remains an exact
+# source substring, but is not one atomic proposition a person can safely use.
+# Keep this deliberately narrow: this is not a general OCR-quality heuristic.
+_EVACUATION_STAGE_HEADING = re.compile(
+    r"\bevacuation\s+(alert|order|rescind)\s*:",
+    re.IGNORECASE,
+)
+
 OFFICIAL_SOURCE_URL = (
     "https://www2.gov.bc.ca/gov/content/safety/emergency-preparedness-response-recovery"
 )
@@ -40,6 +50,51 @@ UNCOVERED_LIMITATION = (
     "FireLens is showing official wording or a handoff, not an interpreted claim."
 )
 MISSING_ASPECT_LIMITATION_PREFIX = "Not supported by selected evidence: "
+
+
+def is_atomic_official_quote_only(quote: str, *, source_text: str | None = None) -> bool:
+    """Return whether an exact quote can stand alone as one safety proposition.
+
+    Reviewed structured records may intentionally compare stages.  Quote-only
+    publication has no such typed interpretation layer, so a span that embeds
+    two or more headed evacuation stages is omitted rather than rewritten.
+    """
+
+    stages = {match.group(1).casefold() for match in _EVACUATION_STAGE_HEADING.finditer(quote)}
+    if len(stages) > 1:
+        return False
+    return source_text is None or _has_safe_source_boundaries(quote, source_text)
+
+
+def _has_safe_source_boundaries(quote: str, source_text: str) -> bool:
+    """Reject exact substrings that start or end inside a semantic unit."""
+
+    start = source_text.find(quote)
+    if start < 0:
+        return False
+    end = start + len(quote)
+    before = source_text[:start]
+    after = source_text[end:]
+    previous = before.rstrip()
+    following = after.lstrip()
+    starts_list_item = bool(re.match(r"^[•¢*\-]\s+\S", quote.lstrip()))
+    start_is_boundary = (
+        not previous
+        or previous.endswith((".", "!", "?", ":"))
+        or before.endswith("\n\n")
+        or starts_list_item
+        and before.endswith("\n")
+    )
+    ends_sentence = quote.rstrip().endswith((".", "!", "?"))
+    next_is_list_item = bool(re.match(r"^[•¢*\-]\s+\S", following))
+    end_is_boundary = (
+        not following
+        or ends_sentence
+        or after.startswith("\n\n")
+        or next_is_list_item
+        and after.startswith("\n")
+    )
+    return start_is_boundary and end_is_boundary
 
 
 def explanation_authority() -> PublicationAuthority:

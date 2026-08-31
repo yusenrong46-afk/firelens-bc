@@ -15,7 +15,6 @@ from firelens.errors import (
     ProviderError,
     ProviderStageUnavailable,
     ReviewedRetrievalUnavailable,
-    ToolInputError,
     UnexpectedProgrammingError,
 )
 from firelens.live import LiveDataUnavailable
@@ -29,7 +28,6 @@ EXPECTED_TOOL_FAILURES = (
     IndexValidationError,
     CorpusValidationError,
     TimeoutError,
-    ValueError,
 )
 
 
@@ -44,8 +42,6 @@ def classify_failure(exc: BaseException) -> FireLensDomainError:
         return ReviewedRetrievalUnavailable()
     if isinstance(exc, TimeoutError):
         return DeadlineExhausted()
-    if isinstance(exc, (TypeError, ValueError, KeyError)):
-        return ToolInputError()
     return UnexpectedProgrammingError()
 
 

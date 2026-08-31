@@ -1,0 +1,34 @@
+{
+  "schema_version": "firelens.productbench_manifest.v2",
+  "catalog_id": "productbench_journeys_50",
+  "raw_catalog_path": "data/evaluation/productbench_journeys_50.json",
+  "raw_catalog_schema": "firelens.productbench_journeys.v1",
+  "raw_catalog_sha256": "916596abd6eafeb568149415cb8aa5e018172909b19c8102b14b53d9edca5759",
+  "executable_catalog_schema": "firelens.productbench_executable_catalog.v2",
+  "executable_catalog_sha256": "3a522a9a086c39b2ef69a3429d886b7550e4c2e99921d9009e45d2b7a99d90db",
+  "case_count": 50,
+  "case_ids": [
+    "PB-01", "PB-02", "PB-03", "PB-04", "PB-05", "PB-06", "PB-07", "PB-08", "PB-09", "PB-10",
+    "PB-11", "PB-12", "PB-13", "PB-14", "PB-15", "PB-16", "PB-17", "PB-18", "PB-19", "PB-20",
+    "PB-21", "PB-22", "PB-23", "PB-24", "PB-25", "PB-26", "PB-27", "PB-28", "PB-29", "PB-30",
+    "PB-31", "PB-32", "PB-33", "PB-34", "PB-35", "PB-36", "PB-37", "PB-38", "PB-39", "PB-40",
+    "PB-41", "PB-42", "PB-43", "PB-44", "PB-45", "PB-46", "PB-47", "PB-48", "PB-49", "PB-50"
+  ],
+  "tiers": {
+    "offline_fake": [
+      "PB-04", "PB-05", "PB-07", "PB-08", "PB-10", "PB-11", "PB-13", "PB-14", "PB-15", "PB-16",
+      "PB-17", "PB-18", "PB-19", "PB-20", "PB-21", "PB-25", "PB-26", "PB-27", "PB-28", "PB-29",
+      "PB-33", "PB-34", "PB-35", "PB-36", "PB-37", "PB-38", "PB-39", "PB-44", "PB-46", "PB-48", "PB-49"
+    ],
+    "provider_manual": [
+      "PB-01", "PB-02", "PB-03", "PB-06", "PB-09", "PB-12", "PB-22", "PB-23", "PB-24", "PB-30",
+      "PB-31", "PB-32", "PB-40", "PB-41", "PB-42", "PB-43", "PB-45", "PB-47", "PB-50"
+    ]
+  },
+  "status": "development_unsealed",
+  "catalog_binding": "current_unsealed_catalog_snapshot",
+  "prior_immutability_proven": false,
+  "qualification_role": "not_sealed_not_release_proof",
+  "contract_sha256": "48a38e8545d2802a21da472e200de3e30f0256aa69486987a5a1cdfed119d953",
+  "provider_calls_in_catalog_build": 0
+}

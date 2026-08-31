@@ -27,7 +27,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-      - name: Ensure functional parent is an ancestor of HEAD
+      - name: Ensure V1.6.2 patch base is an ancestor of HEAD
         run: |
           python3 - <<'PY'
           import json
@@ -38,29 +38,29 @@ jobs:
               return subprocess.check_output(["git", *args], text=True).strip()
 
           manifest = json.loads(
-              Path("config/firelens.v1_6_release_promotion.v1.json").read_text()
+              Path("config/firelens.v1_6_2_patch_promotion.v1.json").read_text()
           )
-          parent = manifest["functional_parent_commit"]
+          base = manifest["base_commit"]
           head = git("rev-parse", "HEAD")
           print("HEAD", head)
-          print("F", parent)
+          print("BASE", base)
           print("git-dir", git("rev-parse", "--git-dir"))
           print("shallow", git("rev-parse", "--is-shallow-repository"))
           print("log", git("log", "--oneline", "-8"))
-          leftover = git("rev-list", "--max-count=3", parent, "--not", head)
+          leftover = git("rev-list", "--max-count=3", base, "--not", head)
           print("leftover", leftover or "<empty>")
           if leftover:
               subprocess.run(["git", "fetch", "--unshallow"], check=False)
               subprocess.run(
-                  ["git", "fetch", "origin", parent, "main"],
+                  ["git", "fetch", "origin", base, "main"],
                   check=False,
               )
-              leftover = git("rev-list", "--max-count=3", parent, "--not", head)
+              leftover = git("rev-list", "--max-count=3", base, "--not", head)
               print("leftover-after-fetch", leftover or "<empty>")
           if leftover:
-              raise SystemExit("functional parent is not an ancestor of HEAD")
+              raise SystemExit("V1.6.2 patch base is not an ancestor of HEAD")
           PY
-      - name: Capture exact clean starting identity
+      - name: Resolve exact clean candidate identity
         run: |
           observed_commit="$(git rev-parse HEAD)"
           test "$observed_commit" = "$CANDIDATE_SHA"
@@ -68,24 +68,6 @@ jobs:
           test -z "$(git status --porcelain --untracked-files=all)"
           export CANDIDATE_TREE="$candidate_tree"
           echo "CANDIDATE_TREE=$candidate_tree" >> "$GITHUB_ENV"
-          mkdir -p candidate-inputs
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          payload = {
-              "schema_version": "firelens.checkout_state.v1",
-              "commit": os.environ["CANDIDATE_SHA"],
-              "tree": os.environ["CANDIDATE_TREE"],
-              "clean": True,
-              "status_porcelain": "",
-          }
-          Path("candidate-inputs/checkout-state.json").write_text(
-              json.dumps(payload, indent=2, sort_keys=True) + "\n",
-              encoding="utf-8",
-          )
-          PY
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
@@ -106,6 +88,35 @@ jobs:
           .venv/bin/python -m pip install --disable-pip-version-check pip-audit==2.9.0
           npm --prefix apps/web ci
           npx --prefix apps/web playwright install --with-deps chromium
+      - name: Execute deterministic ProductBench on the clean exact candidate
+        id: productbench
+        run: |
+          set +e
+          make productbench-deterministic
+          status=$?
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Capture exact clean starting identity evidence
+        run: |
+          test -z "$(git status --porcelain --untracked-files=all)"
+          mkdir -p candidate-inputs
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload = {
+              "schema_version": "firelens.checkout_state.v1",
+              "commit": os.environ["CANDIDATE_SHA"],
+              "tree": os.environ["CANDIDATE_TREE"],
+              "clean": True,
+              "status_porcelain": "",
+          }
+          Path("candidate-inputs/checkout-state.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
       - name: Capture versions, workflow identity, and credential absence
         run: |
           .venv/bin/python - <<'PY'
@@ -171,11 +182,15 @@ jobs:
           action_pins=$?
           make verify
           make_verify=$?
+          productbench_deterministic="${{ steps.productbench.outputs.exit_code }}"
+          if test -f output/productbench/offline.json; then
+            cp output/productbench/offline.json candidate-inputs/productbench-deterministic.json
+          fi
           .venv/bin/python scripts/write_runtime_candidate.py \
             --output config/runtime_candidate.v1.json \
             --commit "$CANDIDATE_SHA" \
-            --benchmark-id firelens_v1_6_rc2 \
-            --release-version 1.6.0
+            --benchmark-id firelens_v1_6_2 \
+            --release-version 1.6.2
           runtime_candidate=$?
           npm --prefix apps/web run build
           frontend_build=$?
@@ -206,7 +221,8 @@ jobs:
           fi
           set -e
           export lockfiles action_pins make_verify runtime_candidate frontend_build
-          export structured_publication_eval hard_probe_offline python_audit npm_audit
+          export structured_publication_eval hard_probe_offline productbench_deterministic
+          export python_audit npm_audit
           export dependency_licenses candidate_artifact_scope
           .venv/bin/python - <<'PY'
           import json
@@ -220,7 +236,7 @@ jobs:
               (
                   "runtime_candidate",
                   "scripts/write_runtime_candidate.py --commit $CANDIDATE_SHA "
-                  "--benchmark-id firelens_v1_6_rc2 --release-version 1.6.0",
+                  "--benchmark-id firelens_v1_6_2 --release-version 1.6.2",
               ),
               ("frontend_build", "npm --prefix apps/web run build"),
               (
@@ -232,6 +248,11 @@ jobs:
                   "hard_probe_offline",
                   "scripts/run_hard_probe.py --mode offline --expectation-profile rc2.2 --output "
                   "candidate-inputs/hard-probe.json",
+              ),
+              (
+                  "productbench_deterministic",
+                  "make productbench-deterministic "
+                  "(captures output/productbench/offline.json)",
               ),
               ("python_audit", "pip-audit -r requirements.lock --format json"),
               ("npm_audit", "npm --prefix apps/web audit --json"),
@@ -261,7 +282,7 @@ jobs:
               encoding="utf-8",
           )
           PY
-      - name: Reconfirm promotion ancestry before evidence build
+      - name: Reconfirm V1.6.2 patch ancestry before evidence build
         run: |
           git fetch --unshallow || true
           git fetch origin --prune --no-recurse-submodules \
@@ -274,22 +295,22 @@ jobs:
           def git(*args: str) -> str:
               return subprocess.check_output(["git", *args], text=True).strip()
 
-          parent = json.loads(
-              Path("config/firelens.v1_6_release_promotion.v1.json").read_text()
-          )["functional_parent_commit"]
+          base = json.loads(
+              Path("config/firelens.v1_6_2_patch_promotion.v1.json").read_text()
+          )["base_commit"]
           head = git("rev-parse", "HEAD")
-          leftover = git("rev-list", "--max-count=3", parent, "--not", head)
+          leftover = git("rev-list", "--max-count=3", base, "--not", head)
           print("HEAD", head)
-          print("F", parent)
+          print("BASE", base)
           print("git-dir", git("rev-parse", "--git-dir"))
           print("shallow", git("rev-parse", "--is-shallow-repository"))
           print("leftover", leftover or "<empty>")
           if leftover:
-              subprocess.run(["git", "fetch", "origin", parent, "main"], check=False)
-              leftover = git("rev-list", "--max-count=3", parent, "--not", head)
+              subprocess.run(["git", "fetch", "origin", base, "main"], check=False)
+              leftover = git("rev-list", "--max-count=3", base, "--not", head)
               print("leftover-after-fetch", leftover or "<empty>")
           if leftover:
-              raise SystemExit("functional parent is not an ancestor of HEAD before evidence")
+              raise SystemExit("V1.6.2 patch base is not an ancestor of HEAD before evidence")
           PY
       - name: Build and recompute candidate-evidence v2
         id: candidate
@@ -300,7 +321,7 @@ jobs:
             --output-dir candidate-evidence \
             --commit "$CANDIDATE_SHA" \
             --tree "$CANDIDATE_TREE" \
-            --release-version 1.6.0 \
+            --release-version 1.6.2 \
             --generated-at "$source_date" \
             --builder-id "https://github.com/$GITHUB_REPOSITORY/actions/workflows/candidate.yml" \
             --invocation-id "$GITHUB_RUN_ID:$GITHUB_RUN_ATTEMPT" \
@@ -314,6 +335,7 @@ jobs:
             --workflow-identity candidate-inputs/workflow-identity.json \
             --structured-eval candidate-inputs/structured-publication-eval.json \
             --hard-probe candidate-inputs/hard-probe.json \
+            --productbench-deterministic candidate-inputs/productbench-deterministic.json \
             --limitation "Exact-main qualification remains a separate human-authorized gate." \
             --limitation "Paid H4/H8 evidence is not part of this zero-cost candidate bundle." \
             --limitation "Preview, accessibility, participant review, and release GO remain separate gates."

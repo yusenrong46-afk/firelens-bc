@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from types import MappingProxyType
 from typing import Any, Literal
+from weakref import WeakKeyDictionary
 
 import httpx
 from pydantic import HttpUrl
@@ -92,6 +93,17 @@ FIRE_CENTRE_CODE_NAMES = MappingProxyType(
         5: "Kamloops Fire Centre",
         6: "Southeast Fire Centre",
         7: "Cariboo Fire Centre",
+    }
+)
+
+# A bare locality such as Kamloops must remain a community lookup.  Only the
+# unambiguous Cariboo regional label and explicit BCWS centre labels select the
+# province-roster fire-centre filter.
+_FIRE_CENTRE_QUERY_LABELS = MappingProxyType(
+    {
+        "cariboo": "Cariboo Fire Centre",
+        "cariboo region": "Cariboo Fire Centre",
+        **{name.casefold(): name for name in FIRE_CENTRE_CODE_NAMES.values()},
     }
 )
 
@@ -196,6 +208,24 @@ def fire_centre_label(value: Any) -> str | None:
         if stripped.isdecimal():
             return FIRE_CENTRE_CODE_NAMES.get(int(stripped))
         return stripped
+    return None
+
+
+def official_fire_centre_label(label: str | None) -> str | None:
+    """Return only an unambiguous request for an official BCWS Fire Centre."""
+
+    if not isinstance(label, str) or not label.strip():
+        return None
+    normalized = " ".join(label.casefold().split()).strip(" .,")
+    return _FIRE_CENTRE_QUERY_LABELS.get(normalized)
+
+
+def official_fire_centre_from_question(question: str) -> str | None:
+    """Extract only an explicit, allowlisted BCWS Fire Centre name."""
+    normalized = " ".join(question.casefold().split())
+    for official_label in FIRE_CENTRE_CODE_NAMES.values():
+        if re.search(rf"(?<!\w){re.escape(official_label.casefold())}(?!\w)", normalized):
+            return official_label
     return None
 
 
@@ -352,6 +382,11 @@ _BC_REGION_GAZETTEER = MappingProxyType(
     {
         "okanagan": BcRegionEntry(latitude=49.88, longitude=-119.49, radius_km=150.0),
         "okanagan valley": BcRegionEntry(latitude=49.88, longitude=-119.49, radius_km=150.0),
+        "vancouver island": BcRegionEntry(
+            latitude=49.65,
+            longitude=-125.45,
+            radius_km=250.0,
+        ),
     }
 )
 
@@ -363,6 +398,37 @@ def bc_region_entry(label: str) -> BcRegionEntry | None:
     if requested.startswith("the "):
         requested = requested.removeprefix("the ").strip()
     return _BC_REGION_GAZETTEER.get(requested)
+
+
+def regional_lookup_limitations(
+    location: LocationInput,
+    existing: list[str],
+    *,
+    unknown_located: bool,
+) -> list[str]:
+    """Describe bounded regional geometry without expanding live-service policy."""
+
+    limitations = list(existing)
+    limitation = regional_reference_point_limitation(location)
+    if limitation is not None:
+        limitations.append(limitation)
+    if unknown_located:
+        limitations.append(
+            "Some official records could not be located spatially; check them "
+            "directly with the issuing authority."
+        )
+    return limitations
+
+
+def regional_reference_point_limitation(location: LocationInput) -> str | None:
+    """Describe a colloquial region without claiming an administrative boundary."""
+
+    if location.label and bc_region_entry(location.label) is not None:
+        return (
+            "This regional lookup uses a bounded radius from the named region's "
+            "reference point, not an administrative-boundary filter."
+        )
+    return None
 
 
 def _exact_bc_locality(features: list[object], label: str) -> dict[str, Any] | None:
@@ -400,6 +466,34 @@ def _exact_bc_locality(features: list[object], label: str) -> dict[str, Any] | N
     return None
 
 
+_RESOLVED_LABELS: WeakKeyDictionary[object, dict[str, tuple[float, float]]] = (
+    WeakKeyDictionary()
+)
+_RESOLVED_LABEL_LIMIT = 64
+
+
+def _resolved_label_cache(get: _HttpGet) -> dict[str, tuple[float, float]]:
+    owner = getattr(get, "__self__", get)
+    try:
+        cache = _RESOLVED_LABELS.get(owner)
+        if cache is None:
+            cache = {}
+            _RESOLVED_LABELS[owner] = cache
+        return cache
+    except TypeError:
+        return {}
+
+
+def _remember_resolved_label(
+    cache: dict[str, tuple[float, float]], label: str, coords: tuple[float, float]
+) -> None:
+    if label in cache:
+        return
+    if len(cache) >= _RESOLVED_LABEL_LIMIT:
+        cache.pop(next(iter(cache)))
+    cache[label] = coords
+
+
 async def resolve_bc_location(get: _HttpGet, location: LocationInput) -> tuple[float, float]:
     """Resolve a coarse label to rounded BC coordinates, failing closed."""
 
@@ -407,9 +501,16 @@ async def resolve_bc_location(get: _HttpGet, location: LocationInput) -> tuple[f
         return location.latitude, location.longitude
     if location.label is None:
         raise LiveDataUnavailable("a coarse location is required for a nearby query")
+    label_key = " ".join(location.label.casefold().split())
+    cache = _resolved_label_cache(get)
+    cached = cache.get(label_key)
+    if cached is not None:
+        return cached
     region = bc_region_entry(location.label)
     if region is not None:
-        return round(region.latitude, 2), round(region.longitude, 2)
+        coords = (round(region.latitude, 2), round(region.longitude, 2))
+        _remember_resolved_label(cache, label_key, coords)
+        return coords
     try:
         response = await get(
             BC_GEOCODER_URL,
@@ -482,7 +583,9 @@ async def resolve_bc_location(get: _HttpGet, location: LocationInput) -> tuple[f
             "the official place service returned coordinates outside British Columbia",
             kind=LiveDataErrorKind.INVALID_RESPONSE,
         )
-    return round(latitude, 2), round(longitude, 2)
+    coords = (round(latitude, 2), round(longitude, 2))
+    _remember_resolved_label(cache, label_key, coords)
+    return coords
 
 
 def _geodesic_km(first: tuple[float, float], second: tuple[float, float]) -> float:

@@ -173,6 +173,45 @@ def test_question_relevance_omits_unrelated_packet_claim() -> None:
     assert response.validation is not None and response.validation.accepted
 
 
+def test_sprinkler_action_does_not_publish_adjacent_gas_instruction() -> None:
+    packet = _bound_packet(
+        "Should I turn on my sprinkler system while evacuating?",
+        "TC-SPRINKLER-001",
+        "TC-GAS-001",
+    )
+
+    response = compile_high_risk_answer(
+        packet.question,
+        packet,
+        trace_id="sprinkler-only",
+    )
+
+    assert _typed_ids(response) == {"TC-SPRINKLER-001"}
+    assert "natural gas" not in (response.answer or "").casefold()
+    assert response.validation is not None and response.validation.accepted
+
+
+def test_order_definition_does_not_publish_other_evacuation_stages() -> None:
+    packet = _bound_packet(
+        "What does an evacuation order mean?",
+        "TC-EVAC-ORDER-001",
+        "TC-EVAC-ALERT-001",
+        "TC-EVAC-RESCIND-001",
+    )
+
+    response = compile_high_risk_answer(
+        packet.question,
+        packet,
+        trace_id="order-stage-only",
+    )
+
+    assert _typed_ids(response) == {"TC-EVAC-ORDER-001"}
+    answer = (response.answer or "").casefold()
+    assert "short notice" not in answer
+    assert "return home" not in answer
+    assert response.validation is not None and response.validation.accepted
+
+
 def test_supported_aspects_preserve_real_multi_aspect_coverage() -> None:
     packet = _bound_packet(
         "Explain both topics.",
@@ -221,6 +260,33 @@ def test_quote_only_high_risk_response_is_partial() -> None:
     assert response.validation is not None and response.validation.accepted
     assert response.claims[0].publication is not None
     assert response.claims[0].publication.kind.value == "official_quote_only"
+
+
+def test_sprinkler_question_never_substitutes_an_adjacent_evacuation_quote() -> None:
+    question = "Should I turn on my sprinklers before leaving during an evacuation?"
+    unrelated_evacuation_quote = (
+        "During a Wildfire\n"
+        "FOLLOW INSTRUCTIONS\n"
+        "The most important thing you can do is heed all evacuation alerts\n"
+        "and orders and follow instructions from your band office, municipality,\n"
+        "regional district or local authority. Trust in your preparedness and work\n"
+        "your emergency plan.\n"
+        "Natural gas safety\n"
+        "Do NOT shut off your natural gas when you receive an evacuation order."
+    )
+    packet = _with_quote_sources(
+        EvidencePacket(question=question, corpus_version="sprinkler", items=[]),
+        unrelated_evacuation_quote,
+    )
+
+    response = compile_high_risk_answer(question, packet, trace_id="sprinkler-substitution")
+
+    assert response.response_mode == ResponseMode.SCOPE_REDIRECT
+    assert response.reason_code == ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED
+    assert response.claims == []
+    public = " ".join([response.answer or "", *response.limitations]).casefold()
+    assert "natural gas" not in public
+    assert "follow instructions" not in public
 
 
 def test_population_specific_request_does_not_publish_a_different_group_claim() -> None:
@@ -498,10 +564,9 @@ def test_service_ask_does_not_ground_one_sided_alert_order_comparison(tmp_path: 
         assert response.response_mode != ResponseMode.GROUNDED
         assert "TC-EVAC-ALERT-001" not in _typed_ids(response)
         if response.response_mode == ResponseMode.PARTIAL:
-            assert (
-                "not supported by selected evidence"
-                in " ".join(response.limitations).casefold()
-            )
+            limitations = " ".join(response.limitations).casefold()
+            assert "not supported by selected evidence" in limitations
+            assert "evacuation alert meaning" in limitations
 
     asyncio.run(run())
 

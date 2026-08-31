@@ -1,11 +1,21 @@
 # FireLens V1.6 architecture
 
 Status: current architecture authority for Ask, trust, packaging, and proof UX.
-Date: 2026-08-25
+Date: 2026-08-28
 
-The RC2 label names the current hardening and qualification campaign. The
-public package, runtime, and OpenAPI identity is `1.6.0`; evidence must record
-that actual identity.
+The V1.6.2 branch candidate is committed. Exact current HEAD/tree identity is
+required in the external current candidate-evidence record after execution;
+this architecture document does not embed a self-referential commit identifier
+and does not affirm that matching CI evidence already exists. The tracked
+package, runtime, Docker, and OpenAPI identity is `1.6.2`, but that identity is
+not a deployment or release statement. Exact-Git qualification evidence remains
+separate and incomplete until its required local, CI, independent, paid,
+preview, and human gates are recorded.
+
+The RC1/RC2 standards and their recorded reports remain historical, frozen
+materials. V1.6.2 is a separate patch promotion: it must bind a new exact
+commit/tree and may not rewrite an older standard, hard-probe input, human
+decision, or report to claim patch qualification.
 
 This document replaces the V1.5 technical handbook for runtime Ask behaviour.
 `docs/TECHNICAL_HANDBOOK.md` is historical (2026-07-30). Qualification evidence
@@ -13,11 +23,13 @@ is still separate from architecture.
 
 ## Product boundary
 
-FireLens is an answer-first assistant over reviewed British Columbia wildfire
-preparedness guidance and three official BC live layers (incidents, perimeters,
-fire-related evacuations). The map is offered on demand and opens first only for
-explicit map or geographic-analysis requests. FireLens is not an emergency-warning
-system, evacuation router, medical advisor, or open-web agent.
+FireLens is an answer-first general conversational assistant with specialized
+reviewed British Columbia wildfire guidance and three official BC live layers
+(incidents, perimeters, fire-related evacuations). General background is visibly
+labelled and never upgraded into reviewed or current evidence. The map is
+offered on demand and opens first only for explicit map or geographic-analysis
+requests. FireLens is not an emergency-warning system, evacuation router,
+medical advisor, or open-web agent.
 
 The application builds an immutable `AgentQueryPlan` before evidence work. It
 is the sole authority for a request's tools, live layers, geography, and exact
@@ -59,7 +71,10 @@ reviewed-guidance signals, and location candidates. `AgentQueryPlan` authorizes
 tools from that projection. Downstream modules must not re-parse the question
 with an independent phrase grammar. Current-advice and preparedness-checklist
 clauses stay on the reviewed-guidance lane. A preparedness noun does not let
-static documents answer whether an evacuation order or incident is active.
+static documents answer whether an evacuation order or incident is active. The
+route applies broad interpretation and narrow authority: relevant but ambiguous
+wording receives the smallest useful bounded route; safety-sensitive does not
+mean out of scope, but personal decisions stay outside FireLens authority.
 
 `AgentQueryPlan` is a frozen per-request value. It can authorize only the
 specific fixed tool calls it contains, including normalized arguments. It

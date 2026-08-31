@@ -68,23 +68,10 @@ export function useFireLensSession(): FireLensSession {
   const [view, setView] = useState<ViewState>({ kind: "idle" });
   const [history, setHistory] = useState<ConversationTurn[]>([]);
   const [locationLabel, setLocationLabel] = useState("");
+  const [activeLocation, setActiveLocation] = useState<LocationInput>();
   const [locationMessage, setLocationMessage] = useState("");
   const [selectedLiveResultId, setSelectedLiveResultId] = useState<string>();
-  const [loadingSeconds, setLoadingSeconds] = useState(0);
   const activeRequest = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    if (view.kind !== "loading") {
-      setLoadingSeconds(0);
-      return;
-    }
-    const started = Date.now();
-    const timer = window.setInterval(
-      () => setLoadingSeconds(Math.floor((Date.now() - started) / 1000)),
-      1_000,
-    );
-    return () => window.clearInterval(timer);
-  }, [view]);
 
   const response = view.kind === "answer" || view.kind === "abstention" ? view.response : undefined;
   const mode = response ? getResponseMode(response) : undefined;
@@ -130,10 +117,15 @@ export function useFireLensSession(): FireLensSession {
     setSelected(0);
     setView({ kind: "loading", question: normalized });
     try {
+      const typedLocation = locationLabel.trim()
+        ? { label: locationLabel.trim(), radius_km: 50 }
+        : undefined;
+      const effectiveLocation = locationOverride ?? activeLocation ?? typedLocation;
+      if (effectiveLocation) setActiveLocation(effectiveLocation);
       const context: MapContext = {
-        visible_live_result_ids: mapVisible
-          ? mapView.mapResults.slice(0, 100).map((result) => result.result_id)
-          : [],
+        visible_live_result_ids: (response?.live_results ?? (mapVisible ? mapView.mapResults : []))
+          .slice(0, 100)
+          .map((result) => result.result_id),
       };
       const contextSelected = selectedResultIdForQuestion(
         normalized,
@@ -144,7 +136,7 @@ export function useFireLensSession(): FireLensSession {
       const nextResponse = await askFireLens(
         normalized,
         requestHistory,
-        locationOverride,
+        effectiveLocation,
         controller.signal,
         context,
       );
@@ -208,6 +200,7 @@ export function useFireLensSession(): FireLensSession {
     setHistory([]);
     setSelected(0);
     setLocationLabel("");
+    setActiveLocation(undefined);
     setLocationMessage("");
     setSelectedLiveResultId(undefined);
     setView({ kind: "idle" });
@@ -227,9 +220,11 @@ export function useFireLensSession(): FireLensSession {
           radius_km: 50,
         };
         setLocationLabel("");
-        setLocationMessage("Approximate location ready for this request.");
-        const continuation = response?.required_input?.continuation_question;
-        if (continuation) void submitQuestionWithContext(continuation, location);
+        setActiveLocation(location);
+        setLocationMessage("Approximate location ready for this conversation.");
+        const continuation = response?.required_input?.continuation_question
+          ?? "What official fires are near this location?";
+        void submitQuestionWithContext(continuation, location);
       },
       () => setLocationMessage("Location was not shared. You can enter a BC community name instead."),
       { enableHighAccuracy: false, maximumAge: 300_000, timeout: 8_000 },
@@ -242,6 +237,7 @@ export function useFireLensSession(): FireLensSession {
     const label = locationLabel.trim();
     if (!continuation || !label) return;
     const location: LocationInput = { label, radius_km: 50 };
+    setActiveLocation(location);
     setLocationLabel("");
     void submitQuestionWithContext(continuation, location);
   }
@@ -272,15 +268,11 @@ export function useFireLensSession(): FireLensSession {
     view.kind === "answer" || view.kind === "abstention"
       ? responseText(view.response)
       : view.kind === "loading"
-        ? loadingSeconds >= 20
-          ? "Official sources are responding slowly — FireLens is still working on this request…"
-          : loadingSeconds >= 6
-            ? "Fetching official records and composing a grounded answer — usually a few more seconds…"
-            : "Checking official BC wildfire layers and reviewed guidance…"
+        ? "Preparing your response…"
         : view.kind === "unavailable" || view.kind === "error"
           ? (view.message ?? "FireLens is unavailable.")
           : provinceMap.loading
-            ? "Loading official wildfire layers. You can ask anything while the map gets ready."
+            ? "Loading…"
             : "Ask about a mapped fire, wildfire preparedness, or an everyday question. FireLens labels official sources, reviewed evidence, and general knowledge differently.";
 
   return {
