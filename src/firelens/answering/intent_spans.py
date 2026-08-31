@@ -143,6 +143,11 @@ def _named_place_from_text(text: str) -> str | None:
         candidate = _finalize_place(closest_fire.group("place"))
         if candidate:
             return candidate
+    compact_closest_fire = lex.COMPACT_CLOSEST_FIRE_SCOPE.search(text)
+    if compact_closest_fire is not None:
+        candidate = _finalize_place(compact_closest_fire.group("place"))
+        if candidate:
+            return candidate
     live_records_closest = lex.LIVE_RECORDS_CLOSEST_SCOPE.search(text)
     if live_records_closest is not None:
         candidate = _finalize_place(live_records_closest.group("place"))
@@ -178,6 +183,11 @@ def _named_place_from_text(text: str) -> str | None:
     alerted = lex.UNDER_ALERT_SCOPE.search(text)
     if alerted is not None:
         candidate = _finalize_place(alerted.group("place"))
+        if candidate:
+            return candidate
+    compact_evacuation = lex.COMPACT_EVACUATION_SCOPE.search(text)
+    if compact_evacuation is not None:
+        candidate = _finalize_place(compact_evacuation.group("place"))
         if candidate:
             return candidate
     mapped_focus = lex.MAP_FOCUS_SCOPE.search(text)

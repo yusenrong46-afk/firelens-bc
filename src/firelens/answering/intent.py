@@ -232,6 +232,14 @@ def required_authorities(question: str) -> frozenset[AuthorityClass]:
 
 def _requires_personal_live_location(question: str) -> bool:
     lowered = question.casefold()
+    # A stable smoke/home-preparation request may mention "my home" without
+    # asking FireLens to inspect a live local layer. Keep the execution guard
+    # aligned with the typed parser so guidance reaches reviewed retrieval.
+    if (
+        reviewed_guidance_intent(question)
+        and not parse_request_intent(question).has_live_records
+    ):
+        return False
     if not asks_for_personal_location(question):
         return False
     if re.search(

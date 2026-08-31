@@ -71,9 +71,9 @@ def is_unresolved_smoke_observation(question: str) -> bool:
     """Recognize a visible-smoke observation that asks about a nearby fire cause."""
 
     return bool(
-        _SMOKE_OBSERVATION.search(question)
-        and _NEARBY_FIRE_POSSIBILITY.search(question)
+        _SMOKE_OBSERVATION.search(question) and _NEARBY_FIRE_POSSIBILITY.search(question)
     )
+
 
 _PERSONALIZED_ROUTE_REQUEST = re.compile(
     r"\b(?:safest|best)\s+(?:(?:evacuation|escape)\s+)?"

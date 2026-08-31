@@ -57,7 +57,9 @@ def test_trust_explanation_is_a_zero_provider_capability_response(tmp_path: Path
 def test_capability_transparency_explains_live_records_and_decision_limit(
     tmp_path: Path,
 ) -> None:
-    question = "What can FireLens reliably tell me, and what should I still verify with officials?"
+    question = (
+        "What can FireLens reliably tell me, and what should I still verify with officials?"
+    )
 
     async def run() -> None:
         assert plan_query(QueryRequest(question=question)).route == QueryRoute.CAPABILITY

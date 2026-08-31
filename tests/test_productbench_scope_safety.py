@@ -247,7 +247,9 @@ async def test_refresh_uses_a_new_live_snapshot_without_inventing_a_delta() -> N
     execution = await FireLensAgent(
         cast(Any, static),
         LiveAnswerCoordinator(cast(Any, live)),
-    ).answer(QueryRequest(question="Refresh the wildfire data and tell me whether anything changed."))
+    ).answer(
+        QueryRequest(question="Refresh the wildfire data and tell me whether anything changed.")
+    )
 
     public = " ".join([execution.response.answer or "", *execution.response.limitations])
     assert execution.route == QueryRoute.LIVE
@@ -265,7 +267,9 @@ async def test_unavailable_refresh_never_claims_that_a_snapshot_was_fetched() ->
     execution = await FireLensAgent(
         cast(Any, static),
         LiveAnswerCoordinator(cast(Any, UnavailableLiveService())),
-    ).answer(QueryRequest(question="Refresh the wildfire data and tell me whether anything changed."))
+    ).answer(
+        QueryRequest(question="Refresh the wildfire data and tell me whether anything changed.")
+    )
 
     public = " ".join([execution.response.answer or "", *execution.response.limitations])
     assert execution.response.response_mode == ResponseMode.ABSTENTION

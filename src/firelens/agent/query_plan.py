@@ -18,6 +18,9 @@ from firelens.agent.query_plan_boundaries import (
     evacuation_alert_distance_boundary as _evacuation_alert_distance_boundary,
 )
 from firelens.agent.query_plan_boundaries import (
+    is_personal_travel_or_fuel_decision as _is_personal_travel_or_fuel_decision,
+)
+from firelens.agent.query_plan_boundaries import (
     location_prompt as _location_prompt,
 )
 from firelens.agent.query_plan_boundaries import (
@@ -125,8 +128,8 @@ _VISIBLE_ORDINAL_INDEX = {
 }
 
 # These questions use wildfire language as a metaphor, not as a request for
-# current incident records.  Keep this small and explicit: a generic mention
-# of "market" must not override a genuine current-fire request.
+# current incident records. Keep this small and explicit: a generic mention of
+# "market" must not override a genuine current-fire request.
 _FINANCE_FIRE_METAPHOR = re.compile(
     r"\b(?:stock(?:[-\s]?market)?|share(?:s| price)?|portfolio|trading|investing)\b"
     r".{0,80}\b(?:wildfire|fire)\b|"
@@ -136,24 +139,14 @@ _FINANCE_FIRE_METAPHOR = re.compile(
 )
 
 # A distance-free premise about apparent absence is not evidence that an area
-# is safe.  It is handled before live dispatch so an unsupported all-clear
-# inference cannot turn into an unrelated province-wide roster.
+# is safe. Handle it before live dispatch so an unsupported all-clear inference
+# cannot turn into an unrelated province-wide roster.
 _ABSENCE_ALL_CLEAR_PREMISE = re.compile(
     r"\b(?:no|zero)\s+(?:active\s+)?(?:fires?|wildfires?|incidents?)\b.{0,100}"
     r"\b(?:nothing\s+to\s+worry\s+about|safe|all[-\s]?clear|no\s+(?:risk|danger|threat))\b",
     re.IGNORECASE,
 )
 
-# This recognizes an individual travel/fuel decision in a wildfire context.
-# It deliberately leaves non-personal preparedness questions (for example,
-# "what should a go-bag contain?") to the guidance/background lane.
-_PERSONAL_TRAVEL_OR_FUEL_DECISION = re.compile(
-    r"\b(?:can|could|should|may)\s+(?:i|we)\s+(?:drive|travel|go)\b.{0,120}"
-    r"\b(?:wildfire|fire|evacuat(?:ion|e))\b|"
-    r"\b(?:wildfire|fire|evacuat(?:ion|e))\b.{0,120}"
-    r"\b(?:can|could|should|may)\s+(?:i|we)\s+(?:drive|travel|go)\b",
-    re.IGNORECASE,
-)
 _UNBOUND_RECORD_REFERENCE = re.compile(
     r"\bwhich\s+(?:official\s+)?record\b.{0,80}\b(?:refer(?:ring)?|mean|mentioned)\b",
     re.IGNORECASE,
@@ -323,7 +316,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             scope_result=AgentScopeResult.SCOPE_REDIRECT,
             terminal_response=_evacuation_alert_distance_boundary(),
         )
-    if _PERSONAL_TRAVEL_OR_FUEL_DECISION.search(question):
+    if _is_personal_travel_or_fuel_decision(question):
         return AgentQueryPlan(
             route=QueryRoute.LIVE,
             mode=AgentRequestMode.TERMINAL,
@@ -427,7 +420,9 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     if (
         not layers
         and is_unresolved_smoke_observation(question)
-        and (request.location is not None or coarse_location_from_question(question) is not None)
+        and (
+            request.location is not None or coarse_location_from_question(question) is not None
+        )
     ):
         layers = (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER)
     if (
@@ -479,10 +474,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     if (
         location is None
         and not is_province_wide_question(request.question)
-        and (
-            continues_prior_live_place(request)
-            or is_live_refresh_request(request.question)
-        )
+        and (continues_prior_live_place(request) or is_live_refresh_request(request.question))
     ):
         prior = prior_anchor_user_question(request)
         if prior:

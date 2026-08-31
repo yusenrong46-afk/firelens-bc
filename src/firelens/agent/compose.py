@@ -625,8 +625,6 @@ def _build_ask_response(
             resolved_location=packet.resolved_location,
             limitations=["FireLens did not invent a live feed it does not ingest."],
         )
-    # Terminal branch: nothing grounded this turn. Never publish free model
-    # prose here; the reader gets a deterministic, honest redirect instead.
     if packet.unavailable_layers:
         terminal_answer = (
             "The official live layers needed for this request were unavailable, so "

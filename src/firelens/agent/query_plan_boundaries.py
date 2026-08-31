@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from uuid import uuid4
 
 from firelens.answering.live_handoffs import official_safety_links, related_live_links
@@ -14,6 +15,30 @@ from firelens.contracts import (
     ResponseMode,
     ResponseStatus,
 )
+
+# This recognizes an individual travel/fuel decision in a wildfire context.
+# It deliberately leaves non-personal preparedness questions (for example,
+# "what should a go-bag contain?") to the guidance/background lane. Indirect
+# first-person asks such as "tell me whether I personally should drive" remain
+# personal decisions, rather than general road-status questions.
+_PERSONAL_TRAVEL_OR_FUEL_DECISION = re.compile(
+    r"\b(?:can|could|should|may)\s+(?:i|we)\s+(?:drive|travel|go)\b.{0,120}"
+    r"\b(?:wildfire|fire|evacuat(?:ion|e))\b|"
+    r"\b(?:wildfire|fire|evacuat(?:ion|e))\b.{0,120}"
+    r"\b(?:can|could|should|may)\s+(?:i|we)\s+(?:drive|travel|go)\b|"
+    r"\b(?:whether|if)\b.{0,40}\b(?:i|we|me|us|personally)\b.{0,60}"
+    r"\b(?:should|can|could|may|safe)\b.{0,60}\b(?:drive|travel|go)\b.{0,120}"
+    r"\b(?:wildfire|fire|evacuat(?:ion|e))\b|"
+    r"\b(?:safe)\s+for\s+(?:me|us)\b.{0,60}\b(?:drive|travel|go)\b.{0,120}"
+    r"\b(?:wildfire|fire|evacuat(?:ion|e))\b",
+    re.IGNORECASE,
+)
+
+
+def is_personal_travel_or_fuel_decision(question: str) -> bool:
+    """Return whether a request asks FireLens to make a personal travel decision."""
+
+    return _PERSONAL_TRAVEL_OR_FUEL_DECISION.search(question) is not None
 
 
 def location_prompt(request: QueryRequest, *, unresolved: bool) -> AskResponse:

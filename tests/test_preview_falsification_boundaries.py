@@ -117,7 +117,9 @@ def test_pb076_refresh_reuses_the_prior_live_community_without_widening_scope() 
         ConversationTurn(role="user", content="Show current fires near Kelowna."),
         ConversationTurn(role="assistant", content="Current official information was shown."),
     ]
-    plan = plan_agent_request(QueryRequest(question="Refresh the wildfire data.", history=history))
+    plan = plan_agent_request(
+        QueryRequest(question="Refresh the wildfire data.", history=history)
+    )
 
     assert plan.mode == AgentRequestMode.LIVE
     assert plan.geography == AgentGeography.LOCATION_RADIUS
