@@ -48,29 +48,6 @@ export function preferredContextSurface({
   return "evidence";
 }
 
-/**
- * Spatial and comparison wording belongs to the summary. Only a literal map
- * request may open a multi-record answer on the map.
- */
-export function preferredAnalyticalSurface({
-  mode,
-  question,
-  response,
-}: {
-  mode: ResponseMode | undefined;
-  question: string | undefined;
-  response: AskResponse | undefined;
-}): "summary" | "map" {
-  if (
-    (mode === "live" || mode === "mixed")
-    && hasSpatialLiveResult(response)
-    && questionExplicitlyRequestsMap(question)
-  ) {
-    return "map";
-  }
-  return "summary";
-}
-
 export function shouldUseAnalyticalWorkspace({
   mode,
   response,

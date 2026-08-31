@@ -53,7 +53,7 @@ const StaticGeometry = memo(function StaticGeometry({
       style={style}
       eventHandlers={{ click: () => onSelectResult?.(result.result_id) }}
     >
-      <Popup>
+      <Popup autoPan={false}>
         <MapRecordPopup result={result} onAskAboutResult={onAskAboutResult} />
       </Popup>
     </GeoJSON>

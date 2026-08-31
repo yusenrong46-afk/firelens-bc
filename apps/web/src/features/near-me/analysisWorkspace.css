@@ -54,7 +54,7 @@
   background: transparent;
   border: 0;
   cursor: pointer;
-  font: 500 14px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font: 500 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   text-transform: uppercase;
 }
 
@@ -194,22 +194,17 @@
 .analysis-ranked-table table { width: 100%; border-collapse: collapse; font: 14px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
 .analysis-ranked-table th, .analysis-ranked-table td { padding: 11px 12px; border-top: 1px dotted #c9c2b0; text-align: left; }
 .analysis-ranked-table thead th { color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
-.analysis-insight,
 .analysis-limitations {
   display: flex;
   align-items: center;
   gap: 10px;
   margin: 16px 0 0;
   padding: 11px 14px;
-  border-radius: 8px;
-  font-size: 14px;
-}
-.analysis-insight { color: var(--forest-deep); background: rgba(227, 237, 229, 0.62); border: 1px solid rgba(80, 111, 83, .15); border-radius: 0; }
-.analysis-insight svg { flex: 0 0 auto; }
-.analysis-limitations {
   color: var(--ink-soft);
   background: rgba(246, 237, 222, 0.72);
   border: 1px solid rgba(154, 104, 42, 0.14);
+  border-radius: 8px;
+  font-size: 14px;
 }
 
 .analysis-disclosure {
@@ -227,9 +222,9 @@
   padding: 0 14px;
   cursor: pointer;
 }
-.analysis-disclosure summary span { color: var(--ink-soft); font-size: 14px; }
-.analysis-disclosure > p { margin: 0; padding: 0 16px 12px 48px; color: var(--ink-soft); font-size: 14px; }
-.analysis-disclosure > ul { margin: 0; padding: 0 20px 14px 68px; color: var(--ink-soft); font-size: 14px; }
+.analysis-disclosure summary span { color: var(--ink-soft); font-size: 16px; }
+.analysis-disclosure > p { margin: 0; padding: 0 16px 12px 48px; color: var(--ink-soft); font-size: 16px; }
+.analysis-disclosure > ul { margin: 0; padding: 0 20px 14px 68px; color: var(--ink-soft); font-size: 16px; }
 .analysis-disclosure button {
   min-height: 44px;
   margin: 0 16px 14px 48px;
@@ -257,7 +252,7 @@
   min-height: 44px;
   padding-inline: 11px;
 }
-.analysis-evidence-rail .analysis-disclosure summary span { font-size: 12px; }
+.analysis-evidence-rail .analysis-disclosure summary span { font-size: 16px; }
 
 .analysis-workspace .live-map { margin-top: 16px; }
 .analysis-workspace .leaflet-container { height: min(56vh, 580px); min-height: 400px; }

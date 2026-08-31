@@ -20,8 +20,12 @@ export function revealAssistantMessage(node: HTMLElement | null, active: boolean
     return;
   }
 
-  node.scrollIntoView?.({ block: "start", inline: "nearest" });
-  scroller.scrollTop += node.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+  const previous = node.previousElementSibling;
+  const target = previous instanceof HTMLElement && previous.classList.contains("question-block")
+    ? previous
+    : node;
+  target.scrollIntoView?.({ block: "start", inline: "nearest" });
+  scroller.scrollTop += target.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
 }
 
 export function conversationContextLabel(priorTurnCount: number): string {

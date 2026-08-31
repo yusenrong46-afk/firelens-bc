@@ -15,7 +15,6 @@ import {
 } from "./liveResultPresentation";
 import {
   AnalysisFilters,
-  joinAnalysisLabels,
   RecordsView,
 } from "./analysisWorkspaceParts";
 import "./analysisWorkspace.css";
@@ -42,13 +41,11 @@ export function LiveAnalysisWorkspace({
   session,
   answerIdentity,
   evidenceOpen = false,
-  initialSurface,
   onOpenEvidence,
 }: {
   session: FireLensSession;
   answerIdentity: string;
   evidenceOpen?: boolean;
-  initialSurface: "summary" | "map";
   onOpenEvidence?: (() => void) | undefined;
 }) {
   const results = useMemo(
@@ -56,10 +53,8 @@ export function LiveAnalysisWorkspace({
     [session.response?.live_results],
   );
   const hasUsefulMap = useMemo(() => results.some(isRenderableGeometry), [results]);
-  // Every new analytical answer opens on the compact overview. The map is a
-  // deliberate secondary surface, so a previous question or a map-oriented
-  // request cannot make the first viewport skip the answer and KPI context.
-  void initialSurface;
+  // Every new analytical answer opens on the compact overview. The map remains
+  // a deliberate secondary surface, so the first viewport retains the answer.
   const resolvedInitialSurface: AnalysisSurface = "summary";
   const [surface, setSurface] = useState<AnalysisSurface>(resolvedInitialSurface);
   const [fireCentreFilter, setFireCentreFilter] = useState("");
@@ -173,18 +168,6 @@ export function LiveAnalysisWorkspace({
               total={analysis.total}
             />
           </Suspense>
-          {analysis.highestFireCentre && (
-            <p className="analysis-insight">
-              <ChartBar size={20} aria-hidden="true" />
-              <span><strong>Insight:</strong> {analysis.highestFireCentre.label} has the highest number of incident records in this result.</span>
-            </p>
-          )}
-          {!analysis.highestFireCentre && analysis.highestFireCentres.length > 1 && (
-            <p className="analysis-insight">
-              <ChartBar size={20} aria-hidden="true" />
-              <span><strong>Insight:</strong> {joinAnalysisLabels(analysis.highestFireCentres.map((row) => row.label))} are tied for the highest count in this bounded result, with {analysis.highestFireCentres[0]?.count} each.</span>
-            </p>
-          )}
           </>
         )}
       </div>

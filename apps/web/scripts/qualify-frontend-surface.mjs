@@ -38,6 +38,7 @@ const requiredMapParityStateIds = [
   "no_result",
   "partial_layer",
 ];
+const performanceQuestion = "Show wildfire distribution by status across B.C.";
 
 // Qualification is evidence, not a best-effort background task. A renderer that
 // stops making progress must fail the run rather than leaving a CI worker (and
@@ -321,11 +322,11 @@ export const surfaceStateReadyText = Object.freeze({
   idle: "Ask about a fire, a B.C. place, or preparedness.",
   grounded: "Answer evidence and support",
   partial: "Partially supported",
-  background: "General background",
+  background: "General knowledge",
   requires_input: "One detail needed",
   abstention: "FireLens did not generate guidance",
   provider_failure: "We couldn't complete this question",
-  live: "Official records returned",
+  live: "Analysis view",
   mixed: "Answer evidence and support",
   stale: "Official cached records",
   no_result: "FireLens did not generate guidance",
@@ -630,7 +631,9 @@ function fixtureForQuestion(question) {
       },
     };
   }
-  const body = responseFixtures[question] ?? groundedResponse;
+  const body = question === performanceQuestion
+    ? responseFixtures["surface:live-fresh"]
+    : responseFixtures[question] ?? groundedResponse;
   return { statusCode: 200, body };
 }
 
@@ -641,6 +644,19 @@ async function installDeterministicRoutes(page) {
   let releaseLoading;
   const loadingGate = new Promise((resolve) => {
     releaseLoading = resolve;
+  });
+  await page.route("https://*.tile.openstreetmap.org/**", async (route) => {
+    // Qualification measures the application, not availability of the public
+    // basemap CDN. Keep tile rendering deterministic while retaining the real
+    // request origin in the network evidence roster.
+    await route.fulfill({
+      status: 200,
+      contentType: "image/png",
+      body: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL7WQAAAABJRU5ErkJggg==",
+        "base64",
+      ),
+    });
   });
   await page.route("**/api/v1/live/map*", async (route) => {
     await route.fulfill({
@@ -704,9 +720,16 @@ async function waitForText(page, text) {
 }
 
 async function openOfficialMapContext(page) {
-  await page.getByRole("button", {
+  const disclosure = page.getByRole("button", {
     name: surfaceInteractionContract.map_control_name,
-  }).click();
+  });
+  if (await disclosure.count()) {
+    await disclosure.click();
+  } else {
+    // Multi-record analytical answers expose Map as a workspace tab instead
+    // of duplicating the chat disclosure control.
+    await page.getByRole("tab", { name: "Map", exact: true }).click();
+  }
   await page.getByRole("region", { name: "Official wildfire records map" }).waitFor();
   await page.locator(".leaflet-container").waitFor();
 }
@@ -803,7 +826,7 @@ function recomputeMapDetailIntegrity(mapEvidence, expectedRecords) {
       && detail.canonical_source_url === canonicalHttpUrl(expected.source_url)
       && detail.source_url_observed_in_popup === false
       && detail.geometry_type === expected.geometry?.type
-      && detail.resolution === "unique_popup_name"
+      && ["unique_popup_name", "bound_marker_metadata"].includes(detail.resolution)
     );
   });
   return (
@@ -993,6 +1016,26 @@ async function inspectMapEvidence(page, state, protocol) {
       const element = mapElements.nth(index);
       const initialObservation = initialMarkerObservations[index];
       try {
+        const boundResultId = await element.getAttribute("data-result-id");
+        if (boundResultId) {
+          const expected = expectedRecords.find((record) => record.result_id === boundResultId);
+          const rendered = {
+            dom_index: index,
+            rendered_popup_name: await element.getAttribute("data-record-name"),
+            element_tag: initialObservation?.element_tag ?? await element.evaluate((node) => node.tagName.toLowerCase()),
+            record_id: expected?.result_id ?? null,
+            geometry_type: await element.getAttribute("data-geometry-type"),
+            canonical_source_url: canonicalHttpUrl(await element.getAttribute("data-source-url")),
+            source_url_observed_in_popup: false,
+            observed_visible: initialObservation?.observed_visible ?? false,
+            observed_center_css_px: initialObservation?.observed_center_css_px ?? null,
+            resolution: expected ? "bound_marker_metadata" : "unresolved",
+          };
+          evidence.rendered_map_feature_or_marker_records.push(rendered);
+          if (expected) evidence.rendered_map_feature_or_marker_record_ids.push(expected.result_id);
+          else evidence.unresolved_map_feature_or_marker_entries.push(rendered);
+          continue;
+        }
         await element.evaluate((node) => {
           node.dispatchEvent(new MouseEvent("click", {
             bubbles: true,
@@ -1126,9 +1169,13 @@ async function inspectLayoutAndCss(page, thresholds) {
       // technology. It is explicitly annotated by the component and must
       // retain the screen-reader-only geometry below; ordinary clipped text is
       // still treated as a surface failure.
+      const describedHelp = element.id !== "" && document.querySelector(
+        `[aria-describedby~="${CSS.escape(element.id)}"]`,
+      ) !== null;
+      const semanticHeading = /^(?:H1|H2|H3|H4|H5|H6)$/.test(element.tagName);
       const intentionallyScreenReaderOnly = (
         element.dataset.surfaceVisuallyHidden === "true"
-        && element.getAttribute("role") === "status"
+        && (element.getAttribute("role") === "status" || describedHelp || semanticHeading)
         && style.position === "absolute"
         && rect.width <= 1
         && rect.height <= 1
@@ -1972,11 +2019,11 @@ async function privacyJourney(browser, protocol, baseUrl) {
     await page.getByLabel("Ask FireLens a question").press("Enter");
     await waitForText(page, "One detail needed");
     await page.getByRole("button", { name: "Use approximate location" }).click();
-    await waitForText(page, "Approximate location ready for this request.");
+    await waitForText(page, "Approximate location ready for this conversation.");
     const geolocationAfterOptIn = await page.evaluate(
       () => window.__surfaceGeolocationCalls,
     );
-    await waitForText(page, "Official records returned");
+    await waitForText(page, "Analysis view");
     await page.waitForLoadState("networkidle");
     const browserSurfaces = await inspectPrivacyBrowserSurfaces(
       page,
@@ -2043,7 +2090,7 @@ async function historyJourney(browser, protocol, baseUrl) {
     await input.press("Enter");
     await waitForText(
       page,
-      "This is labelled general background and has no reviewed source support attached.",
+      "General model knowledge · not checked against FireLens sources",
     );
     checks.bounded_history_sent = routes.requestBodies[1]?.history?.length === 2;
     await page.getByLabel("Clear conversation history").click();
@@ -2113,7 +2160,12 @@ export { p75NearestRank };
 
 async function configurePerformancePage(page, protocol) {
   await page.addInitScript(() => {
-    window.__surfaceVitals = { lcp_ms: null, cls: 0, inp_interaction_proxy_ms: null };
+    window.__surfaceVitals = {
+      lcp_ms: null,
+      cls: 0,
+      inp_interaction_proxy_ms: null,
+      layout_shift_entries: [],
+    };
     try {
       new PerformanceObserver((list) => {
         const entries = list.getEntries();
@@ -2126,7 +2178,20 @@ async function configurePerformancePage(page, protocol) {
     try {
       new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          if (!entry.hadRecentInput) window.__surfaceVitals.cls += entry.value;
+          if (entry.hadRecentInput) continue;
+          window.__surfaceVitals.cls += entry.value;
+          if (window.__surfaceVitals.layout_shift_entries.length >= 20) continue;
+          window.__surfaceVitals.layout_shift_entries.push({
+            start_time_ms: entry.startTime,
+            value: entry.value,
+            sources: [...(entry.sources ?? [])].slice(0, 8).map((source) => ({
+              tag: source.node?.tagName?.toLowerCase() ?? null,
+              class_name: source.node?.className || null,
+              text: source.node?.textContent?.trim().slice(0, 120) ?? null,
+              previous_rect: source.previousRect,
+              current_rect: source.currentRect,
+            })),
+          });
         }
       }).observe({ type: "layout-shift", buffered: true });
     } catch {
@@ -2186,9 +2251,9 @@ async function performanceSample(
     await page.waitForTimeout(250);
     const beforeInteraction = await page.evaluate(() => ({ ...window.__surfaceVitals }));
     const input = page.getByLabel("Ask FireLens a question");
-    await input.fill("surface:live-fresh");
+    await input.fill(performanceQuestion);
     await input.press("Enter");
-    await waitForText(page, "Official records returned");
+    await waitForText(page, "Analysis view");
     const interactionStarted = await page.evaluate(() => performance.now());
     await openOfficialMapContext(page);
     await page.locator(".leaflet-interactive").first().waitFor();
@@ -2201,6 +2266,7 @@ async function performanceSample(
     }));
     result.lcp_ms = beforeInteraction.lcp_ms;
     result.cls = afterInteraction.vitals.cls;
+    result.layout_shift_entries = afterInteraction.vitals.layout_shift_entries;
     result.inp_interaction_proxy_ms = afterInteraction.vitals.inp_interaction_proxy_ms;
     result.map_ready_after_interaction_ms = afterInteraction.now - interactionStarted;
     result.status = [

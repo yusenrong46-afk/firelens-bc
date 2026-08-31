@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  preferredAnalyticalSurface,
   preferredContextSurface,
   questionExplicitlyRequestsMap,
   questionRequestsMap,
@@ -79,31 +78,6 @@ describe("task-first workspace presentation", () => {
     expect(preferredContextSurface({ mode: "mixed", question: "Show this on a map" })).toBe("map");
     expect(preferredContextSurface({ mode: "live", question: "Wildfire distribution across B.C." })).toBe("evidence");
     expect(preferredContextSurface({ mode: "mixed", question: "What should I prepare?" })).toBe("evidence");
-  });
-
-  it("opens a multi-record map only for a literal map request", () => {
-    const multiRecordResponse = {
-      ...spatialResponse,
-      live_results: [
-        spatialResponse.live_results[0]!,
-        { ...spatialResponse.live_results[0]!, result_id: "incident:2" },
-      ],
-    };
-    expect(preferredAnalyticalSurface({
-      mode: "live",
-      question: "Map wildfire distribution by status across B.C.",
-      response: multiRecordResponse,
-    })).toBe("map");
-    expect(preferredAnalyticalSurface({
-      mode: "live",
-      question: "Show wildfire distribution by status across B.C.",
-      response: multiRecordResponse,
-    })).toBe("summary");
-    expect(preferredAnalyticalSurface({
-      mode: "live",
-      question: "Where are the most active wildfires?",
-      response: multiRecordResponse,
-    })).toBe("summary");
   });
 
   it("uses the analytical workspace whenever a live answer returns multiple incidents", () => {

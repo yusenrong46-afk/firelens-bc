@@ -1,6 +1,6 @@
-import { ChartBar, WarningCircle } from "@phosphor-icons/react";
+import { WarningCircle } from "@phosphor-icons/react";
 import type { AskResponse } from "../../shared/api/api";
-import { analyticalAnswerSummary, buildLiveAnalysis } from "../near-me/liveAnalysis";
+import { analyticalAnswerSummary } from "../near-me/liveAnalysis";
 import { AnswerMarkdown } from "./AnswerMarkdown";
 import { answerSectionAuthority, getAnswerSections } from "./answerSections";
 import { splitLimitations } from "./limitationsPresentation";
@@ -23,10 +23,13 @@ export function AnswerBody({
   const { material, boilerplate } = splitLimitations(
     Array.from(new Set((response?.limitations ?? []).map((item) => item.trim()).filter(Boolean))),
   );
-  const lead = (
-    analytical ? analyticalAnswerSummary(response?.live_results ?? []) : undefined
-  ) ?? response?.answer?.trim() ?? assistantText;
-  const analysis = analytical ? buildLiveAnalysis(response?.live_results ?? []) : undefined;
+  // The backend answer preserves the requested operation (for example,
+  // freshness comparison, ranked distance, or a bounded radius). The
+  // analytical summary is presentation-only and must never replace that
+  // operation-specific answer merely because multiple records were returned.
+  const lead = response?.answer?.trim()
+    ?? (analytical ? analyticalAnswerSummary(response?.live_results ?? []) : undefined)
+    ?? assistantText;
   const banner = getStatusBanner(response);
   const backgroundMode = response?.response_mode === "background";
   const compactOfficialHandoff = response?.reason_code === "high_risk_claim_not_structured";
@@ -84,17 +87,6 @@ export function AnswerBody({
         <p className="answer-provenance" role="note">
           General model knowledge · not checked against FireLens sources
         </p>
-      )}
-      {analytical && analysis?.highestFireCentre && (
-        <div className="analytical-takeaway" role="note" aria-label="Key takeaway">
-          <ChartBar size={24} aria-hidden="true" />
-          <div>
-            <span className="panel-label">Key takeaway</span>
-            <p>
-              {analysis.highestFireCentre.label.replace(/\s+Fire\s+Centre$/i, "")} has the most incident records in this returned snapshot ({analysis.highestFireCentre.count}).
-            </p>
-          </div>
-        </div>
       )}
       {analytical && banner && <StatusBanner banner={banner} compact />}
       {!analytical

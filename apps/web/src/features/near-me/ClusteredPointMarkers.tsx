@@ -1,9 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { CircleMarker, Popup, useMap } from "react-leaflet";
+import type { LeafletEvent } from "leaflet";
 import type { LiveResult } from "../../shared/api/api";
 import { clusterPointResults, isQuestionMatch } from "./mapClustering";
 import { MapRecordPopup } from "./MapRecordPopup";
 import { resultColour } from "./liveResultPresentation";
+
+function bindRecordMarker(event: LeafletEvent, result: LiveResult) {
+  const target = event.target as { getElement?: () => SVGElement | null };
+  const element = target.getElement?.();
+  if (!element) return;
+  element.classList.add("live-map__record-geometry");
+  element.dataset.resultId = result.result_id;
+  element.dataset.recordName = result.name ?? "";
+  element.dataset.sourceUrl = result.source_url;
+  element.dataset.geometryType = String(result.geometry?.type ?? "");
+}
 
 export function ClusteredPointMarkers({
   matchingResultIds,
@@ -53,7 +65,7 @@ export function ClusteredPointMarkers({
                 fillOpacity: matching ? 0.85 : 0.25,
               }}
             >
-              <Popup>{item.count} official records in this area. Zoom in to inspect each record.</Popup>
+              <Popup autoPan={false}>{item.count} official records in this area. Zoom in to inspect each record.</Popup>
             </CircleMarker>
           );
         }
@@ -63,7 +75,10 @@ export function ClusteredPointMarkers({
             key={item.result.result_id}
             center={[item.latitude, item.longitude]}
             radius={7}
-            eventHandlers={{ click: () => onSelectResult?.(item.result.result_id) }}
+            eventHandlers={{
+              add: (event) => bindRecordMarker(event, item.result),
+              click: () => onSelectResult?.(item.result.result_id),
+            }}
             pathOptions={{
               className: "live-map__record-geometry",
               color: "#fff",
@@ -73,7 +88,7 @@ export function ClusteredPointMarkers({
               fillOpacity: matching ? 1 : 0.25,
             }}
           >
-            <Popup>
+            <Popup autoPan={false}>
               <MapRecordPopup result={item.result} onAskAboutResult={onAskAboutResult} />
             </Popup>
           </CircleMarker>

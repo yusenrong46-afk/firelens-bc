@@ -45,7 +45,11 @@ export function FeedbackControls({ traceId }: { traceId: string }) {
 
   return (
     <div className="feedback-controls" aria-label="Response feedback" aria-busy={status === "sending"}>
-      <span id={feedbackHelpId} className="response-announcement">
+      <span
+        id={feedbackHelpId}
+        className="response-announcement"
+        data-surface-visually-hidden="true"
+      >
         Send anonymous feedback about this answer. Feedback does not change the answer.
       </span>
       <button

@@ -53,7 +53,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .response-announcement {
   position: absolute;
   width: 1px;
+  max-width: 1px;
   height: 1px;
+  max-height: 1px;
   padding: 0;
   margin: -1px;
   overflow: hidden;
@@ -1192,9 +1194,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   gap: 16px;
   margin-right: auto;
   padding-left: 20px;
-  color: var(--ember);
+  color: #f0a075;
   border-left: 1px solid rgba(244, 242, 233, .45);
-  font: 500 14px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font: 500 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   letter-spacing: .015em;
   text-transform: uppercase;
 }
@@ -1436,10 +1438,11 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .topbar-anchor,
 .topbar-project,
 .workspace-jump button,
-.official-link { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 14px; letter-spacing: .015em; text-transform: uppercase; }
+.official-link { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 16px; letter-spacing: .015em; text-transform: uppercase; }
 .topbar-project > span { display: grid; gap: 1px; text-align: left; }
 .topbar-project strong { font-size: 16px; }
 .topbar-project small { color: rgba(234, 242, 236, 0.78); font-size: 12px; font-weight: 500; }
+.topbar-project__compact-label { font-size: 16px; }
 .topbar-project__compact-label { display: none !important; }
 
 .workspace,
@@ -1518,19 +1521,6 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .conversation-panel--analytical .response-badge { display: none; }
 .conversation-panel--analytical .analytical-short-answer { display: block; margin-bottom: 7px; }
 .conversation-panel--analytical .answer-lead { margin: 0; max-width: 1060px; }
-.conversation-panel--analytical .analytical-takeaway {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
-  gap: 12px;
-  align-items: start;
-  margin-top: 17px;
-  padding: 16px 0;
-  border-top: 1px dotted rgba(167, 184, 102, .55);
-  border-bottom: 1px dotted rgba(167, 184, 102, .55);
-}
-.conversation-panel--analytical .analytical-takeaway > svg { color: var(--ember); }
-.conversation-panel--analytical .analytical-takeaway .panel-label { color: var(--ember); }
-.conversation-panel--analytical .analytical-takeaway p { margin: 2px 0 0; font: 600 20px/1.35 "Newsreader", Georgia, serif; }
 .conversation-panel--analytical .status-banner {
   grid-template-columns: minmax(0, 1fr);
   margin: 14px 0 0;
@@ -1551,13 +1541,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .conversation-panel--analytical .status-banner__summary p { display: none; }
 .conversation-panel--analytical .status-banner > a { display: none; }
 .conversation-toolbar--clear-only {
-  position: absolute;
-  z-index: 2;
-  top: 8px;
-  right: 14px;
+  position: static;
   min-height: 44px;
   justify-content: flex-end;
-  padding: 0;
+  padding: 0 14px;
   background: transparent;
   border: 0;
 }
@@ -1813,7 +1800,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   padding-bottom: 14px;
   color: var(--muted);
   border-bottom: 1px solid #b8b19f;
-  font: 600 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font: 600 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -1822,7 +1809,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   gap: 9px;
   margin: 26px 0 10px;
   color: var(--forest-deep);
-  font: 600 13px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font: 600 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   letter-spacing: .05em;
   text-transform: uppercase;
 }
@@ -1835,7 +1822,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .ask-start-panel__place small {
   color: var(--muted);
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
 }
 .ask-start-panel__place input {
   min-height: 54px;
@@ -1866,7 +1853,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   background: none;
   border: 0;
   cursor: pointer;
-  font: 600 14px "Inter", system-ui, sans-serif;
+  font: 600 16px "Inter", system-ui, sans-serif;
 }
 .ask-start-panel__approx > span { display: flex; flex: 1; justify-content: space-between; gap: 12px; }
 .ask-start-panel__approx small { color: var(--muted); font: inherit; font-size: 12px; text-transform: uppercase; }
@@ -1903,7 +1890,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   place-items: center;
   color: #a7b866;
   background: #061d18;
-  font: 600 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font: 600 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 .conversation-panel--idle .composer--idle {
   margin: 0;
@@ -1982,6 +1969,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   color: #f5f3ec;
   background: #061d18;
 }
+.workspace--analysis .composer > p { display: none; color: #dfe7d4; }
 .workspace--analysis .conversation-toolbar--clear-only {
   position: static;
   z-index: auto;
@@ -1992,7 +1980,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   background: #061d18;
   border-bottom: 1px solid rgba(167, 184, 102, .28);
 }
-.workspace--analysis .conversation-toolbar--clear-only button { min-height: 44px; color: #dfe7d4; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 13px; text-transform: uppercase; }
+.workspace--analysis .conversation-toolbar--clear-only button { min-height: 44px; color: #dfe7d4; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 16px; text-transform: uppercase; }
 .workspace--analysis .conversation-panel--analytical .question-bubble p,
 .workspace--analysis .conversation-panel--analytical .assistant-message p,
 .workspace--analysis .conversation-panel--analytical .answer-lead,
@@ -2152,9 +2140,28 @@ button:focus-visible, a:focus-visible, input:focus-visible {
     border-top-color: rgba(167, 184, 102, .32);
     border-radius: 0;
   }
-  .workspace--analysis .composer > p { color: #a7b866; }
+  .workspace--analysis .composer > p { color: #dfe7d4; }
   .workspace--analysis .composer > p { display: none; }
   .workspace--analysis .analysis-tabs { width: min(100%, 520px); }
+  .workspace--analysis .analysis-workspace > [role="tabpanel"] {
+    height: 657px;
+    overflow-y: auto;
+  }
+  .workspace--analysis .analysis-workspace .leaflet-container {
+    height: 400px;
+    min-height: 400px;
+  }
+}
+
+.workspace--analysis .conversation-scroll > .response-announcement.response-announcement {
+  width: 1px;
+  min-width: 1px;
+  max-width: 1px;
+  height: 1px;
+  min-height: 1px;
+  max-height: 1px;
+  padding: 0;
+  margin: -1px;
 }
 
 @media (min-width: 1120px) and (max-width: 1320px) {

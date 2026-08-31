@@ -42,6 +42,7 @@ export function OfficialBasemap({
       {focus && (
         <CircleMarker
           center={[focus.latitude, focus.longitude]}
+          interactive={false}
           radius={8}
           pathOptions={{
             className: "live-map__place-pin",

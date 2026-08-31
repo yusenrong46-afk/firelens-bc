@@ -15,7 +15,6 @@ import {
 } from "../features/near-me/LiveAnalysisWorkspace";
 import { HowFireLensWorks } from "./HowFireLensWorks";
 import {
-  preferredAnalyticalSurface,
   preferredContextSurface,
   questionExplicitlyRequestsMap,
   shouldOfferContextMap,
@@ -43,15 +42,17 @@ export function App() {
     question: session.visibleQuestion,
     response: session.response,
   });
-  const analyticalWorkspace = shouldUseAnalyticalWorkspace({
+  const responseAnalyticalWorkspace = shouldUseAnalyticalWorkspace({
     mode: session.mode,
     response: session.response,
   });
-  const analyticalInitialSurface = preferredAnalyticalSurface({
-    mode: session.mode,
-    question: session.visibleQuestion,
-    response: session.response,
-  });
+  // Enter the final desktop shell immediately after an explicitly analytical
+  // submission. The response record shape remains final presentation
+  // authority; this pending-only hint prevents a late full-page rail/canvas
+  // jump on slower connections.
+  const pendingAnalyticalWorkspace = session.view.kind === "loading"
+    && ANALYTICAL_QUERY.test(session.visibleQuestion ?? "");
+  const analyticalWorkspace = responseAnalyticalWorkspace || pendingAnalyticalWorkspace;
   const showMap = (session.view.kind === "idle" && idleMapOpen)
     || (!analyticalWorkspace && contextOpen && mapAvailable && contextSurface === "map");
   const evidenceOpen = contextOpen && contextSurface === "evidence";
@@ -193,12 +194,11 @@ export function App() {
         <ConversationPanel
           session={session}
           analytical={analyticalWorkspace}
-          analysisSlot={analyticalWorkspace ? (
+          analysisSlot={responseAnalyticalWorkspace ? (
             <LiveAnalysisWorkspace
               session={session}
               answerIdentity={session.response?.trace_id ?? ""}
               evidenceOpen={showContext && contextSurface === "evidence"}
-              initialSurface={analyticalInitialSurface}
               onOpenEvidence={() => {
                 session.setSelected(0);
                 showEvidence();

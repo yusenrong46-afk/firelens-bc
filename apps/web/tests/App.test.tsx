@@ -83,6 +83,61 @@ describe("FireLens Source Lens", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("enters the analytical shell while a distribution answer is still loading", async () => {
+    let resolveAsk!: (response: Response) => void;
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(() => new Promise<Response>((resolve) => {
+      resolveAsk = resolve;
+    })));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(
+      screen.getByLabelText("Ask FireLens a question"),
+      "Show wildfire distribution by status across B.C.",
+    );
+    await user.click(screen.getByLabelText("Send question"));
+
+    await waitFor(() => expect(document.querySelector("main.workspace--analysis")).toBeInTheDocument());
+    expect(screen.getByText("Preparing your response…")).toBeInTheDocument();
+
+    resolveAsk(new Response(JSON.stringify({
+      status: "answer",
+      response_mode: "live",
+      trace_id: "trace-pending-analysis",
+      answer: "Two official incident records are in this bounded result.",
+      claims: [],
+      evidence: [],
+      limitations: [],
+      live_results: [
+        {
+          result_id: "incident:pending-1",
+          kind: "incident",
+          authority: "BC Wildfire Service",
+          source_url: "https://example.test/pending-1",
+          source_updated_at: "2026-08-23T12:00:00Z",
+          retrieved_at: "2026-08-23T12:01:00Z",
+          freshness: "fresh",
+          status: "Being Held",
+          fire_centre: "Kamloops Fire Centre",
+          geometry: { type: "Point", coordinates: [-119.5, 49.9] },
+        },
+        {
+          result_id: "incident:pending-2",
+          kind: "incident",
+          authority: "BC Wildfire Service",
+          source_url: "https://example.test/pending-2",
+          source_updated_at: "2026-08-23T12:00:00Z",
+          retrieved_at: "2026-08-23T12:01:00Z",
+          freshness: "fresh",
+          status: "Out of Control",
+          fire_centre: "Coastal Fire Centre",
+          geometry: { type: "Point", coordinates: [-123.1, 49.3] },
+        },
+      ],
+    }), { status: 200 }));
+    expect(await screen.findByRole("region", { name: "Analysis view" })).toBeInTheDocument();
+  });
+
   it("switches multi-record analytical questions into summary and records views", async () => {
     const liveResults = [
       { result_id: "incident:1", fire_centre: "Kamloops Fire Centre", status: "Out of Control" },
@@ -118,9 +173,7 @@ describe("FireLens Source Lens", () => {
 
     expect(await screen.findByRole("region", { name: "Analysis view" })).toBeInTheDocument();
     const shortAnswer = screen.getByText(
-      "This answer includes 3 fetched official incident records. "
-      + "Kamloops Fire Centre has the highest fire-centre count (2). "
-      + "Being Held, Out of Control, and Under Control tie for the most common reported status (1).",
+      "Three official incident records are in this bounded result.",
     );
     const analysisRegion = screen.getByRole("region", { name: "Analysis view" });
     expect(shortAnswer.compareDocumentPosition(analysisRegion) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -157,6 +210,46 @@ describe("FireLens Source Lens", () => {
     expect(screen.queryByRole("region", { name: "Official wildfire records map" })).not.toBeInTheDocument();
     const accessibility = await axe(container);
     expect(accessibility.violations).toEqual([]);
+  });
+
+  it("keeps an operation-specific backend answer above multi-record analysis", async () => {
+    const liveResults = [
+      { result_id: "incident:freshness-1", source_updated_at: "2026-08-23T12:00:00Z" },
+      { result_id: "incident:freshness-2", source_updated_at: "2026-08-22T18:00:00Z" },
+    ].map((item) => ({
+      ...item,
+      kind: "incident",
+      authority: "BC Wildfire Service",
+      source_url: `https://example.test/${item.result_id}`,
+      retrieved_at: "2026-08-23T12:01:00Z",
+      freshness: "fresh",
+      status: "Being Held",
+      fire_centre: "Kamloops Fire Centre",
+      geometry: { type: "Point", coordinates: [-119.5, 49.9] },
+    }));
+    const operationAnswer = "Source updates range from August 22 to August 23; both records were retrieved at 12:01 UTC.";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: "answer",
+      response_mode: "live",
+      trace_id: "trace-analysis-operation-answer",
+      answer: operationAnswer,
+      suggested_questions: [],
+      claims: [],
+      evidence: [],
+      limitations: [],
+      live_results: liveResults,
+      aggregate_freshness: "fresh",
+      validation: { accepted: true },
+    }), { status: 200 })));
+
+    render(<App />);
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "How fresh are these wildfire records?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByRole("region", { name: "Analysis view" })).toBeInTheDocument();
+    expect(screen.getByText(operationAnswer)).toBeInTheDocument();
+    expect(screen.queryByText(/This answer includes 2 fetched official incident records/i)).not.toBeInTheDocument();
   });
 
   it("keeps a deterministic records analysis but omits a useless map", async () => {
@@ -198,7 +291,9 @@ describe("FireLens Source Lens", () => {
     expect(within(analysisView).queryByRole("tab", { name: "Map" })).not.toBeInTheDocument();
     expect(within(analysisView).getByRole("tab", { name: "Summary" })).toBeInTheDocument();
     expect(within(analysisView).getByRole("tab", { name: "Records" })).toBeInTheDocument();
-    expect(within(analysisView).getByText(/are tied for the highest count/i)).toHaveTextContent("1 each");
+    const fireCentreTotals = within(analysisView).getByLabelText("Fire-centre record totals");
+    expect(fireCentreTotals).toHaveTextContent("Coastal1");
+    expect(fireCentreTotals).toHaveTextContent("Kamloops1");
     expect(within(analysisView).queryByLabelText("Analysis limitations")).not.toBeInTheDocument();
     expect(within(analysisView).getByText("Limits", { exact: true })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "View official map context" })).not.toBeInTheDocument();

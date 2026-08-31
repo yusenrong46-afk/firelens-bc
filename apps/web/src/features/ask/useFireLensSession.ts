@@ -123,9 +123,9 @@ export function useFireLensSession(): FireLensSession {
       const effectiveLocation = locationOverride ?? activeLocation ?? typedLocation;
       if (effectiveLocation) setActiveLocation(effectiveLocation);
       const context: MapContext = {
-        visible_live_result_ids: mapVisible
-          ? mapView.mapResults.slice(0, 100).map((result) => result.result_id)
-          : [],
+        visible_live_result_ids: (response?.live_results ?? (mapVisible ? mapView.mapResults : []))
+          .slice(0, 100)
+          .map((result) => result.result_id),
       };
       const contextSelected = selectedResultIdForQuestion(
         normalized,
