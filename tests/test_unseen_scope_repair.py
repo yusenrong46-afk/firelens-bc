@@ -229,14 +229,18 @@ def test_general_smoke_home_guidance_reaches_public_agent_without_location_promp
 def test_province_live_plus_kit_reaches_public_agent_as_mixed_and_executes_static_clause() -> (
     None
 ):
-    execution, static, live = _execute(
-        "List active BC fires and summarize their reported status, then give general kit guidance."
-    )
+    question = "List active BC fires and summarize their reported status, then give general kit guidance."
+    plan = plan_agent_request(QueryRequest(question=question))
+    execution, static, live = _execute(question)
 
     assert execution.response.response_mode == ResponseMode.MIXED
     assert execution.response.answer is not None
     assert "Pack water and copies" in execution.response.answer
-    assert static.questions == ["give general kit guidance"]
+    # The immutable plan retains the user's clause; the reviewed static
+    # boundary receives its typed retrieval/publication question.
+    assert plan.static_subrequest == "give general kit guidance"
+    assert plan.tool_calls[-1].as_arguments() == {"query": "give general kit guidance"}
+    assert static.questions == ["emergency kit contents checklist"]
     assert live.map_layers == [(LiveResultKind.INCIDENT, LiveResultKind.PERIMETER)]
     assert execution.tools == (
         AgentTool.LIST_OFFICIAL_FIRES,

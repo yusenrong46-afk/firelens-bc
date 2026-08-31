@@ -51,6 +51,7 @@ from firelens.answering.location_intent import (
 from firelens.answering.request_facets import contents_request_facet
 from firelens.answering.request_grammar import parse_request_facets
 from firelens.answering.return_intent import reviewed_return_condition_intent
+from firelens.answering.static_guidance_subject import static_guidance_retrieval_query
 from firelens.contracts import (
     AuthorityClass,
     LiveResultKind,
@@ -516,7 +517,8 @@ def reviewed_guidance_plan(plan: QueryPlan) -> QueryPlan:
     """Force grounded corpus retrieval without consulting a provider planner."""
 
     contents_facet = contents_request_facet(plan.original_question)
-    retrieval_query = (
+    subject_query = static_guidance_retrieval_query(plan.original_question)
+    retrieval_query = subject_query or (
         contents_facet.retrieval_query
         if contents_facet is not None
         else plan.normalized_question

@@ -18,7 +18,9 @@ limits inspectable.
 
 [Open the public V1.6.2 demo](https://firelens-bc.vercel.app) or follow the
 [3–5 minute demo script](DEMO_SCRIPT.md). Live records and timestamps change;
-the architecture and failure boundaries are the intended demonstration.
+the architecture and failure boundaries are the intended demonstration. The
+[public readiness endpoint](https://firelens-bc.vercel.app/api/v1/health/ready)
+exposes the deployed runtime identity separately from this checkout.
 
 ## Why naive RAG fails
 
@@ -74,6 +76,17 @@ Guidance and ordinary conversation stay in a focused Chat view. Multi-record
 questions open a snapshot-only Analysis workspace with Summary, Map, and Records.
 Named, nearby, and closest-fire questions use a Spatial view when map context is
 useful. Missing or stale layers remain visible and never become an all-clear.
+
+### Operational value beyond wildfire
+
+For building and climate-intelligence teams, the same separation reduces the
+risk of treating a stale sensor reading, extracted document sentence, or model
+summary as an approved operational fact. It also gives reviewers a smaller,
+traceable surface to inspect: each published item carries its source identity,
+scope, validation state, and permitted presentation. That can make exception
+handling and evidence review more repeatable across maintenance, sustainability,
+and compliance workflows. This is an architectural risk-control hypothesis,
+not a measured business or user outcome from FireLens.
 
 ## A representative journey
 

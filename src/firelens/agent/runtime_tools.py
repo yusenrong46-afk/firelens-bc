@@ -26,6 +26,7 @@ from firelens.answering.location_intent import (
     is_out_of_province_label,
     is_province_wide_label,
 )
+from firelens.answering.static_guidance_subject import static_guidance_retrieval_query
 from firelens.contracts import (
     CoarseResolvedLocation,
     LiveResultKind,
@@ -134,8 +135,13 @@ async def execute_tool(
         return json.dumps({"records": [live_record_fact(item) for item in results]})
     if name == AgentTool.SEARCH_REVIEWED_GUIDANCE.value:
         query = str(arguments.get("query") or request.question)
+        # Preserve the planner's user-language subrequest for auditability,
+        # while giving static RAG its typed subject as the bounded publication
+        # question. This lets generic kit guidance and contextual pet follow-
+        # ups reach only the material that the reviewed pipeline can admit.
+        static_question = static_guidance_retrieval_query(query) or query
         static_request = QueryRequest(
-            question=query,
+            question=static_question,
             history=request.history,
             context=request.context,
         )

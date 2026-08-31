@@ -21,6 +21,7 @@ from firelens.answering.grounded import GroundedAnswerEngine
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     CoarseResolvedLocation,
+    ConversationTurn,
     Freshness,
     LiveResult,
     LiveResultKind,
@@ -135,6 +136,25 @@ class _FixtureLiveService:
         del args, kwargs
         self.resolve_calls += 1
         return 49.88, -119.49
+
+
+class _FixtureProvinceLiveService(_FixtureLiveService):
+    """Live fixture that also supports the deliberate BC-wide roster lane."""
+
+    async def map_results(self, *args: Any, **kwargs: Any) -> Any:
+        del args, kwargs
+        self.map_calls += 1
+        return type(
+            "MapFixture",
+            (),
+            {
+                "results": self.results,
+                "limitations": [],
+                "unavailable_layers": [],
+                "resolved_location": None,
+                "pagination": type("Pagination", (), {"total_results": len(self.results)})(),
+            },
+        )()
 
 
 class _UnexpectedStatic:
@@ -403,6 +423,63 @@ def test_agent_fixtures_keep_mixed_authority_separate_and_require_coarse_locatio
             0,
             0,
         )
+
+    asyncio.run(run())
+
+
+def test_actual_runtime_keeps_generic_kit_and_pet_continuation_in_reviewed_lane() -> None:
+    """Exercise typed static context through the real corpus and agent tool path."""
+
+    async def run() -> None:
+        provider = FakeProvider(dimensions=1536)
+        runtime = load_runtime(FireLensConfig.from_env(ROOT), provider=provider)
+        try:
+            mixed = await FireLensAgent(
+                runtime.service,
+                LiveAnswerCoordinator(_FixtureProvinceLiveService([_fire()])),
+            ).answer(
+                QueryRequest(
+                    question=(
+                        "List active BC fires and summarize their reported status, "
+                        "then give general kit guidance."
+                    )
+                )
+            )
+            assert mixed.response.response_mode == ResponseMode.MIXED
+            assert {section.kind.value for section in mixed.response.answer_sections} >= {
+                "current_records",
+                "reviewed_guidance",
+            }
+            assert _publication_kinds(mixed.response) == {"official_quote_only"}
+            assert AgentTool.LIST_OFFICIAL_FIRES in mixed.tools
+            assert AgentTool.SEARCH_REVIEWED_GUIDANCE in mixed.tools
+            assert any(
+                "Grab-and-Go Bag" in claim.text for claim in mixed.response.claims
+            )
+
+            pets = await FireLensAgent(
+                runtime.service,
+                LiveAnswerCoordinator(_FixtureLiveService([])),
+            ).answer(
+                QueryRequest(
+                    question="What about pets?",
+                    history=[
+                        ConversationTurn(
+                            role="user",
+                            content="What belongs in a wildfire emergency kit?",
+                        )
+                    ],
+                )
+            )
+            assert pets.response.response_mode == ResponseMode.PARTIAL
+            assert _publication_kinds(pets.response) == {"official_quote_only"}
+            assert AgentTool.SEARCH_REVIEWED_GUIDANCE in pets.tools
+            assert any(
+                "Pets are part of the family" in claim.text
+                for claim in pets.response.claims
+            )
+        finally:
+            await runtime.aclose()
 
     asyncio.run(run())
 

@@ -28,6 +28,11 @@ from firelens.answering.intent_automaton import (
 from firelens.answering.intent_refresh import is_live_refresh_request
 from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.location_intent import coarse_location_from_question
+from firelens.answering.static_guidance_subject import (
+    StaticGuidanceSubject,
+    static_guidance_retrieval_query,
+    static_guidance_subject,
+)
 from firelens.contracts import (
     AnswerSectionKind,
     AskResponse,
@@ -62,6 +67,33 @@ LIVE_FORMS = st.sampled_from(
         "Give me the current fire report for {place}.",
     )
 )
+
+
+@pytest.mark.parametrize(
+    ("question", "expected_subject", "expected_query"),
+    (
+        (
+            "Give general kit guidance.",
+            StaticGuidanceSubject.EMERGENCY_KIT,
+            "emergency kit contents checklist",
+        ),
+        (
+            "Regarding an emergency kit, what about pets?",
+            StaticGuidanceSubject.PET_GRAB_AND_GO,
+            "pets emergency kit grab-and-go bag food water leashes carriers",
+        ),
+        ("Put a bag in the trunk before work.", None, None),
+        ("How should I pack a backpack for travel?", None, None),
+        ("What about pets during the wildfire season?", None, None),
+    ),
+)
+def test_static_guidance_subject_is_bounded_to_kit_context(
+    question: str,
+    expected_subject: StaticGuidanceSubject | None,
+    expected_query: str | None,
+) -> None:
+    assert static_guidance_subject(question) == expected_subject
+    assert static_guidance_retrieval_query(question) == expected_query
 
 
 @given(place=PLACES, time=CURRENT_CUES, template=LIVE_FORMS)

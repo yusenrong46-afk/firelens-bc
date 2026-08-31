@@ -4,27 +4,15 @@ This ledger records the current local candidate. It is not a release approval,
 production proof, or substitute for independent human and sealed evidence.
 Keep under 300 lines and update when the candidate identity or evidence changes.
 
-## Starting identity
+## Current identity
 
 - Repository: `/Users/thomas/Documents/firelens-v1-6-integration-20260826T003225Z`
-- Starting commit: `8a7ff876d960d1000d63317a2b8eebc55ecb9289`
-- Starting tree: `70bbfcbabe07e6cef2274e1392687a82c0c0fa62`
-- Working branch: `codex/v1-6-2-full-qualification`
+- Working branch: `codex/v1-6-2-productbench100-repair`
+- Current HEAD: `d1deafc5814bc521b7c45f4cd13f437bc154daf3` (portfolio documentation
+  refresh; uncommitted documentation work may change the tree identity).
 - Package/version: `1.6.2`
-- Integration parent before the current repair: commit
-  `60a68ac970ae8805020301ece81861a94e1fb7b4`, tree
-  `c74dca627e1e9003fd5d9efd3551255a013c3a87`. The final repair is not
-  identity-bound until it is committed and requalified by CI.
-- Last exact qualified parent: commit `6642d276fd9d2ec54c9d8034f257c033d186d7f5`,
-  tree `26ed664588f5de756c0e4fd072cfb58661bb0d97`.
-- Visual implementation parent examined before this repair: commit
-  `345aaab2bef2fb3f580401dd79303a6b840fc88a`, tree
-  `8d098103468fe26eed7578ce6a8e1c7a67b1e0cf` (Thomas-authored Civic
-  Intelligence Desk candidate). The current branch HEAD is the unqualified
-  candidate. Its exact commit/tree must be read from matching current CI or
-  candidate evidence; any post-evidence change invalidates that evidence.
-  Neither identity is a release approval, deployment proof, or completed
-  qualification.
+- This branch is not release-qualified. Exact candidate/tree identity must be
+  re-established from fresh CI and candidate evidence after this repair.
 
 ## Ownership and routing
 
@@ -70,38 +58,23 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - Final presentation repair: the first question stays visible, the conversation
   toolbar cannot overlap it, duplicate analytical insight copy was removed, and
   the unused map-default presentation branch was deleted.
+- Current uncommitted repair campaign: the two last real-corpus continuity
+  defects are locally repaired: mixed live records plus generic kit guidance
+  omitted the static clause, and `What about pets?` after kit guidance
+  redirected instead of continuing grounded quote-only guidance. These repairs
+  still require exact-head verification and preview replay.
 
-## Executed local evidence
+## Evidence status
 
-- Local engineering qualification was recorded before the current branch HEAD
-  was bound to candidate evidence. It must be rerun and bound to the current
-  candidate evidence before it is treated as exact-head evidence.
-- Backend suite: `1,837` passing tests, `10` skipped, `672` subtests.
-- Frontend unit suite: `149` passing tests after removing one obsolete
-  map-default contract test.
-- Tooling checks: `6` passing.
-- Sites checks: `4` passing.
-- Playwright after the density refinement: `41` passing, `1` expected
-  desktop-only skip on mobile.
-- Real/provider-backed local journey set: `19` cases recorded.
-- ProductBench deterministic tier: `31/31`, zero provider calls and zero cost.
-- Offline hard probe: `91/105`, zero cost; frozen threshold remains `86/105`.
-- Structural leak counters: five zeros.
-- Package verification: passed.
-- Frontend surface harness: `36/36` rows, functional journeys and performance
-  passed. The regenerated first-answer captures keep the toolbar, user question,
-  and assistant answer separate. The development protocol remains explicitly
-  unratified, so the report is not release qualification.
-- Real official-feed smoke: named Bald Range, ranked Kelowna records, freshness,
-  Cariboo, Okanagan, analytical counts, largest area, false-all-clear, and
-  evacuation-alert premise checks returned contract-valid responses. This is a
-  point-in-time integration smoke, not continuous availability proof.
-- Bundle-size deltas: captured for the candidate; no presentation provider
-  calls were introduced.
-- Design QA: reference and implementation were compared together at
-  `1488 x 1058`, with separate `390 x 844` start and analysis checks. The
-  answer-rail density and mobile nested-tab collision were repaired. Current
-  report says `final result: passed` for the bounded visual scope.
+- Earlier local engineering, ProductBench, hard-probe, package, browser, and
+  real-feed results predate the current HEAD or are not bound to its final tree.
+  They are historical development evidence, not exact-head qualification.
+- The two current real-corpus continuity repairs are local-only until exact-head
+  verification and preview replay produce matching artifacts. Selected-record
+  and refresh/location continuity were earlier committed repairs.
+- No local result in this ledger establishes deployed identity, continuous
+  official-feed availability, semantic completeness, participant comprehension,
+  or release readiness.
 
 ## Evidence boundaries and blockers
 
