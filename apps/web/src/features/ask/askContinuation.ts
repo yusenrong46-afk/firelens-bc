@@ -10,7 +10,12 @@ const SHORT_ATTRIBUTE_FOLLOW_UP =
 const REFORMAT_FOLLOW_UP =
   /^\s*(?:please\s+)?(?:give|show|put)\s+(?:me\s+)?(?:the\s+)?answer\s+first(?:,?\s+then\s+(?:the\s+)?evidence)?[.!?]*\s*$/i;
 
-type LiveResultReference = { result_id: string };
+type LiveResultReference = {
+  result_id: string;
+  kind?: string;
+  name?: string | null;
+  incident_number?: string | null;
+};
 
 const ORDINAL_WORDS: Record<string, number> = {
   first: 0,
@@ -34,6 +39,31 @@ function ordinalIndex(question: string): number | undefined {
   return Number.isSafeInteger(numeric) && numeric > 0 ? numeric - 1 : undefined;
 }
 
+function normalizedIdentity(value: string): string {
+  return value.toLocaleLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+}
+
+function explicitVisibleResultId(
+  question: string,
+  availableResults: readonly LiveResultReference[],
+): string | undefined {
+  const match = /^\s*where(?:\s+is|['’]s)\s+(?:the\s+)?(.+?)[?.!]*\s*$/i.exec(question);
+  if (!match) return undefined;
+  const requested = normalizedIdentity(match[1] ?? "");
+  if (!requested) return undefined;
+  const matches = availableResults.filter((result) => {
+    const identities = [result.name, result.incident_number]
+      .filter((value): value is string => Boolean(value))
+      .map(normalizedIdentity);
+    return identities.includes(requested);
+  });
+  if (matches.length === 0) return undefined;
+  const incidents = matches.filter((result) => result.kind === "incident");
+  if (incidents.length === 1) return incidents[0]?.result_id;
+  if (incidents.length > 1) return undefined;
+  return matches.length === 1 ? matches[0]?.result_id : undefined;
+}
+
 export function selectedResultIdForQuestion(
   question: string,
   selectedId: string | undefined,
@@ -42,6 +72,8 @@ export function selectedResultIdForQuestion(
 ): string | undefined {
   if (override) return override;
   const trimmed = question.trim();
+  const explicit = explicitVisibleResultId(trimmed, availableResults);
+  if (explicit) return explicit;
   const ordinal = ordinalIndex(trimmed);
   // An explicit ordinal takes precedence over a prior selection. If it cannot
   // be resolved in the visible roster, fail closed rather than falling back to

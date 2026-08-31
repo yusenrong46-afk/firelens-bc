@@ -83,6 +83,18 @@ describe("FireLens Source Lens", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("exposes only the public same-origin OpenAPI contract", async () => {
+    render(<App />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "How FireLens works" }));
+
+    expect(screen.queryByRole("link", { name: /Repository/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /OpenAPI contract/i })).toHaveAttribute(
+      "href",
+      "/openapi.json",
+    );
+  });
+
   it("enters the analytical shell while a distribution answer is still loading", async () => {
     let resolveAsk!: (response: Response) => void;
     vi.stubGlobal("fetch", vi.fn().mockImplementation(() => new Promise<Response>((resolve) => {

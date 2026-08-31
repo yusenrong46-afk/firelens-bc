@@ -47,11 +47,17 @@ class Coordinator:
         self.live_service = resolver
 
 
-def _plan(question: str, *, found: bool = True, selected: str | None = None) -> Any:
+def _plan(
+    question: str,
+    *,
+    found: bool = True,
+    selected: str | None = None,
+    history: list[ConversationTurn] | None = None,
+) -> Any:
     context = MapContext(selected_live_result_id=selected) if selected else MapContext()
     return asyncio.run(
         build_agent_query_plan(
-            QueryRequest(question=question, context=context),
+            QueryRequest(question=question, context=context, history=history or []),
             Coordinator(Resolver(found=found)),  # type: ignore[arg-type]
         )
     )
@@ -335,6 +341,80 @@ def test_selected_record_plan_owns_exact_record_identifier() -> None:
         AgentTool.GET_OFFICIAL_FIRE.value,
         {"result_id": "incident:other"},
     )
+
+
+def test_selected_record_named_location_question_uses_selected_record_tool() -> None:
+    plan = _plan(
+        "Where is Bald Range?",
+        selected="incident:bald-range",
+        history=[ConversationTurn(role="assistant", content="Bald Range: Being Held.")],
+    )
+
+    assert plan.route == QueryRoute.LIVE
+    assert plan.mode == AgentRequestMode.SELECTED
+    assert plan.geography == AgentGeography.SELECTED_RECORD
+    assert plan.tool_calls[0].name == AgentTool.GET_OFFICIAL_FIRE
+    assert plan.tool_calls[0].as_arguments() == {"result_id": "incident:bald-range"}
+
+
+def test_selected_record_contracted_named_location_question_uses_selected_record_tool() -> None:
+    plan = _plan(
+        "Where’s Bald Range?",
+        selected="incident:bald-range",
+        history=[ConversationTurn(role="assistant", content="Bald Range: Being Held.")],
+    )
+
+    assert plan.mode == AgentRequestMode.SELECTED
+    assert plan.tool_calls[0].as_arguments() == {"result_id": "incident:bald-range"}
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Where is wildfire prevention taught in B.C.?",
+        "Where is wildfire ecology researched?",
+    ),
+)
+def test_selected_context_does_not_overbind_guidance_where_questions(question: str) -> None:
+    plan = _plan(
+        question,
+        selected="incident:bald-range",
+        history=[ConversationTurn(role="assistant", content="Bald Range: Being Held.")],
+    )
+
+    assert plan.mode != AgentRequestMode.SELECTED
+    assert all(call.name != AgentTool.GET_OFFICIAL_FIRE for call in plan.tool_calls)
+
+
+@pytest.mark.parametrize(
+    "history",
+    (
+        [],
+        [ConversationTurn(role="assistant", content="Cariboo Fire: Being Held.")],
+    ),
+)
+def test_selected_named_location_requires_an_exact_prior_assistant_identity(
+    history: list[ConversationTurn],
+) -> None:
+    plan = _plan("Where is Bald Range?", selected="incident:bald-range", history=history)
+
+    assert plan.mode != AgentRequestMode.SELECTED
+    assert all(call.name != AgentTool.GET_OFFICIAL_FIRE for call in plan.tool_calls)
+
+
+def test_selected_named_location_does_not_revive_an_older_assistant_roster() -> None:
+    plan = _plan(
+        "Where is Bald Range?",
+        selected="incident:bald-range",
+        history=[
+            ConversationTurn(role="assistant", content="Bald Range: Being Held."),
+            ConversationTurn(role="user", content="What is the weather?"),
+            ConversationTurn(role="assistant", content="No wildfire records were requested."),
+        ],
+    )
+
+    assert plan.mode != AgentRequestMode.SELECTED
+    assert all(call.name != AgentTool.GET_OFFICIAL_FIRE for call in plan.tool_calls)
 
 
 @pytest.mark.parametrize(

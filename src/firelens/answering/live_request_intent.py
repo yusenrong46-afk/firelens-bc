@@ -52,6 +52,17 @@ _SELECTED_ENTITY_PATTERN = re.compile(
     r"\b(?:this|that|selected)\s+(?:fire|wildfire|incident|perimeter|record)\b",
     re.IGNORECASE,
 )
+_SELECTED_LOCATION_PATTERN = re.compile(
+    r"^\s*where(?:\s+is|['’]s)\s+(?:the\s+)?(?P<identity>[A-Za-z0-9'’.-]+"
+    r"(?:\s+[A-Za-z0-9'’.-]+){0,8})[?.!]*\s*$",
+    re.IGNORECASE,
+)
+
+
+def _normalized_record_identity(value: str) -> str:
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", value.casefold()).split())
+
+
 _SELECTED_ATTRIBUTE_PATTERN = re.compile(
     r"\b(?:status|happening|details?|size|large|big|hectares?|source|publisher|dataset|"
     r"updated|updates?|update time|update timestamp|perimeter|map|location|position)\b",
@@ -234,6 +245,8 @@ def is_distance_request(request: QueryRequest) -> bool:
 def is_selected_live_request(request: QueryRequest) -> bool:
     """Recognize supported attribute questions about the selected live record."""
 
+    named_location_bound = selected_location_identity(request) is not None
+
     return bool(
         request.context.selected_live_result_id
         and (
@@ -242,6 +255,7 @@ def is_selected_live_request(request: QueryRequest) -> bool:
                 and _SELECTED_ATTRIBUTE_PATTERN.search(request.question)
                 and not _SELECTED_UNSUPPORTED_PATTERN.search(request.question)
             )
+            or named_location_bound
             or _SELECTED_LIVE_ELLIPTICAL.match(request.question)
             or _SELECTED_DEICTIC_STATUS.match(request.question)
             or _SELECTED_DEICTIC_OFFICIAL_DETAILS.match(request.question)
@@ -250,6 +264,49 @@ def is_selected_live_request(request: QueryRequest) -> bool:
             or _SELECTED_REFORMAT.match(request.question)
         )
     )
+
+
+def selected_location_identity(request: QueryRequest) -> str | None:
+    """Return a named location bound to the most recent visible live roster."""
+
+    named_location = _SELECTED_LOCATION_PATTERN.fullmatch(request.question)
+    if named_location is None:
+        return None
+    identity = _normalized_record_identity(named_location.group("identity"))
+    identity_tokens = identity.split()
+    latest_assistant = next(
+        (turn for turn in reversed(request.history) if turn.role == "assistant"),
+        None,
+    )
+    if latest_assistant is None:
+        return None
+    prior_tokens = _normalized_record_identity(latest_assistant.content).split()
+    if any(
+        prior_tokens[index : index + len(identity_tokens)] == identity_tokens
+        for index in range(len(prior_tokens) - len(identity_tokens) + 1)
+    ):
+        return identity
+    return None
+
+
+def selected_location_matches_record(
+    request: QueryRequest, records: Sequence[LiveResult]
+) -> bool:
+    """Verify a bound named location against the exact selected live record."""
+
+    identity = selected_location_identity(request)
+    selected_id = request.context.selected_live_result_id
+    if identity is None or not selected_id:
+        return True
+    selected = next((item for item in records if item.result_id == selected_id), None)
+    if selected is None:
+        return False
+    identities = {
+        _normalized_record_identity(value)
+        for value in (selected.name, selected.incident_number)
+        if value
+    }
+    return identity in identities
 
 
 def is_unsupported_selected_request(request: QueryRequest) -> bool:

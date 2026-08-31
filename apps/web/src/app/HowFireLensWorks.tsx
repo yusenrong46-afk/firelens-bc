@@ -56,8 +56,7 @@ export function HowFireLensWorks({ open, onClose }: { open: boolean; onClose: ()
           </div>
         </details>
         <div className="project-dialog__links">
-          <a href="https://github.com/yusenrong46-afk/firelens-bc" target="_blank" rel="noreferrer">Repository <ArrowSquareOut size={17} /></a>
-          <a href="https://github.com/yusenrong46-afk/firelens-bc/blob/main/docs/openapi.v1.json" target="_blank" rel="noreferrer">OpenAPI contract <ArrowSquareOut size={17} /></a>
+          <a href="/openapi.json" target="_blank" rel="noreferrer">OpenAPI contract <ArrowSquareOut size={17} /></a>
         </div>
         <p className="project-dialog__limit">Not emergency advice, independent certification, or release approval.</p>
       </section>

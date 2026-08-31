@@ -24,6 +24,7 @@ from firelens.answering.live_request_intent import (
     is_distance_request,
     is_selected_live_request,
     is_unsupported_selected_request,
+    selected_location_matches_record,
 )
 from firelens.answering.live_response_support import (
     empty_live_response,
@@ -203,11 +204,9 @@ def _missing_selected(request: QueryRequest, packet: AgentPacket) -> bool:
         or is_distance_request(request)
     ):
         return False
-    return not any(item.result_id == selected_id for item in packet.live_results)
-
-
-def _records_heading(freshness: AggregateFreshness | None) -> str:
-    return records_section_heading(freshness)
+    return not any(
+        item.result_id == selected_id for item in packet.live_results
+    ) or not selected_location_matches_record(request, packet.live_results)
 
 
 def _packet_live_answer(
@@ -436,7 +435,7 @@ def _build_ask_response(
             answer_sections=[
                 AnswerSection(
                     kind=AnswerSectionKind.CURRENT_RECORDS,
-                    heading=_records_heading(freshness),
+                    heading=records_section_heading(freshness),
                     text=live_text,
                 ),
                 AnswerSection(
@@ -476,7 +475,7 @@ def _build_ask_response(
         sections = [
             AnswerSection(
                 kind=AnswerSectionKind.CURRENT_RECORDS,
-                heading=_records_heading(freshness),
+                heading=records_section_heading(freshness),
                 text=live_text,
             ),
             AnswerSection(
@@ -523,7 +522,7 @@ def _build_ask_response(
             answer_sections=[
                 AnswerSection(
                     kind=AnswerSectionKind.CURRENT_RECORDS,
-                    heading=_records_heading(freshness),
+                    heading=records_section_heading(freshness),
                     text=live_text,
                 ),
                 AnswerSection(

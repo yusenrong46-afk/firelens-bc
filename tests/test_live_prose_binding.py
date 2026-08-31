@@ -11,6 +11,8 @@ from pydantic import HttpUrl, ValidationError
 
 from firelens.agent import FireLensAgent
 from firelens.agent.chat import ChatTurn
+from firelens.agent.compose import _build_ask_response
+from firelens.agent.packet import AgentPacket
 from firelens.answering.live_analysis import (
     compose_official_answer,
 )
@@ -23,6 +25,7 @@ from firelens.contracts import (
     AnswerSectionKind,
     AskResponse,
     ClaimSupport,
+    ConversationTurn,
     EvidenceStatus,
     Freshness,
     LiveResult,
@@ -62,6 +65,78 @@ def _mountain_held() -> LiveResult:
         name="Mountain Fire",
         geometry={"type": "Point", "coordinates": [-119.5, 49.9]},
     )
+
+
+def _incident_perimeter_roster() -> list[LiveResult]:
+    incidents = [
+        _mountain_held().model_copy(
+            update={"result_id": f"incident:{index}", "name": f"Fire {index}"}
+        )
+        for index in range(1, 4)
+    ]
+    perimeters = [
+        incident.model_copy(
+            update={
+                "result_id": f"perimeter:{index}",
+                "kind": LiveResultKind.PERIMETER,
+                "name": f"Fire {index} perimeter",
+                "status": "Mapped perimeter",
+            }
+        )
+        for index, incident in enumerate(incidents, start=1)
+    ]
+    return [*incidents, *perimeters]
+
+
+def test_ordinary_fire_roster_does_not_narrate_perimeters_as_extra_fires() -> None:
+    answer = compose_official_answer(
+        QueryRequest(question="List the current active fires across BC."),
+        _incident_perimeter_roster(),
+    )
+
+    assert "Fire 1: Being Held" in answer
+    assert "Fire 2: Being Held" in answer
+    assert "Fire 3: Being Held" in answer
+    assert "perimeter" not in answer.casefold()
+
+
+def test_ordinary_fire_roster_keeps_requested_evacuation_record_while_omitting_perimeter() -> (
+    None
+):
+    roster = _incident_perimeter_roster()
+    evacuation = _mountain_held().model_copy(
+        update={
+            "result_id": "evacuation:1",
+            "kind": LiveResultKind.EVACUATION,
+            "name": "Fire 1 evacuation alert",
+            "status": "Alert",
+        }
+    )
+
+    answer = compose_official_answer(
+        QueryRequest(question="List current fires with emergency notices across BC."),
+        [*roster, evacuation],
+    )
+
+    assert "Fire 1: Being Held" in answer
+    assert "Fire 1 evacuation alert: Alert" in answer
+    assert "perimeter" not in answer.casefold()
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "List the current official fire perimeter records across BC.",
+        "Show all current official multi-layer fire records across BC.",
+    ),
+)
+def test_explicit_perimeter_or_multilayer_roster_keeps_perimeter_records(question: str) -> None:
+    answer = compose_official_answer(
+        QueryRequest(question=question), _incident_perimeter_roster()
+    )
+
+    assert "Fire 1: Being Held" in answer
+    assert "Fire 1 perimeter: Mapped perimeter" in answer
 
 
 def test_mixed_fire_lookup_keeps_live_incidents_ahead_of_future_evacuation_guidance() -> None:
@@ -464,6 +539,58 @@ def test_selected_record_explains_distance_clock_and_unknowns_without_model_infe
     assert "separate clocks" in clocks
     assert "future spread" in unknowns
     assert "personal evacuation decision" in unknowns
+
+
+def test_named_selected_location_cannot_publish_a_stale_selected_record() -> None:
+    bald = _mountain_held().model_copy(update={"name": "Bald Range"})
+    pine = _mountain_held().model_copy(
+        update={"result_id": "incident:pine", "name": "Pine Fire"}
+    )
+    request = QueryRequest(
+        question="Where is Pine Fire?",
+        history=[
+            ConversationTurn(
+                role="assistant", content="Bald Range: Being Held. Pine Fire: Under Control."
+            )
+        ],
+        context=MapContext(selected_live_result_id=bald.result_id),
+    )
+    response = _build_ask_response(
+        request,
+        AgentPacket(live_results=[bald, pine]),
+        "stale provider prose",
+    )
+
+    assert response.response_mode == ResponseMode.ABSTENTION
+    assert "will not substitute" in (response.answer or "")
+    assert "Bald Range" not in (response.answer or "")
+
+
+@pytest.mark.parametrize("question", ("Where is Bald Range?", "Where’s Bald Range?"))
+def test_named_selected_location_publishes_only_the_exact_selected_record(
+    question: str,
+) -> None:
+    bald = _mountain_held().model_copy(update={"name": "Bald Range"})
+    pine = _mountain_held().model_copy(
+        update={"result_id": "incident:pine", "name": "Pine Fire"}
+    )
+    request = QueryRequest(
+        question=question,
+        history=[
+            ConversationTurn(
+                role="assistant", content="Bald Range: Being Held. Pine Fire: Under Control."
+            )
+        ],
+        context=MapContext(selected_live_result_id=bald.result_id),
+    )
+    response = _build_ask_response(
+        request, AgentPacket(live_results=[bald, pine]), "provider prose"
+    )
+
+    assert response.response_mode == ResponseMode.LIVE
+    assert response.selected_live_result_id == bald.result_id
+    assert "Bald Range" in (response.answer or "")
+    assert "Pine Fire" not in (response.answer or "")
 
 
 def test_closest_three_fact_request_returns_exactly_three_numbered_facts() -> None:

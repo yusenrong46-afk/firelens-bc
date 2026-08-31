@@ -42,6 +42,36 @@ describe("selectedResultIdForQuestion", () => {
     expect(selectedResultIdForQuestion("Tell me more about number 3.", undefined, undefined, liveResults)).toBe("incident:third");
   });
 
+  it("binds an exact visible incident name and prefers its incident over a perimeter", () => {
+    const results = [
+      { result_id: "perimeter:bald", kind: "perimeter", name: "Bald Range", incident_number: null },
+      { result_id: "incident:bald", kind: "incident", name: "Bald Range", incident_number: "K12345" },
+    ];
+    expect(selectedResultIdForQuestion("Where is Bald Range?", undefined, undefined, results)).toBe(
+      "incident:bald",
+    );
+    expect(selectedResultIdForQuestion("Where's Bald Range?", undefined, undefined, results)).toBe(
+      "incident:bald",
+    );
+    expect(selectedResultIdForQuestion("Where’s Bald Range?", undefined, undefined, results)).toBe(
+      "incident:bald",
+    );
+    expect(selectedResultIdForQuestion("Where is K12345?", undefined, undefined, results)).toBe(
+      "incident:bald",
+    );
+  });
+
+  it("fails closed for fuzzy, substring, and ambiguous visible identities", () => {
+    const results = [
+      { result_id: "incident:bald", kind: "incident", name: "Bald Range", incident_number: null },
+      { result_id: "incident:bald-2", kind: "incident", name: "Bald Range", incident_number: null },
+    ];
+    expect(selectedResultIdForQuestion("Where is Bald?", undefined, undefined, results)).toBeUndefined();
+    expect(selectedResultIdForQuestion("Where is Bald Range Fire?", undefined, undefined, results)).toBeUndefined();
+    expect(selectedResultIdForQuestion("Where are fires across B.C.?", "incident:bald", undefined, results)).toBeUndefined();
+    expect(selectedResultIdForQuestion("Where is Bald Range?", undefined, undefined, results)).toBeUndefined();
+  });
+
   it("fails closed for out-of-range ordinals and ambiguous singular questions", () => {
     expect(selectedResultIdForQuestion("Tell me more about the fourth one.", undefined, undefined, liveResults)).toBeUndefined();
     expect(selectedResultIdForQuestion("Tell me more about the second one.", "incident:first", undefined, [])).toBeUndefined();

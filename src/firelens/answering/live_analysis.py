@@ -109,7 +109,6 @@ _ORDINAL_RANK = {"first": 0, "1st": 0, "second": 1, "2nd": 1, "third": 2, "3rd":
 
 def official_information_prefix(records: Sequence[LiveResult]) -> str:
     """Honest lead-in: cached-stale records are never called current."""
-
     return freshness_language.official_information_prefix(
         freshness_language.aggregate_freshness_from_records(list(records))
     )
@@ -379,7 +378,6 @@ def compose_official_answer(
     static_answer: str | None = None,
 ) -> str:
     """Deterministic official sentence used offline and after a rail veto."""
-
     lowered = request.question.casefold()
     analysis = official_analysis_answer(
         request,
@@ -467,6 +465,14 @@ def compose_official_answer(
             "Open the selected official record for the fields its publishing "
             "authority provides."
         )
+    narrate_incidents = any(
+        item.kind == LiveResultKind.INCIDENT for item in records
+    ) and not re.search(
+        r"\b(?:perimeters?|multi[- ]layer|all (?:official )?layers|both (?:official )?layers)\b",
+        lowered,
+    )
+    if narrate_incidents:
+        records = [item for item in records if item.kind != LiveResultKind.PERIMETER]
     parts: list[str] = []
     for item in records[:8]:
         line = f"{official_display_name(item)}: {item.status}"
