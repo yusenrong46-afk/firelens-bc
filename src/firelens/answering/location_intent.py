@@ -47,6 +47,13 @@ def is_multi_place_fire_comparison(question: str) -> bool:
 
 _PLACE_PATTERNS = (
     re.compile(
+        r"\b(?:my|our)\s+(?:parents?|children|kids|partner|spouse|family|friends?|relatives?)\s+"
+        r"(?:are|is|live|lives|stay|stays)\s+(?:currently\s+)?in\s+"
+        r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?=[,;:.?!]|\s+(?:and|but|so)\b|$)",
+        re.IGNORECASE,
+    ),
+    re.compile(
         r"\b(?:wildfire|fire|incident|perimeter|evacuation)?\s*"
         r"(?:map|layer|view|search)\b.{0,50}"
         r"\b(?:empty|blank|returned?\s+(?:no|zero)|returned?\s+nothing)\b"
@@ -288,6 +295,7 @@ _REJECTED_PLACES = {
     "this fire",
     "this incident",
     "this wildfire",
+    "town",
     "any",
     "some",
     "what",
@@ -415,6 +423,12 @@ def directional_bc_region_label(question: str) -> str | None:
 
 def _clean_place(candidate: str) -> str | None:
     place = candidate.split(",", maxsplit=1)[0]
+    place = re.sub(
+        r"[.?!]\s+(?:can|could|may|might|do|does|how|is|are|what|which|why)\b.*$",
+        "",
+        place,
+        flags=re.IGNORECASE,
+    )
     place = _TRAILING_CLAUSE.sub("", place)
     place = _TRAILING_TIME.sub("", place)
     place = _TRAILING_SELECTED_REFERENCE.sub("", place)
@@ -481,6 +495,7 @@ def _clean_place(candidate: str) -> str | None:
                 "my ",
                 "our ",
                 "your ",
+                "town ",
             )
         )
         or lowered.startswith(

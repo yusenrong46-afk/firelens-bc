@@ -61,6 +61,29 @@ def empty_map_location_prompt(request: QueryRequest) -> AskResponse:
     )
 
 
+def smoke_observation_location_prompt() -> AskResponse:
+    """Request a bounded official lookup without attributing visible smoke."""
+
+    return AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id=uuid4().hex,
+        response_mode=ResponseMode.REQUIRES_INPUT,
+        answer=(
+            "FireLens cannot identify the cause of visible smoke. Enter a BC community "
+            "or approximate location and it can check current official wildfire incidents nearby."
+        ),
+        required_input=RequiredInput(
+            kind=RequiredInputKind.LOCATION,
+            prompt="Enter a BC community or approximate location to check official wildfire incidents.",
+            continuation_question="Show current wildfires near my place.",
+        ),
+        reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+        limitations=[
+            "No official incident lookup was run because the visible-smoke location was not provided."
+        ],
+    )
+
+
 def scope_redirect(topics: tuple[str, ...]) -> AskResponse:
     if topics:
         answer = f"FireLens is not connected to an official live source for {', '.join(topics)}. Open the related official service for the current value."

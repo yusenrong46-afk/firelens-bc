@@ -33,6 +33,9 @@ from firelens.agent.query_plan_boundaries import (
     selection_prompt as _selection_prompt,
 )
 from firelens.agent.query_plan_boundaries import (
+    smoke_observation_location_prompt as _smoke_observation_location_prompt,
+)
+from firelens.agent.query_plan_boundaries import (
     travel_or_fuel_boundary as _travel_or_fuel_boundary,
 )
 from firelens.agent.query_plan_boundaries import (
@@ -50,6 +53,8 @@ from firelens.answering.intent import (
     unsupported_live_topics,
 )
 from firelens.answering.intent_automaton import parse_request_intent
+from firelens.answering.intent_patterns import is_unresolved_smoke_observation
+from firelens.answering.intent_refresh import is_live_refresh_request
 from firelens.answering.intent_safety import is_empty_map_safety_inference
 from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.live_request_intent import (
@@ -330,6 +335,22 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             scope_result=AgentScopeResult.SCOPE_REDIRECT,
             terminal_response=_travel_or_fuel_boundary(),
         )
+    if (
+        is_unresolved_smoke_observation(question)
+        and request.location is None
+        and coarse_location_from_question(question) is None
+    ):
+        return AgentQueryPlan(
+            route=QueryRoute.LIVE,
+            mode=AgentRequestMode.TERMINAL,
+            live_layers=(LiveResultKind.INCIDENT, LiveResultKind.PERIMETER),
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=None,
+            tool_calls=(),
+            scope_result=AgentScopeResult.REQUIRES_INPUT,
+            terminal_response=_smoke_observation_location_prompt(),
+        )
     public_plan = plan_query(request)
     if public_plan.route == QueryRoute.TANGENT and prefers_general_background(request):
         return AgentQueryPlan(
@@ -405,6 +426,12 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     layers = live_layers_for_question(planning_question)
     if (
         not layers
+        and is_unresolved_smoke_observation(question)
+        and (request.location is not None or coarse_location_from_question(question) is not None)
+    ):
+        layers = (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER)
+    if (
+        not layers
         and _VAGUE_LOCAL_LIVE_CONCERN.search(question)
         and coarse_location_from_question(question) is not None
     ):
@@ -452,7 +479,10 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     if (
         location is None
         and not is_province_wide_question(request.question)
-        and continues_prior_live_place(request)
+        and (
+            continues_prior_live_place(request)
+            or is_live_refresh_request(request.question)
+        )
     ):
         prior = prior_anchor_user_question(request)
         if prior:
