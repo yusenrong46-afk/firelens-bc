@@ -453,9 +453,7 @@ def test_actual_runtime_keeps_generic_kit_and_pet_continuation_in_reviewed_lane(
             assert _publication_kinds(mixed.response) == {"official_quote_only"}
             assert AgentTool.LIST_OFFICIAL_FIRES in mixed.tools
             assert AgentTool.SEARCH_REVIEWED_GUIDANCE in mixed.tools
-            assert any(
-                "Grab-and-Go Bag" in claim.text for claim in mixed.response.claims
-            )
+            assert any("Grab-and-Go Bag" in claim.text for claim in mixed.response.claims)
 
             pets = await FireLensAgent(
                 runtime.service,
@@ -475,8 +473,7 @@ def test_actual_runtime_keeps_generic_kit_and_pet_continuation_in_reviewed_lane(
             assert _publication_kinds(pets.response) == {"official_quote_only"}
             assert AgentTool.SEARCH_REVIEWED_GUIDANCE in pets.tools
             assert any(
-                "Pets are part of the family" in claim.text
-                for claim in pets.response.claims
+                "Pets are part of the family" in claim.text for claim in pets.response.claims
             )
         finally:
             await runtime.aclose()

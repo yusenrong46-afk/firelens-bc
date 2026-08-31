@@ -8,8 +8,9 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 - Repository: `/Users/thomas/Documents/firelens-v1-6-integration-20260826T003225Z`
 - Working branch: `codex/v1-6-2-productbench100-repair`
-- Current HEAD: `d1deafc5814bc521b7c45f4cd13f437bc154daf3` (portfolio documentation
-  refresh; uncommitted documentation work may change the tree identity).
+- Current HEAD and tree: read from `git rev-parse HEAD^{commit}` and
+  `git rev-parse HEAD^{tree}`. This ledger deliberately does not embed a
+  self-referential candidate hash.
 - Package/version: `1.6.2`
 - This branch is not release-qualified. Exact candidate/tree identity must be
   re-established from fresh CI and candidate evidence after this repair.
@@ -58,8 +59,8 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - Final presentation repair: the first question stays visible, the conversation
   toolbar cannot overlap it, duplicate analytical insight copy was removed, and
   the unused map-default presentation branch was deleted.
-- Current uncommitted repair campaign: the two last real-corpus continuity
-  defects are locally repaired: mixed live records plus generic kit guidance
+- Current repair campaign: the two last real-corpus continuity defects are
+  implemented on this branch: mixed live records plus generic kit guidance
   omitted the static clause, and `What about pets?` after kit guidance
   redirected instead of continuing grounded quote-only guidance. These repairs
   still require exact-head verification and preview replay.
@@ -69,7 +70,7 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - Earlier local engineering, ProductBench, hard-probe, package, browser, and
   real-feed results predate the current HEAD or are not bound to its final tree.
   They are historical development evidence, not exact-head qualification.
-- The two current real-corpus continuity repairs are local-only until exact-head
+- The two current real-corpus continuity repairs are branch-local until exact-head
   verification and preview replay produce matching artifacts. Selected-record
   and refresh/location continuity were earlier committed repairs.
 - No local result in this ledger establishes deployed identity, continuous
