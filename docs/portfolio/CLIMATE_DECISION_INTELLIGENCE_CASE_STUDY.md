@@ -1,116 +1,134 @@
-# FireLens BC V1.6: Evidence-Bound Climate Decision Intelligence
+# FireLens BC: Evidence-Bound Climate Decision Intelligence
 
-## Problem
+## The decision problem
 
-Wildfire information products have to make uncertainty legible. People need to
-find official incident records and stable preparedness guidance quickly, but a
-fluent answer alone cannot establish a current fact, a recommendation, or an
-evacuation decision.
+People asking about wildfire conditions need two very different kinds of
+information: changing operational records and stable preparedness guidance. A
+conventional chatbot can retrieve both, summarize both, and still leave the
+user unable to tell which sentence is current, reviewed, merely quoted, or
+unsupported.
 
-FireLens BC is an answer-first engineering prototype for British Columbia. It
-combines official records, reviewed guidance, and explicit limits without
-presenting retrieval or model output as authority.
+FireLens BC is an independent engineering prototype built around that problem.
+It applies a pattern relevant to climate and building intelligence: keep
+changing operational records, governed documents, model language, and
+user-facing confidence visibly distinct.
+
+It is not an emergency authority. Its goal is to make a useful answer and its
+limits inspectable.
 
 ## Why naive RAG fails
 
-Retrieval can find relevant text without proving that a sentence is current,
-atomic, applicable, or authorized for publication. A naive RAG flow also tends
-to merge live records, quotations, and generated interpretation into one
-confident-looking answer. That makes it hard for a user to see what was actually
-established, what is only source wording, and what could not be verified.
+Retrieval proves that text was found, not that a generated sentence is entailed,
+current, atomic, or authorized for publication. A large source chunk may contain
+several unrelated facts. A citation may point to the right document but the
+wrong span. A live adapter may be unavailable while a model still sounds
+confident.
 
-## System architecture
+Those are data-contract problems, not prompt-writing problems. I therefore
+treated publication as a separate deterministic system:
 
 ```text
-Question -> deterministic request plan -> official adapters / reviewed retrieval
-         -> evidence packet -> deterministic validation -> labelled response
-         -> Proof Cards and map context when useful
+question
+  -> typed intent and immutable request plan
+  -> bounded official adapters and/or reviewed retrieval
+  -> evidence packet
+  -> identity, relevance, quotation, field, and authority validation
+  -> labelled response, Proof Cards, and useful analytical context
 ```
 
-The request plan fixes permitted tools, source layers, geography, and any
-reviewed-guidance subrequest before a provider can participate. Validation checks
-identity, relevance, exact quotation, typed fields, and publication authority.
+The model can help communicate. It cannot authorize a live fact, choose new
+tools, widen geography, or promote an extracted quotation into a reviewed
+claim.
 
-## Authority model
+## What I built
 
-The model may propose language from an application-owned packet; it does not
-authorize facts, choose tools, widen geography, or promote an extraction into a
-reviewed claim. FireLens keeps these states distinct:
+### Separate evidence lanes
 
-- official live typed records for current integrated data;
-- reviewed structured claims for approved, hash-bound guidance;
-- exact source quotations when extraction has not become a structured claim;
-- unknown, partial, or official-handoff states when support is missing.
+Official live records, reviewed structured guidance, exact source quotations,
+general background, and unknowns are different publication kinds. They retain
+different labels even when one question needs more than one lane.
 
-Proof Cards expose the associated source, identity, and publication state rather
-than treating a citation as proof of entailment.
+### Governed claims and atomic evidence
 
-## Regional routing defect discovered
+High-risk structured guidance compiles from a 26-record typed inventory with
+human review state, source-document revision, atomic quote, span hash, and
+approved wording. A changed source, missing chunk, altered quote, pending review,
+or changed surface fails closed. Nine source-repair deferrals remain
+non-compilable rather than being forced through review.
 
-An independent defect-first examination reproduced a location-routing failure:
-a named fire question that already contained a British Columbia place could
-fall into a generic “enter a BC community” continuation. Related mixed and
-province-wide requests could also lose the distinction between a deterministic
-analysis and a conversational answer.
+### Deterministic request authority
 
-## Repair design
+An immutable query plan fixes which tools, official layers, and geography a
+request may use. The plan also carries selected-record identity into a bounded
+follow-up, so “How large is it?” can remain tied to the record the user actually
+selected instead of silently choosing another incident.
 
-The repair introduced a single immutable `AgentQueryPlan` and a shared request
-grammar. It decides whether a question is a named-record lookup, regional or
-province-wide analysis, reviewed guidance, a mixed request, a handoff, or a
-request for additional input. The plan is also the sole authority for live
-layers and geography. The interface then uses an answer-first conversation for
-named records and guidance, and a deterministic summary/map/records workspace
-only for genuine multi-record analysis.
+### Adaptive product presentation
 
-## Before-versus-after benchmark
+The interface does not show the same map-heavy shell for every question.
+Guidance and ordinary conversation stay in a focused Chat view. Multi-record
+questions open a snapshot-only Analysis workspace with Summary, Map, and Records.
+Named, nearby, and closest-fire questions use a Spatial view when map context is
+useful. Missing or stale layers remain visible and never become an all-clear.
 
-In the local repair campaign, the public structural suite improved from **10/24
-to 24/24** cases. The offline hard probe improved from **86/105 to 88/105** with
-no previously passing case reported as regressed and zero provider cost. A full
-local Python run recorded **1300 passed, 10 skipped, and 584 subtests**; mocked
-browser checks recorded **31 passed and one intended skip**, while a deterministic
-backend-to-browser lane recorded **9/9**.
+## A representative journey
 
-These are executed local engineering results, not deployment, certification, or
-release evidence. Final qualification commands and a sealed holdout remain
-separate gates for this candidate.
+Consider: “Show current wildfire distribution by fire centre across B.C.”
 
-## Failure handling
+1. Typed intent classifies a province-wide multi-record analysis without
+   inventing a place requirement.
+2. The immutable plan authorizes the required official layer and no unrelated
+   geography.
+3. The live adapter returns typed records and freshness metadata.
+4. Application-owned analysis counts the returned snapshot by fire centre and
+   status. No provider writes those facts.
+5. The UI leads with a concise answer, then renders accessible charts and a
+   sortable record table. It says “returned records,” not an unsupported claim
+   about every real-world incident.
 
-An empty, unavailable, stale, or partial official layer is never an all-clear.
-The response says which layer was unavailable, keeps available records separate,
-and directs the user to an official source when FireLens cannot establish the
-requested fact. Rejected or malformed evidence is downgraded to unknown instead
-of being strengthened in the interface.
+If the source is unavailable, the answer names that limitation. If zero records
+are returned, FireLens does not infer that B.C. is safe.
 
-## Engineering tradeoffs
+## What failure taught me
 
-The system intentionally favors bounded behavior over broad conversational
-coverage. That costs some apparent fluency and requires careful data contracts,
-but it makes source changes, review state, failure paths, and response authority
-inspectable. The product does not browse arbitrary websites or infer local
-safety from absent results.
+Adversarial journey testing found defects that ordinary unit tests missed:
+questions containing “wildfire” could be routed into irrelevant live rosters;
+province-wide analysis could be mistaken for a place lookup; negated source
+wording could lose its negation; and multi-turn location or selected-record
+state could be dropped by the interface.
 
-## Transferability
+The repair strategy was not to add a longer prompt. I separated scope,
+capability, safety, tool planning, publication, and presentation; then added
+failing behavioral tests. During the pre-candidate repair campaign I ran
+backend, frontend, browser, structural-publication, hard-probe, and ProductBench
+checks. Current results remain attached to the exact Git candidate and CI
+artifacts that produced them rather than being frozen into this narrative.
 
-The same design is useful wherever document evidence and changing operational
-data have different authority:
+## Why the pattern transfers
 
-- building operations and maintenance intelligence;
-- sustainability and climate-risk analytics;
-- modular construction and inspection workflows;
-- document-plus-sensor systems;
-- regulated or otherwise high-consequence decision support.
+The same architecture applies when operational data and governed documents have
+different authority or update rates:
 
-In each case, the transferable pattern is not “use a chatbot.” It is to bind
-data identity, rules, provenance, and presentation state so a user can see what
-the system knows, what it does not know, and why.
+- building performance and maintenance records;
+- sustainability reporting and climate-risk analytics;
+- inspections, work orders, and compliance documents;
+- document-plus-sensor decision support;
+- any workflow where “we found text” is weaker than “this claim is authorized.”
 
-## Remaining limits
+The transferable skill is not simply building a chatbot. It is designing data
+identity, policy, validation, analytical computation, and interface state so a
+user can see what the system knows, what it does not know, and why.
 
-FireLens V1.6 is not an emergency authority and does not establish personal
-safety, evacuation decisions, medical advice, continuous monitoring, or
-production readiness. Paid H4/H8 evaluation, participant comprehension, manual
-VoiceOver review, preview qualification, firewall and rollback proof,
-deployment, and release GO remain external human-authorized gates.
+## Remaining limits and evidence
+
+The repository includes a [V1.6 architecture](../ARCHITECTURE_V1_6.md),
+[Product Constitution](../quality/FIRELENS_PRODUCT_CONSTITUTION.md),
+[ProductBench protocol](../protocols/PRODUCTBENCH_V2.md),
+[release runbook](../releases/V1_6_RUNBOOK.md), and
+[fixture-backed demo script](DEMO_SCRIPT.md).
+
+Automated evidence can establish deterministic behavior, source identity,
+quotation integrity, request authority, and interface states for a particular
+commit. It cannot establish personal safety, universal answer quality, human
+comprehension, production identity, or release approval. Those remain explicit
+gates rather than implied claims.

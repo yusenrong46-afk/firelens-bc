@@ -11,6 +11,10 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - Starting tree: `70bbfcbabe07e6cef2274e1392687a82c0c0fa62`
 - Working branch: `codex/v1-6-2-full-qualification`
 - Package/version: `1.6.2`
+- Integration parent before the current repair: commit
+  `60a68ac970ae8805020301ece81861a94e1fb7b4`, tree
+  `c74dca627e1e9003fd5d9efd3551255a013c3a87`. The final repair is not
+  identity-bound until it is committed and requalified by CI.
 - Last exact qualified parent: commit `6642d276fd9d2ec54c9d8034f257c033d186d7f5`,
   tree `26ed664588f5de756c0e4fd072cfb58661bb0d97`.
 - Visual implementation parent examined before this repair: commit
@@ -52,13 +56,29 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
   wider chart/table canvas, and separated mobile primary/display tab rows.
 - README: reader-first V1.6.2 project explanation, architecture, verification,
   limitations, and explicit external-gate disclosures.
+- Product-journey repair: preserves operation-specific answers above analysis,
+  rejects false all-clear premises, binds named and ordinal records, filters
+  Cariboo by the official fire-centre field, labels Okanagan as a bounded-radius
+  lookup, and prevents adjacent gas/evacuation wording from supporting a
+  sprinkler question.
+- Architecture repair: extracted narrow query-boundary, location-pattern,
+  live-scope, intent-rule, and distance helpers; all modified production modules
+  are below the repository's 650-line ceiling without a new exception.
+- Independent-verifier repair: official Fire Centre labels now bypass community
+  geocoding and use only the existing exact roster filter; numbered nearest-
+  record requests bind their stated community and requested count.
+- Final presentation repair: the first question stays visible, the conversation
+  toolbar cannot overlap it, duplicate analytical insight copy was removed, and
+  the unused map-default presentation branch was deleted.
 
 ## Executed local evidence
 
 - Local engineering qualification was recorded before the current branch HEAD
   was bound to candidate evidence. It must be rerun and bound to the current
   candidate evidence before it is treated as exact-head evidence.
-- Frontend unit suite: `148` passing tests.
+- Backend suite: `1,837` passing tests, `10` skipped, `672` subtests.
+- Frontend unit suite: `149` passing tests after removing one obsolete
+  map-default contract test.
 - Tooling checks: `6` passing.
 - Sites checks: `4` passing.
 - Playwright after the density refinement: `41` passing, `1` expected
@@ -68,6 +88,14 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 - Offline hard probe: `91/105`, zero cost; frozen threshold remains `86/105`.
 - Structural leak counters: five zeros.
 - Package verification: passed.
+- Frontend surface harness: `36/36` rows, functional journeys and performance
+  passed. The regenerated first-answer captures keep the toolbar, user question,
+  and assistant answer separate. The development protocol remains explicitly
+  unratified, so the report is not release qualification.
+- Real official-feed smoke: named Bald Range, ranked Kelowna records, freshness,
+  Cariboo, Okanagan, analytical counts, largest area, false-all-clear, and
+  evacuation-alert premise checks returned contract-valid responses. This is a
+  point-in-time integration smoke, not continuous availability proof.
 - Bundle-size deltas: captured for the candidate; no presentation provider
   calls were introduced.
 - Design QA: reference and implementation were compared together at
@@ -104,9 +132,8 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
 
 ## Next exact action
 
-Read the current branch HEAD/tree from matching current CI or candidate evidence,
-rerun local qualification and H8, and bind the results in external current
-candidate-evidence. Any post-evidence change invalidates those results. Then
-complete the outstanding paid, preview, human, VoiceOver, firewall, rollback,
-and release-decision gates. Do not describe the project as fully qualified,
-deployed, or release-ready until those gates pass.
+Freeze and commit the current repair, push the branch, and require matching CI
+and candidate evidence before merge or deployment. Any post-evidence change
+invalidates those results. Human, sealed, preview, firewall, rollback, and
+release artifacts must be attached to the same identity before they are claimed
+as completed; verbal completion is not a substitute for candidate-bound proof.
