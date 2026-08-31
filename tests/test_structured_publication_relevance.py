@@ -191,6 +191,30 @@ def test_sprinkler_action_does_not_publish_adjacent_gas_instruction() -> None:
     assert response.validation is not None and response.validation.accepted
 
 
+def test_pb037_sprinkler_action_selects_the_reviewed_claim_without_generation() -> None:
+    question = "Should I turn on my sprinklers before leaving during an evacuation?"
+    packet = _bound_packet(question, "TC-SPRINKLER-001")
+
+    assert select_typed_claim_ids(packet, question=question) == ["TC-SPRINKLER-001"]
+
+    outcome = asyncio.run(
+        GroundedAnswerEngine(FakeProvider(dimensions=8)).answer(
+            question,
+            packet,
+            trace_id="pb037-sprinkler",
+        )
+    )
+
+    assert outcome.response.response_mode == ResponseMode.GROUNDED
+    assert _typed_ids(outcome.response) == {"TC-SPRINKLER-001"}
+    public = (outcome.response.answer or "").casefold()
+    assert "do not activate" in public
+    assert "natural gas" not in public
+    assert "follow instructions" not in public
+    assert outcome.attempts == 0
+    assert outcome.observations == ()
+
+
 def test_order_definition_does_not_publish_other_evacuation_stages() -> None:
     packet = _bound_packet(
         "What does an evacuation order mean?",

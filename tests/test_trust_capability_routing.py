@@ -52,3 +52,40 @@ def test_trust_explanation_is_a_zero_provider_capability_response(tmp_path: Path
         assert "human semantic review" in public_text
 
     asyncio.run(run())
+
+
+def test_capability_transparency_explains_live_records_and_decision_limit(
+    tmp_path: Path,
+) -> None:
+    question = "What can FireLens reliably tell me, and what should I still verify with officials?"
+
+    async def run() -> None:
+        assert plan_query(QueryRequest(question=question)).route == QueryRoute.CAPABILITY
+        provider = FakeProvider()
+        runtime, _, _ = await make_runtime(tmp_path, provider=provider)
+        before = (
+            provider.plan_calls,
+            provider.embed_calls,
+            provider.rerank_calls,
+            provider.generate_calls,
+        )
+        try:
+            assert runtime.service is not None
+            response = await runtime.service.ask(QueryRequest(question=question))
+        finally:
+            await runtime.aclose()
+
+        assert response.response_mode == ResponseMode.CAPABILITY
+        public = " ".join([response.answer or "", *response.limitations]).casefold()
+        assert "current official b.c. wildfire records" in public
+        assert "deterministic record-based counts, rankings, and distances" in public
+        assert "issuing officials" in public
+        assert "does not decide whether to leave, stay, return, or take a route" in public
+        assert (
+            provider.plan_calls,
+            provider.embed_calls,
+            provider.rerank_calls,
+            provider.generate_calls,
+        ) == before
+
+    asyncio.run(run())

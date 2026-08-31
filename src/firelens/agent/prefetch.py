@@ -17,6 +17,7 @@ from firelens.agent.query_plan import AgentQueryPlan
 from firelens.agent.runtime_tools import execute_tool
 from firelens.agent.tools import AgentTool
 from firelens.answering.intent import live_query_requires_location
+from firelens.answering.intent_refresh import is_live_refresh_request
 from firelens.answering.live_request_intent import (
     is_distance_request,
     is_selected_live_request,
@@ -171,6 +172,11 @@ async def prefetch_evidence(
 
         for isolated in await _gather_cancel_on_error(workers):
             _merge_isolated_packet(packet, isolated)
+        if packet.live_results and is_live_refresh_request(request.question):
+            packet.add_live_limitation(
+                "FireLens fetched a current official snapshot for this request, but it does "
+                "not retain a prior official snapshot here to establish what changed."
+            )
         return
     await prefetch_selected(request, live_coordinator, static_service, packet)
     await ensure_official_fetch(request, live_coordinator, static_service, packet)

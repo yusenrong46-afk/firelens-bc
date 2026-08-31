@@ -131,6 +131,7 @@ export function useFireLensSession(): FireLensSession {
         normalized,
         selectedLiveResultId,
         selectedResultOverride,
+        response?.live_results ?? [],
       );
       if (contextSelected) context.selected_live_result_id = contextSelected;
       const nextResponse = await askFireLens(

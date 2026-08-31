@@ -10,6 +10,7 @@ from test_luna_brain_agent import (
     CountingMapService,
     InventingThenRewritingProvider,
     RecordingStatic,
+    UnavailableLiveService,
     _background_response,
     _fire,
     _kit_response,
@@ -237,6 +238,40 @@ async def test_pb21_public_path_uses_bounded_official_layers_without_static_rag(
     assert live.map_calls == 0
     assert len(static.calls) == 0
     assert provider.turns == 0
+
+
+@_sync_test
+async def test_refresh_uses_a_new_live_snapshot_without_inventing_a_delta() -> None:
+    static = RecordingStatic(_background_response())
+    live = CountingMapService([_fire(result_id="incident:refresh", name="Refresh Fire")])
+    execution = await FireLensAgent(
+        cast(Any, static),
+        LiveAnswerCoordinator(cast(Any, live)),
+    ).answer(QueryRequest(question="Refresh the wildfire data and tell me whether anything changed."))
+
+    public = " ".join([execution.response.answer or "", *execution.response.limitations])
+    assert execution.route == QueryRoute.LIVE
+    assert execution.response.response_mode == ResponseMode.LIVE
+    assert "current official snapshot" in public.casefold()
+    assert "does not retain a prior official snapshot" in public.casefold()
+    assert live.map_calls == 1
+    assert live.nearby_calls == 0
+    assert len(static.calls) == 0
+
+
+@_sync_test
+async def test_unavailable_refresh_never_claims_that_a_snapshot_was_fetched() -> None:
+    static = RecordingStatic(_background_response())
+    execution = await FireLensAgent(
+        cast(Any, static),
+        LiveAnswerCoordinator(cast(Any, UnavailableLiveService())),
+    ).answer(QueryRequest(question="Refresh the wildfire data and tell me whether anything changed."))
+
+    public = " ".join([execution.response.answer or "", *execution.response.limitations])
+    assert execution.response.response_mode == ResponseMode.ABSTENTION
+    assert "official live wildfire layers were unavailable" in public.casefold()
+    assert "fetched a current official snapshot" not in public.casefold()
+    assert len(static.calls) == 0
 
 
 @_sync_test

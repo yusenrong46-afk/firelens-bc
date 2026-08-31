@@ -101,6 +101,23 @@ def selection_prompt() -> AskResponse:
     )
 
 
+def record_reference_prompt() -> AskResponse:
+    """Keep an ambiguous roster reference from selecting a record implicitly."""
+
+    return AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id=uuid4().hex,
+        response_mode=ResponseMode.SCOPE_REDIRECT,
+        answer=(
+            "Select a mapped official record or name the fire you mean before asking "
+            "which record FireLens is referring to. FireLens will not choose one from "
+            "the roster."
+        ),
+        reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+        limitations=["No official record was fetched for an unselected reference."],
+    )
+
+
 def multi_place_comparison_limit(request: QueryRequest) -> AskResponse:
     return AskResponse(
         status=ResponseStatus.ANSWER,

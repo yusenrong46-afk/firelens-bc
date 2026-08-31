@@ -17,6 +17,7 @@ from firelens.answering import intent_lexicon as lex
 from firelens.answering import intent_spans as spans
 from firelens.answering.intent_automaton_rules import is_selected_prediction
 from firelens.answering.intent_guidance import is_evac_definition, is_guidance
+from firelens.answering.intent_refresh import is_refresh_snapshot_tokens
 from firelens.contracts import LiveResultKind
 
 
@@ -267,6 +268,8 @@ def _current_fire_operation(
         return RecordOperation.LOCATE if map_focus else RecordOperation.LIST
     if not fire and not perimeter:
         return None
+    if fire and is_refresh_snapshot_tokens(tokens):
+        return RecordOperation.LIST
     if is_selected_prediction(tokens):
         return RecordOperation.STATUS
     if temporal == TemporalScope.NONCURRENT:

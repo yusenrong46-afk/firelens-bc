@@ -24,6 +24,9 @@ from firelens.agent.query_plan_boundaries import (
     multi_place_comparison_limit as _multi_place_comparison_limit,
 )
 from firelens.agent.query_plan_boundaries import (
+    record_reference_prompt as _record_reference_prompt,
+)
+from firelens.agent.query_plan_boundaries import (
     scope_redirect as _scope_redirect,
 )
 from firelens.agent.query_plan_boundaries import (
@@ -144,6 +147,14 @@ _PERSONAL_TRAVEL_OR_FUEL_DECISION = re.compile(
     r"\b(?:wildfire|fire|evacuat(?:ion|e))\b|"
     r"\b(?:wildfire|fire|evacuat(?:ion|e))\b.{0,120}"
     r"\b(?:can|could|should|may)\s+(?:i|we)\s+(?:drive|travel|go)\b",
+    re.IGNORECASE,
+)
+_UNBOUND_RECORD_REFERENCE = re.compile(
+    r"\bwhich\s+(?:official\s+)?record\b.{0,80}\b(?:refer(?:ring)?|mean|mentioned)\b",
+    re.IGNORECASE,
+)
+_VAGUE_LOCAL_LIVE_CONCERN = re.compile(
+    r"\b(?:worry|concern(?:ed)?)\b.{0,48}\b(?:near|around|in)\s+[a-z]",
     re.IGNORECASE,
 )
 
@@ -353,6 +364,29 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             tool_calls=(_call(AgentTool.GET_OFFICIAL_FIRE, result_id=selected),),
         )
 
+    if _UNBOUND_RECORD_REFERENCE.search(question):
+        if selected is not None:
+            return AgentQueryPlan(
+                route=QueryRoute.LIVE,
+                mode=AgentRequestMode.SELECTED,
+                live_layers=(),
+                geography=AgentGeography.SELECTED_RECORD,
+                location_label=None,
+                static_subrequest=None,
+                tool_calls=(_call(AgentTool.GET_OFFICIAL_FIRE, result_id=selected),),
+            )
+        return AgentQueryPlan(
+            route=QueryRoute.LIVE,
+            mode=AgentRequestMode.TERMINAL,
+            live_layers=(),
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=None,
+            tool_calls=(),
+            scope_result=AgentScopeResult.SCOPE_REDIRECT,
+            terminal_response=_record_reference_prompt(),
+        )
+
     if requires_selected_live_record(request):
         return AgentQueryPlan(
             route=QueryRoute.LIVE,
@@ -369,6 +403,12 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     planning_question = conversation_planning_question(request)
     topics = unsupported_live_topics(planning_question)
     layers = live_layers_for_question(planning_question)
+    if (
+        not layers
+        and _VAGUE_LOCAL_LIVE_CONCERN.search(question)
+        and coarse_location_from_question(question) is not None
+    ):
+        layers = (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER)
     parsed_intent = parse_request_intent(planning_question)
     supported_live_clause = parsed_intent.has_live_records
     if topics and not supported_live_clause:

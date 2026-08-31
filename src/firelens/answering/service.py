@@ -423,10 +423,14 @@ class StaticRAGService(StaticRAGSupport):
                 trace_id=trace_id,
                 response_mode=ResponseMode.CAPABILITY,
                 answer=(
-                    f"FireLens can help with {topics}. Its reviewed collection includes "
-                    "PreparedBC, FireSmart BC, BC Wildfire Service, and BCCDC guidance. "
-                    f"{GROUNDED_PUBLIC_WORDING} Grounded answers pair each claim with "
-                    "reviewed local evidence and an exact supporting quote."
+                    "FireLens can show current official B.C. wildfire records, present "
+                    "reviewed preparedness guidance with exact source wording, and make "
+                    "deterministic record-based counts, rankings, and distances. It can help "
+                    f"with {topics}. {GROUNDED_PUBLIC_WORDING} Grounded answers pair each "
+                    "claim with reviewed local evidence and an exact supporting quote. Verify "
+                    "time-sensitive evacuation notices, roads, and personal safety decisions "
+                    "with the issuing officials; FireLens does not decide whether to leave, "
+                    "stay, return, or take a route."
                 ),
                 limitations=search.plan.limitations,
                 suggested_questions=list(SUGGESTED_QUESTIONS[:6]),

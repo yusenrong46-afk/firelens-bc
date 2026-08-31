@@ -193,6 +193,11 @@ _PLACE_PATTERNS = (
 
 _CONTEXTUAL_PLACE_PATTERNS = (
     re.compile(
+        r"\b(?:anything|something|what).{0,28}\b(?:worry|concern(?:ed)?)\b"
+        r".{0,32}\b(?:near|around|in)\s+(?P<place>[a-z][a-z .'-]{1,80})",
+        re.IGNORECASE,
+    ),
+    re.compile(
         r"\b(?:fires?|wildfires?|(?:fire|wildfire)\s+situation|"
         r"(?:(?:fire|wildfire)\s+)?perimeters?|[a-z]{1,12}fires?)\s+"
         r"(?:(?:is|are)\s+)?"

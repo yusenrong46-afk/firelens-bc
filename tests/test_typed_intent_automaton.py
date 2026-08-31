@@ -25,6 +25,7 @@ from firelens.answering.intent_automaton import (
     TemporalScope,
     parse_request_intent,
 )
+from firelens.answering.intent_refresh import is_live_refresh_request
 from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import (
@@ -259,6 +260,19 @@ def test_how_firelens_maps_current_data_is_product_help_not_live() -> None:
     )
     assert plan.mode != AgentRequestMode.LIVE
     assert plan.geography != AgentGeography.PROVINCE_WIDE or not plan.live_layers
+
+
+def test_refresh_wildfire_data_is_a_current_snapshot_not_a_historical_claim() -> None:
+    question = "Refresh the wildfire data and tell me whether anything changed."
+    parsed = parse_request_intent(question)
+
+    assert parsed.has_live_records
+    assert parsed.clauses[0].operation == RecordOperation.LIST
+    assert is_live_refresh_request(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+    assert plan.route == QueryRoute.LIVE
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.geography == AgentGeography.PROVINCE_WIDE
 
 
 def test_universal_standoff_distance_is_not_a_live_geometry_ask() -> None:

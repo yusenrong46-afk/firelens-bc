@@ -10,6 +10,7 @@ _CAPABILITY_PATTERNS = (
     r"^(?:hi|hello|hey|good (?:morning|afternoon|evening))[!., ]*$",
     r"\bwhat (?:can|could) i ask (?:you|firelens)(?: about)?\b",
     r"\bwhat (?:can|could) (?:you|firelens) (?:do|help(?: me)? with)\b",
+    r"\bwhat can firelens reliably (?:tell|show|do)\b",
     r"\bwhat does firelens (?:do|cover|offer)\b",
     r"\b(?:what|which) (?:documents|sources|topics).{0,80}\b(?:collection|know|use|cover)\b",
     r"\b(?:show|give) me (?:a few )?(?:example|sample|suggested) questions\b",
