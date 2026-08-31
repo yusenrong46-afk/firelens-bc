@@ -262,6 +262,33 @@ def test_quote_only_high_risk_response_is_partial() -> None:
     assert response.claims[0].publication.kind.value == "official_quote_only"
 
 
+def test_sprinkler_question_never_substitutes_an_adjacent_evacuation_quote() -> None:
+    question = "Should I turn on my sprinklers before leaving during an evacuation?"
+    unrelated_evacuation_quote = (
+        "During a Wildfire\n"
+        "FOLLOW INSTRUCTIONS\n"
+        "The most important thing you can do is heed all evacuation alerts\n"
+        "and orders and follow instructions from your band office, municipality,\n"
+        "regional district or local authority. Trust in your preparedness and work\n"
+        "your emergency plan.\n"
+        "Natural gas safety\n"
+        "Do NOT shut off your natural gas when you receive an evacuation order."
+    )
+    packet = _with_quote_sources(
+        EvidencePacket(question=question, corpus_version="sprinkler", items=[]),
+        unrelated_evacuation_quote,
+    )
+
+    response = compile_high_risk_answer(question, packet, trace_id="sprinkler-substitution")
+
+    assert response.response_mode == ResponseMode.SCOPE_REDIRECT
+    assert response.reason_code == ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED
+    assert response.claims == []
+    public = " ".join([response.answer or "", *response.limitations]).casefold()
+    assert "natural gas" not in public
+    assert "follow instructions" not in public
+
+
 def test_population_specific_request_does_not_publish_a_different_group_claim() -> None:
     question = "What should I do about wildfire smoke if I am pregnant?"
     quote = (

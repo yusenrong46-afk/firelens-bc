@@ -1953,6 +1953,26 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertNotIn("Unrelated Ridge Fire", execution.response.answer or "")
 
+    async def test_explicit_named_fire_status_filters_the_roster(self) -> None:
+        agent = _agent(
+            [
+                _fire(result_id="incident:1", name="Bald Range", status="Fire of Note"),
+                _fire(result_id="incident:2", name="Unrelated Ridge Fire", status="Being Held"),
+            ]
+        )
+
+        execution = await agent.answer(
+            QueryRequest(question="What is the current status of the Bald Range Fire?")
+        )
+
+        self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
+        self.assertEqual(
+            [item.name for item in execution.response.live_results],
+            ["Bald Range"],
+        )
+        self.assertIn("Bald Range", execution.response.answer or "")
+        self.assertNotIn("Unrelated Ridge Fire", execution.response.answer or "")
+
     async def test_closest_follow_up_after_a_place_list_uses_fetched_distances(self) -> None:
         agent = _agent(
             [

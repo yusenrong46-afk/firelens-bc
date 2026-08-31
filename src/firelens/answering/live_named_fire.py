@@ -37,8 +37,10 @@ _GENERIC_LOCATED_NAMES = frozenset(
         "local",
         "nearest",
         "second",
+        "that",
         "the",
         "third",
+        "this",
     }
 )
 _GUIDANCE_NAMED_SUBJECTS = frozenset(
@@ -112,6 +114,20 @@ _STILL_BURNING_FIRE = re.compile(
     r"\s+(?:fire|wildfire|incident)\s+still\s+burning\b",
     re.IGNORECASE,
 )
+_STATUS_NAMED_FIRE = re.compile(
+    r"\b(?:what(?:'s|\s+is)|give|show)\s+(?:me\s+)?(?:the\s+)?"
+    r"(?:current\s+|latest\s+|official\s+)?status\s+(?:of|for)\s+(?:the\s+)?"
+    r"(?P<name>[A-Za-z][A-Za-z0-9'’.-]*(?:\s+[A-Za-z0-9'’.-]*){0,4}?)\s+"
+    r"(?:fire|wildfire|incident)\s*[?.!]?\s*$",
+    re.IGNORECASE,
+)
+_STATUS_NAMED_FIRE_TYPO = re.compile(
+    r"\bwhts\s+(?:the\s+)?(?:current\s+|latest\s+|official\s+)?status\s+"
+    r"(?:of\s+|for\s+)?(?:the\s+)?"
+    r"(?P<name>[A-Za-z][A-Za-z0-9'’.-]*(?:\s+[A-Za-z0-9'’.-]*){0,4}?)\s+"
+    r"(?:fire|wildfire|incident)\s*[?.!]?\s*$",
+    re.IGNORECASE,
+)
 
 
 def _normalized_name(value: str) -> str:
@@ -134,7 +150,12 @@ def extracted_located_fire_name(question: str) -> str | None:
         base = " ".join(match.group("name").split()).strip(" ?.!'\"")
         if base and base.casefold().split()[0] not in _GENERIC_LOCATED_NAMES:
             return f"{base} Fire"
-    for pattern in (_TELL_ABOUT_FIRE, _STILL_BURNING_FIRE):
+    for pattern in (
+        _TELL_ABOUT_FIRE,
+        _STILL_BURNING_FIRE,
+        _STATUS_NAMED_FIRE,
+        _STATUS_NAMED_FIRE_TYPO,
+    ):
         mentioned = pattern.search(question)
         if mentioned is None:
             continue

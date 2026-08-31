@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import uuid4
 
+from firelens.agent.live_scope import packet_scope_limitations
 from firelens.agent.live_selection import (
     selected_live_result_id,
     selected_official_handoff,
@@ -150,6 +151,14 @@ def _with_packet_fields(
         if layer_unavailable not in limitations:
             limitations.append(layer_unavailable)
             updates["limitations"] = limitations
+            updates["history_text"] = None
+    scope_limitations = [*packet.live_limitations, *packet_scope_limitations(request, packet)]
+    for limitation in scope_limitations:
+        if limitation not in limitations:
+            limitations.append(limitation)
+            updates["limitations"] = limitations
+            # `history_text` is a derived public-contract field. Any visible
+            # limitation changes the answer history representation too.
             updates["history_text"] = None
     if request.context.selected_live_result_id and not response.selected_live_result_id:
         updates["selected_live_result_id"] = request.context.selected_live_result_id

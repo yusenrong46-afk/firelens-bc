@@ -25,6 +25,11 @@ _PACKING_CONTEXT = re.compile(
     r"\b(?:bag|bags|kit|kits|pack|packing|grab-and-go|go-bag)\b", re.IGNORECASE
 )
 _GENERAL_MISTAKE_DISCUSSION = re.compile(r"\b(?:mistake|mistakes|error|errors)\b", re.I)
+_NONLITERAL_FIRE_METAPHOR = re.compile(
+    r"\b(?:my|our)\s+(?:workload|schedule|inbox|project)\s+(?:is|feels?\s+like)\s+"
+    r"(?:a\s+)?(?:fire|wildfire|inferno)\b",
+    re.IGNORECASE,
+)
 _EXPLICIT_SOURCE_ATTRIBUTION = re.compile(
     r"\baccording\s+to\b|\b(?:what\s+(?:does|do)|does)\b.{0,80}\b(?:say|says|"
     r"recommend|require|follow)\b|\b(?:source|document|guide|checklist)\b.{0,80}\b(?:say|says|"
@@ -199,6 +204,8 @@ def prefers_general_background(request: QueryRequest) -> bool:
     current = focused_question(request.question)
     if is_capability_question(current.casefold()):
         return False
+    if _NONLITERAL_FIRE_METAPHOR.search(current) is not None:
+        return True
     parsed = parse_request_intent(current)
     if parsed.has_live_records or explicit_corpus_attribution(current):
         return False

@@ -17,6 +17,7 @@ from firelens.answering.live_analysis import (
     annotate_live_results,
     filter_requested_named_fire_results,
 )
+from firelens.answering.live_analysis_distance import ranked_live_results_for_request
 from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.live_record_intent import is_fire_geography_analysis
 from firelens.answering.location_intent import (
@@ -34,6 +35,10 @@ from firelens.contracts import (
 from firelens.errors import ToolInputError
 from firelens.live import LiveDataErrorKind, LiveDataService, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
+from firelens.live_support import (
+    official_fire_centre_label,
+    regional_reference_point_limitation,
+)
 
 _EXPLICIT_PROVINCE_SCOPE = re.compile(
     r"\b(?:across|throughout|in|of|by|around)\s+"
@@ -267,8 +272,11 @@ async def _fetch_layers(
     if location is not None and is_out_of_province_label(location.label):
         _note_topic(packet, "out_of_province_place")
         return [], None, None
+    fire_centre = official_fire_centre_label(location.label) if location is not None else None
+    if location is not None:
+        packet.add_live_limitation(regional_reference_point_limitation(location))
     try:
-        if location is not None:
+        if location is not None and fire_centre is None:
             page = await live_service.nearby_page(
                 location, layers=layers, page=1, page_size=100
             )
@@ -279,7 +287,10 @@ async def _fetch_layers(
             if roster_total is None:
                 roster_total = len(page.results)
             annotated = annotate_live_results(list(page.results), resolved)
-            filtered = filter_requested_named_fire_results(request, annotated)
+            filtered = ranked_live_results_for_request(
+                request.question,
+                filter_requested_named_fire_results(request, annotated),
+            )
             if extracted_located_fire_name(request.question) is not None and not filtered:
                 _note_topic(packet, "named_fire_not_found")
             _record_successful_live_response(packet, page)
@@ -289,18 +300,46 @@ async def _fetch_layers(
                 roster_total,
             )
         mapped = await live_service.map_results(layers=layers)
-        resolved_location = None if province_wide else _annotation_location(request, None)
+        # A BCWS fire-centre label is an administrative source field, not a
+        # geocodable origin.  Do not attach distances from an unrelated place
+        # returned by a gazetteer lookup.
+        resolved_location = (
+            None
+            if province_wide or fire_centre is not None
+            else _annotation_location(request, None)
+        )
         resolved = (
             await _resolve(live_service, resolved_location)
             if resolved_location is not None
             else None
         )
         annotated = annotate_live_results(list(mapped.results), resolved)
-        filtered = filter_requested_named_fire_results(request, annotated)
+        centre_filtered = (
+            [
+                item
+                for item in annotated
+                if item.fire_centre is not None
+                and item.fire_centre.casefold() == fire_centre.casefold()
+            ]
+            if fire_centre is not None
+            else annotated
+        )
+        if fire_centre is not None:
+            packet.add_live_limitation(
+                f"Results are filtered to the official BC Wildfire Service {fire_centre} label."
+            )
+        filtered = ranked_live_results_for_request(
+            request.question,
+            filter_requested_named_fire_results(request, centre_filtered),
+        )
         if extracted_located_fire_name(request.question) is not None and not filtered:
             _note_topic(packet, "named_fire_not_found")
         _record_successful_live_response(packet, mapped)
-        return filtered, resolved, len(mapped.results)
+        return (
+            filtered,
+            resolved,
+            len(filtered) if fire_centre is not None else len(mapped.results),
+        )
     except LiveDataUnavailable as exc:
         _remember_retrieval(packet, datetime.now(UTC))
         if exc.kind == LiveDataErrorKind.NOT_FOUND:

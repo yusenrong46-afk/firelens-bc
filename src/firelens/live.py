@@ -40,6 +40,7 @@ from firelens.live_support import (
     _BBox,
     _CacheKey,
     bc_region_entry,
+    regional_lookup_limitations,
 )
 from firelens.live_support import (
     GEOCODER_ACCEPTED_PRECISIONS as GEOCODER_ACCEPTED_PRECISIONS,
@@ -702,11 +703,9 @@ class LiveDataService:
                 continue
             if relation in {GeometryRelation.INSIDE, GeometryRelation.NEARBY}:
                 related.append(result.model_copy(update={"geometry_relation": relation}))
-        limitations = list(response.limitations)
-        if unknown_located:
-            limitations.append(
-                "Some official records could not be located spatially; check them directly with the issuing authority."
-            )
+        limitations = regional_lookup_limitations(
+            location, response.limitations, unknown_located=unknown_located
+        )
         related_response = response.model_copy(
             update={
                 "results": related,

@@ -6,6 +6,11 @@ import re
 
 from firelens.answering import intent_lexicon as lex
 from firelens.answering import intent_spans as spans
+from firelens.answering.location_intent_patterns import (
+    CLOSEST_FIRE_TRAILING_PLACE,
+    MULTI_PLACE_DISTANCE_COMPARISONS,
+    MULTI_PLACE_FIRE_COMPARISONS,
+)
 from firelens.answering.request_grammar import (
     parse_request_facets,
     requests_non_bc_national_scope,
@@ -33,25 +38,12 @@ _PROVINCE_WIDE_SCOPE = re.compile(
     re.IGNORECASE,
 )
 
-_MULTI_PLACE_FIRE_COMPARISONS = (
-    re.compile(
-        r"\b(?:fires?|wildfires?|(?:fire|wildfire)\s+counts?|"
-        r"evacuation\s+(?:alerts?|orders?)|perimeters?|official\s+records?)\b"
-        r".{0,100}\b(?:in|near|around|within|for)\s+"
-        r"(?:the\s+)?[a-z][a-z .'-]{1,60}?\s+"
-        r"(?:versus|vs\.?)\s+(?:the\s+)?[a-z][a-z .'-]{1,60}?"
-        r"(?=[?.,;]|$)",
-        re.IGNORECASE,
-    ),
-    re.compile(
-        r"(?i:\b(?:fires?|wildfires?|(?:fire|wildfire)\s+counts?|"
-        r"evacuation\s+(?:alerts?|orders?)|perimeters?|official\s+records?)\b"
-        r".{0,100}\b(?:in|near|around|within|for)\s+(?:the\s+)?"
-        r"[a-z][a-z .'-]{1,60}?\s+(?:and|or)\s+(?:the\s+)?)"
-        r"[A-Z][A-Za-z.'-]*(?:\s+[A-Z][A-Za-z.'-]*){0,3}"
-        r"(?=[?.,;]|$)",
-    ),
-)
+
+def is_multi_place_fire_comparison(question: str) -> bool:
+    """Return true when one request requires two independent distance origins."""
+
+    return any(pattern.search(question) for pattern in MULTI_PLACE_DISTANCE_COMPARISONS)
+
 
 _PLACE_PATTERNS = (
     re.compile(
@@ -271,6 +263,7 @@ _NON_PLACE_ANALYSIS_WORDS = frozenset(
         "geographic",
         "geographically",
         "geography",
+        "provincial",
         "status",
         "centre",
         "centres",
@@ -480,6 +473,9 @@ def _clean_place(candidate: str) -> str | None:
                 "active ",
                 "fires ",
                 "wildfires ",
+                "my ",
+                "our ",
+                "your ",
             )
         )
         or lowered.startswith(
@@ -542,7 +538,7 @@ def coarse_location_from_question(question: str) -> LocationInput | None:
         return None
     if directional_bc_region_label(question) is not None:
         return None
-    if any(pattern.search(question) for pattern in _MULTI_PLACE_FIRE_COMPARISONS):
+    if any(pattern.search(question) for pattern in MULTI_PLACE_FIRE_COMPARISONS):
         return None
 
     normalized = lex.normalize_text(question)
@@ -552,6 +548,36 @@ def coarse_location_from_question(question: str) -> LocationInput | None:
         if place is not None:
             try:
                 return LocationInput(label=place, radius_km=50)
+            except ValueError:
+                return None
+
+    live_records_closest = lex.LIVE_RECORDS_CLOSEST_SCOPE.search(normalized)
+    if live_records_closest is not None:
+        place = _clean_place(live_records_closest.group("place"))
+        if place is not None:
+            try:
+                return LocationInput(label=place, radius_km=50)
+            except ValueError:
+                return None
+
+    closest_size = CLOSEST_FIRE_TRAILING_PLACE.search(normalized)
+    if closest_size is not None:
+        place = _clean_place(closest_size.group("place"))
+        if place is not None:
+            try:
+                return LocationInput(label=place, radius_km=50)
+            except ValueError:
+                return None
+
+    compact_radius = lex.COMPACT_RADIUS_SCOPE.search(normalized)
+    if compact_radius is not None:
+        place = _clean_place(compact_radius.group("place"))
+        if place is not None:
+            try:
+                return LocationInput(
+                    label=place,
+                    radius_km=float(compact_radius.group("radius")),
+                )
             except ValueError:
                 return None
 

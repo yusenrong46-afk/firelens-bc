@@ -307,6 +307,20 @@ class FireLensAgent:
             _live_place_correction(request) or _answer_mismatch_correction(request) or request
         )
         agent_plan = await build_agent_query_plan(effective_request, self.live_coordinator)
+        if (
+            agent_plan.mode == AgentRequestMode.SELECTED
+            and effective_request.context.selected_live_result_id is None
+            and agent_plan.tool_calls
+        ):
+            selected_id = agent_plan.tool_calls[0].as_arguments().get("result_id")
+            if selected_id:
+                effective_request = effective_request.model_copy(
+                    update={
+                        "context": effective_request.context.model_copy(
+                            update={"selected_live_result_id": selected_id}
+                        )
+                    }
+                )
         if agent_plan.mode == AgentRequestMode.TERMINAL:
             assert agent_plan.terminal_response is not None
             terminal_route = (

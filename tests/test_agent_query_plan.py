@@ -85,6 +85,103 @@ def test_mixed_plan_preserves_exact_static_clause_and_order(question: str) -> No
     ("question", "place", "static_subrequest"),
     (
         (
+            "What is the closest fire to Penticton and what should I have ready?",
+            "Penticton",
+            "what should I have ready",
+        ),
+        (
+            "Are there fires near Kamloops and how should I prepare for poor air quality?",
+            "Kamloops",
+            "how should I prepare for poor air quality",
+        ),
+        (
+            "Give me a short summary of current Kelowna fires plus official preparedness advice.",
+            "Kelowna",
+            "official preparedness advice",
+        ),
+    ),
+)
+def test_product_journey_mixed_requests_preserve_both_lanes(
+    question: str, place: str, static_subrequest: str
+) -> None:
+    plan = _plan(question)
+
+    assert plan.mode == AgentRequestMode.MIXED
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == place
+    assert plan.static_subrequest == static_subrequest
+    assert [call.name for call in plan.tool_calls] == [
+        AgentTool.LIST_OFFICIAL_FIRES,
+        AgentTool.SEARCH_REVIEWED_GUIDANCE,
+    ]
+
+
+@pytest.mark.parametrize(
+    ("question", "place"),
+    (
+        ("Are there any current fires on Vancouver Island?", "Vancouver Island"),
+        ("When was the wildfire information for Kelowna last updated?", "Kelowna"),
+        ("List the closest wildfires to Kelowna from nearest to farthest.", "Kelowna"),
+        ("Give me three facts about the closest wildfire to Kelowna.", "Kelowna"),
+    ),
+)
+def test_product_journey_live_requests_keep_explicit_geography(
+    question: str, place: str
+) -> None:
+    plan = _plan(question)
+
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == place
+    assert plan.tool_calls[0].as_arguments() == {"place_label": place}
+
+
+def test_perimeter_existential_requests_only_the_perimeter_layer() -> None:
+    plan = _plan("Is there a fire perimeter near Kelowna?")
+
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.live_layers == (LiveResultKind.PERIMETER,)
+    assert plan.location_label == "Kelowna"
+
+
+def test_nonliteral_wildfire_metaphor_never_fetches_live_records() -> None:
+    plan = _plan("My workload is a wildfire. Is it out of control?")
+
+    assert plan.route == QueryRoute.TANGENT
+    assert plan.mode == AgentRequestMode.STATIC
+    assert plan.live_layers == ()
+    assert plan.tool_calls == ()
+
+
+def test_ambiguous_nearby_family_request_uses_stated_place_without_safety_inference() -> None:
+    plan = _plan("My parents are in Penticton. Is anything nearby?")
+
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == "Penticton"
+    assert plan.static_subrequest is None
+
+
+def test_implicit_nearby_mixed_request_preserves_reviewed_smoke_half() -> None:
+    plan = _plan(
+        "What's happening around Kamloops, and how should I prepare for poor air quality?"
+    )
+
+    assert plan.mode == AgentRequestMode.MIXED
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == "Kamloops"
+    assert plan.static_subrequest == "how should I prepare for poor air quality"
+    assert [call.name for call in plan.tool_calls] == [
+        AgentTool.LIST_OFFICIAL_FIRES,
+        AgentTool.LIST_OFFICIAL_EVACUATIONS,
+        AgentTool.SEARCH_REVIEWED_GUIDANCE,
+    ]
+
+
+@pytest.mark.parametrize(
+    ("question", "place", "static_subrequest"),
+    (
+        (
             "Show current fires near Kelowna and emergency kit advice.",
             "Kelowna",
             "emergency kit advice",
@@ -258,7 +355,53 @@ def test_existing_selection_binds_named_closest_and_ordinal_requests(question: s
     assert plan.geography == AgentGeography.SELECTED_RECORD
     assert len(plan.tool_calls) == 1
     assert plan.tool_calls[0].name == AgentTool.GET_OFFICIAL_FIRE
-    assert plan.tool_calls[0].as_arguments() == {"result_id": "incident:7"}
+
+
+def test_visible_roster_ordinal_binds_exact_stable_record_id() -> None:
+    plan = plan_agent_request(
+        QueryRequest(
+            question="Tell me more about the second one.",
+            context=MapContext(
+                visible_live_result_ids=["incident:1", "incident:2", "incident:3"]
+            ),
+        )
+    )
+
+    assert plan.mode == AgentRequestMode.SELECTED
+    assert plan.geography == AgentGeography.SELECTED_RECORD
+    assert plan.tool_calls[0].as_arguments() == {"result_id": "incident:2"}
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Compare the closest active fires to Kelowna and Kamloops.",
+        "Which city currently has the closer active fire, Kelowna or Vernon?",
+    ),
+)
+def test_multi_place_distance_comparison_fails_truthfully_before_fetch(question: str) -> None:
+    plan = _plan(question)
+
+    assert plan.mode == AgentRequestMode.TERMINAL
+    assert plan.scope_result == AgentScopeResult.REQUIRES_INPUT
+    assert plan.tool_calls == ()
+    assert plan.terminal_response is not None
+    assert "cannot yet compare" in (plan.terminal_response.answer or "")
+
+
+def test_multi_place_comparison_continues_with_the_community_the_user_chose() -> None:
+    plan = plan_agent_request(
+        QueryRequest(
+            question="Compare the closest active fires to Kelowna and Kamloops.",
+            location=LocationInput(label="Kelowna"),
+        )
+    )
+
+    assert plan.mode != AgentRequestMode.TERMINAL
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == "Kelowna"
+    assert plan.tool_calls
+    assert plan.tool_calls[0].as_arguments() == {"place_label": "Kelowna"}
 
 
 @pytest.mark.parametrize(

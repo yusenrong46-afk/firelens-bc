@@ -317,3 +317,16 @@ def test_okanagan_region_resolves_without_the_community_geocoder() -> None:
         resolve_bc_location(forbidden_get, LocationInput(label="the Okanagan"))
     )
     assert the_valley == (latitude, longitude)
+
+
+def test_vancouver_island_region_resolves_without_the_community_geocoder() -> None:
+    async def forbidden_get(*args: Any, **kwargs: Any) -> Any:
+        del args, kwargs
+        raise AssertionError("Vancouver Island must use the bounded region gazetteer")
+
+    latitude, longitude = asyncio.run(
+        resolve_bc_location(forbidden_get, LocationInput(label="Vancouver Island"))
+    )
+
+    assert 48.0 <= latitude <= 51.0
+    assert -128.0 <= longitude <= -123.0

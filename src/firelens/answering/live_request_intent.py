@@ -126,6 +126,22 @@ _ORDINAL_RECORD_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _CLOSEST_RECORD_PATTERN = re.compile(r"\b(?:closest|nearest)\b", re.IGNORECASE)
+_SELECTED_CLOSEST_RATIONALE = re.compile(
+    r"\bwhy\b.{0,80}\b(?:this|that|selected)\s+"
+    r"(?:fire|wildfire|incident|record)\b.{0,80}\b(?:closest|nearest)\b",
+    re.IGNORECASE,
+)
+_SELECTED_UNKNOWN = re.compile(
+    r"\b(?:what|which)\b.{0,80}\b(?:this|that|selected)\s+"
+    r"(?:fire|wildfire|incident|record)\b.{0,80}"
+    r"\b(?:uncertain|not\s+certain|unknown|not\s+known)\b",
+    re.IGNORECASE,
+)
+_SELECTED_REFORMAT = re.compile(
+    r"^\s*(?:please\s+)?(?:give|show|put)\s+(?:me\s+)?(?:the\s+)?"
+    r"answer\s+first(?:,?\s+then\s+(?:the\s+)?evidence)?[.!?]*\s*$",
+    re.IGNORECASE,
+)
 _SINGULAR_STATUS_PATTERN = re.compile(
     r"\b(?:what(?:'s|\s+is)|is)\s+(?:the\s+)?status\s+(?:of\s+)?"
     r"(?:this|that|the|a|an|it|its)\s+(?:fire|wildfire|incident|record)\b|"
@@ -229,6 +245,9 @@ def is_selected_live_request(request: QueryRequest) -> bool:
             or _SELECTED_LIVE_ELLIPTICAL.match(request.question)
             or _SELECTED_DEICTIC_STATUS.match(request.question)
             or _SELECTED_DEICTIC_OFFICIAL_DETAILS.match(request.question)
+            or _SELECTED_CLOSEST_RATIONALE.search(request.question)
+            or _SELECTED_UNKNOWN.search(request.question)
+            or _SELECTED_REFORMAT.match(request.question)
         )
     )
 
@@ -236,6 +255,8 @@ def is_selected_live_request(request: QueryRequest) -> bool:
 def is_unsupported_selected_request(request: QueryRequest) -> bool:
     """Recognize selected-record asks unavailable official fields cannot answer."""
 
+    if _SELECTED_CLOSEST_RATIONALE.search(request.question):
+        return False
     return bool(
         request.context.selected_live_result_id
         and (

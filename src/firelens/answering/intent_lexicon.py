@@ -427,6 +427,43 @@ RADIUS_SCOPE = re.compile(
     r"(?=[,;:.?!]|\s+(?:and|but|then)\b|$)",
     re.IGNORECASE,
 )
+COMPACT_RADIUS_SCOPE = re.compile(
+    r"^\s*(?:show|list|find|check)?\s*(?:current\s+|active\s+)?"
+    r"(?:wildfires?|fires?|incidents?)\s+"
+    r"(?P<place>[a-z][a-z .'-]{1,80}?)\s+"
+    r"(?P<radius>\d+(?:\.\d+)?)\s*"
+    r"(?:km|kilomet(?:er|re)s?)[?!.,]*\s*$",
+    re.IGNORECASE,
+)
+CLOSEST_FIRE_TO_SCOPE = re.compile(
+    r"\b(?:closest|nearest)\s+(?:active\s+|official\s+|mapped\s+)*"
+    r"(?:wildfires?|fires?|incidents?|perimeters?)\s+(?:to|from|near)\s+"
+    r"(?:the\s+)?(?P<place>[a-z][a-z .'-]{1,80}?)"
+    r"(?=\s+(?:from\s+(?:nearest|closest)\s+to\s+(?:farthest|furthest)|"
+    r"in\s+order|and|but|then|with)\b|[,;:.?!]|$)",
+    re.IGNORECASE,
+)
+LIVE_RECORDS_CLOSEST_SCOPE = re.compile(
+    r"\b(?:list|show|display|find|get|check)\s+(?:the\s+)?"
+    r"(?:(?:two|three|2|3)\s+)?"
+    r"(?:live|official|current)\s+records?\s+(?:closest|nearest)\s+"
+    r"(?:to|from|near)\s+(?:the\s+)?"
+    r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+    r"(?=[,;:.?!]|$)",
+    re.IGNORECASE,
+)
+FIRE_ON_SCOPE = re.compile(
+    r"\b(?:fires?|wildfires?|incidents?|perimeters?)\s+on\s+(?:the\s+)?"
+    r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+    r"(?=\s+(?:right\s+now|currently|today|and|but|then)\b|[,;:.?!]|$)",
+    re.IGNORECASE,
+)
+QUALIFIED_PLACE_FIRE_SCOPE = re.compile(
+    r"\b(?:current|active|latest|official|reported)\s+"
+    r"(?P<place>[a-z][a-z .'-]{1,60}?)\s+"
+    r"(?:wildfires?|fires?|incidents?)\b",
+    re.IGNORECASE,
+)
 CLOSEST_NEAR_SCOPE = re.compile(
     r"\b(?:which|what)\s+(?:official\s+)?"
     r"(?:wildfire|fire|incident|perimeter)\s+"
@@ -460,6 +497,13 @@ FIRST_PERSON_PLACE = re.compile(
     r"(?=[,;:.?!]|$)",
     re.IGNORECASE,
 )
+THIRD_PARTY_PLACE = re.compile(
+    r"\b(?:my|our)\s+(?:parents?|family|friends?|children|kids|relatives?)\s+"
+    r"(?:are|is|live|lives|stay|stays)\s+(?:currently\s+)?in\s+"
+    r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+    r"(?=[,;:.?!]|$)",
+    re.IGNORECASE,
+)
 NEARBY_INFORMATION_REQUEST = re.compile(
     r"\b(?:anything|something|what(?:['’]s|\s+is))\s+"
     r"(?:happening\s+)?nearby\b",
@@ -486,7 +530,7 @@ NEAREST_BARE_SCOPE = re.compile(
 )
 REPORT_FOR_SCOPE = re.compile(
     r"\b(?:fire|wildfire|incident|perimeter)\s+"
-    r"(?:activity|occurrences?|status|update|report|records?|overview|snapshot|"
+    r"(?:activity|information|occurrences?|status|update|report|records?|overview|snapshot|"
     r"picture|summary|situation)\s+for\s+(?:the\s+)?"
     r"(?P<place>[a-z][a-z .'-]{1,100})",
     re.IGNORECASE,
@@ -533,7 +577,7 @@ EXISTENTIAL_EVACUATION_SCOPE = re.compile(
 TIME_TAIL = re.compile(
     r"\s+(?:right\s+now|currently|current|latest|today|tonight|now|at\s+present|"
     r"at\s+the\s+moment|this\s+(?:morning|afternoon|evening|week)|"
-    r"last\s+(?:season|summer|year|week)|yesterday)\b.*$",
+    r"last\s+(?:season|summer|year|week)|last\s+updated|yesterday)\b.*$",
     re.IGNORECASE,
 )
 TOP_LEVEL_SEPARATOR = re.compile(

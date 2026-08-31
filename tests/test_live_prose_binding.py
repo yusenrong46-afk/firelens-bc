@@ -11,7 +11,13 @@ from pydantic import HttpUrl, ValidationError
 
 from firelens.agent import FireLensAgent
 from firelens.agent.chat import ChatTurn
-from firelens.answering.live_analysis import compose_official_answer
+from firelens.answering.live_analysis import (
+    compose_official_answer,
+)
+from firelens.answering.live_analysis_distance import (
+    closest_locatable_result,
+    ranked_live_results_for_request,
+)
 from firelens.contracts import (
     AnswerSection,
     AnswerSectionKind,
@@ -22,6 +28,7 @@ from firelens.contracts import (
     LiveResult,
     LiveResultKind,
     LocationInput,
+    MapContext,
     PublicClaim,
     PublicEvidence,
     QueryRequest,
@@ -30,6 +37,7 @@ from firelens.contracts import (
     TemporalClass,
     ValidationReport,
     aggregate_live_freshness,
+    bind_distance_derivation,
 )
 from firelens.live_answering import LiveAnswerCoordinator
 from firelens.publication.fallback import explanation_authority
@@ -53,6 +61,39 @@ def _mountain_held() -> LiveResult:
         status="Being Held",
         name="Mountain Fire",
         geometry={"type": "Point", "coordinates": [-119.5, 49.9]},
+    )
+
+
+def test_mixed_fire_lookup_keeps_live_incidents_ahead_of_future_evacuation_guidance() -> None:
+    answer = compose_official_answer(
+        QueryRequest(
+            question=(
+                "Are there fires near Penticton, and what should I do if an "
+                "evacuation order is issued later?"
+            )
+        ),
+        [_mountain_held()],
+        static_answer="An evacuation order means you must leave immediately.",
+    )
+
+    assert "Mountain Fire" in answer
+    assert "No fetched official fire-related evacuation" not in answer
+
+
+def _with_distance(result: LiveResult, distance_km: float) -> LiveResult:
+    return result.model_copy(
+        update={
+            "distance_km": distance_km,
+            "distance_basis": "incident_point",
+            "distance_derivation": bind_distance_derivation(
+                result_id=result.result_id,
+                distance_km=distance_km,
+                distance_basis="incident_point",
+                calculated_at=result.retrieved_at,
+                extra_input_ids=("place:49.90,-119.50",),
+                input_freshness=result.freshness,
+            ),
+        }
     )
 
 
@@ -271,6 +312,176 @@ def test_fire_of_note_distribution_is_not_misread_as_a_total_fire_count() -> Non
         aggregate_freshness=aggregate_live_freshness(records),
     )
     assert response.answer == answer
+
+
+def test_multi_record_freshness_keeps_source_and_retrieval_clocks_separate() -> None:
+    first = _mountain_held()
+    second = first.model_copy(
+        update={
+            "result_id": "incident:8",
+            "name": "Ridge Fire",
+            "source_updated_at": datetime(2026, 8, 15, 1, tzinfo=UTC),
+            "retrieved_at": datetime(2026, 8, 15, 2, tzinfo=UTC),
+        }
+    )
+
+    answer = compose_official_answer(
+        QueryRequest(question="When was the wildfire information for Kelowna last updated?"),
+        [first, second],
+    )
+
+    assert "source update" in answer.casefold()
+    assert "FireLens retrieval" in answer
+    assert "separate clocks" in answer
+    assert first.source_updated_at.isoformat() in answer
+    assert second.retrieved_at.isoformat() in answer
+
+
+def test_ranked_closest_list_is_stable_and_does_not_select_only_one_record() -> None:
+    first = _with_distance(_mountain_held(), 12.0)
+    second = _with_distance(
+        _mountain_held().model_copy(update={"result_id": "incident:8", "name": "Ridge Fire"}),
+        4.0,
+    )
+
+    answer = compose_official_answer(
+        QueryRequest(
+            question="List the closest fires to Kelowna in order from nearest to farthest."
+        ),
+        [first, second],
+    )
+
+    assert answer.index("Ridge Fire") < answer.index("Mountain Fire")
+    assert "4 km" in answer
+    assert "12 km" in answer
+
+    ranked = ranked_live_results_for_request(
+        "Show me the two closest fires to Kelowna.",
+        [first, second],
+    )
+    assert [item.result_id for item in ranked] == ["incident:8", "incident:7"]
+
+    third = _with_distance(
+        _mountain_held().model_copy(update={"result_id": "incident:9", "name": "Creek Fire"}),
+        20.0,
+    )
+    fourth = _with_distance(
+        _mountain_held().model_copy(update={"result_id": "incident:10", "name": "Valley Fire"}),
+        30.0,
+    )
+    ranked_records = ranked_live_results_for_request(
+        "Can you list the 3 live records closest to Kelowna?",
+        [first, second, third, fourth],
+    )
+    assert [item.result_id for item in ranked_records] == [
+        "incident:8",
+        "incident:7",
+        "incident:9",
+    ]
+
+
+def test_closest_fire_ignores_a_nearer_perimeter_and_breaks_ties_by_id() -> None:
+    incident_b = _with_distance(_mountain_held(), 12.0)
+    incident_a = _with_distance(
+        _mountain_held().model_copy(update={"result_id": "incident:1", "name": "Ridge Fire"}),
+        12.0,
+    )
+    perimeter = _with_distance(
+        _mountain_held().model_copy(
+            update={
+                "result_id": "perimeter:1",
+                "kind": LiveResultKind.PERIMETER,
+                "name": "Other perimeter",
+            }
+        ),
+        1.0,
+    )
+    question = "What is the closest active fire to Kelowna?"
+
+    assert closest_locatable_result(question, [incident_b, perimeter, incident_a]) == incident_a
+    assert closest_locatable_result(question, [incident_a, perimeter, incident_b]) == incident_a
+    assert "Ridge Fire" in compose_official_answer(
+        QueryRequest(question=question),
+        [incident_b, perimeter, incident_a],
+    )
+
+
+def test_closest_fire_size_question_reports_the_closest_incident_area() -> None:
+    farther = _with_distance(
+        _mountain_held().model_copy(update={"name": "Farther Fire", "size_hectares": 900.0}),
+        12.0,
+    )
+    closest = _with_distance(
+        _mountain_held().model_copy(
+            update={"result_id": "incident:8", "name": "Closest Fire", "size_hectares": 7.0}
+        ),
+        4.0,
+    )
+
+    answer = compose_official_answer(
+        QueryRequest(question="How big is the closest fire to Kamloops?"),
+        [farther, closest],
+    )
+
+    assert "Closest Fire" in answer
+    assert "7 hectares" in answer
+    assert "Farther Fire" not in answer
+
+
+def test_selected_record_explains_distance_clock_and_unknowns_without_model_inference() -> None:
+    selected = _with_distance(_mountain_held(), 12.0)
+    context = MapContext(selected_live_result_id=selected.result_id)
+
+    rationale = compose_official_answer(
+        QueryRequest(
+            question="Why do you believe this fire is the closest one?",
+            context=context,
+        ),
+        [selected],
+    )
+    clocks = compose_official_answer(
+        QueryRequest(
+            question=(
+                "What is the difference between when the official source updated this fire "
+                "and when FireLens retrieved it?"
+            ),
+            context=context,
+        ),
+        [selected],
+    )
+    unknowns = compose_official_answer(
+        QueryRequest(
+            question="What information about this fire are you not certain about?",
+            context=context,
+        ),
+        [selected],
+    )
+
+    assert "12 km" in rationale
+    assert "model did not choose" in rationale.casefold()
+    assert selected.source_updated_at.isoformat() in clocks
+    assert selected.retrieved_at.isoformat() in clocks
+    assert "separate clocks" in clocks
+    assert "future spread" in unknowns
+    assert "personal evacuation decision" in unknowns
+
+
+def test_closest_three_fact_request_returns_exactly_three_numbered_facts() -> None:
+    selected = _with_distance(_mountain_held(), 12.0).model_copy(update={"size_hectares": 84.0})
+
+    answer = compose_official_answer(
+        QueryRequest(
+            question="Give me only the three most important facts about the closest fire to Kelowna."
+        ),
+        [selected],
+    )
+
+    assert answer.count("1.") == 1
+    assert answer.count("2.") == 1
+    assert answer.count("3.") == 1
+    assert "Mountain Fire" in answer
+    assert "Being Held" in answer
+    assert "12 km" in answer
 
 
 def test_province_distribution_ignores_retained_community_location() -> None:

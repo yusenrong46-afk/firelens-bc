@@ -15,6 +15,7 @@ from functools import lru_cache
 
 from firelens.answering import intent_lexicon as lex
 from firelens.answering import intent_spans as spans
+from firelens.answering.intent_automaton_rules import is_selected_prediction
 from firelens.answering.intent_guidance import is_evac_definition, is_guidance
 from firelens.contracts import LiveResultKind
 
@@ -48,16 +49,6 @@ class RecordOperation(StrEnum):
     EVACUATION = "evacuation"
 
 
-def _is_selected_prediction(tokens: tuple[str, ...]) -> bool:
-    token_set = frozenset(tokens)
-    return bool(
-        token_set & {"can", "could", "might", "will"}
-        and lex.has_fire(tokens)
-        and token_set & lex.PREDICTION_VERBS
-        and token_set & lex.PREDICTION_TARGETS
-    )
-
-
 def _temporal_scope(tokens: tuple[str, ...], text: str) -> TemporalScope:
     token_set = frozenset(tokens)
     current = bool(
@@ -68,7 +59,7 @@ def _temporal_scope(tokens: tuple[str, ...], text: str) -> TemporalScope:
         or lex.has_any_phrase(tokens, lex.NONCURRENT_PHRASES)
         or lex.YEAR.search(text)
     )
-    if _is_selected_prediction(tokens):
+    if is_selected_prediction(tokens):
         return TemporalScope.CURRENT
     if noncurrent:
         return TemporalScope.NONCURRENT
@@ -107,6 +98,7 @@ def _looks_like_clause(text: str) -> bool:
         "guidance",
         "packing",
         "plain",
+        "official",
         "simple",
         "smoke",
         "the",
@@ -118,6 +110,11 @@ def _looks_like_clause(text: str) -> bool:
     return bool(
         tokens[0] in lex.REQUEST_STARTERS
         or (tokens[0] in guidance_heads and is_guidance(tokens[:12]))
+        or (
+            tokens[0] in guidance_heads
+            and frozenset(tokens[:16])
+            & {"advice", "checklist", "guidance", "preparedness", "readiness", "tips"}
+        )
     )
 
 
@@ -270,7 +267,7 @@ def _current_fire_operation(
         return RecordOperation.LOCATE if map_focus else RecordOperation.LIST
     if not fire and not perimeter:
         return None
-    if _is_selected_prediction(tokens):
+    if is_selected_prediction(tokens):
         return RecordOperation.STATUS
     if temporal == TemporalScope.NONCURRENT:
         return None
@@ -318,7 +315,7 @@ def _current_fire_operation(
         )
     if _is_geography_analysis(tokens) or _is_record_analysis(tokens):
         return RecordOperation.ANALYZE
-    if perimeter and (command or current or wh):
+    if perimeter and (command or current or wh or existential):
         return RecordOperation.PERIMETER
     if named_fire_location:
         return RecordOperation.LOCATE
@@ -424,6 +421,8 @@ class ParsedClauseIntent:
     def contributes_static_subrequest(self) -> bool:
         if self.is_live or self.kind == ClauseIntentKind.PRODUCT_HELP:
             return False
+        if spans.is_context_location_declaration(self.text):
+            return False
         if self.kind in {
             ClauseIntentKind.REVIEWED_GUIDANCE,
             ClauseIntentKind.STATIC_BACKGROUND,
@@ -453,7 +452,14 @@ class ParsedRequestIntent:
         if self.has_reviewed_guidance:
             return True
         tokens = frozenset(token for clause in self.clauses for token in clause.tokens)
-        return bool(tokens & lex.PREFETCH_GUIDANCE_TOKENS)
+        return bool(tokens & lex.PREFETCH_GUIDANCE_TOKENS) or bool(
+            self.has_live_records
+            and any(
+                {"what", "should", "have", "ready"}.issubset(frozenset(clause.tokens))
+                for clause in self.clauses
+                if not clause.is_live
+            )
+        )
 
     @property
     def live_layers(self) -> tuple[LiveResultKind, ...]:
@@ -501,7 +507,15 @@ def _parse_clause(text: str) -> ParsedClauseIntent:
     temporal = _temporal_scope(tokens, text)
     product_help = _is_product_help(tokens)
     guidance = is_guidance(tokens)
-    fire_operation = _current_fire_operation(tokens, temporal)
+    fire_operation = (
+        RecordOperation.LIST
+        if lex.COMPACT_RADIUS_SCOPE.search(text)
+        else (
+            RecordOperation.LOCATE
+            if lex.LIVE_RECORDS_CLOSEST_SCOPE.search(text)
+            else _current_fire_operation(tokens, temporal)
+        )
+    )
     evacuation = _current_evacuation(tokens, temporal)
     layers: list[LiveResultKind] = []
     operation = fire_operation
@@ -552,8 +566,9 @@ def parse_request_intent(question: str) -> ParsedRequestIntent:
     """Parse one question once into immutable typed request intent."""
 
     normalized = lex.normalize_text(question)
+    split_texts = _split_clauses(normalized)
     implicit_location = spans.implicit_nearby_location(normalized)
-    if implicit_location is not None:
+    if implicit_location is not None and len(split_texts) == 1:
         clause = ParsedClauseIntent(
             text=normalized.strip(" ,.?;+"),
             tokens=lex.tokenize(normalized),
@@ -572,8 +587,30 @@ def parse_request_intent(question: str) -> ParsedRequestIntent:
             clauses=(clause,),
             requests_non_bc_scope=spans.requests_non_bc_scope(clause.tokens),
         )
-    texts = _split_clauses(normalized)
+    texts = split_texts
     clauses = [_parse_clause(text) for text in texts]
+    if implicit_location is not None:
+        for index, clause in enumerate(clauses):
+            nearby_clause = bool(
+                lex.NEARBY_INFORMATION_REQUEST.search(clause.text)
+                or lex.NEAR_PLACE_INFORMATION_REQUEST.search(clause.text)
+            )
+            if not nearby_clause or clause.is_live:
+                continue
+            clauses[index] = ParsedClauseIntent(
+                text=clause.text,
+                tokens=clause.tokens,
+                kind=ClauseIntentKind.LIVE_RECORDS,
+                temporal_scope=clause.temporal_scope,
+                operation=RecordOperation.LIST,
+                live_layers=(
+                    LiveResultKind.INCIDENT,
+                    LiveResultKind.PERIMETER,
+                    LiveResultKind.EVACUATION,
+                ),
+                live_location_candidate=implicit_location,
+            )
+            break
     fronted_scope = spans.fronted_scope_for_question(normalized)
     if fronted_scope is not None:
         for index, clause in enumerate(clauses):

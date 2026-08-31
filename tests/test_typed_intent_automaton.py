@@ -21,6 +21,7 @@ from firelens.answering.intent import (
 )
 from firelens.answering.intent_automaton import (
     ClauseIntentKind,
+    RecordOperation,
     TemporalScope,
     parse_request_intent,
 )
@@ -517,6 +518,46 @@ def test_tell_me_about_an_explicit_named_fire_is_a_live_incident_lookup() -> Non
     assert plan.mode == AgentRequestMode.LIVE
     assert plan.route == QueryRoute.LIVE
     assert parsed.has_live_records or live_layers_for_question(question)
+
+
+def test_explicit_live_record_ranking_binds_the_stated_community() -> None:
+    question = "Can you list the 3 live records closest to Kelowna?"
+    parsed = parse_request_intent(question)
+    location = coarse_location_from_question(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert parsed.has_live_records
+    assert parsed.clauses[0].operation == RecordOperation.LOCATE
+    assert parsed.live_location_candidates == ("Kelowna",)
+    assert location is not None and location.label == "Kelowna"
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == "Kelowna"
+    assert plan.tool_calls[0].as_arguments() == {"place_label": "Kelowna"}
+
+
+def test_current_status_of_an_explicit_named_fire_filters_the_live_roster() -> None:
+    question = "What is the current status of the Bald Range Fire?"
+
+    assert extracted_located_fire_name(question) == "Bald Range"
+    assert live_layers_for_question(question) == (
+        LiveResultKind.INCIDENT,
+        LiveResultKind.PERIMETER,
+    )
+    assert extracted_located_fire_name("What is the status of this fire?") is None
+
+
+def test_explicit_status_fire_typo_remains_a_narrow_named_incident_lookup() -> None:
+    assert extracted_located_fire_name("whts status bald range fire") == "bald range"
+    assert extracted_located_fire_name("whts status wildfire smoke") is None
+
+
+def test_closest_fire_size_shorthand_binds_its_stated_place() -> None:
+    location = coarse_location_from_question("how big closest fire kamloops")
+
+    assert location is not None
+    assert location.label == "kamloops"
+    assert location.radius_km == 50
 
 
 def test_guidance_where_questions_are_not_named_fire_lookups() -> None:

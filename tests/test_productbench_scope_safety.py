@@ -378,6 +378,112 @@ def test_prior_ordinary_guidance_language_stays_conversational_without_live_scop
 
 
 @_sync_test
+async def test_false_no_fire_premise_is_corrected_without_fetching_a_roster() -> None:
+    provider = InventingThenRewritingProvider()
+    static = RecordingStatic(_background_response())
+    static.provider = provider
+    live = CountingMapService([])
+    execution = await FireLensAgent(
+        cast(Any, static),
+        LiveAnswerCoordinator(cast(Any, live)),
+    ).answer(
+        QueryRequest(
+            question="There are no fires within 50 km, so there is nothing to worry about, right?"
+        )
+    )
+
+    response = execution.response
+    public = " ".join([response.answer or "", *response.limitations]).casefold()
+    assert response.response_mode == ResponseMode.ABSTENTION
+    assert response.reason_code == ReasonCode.LIVE_DATA_REQUIRED
+    assert public.startswith("no.")
+    assert "does not establish" in public
+    assert "all-clear" in public
+    assert execution.tools == ()
+    assert len(static.calls) == 0
+    assert live.map_calls == live.nearby_calls == live.resolve_calls == 0
+    assert provider.turns == 0
+
+
+@_sync_test
+async def test_evacuation_alert_cannot_be_ignored_based_on_fire_distance() -> None:
+    provider = InventingThenRewritingProvider()
+    static = RecordingStatic(_background_response())
+    static.provider = provider
+    live = CountingMapService([])
+    execution = await FireLensAgent(
+        cast(Any, static),
+        LiveAnswerCoordinator(cast(Any, live)),
+    ).answer(QueryRequest(question="Can I ignore an evacuation alert if the fire is far away?"))
+
+    response = execution.response
+    public = " ".join([response.answer or "", *response.limitations]).casefold()
+    assert response.response_mode == ResponseMode.ABSTENTION
+    assert response.reason_code == ReasonCode.PERSONALIZED_SAFETY_DECISION
+    assert public.startswith("no.")
+    assert "do not ignore an evacuation alert" in public
+    assert "authority that issued the alert" in public
+    assert execution.tools == ()
+    assert len(static.calls) == 0
+    assert live.map_calls == live.nearby_calls == live.resolve_calls == 0
+    assert provider.turns == 0
+
+
+@_sync_test
+async def test_stock_market_wildfire_metaphor_stays_in_labelled_background() -> None:
+    static = RecordingStatic(_background_response())
+    live = CountingMapService([])
+    execution = await FireLensAgent(
+        cast(Any, static),
+        LiveAnswerCoordinator(cast(Any, live)),
+    ).answer(QueryRequest(question="Is the stock market a wildfire right now?"))
+
+    assert execution.route == QueryRoute.TANGENT
+    assert execution.response.response_mode == ResponseMode.BACKGROUND
+    assert execution.tools == (AgentTool.ANSWER_GENERAL_BACKGROUND,)
+    assert len(static.calls) == 1
+    assert live.map_calls == live.nearby_calls == live.resolve_calls == 0
+
+
+@_sync_test
+async def test_driving_for_fuel_is_usefully_handed_off_without_live_roster() -> None:
+    provider = InventingThenRewritingProvider()
+    static = RecordingStatic(_background_response())
+    static.provider = provider
+    live = CountingMapService([])
+    execution = await FireLensAgent(
+        cast(Any, static),
+        LiveAnswerCoordinator(cast(Any, live)),
+    ).answer(QueryRequest(question="Can I drive to get gas if there is a wildfire nearby?"))
+
+    response = execution.response
+    public = " ".join([response.answer or "", *response.limitations]).casefold()
+    assert response.response_mode == ResponseMode.ABSTENTION
+    assert response.reason_code == ReasonCode.PERSONALIZED_SAFETY_DECISION
+    assert "cannot decide whether you should drive for fuel" in public
+    assert "drivebc" in public
+    assert execution.tools == ()
+    assert len(static.calls) == 0
+    assert live.map_calls == live.nearby_calls == live.resolve_calls == 0
+    assert provider.turns == 0
+
+
+@_sync_test
+async def test_general_fuel_preparedness_stays_useful_without_live_dispatch() -> None:
+    static = RecordingStatic(_background_response())
+    live = CountingMapService([])
+    execution = await FireLensAgent(
+        cast(Any, static),
+        LiveAnswerCoordinator(cast(Any, live)),
+    ).answer(QueryRequest(question="What should I do about gas when wildfire is coming?"))
+
+    assert execution.response.response_mode == ResponseMode.BACKGROUND
+    assert execution.tools == (AgentTool.ANSWER_GENERAL_BACKGROUND,)
+    assert len(static.calls) == 1
+    assert live.map_calls == live.nearby_calls == live.resolve_calls == 0
+
+
+@_sync_test
 async def test_prior_general_and_guidance_prompts_keep_typed_authority_lanes() -> None:
     cases = (
         (

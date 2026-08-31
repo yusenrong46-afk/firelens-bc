@@ -362,10 +362,13 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
     )
     if reviewed_return_condition_intent(processing_question):
         personalized = False
+    general_background = prefers_general_background(request)
     live = bool(unsupported_live_topics(processing_question))
     live = live or parsed_intent.has_live_records
     live = live or any(parse_request_intent(text).has_live_records for text in routing_texts)
     live = live or _named_individual_fire_request(processing_question)
+    if general_background:
+        live = False
     manipulation = any(
         re.search(pattern, text)
         for text in safety_texts
@@ -409,7 +412,7 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
             boundary_reason=ReasonCode.LIVE_DATA_REQUIRED,
             limitations=["The static corpus cannot establish current wildfire conditions."],
         )
-    if prefers_general_background(request):
+    if general_background:
         return QueryPlan(
             original_question=question,
             normalized_question=processing_question,

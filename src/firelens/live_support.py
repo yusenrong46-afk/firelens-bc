@@ -96,6 +96,17 @@ FIRE_CENTRE_CODE_NAMES = MappingProxyType(
     }
 )
 
+# A bare locality such as Kamloops must remain a community lookup.  Only the
+# unambiguous Cariboo regional label and explicit BCWS centre labels select the
+# province-roster fire-centre filter.
+_FIRE_CENTRE_QUERY_LABELS = MappingProxyType(
+    {
+        "cariboo": "Cariboo Fire Centre",
+        "cariboo region": "Cariboo Fire Centre",
+        **{name.casefold(): name for name in FIRE_CENTRE_CODE_NAMES.values()},
+    }
+)
+
 WGS84_GEOD = Geod(ellps="WGS84")
 
 _BBox = tuple[float, float, float, float]
@@ -197,6 +208,24 @@ def fire_centre_label(value: Any) -> str | None:
         if stripped.isdecimal():
             return FIRE_CENTRE_CODE_NAMES.get(int(stripped))
         return stripped
+    return None
+
+
+def official_fire_centre_label(label: str | None) -> str | None:
+    """Return only an unambiguous request for an official BCWS Fire Centre."""
+
+    if not isinstance(label, str) or not label.strip():
+        return None
+    normalized = " ".join(label.casefold().split()).strip(" .,")
+    return _FIRE_CENTRE_QUERY_LABELS.get(normalized)
+
+
+def official_fire_centre_from_question(question: str) -> str | None:
+    """Extract only an explicit, allowlisted BCWS Fire Centre name."""
+    normalized = " ".join(question.casefold().split())
+    for official_label in FIRE_CENTRE_CODE_NAMES.values():
+        if re.search(rf"(?<!\w){re.escape(official_label.casefold())}(?!\w)", normalized):
+            return official_label
     return None
 
 
@@ -353,6 +382,11 @@ _BC_REGION_GAZETTEER = MappingProxyType(
     {
         "okanagan": BcRegionEntry(latitude=49.88, longitude=-119.49, radius_km=150.0),
         "okanagan valley": BcRegionEntry(latitude=49.88, longitude=-119.49, radius_km=150.0),
+        "vancouver island": BcRegionEntry(
+            latitude=49.65,
+            longitude=-125.45,
+            radius_km=250.0,
+        ),
     }
 )
 
@@ -364,6 +398,37 @@ def bc_region_entry(label: str) -> BcRegionEntry | None:
     if requested.startswith("the "):
         requested = requested.removeprefix("the ").strip()
     return _BC_REGION_GAZETTEER.get(requested)
+
+
+def regional_lookup_limitations(
+    location: LocationInput,
+    existing: list[str],
+    *,
+    unknown_located: bool,
+) -> list[str]:
+    """Describe bounded regional geometry without expanding live-service policy."""
+
+    limitations = list(existing)
+    limitation = regional_reference_point_limitation(location)
+    if limitation is not None:
+        limitations.append(limitation)
+    if unknown_located:
+        limitations.append(
+            "Some official records could not be located spatially; check them "
+            "directly with the issuing authority."
+        )
+    return limitations
+
+
+def regional_reference_point_limitation(location: LocationInput) -> str | None:
+    """Describe a colloquial region without claiming an administrative boundary."""
+
+    if location.label and bc_region_entry(location.label) is not None:
+        return (
+            "This regional lookup uses a bounded radius from the named region's "
+            "reference point, not an administrative-boundary filter."
+        )
+    return None
 
 
 def _exact_bc_locality(features: list[object], label: str) -> dict[str, Any] | None:

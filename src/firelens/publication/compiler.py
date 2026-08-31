@@ -84,6 +84,8 @@ from firelens.publication_contracts import (
     StructuredReviewedClaimBlock,
 )
 
+_SPRINKLER_TERM = re.compile(r"\bsprinkler(?:s)?\b", re.IGNORECASE)
+
 
 @dataclass(frozen=True)
 class CompiledClaim:
@@ -247,12 +249,19 @@ def compile_high_risk_answer(
     for candidate in packet.quote_candidates:
         if classify_text(candidate.text) not in {RiskTier.A, RiskTier.B}:
             continue
-        if not is_atomic_official_quote_only(candidate.text):
-            continue
         evidence_item = next(
             (item for item in packet.items if item.evidence_id == candidate.evidence_id),
             None,
         )
+        if not is_atomic_official_quote_only(
+            candidate.text,
+            source_text=(
+                evidence_item.context_text or evidence_item.primary_text
+                if evidence_item is not None
+                else None
+            ),
+        ):
+            continue
         if not admitted_official_quote_source(evidence_item, candidate.text):
             continue
         matched_targets = tuple(
@@ -365,6 +374,15 @@ def select_typed_claim_ids(
 
 
 def _quote_candidate_covers_target(text: str, target: str) -> bool:
+    # "Evacuation" by itself is not enough to answer a question about
+    # sprinklers.  The source packet may contain several adjacent high-risk
+    # passages, so require this user-supplied, concrete subject to occur in
+    # the exact candidate before its other overlapping terms can authorize
+    # quote-only publication.  This does not interpret a sprinkler claim or
+    # alter its review state; it only prevents a different topic in the same
+    # general preparedness domain from being substituted as support.
+    if _SPRINKLER_TERM.search(target) and _SPRINKLER_TERM.search(text) is None:
+        return False
     if support_token_overlap(text, target) < SUPPORT_TOKEN_OVERLAP_FLOOR:
         return False
     if any(

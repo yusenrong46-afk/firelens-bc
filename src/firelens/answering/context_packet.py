@@ -8,6 +8,7 @@ authority-bearing data path easier to inspect without changing its behavior.
 from __future__ import annotations
 
 import difflib
+import re
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass, field
@@ -29,6 +30,8 @@ from firelens.publication.comparison_targets import reserve_fused_atomic_hits
 from firelens.retrieval.bm25 import tokenize
 
 _CONFLICT_CUES = frozenset({"is", "means", "must", "required", "shall", "should", "will"})
+_SENTENCE_END = re.compile(r"[.!?](?=\s|$)")
+_LIST_ITEM_START = re.compile(r"(?m)^\s*[•¢*\-]\s+\S")
 
 
 @dataclass(frozen=True)
@@ -58,7 +61,13 @@ class EvidenceGroup:
 
 
 def _exact_quote_segments(text: str, *, max_chars: int = 500) -> list[str]:
-    """Create bounded exact substrings without normalizing source whitespace."""
+    """Create bounded exact substrings without cutting semantic units.
+
+    Quote-only publication must never manufacture a new meaning by beginning
+    after a negation, condition, or subject in the source sentence.  Build
+    candidates from complete sentence/list units and omit an overlong unit
+    rather than slicing it at an arbitrary character count.
+    """
 
     segments: list[str] = []
     for paragraph in text.split("\n\n"):
@@ -67,20 +76,45 @@ def _exact_quote_segments(text: str, *, max_chars: int = 500) -> list[str]:
         if len(paragraph) <= max_chars:
             segments.append(paragraph)
             continue
-        active = ""
-        for line in paragraph.splitlines(keepends=True):
-            while len(line) > max_chars:
-                if active:
-                    segments.append(active.rstrip("\n"))
-                    active = ""
-                segments.append(line[:max_chars])
-                line = line[max_chars:]
-            if active and len(active) + len(line) > max_chars:
-                segments.append(active.rstrip("\n"))
-                active = ""
-            active += line
-        if active:
-            segments.append(active.rstrip("\n"))
+        boundaries = {
+            *(match.end() for match in _SENTENCE_END.finditer(paragraph)),
+            *(match.start() for match in _LIST_ITEM_START.finditer(paragraph)),
+            len(paragraph),
+        }
+        unit_ranges: list[tuple[int, int]] = []
+        start = 0
+        for end in sorted(boundary for boundary in boundaries if boundary > 0):
+            if end <= start:
+                continue
+            unit_ranges.append((start, end))
+            start = end
+
+        active_start: int | None = None
+        active_end: int | None = None
+        for unit_start, unit_end in unit_ranges:
+            unit = paragraph[unit_start:unit_end].strip()
+            if not unit:
+                continue
+            stripped_start = paragraph.find(unit, unit_start, unit_end)
+            stripped_end = stripped_start + len(unit)
+            if len(unit) > max_chars:
+                if active_start is not None and active_end is not None:
+                    segments.append(paragraph[active_start:active_end])
+                active_start = None
+                active_end = None
+                continue
+            if active_start is None:
+                active_start = stripped_start
+                active_end = stripped_end
+                continue
+            assert active_end is not None
+            proposed = paragraph[active_start:stripped_end]
+            if len(proposed) > max_chars:
+                segments.append(paragraph[active_start:active_end])
+                active_start = stripped_start
+            active_end = stripped_end
+        if active_start is not None and active_end is not None:
+            segments.append(paragraph[active_start:active_end])
     return [segment for segment in segments if segment.strip()]
 
 
