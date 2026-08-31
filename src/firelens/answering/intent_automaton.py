@@ -276,6 +276,28 @@ def _current_fire_operation(
         return None
     if _is_product_help(tokens) or _guidance_blocks_live(tokens, temporal):
         return None
+    personal_reference = any(
+        lex.has_phrase(tokens, phrase)
+        for phrase in (
+            ("near", "me"),
+            ("near", "us"),
+            ("near", "my"),
+            ("near", "our"),
+            ("nearby", "me"),
+            ("nearby", "us"),
+            ("to", "me"),
+            ("to", "us"),
+            ("from", "me"),
+            ("from", "us"),
+        )
+    )
+    personal_proximity = bool(
+        fire
+        and token_set & {"near", "nearby", "closest", "nearest"}
+        and personal_reference
+    )
+    if personal_proximity:
+        return RecordOperation.LOCATE
     current = temporal == TemporalScope.CURRENT
     command = bool(token_set & lex.RECORD_COMMANDS)
     record_noun = bool(token_set & lex.RECORD_NOUNS)

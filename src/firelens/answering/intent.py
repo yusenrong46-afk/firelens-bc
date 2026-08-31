@@ -130,6 +130,10 @@ _UNSUPPORTED_LIVE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
             # Live road handoffs need an operational status request, not a
             # road noun plus an adjacent explanatory word.  Personalized
             # safe-driving questions are handled separately by safety routing.
+            rf"\b(?:confirm|verify)(?:\s+(?:that|whether|if))?\s+"
+            rf"(?:the\s+)?(?:roads?|highways?|routes?)\b"
+            rf"(?:\s+[a-z0-9.'-]+){{0,4}}\s+(?:is|are)\s+"
+            rf"(?:open|closed|blocked)\b.{{0,35}}\b{_CURRENT_CUE_TEXT}\b|"
             r"\b(?:is|are)\s+(?:the\s+)?(?:roads?|highways?|routes?)\b"
             r"(?:\s+[a-z0-9.'-]+){0,4}\s+\b(?:open|closed|blocked)\b|"
             r"\bare\s+there\s+(?:any\s+)?(?:road|highway|route)\s+"

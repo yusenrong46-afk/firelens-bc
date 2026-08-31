@@ -300,6 +300,10 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
         try:
             with tempfile.TemporaryDirectory() as directory:
                 runtime, _, config = await make_runtime(Path(directory))
+                runtime.corpus_version = "firelens_static_corpus.v1"
+                runtime.bound_candidate = {
+                    "candidate_id": "firelens-v1-6-2:" + "b" * 40
+                }
                 app = create_app(config, runtime=runtime)
                 async with httpx.AsyncClient(
                     transport=httpx.ASGITransport(app=app), base_url="http://test"
@@ -358,9 +362,42 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
             },
         )
         self.assertEqual(event["schema_version"], "firelens.operational_event.v3")
-        self.assertEqual(event["corpus_version"], "test-corpus.v1")
+        self.assertEqual(event["corpus_version"], "firelens_static_corpus.v1")
+        self.assertEqual(event["candidate_id"], "firelens-v1-6-2:" + "b" * 40)
+        self.assertNotEqual(event["candidate_id"], event["corpus_version"])
         self.assertEqual(event["deployment_environment"], "local")
         self.assertGreaterEqual(event["evidence_count"], 0)
+
+    async def test_unbound_runtime_logs_no_candidate_identity(self) -> None:
+        stream = io.StringIO()
+        handler = logging.StreamHandler(stream)
+        logger = logging.getLogger(LOGGER_NAME)
+        previous_level = logger.level
+        previous_propagate = logger.propagate
+        logger.setLevel(logging.INFO)
+        logger.propagate = False
+        logger.addHandler(handler)
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                runtime, _, config = await make_runtime(Path(directory))
+                runtime.bound_candidate = None
+                app = create_app(config, runtime=runtime)
+                async with httpx.AsyncClient(
+                    transport=httpx.ASGITransport(app=app), base_url="http://test"
+                ) as client:
+                    response = await client.post(
+                        "/api/v1/ask",
+                        json={"question": "What belongs in an emergency kit?"},
+                    )
+                await runtime.aclose()
+        finally:
+            logger.removeHandler(handler)
+            logger.setLevel(previous_level)
+            logger.propagate = previous_propagate
+
+        self.assertEqual(response.status_code, 200)
+        event = json.loads(stream.getvalue().strip().splitlines()[-1])
+        self.assertIsNone(event["candidate_id"])
 
 
 class ProductionImportBoundaryTests(unittest.TestCase):

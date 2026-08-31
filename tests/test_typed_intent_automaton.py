@@ -12,7 +12,12 @@ from hypothesis import strategies as st
 from pydantic import HttpUrl
 
 from firelens.agent import FireLensAgent
-from firelens.agent.query_plan import AgentGeography, AgentRequestMode, plan_agent_request
+from firelens.agent.query_plan import (
+    AgentGeography,
+    AgentRequestMode,
+    AgentScopeResult,
+    plan_agent_request,
+)
 from firelens.answering.intent import (
     live_layers_for_question,
     plan_query,
@@ -231,6 +236,53 @@ def test_nearest_wildfire_from_place_extracts_the_community() -> None:
     assert location is not None and location.label == "Kelowna"
     assert plan.geography == AgentGeography.LOCATION_RADIUS
     assert plan.location_label == "Kelowna"
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "fire near me?",
+        "wildfire near me",
+        "any fire near us?",
+        "show the nearest wildfire to me",
+    ),
+)
+def test_personal_proximity_fire_requests_require_location_without_tools(
+    question: str,
+) -> None:
+    parsed = parse_request_intent(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert parsed.has_live_records
+    assert parsed.clauses[0].operation == RecordOperation.LOCATE
+    assert plan.route == QueryRoute.LIVE
+    assert plan.mode == AgentRequestMode.TERMINAL
+    assert plan.scope_result == AgentScopeResult.REQUIRES_INPUT
+    assert plan.tool_calls == ()
+    assert plan.terminal_response is not None
+    assert plan.terminal_response.response_mode == ResponseMode.REQUIRES_INPUT
+    assert plan.terminal_response.reason_code is not None
+    assert plan.terminal_response.reason_code.value == "live_data_required"
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Why is fire near homes dangerous?",
+        "What is defensible space near a home?",
+        "Tell me about a historical fire near Victoria.",
+        "My workload is a fire near deadline.",
+    ),
+)
+def test_noncurrent_or_nonliteral_near_fire_phrases_do_not_become_live_lookups(
+    question: str,
+) -> None:
+    parsed = parse_request_intent(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert not parsed.has_live_records
+    assert plan.mode != AgentRequestMode.LIVE
+    assert plan.tool_calls == ()
 
 
 @pytest.mark.parametrize(

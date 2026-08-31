@@ -18,7 +18,7 @@ from firelens.answering.request_grammar import (
 from firelens.live_contracts import LocationInput
 
 _PERSONAL_LOCATION = re.compile(
-    r"\b(?:near|around|close to|closest to|where)\s+(?:me|my|our)\b|"
+    r"\b(?:near|around|close to|closest to|where)\s+(?:me|us|my|our)\b|"
     r"\b(?:my|our)\s+(?:place|home|house|address|location|area|neighbou?rhood)\b|"
     r"\b(?:my|our)\s+current\s+location\b|"
     r"\b(?:to me|from me|from us|current location|where i am|where we are|"

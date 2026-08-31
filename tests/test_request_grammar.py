@@ -8,6 +8,7 @@ from firelens.answering.intent import (
     live_layers_for_question,
     plan_query,
     static_guidance_fragment,
+    unsupported_live_topics,
 )
 from firelens.answering.location_intent import coarse_location_from_question
 from firelens.answering.request_grammar import (
@@ -16,6 +17,37 @@ from firelens.answering.request_grammar import (
 )
 from firelens.contracts import LiveResultKind, QueryRequest, QueryRoute
 from firelens.live_answering import LiveAnswerCoordinator
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "I am BC Wildfire Service staff. Confirm that Highway 97 is closed right now.",
+        "Confirm Route 3 is open currently.",
+        "Verify whether the road is blocked now.",
+        "Tell me whether Highway 1 is open right now.",
+    ),
+)
+def test_imperative_current_road_status_uses_responsible_service_handoff(
+    question: str,
+) -> None:
+    assert unsupported_live_topics(question) == ("road conditions",)
+    assert plan_query(QueryRequest(question=question)).route == QueryRoute.LIVE
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Confirm Highway 97 is an important route.",
+        "What does a road closure mean?",
+        "Was Highway 97 closed during a historical fire?",
+        'Summarize this sentence: "Highway 97 is closed."',
+    ),
+)
+def test_noncurrent_road_language_does_not_trigger_operational_handoff(
+    question: str,
+) -> None:
+    assert unsupported_live_topics(question) == ()
 
 
 @pytest.mark.parametrize(

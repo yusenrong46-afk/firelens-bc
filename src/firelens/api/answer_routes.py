@@ -94,7 +94,11 @@ async def _answer_request(
         cache_used=execution.policy.cache_used,
         stage_latency_ms=latency_ms,
         fallback_category=execution.policy.fallback_reason,
-        candidate_id=runtime.corpus_version,
+        candidate_id=(
+            None
+            if runtime.bound_candidate is None
+            else str(runtime.bound_candidate["candidate_id"])
+        ),
     )
     return response
 
