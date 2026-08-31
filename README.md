@@ -5,12 +5,16 @@ wildfire capability.** FireLens combines useful chat, official incident records,
 reviewed preparedness guidance, and deterministic analysis without presenting
 model output as official evidence.
 
+[**Open the public V1.6.2 demo**](https://firelens-bc.vercel.app) ·
+[Read the case study](docs/portfolio/CLIMATE_DECISION_INTELLIGENCE_CASE_STUDY.md) ·
+[Use the 3–5 minute demo script](docs/portfolio/DEMO_SCRIPT.md)
+
 ![FireLens BC Civic Intelligence Desk showing a deterministic wildfire distribution analysis](docs/assets/firelens-v1-6-overview.jpg)
 
 _Deterministic fixture data—not a current wildfire or evacuation report. The
 screenshot demonstrates the V1.6.2 interface, not current conditions._
 
-> **Project status:** V1.6.2 engineering candidate. Qualification and deployment claims belong to commit-bound CI and runtime evidence; this README does not confer release authority or turn a fluent model answer into proof.
+> **Project status:** A public V1.6.2 demo is available. Runtime identity, readiness, and qualification evidence remain commit-bound; this README does not confer emergency authority or turn a fluent model answer into proof.
 
 ## What FireLens does
 
@@ -69,7 +73,7 @@ publication authority:
 > **Models propose language. Source contracts, deterministic validation, and
 > authorized human decisions determine what may be published.**
 
-## What V1.6 and the local V1.6.2 candidate add
+## What V1.6.2 demonstrates
 
 - Authority-bound reviewed claims and a disposition ledger for all 36 raw
   candidates; unresolved source repairs remain non-compilable.
@@ -192,10 +196,11 @@ uses fixtures and a fake provider at $0; its optional provider tier is unsealed
 development evidence, not release qualification.
 
 Automated checks establish identity, structure, exact quotation, typed-field
-preservation, routing, and presentation behavior. They do not establish
-universal semantic completeness, participant comprehension, deployed identity,
-or release approval. Exact results belong to the commit/tree and attached CI
-artifacts that produced them.
+preservation, routing, and presentation behavior for a particular candidate.
+They do not establish universal semantic completeness, participant
+comprehension, personal safety, or approval by an emergency authority. Exact
+results belong to the commit/tree, runtime identity, and attached CI artifacts
+that produced them.
 
 ## Architecture and repository map
 
@@ -228,6 +233,6 @@ Recommended entry points:
 - The in-process request guard is not a distributed production firewall.
 - Empty, stale, partial, or unavailable layers are limitations—not safety facts.
 
-Paid/sealed evaluation, participant comprehension, manual assistive-technology
-review, preview qualification, firewall and rollback proof, deployment, and
-release GO remain separate, human-authorized gates.
+Sealed evaluation, participant comprehension, manual assistive-technology
+review, firewall publication, rollback evidence, and any emergency-use or
+institutional approval remain separate human-authorized gates.

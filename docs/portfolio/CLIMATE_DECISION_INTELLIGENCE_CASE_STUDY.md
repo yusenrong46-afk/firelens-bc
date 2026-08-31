@@ -16,6 +16,10 @@ user-facing confidence visibly distinct.
 It is not an emergency authority. Its goal is to make a useful answer and its
 limits inspectable.
 
+[Open the public V1.6.2 demo](https://firelens-bc.vercel.app) or follow the
+[3–5 minute demo script](DEMO_SCRIPT.md). Live records and timestamps change;
+the architecture and failure boundaries are the intended demonstration.
+
 ## Why naive RAG fails
 
 Retrieval proves that text was found, not that a generated sentence is entailed,
@@ -101,8 +105,12 @@ The repair strategy was not to add a longer prompt. I separated scope,
 capability, safety, tool planning, publication, and presentation; then added
 failing behavioral tests. During the pre-candidate repair campaign I ran
 backend, frontend, browser, structural-publication, hard-probe, and ProductBench
-checks. Current results remain attached to the exact Git candidate and CI
-artifacts that produced them rather than being frozen into this narrative.
+checks. A later 100-journey public ProductBench run exposed failures that unit
+tests had missed, including quote negation, vague-place routing, refresh scope,
+and selected-record continuity. Those failures were reproduced and locked with
+behavioral tests before repair. Current results remain attached to the exact Git
+candidate and CI/runtime artifacts that produced them rather than being frozen
+into this narrative.
 
 ## Why the pattern transfers
 
@@ -130,5 +138,6 @@ The repository includes a [V1.6 architecture](../ARCHITECTURE_V1_6.md),
 Automated evidence can establish deterministic behavior, source identity,
 quotation integrity, request authority, and interface states for a particular
 commit. It cannot establish personal safety, universal answer quality, human
-comprehension, production identity, or release approval. Those remain explicit
-gates rather than implied claims.
+comprehension, or approval by an emergency authority. Public runtime identity is
+exposed separately by the readiness endpoint; human and institutional gates
+remain explicit rather than implied.

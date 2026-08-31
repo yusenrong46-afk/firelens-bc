@@ -23,15 +23,16 @@ def test_current_documentation_preserves_v1_6_rc2_authority_boundaries() -> None
     assert "Exact quote only" in readme
     assert "## What FireLens does" in readme
     assert "## Why this is not “just a chatbot”" in readme
-    assert "## What V1.6 and the local V1.6.2 candidate add" in readme
+    assert "## What V1.6.2 demonstrates" in readme
+    assert "https://firelens-bc.vercel.app" in readme
     assert "## How an answer becomes publishable" in readme
     assert "## Adaptive views" in readme
     assert "## Quick start" in readme
     assert "## Verification and evidence" in readme
-    assert "V1.6.2 engineering candidate" in readme
-    assert "Qualification and deployment" in readme
-    assert "commit-bound CI and runtime evidence" in readme
-    assert "does not confer release authority" in readme
+    assert "A public V1.6.2 demo is available" in readme
+    assert "Runtime identity" in readme
+    assert "qualification evidence remain commit-bound" in readme
+    assert "does not confer emergency authority" in readme
     assert "general conversational assistant with specialized, evidence-bound B.C." in readme
     assert "Broad interpretation, narrow authority" in readme
     assert "Safety-sensitive is not out of scope" in readme
@@ -104,7 +105,9 @@ def test_portfolio_and_offline_examination_documents_preserve_limits() -> None:
     assert "Remaining limits" in case_study
     assert "not an emergency authority" in case_study
     assert "fixture lane" in demo
-    assert "current incident, evacuation, or safety information" in demo
+    assert "Neither path is emergency advice" in demo
+    assert "https://firelens-bc.vercel.app" in case_study
+    assert "https://firelens-bc.vercel.app" in demo
     assert "GitHub, network, and a local checkout are unavailable" in offline_prompt
     assert "state UNKNOWN" in offline_prompt
     assert "must not edit files, make network calls" in offline_prompt
