@@ -94,6 +94,24 @@ def typed_record_matches_publication_target(
         or current.source_span_sha256 != source_span_sha256
     ):
         return False
+    # A typed action with applicability conditions needs support for at least
+    # one such condition in the requested target. Topic overlap alone cannot
+    # authorize a conditional instruction from an adjacent source passage.
+    # An exact approved canonical surface remains an atomic self-match: two
+    # admitted records deliberately keep their re-entry qualifier in typed
+    # metadata while their approved public surface is the instruction alone.
+    condition_supported = any(
+        support_token_overlap(target, condition) >= SUPPORT_TOKEN_OVERLAP_FLOOR
+        for target in targets
+        for condition in current.record.conditions
+    )
+    canonical_surface_requested = any(
+        " ".join(target.split()).casefold()
+        == " ".join(current.canonical_text.split()).casefold()
+        for target in targets
+    )
+    if current.record.conditions and not (condition_supported or canonical_surface_requested):
+        return False
     scope_text = "\n".join(
         value
         for value in (

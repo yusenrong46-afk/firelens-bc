@@ -443,6 +443,10 @@ CLOSEST_FIRE_TO_SCOPE = re.compile(
     r"in\s+order|and|but|then|with)\b|[,;:.?!]|$)",
     re.IGNORECASE,
 )
+COMPACT_CLOSEST_FIRE_SCOPE = re.compile(
+    r"^\s*(?:closest|nearest)\s+(?:[a-z][a-z'-]*\s+)?(?:wildfires?|fires?|incidents?)\s+(?P<place>[a-z][a-z .'-]{1,80}?)[?!.,]*\s*$",
+    re.IGNORECASE,
+)
 LIVE_RECORDS_CLOSEST_SCOPE = re.compile(
     r"\b(?:list|show|display|find|get|check)\s+(?:the\s+)?"
     r"(?:(?:two|three|2|3)\s+)?"
@@ -450,6 +454,10 @@ LIVE_RECORDS_CLOSEST_SCOPE = re.compile(
     r"(?:to|from|near)\s+(?:the\s+)?"
     r"(?P<place>[a-z][a-z .'-]{1,80}?)"
     r"(?=[,;:.?!]|$)",
+    re.IGNORECASE,
+)
+COMPACT_EVACUATION_SCOPE = re.compile(
+    r"^\s*(?:(?:show|list|check|find|get|display)\s+)?(?:(?:current|active|latest)\s+)?(?:evac(?:uation)?\s+)?(?:alerts?|orders?)\s+(?P<place>[a-z][a-z .'-]{1,80}?)\s+(?:right\s+now|today|tonight|currently|now)[?!.,]*\s*$",
     re.IGNORECASE,
 )
 FIRE_ON_SCOPE = re.compile(
@@ -590,7 +598,12 @@ TOP_LEVEL_SEPARATOR = re.compile(
 def normalize_text(text: str) -> str:
     """Normalize Unicode without changing reader-visible clause punctuation."""
 
-    return unicodedata.normalize("NFKC", text).replace("’", "'")
+    normalized = unicodedata.normalize("NFKC", text).replace("’", "'")
+    # Expand only narrow, unambiguous compressed-chat forms; this is not fuzzy correction.
+    normalized = re.sub(r"\barnd\b", "around", normalized, flags=re.IGNORECASE)
+    normalized = re.sub(r"\brn\b", "right now", normalized, flags=re.IGNORECASE)
+    normalized = re.sub(r"\bmoutain\b", "mountain", normalized, flags=re.IGNORECASE)
+    return normalized
 
 
 def tokenize(text: str) -> tuple[str, ...]:

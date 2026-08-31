@@ -49,7 +49,31 @@ _PROHIBITED_PATTERNS = (
     r"\basap\s+evac(?:uate|uation)?\b",
     r"\b(?:am i|are we)\s+under\b",
     r"\bwhich one\s+am i\s+under\b",
+    r"\b(?:am i|are we)\s+(?:in\s+)?(?:danger|at risk)\b",
+    r"\b(?:my|our)\s+(?:parents?|children|kids|partner|spouse|family|friends?|relatives?)\s+"
+    r"(?:are|is|live|lives|stay|stays)\b.{0,160}\bshould\s+they\s+"
+    r"(?:stay|leave|evacuate|return)\b",
 )
+
+_SMOKE_OBSERVATION = re.compile(
+    r"\b(?:i|we)\s+(?:can\s+)?(?:see|smell|notice|observe)\s+(?:some\s+)?smoke\b|"
+    r"\bthere(?:'s|\s+is|\s+are)\s+(?:some\s+)?smoke\b",
+    re.IGNORECASE,
+)
+_NEARBY_FIRE_POSSIBILITY = re.compile(
+    r"\b(?:could|can|might|may|is|are|was|were)\b.{0,60}\b(?:a\s+)?(?:wild)?fire\b|"
+    r"\b(?:wild)?fire\b.{0,60}\b(?:nearby|cause|source)\b",
+    re.IGNORECASE,
+)
+
+
+def is_unresolved_smoke_observation(question: str) -> bool:
+    """Recognize a visible-smoke observation that asks about a nearby fire cause."""
+
+    return bool(
+        _SMOKE_OBSERVATION.search(question) and _NEARBY_FIRE_POSSIBILITY.search(question)
+    )
+
 
 _PERSONALIZED_ROUTE_REQUEST = re.compile(
     r"\b(?:safest|best)\s+(?:(?:evacuation|escape)\s+)?"

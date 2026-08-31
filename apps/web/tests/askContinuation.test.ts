@@ -5,6 +5,12 @@ import {
 } from "../src/features/ask/askContinuation";
 
 describe("selectedResultIdForQuestion", () => {
+  const liveResults = [
+    { result_id: "incident:first" },
+    { result_id: "incident:second" },
+    { result_id: "incident:third" },
+  ];
+
   it("sends an explicit override", () => {
     expect(selectedResultIdForQuestion("What is a firebreak?", undefined, "incident:7")).toBe(
       "incident:7",
@@ -26,6 +32,26 @@ describe("selectedResultIdForQuestion", () => {
     expect(
       selectedResultIdForQuestion("Give me the answer first, then the evidence.", "incident:7"),
     ).toBe("incident:7");
+  });
+
+  it("binds explicit ordinal references to the prior live roster", () => {
+    expect(selectedResultIdForQuestion("Tell me more about the first one.", undefined, undefined, liveResults)).toBe("incident:first");
+    expect(selectedResultIdForQuestion("Tell me more about the second one.", undefined, undefined, liveResults)).toBe("incident:second");
+    expect(selectedResultIdForQuestion("Tell me more about the third fire.", undefined, undefined, liveResults)).toBe("incident:third");
+    expect(selectedResultIdForQuestion("Tell me more about the 2nd record.", undefined, undefined, liveResults)).toBe("incident:second");
+    expect(selectedResultIdForQuestion("Tell me more about number 3.", undefined, undefined, liveResults)).toBe("incident:third");
+  });
+
+  it("fails closed for out-of-range ordinals and ambiguous singular questions", () => {
+    expect(selectedResultIdForQuestion("Tell me more about the fourth one.", undefined, undefined, liveResults)).toBeUndefined();
+    expect(selectedResultIdForQuestion("Tell me more about the second one.", "incident:first", undefined, [])).toBeUndefined();
+    expect(selectedResultIdForQuestion("How large is it?", undefined, undefined, liveResults)).toBeUndefined();
+  });
+
+  it("retains the backend-selected id for a later deictic follow-up", () => {
+    const selected = selectedResultIdForQuestion("Tell me more about the second one.", undefined, undefined, liveResults);
+    expect(selected).toBe("incident:second");
+    expect(selectedResultIdForQuestion("How far is that one from Kamloops?", selected, undefined, [{ result_id: selected! }])).toBe("incident:second");
   });
 
   it("does not hijack broad-subject questions with a stale selection", () => {

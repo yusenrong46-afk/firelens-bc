@@ -52,6 +52,15 @@ _STALE_RECORDS_LIMITATION = (
 )
 
 
+def _requested_live_layers(request: QueryRequest, packet: AgentPacket) -> tuple[Any, ...]:
+    """Use the already-authorized plan rather than reclassifying at publication time."""
+
+    plan = packet.query_plan
+    if plan is not None:
+        return tuple(plan.live_layers)
+    return live_layers_for_question(request.question)
+
+
 def safety_response(request: QueryRequest) -> AskResponse:
     del request
     answer = "FireLens cannot provide personalized safety advice or evacuation decisions."
@@ -345,7 +354,7 @@ def _build_ask_response(
             return _unresolved_place_response(request)
         if "out_of_province_place" in packet.unknown_topics:
             return _out_of_province_response(packet)
-        requested_layers = live_layers_for_question(request.question)
+        requested_layers = _requested_live_layers(request, packet)
         if requested_layers:
             empty = empty_live_response(
                 requested_layers=requested_layers,
@@ -553,7 +562,7 @@ def _build_ask_response(
             ),
         )
     if static is not None and not live:
-        requested = live_layers_for_question(request.question)
+        requested = _requested_live_layers(request, packet)
         if requested:
             empty = empty_live_response(
                 requested_layers=requested,
@@ -616,8 +625,6 @@ def _build_ask_response(
             resolved_location=packet.resolved_location,
             limitations=["FireLens did not invent a live feed it does not ingest."],
         )
-    # Terminal branch: nothing grounded this turn. Never publish free model
-    # prose here; the reader gets a deterministic, honest redirect instead.
     if packet.unavailable_layers:
         terminal_answer = (
             "The official live layers needed for this request were unavailable, so "

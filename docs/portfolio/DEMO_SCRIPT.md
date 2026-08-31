@@ -1,60 +1,67 @@
-# FireLens BC V1.6 demo script (3–5 minutes)
+# FireLens BC V1.6.2 demo script (3–5 minutes)
 
-This script uses the deterministic fixture lane. It demonstrates product
-behavior; it is **not** current incident, evacuation, or safety information.
-Start the local fixture-backed backend-to-browser demo before presenting.
+Use the [public demo](https://firelens-bc.vercel.app) for a live walkthrough or
+the deterministic fixture lane when repeatability matters. Live names, counts,
+and timestamps will change. Neither path is emergency advice.
 
-## 1. Named fire — answer first (about 35 seconds)
+## 1. Nearby records and continuity (about 50 seconds)
 
-Ask: **“Where is the Mountain Fire in Kelowna?”**
+Set the place to **Kelowna**, then ask: **“What fires are near me right now?”**
 
-Say: “A named fire with a BC place stays in the answer-first chat flow. The
-system does not ask again for the place it already has. Map context is available
-on demand rather than displacing the answer.”
+Say: “The place is retained, the answer leads, and every changing fact comes
+from returned official records. Map context appears because it is useful here,
+not because every answer gets a map.”
 
-## 2. Regional Okanagan analysis (about 35 seconds)
+If several records appear, ask: **“Tell me about the second one.”** Then ask:
+**“How large is it?”**
 
-Ask: **“Show the wildfire distribution across the Okanagan.”**
+Say: “The selected record ID—not model guesswork—binds the follow-up.”
+
+## 2. Province-wide analysis (about 40 seconds)
+
+Ask: **“How are current wildfire records distributed across B.C. by fire centre
+and status?”**
 
 Say: “A geographic distribution is a different task. FireLens switches to a
-deterministic analytical view: summary, records, and map. It does not present a
-map as a substitute for an answer.”
+deterministic Analysis workspace: Summary, Map, and Records. Counts and rankings
+are computed from the returned snapshot rather than written by the model.”
 
-## 3. Mixed current records and alert meaning (about 45 seconds)
+## 3. Mixed current records and guidance (about 40 seconds)
 
 Ask: **“What fires are near Kelowna, and what does an evacuation alert mean?”**
 
-Say: “The live record and the stable guidance use different evidence lanes. The
+Say: “The live record and stable guidance use different evidence lanes. The
 interface labels them separately rather than blending a current record with a
 reviewed claim.”
 
-## 4. Unsupported request (about 25 seconds)
+## 4. Exact wording and negation (about 35 seconds)
 
-Ask: **“Is it safe for my family to stay?”**
+Ask: **“Should I turn on my sprinklers before leaving during an evacuation?”**
 
-Say: “FireLens does not make a personal safety or evacuation decision. It
-explains the limit and provides an official handoff instead of confident filler.”
+Say: “The answer preserves the reviewed source’s `DO NOT activate` wording.
+The quote, approved surface, and source revision are bound; a nearby source
+sentence cannot substitute for it.”
 
-## 5. Partial outage (about 35 seconds)
+## 5. Personal-decision boundary (about 25 seconds)
+
+Ask: **“My parents are in West Kelowna. Should they leave now?”**
+
+Say: “FireLens does not make a personal evacuation decision. It retains the
+stated place and offers a bounded official check instead of confident filler.”
+
+## 6. Failure behavior (about 30 seconds)
 
 Use the fixture response where evacuation data is unavailable and ask for live
 records plus evacuation information.
 
 Say: “Available incident records remain visible, but the unavailable layer is
-named explicitly. The response does not convert missing evacuation data into an
-all-clear.”
+named explicitly. Missing evacuation data never becomes an all-clear.”
 
-## 6. Proof Card (about 35 seconds)
+## 7. Proof Card and close (about 35 seconds)
 
 Open a reviewed guidance item’s **Proof Card**.
 
-Say: “This shows why a response is labelled the way it is: its source, exact
-wording where applicable, and its publication state. A link or retrieval match
-is not silently treated as semantic proof.”
-
-## Close (about 20 seconds)
-
-Say: “The core idea is evidence-bound assistance: deterministic code and
-reviewed data authorize what can be published, while the model is bounded to
-language work. The fixture run shows engineering behavior only, not live
-emergency conditions or a release claim.”
+Say: “This shows why a response is labelled the way it is: source, exact
+wording, and publication state. Retrieval is not silently treated as semantic
+proof. The core idea is evidence-bound assistance: deterministic code and
+reviewed data authorize facts while the model is bounded to language work.”

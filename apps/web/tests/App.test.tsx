@@ -1283,6 +1283,66 @@ describe("FireLens Source Lens", () => {
     ]);
   });
 
+  it("binds ordinal live-record follow-ups and retains the server selection", async () => {
+    const liveResults = [
+      { result_id: "incident:first", name: "First Fire", status: "Out of Control" },
+      { result_id: "incident:second", name: "Second Fire", status: "Being Held" },
+      { result_id: "incident:third", name: "Third Fire", status: "Under Control" },
+    ].map((item) => ({
+      ...item,
+      kind: "incident",
+      authority: "BC Wildfire Service",
+      source_url: `https://example.test/${item.result_id}`,
+      source_updated_at: "2026-08-23T12:00:00Z",
+      retrieved_at: "2026-08-23T12:01:00Z",
+      freshness: "fresh",
+      geometry: { type: "Point", coordinates: [-119.5, 49.9] },
+    }));
+    let askCount = 0;
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.startsWith("/api/v1/live/map")) {
+        return Promise.resolve(new Response(JSON.stringify({ results: [], unavailable_layers: [] }), { status: 200 }));
+      }
+      askCount += 1;
+      const selected = askCount > 1 ? "incident:second" : undefined;
+      return Promise.resolve(new Response(JSON.stringify({
+        status: "answer",
+        response_mode: "live",
+        trace_id: `trace-ordinal-${askCount}`,
+        answer: `PB0${25 + askCount} answer`,
+        suggested_questions: [],
+        claims: [],
+        evidence: [],
+        limitations: [],
+        live_results: liveResults,
+        aggregate_freshness: "fresh",
+        ...(selected ? { selected_live_result_id: selected } : {}),
+        validation: { accepted: true },
+      }), { status: 200 }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Show current wildfire records");
+    await user.click(screen.getByLabelText("Send question"));
+    expect(await screen.findByText("PB026 answer")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Tell me more about the second one.");
+    await user.click(screen.getByLabelText("Send question"));
+    expect(await screen.findByText("PB027 answer")).toBeInTheDocument();
+    await waitFor(() => expect(askCallOptions(fetchMock)).toHaveLength(2));
+    const secondPayload = JSON.parse(String(askCallOptions(fetchMock)[1]?.body));
+    expect(secondPayload.context?.selected_live_result_id).toBe("incident:second");
+
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "How far is that one from Kamloops?");
+    await user.click(screen.getByLabelText("Send question"));
+    expect(await screen.findByText("PB028 answer")).toBeInTheDocument();
+    await waitFor(() => expect(askCallOptions(fetchMock)).toHaveLength(3));
+    const thirdPayload = JSON.parse(String(askCallOptions(fetchMock)[2]?.body));
+    expect(thirdPayload.context?.selected_live_result_id).toBe("incident:second");
+  });
+
   it("uses the server-bounded assistant history representation", async () => {
     const longAnswer = "A".repeat(7_000);
     const boundedHistory = `${"A".repeat(5_997)}...`;

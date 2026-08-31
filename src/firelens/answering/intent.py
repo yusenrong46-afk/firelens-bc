@@ -51,6 +51,7 @@ from firelens.answering.location_intent import (
 from firelens.answering.request_facets import contents_request_facet
 from firelens.answering.request_grammar import parse_request_facets
 from firelens.answering.return_intent import reviewed_return_condition_intent
+from firelens.answering.static_guidance_subject import static_guidance_retrieval_query
 from firelens.contracts import (
     AuthorityClass,
     LiveResultKind,
@@ -232,6 +233,14 @@ def required_authorities(question: str) -> frozenset[AuthorityClass]:
 
 def _requires_personal_live_location(question: str) -> bool:
     lowered = question.casefold()
+    # A stable smoke/home-preparation request may mention "my home" without
+    # asking FireLens to inspect a live local layer. Keep the execution guard
+    # aligned with the typed parser so guidance reaches reviewed retrieval.
+    if (
+        reviewed_guidance_intent(question)
+        and not parse_request_intent(question).has_live_records
+    ):
+        return False
     if not asks_for_personal_location(question):
         return False
     if re.search(
@@ -508,7 +517,8 @@ def reviewed_guidance_plan(plan: QueryPlan) -> QueryPlan:
     """Force grounded corpus retrieval without consulting a provider planner."""
 
     contents_facet = contents_request_facet(plan.original_question)
-    retrieval_query = (
+    subject_query = static_guidance_retrieval_query(plan.original_question)
+    retrieval_query = subject_query or (
         contents_facet.retrieval_query
         if contents_facet is not None
         else plan.normalized_question

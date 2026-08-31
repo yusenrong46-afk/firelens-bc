@@ -25,8 +25,14 @@ from firelens.answering.intent_automaton import (
     TemporalScope,
     parse_request_intent,
 )
+from firelens.answering.intent_refresh import is_live_refresh_request
 from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.location_intent import coarse_location_from_question
+from firelens.answering.static_guidance_subject import (
+    StaticGuidanceSubject,
+    static_guidance_retrieval_query,
+    static_guidance_subject,
+)
 from firelens.contracts import (
     AnswerSectionKind,
     AskResponse,
@@ -61,6 +67,33 @@ LIVE_FORMS = st.sampled_from(
         "Give me the current fire report for {place}.",
     )
 )
+
+
+@pytest.mark.parametrize(
+    ("question", "expected_subject", "expected_query"),
+    (
+        (
+            "Give general kit guidance.",
+            StaticGuidanceSubject.EMERGENCY_KIT,
+            "emergency kit contents checklist",
+        ),
+        (
+            "Regarding an emergency kit, what about pets?",
+            StaticGuidanceSubject.PET_GRAB_AND_GO,
+            "pets emergency kit grab-and-go bag food water leashes carriers",
+        ),
+        ("Put a bag in the trunk before work.", None, None),
+        ("How should I pack a backpack for travel?", None, None),
+        ("What about pets during the wildfire season?", None, None),
+    ),
+)
+def test_static_guidance_subject_is_bounded_to_kit_context(
+    question: str,
+    expected_subject: StaticGuidanceSubject | None,
+    expected_query: str | None,
+) -> None:
+    assert static_guidance_subject(question) == expected_subject
+    assert static_guidance_retrieval_query(question) == expected_query
 
 
 @given(place=PLACES, time=CURRENT_CUES, template=LIVE_FORMS)
@@ -259,6 +292,19 @@ def test_how_firelens_maps_current_data_is_product_help_not_live() -> None:
     )
     assert plan.mode != AgentRequestMode.LIVE
     assert plan.geography != AgentGeography.PROVINCE_WIDE or not plan.live_layers
+
+
+def test_refresh_wildfire_data_is_a_current_snapshot_not_a_historical_claim() -> None:
+    question = "Refresh the wildfire data and tell me whether anything changed."
+    parsed = parse_request_intent(question)
+
+    assert parsed.has_live_records
+    assert parsed.clauses[0].operation == RecordOperation.LIST
+    assert is_live_refresh_request(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+    assert plan.route == QueryRoute.LIVE
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.geography == AgentGeography.PROVINCE_WIDE
 
 
 def test_universal_standoff_distance_is_not_a_live_geometry_ask() -> None:

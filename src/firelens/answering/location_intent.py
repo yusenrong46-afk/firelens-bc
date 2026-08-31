@@ -47,6 +47,13 @@ def is_multi_place_fire_comparison(question: str) -> bool:
 
 _PLACE_PATTERNS = (
     re.compile(
+        r"\b(?:my|our)\s+(?:parents?|children|kids|partner|spouse|family|friends?|relatives?)\s+"
+        r"(?:are|is|live|lives|stay|stays)\s+(?:currently\s+)?in\s+"
+        r"(?P<place>[a-z][a-z .'-]{1,80}?)"
+        r"(?=[,;:.?!]|\s+(?:and|but|so)\b|$)",
+        re.IGNORECASE,
+    ),
+    re.compile(
         r"\b(?:wildfire|fire|incident|perimeter|evacuation)?\s*"
         r"(?:map|layer|view|search)\b.{0,50}"
         r"\b(?:empty|blank|returned?\s+(?:no|zero)|returned?\s+nothing)\b"
@@ -193,6 +200,11 @@ _PLACE_PATTERNS = (
 
 _CONTEXTUAL_PLACE_PATTERNS = (
     re.compile(
+        r"\b(?:anything|something|what).{0,28}\b(?:worry|concern(?:ed)?)\b"
+        r".{0,32}\b(?:near|around|in)\s+(?P<place>[a-z][a-z .'-]{1,80})",
+        re.IGNORECASE,
+    ),
+    re.compile(
         r"\b(?:fires?|wildfires?|(?:fire|wildfire)\s+situation|"
         r"(?:(?:fire|wildfire)\s+)?perimeters?|[a-z]{1,12}fires?)\s+"
         r"(?:(?:is|are)\s+)?"
@@ -227,7 +239,6 @@ _CONTEXTUAL_PLACE_PATTERNS = (
         re.IGNORECASE,
     ),
 )
-
 _TRAILING_CLAUSE = re.compile(
     r"\s+(?:and|but|then)\b.*$",
     re.IGNORECASE,
@@ -283,6 +294,7 @@ _REJECTED_PLACES = {
     "this fire",
     "this incident",
     "this wildfire",
+    "town",
     "any",
     "some",
     "what",
@@ -329,7 +341,6 @@ _REJECTED_PLACES = {
 _PLACE_ALIASES = {
     "west k": "West Kelowna",
 }
-
 _PROVINCE_WIDE_LABELS = frozenset(
     {
         "bc",
@@ -340,9 +351,6 @@ _PROVINCE_WIDE_LABELS = frozenset(
         "bc wildfire service",
     }
 )
-
-# Places FireLens must never geocode as BC communities. The BC Geocoder
-# fuzzy-matches anything, so these are rejected before it is asked.
 _OUT_OF_PROVINCE_PLACES = frozenset(
     {
         "alberta",
@@ -410,6 +418,12 @@ def directional_bc_region_label(question: str) -> str | None:
 
 def _clean_place(candidate: str) -> str | None:
     place = candidate.split(",", maxsplit=1)[0]
+    place = re.sub(
+        r"[.?!]\s+(?:can|could|may|might|do|does|how|is|are|what|which|why)\b.*$",
+        "",
+        place,
+        flags=re.IGNORECASE,
+    )
     place = _TRAILING_CLAUSE.sub("", place)
     place = _TRAILING_TIME.sub("", place)
     place = _TRAILING_SELECTED_REFERENCE.sub("", place)
@@ -476,6 +490,7 @@ def _clean_place(candidate: str) -> str | None:
                 "my ",
                 "our ",
                 "your ",
+                "town ",
             )
         )
         or lowered.startswith(
@@ -531,6 +546,15 @@ def is_province_wide_question(question: str) -> bool:
     return bool(_PROVINCE_WIDE_SCOPE.search(question))
 
 
+def _location_input(place: str | None, radius_km: float = 50.0) -> LocationInput | None:
+    if place is None:
+        return None
+    try:
+        return LocationInput(label=place, radius_km=radius_km)
+    except ValueError:
+        return None
+
+
 def coarse_location_from_question(question: str) -> LocationInput | None:
     """Return only a user-stated place label; never infer personal coordinates."""
 
@@ -544,67 +568,51 @@ def coarse_location_from_question(question: str) -> LocationInput | None:
     normalized = lex.normalize_text(question)
     implicit_place = spans.implicit_nearby_location(normalized)
     if implicit_place is not None:
-        place = _clean_place(implicit_place)
-        if place is not None:
-            try:
-                return LocationInput(label=place, radius_km=50)
-            except ValueError:
-                return None
-
+        location = _location_input(_clean_place(implicit_place))
+        if location is not None:
+            return location
     live_records_closest = lex.LIVE_RECORDS_CLOSEST_SCOPE.search(normalized)
     if live_records_closest is not None:
-        place = _clean_place(live_records_closest.group("place"))
-        if place is not None:
-            try:
-                return LocationInput(label=place, radius_km=50)
-            except ValueError:
-                return None
-
+        location = _location_input(_clean_place(live_records_closest.group("place")))
+        if location is not None:
+            return location
+    compact_closest_fire = lex.COMPACT_CLOSEST_FIRE_SCOPE.search(normalized)
+    if compact_closest_fire is not None:
+        location = _location_input(_clean_place(compact_closest_fire.group("place")))
+        if location is not None:
+            return location
+    compact_evacuation = lex.COMPACT_EVACUATION_SCOPE.search(normalized)
+    if compact_evacuation is not None:
+        location = _location_input(_clean_place(compact_evacuation.group("place")))
+        if location is not None:
+            return location
     closest_size = CLOSEST_FIRE_TRAILING_PLACE.search(normalized)
     if closest_size is not None:
-        place = _clean_place(closest_size.group("place"))
-        if place is not None:
-            try:
-                return LocationInput(label=place, radius_km=50)
-            except ValueError:
-                return None
-
+        location = _location_input(_clean_place(closest_size.group("place")))
+        if location is not None:
+            return location
     compact_radius = lex.COMPACT_RADIUS_SCOPE.search(normalized)
     if compact_radius is not None:
-        place = _clean_place(compact_radius.group("place"))
-        if place is not None:
-            try:
-                return LocationInput(
-                    label=place,
-                    radius_km=float(compact_radius.group("radius")),
-                )
-            except ValueError:
-                return None
-
+        location = _location_input(
+            _clean_place(compact_radius.group("place")),
+            float(compact_radius.group("radius")),
+        )
+        if location is not None:
+            return location
     radius = lex.RADIUS_SCOPE.search(normalized)
     if radius is not None:
-        place = _clean_place(radius.group("place"))
-        if place is not None:
-            try:
-                return LocationInput(
-                    label=place,
-                    radius_km=float(radius.group("radius")),
-                )
-            except ValueError:
-                return None
-
+        location = _location_input(
+            _clean_place(radius.group("place")), float(radius.group("radius"))
+        )
+        if location is not None:
+            return location
     facets = parse_request_facets(question)
     if facets.only_non_current_fire:
         return None
     for candidate in facets.live_location_candidates:
-        place = _clean_place(candidate)
-        if place is None:
-            continue
-        try:
-            return LocationInput(label=place, radius_km=50)
-        except ValueError:
-            return None
-
+        location = _location_input(_clean_place(candidate))
+        if location is not None:
+            return location
     # When the grammar finds a current fire clause, location extraction is
     # intentionally scoped to that clause. A later guidance clause must not
     # lend its place phrase to the live lookup.
@@ -619,21 +627,16 @@ def coarse_location_from_question(question: str) -> LocationInput | None:
             if match is None:
                 continue
             place = _clean_place(match.group("place"))
-            if place is None:
-                continue
-            try:
-                return LocationInput(label=place, radius_km=50)
-            except ValueError:
-                return None
+            location = _location_input(place)
+            if location is not None:
+                return location
         for pattern in _CONTEXTUAL_PLACE_PATTERNS:
             match = pattern.search(search_text)
             if match is not None:
                 place = _clean_place(match.group("place"))
-                if place is not None:
-                    try:
-                        return LocationInput(label=place, radius_km=50)
-                    except ValueError:
-                        return None
+                location = _location_input(place)
+                if location is not None:
+                    return location
     return None
 
 

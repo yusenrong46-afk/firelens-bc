@@ -5,6 +5,7 @@ from pathlib import Path
 
 from rag_helpers import make_chunk, make_runtime
 
+from firelens.answering.context import build_evidence_packet
 from firelens.answering.grounded import GroundedAnswerEngine
 from firelens.answering.typed_records import load_inventory, match_quote
 from firelens.config import FireLensConfig
@@ -25,6 +26,8 @@ from firelens.publication.compiler import (
 )
 from firelens.publication.fallback import admitted_official_quote_source
 from firelens.publication.records import admitted_corpus_index, get_versioned
+from firelens.retrieval.bm25 import load_chunk_records
+from firelens.retrieval.vector import retrieval_hit_from_chunk
 from firelens.runtime import load_runtime
 
 _ADMITTED_GRAB_AND_GO_LIST = (
@@ -189,6 +192,69 @@ def test_sprinkler_action_does_not_publish_adjacent_gas_instruction() -> None:
     assert _typed_ids(response) == {"TC-SPRINKLER-001"}
     assert "natural gas" not in (response.answer or "").casefold()
     assert response.validation is not None and response.validation.accepted
+
+
+def test_gas_order_does_not_select_adjacent_suspected_leak_record() -> None:
+    root = Path(__file__).resolve().parents[1]
+    question = "Should I shut off natural gas when I receive an evacuation order?"
+    chunk = next(
+        item
+        for item in load_chunk_records(
+            root / "data/processed/firelens_static_corpus.chunks.jsonl"
+        )
+        if item.chunk_id == "preparedbc_wildfire_guide:page:12:chunk:1"
+    )
+    packet = build_evidence_packet(
+        question,
+        [retrieval_hit_from_chunk(chunk, rerank_rank=1)],
+        [chunk],
+        corpus_version="structured-relevance.gas-order.v1",
+        config=FireLensConfig.from_env(root),
+    )
+
+    outcome = asyncio.run(
+        GroundedAnswerEngine(FakeProvider(dimensions=8)).answer(
+            question,
+            packet,
+            trace_id="gas-order-cross-segment",
+        )
+    )
+
+    assert _typed_ids(outcome.response) == set()
+    assert outcome.response.response_mode == ResponseMode.PARTIAL
+    assert "do not shut off your natural gas" in (outcome.response.answer or "").casefold()
+    assert outcome.response.validation is not None and outcome.response.validation.accepted
+
+
+def test_explicitly_supported_record_condition_permits_structured_selection() -> None:
+    question = "What should I do if I suspect a gas leak?"
+    packet = _bound_packet(question, "TC-GENERAL-036-01")
+
+    assert select_typed_claim_ids(packet, question=question) == ["TC-GENERAL-036-01"]
+
+
+def test_pb037_sprinkler_action_selects_the_reviewed_claim_without_generation() -> None:
+    question = "Should I turn on my sprinklers before leaving during an evacuation?"
+    packet = _bound_packet(question, "TC-SPRINKLER-001")
+
+    assert select_typed_claim_ids(packet, question=question) == ["TC-SPRINKLER-001"]
+
+    outcome = asyncio.run(
+        GroundedAnswerEngine(FakeProvider(dimensions=8)).answer(
+            question,
+            packet,
+            trace_id="pb037-sprinkler",
+        )
+    )
+
+    assert outcome.response.response_mode == ResponseMode.GROUNDED
+    assert _typed_ids(outcome.response) == {"TC-SPRINKLER-001"}
+    public = (outcome.response.answer or "").casefold()
+    assert "do not activate" in public
+    assert "natural gas" not in public
+    assert "follow instructions" not in public
+    assert outcome.attempts == 0
+    assert outcome.observations == ()
 
 
 def test_order_definition_does_not_publish_other_evacuation_stages() -> None:

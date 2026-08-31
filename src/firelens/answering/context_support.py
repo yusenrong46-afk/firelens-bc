@@ -22,6 +22,7 @@ from firelens.contracts import (
 from firelens.retrieval.bm25 import tokenize
 
 _ASPECT_STOPWORDS = {
+    "an",
     "about",
     "after",
     "also",
@@ -166,7 +167,9 @@ def _support_tokens(text: str) -> frozenset[str]:
 
     normalized: set[str] = set()
     for token in tokenize(text):
-        if token.startswith("prepar"):
+        if token == "meaning":
+            normalized.add("mean")
+        elif token.startswith("prepar"):
             normalized.add("prepare")
         elif token.startswith("evacuat") or token in {"leave", "leaving"}:
             normalized.add("evacuate")

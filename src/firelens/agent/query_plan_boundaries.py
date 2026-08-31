@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from uuid import uuid4
 
 from firelens.answering.live_handoffs import official_safety_links, related_live_links
@@ -14,6 +15,30 @@ from firelens.contracts import (
     ResponseMode,
     ResponseStatus,
 )
+
+# This recognizes an individual travel/fuel decision in a wildfire context.
+# It deliberately leaves non-personal preparedness questions (for example,
+# "what should a go-bag contain?") to the guidance/background lane. Indirect
+# first-person asks such as "tell me whether I personally should drive" remain
+# personal decisions, rather than general road-status questions.
+_PERSONAL_TRAVEL_OR_FUEL_DECISION = re.compile(
+    r"\b(?:can|could|should|may)\s+(?:i|we)\s+(?:drive|travel|go)\b.{0,120}"
+    r"\b(?:wildfire|fire|evacuat(?:ion|e))\b|"
+    r"\b(?:wildfire|fire|evacuat(?:ion|e))\b.{0,120}"
+    r"\b(?:can|could|should|may)\s+(?:i|we)\s+(?:drive|travel|go)\b|"
+    r"\b(?:whether|if)\b.{0,40}\b(?:i|we|me|us|personally)\b.{0,60}"
+    r"\b(?:should|can|could|may|safe)\b.{0,60}\b(?:drive|travel|go)\b.{0,120}"
+    r"\b(?:wildfire|fire|evacuat(?:ion|e))\b|"
+    r"\b(?:safe)\s+for\s+(?:me|us)\b.{0,60}\b(?:drive|travel|go)\b.{0,120}"
+    r"\b(?:wildfire|fire|evacuat(?:ion|e))\b",
+    re.IGNORECASE,
+)
+
+
+def is_personal_travel_or_fuel_decision(question: str) -> bool:
+    """Return whether a request asks FireLens to make a personal travel decision."""
+
+    return _PERSONAL_TRAVEL_OR_FUEL_DECISION.search(question) is not None
 
 
 def location_prompt(request: QueryRequest, *, unresolved: bool) -> AskResponse:
@@ -61,6 +86,29 @@ def empty_map_location_prompt(request: QueryRequest) -> AskResponse:
     )
 
 
+def smoke_observation_location_prompt() -> AskResponse:
+    """Request a bounded official lookup without attributing visible smoke."""
+
+    return AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id=uuid4().hex,
+        response_mode=ResponseMode.REQUIRES_INPUT,
+        answer=(
+            "FireLens cannot identify the cause of visible smoke. Enter a BC community "
+            "or approximate location and it can check current official wildfire incidents nearby."
+        ),
+        required_input=RequiredInput(
+            kind=RequiredInputKind.LOCATION,
+            prompt="Enter a BC community or approximate location to check official wildfire incidents.",
+            continuation_question="Show current wildfires near my place.",
+        ),
+        reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+        limitations=[
+            "No official incident lookup was run because the visible-smoke location was not provided."
+        ],
+    )
+
+
 def scope_redirect(topics: tuple[str, ...]) -> AskResponse:
     if topics:
         answer = f"FireLens is not connected to an official live source for {', '.join(topics)}. Open the related official service for the current value."
@@ -98,6 +146,23 @@ def selection_prompt() -> AskResponse:
         answer="Select a mapped official record before asking for one record's size or status. FireLens will not choose a nearby record for you.",
         reason_code=ReasonCode.LIVE_DATA_REQUIRED,
         limitations=["No official record was fetched because no exact record was selected."],
+    )
+
+
+def record_reference_prompt() -> AskResponse:
+    """Keep an ambiguous roster reference from selecting a record implicitly."""
+
+    return AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id=uuid4().hex,
+        response_mode=ResponseMode.SCOPE_REDIRECT,
+        answer=(
+            "Select a mapped official record or name the fire you mean before asking "
+            "which record FireLens is referring to. FireLens will not choose one from "
+            "the roster."
+        ),
+        reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+        limitations=["No official record was fetched for an unselected reference."],
     )
 
 

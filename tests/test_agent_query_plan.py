@@ -162,6 +162,34 @@ def test_ambiguous_nearby_family_request_uses_stated_place_without_safety_infere
     assert plan.static_subrequest is None
 
 
+def test_vague_local_concern_uses_a_bounded_official_record_lookup() -> None:
+    plan = _plan("Anything I gotta worry about around Kamloops?")
+
+    assert plan.route == QueryRoute.LIVE
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.geography == AgentGeography.LOCATION_RADIUS
+    assert plan.location_label == "Kamloops"
+    assert plan.live_layers == (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER)
+    assert plan.tool_calls[0].as_arguments() == {"place_label": "Kamloops"}
+
+
+def test_unselected_roster_reference_requires_a_selection_instead_of_refetching() -> None:
+    plan = plan_agent_request(
+        QueryRequest(
+            question="I can't see the fire you mentioned on the map. Which record are you referring to?",
+            context=MapContext(visible_live_result_ids=["incident:1", "incident:2"]),
+        )
+    )
+
+    assert plan.route == QueryRoute.LIVE
+    assert plan.mode == AgentRequestMode.TERMINAL
+    assert plan.tool_calls == ()
+    assert plan.terminal_response is not None
+    assert "Select a mapped official record or name the fire" in (
+        plan.terminal_response.answer or ""
+    )
+
+
 def test_implicit_nearby_mixed_request_preserves_reviewed_smoke_half() -> None:
     plan = _plan(
         "What's happening around Kamloops, and how should I prepare for poor air quality?"

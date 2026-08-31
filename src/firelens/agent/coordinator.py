@@ -45,8 +45,10 @@ from firelens.live_answering import LiveAnswerCoordinator
 
 _PLACE_CORRECTION_PATTERNS = (
     re.compile(
-        r"^(?:i\s+(?:mean|meant)|actually|no[,]?\s*wait[,]?)\s+"
-        r"(?P<place>[a-z][a-z .'-]{1,80}?)(?:\s+(?:not|instead of)\b.*)?[.?!]*$",
+        r"^(?:i\s+(?:mean|meant)|"
+        r"actually(?:[,]?\s+i\s+(?:mean|meant))?|"
+        r"no[,]?\s*wait[,]?)\s+"
+        r"(?P<place>[a-z][a-z .'-]{1,80}?)(?:\s+(?:not|instead)(?:\s+of)?\b.*)?[.?!]*$",
         re.IGNORECASE,
     ),
     re.compile(
