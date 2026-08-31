@@ -71,7 +71,8 @@ Keep under 300 lines and update when the candidate identity or evidence changes.
   collides with the personalized evacuation boundary; the current turn owns
   typed kit and smoke retrieval so earlier conversation cannot substitute an
   unrelated pet or PDF fragment; exact quote-only answers render once with a
-  compact source/review affordance instead of repeating the full passage.
+  compact source/review affordance instead of repeating the full passage, and
+  source line breaks remain visible for headings and checklists.
 
 ## Evidence status
 

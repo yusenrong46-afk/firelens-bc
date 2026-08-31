@@ -66,7 +66,14 @@ export function AnswerBody({
       {!analytical && quoteOnlyAnswer && (
         <span className="panel-label answer-source-kicker">Exact official source wording</span>
       )}
-      {!hasAnswerSections && lead && <AnswerMarkdown className="answer-lead">{lead}</AnswerMarkdown>}
+      {!hasAnswerSections && lead && (
+        <AnswerMarkdown className={quoteOnlyAnswer
+          ? "answer-lead answer-lead--source-quote"
+          : "answer-lead"}
+        >
+          {lead}
+        </AnswerMarkdown>
+      )}
       {hasAnswerSections && (
         <div className="answer-sections" aria-label="Authority-labelled answer">
           {answerSections.map((section) => (

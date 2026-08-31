@@ -637,6 +637,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .proof-card a { color: var(--forest); font-size: 16px; font-weight: 600; }
 
 .answer-source-kicker { display: block; margin: 0 0 8px; color: var(--forest); }
+.answer-lead--source-quote { white-space: pre-line; }
 .claim-evidence__source { display: grid; gap: 4px; margin: 0; }
 .claim-evidence__source a {
   display: inline-flex;
