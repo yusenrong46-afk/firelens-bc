@@ -3,19 +3,20 @@
 Status: current architecture authority for Ask, trust, packaging, and proof UX.
 Date: 2026-08-28
 
-The V1.6.2 branch candidate is committed. Exact current HEAD/tree identity is
+The V1.6.3 branch candidate is committed. Exact current HEAD/tree identity is
 required in the external current candidate-evidence record after execution;
 this architecture document does not embed a self-referential commit identifier
 and does not affirm that matching CI evidence already exists. The tracked
-package, runtime, Docker, and OpenAPI identity is `1.6.2`, but that identity is
+package, runtime, Docker, and OpenAPI identity is `1.6.3`, but that identity is
 not a deployment or release statement. Exact-Git qualification evidence remains
 separate and incomplete until its required local, CI, independent, paid,
 preview, and human gates are recorded.
 
 The RC1/RC2 standards and their recorded reports remain historical, frozen
-materials. V1.6.2 is a separate patch promotion: it must bind a new exact
-commit/tree and may not rewrite an older standard, hard-probe input, human
-decision, or report to claim patch qualification.
+materials. V1.6.3 is a separate patch promotion: it binds the V1.6.2 functional
+parent, a new exact commit/tree, and immutable governed artifacts without
+rewriting an older standard, hard-probe input, human decision, or report to claim
+patch qualification.
 
 This document replaces the V1.5 technical handbook for runtime Ask behaviour.
 `docs/TECHNICAL_HANDBOOK.md` is historical (2026-07-30). Qualification evidence

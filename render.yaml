@@ -28,4 +28,4 @@ services:
       - key: FIRELENS_TRACE_CONTENT
         value: "false"
       - key: FIRELENS_RELEASE_VERSION
-        value: "1.6.2"
+        value: "1.6.3"

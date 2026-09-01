@@ -5,16 +5,16 @@ wildfire capability.** FireLens combines useful chat, official incident records,
 reviewed preparedness guidance, and deterministic analysis without presenting
 model output as official evidence.
 
-[**Open the public V1.6.2 demo**](https://firelens-bc.vercel.app) ·
+[**Open the public V1.6.3 demo**](https://firelens-bc.vercel.app) ·
 [Read the case study](docs/portfolio/CLIMATE_DECISION_INTELLIGENCE_CASE_STUDY.md) ·
 [Use the 3–5 minute demo script](docs/portfolio/DEMO_SCRIPT.md)
 
 ![FireLens BC Civic Intelligence Desk showing a deterministic wildfire distribution analysis](docs/assets/firelens-v1-6-overview.jpg)
 
 _Deterministic fixture data—not a current wildfire or evacuation report. The
-screenshot demonstrates the V1.6.2 interface, not current conditions._
+screenshot demonstrates the V1.6.3 interface, not current conditions._
 
-> **Project status:** A public V1.6.2 demo is available. Runtime identity, readiness, and qualification evidence remain commit-bound; this README does not confer emergency authority or turn a fluent model answer into proof.
+> **Project status:** A public V1.6.3 demo is available. Runtime identity, readiness, and qualification evidence remain commit-bound; this README does not confer emergency authority or turn a fluent model answer into proof.
 
 ## What FireLens does
 
@@ -73,7 +73,7 @@ publication authority:
 > **Models propose language. Source contracts, deterministic validation, and
 > authorized human decisions determine what may be published.**
 
-## What V1.6.2 demonstrates
+## What V1.6.3 demonstrates
 
 - Authority-bound reviewed claims and a disposition ledger for all 36 raw
   candidates; unresolved source repairs remain non-compilable.

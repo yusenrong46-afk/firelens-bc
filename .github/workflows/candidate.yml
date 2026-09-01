@@ -27,7 +27,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-      - name: Ensure V1.6.2 patch base is an ancestor of HEAD
+      - name: Ensure V1.6.3 functional parent is an ancestor of HEAD
         run: |
           python3 - <<'PY'
           import json
@@ -38,9 +38,9 @@ jobs:
               return subprocess.check_output(["git", *args], text=True).strip()
 
           manifest = json.loads(
-              Path("config/firelens.v1_6_2_patch_promotion.v1.json").read_text()
+              Path("config/firelens.v1_6_3_patch_promotion.v1.json").read_text()
           )
-          base = manifest["base_commit"]
+          base = manifest["functional_parent_commit"]
           head = git("rev-parse", "HEAD")
           print("HEAD", head)
           print("BASE", base)
@@ -58,7 +58,7 @@ jobs:
               leftover = git("rev-list", "--max-count=3", base, "--not", head)
               print("leftover-after-fetch", leftover or "<empty>")
           if leftover:
-              raise SystemExit("V1.6.2 patch base is not an ancestor of HEAD")
+              raise SystemExit("V1.6.3 functional parent is not an ancestor of HEAD")
           PY
       - name: Resolve exact clean candidate identity
         run: |
@@ -190,7 +190,7 @@ jobs:
             --output config/runtime_candidate.v1.json \
             --commit "$CANDIDATE_SHA" \
             --benchmark-id firelens_v1_6_2 \
-            --release-version 1.6.2
+            --release-version 1.6.3
           runtime_candidate=$?
           npm --prefix apps/web run build
           frontend_build=$?
@@ -236,7 +236,7 @@ jobs:
               (
                   "runtime_candidate",
                   "scripts/write_runtime_candidate.py --commit $CANDIDATE_SHA "
-                  "--benchmark-id firelens_v1_6_2 --release-version 1.6.2",
+                  "--benchmark-id firelens_v1_6_2 --release-version 1.6.3",
               ),
               ("frontend_build", "npm --prefix apps/web run build"),
               (
@@ -282,7 +282,7 @@ jobs:
               encoding="utf-8",
           )
           PY
-      - name: Reconfirm V1.6.2 patch ancestry before evidence build
+      - name: Reconfirm V1.6.3 functional parent ancestry before evidence build
         run: |
           git fetch --unshallow || true
           git fetch origin --prune --no-recurse-submodules \
@@ -296,8 +296,8 @@ jobs:
               return subprocess.check_output(["git", *args], text=True).strip()
 
           base = json.loads(
-              Path("config/firelens.v1_6_2_patch_promotion.v1.json").read_text()
-          )["base_commit"]
+              Path("config/firelens.v1_6_3_patch_promotion.v1.json").read_text()
+          )["functional_parent_commit"]
           head = git("rev-parse", "HEAD")
           leftover = git("rev-list", "--max-count=3", base, "--not", head)
           print("HEAD", head)
@@ -310,7 +310,9 @@ jobs:
               leftover = git("rev-list", "--max-count=3", base, "--not", head)
               print("leftover-after-fetch", leftover or "<empty>")
           if leftover:
-              raise SystemExit("V1.6.2 patch base is not an ancestor of HEAD before evidence")
+              raise SystemExit(
+                  "V1.6.3 functional parent is not an ancestor of HEAD before evidence"
+              )
           PY
       - name: Build and recompute candidate-evidence v2
         id: candidate
@@ -321,7 +323,7 @@ jobs:
             --output-dir candidate-evidence \
             --commit "$CANDIDATE_SHA" \
             --tree "$CANDIDATE_TREE" \
-            --release-version 1.6.2 \
+            --release-version 1.6.3 \
             --generated-at "$source_date" \
             --builder-id "https://github.com/$GITHUB_REPOSITORY/actions/workflows/candidate.yml" \
             --invocation-id "$GITHUB_RUN_ID:$GITHUB_RUN_ATTEMPT" \

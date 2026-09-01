@@ -256,7 +256,7 @@ def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> N
         "FIRELENS_GENERATION_ZDR=required",
         "FIRELENS_RERANK_MODEL",
         "FIRELENS_GENERATION_MODEL",
-        "ARG FIRELENS_RELEASE_VERSION=1.6.2",
+        "ARG FIRELENS_RELEASE_VERSION=1.6.3",
         "ARG FIRELENS_BENCHMARK_ID=firelens_v1_6_2",
         '--benchmark-id "$FIRELENS_BENCHMARK_ID"',
     ):
@@ -265,7 +265,7 @@ def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> N
     assert "1.5.0-rc.1" not in dockerfile
     render = (ROOT / "render.yaml").read_text(encoding="utf-8")
     assert "FIRELENS_RELEASE_VERSION" in render
-    assert 'value: "1.6.2"' in render
+    assert 'value: "1.6.3"' in render
     assert "1.5.0-rc.1" not in render
     writer = (ROOT / "scripts/write_runtime_candidate.py").read_text(encoding="utf-8")
     vercel_prep = (ROOT / "scripts/prepare_vercel_build.py").read_text(encoding="utf-8")
@@ -276,7 +276,7 @@ def test_deployment_packaging_includes_governance_and_narrows_vercel_data() -> N
     assert "DEFAULT_BENCHMARK_ID" in vercel_prep
     assert "FIRELENS_BENCHMARK_ID" in vercel_prep
     assert "FIRELENS_BUILD_COMMIT" in vercel_prep
-    assert FireLensConfig.model_fields["release_version"].default == "1.6.2"
+    assert FireLensConfig.model_fields["release_version"].default == "1.6.3"
     vercel = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
     include = vercel["services"]["firelens"]["functions"]["**/*.py"]["includeFiles"]
     assert include != "data/**"

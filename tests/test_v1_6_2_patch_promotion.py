@@ -55,6 +55,12 @@ def _fixture_root(tmp_path: Path) -> Path:
         target = root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
+    for relative in VERSION_SURFACE_PATHS:
+        path = root / relative
+        path.write_text(
+            path.read_text(encoding="utf-8").replace("1.6.3", TO_VERSION),
+            encoding="utf-8",
+        )
     return root
 
 
@@ -205,4 +211,4 @@ def test_openapi_export_ignores_local_release_version_override(
 
     config = build_export_config(tmp_path)
 
-    assert config.release_version == TO_VERSION
+    assert config.release_version == "1.6.3"

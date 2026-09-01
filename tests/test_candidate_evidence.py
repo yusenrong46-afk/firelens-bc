@@ -1441,10 +1441,10 @@ def test_candidate_workflow_is_exact_head_zero_cost_v2_artifact() -> None:
         in workflow_text
     )
     assert "--expectation-profile rc2.2" in workflow_text
-    assert "--release-version 1.6.2" in workflow_text
+    assert "--release-version 1.6.3" in workflow_text
     assert "--release-version 1.6.0-rc.1" not in workflow_text
     assert "--release-version 1.6.0-rc.2" not in workflow_text
-    assert "config/firelens.v1_6_2_patch_promotion.v1.json" in workflow_text
+    assert "config/firelens.v1_6_3_patch_promotion.v1.json" in workflow_text
     assert "firelens.candidate_evidence.v2" in workflow_text
     assert "--expected-tree" in workflow_text
     assert "CURRENT_EVIDENCE" not in workflow_text

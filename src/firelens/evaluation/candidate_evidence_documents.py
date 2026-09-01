@@ -49,6 +49,15 @@ from firelens.evaluation.v1_6_2_patch_promotion import (
     patch_promotion_material_record,
     validate_patch_promotion,
 )
+from firelens.evaluation.v1_6_3_patch_promotion import (
+    TO_VERSION as CURRENT_PATCH_PROMOTED_VERSION,
+)
+from firelens.evaluation.v1_6_3_patch_promotion import (
+    patch_promotion_material_record as current_patch_promotion_material_record,
+)
+from firelens.evaluation.v1_6_3_patch_promotion import (
+    validate_patch_promotion as validate_current_patch_promotion,
+)
 
 
 def _python_components(root: Path) -> list[dict[str, object]]:
@@ -251,6 +260,8 @@ def evidence_materials(root: Path, *, release_version: str) -> list[dict[str, ob
         materials.append(promotion_material_record(root))
     elif normalized == PATCH_PROMOTED_VERSION:
         materials.append(patch_promotion_material_record(root))
+    elif normalized == CURRENT_PATCH_PROMOTED_VERSION:
+        materials.append(current_patch_promotion_material_record(root))
     return materials
 
 
@@ -312,6 +323,14 @@ def documents(
         )
     elif normalized_release == PATCH_PROMOTED_VERSION:
         validate_patch_promotion(
+            root,
+            commit=commit,
+            tree=tree,
+            release_version=release_version,
+            clean_starting_state_bound=True,
+        )
+    elif normalized_release == CURRENT_PATCH_PROMOTED_VERSION:
+        validate_current_patch_promotion(
             root,
             commit=commit,
             tree=tree,
