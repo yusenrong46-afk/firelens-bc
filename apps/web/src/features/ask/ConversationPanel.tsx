@@ -1,20 +1,17 @@
 import { ArrowSquareOut, Crosshair, UserCircle, WarningCircle } from "@phosphor-icons/react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { FeedbackControls } from "../feedback/FeedbackControls";
 import { resultDisplayName } from "../near-me/liveResultPresentation";
 import { AnswerBody } from "./AnswerBody";
 import { AskStartPanel } from "./AskStartPanel";
 import { getAnswerSections } from "./answerSections";
 import {
-  ClaimEvidence,
   ConversationToolbar,
-  NonSelectableClaim,
-  PreparednessSources,
   revealAssistantMessage,
   ServiceFailureState,
   SuggestedQuestions,
 } from "./ConversationPresentation";
-import { getClaimSupportLabel, getClaimSupportState } from "./proofPresentation";
+import { ConversationEvidenceDetails } from "./ConversationEvidenceDetails";
 import { QuestionComposer } from "./QuestionComposer";
 import { ResponseModeBadge } from "./responseModeBadge";
 import { announcementForState, type ConversationState } from "./conversationAnnouncements";
@@ -58,16 +55,6 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
     mapResults,
   } = session;
   const answerSections = getAnswerSections(response);
-  const evidenceById = new Map((response?.evidence ?? []).map((item) => [item.evidence_id, item]));
-  const presentableEvidence = !response ? [] : (response.evidence ?? []).flatMap((item) => {
-    const linkedClaim = claims.find((claim) => claim.supports?.some((support) => support.evidence_id === item.evidence_id));
-    if (!linkedClaim) return [];
-    const state = getClaimSupportState(response, linkedClaim);
-    if (!["supported", "structured_reviewed", "official_quote_only", "source_linked_explanation", "conflict"].includes(state)) {
-      return [];
-    }
-    return [{ item, state }];
-  });
   const visibleLimitations = Array.from(
     new Set((response?.limitations ?? []).map((item) => item.trim()).filter(Boolean)),
   );
@@ -77,7 +64,18 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
     (item) => item.result_id === selectedLiveResultId,
   );
   const previousState = useRef<ConversationState>(view.kind);
+  const composerRef = useRef<HTMLInputElement>(null);
   const [announcement, setAnnouncement] = useState("");
+  const [selectionAnnouncement, setSelectionAnnouncement] = useState("");
+
+  const fillComposer = useCallback((question: string) => {
+    const place = locationLabel.trim();
+    const normalized = (place ? question.replaceAll("{place}", place) : question).trim();
+    if (!normalized) return;
+    setQuery(normalized);
+    setSelectionAnnouncement(`Question added to the composer: ${normalized}`);
+    requestAnimationFrame(() => composerRef.current?.focus());
+  }, [locationLabel, setQuery]);
 
   useEffect(() => {
     const priorState = previousState.current;
@@ -101,6 +99,7 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
         >
           {announcement}
         </span>
+        <span className="response-announcement" role="status" aria-live="polite" aria-atomic="true">{selectionAnnouncement}</span>
         {earlierTurns.length > 0 && (
           <div className="history-group" aria-label="Earlier conversation">
             <span className="panel-label">Earlier conversation</span>
@@ -128,9 +127,9 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
               locationLabel={locationLabel}
               onLocationChange={(value) => { setLocationLabel(value); clearManualLocation(); }}
               onUseApproximateLocation={useApproximateLocation}
-              onAsk={(question) => void submitQuestion(question)}
+              onSelectQuestion={fillComposer}
             />
-            <QuestionComposer idle loading={false} query={query} onQueryChange={setQuery} onSubmit={submit} />
+            <QuestionComposer idle loading={false} query={query} onQueryChange={setQuery} onSubmit={submit} inputRef={composerRef} />
           </>
         )}
 
@@ -219,49 +218,15 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
         {locationMessage && <p className="location-message" role="status" aria-live="polite" aria-atomic="true">{locationMessage}</p>}
 
         {view.kind === "answer" && mode !== "background" && claims.length > 0 && (
-          <div className="claim-group">
-            <span className="panel-label">Answer evidence and support</span>
-            <div className="claim-list">
-              {claims.map((claim, index) => {
-                const state = getClaimSupportState(view.response, claim);
-                const supportLabel = getClaimSupportLabel(view.response, claim);
-                const showSource = [
-                  "supported",
-                  "structured_reviewed",
-                  "official_quote_only",
-                  "source_linked_explanation",
-                  "conflict",
-                ].includes(state);
-                const hasLinkedEvidence = claim.supports?.some((support) => evidenceById.has(support.evidence_id)) ?? false;
-                const canReview = showSource || hasLinkedEvidence || state === "official_live_typed";
-                return canReview ? (
-                  <ClaimEvidence
-                    key={claim.claim_id}
-                    claim={claim}
-                    index={index}
-                    supportLabel={supportLabel}
-                    evidence={showSource && claim.supports?.[0] ? evidenceById.get(claim.supports[0].evidence_id) : undefined}
-                    showSource={showSource}
-                    onReviewEvidence={() => {
-                      setSelected(index);
-                      onOpenEvidence?.();
-                    }}
-                  />
-                ) : (
-                  <NonSelectableClaim
-                    key={claim.claim_id}
-                    claim={claim}
-                    index={index}
-                    supportLabel={supportLabel}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {view.kind === "answer" && !allClaimsQuoteOnly && (
-          <PreparednessSources evidence={presentableEvidence} />
+          <ConversationEvidenceDetails
+            allClaimsQuoteOnly={allClaimsQuoteOnly}
+            claims={claims}
+            onReviewEvidence={(index) => {
+              setSelected(index);
+              onOpenEvidence?.();
+            }}
+            response={view.response}
+          />
         )}
 
         {view.kind === "abstention" && (
@@ -278,7 +243,7 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
         {view.kind !== "idle" && (
           <SuggestedQuestions
             disabled={view.kind === "loading"}
-            onSelect={(question) => void submitQuestion(question)}
+            onSelect={fillComposer}
             suggestions={suggestions}
           />
         )}
@@ -290,7 +255,7 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
 
       {view.kind !== "idle" && (
         <QuestionComposer continuationPending={requiresLocation} idle={false} loading={view.kind === "loading"} query={query}
-          onQueryChange={setQuery} onSubmit={submit} />
+          onQueryChange={setQuery} onSubmit={submit} inputRef={composerRef} />
       )}
     </section>
   );

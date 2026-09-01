@@ -16,13 +16,16 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .conversation-panel,
   .conversation-panel *,
+  .analysis-workspace,
   .analysis-workspace *,
   .leaflet-container,
   .leaflet-container * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
+    animation: none !important;
+    transition: none !important;
   }
 }

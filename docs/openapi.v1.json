@@ -709,6 +709,110 @@
         "title": "GeometryRelation",
         "type": "string"
       },
+      "GuidedQuestionCategory": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/GuidedQuestionItem"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Questions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "questions"
+        ],
+        "title": "GuidedQuestionCategory",
+        "type": "object"
+      },
+      "GuidedQuestionItem": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "location_mode": {
+            "enum": [
+              "none",
+              "required"
+            ],
+            "title": "Location Mode",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "source_lane": {
+            "enum": [
+              "official_live",
+              "reviewed_guidance",
+              "official_quote"
+            ],
+            "title": "Source Lane",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "question",
+          "location_mode",
+          "source_lane"
+        ],
+        "title": "GuidedQuestionItem",
+        "type": "object"
+      },
+      "GuidedQuestionsResponse": {
+        "additionalProperties": false,
+        "description": "Frozen public catalogue shape; capability internals stay private.",
+        "properties": {
+          "catalogue_sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Catalogue Sha256",
+            "type": "string"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/GuidedQuestionCategory"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Categories",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "firelens.guided_questions.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "catalogue_sha256",
+          "categories"
+        ],
+        "title": "GuidedQuestionsResponse",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2491,6 +2595,25 @@
           }
         },
         "summary": "Feedback"
+      }
+    },
+    "/api/v1/guided-questions": {
+      "get": {
+        "description": "Return the frozen client catalogue without exposing routing internals.",
+        "operationId": "guided_questions_api_v1_guided_questions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidedQuestionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Guided Questions"
       }
     },
     "/api/v1/health/live": {

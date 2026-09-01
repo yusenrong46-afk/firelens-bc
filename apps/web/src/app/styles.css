@@ -50,6 +50,14 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   outline: 3px solid var(--ember-deep);
   outline-offset: 3px;
 }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
 .response-announcement {
   position: absolute;
   width: 1px;
@@ -1877,6 +1885,80 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .ask-start-panel__approx > span { display: flex; flex: 1; justify-content: space-between; gap: 12px; }
 .ask-start-panel__approx small { color: var(--muted); font: inherit; font-size: 12px; text-transform: uppercase; }
 .ask-start-panel__approx:hover { color: var(--ember-deep); }
+.guided-questions { margin-top: 4px; }
+.guided-questions__trigger {
+  width: 100%;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  color: var(--forest-deep);
+  text-align: left;
+  background: rgba(255, 255, 253, .72);
+  border: 1px solid #8f9489;
+  border-radius: 0;
+  cursor: pointer;
+  font: 600 16px "Inter", system-ui, sans-serif;
+}
+.guided-questions__trigger:hover,
+.guided-questions__trigger:focus-visible { color: var(--ember-deep); background: #fff; }
+.guided-questions__trigger[aria-expanded="true"] { border-color: var(--forest); }
+.guided-questions__panel {
+  margin-top: 8px;
+  padding: 12px;
+  background: #fffef9;
+  border: 1px solid #8f9489;
+  box-shadow: var(--shadow-card);
+}
+.guided-questions__tools { display: grid; grid-template-columns: minmax(0, 1fr) minmax(170px, .72fr) 44px; gap: 8px; align-items: center; }
+.guided-questions__search,
+.guided-questions__filter { min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--muted); border: 1px solid var(--hairline); background: var(--paper); }
+.guided-questions__search input { min-width: 0; flex: 1; min-height: 42px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 16px; }
+.guided-questions__filter select { min-width: 0; width: 100%; min-height: 42px; border: 0; outline: 0; color: var(--ink); background: transparent; font-size: 16px; }
+.guided-questions__close { min-width: 44px; min-height: 44px; display: grid; place-items: center; color: var(--forest); background: transparent; border: 1px solid var(--hairline); cursor: pointer; }
+.guided-questions__close:hover { color: var(--ember-deep); background: var(--ember-tint); }
+.guided-questions__categories { display: grid; gap: 14px; max-height: min(52vh, 560px); margin-top: 14px; overflow-y: auto; overscroll-behavior: contain; }
+.guided-questions__categories section { min-width: 0; }
+.guided-questions__categories h2 { margin: 0 0 6px; color: var(--forest-deep); font: 600 18px/1.25 "Newsreader", Georgia, serif; }
+.guided-questions__categories ul { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.guided-questions__categories li button { width: 100%; min-height: 52px; display: grid; gap: 2px; padding: 8px 10px; color: var(--ink); text-align: left; background: var(--forest-tint); border: 1px solid transparent; cursor: pointer; }
+.guided-questions__categories li button:hover, .guided-questions__categories li button:focus-visible { color: var(--ember-deep); background: var(--ember-tint); border-color: rgba(184, 68, 31, .28); }
+.guided-questions__categories li strong { font-size: 16px; }
+.guided-questions__categories li span { color: var(--ink-soft); font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
+.guided-questions__empty { margin: 14px 2px 2px; color: var(--muted); font-size: 16px; }
+.guided-questions__failure {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 54px;
+  padding: 8px 12px;
+  color: var(--ink-soft);
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-edge);
+}
+.guided-questions__failure button {
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--forest);
+  background: #fff;
+  border: 1px solid rgba(28, 70, 54, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.guided-questions__failure button:hover { color: #fff; background: var(--forest); }
+.suggestion-group__hint { margin: 6px 0 8px; color: var(--muted); font-size: 14px; }
+.answer-details { margin-top: 16px; border-top: 1px solid var(--hairline-soft); }
+.answer-details > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--forest); font-size: 16px; font-weight: 650; }
+.answer-details > summary:hover { color: var(--ember-deep); }
+.answer-details[open] { padding-bottom: 4px; }
+.answer-details .claim-group { padding-top: 6px; }
+.answer-details .answer-sources { margin-top: 16px; }
 .ask-start-panel__intents {
   display: grid;
   margin: 0;
@@ -2065,7 +2147,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   }
   .workspace--chat:not(.workspace--split) .conversation-panel--idle {
     width: min(1240px, 100%);
-    height: auto;
+    height: 100%;
+    min-height: 0;
     align-self: start;
   }
 
@@ -2074,6 +2157,13 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .workspace--chat.workspace--split .conversation-scroll {
     overflow-y: auto;
     scrollbar-width: thin;
+  }
+
+  /* The idle guided catalogue and composer live inside the conversation
+     scroller. Keep the desktop shell bounded so expanding all 24 questions
+     never overflows the fixed workspace or clips its lower controls. */
+  .workspace--chat:not(.workspace--split) .conversation-panel--idle .conversation-scroll {
+    overflow-y: auto;
   }
 
   .workspace--chat:not(.workspace--split) .conversation-scroll > .history-group,
@@ -2306,5 +2396,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .ask-start-panel__console { padding: 26px 18px 30px; border-left-width: 4px; }
   .ask-start-panel__approx > span { display: grid; gap: 2px; }
   .ask-start-panel__intents button { min-height: 58px; }
+  .guided-questions__tools { grid-template-columns: 1fr 44px; }
+  .guided-questions__search { grid-column: 1 / -1; }
+  .guided-questions__filter { grid-column: 1; }
+  .guided-questions__failure { display: grid; align-items: start; }
+  .guided-questions__failure button { justify-self: start; }
   .conversation-panel--idle .composer--idle { padding: 16px 18px; }
 }

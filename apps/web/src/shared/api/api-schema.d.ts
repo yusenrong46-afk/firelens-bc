@@ -38,6 +38,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/guided-questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Guided Questions
+         * @description Return the frozen client catalogue without exposing routing internals.
+         */
+        get: operations["guided_questions_api_v1_guided_questions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health/live": {
         parameters: {
             query?: never;
@@ -352,6 +372,49 @@ export interface components {
          * @enum {string}
          */
         GeometryRelation: "inside" | "nearby" | "outside" | "unknown";
+        /** GuidedQuestionCategory */
+        GuidedQuestionCategory: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Questions */
+            questions: components["schemas"]["GuidedQuestionItem"][];
+        };
+        /** GuidedQuestionItem */
+        GuidedQuestionItem: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * Location Mode
+             * @enum {string}
+             */
+            location_mode: "none" | "required";
+            /** Question */
+            question: string;
+            /**
+             * Source Lane
+             * @enum {string}
+             */
+            source_lane: "official_live" | "reviewed_guidance" | "official_quote";
+        };
+        /**
+         * GuidedQuestionsResponse
+         * @description Frozen public catalogue shape; capability internals stay private.
+         */
+        GuidedQuestionsResponse: {
+            /** Catalogue Sha256 */
+            catalogue_sha256: string;
+            /** Categories */
+            categories: components["schemas"]["GuidedQuestionCategory"][];
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "firelens.guided_questions.v1";
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1064,6 +1127,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    guided_questions_api_v1_guided_questions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuidedQuestionsResponse"];
                 };
             };
         };

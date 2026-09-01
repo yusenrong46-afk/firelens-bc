@@ -14,6 +14,29 @@ export type NearMeRequest = components["schemas"]["NearMeRequest"];
 export type NearMeResponse = components["schemas"]["NearMeResponse"];
 export type FeedbackCategory = components["schemas"]["FeedbackRequest"]["category"];
 
+/** The guided-question catalogue is served by the V1.6.3 backend endpoint.
+ * Keep this narrow client type local until the public generated schema is
+ * intentionally regenerated; the endpoint contract itself is frozen. */
+export type GuidedQuestion = {
+  id: string;
+  label: string;
+  question: string;
+  location_mode: "none" | "optional" | "required";
+  source_lane: "official_live" | "reviewed_guidance" | "official_quote";
+};
+
+export type GuidedQuestionCategory = {
+  id: string;
+  label: string;
+  questions: GuidedQuestion[];
+};
+
+export type GuidedQuestionsResponse = {
+  schema_version: string;
+  catalogue_sha256: string;
+  categories: GuidedQuestionCategory[];
+};
+
 type ResponseMetadata = {
   responseStatus?: number | undefined;
   requestId?: string | undefined;
@@ -219,5 +242,17 @@ export async function submitFeedback(
       const payload = await readJsonResponse(response, endpoint);
       throw apiError(payload, response);
     }
+  });
+}
+
+export async function fetchGuidedQuestions(signal?: AbortSignal): Promise<GuidedQuestionsResponse> {
+  const endpoint = "/api/v1/guided-questions";
+  return withRequestDeadline(endpoint, signal, async (deadlineSignal) => {
+    const response = await fetchResponse(endpoint, { signal: deadlineSignal });
+    const payload = await readJsonResponse(response, endpoint);
+    if (!response.ok) {
+      throw apiError(payload, response);
+    }
+    return payload as GuidedQuestionsResponse;
   });
 }

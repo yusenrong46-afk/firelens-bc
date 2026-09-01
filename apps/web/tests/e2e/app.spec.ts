@@ -275,6 +275,11 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
   await expect(page.locator("#conversation .assistant-message .answer-lead")).toHaveText(
     "Prepare water, food, and medication.",
   );
+  const evidenceDetails = page.locator("#conversation details.answer-details");
+  await expect(evidenceDetails).toBeVisible();
+  await expect(evidenceDetails.locator("summary")).toHaveText("Sources and technical evidence");
+  await expect(evidenceDetails.locator("mark")).toBeHidden();
+  await evidenceDetails.locator("summary").click();
   await expect(page.getByText("Answer evidence and support")).toBeVisible();
   await expect(page.getByText("Reviewed sources")).toBeVisible();
   await expect(page.locator("mark")).toHaveText("Food & water");

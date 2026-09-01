@@ -67,7 +67,8 @@ export function SuggestedQuestions({
   if (suggestions.length === 0) return null;
   return (
     <div className="suggestion-group" aria-label="Suggested questions">
-      <span className="panel-label">Start with an example</span>
+      <span className="panel-label">More questions to explore</span>
+      <p className="suggestion-group__hint">Select one to fill the composer.</p>
       <div>
         {suggestions.map((suggestion) => (
           <button type="button" key={suggestion} onClick={() => onSelect(suggestion)} disabled={disabled}>

@@ -1,5 +1,5 @@
 import { Info, PaperPlaneTilt } from "@phosphor-icons/react";
-import type { FormEvent } from "react";
+import type { FormEvent, RefObject } from "react";
 
 export function QuestionComposer({
   continuationPending = false,
@@ -8,6 +8,7 @@ export function QuestionComposer({
   onQueryChange,
   onSubmit,
   query,
+  inputRef,
 }: {
   continuationPending?: boolean;
   idle: boolean;
@@ -15,11 +16,13 @@ export function QuestionComposer({
   onQueryChange: (query: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   query: string;
+  inputRef?: RefObject<HTMLInputElement | null>;
 }) {
   return (
     <form className={`composer ${idle ? "composer--idle" : ""}`} onSubmit={onSubmit}>
       <div className="composer-input">
         <input
+          ref={inputRef}
           aria-label="Ask FireLens a question"
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}

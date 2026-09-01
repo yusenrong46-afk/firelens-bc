@@ -95,7 +95,6 @@ export function AnswerBody({
         && !backgroundMode
         && !compactOfficialHandoff
         && banner
-        && (!liveSummary || freshnessWarning)
         && <StatusBanner banner={banner} compact={compactBanner && !freshnessWarning} />}
       {backgroundMode && (
         <p className="answer-provenance" role="note">
