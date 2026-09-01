@@ -47,6 +47,20 @@ commit/tree and its own artifacts; it never retrofits historical evidence.
    separately bound material.
 7. Do not treat missing H4 sealed 46/47 or H10 evidence as a pass.
 
+## Source-aware conversation evaluation
+
+Run `make source-aware-conversation` before candidate review. The runner is
+offline and unsealed: it executes the real agent over a fresh local vector
+index, a deterministic fake provider, and deterministic official-record
+fixtures. The JSON report records observed routes, response modes, source
+lanes, publication kinds, tool traces, provider-stage calls, and failure
+reasons. It also binds the dataset/manifest, guided and capability registries,
+corpus/vector artifacts, typed inventory, and current Git identity.
+
+The command intentionally exits non-zero when the current runtime misses any
+declared predicate or the zero Tier A/B generation gate. That is a repair signal,
+not evidence to relax a threshold; no network or model call is made.
+
 ## Structured-publication continuation
 
 Before independent examination:

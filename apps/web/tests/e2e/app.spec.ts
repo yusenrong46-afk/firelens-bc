@@ -673,6 +673,10 @@ test("opens analytical answers on Summary and resets the selected surface for a 
   const records = page.getByRole("tab", { name: "Records", exact: true });
   await expect(map).toHaveAttribute("aria-selected", "false");
   await expect(summary).toHaveAttribute("aria-selected", "true");
+  if ((page.viewportSize()?.width ?? 0) >= 1120) {
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    await expect.poll(() => page.evaluate(() => document.querySelector(".topbar")?.getBoundingClientRect().top ?? -1)).toBe(0);
+  }
 
   if ((page.viewportSize()?.width ?? 0) >= 1120) {
     const desktopColumns = await page.evaluate(() => {

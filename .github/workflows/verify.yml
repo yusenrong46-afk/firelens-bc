@@ -58,5 +58,7 @@ jobs:
         run: make verify
       - name: Run ProductBench v2 deterministic offline contract
         run: make productbench-deterministic
+      - name: Run source-aware conversation deterministic contract
+        run: make source-aware-conversation
       - name: Reject generated-file drift
         run: git diff --exit-code

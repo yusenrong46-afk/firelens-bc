@@ -94,6 +94,14 @@ publication authority:
 - A hash-bound 50-question UX catalog, deterministic ProductBench tier, hard
   probe, structured-publication evaluation, and candidate-evidence workflow.
 
+The unsealed source-aware conversation contract covers all 24 guided questions,
+three paraphrases per question, reproduced multi-turn conversations, and
+failure/safety/location fixtures. Run it with `make source-aware-conversation`.
+It builds a fresh local vector index and uses only the deterministic provider
+and official-record fixture; its report binds catalogue, capability, corpus,
+vector, typed-inventory, commit, and tree identities. A non-zero result is a
+real current-runtime failure, not a qualification waiver.
+
 These are implementation properties—not certification, emergency advice, or a
 claim that every official source is continuously available.
 

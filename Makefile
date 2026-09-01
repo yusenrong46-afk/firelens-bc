@@ -2,7 +2,7 @@ PYTHON := .venv/bin/python
 FIRELENS := .venv/bin/firelens
 FRONTEND := apps/web
 
-.PHONY: setup check verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review retrieval-review-packet retrieval-review-template qualify-retrieval-review qualify-retrieval-v1-5 qualify-live-v1-5 capture-live-slo verify-live-slo prepare-firewall model-bakeoff canary live-smoke openapi secret-scan productbench-deterministic productbench-offline productbench-provider v1-6-baseline v1-6-gate v1-6-report v1-6-package-verify v1-6-round2-baseline claimbench-v2 v1-6-hard-probe v1-6-performance v1-6-pre-release-performance v1-6-retrieval-dry-run v1-6-round2-gate v1-6-round2-report v1-6-round3-eval v1-6-round3-report typed-claim-review-export v1-6-structured-publication-eval vercel-preview vercel-production
+.PHONY: setup check verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review retrieval-review-packet retrieval-review-template qualify-retrieval-review qualify-retrieval-v1-5 qualify-live-v1-5 capture-live-slo verify-live-slo prepare-firewall model-bakeoff canary live-smoke openapi secret-scan productbench-deterministic productbench-offline productbench-provider source-aware-conversation v1-6-baseline v1-6-gate v1-6-report v1-6-package-verify v1-6-round2-baseline claimbench-v2 v1-6-hard-probe v1-6-performance v1-6-pre-release-performance v1-6-retrieval-dry-run v1-6-round2-gate v1-6-round2-report v1-6-round3-eval v1-6-round3-report typed-claim-review-export v1-6-structured-publication-eval vercel-preview vercel-production
 
 setup:
 	@test -d .venv || python3 -m venv .venv
@@ -67,6 +67,10 @@ productbench-deterministic:
 		--output output/productbench/offline.json
 
 productbench-offline: productbench-deterministic
+
+source-aware-conversation:
+	$(PYTHON) scripts/run_source_aware_conversation.py \
+		--output output/evaluation/source_aware_conversation_offline.json
 
 productbench-provider:
 	@test -n "$(MAX_COST_USD)" || (echo "Set MAX_COST_USD to a positive ceiling."; exit 2)

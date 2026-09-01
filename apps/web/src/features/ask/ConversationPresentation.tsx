@@ -17,6 +17,18 @@ export function revealAssistantMessage(node: HTMLElement | null, active: boolean
   // scroller at the top and let ordinary conversations retain auto-follow.
   if (node.closest(".conversation-panel--analytical")) {
     scroller.scrollTop = 0;
+    // The desktop analytical shell is a viewport-filling workspace. A browser
+    // can still retain the document offset created while the composer was
+    // focused, which clips the fixed header when the answer replaces loading.
+    // Reset only this app-owned layout at desktop widths; mobile keeps the
+    // answer-follow behaviour used by the compact conversation surface.
+    if (
+      typeof window !== "undefined"
+      && typeof window.matchMedia === "function"
+      && window.matchMedia("(min-width: 1120px)").matches
+    ) {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
     return;
   }
 

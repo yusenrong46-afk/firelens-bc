@@ -4,6 +4,11 @@
 
 ### Changed
 
+- Added the unsealed, execution-backed source-aware conversation contract for
+  24 guided questions, paraphrases, multi-turn context, mixed source lanes,
+  safety boundaries, empty/provider-failure fixtures, and hash-bound offline
+  evidence. It reports failures against independent routing, authority,
+  handoff, safe-general, and zero Tier A/B generation gates.
 - Improved scope recall without broadening factual authority: ordinary
   conversation remains labelled general background, wildfire guidance reaches
   its reviewed lane, and safety-sensitive questions receive a bounded official
