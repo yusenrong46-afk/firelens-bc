@@ -7,10 +7,11 @@ from pathlib import Path
 import yaml
 
 from firelens.answering.candidate_preparation import (
-    PreparedCandidateArtifact,
     build_prepared_candidates,
     disposition_counts,
+    load_prepared_candidates,
     normalized_sha256,
+    validate_prepared_candidate_bindings,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,11 +51,14 @@ def test_review_ready_candidates_are_bound_pending_and_batched() -> None:
 
 
 def test_checked_in_prepared_artifact_and_manifest_are_reproducible() -> None:
-    expected = build_prepared_candidates(ROOT)
-    checked_in = PreparedCandidateArtifact.model_validate(
-        yaml.safe_load(PREPARED.read_text(encoding="utf-8"))
+    checked_in = load_prepared_candidates(ROOT)
+    assert validate_prepared_candidate_bindings(ROOT) == checked_in
+    # Historical provenance remains byte-stable while the current corpus may grow.
+    assert (
+        checked_in.corpus_sha256
+        == "d5fcd794f9ec0486a256ae511366fde982254342b7d07b9c83a21ea8ead291eb"
     )
-    assert checked_in == expected
+    assert checked_in.corpus_sha256 != build_prepared_candidates(ROOT).corpus_sha256
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     assert manifest["raw_candidate_count"] == 36
     assert manifest["prepared_candidate_count"] == 20

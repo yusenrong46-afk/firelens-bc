@@ -25,7 +25,9 @@ _KIT_GUIDANCE_TOKENS = frozenset({"kit", "kits"})
 _BAG_GUIDANCE_TOKENS = frozenset({"bag", "bags"})
 _BAG_GUIDANCE_QUALIFIERS = frozenset({"emergency", "evacuation", "grab", "go"})
 _PET_GUIDANCE_TOKENS = frozenset({"pet", "pets", "animal", "animals"})
+_EVACUATION_GUIDANCE_TOKENS = frozenset({"evacuation", "evacuate", "evacuated", "evacuating"})
 _SMOKE_GUIDANCE_TOKENS = frozenset({"smoke", "smoky"})
+_SMOKE_RESPIRATOR_TOKENS = frozenset({"n95", "respirator", "respirators"})
 _SMOKE_EFFECT_TOKENS = frozenset(
     {"effect", "effects", "health", "harm", "harmful", "impact", "impacts"}
 )
@@ -62,10 +64,10 @@ def static_guidance_subject(question: str) -> StaticGuidanceSubject | None:
     kit_subject = bool(tokens & _KIT_GUIDANCE_TOKENS) or bool(
         tokens & _BAG_GUIDANCE_TOKENS and tokens & _BAG_GUIDANCE_QUALIFIERS
     )
+    if tokens & _PET_GUIDANCE_TOKENS and (kit_subject or tokens & _EVACUATION_GUIDANCE_TOKENS):
+        return StaticGuidanceSubject.PET_GRAB_AND_GO
     if not kit_subject:
         return None
-    if tokens & _PET_GUIDANCE_TOKENS:
-        return StaticGuidanceSubject.PET_GRAB_AND_GO
     return StaticGuidanceSubject.EMERGENCY_KIT
 
 
@@ -83,6 +85,8 @@ def static_guidance_retrieval_query(question: str) -> str | None:
         # a reader-facing answer. Publication still requires an admitted exact
         # quotation from the returned evidence packet.
         tokens = frozenset(lex.tokenize(question))
+        if tokens & _SMOKE_RESPIRATOR_TOKENS:
+            return "N95 respirators wildfire smoke"
         if tokens & _SMOKE_SPECIFIC_TOKENS:
             return " ".join(question.split())
         if tokens & _SMOKE_EFFECT_TOKENS:

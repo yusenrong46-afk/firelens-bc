@@ -1,5 +1,4 @@
 """Fail-closed runtime artifact inventory and cross-platform comparison.
-
 This module verifies a staged deployment root. It deliberately does not inspect a
 repository checkout as if it were a deployment artifact: the staging step is the
 security boundary that must include only runtime inputs.
@@ -378,12 +377,18 @@ def _validate_repairs(
         "reason",
         "replacement_text",
     }
-    registry_targets: set[tuple[str, int, str]] = set()
+    approved_targets: set[tuple[str, int, str]] = set()
+    quarantined_targets: set[tuple[str, int, str, str, str]] = set()
     for index, repair in enumerate(repairs, start=1):
-        target = _validated_repair_target(repair, index, expected_keys)
-        if target in registry_targets:
+        target, review_status, reason = _validated_repair_target(repair, index, expected_keys)
+        if target in approved_targets or any(
+            target == pending[:3] for pending in quarantined_targets
+        ):
             raise RuntimeArtifactError("runtime repair registry has duplicate targets")
-        registry_targets.add(target)
+        if review_status == "human_verified":
+            approved_targets.add(target)
+        else:
+            quarantined_targets.add((*target, review_status, reason))
 
     repaired_targets = {
         (chunk["source_id"], chunk.get("page_number"), chunk["document_sha256"])
@@ -392,9 +397,39 @@ def _validate_repairs(
     }
     if any(target[1] is None for target in repaired_targets):
         raise RuntimeArtifactError("repaired corpus chunks must retain page provenance")
-    if registry_targets != repaired_targets:
+    if any(target[:3] in repaired_targets for target in quarantined_targets):
+        raise RuntimeArtifactError(
+            "not approved repair provenance appears in the admitted corpus"
+        )
+    if approved_targets != repaired_targets:
         raise RuntimeArtifactError(
             "runtime repair registry must contain exactly the repairs used by the corpus"
+        )
+    manifest_quarantine = corpus_manifest.get("quarantined_pages", [])
+    if not isinstance(manifest_quarantine, list):
+        raise RuntimeArtifactError("corpus manifest quarantined_pages is malformed")
+    manifest_targets: set[tuple[str, int, str, str, str]] = set()
+    for index, page in enumerate(manifest_quarantine, start=1):
+        context = f"corpus manifest quarantined page {index}"
+        if not isinstance(page, dict):
+            raise RuntimeArtifactError(f"{context} is not an object")
+        _exact_keys(
+            page,
+            {"source_id", "page_number", "document_sha256", "review_status", "reason"},
+            context=context,
+        )
+        source_id, page_number, digest = _validated_repair_target_fields(page, context)
+        status = page["review_status"]
+        reason = page["reason"]
+        if status not in {"pending_owner_review", "automated_visual_reviewed"}:
+            raise RuntimeArtifactError(f"{context} has an unsupported quarantine status")
+        candidate = (source_id, page_number, digest, status, reason)
+        if candidate in manifest_targets:
+            raise RuntimeArtifactError("corpus manifest has duplicate quarantined pages")
+        manifest_targets.add(candidate)
+    if manifest_targets != quarantined_targets:
+        raise RuntimeArtifactError(
+            "not approved repair provenance is missing an exact quarantined-page record"
         )
     allowed_provenance = {"native_text", "human_verified_repair"}
     if any(chunk["review_provenance"] not in allowed_provenance for chunk in chunks):
@@ -403,13 +438,25 @@ def _validate_repairs(
 
 def _validated_repair_target(
     repair: Any, index: int, expected_keys: set[str]
-) -> tuple[str, int, str]:
+) -> tuple[tuple[str, int, str], str, str]:
     context = f"runtime repair {index}"
     if not isinstance(repair, dict):
         raise RuntimeArtifactError(f"{context} must be an object")
     _exact_keys(repair, expected_keys, context=context)
-    if repair.get("review_status") != "human_verified":
-        raise RuntimeArtifactError(f"{context} is not approved human_verified provenance")
+    source_id, page, digest = _validated_repair_target_fields(repair, context)
+    status = repair.get("review_status")
+    if status not in {"human_verified", "pending_owner_review", "automated_visual_reviewed"}:
+        raise RuntimeArtifactError(f"{context} has an unsupported review status")
+    reason = repair["reason"]
+    replacement = repair.get("replacement_text")
+    if not isinstance(replacement, str) or not replacement.strip():
+        raise RuntimeArtifactError(f"{context} has no replacement text")
+    return (source_id, page, digest), status, reason
+
+
+def _validated_repair_target_fields(
+    repair: dict[str, Any], context: str
+) -> tuple[str, int, str]:
     source_id, page, digest = (
         repair.get("source_id"),
         repair.get("page_number"),
@@ -423,9 +470,6 @@ def _validated_repair_target(
         raise RuntimeArtifactError(f"{context} has an invalid document_sha256")
     if not isinstance(repair.get("reason"), str) or not repair["reason"].strip():
         raise RuntimeArtifactError(f"{context} has no review reason")
-    replacement = repair.get("replacement_text")
-    if not isinstance(replacement, str) or not replacement.strip():
-        raise RuntimeArtifactError(f"{context} has no replacement text")
     return source_id, page, digest
 
 

@@ -1,0 +1,1009 @@
+{
+  "schema_version": "firelens.guidance_capabilities.v1",
+  "corpus_chunks_sha256": "4d2967ff1501295e858c72a46de1e181bff846fd678261e2d1962507ccff8a04",
+  "corpus_manifest_sha256": "a66e2975deb4ce81c02bdc1e9d961950e9e61dbe7b706533a66a9504bb1bb546",
+  "typed_inventory_sha256": "75a183631a19dafbac9022ead6fd8dc3ba964eb7274981d17f4d479386673f38",
+  "capabilities": [
+    {
+      "id": "current_bc_listed_wildfires",
+      "category": "current_bc_records",
+      "source_mode": "official_live",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "What wildfires are currently listed in B.C.?"
+      ],
+      "retrieval_queries": [
+        "current listed B.C. wildfire incidents"
+      ],
+      "aspects": [
+        {
+          "id": "current_listed_wildfires",
+          "text": "current listed B.C. wildfire incidents"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [],
+      "live_layers": [
+        "incident"
+      ],
+      "guided_question_ids": [
+        "GQ-01"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "wildfire_distribution",
+      "category": "current_bc_records",
+      "source_mode": "official_live",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "How are returned wildfire records distributed by fire centre and status?"
+      ],
+      "retrieval_queries": [
+        "returned wildfire records by fire centre",
+        "returned wildfire records by status"
+      ],
+      "aspects": [
+        {
+          "id": "fire_centre_distribution",
+          "text": "returned wildfire records by fire centre"
+        },
+        {
+          "id": "status_distribution",
+          "text": "returned wildfire records by status"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [],
+      "live_layers": [
+        "incident"
+      ],
+      "guided_question_ids": [
+        "GQ-02"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "out_of_control_records",
+      "category": "current_bc_records",
+      "source_mode": "official_live",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "Which returned wildfires are currently out of control?"
+      ],
+      "retrieval_queries": [
+        "returned out of control wildfire records"
+      ],
+      "aspects": [
+        {
+          "id": "out_of_control_records",
+          "text": "returned wildfires with Out of Control status"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [],
+      "live_layers": [
+        "incident"
+      ],
+      "guided_question_ids": [
+        "GQ-03"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "current_evacuation_notices",
+      "category": "current_bc_records",
+      "source_mode": "official_live",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "What evacuation alerts or orders are currently listed in B.C.?"
+      ],
+      "retrieval_queries": [
+        "current B.C. evacuation alerts",
+        "current B.C. evacuation orders"
+      ],
+      "aspects": [
+        {
+          "id": "evacuation_alerts",
+          "text": "current listed evacuation alerts"
+        },
+        {
+          "id": "evacuation_orders",
+          "text": "current listed evacuation orders"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [],
+      "live_layers": [
+        "evacuation"
+      ],
+      "guided_question_ids": [
+        "GQ-04"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "nearby_wildfire_records",
+      "category": "around_a_bc_place",
+      "source_mode": "official_live",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "What official wildfire records are near {place}?"
+      ],
+      "retrieval_queries": [
+        "wildfire records near selected B.C. place"
+      ],
+      "aspects": [
+        {
+          "id": "nearby_incidents",
+          "text": "official wildfire incident records near the selected place"
+        },
+        {
+          "id": "nearby_perimeters",
+          "text": "official wildfire perimeter records near the selected place"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [],
+      "live_layers": [
+        "incident",
+        "perimeter"
+      ],
+      "guided_question_ids": [
+        "GQ-05"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "closest_listed_wildfire",
+      "category": "around_a_bc_place",
+      "source_mode": "official_live",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "Which listed wildfire is closest to {place}?"
+      ],
+      "retrieval_queries": [
+        "closest listed wildfire to selected B.C. place"
+      ],
+      "aspects": [
+        {
+          "id": "closest_incident",
+          "text": "closest listed wildfire to the selected place"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [],
+      "live_layers": [
+        "incident",
+        "perimeter"
+      ],
+      "guided_question_ids": [
+        "GQ-06"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "nearby_evacuation_notices",
+      "category": "around_a_bc_place",
+      "source_mode": "official_live",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "Are evacuation alerts or orders listed near {place}?"
+      ],
+      "retrieval_queries": [
+        "evacuation alerts near selected B.C. place",
+        "evacuation orders near selected B.C. place"
+      ],
+      "aspects": [
+        {
+          "id": "nearby_alerts",
+          "text": "listed evacuation alerts near the selected place"
+        },
+        {
+          "id": "nearby_orders",
+          "text": "listed evacuation orders near the selected place"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [],
+      "live_layers": [
+        "evacuation"
+      ],
+      "guided_question_ids": [
+        "GQ-07"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "nearby_official_layers",
+      "category": "around_a_bc_place",
+      "source_mode": "official_live",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "Show the incident, perimeter, and evacuation records near {place}."
+      ],
+      "retrieval_queries": [
+        "incident records near selected B.C. place",
+        "perimeter records near selected B.C. place",
+        "evacuation records near selected B.C. place"
+      ],
+      "aspects": [
+        {
+          "id": "incident_layer",
+          "text": "incident records near the selected place"
+        },
+        {
+          "id": "perimeter_layer",
+          "text": "perimeter records near the selected place"
+        },
+        {
+          "id": "evacuation_layer",
+          "text": "evacuation records near the selected place"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [],
+      "live_layers": [
+        "incident",
+        "perimeter",
+        "evacuation"
+      ],
+      "guided_question_ids": [
+        "GQ-08"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "evacuation_alert_order_difference",
+      "category": "evacuation_guidance",
+      "source_mode": "corpus",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "What's the difference between an evacuation alert and an evacuation order?"
+      ],
+      "retrieval_queries": [
+        "evacuation alert meaning",
+        "evacuation order meaning"
+      ],
+      "aspects": [
+        {
+          "id": "evacuation_alert",
+          "text": "meaning of an evacuation alert"
+        },
+        {
+          "id": "evacuation_order",
+          "text": "meaning of an evacuation order"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [
+        "TC-EVAC-ALERT-001",
+        "TC-EVAC-ORDER-001"
+      ],
+      "chunk_ids": [
+        "preparedbc_wildfire_guide:page:10:chunk:4",
+        "preparedbc_wildfire_guide:page:11:chunk:2"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-09"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "evacuation_order_actions",
+      "category": "evacuation_guidance",
+      "source_mode": "corpus",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "What should I do when an evacuation order is issued?"
+      ],
+      "retrieval_queries": [
+        "actions under an evacuation order",
+        "official evacuation route instructions",
+        "home visibility while evacuating"
+      ],
+      "aspects": [
+        {
+          "id": "leave_immediately",
+          "text": "leave immediately under an evacuation order"
+        },
+        {
+          "id": "official_route",
+          "text": "use routes identified by officials"
+        },
+        {
+          "id": "home_visibility",
+          "text": "close windows and doors and make the home visible to firefighters"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [
+        "TC-EVAC-ORDER-001",
+        "TC-GENERAL-033-01",
+        "TC-GENERAL-033-02"
+      ],
+      "chunk_ids": [
+        "preparedbc_wildfire_guide:page:11:chunk:2"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-10"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "evacuation_mistakes_to_avoid",
+      "category": "evacuation_guidance",
+      "source_mode": "corpus",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "According to official guidance, what mistakes should I avoid during an evacuation?"
+      ],
+      "retrieval_queries": [
+        "official evacuation routes to follow",
+        "natural gas during an evacuation order",
+        "structure protection sprinklers while evacuating"
+      ],
+      "aspects": [
+        {
+          "id": "route_shortcuts",
+          "text": "follow officials directions and do not substitute an unapproved route"
+        },
+        {
+          "id": "natural_gas",
+          "text": "do not shut off natural gas merely because an evacuation order is issued"
+        },
+        {
+          "id": "sprinkler_activation",
+          "text": "do not activate a structure protection sprinkler system while evacuating"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government",
+        "recognized_wildfire_preparedness_program"
+      ],
+      "typed_claim_ids": [
+        "TC-GENERAL-033-01",
+        "TC-SPRINKLER-001"
+      ],
+      "chunk_ids": [
+        "preparedbc_wildfire_guide:page:11:chunk:2",
+        "preparedbc_wildfire_guide:page:12:chunk:1",
+        "firesmart_sprinkler_water_use:page:3:chunk:1"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-11"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": [
+        "Do NOT shut off your natural gas when you receive an evacuation order."
+      ]
+    },
+    {
+      "id": "return_after_evacuation",
+      "category": "evacuation_guidance",
+      "source_mode": "corpus",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "When can evacuated residents return home?"
+      ],
+      "retrieval_queries": [
+        "official clearance before returning home",
+        "evacuation order rescind and return"
+      ],
+      "aspects": [
+        {
+          "id": "official_clearance",
+          "text": "return only when officials say it is safe"
+        },
+        {
+          "id": "order_rescinded",
+          "text": "return after the evacuation order is rescinded"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [
+        "TC-EVAC-003-01",
+        "TC-EVAC-RESCIND-001"
+      ],
+      "chunk_ids": [
+        "preparedbc_wildfire_guide:page:15:chunk:1",
+        "preparedbc_wildfire_guide:page:11:chunk:3"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-12"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "grab_go_bag_contents",
+      "category": "prepare",
+      "source_mode": "corpus",
+      "coverage_state": "quote_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "What belongs in a wildfire grab-and-go bag?"
+      ],
+      "retrieval_queries": [
+        "official grab-and-go bag contents"
+      ],
+      "aspects": [
+        {
+          "id": "bag_contents",
+          "text": "items on the official grab-and-go bag list"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [
+        "preparedbc_wildfire_guide:page:5:chunk:1"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-13"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": [
+        "Grab-and-Go Bag\n• Pen & notepad\n• Phone charger & battery bank\n• Flashlight\n• Radio\n• First aid kit\n• Personal toiletries\n• Seasonal clothing\n• Food & water\n• Batteries\n• Whistle\n• Emergency plan"
+      ]
+    },
+    {
+      "id": "pet_evacuation_supplies",
+      "category": "prepare",
+      "source_mode": "corpus",
+      "coverage_state": "quote_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "What should I pack for pets during a wildfire evacuation?"
+      ],
+      "retrieval_queries": [
+        "official pet grab-and-go bag supplies"
+      ],
+      "aspects": [
+        {
+          "id": "pet_food_water",
+          "text": "food and water for pets"
+        },
+        {
+          "id": "pet_control",
+          "text": "leashes and carriers"
+        },
+        {
+          "id": "pet_records",
+          "text": "recent picture vaccination records and health information"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [
+        "preparedbc_wildfire_guide:page:6:chunk:3"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-14"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": [
+        "TIP: Pets are part of the family too. Pack them grab-and-go bags\nwith food, water, leashes and carriers. It’s a good idea to\ninclude a recent picture, along with copies of vaccination\nrecords and health information. Consider talking to your\nmunicipality, regional district or band office about what\norganizations or resources are available for animals during\nemergencies. Plan ahead for where they might stay."
+      ]
+    },
+    {
+      "id": "documents_medications",
+      "category": "prepare",
+      "source_mode": "corpus",
+      "coverage_state": "quote_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "Which documents and medications should I prepare for an evacuation?"
+      ],
+      "retrieval_queries": [
+        "important documents in grab-and-go bags",
+        "personal medications in grab-and-go bags"
+      ],
+      "aspects": [
+        {
+          "id": "important_documents",
+          "text": "copies of emergency plans insurance papers and important documents"
+        },
+        {
+          "id": "personal_medications",
+          "text": "personal medications in a grab-and-go bag"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [
+        "preparedbc_wildfire_guide:page:6:chunk:1",
+        "preparedbc_wildfire_guide:page:10:chunk:5"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-15"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": [
+        "¢ Gather your grab-and-go bags, emergency plan, copies of\nimportant documents and cherished mementos. Have them\nat the front door or already packed in your vehicle",
+        "¢ Small first aid kit and\npersonal medications"
+      ]
+    },
+    {
+      "id": "route_vehicle_preparation",
+      "category": "prepare",
+      "source_mode": "corpus",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "How should I prepare my evacuation route and vehicle?"
+      ],
+      "retrieval_queries": [
+        "official evacuation route directions",
+        "vehicle fuel before evacuation"
+      ],
+      "aspects": [
+        {
+          "id": "official_route",
+          "text": "use routes identified by officials"
+        },
+        {
+          "id": "vehicle_fuel",
+          "text": "keep the vehicle fuel tank at least half full"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [
+        "TC-GENERAL-033-01",
+        "TC-GENERAL-035-01"
+      ],
+      "chunk_ids": [
+        "preparedbc_wildfire_guide:page:11:chunk:2",
+        "preparedbc_wildfire_guide:page:11:chunk:4"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-16"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "smoke_exposure_reduction",
+      "category": "smoke",
+      "source_mode": "corpus",
+      "coverage_state": "quote_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "How can I reduce exposure to wildfire smoke?"
+      ],
+      "retrieval_queries": [
+        "reduce exposure to wildfire smoke",
+        "cleaner indoor air during wildfire smoke",
+        "limit outdoor exercise during wildfire smoke"
+      ],
+      "aspects": [
+        {
+          "id": "cleaner_air_space",
+          "text": "filter air in a cleaner indoor space"
+        },
+        {
+          "id": "outdoor_exercise",
+          "text": "limit outdoor exercise on smoky days"
+        },
+        {
+          "id": "public_clean_air",
+          "text": "use public spaces with cleaner filtered air"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_public_health"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [
+        "bccdc_wildfire_smoke:section:protect-yourself-from-wildfire-smoke:chunk:1"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-17"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": [
+        "Use a portable HEPA air cleaner or a do-it-yourself air cleaner to filter the air in one area of your home.",
+        "Visit public spaces such as community centres, libraries, and shopping malls which tend to have cleaner, cooler indoor air.",
+        "Take it easy and limit outdoor exercise on smoky days because the harder you breathe, the more smoke you inhale."
+      ]
+    },
+    {
+      "id": "smoke_higher_risk_groups",
+      "category": "smoke",
+      "source_mode": "corpus",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "Who is at higher risk from wildfire smoke?"
+      ],
+      "retrieval_queries": [
+        "higher risk groups for wildfire smoke",
+        "respiratory conditions and wildfire smoke",
+        "young children during smoky periods"
+      ],
+      "aspects": [
+        {
+          "id": "chronic_conditions",
+          "text": "people with chronic health conditions at higher risk"
+        },
+        {
+          "id": "respiratory_conditions",
+          "text": "people with respiratory conditions at highest risk"
+        },
+        {
+          "id": "young_children",
+          "text": "young children may need to reduce activity during smoky periods"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_public_health"
+      ],
+      "typed_claim_ids": [
+        "TC-VULNERABLE-023-01",
+        "TC-SMOKE-012-01",
+        "TC-SMOKE-013-01"
+      ],
+      "chunk_ids": [
+        "bccdc_wildfire_smoke:section:people-at-higher-risk:chunk:1",
+        "bccdc_smoke_health_factsheet:page:2:chunk:1",
+        "bccdc_smoke_health_factsheet:page:2:chunk:2"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-18"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "smoke_n95_guidance",
+      "category": "smoke",
+      "source_mode": "corpus",
+      "coverage_state": "quote_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "Can an N95 respirator help with wildfire smoke?"
+      ],
+      "retrieval_queries": [
+        "N95 respirator and wildfire smoke",
+        "well fitted respirator for wildfire smoke"
+      ],
+      "aspects": [
+        {
+          "id": "respirator_type",
+          "text": "N95 KN95 or KF94 respirator"
+        },
+        {
+          "id": "respirator_fit",
+          "text": "well-fitted respirator"
+        },
+        {
+          "id": "respirator_purpose",
+          "text": "filter air breathed outdoors during wildfire smoke"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_public_health"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [
+        "bccdc_wildfire_smoke:section:protect-yourself-from-wildfire-smoke:chunk:1"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-19"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": [
+        "If you need to be outdoors, consider wearing a well-fitted N95/KN95/KF94 respirator to filter the air you breath in."
+      ]
+    },
+    {
+      "id": "smoke_indoor_air_management",
+      "category": "smoke",
+      "source_mode": "corpus",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "How can I keep indoor air cleaner during wildfire smoke?"
+      ],
+      "retrieval_queries": [
+        "indoor air quality during wildfire smoke",
+        "reduce smoke exposure indoors"
+      ],
+      "aspects": [
+        {
+          "id": "indoor_air_quality",
+          "text": "manage indoor air quality to reduce smoke exposure"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_public_health"
+      ],
+      "typed_claim_ids": [
+        "TC-SMOKE-014-01"
+      ],
+      "chunk_ids": [
+        "bccdc_smoke_health_factsheet:page:2:chunk:3"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-20"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "stages_of_control",
+      "category": "terms_and_firesmart",
+      "source_mode": "corpus",
+      "coverage_state": "quote_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "What do Out of Control, Being Held, and Under Control mean?"
+      ],
+      "retrieval_queries": [
+        "BC Wildfire Service stages of control definitions"
+      ],
+      "aspects": [
+        {
+          "id": "out_of_control",
+          "text": "meaning of Out of Control"
+        },
+        {
+          "id": "being_held",
+          "text": "meaning of Being Held"
+        },
+        {
+          "id": "under_control",
+          "text": "meaning of Under Control"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [
+        "bcws_stages_of_control:section:stages-of-control:chunk:1",
+        "bcws_stages_of_control:section:out-of-control:chunk:1",
+        "bcws_stages_of_control:section:being-held:chunk:1",
+        "bcws_stages_of_control:section:under-control:chunk:1"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-21"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": [
+        "Out of Control\nAt this stage, the wildfire is spreading or is anticipated to spread beyond the current perimeter, or control line. In this case, BC Wildfire Service applies more aggressive suppression and control methods such as establishing control lines, burn-offs, dropping water, foam or retardant.",
+        "Being Held\nAt this stage, the wildfire is projected, based on fuel and weather conditions and resource availability, to remain within the current perimeter, control line or boundary. At this point, crews may finish establishing control lines, conduct fuel management activities and mop-up (extinguishing a fire after it has been brought under control).",
+        "Under Control\nAt this stage, the wildfire is not projected to spread beyond the current perimeter. BC Wildfire Service may continue to patrol the fire and extinguish hot spots while moving gear, equipment and personnel to another incident."
+      ]
+    },
+    {
+      "id": "wildfire_rank_definition",
+      "category": "terms_and_firesmart",
+      "source_mode": "corpus",
+      "coverage_state": "quote_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "What does wildfire rank mean?"
+      ],
+      "retrieval_queries": [
+        "BC Wildfire Service wildfire rank definition"
+      ],
+      "aspects": [
+        {
+          "id": "wildfire_rank",
+          "text": "meaning of wildfire rank"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [
+        "bcws_wildfire_rank:section:wildfire-rank:chunk:1"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-22"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": [
+        "The BC Wildfire Service uses a ranking scale from 1 to 6 to describe fire behaviour based on a set of visual indicators."
+      ]
+    },
+    {
+      "id": "firesmart_non_combustible_zone",
+      "category": "terms_and_firesmart",
+      "source_mode": "corpus",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "What is the FireSmart non-combustible zone?"
+      ],
+      "retrieval_queries": [
+        "FireSmart non-combustible zone",
+        "non-combustible zone distance and materials"
+      ],
+      "aspects": [
+        {
+          "id": "zone_distance",
+          "text": "0 to 1.5 metre non-combustible zone"
+        },
+        {
+          "id": "zone_materials",
+          "text": "remove combustible material down to mineral soil"
+        }
+      ],
+      "required_authority_classes": [
+        "recognized_wildfire_preparedness_program",
+        "provincial_government"
+      ],
+      "typed_claim_ids": [
+        "TC-FIRESMART-017-01",
+        "TC-GENERAL-029-01"
+      ],
+      "chunk_ids": [
+        "firesmart_begins_at_home:page:11:chunk:1",
+        "preparedbc_wildfire_guide:page:8:chunk:2"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-23"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "firesmart_home_assessment",
+      "category": "terms_and_firesmart",
+      "source_mode": "corpus",
+      "coverage_state": "structured_ready",
+      "match_kind": "exact_normalized_whitespace_case",
+      "canonical_questions": [
+        "What is a FireSmart home assessment?"
+      ],
+      "retrieval_queries": [
+        "FireSmart home assessment",
+        "home assessment risk reduction changes"
+      ],
+      "aspects": [
+        {
+          "id": "home_assessment",
+          "text": "complete the FireSmart home assessment"
+        },
+        {
+          "id": "risk_reduction",
+          "text": "identify changes that reduce home risk"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [
+        "TC-GENERAL-030-01"
+      ],
+      "chunk_ids": [
+        "preparedbc_wildfire_guide:page:9:chunk:3"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [
+        "GQ-24"
+      ],
+      "guided_eligible": true,
+      "exact_quote_texts": []
+    },
+    {
+      "id": "immediate_danger_contact",
+      "category": "immediate_danger",
+      "source_mode": "corpus",
+      "coverage_state": "quote_ready",
+      "match_kind": "conservative_immediate_danger_contact",
+      "canonical_questions": [
+        "Who should I call when I am in danger during a wildfire?",
+        "Who do I contact if a wildfire puts me in immediate danger?"
+      ],
+      "retrieval_queries": [
+        "wildfire immediate danger call 911",
+        "wildfire trusted routine information sources"
+      ],
+      "aspects": [
+        {
+          "id": "emergency_911_conditions",
+          "text": "call 911 only when trapped and unable to evacuate or experiencing a medical or safety emergency"
+        },
+        {
+          "id": "routine_information_sources",
+          "text": "routine wildfire information from local governments First Nations emergency officials and EmergencyInfoBC"
+        }
+      ],
+      "required_authority_classes": [
+        "provincial_government"
+      ],
+      "typed_claim_ids": [],
+      "chunk_ids": [
+        "bc_emergency_alert:section:if-you-receive-a-bc-emergency-alert:chunk:1",
+        "preparedbc_during_wildfire:section:stay-safe-during-a-wildfire:chunk:1",
+        "preparedbc_during_wildfire:section:stay-safe-during-a-wildfire:chunk:2"
+      ],
+      "live_layers": [],
+      "guided_question_ids": [],
+      "guided_eligible": false,
+      "exact_quote_texts": [
+        "Do not call 911 unless you are trapped and unable to evacuate or are experiencing a medical or safety emergency.",
+        "If a wildfire is directly threatening your community, the best information sources are your municipality, regional district, band office or local authority.",
+        "You can follow EmergencyInfoBC to get notifications for Evacuation Alerts and Evacuation Orders issued by local authorities, as well as other information you may need to respond and recover from emergencies."
+      ]
+    }
+  ]
+}

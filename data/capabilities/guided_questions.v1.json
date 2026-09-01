@@ -1,0 +1,307 @@
+{
+  "schema_version": "firelens.guided_questions.v1",
+  "categories": [
+    {
+      "id": "current_bc_records",
+      "label": "Current B.C. records",
+      "questions": [
+        {
+          "id": "GQ-01",
+          "label": "Listed wildfires",
+          "question": "What wildfires are currently listed in B.C.?",
+          "location_mode": "none",
+          "source_lane": "official_live",
+          "required_aspects": [
+            "current listed B.C. wildfire incidents"
+          ]
+        },
+        {
+          "id": "GQ-02",
+          "label": "Fire centre and status",
+          "question": "How are returned wildfire records distributed by fire centre and status?",
+          "location_mode": "none",
+          "source_lane": "official_live",
+          "required_aspects": [
+            "returned wildfire records by fire centre",
+            "returned wildfire records by status"
+          ]
+        },
+        {
+          "id": "GQ-03",
+          "label": "Out of Control records",
+          "question": "Which returned wildfires are currently out of control?",
+          "location_mode": "none",
+          "source_lane": "official_live",
+          "required_aspects": [
+            "returned wildfires with Out of Control status"
+          ]
+        },
+        {
+          "id": "GQ-04",
+          "label": "Listed evacuation notices",
+          "question": "What evacuation alerts or orders are currently listed in B.C.?",
+          "location_mode": "none",
+          "source_lane": "official_live",
+          "required_aspects": [
+            "current listed evacuation alerts",
+            "current listed evacuation orders"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "around_a_bc_place",
+      "label": "Around a B.C. place",
+      "questions": [
+        {
+          "id": "GQ-05",
+          "label": "Nearby wildfire records",
+          "question": "What official wildfire records are near {place}?",
+          "location_mode": "required",
+          "source_lane": "official_live",
+          "required_aspects": [
+            "official wildfire incident records near the selected place",
+            "official wildfire perimeter records near the selected place"
+          ]
+        },
+        {
+          "id": "GQ-06",
+          "label": "Closest listed wildfire",
+          "question": "Which listed wildfire is closest to {place}?",
+          "location_mode": "required",
+          "source_lane": "official_live",
+          "required_aspects": [
+            "closest listed wildfire to the selected place"
+          ]
+        },
+        {
+          "id": "GQ-07",
+          "label": "Nearby evacuation notices",
+          "question": "Are evacuation alerts or orders listed near {place}?",
+          "location_mode": "required",
+          "source_lane": "official_live",
+          "required_aspects": [
+            "listed evacuation alerts near the selected place",
+            "listed evacuation orders near the selected place"
+          ]
+        },
+        {
+          "id": "GQ-08",
+          "label": "Nearby official layers",
+          "question": "Show the incident, perimeter, and evacuation records near {place}.",
+          "location_mode": "required",
+          "source_lane": "official_live",
+          "required_aspects": [
+            "incident records near the selected place",
+            "perimeter records near the selected place",
+            "evacuation records near the selected place"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "evacuation_guidance",
+      "label": "Evacuation guidance",
+      "questions": [
+        {
+          "id": "GQ-09",
+          "label": "Alert and order",
+          "question": "What's the difference between an evacuation alert and an evacuation order?",
+          "location_mode": "none",
+          "source_lane": "reviewed_guidance",
+          "required_aspects": [
+            "meaning of an evacuation alert",
+            "meaning of an evacuation order"
+          ]
+        },
+        {
+          "id": "GQ-10",
+          "label": "Order actions",
+          "question": "What should I do when an evacuation order is issued?",
+          "location_mode": "none",
+          "source_lane": "reviewed_guidance",
+          "required_aspects": [
+            "leave immediately under an evacuation order",
+            "use routes identified by officials",
+            "close windows and doors and make the home visible to firefighters"
+          ]
+        },
+        {
+          "id": "GQ-11",
+          "label": "Evacuation mistakes",
+          "question": "According to official guidance, what mistakes should I avoid during an evacuation?",
+          "location_mode": "none",
+          "source_lane": "reviewed_guidance",
+          "required_aspects": [
+            "follow officials directions and do not substitute an unapproved route",
+            "do not shut off natural gas merely because an evacuation order is issued",
+            "do not activate a structure protection sprinkler system while evacuating"
+          ]
+        },
+        {
+          "id": "GQ-12",
+          "label": "Returning home",
+          "question": "When can evacuated residents return home?",
+          "location_mode": "none",
+          "source_lane": "reviewed_guidance",
+          "required_aspects": [
+            "return only when officials say it is safe",
+            "return after the evacuation order is rescinded"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prepare",
+      "label": "Prepare",
+      "questions": [
+        {
+          "id": "GQ-13",
+          "label": "Grab-and-go bag",
+          "question": "What belongs in a wildfire grab-and-go bag?",
+          "location_mode": "none",
+          "source_lane": "official_quote",
+          "required_aspects": [
+            "items on the official grab-and-go bag list"
+          ]
+        },
+        {
+          "id": "GQ-14",
+          "label": "Pets",
+          "question": "What should I pack for pets during a wildfire evacuation?",
+          "location_mode": "none",
+          "source_lane": "official_quote",
+          "required_aspects": [
+            "food and water for pets",
+            "leashes and carriers",
+            "recent picture vaccination records and health information"
+          ]
+        },
+        {
+          "id": "GQ-15",
+          "label": "Documents and medications",
+          "question": "Which documents and medications should I prepare for an evacuation?",
+          "location_mode": "none",
+          "source_lane": "official_quote",
+          "required_aspects": [
+            "copies of emergency plans insurance papers and important documents",
+            "personal medications in a grab-and-go bag"
+          ]
+        },
+        {
+          "id": "GQ-16",
+          "label": "Route and vehicle",
+          "question": "How should I prepare my evacuation route and vehicle?",
+          "location_mode": "none",
+          "source_lane": "reviewed_guidance",
+          "required_aspects": [
+            "use routes identified by officials",
+            "keep the vehicle fuel tank at least half full"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "smoke",
+      "label": "Smoke",
+      "questions": [
+        {
+          "id": "GQ-17",
+          "label": "Reduce exposure",
+          "question": "How can I reduce exposure to wildfire smoke?",
+          "location_mode": "none",
+          "source_lane": "official_quote",
+          "required_aspects": [
+            "filter air in a cleaner indoor space",
+            "limit outdoor exercise on smoky days",
+            "use public spaces with cleaner filtered air"
+          ]
+        },
+        {
+          "id": "GQ-18",
+          "label": "Higher risk",
+          "question": "Who is at higher risk from wildfire smoke?",
+          "location_mode": "none",
+          "source_lane": "reviewed_guidance",
+          "required_aspects": [
+            "people with chronic health conditions at higher risk",
+            "people with respiratory conditions at highest risk",
+            "young children may need to reduce activity during smoky periods"
+          ]
+        },
+        {
+          "id": "GQ-19",
+          "label": "N95 respirator",
+          "question": "Can an N95 respirator help with wildfire smoke?",
+          "location_mode": "none",
+          "source_lane": "official_quote",
+          "required_aspects": [
+            "N95 KN95 or KF94 respirator",
+            "well-fitted respirator",
+            "filter air breathed outdoors during wildfire smoke"
+          ]
+        },
+        {
+          "id": "GQ-20",
+          "label": "Cleaner indoor air",
+          "question": "How can I keep indoor air cleaner during wildfire smoke?",
+          "location_mode": "none",
+          "source_lane": "reviewed_guidance",
+          "required_aspects": [
+            "manage indoor air quality to reduce smoke exposure"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "terms_and_firesmart",
+      "label": "Terms and FireSmart",
+      "questions": [
+        {
+          "id": "GQ-21",
+          "label": "Stages of control",
+          "question": "What do Out of Control, Being Held, and Under Control mean?",
+          "location_mode": "none",
+          "source_lane": "official_quote",
+          "required_aspects": [
+            "meaning of Out of Control",
+            "meaning of Being Held",
+            "meaning of Under Control"
+          ]
+        },
+        {
+          "id": "GQ-22",
+          "label": "Wildfire rank",
+          "question": "What does wildfire rank mean?",
+          "location_mode": "none",
+          "source_lane": "official_quote",
+          "required_aspects": [
+            "meaning of wildfire rank"
+          ]
+        },
+        {
+          "id": "GQ-23",
+          "label": "Non-combustible zone",
+          "question": "What is the FireSmart non-combustible zone?",
+          "location_mode": "none",
+          "source_lane": "reviewed_guidance",
+          "required_aspects": [
+            "0 to 1.5 metre non-combustible zone",
+            "remove combustible material down to mineral soil"
+          ]
+        },
+        {
+          "id": "GQ-24",
+          "label": "Home assessment",
+          "question": "What is a FireSmart home assessment?",
+          "location_mode": "none",
+          "source_lane": "reviewed_guidance",
+          "required_aspects": [
+            "complete the FireSmart home assessment",
+            "identify changes that reduce home risk"
+          ]
+        }
+      ]
+    }
+  ]
+}

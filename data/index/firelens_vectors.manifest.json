@@ -169,14 +169,23 @@
     "bccdc_smoke_health_factsheet:page:1:chunk:3",
     "bccdc_smoke_health_factsheet:page:2:chunk:1",
     "bccdc_smoke_health_factsheet:page:2:chunk:2",
-    "bccdc_smoke_health_factsheet:page:2:chunk:3"
+    "bccdc_smoke_health_factsheet:page:2:chunk:3",
+    "bc_emergency_alert:section:if-you-receive-a-bc-emergency-alert:chunk:1",
+    "bc_emergency_alert:section:if-you-receive-a-bc-emergency-alert:chunk:2",
+    "bc_emergency_alert:section:if-you-receive-a-bc-emergency-alert:chunk:3",
+    "bc_emergency_alert:section:if-you-receive-a-bc-emergency-alert:chunk:4",
+    "preparedbc_during_wildfire:section:stay-safe-during-a-wildfire:chunk:1",
+    "preparedbc_during_wildfire:section:stay-safe-during-a-wildfire:chunk:2",
+    "preparedbc_during_wildfire:section:stay-safe-during-a-wildfire:chunk:3",
+    "preparedbc_during_wildfire:section:stay-safe-during-a-wildfire:chunk:4",
+    "preparedbc_during_wildfire:section:stay-safe-during-a-wildfire:chunk:5"
   ],
-  "corpus_sha256": "d5fcd794f9ec0486a256ae511366fde982254342b7d07b9c83a21ea8ead291eb",
+  "corpus_sha256": "4d2967ff1501295e858c72a46de1e181bff846fd678261e2d1962507ccff8a04",
   "corpus_version": "firelens_static_corpus.v1",
-  "created_at": "2026-07-30T21:06:05.695094+00:00",
+  "created_at": "2026-09-01T01:20:16.131930+00:00",
   "dimensions": 1536,
   "embedding_model": "openai/text-embedding-3-small",
-  "matrix_sha256": "fd0b171488809c5a87f3aee5c912b07358231cac6478bb621f6d2fc79d41efb7",
+  "matrix_sha256": "e637eb408e8f57c837867bf62f1ee1cb2e9cc4c09ea2346e97081bf28e5a264b",
   "retrieval_text_strategy": "metadata_context_v1",
   "schema_version": "firelens_vector_index.v1"
 }

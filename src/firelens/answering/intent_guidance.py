@@ -4,12 +4,31 @@ from __future__ import annotations
 
 from firelens.answering import intent_lexicon as lex
 
+_STABLE_EVACUATION_ACTIONS = frozenset(
+    {
+        "action",
+        "actions",
+        "bag",
+        "bags",
+        "pack",
+        "packing",
+        "pet",
+        "pets",
+        "prepare",
+        "ready",
+        "respond",
+        "response",
+        "route",
+        "vehicle",
+    }
+)
+
 
 def is_evac_definition(tokens: tuple[str, ...]) -> bool:
     """Return whether a clause asks for a stable evacuation-term definition."""
 
     token_set = frozenset(tokens)
-    if not token_set & lex.EVACUATION_WORDS:
+    if not (token_set & lex.EVACUATION_WORDS or token_set & {"evacuated", "evacuating"}):
         return False
     if token_set & lex.DEFINITION_WORDS:
         return True
@@ -29,6 +48,19 @@ def _is_control_stage_definition(tokens: tuple[str, ...]) -> bool:
         or lex.has_phrase(tokens, ("fire", "of", "note"))
         or lex.has_phrase(tokens, ("stage", "of", "control"))
     )
+
+
+def is_stable_evacuation_action(tokens: tuple[str, ...]) -> bool:
+    """Keep non-current evacuation preparation and response in reviewed guidance."""
+
+    token_set = frozenset(tokens)
+    if not (token_set & lex.EVACUATION_WORDS or token_set & {"evacuated", "evacuating"}):
+        return False
+    if token_set & lex.CURRENT_WORDS or lex.has_any_phrase(tokens, lex.CURRENT_PHRASES):
+        return False
+    if token_set & {"listed", "record", "records", "reported"}:
+        return False
+    return bool(token_set & _STABLE_EVACUATION_ACTIONS)
 
 
 def is_guidance(tokens: tuple[str, ...]) -> bool:
@@ -88,7 +120,15 @@ def is_guidance(tokens: tuple[str, ...]) -> bool:
         )
     ):
         return True
+    if (
+        "smoke" in token_set
+        and token_set & {"n95", "respirator", "respirators", "mask", "masks"}
+        and not current_smoke_measurement
+    ):
+        return True
     if is_evac_definition(tokens):
+        return True
+    if is_stable_evacuation_action(tokens):
         return True
     if token_set & {"pack", "packing"} and token_set & {"what", "should"}:
         return True

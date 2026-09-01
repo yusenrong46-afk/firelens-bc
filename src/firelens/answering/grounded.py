@@ -141,6 +141,8 @@ def compile_without_generation(
     trace_id: str,
     supported_aspects: Sequence[str] = (),
     force_partial: bool = False,
+    allowed_typed_claim_ids: Sequence[str] | None = None,
+    allowed_quote_texts: Sequence[str] | None = None,
 ) -> AskResponse | None:
     """Compile a high-risk answer or handoff instead of calling a generator."""
 
@@ -148,8 +150,10 @@ def compile_without_generation(
         return (
             official_handoff_response(trace_id) if reviewed_guidance_intent(question) else None
         )
-    if not packet_requires_structured(packet, question) and not reviewed_guidance_intent(
-        question
+    if (
+        allowed_quote_texts is None
+        and not packet_requires_structured(packet, question)
+        and not reviewed_guidance_intent(question)
     ):
         return None
     response = compile_high_risk_answer(
@@ -157,6 +161,8 @@ def compile_without_generation(
         packet,
         trace_id=trace_id,
         supported_aspects=supported_aspects,
+        allowed_typed_claim_ids=allowed_typed_claim_ids,
+        allowed_quote_texts=allowed_quote_texts,
     )
     return _force_partial_response(response) if force_partial else response
 
@@ -250,6 +256,8 @@ class GroundedAnswerEngine:
         trace_id: str,
         force_partial: bool = False,
         supported_aspects: Sequence[str] = (),
+        allowed_typed_claim_ids: Sequence[str] | None = None,
+        allowed_quote_texts: Sequence[str] | None = None,
     ) -> GroundedOutcome:
         observations: list[GenerationObservation] = []
         repair_count = 0
@@ -258,12 +266,16 @@ class GroundedAnswerEngine:
         usage: dict[str, Any] = {}
         attempts = 0
 
-        if packet_requires_structured(evidence_packet, question):
+        if allowed_quote_texts is not None or packet_requires_structured(
+            evidence_packet, question
+        ):
             response = compile_high_risk_answer(
                 question,
                 evidence_packet,
                 trace_id=trace_id,
                 supported_aspects=supported_aspects,
+                allowed_typed_claim_ids=allowed_typed_claim_ids,
+                allowed_quote_texts=allowed_quote_texts,
             )
             if force_partial:
                 response = _force_partial_response(response)

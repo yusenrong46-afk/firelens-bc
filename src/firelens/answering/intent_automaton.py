@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from enum import StrEnum
 from functools import lru_cache
 
+from firelens.answering import intent_automaton_rules as rules
 from firelens.answering import intent_lexicon as lex
 from firelens.answering import intent_spans as spans
-from firelens.answering.intent_automaton_rules import is_selected_prediction
 from firelens.answering.intent_guidance import is_evac_definition, is_guidance
 from firelens.answering.intent_refresh import is_refresh_snapshot_tokens
 from firelens.contracts import LiveResultKind
@@ -54,28 +54,13 @@ def _temporal_scope(tokens: tuple[str, ...], text: str) -> TemporalScope:
         or lex.has_any_phrase(tokens, lex.NONCURRENT_PHRASES)
         or lex.YEAR.search(text)
     )
-    if is_selected_prediction(tokens):
+    if rules.is_selected_prediction(tokens):
         return TemporalScope.CURRENT
     if noncurrent:
         return TemporalScope.NONCURRENT
     if current:
         return TemporalScope.CURRENT
     return TemporalScope.UNSPECIFIED
-
-
-def _is_universal_distance(tokens: tuple[str, ...]) -> bool:
-    token_set = frozenset(tokens)
-    return bool(
-        token_set & {"distance", "radius", "far"}
-        and (
-            token_set & {"everyone", "everybody", "universal"}
-            or lex.has_phrase(tokens, ("every", "resident"))
-            or lex.has_phrase(tokens, ("every", "family"))
-            or lex.has_phrase(tokens, ("every", "wildfire"))
-            or lex.has_phrase(tokens, ("every", "person"))
-            or lex.has_phrase(tokens, ("one", "exact"))
-        )
-    )
 
 
 def _looks_like_clause(text: str) -> bool:
@@ -213,7 +198,7 @@ def _guidance_blocks_live(tokens: tuple[str, ...], temporal: TemporalScope) -> b
     if not is_guidance(tokens):
         return False
     token_set = frozenset(tokens)
-    if token_set & lex.DEFINITION_WORDS:
+    if token_set & lex.DEFINITION_WORDS or rules.is_stable_evacuation_action(tokens):
         return True
     asked_live_records = bool(token_set & lex.LIVE_RECORD_ASK_COMMANDS)
     if token_set & {"advice", "guidance", "tips", "checklist"} and not asked_live_records:
@@ -237,7 +222,7 @@ def _current_fire_operation(
     tokens: tuple[str, ...], temporal: TemporalScope
 ) -> RecordOperation | None:
     token_set = frozenset(tokens)
-    if _is_universal_distance(tokens):
+    if rules.is_universal_distance(tokens):
         return None
     if "safe" in token_set and token_set & {"distance", "separation"}:
         return None
@@ -264,7 +249,7 @@ def _current_fire_operation(
         return None
     if fire and is_refresh_snapshot_tokens(tokens):
         return RecordOperation.LIST
-    if is_selected_prediction(tokens):
+    if rules.is_selected_prediction(tokens):
         return RecordOperation.STATUS
     if temporal == TemporalScope.NONCURRENT:
         return None
@@ -347,7 +332,7 @@ def _current_fire_operation(
 
 def _current_evacuation(tokens: tuple[str, ...], temporal: TemporalScope) -> bool:
     token_set = frozenset(tokens)
-    if _is_universal_distance(tokens) or is_evac_definition(tokens):
+    if rules.is_universal_distance(tokens) or is_evac_definition(tokens):
         return False
     emergency_service = bool(
         "emergencyinfobc" in token_set or ("emergencyinfo" in token_set and "bc" in token_set)
@@ -522,7 +507,11 @@ def _parse_clause(text: str) -> ParsedClauseIntent:
     evacuation = _current_evacuation(tokens, temporal)
     layers: list[LiveResultKind] = []
     operation = fire_operation
-    if fire_operation == RecordOperation.ANALYZE:
+    all_three_layers = rules.all_three_official_record_layers(text)
+    if all_three_layers:
+        operation = RecordOperation.LIST
+        layers.extend(all_three_layers)
+    elif fire_operation == RecordOperation.ANALYZE:
         if token_set & {"hectare", "hectares", "largest", "oldest"}:
             layers.extend((LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
         else:

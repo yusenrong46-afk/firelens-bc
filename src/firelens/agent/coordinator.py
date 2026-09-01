@@ -41,6 +41,7 @@ from firelens.contracts import (
     ResponseMode,
     ResponseStatus,
 )
+from firelens.guidance_capabilities import resolve_capability
 from firelens.live_answering import LiveAnswerCoordinator
 
 _PLACE_CORRECTION_PATTERNS = (
@@ -304,6 +305,24 @@ class FireLensAgent:
                 route=QueryRoute.PROHIBITED,
                 tools=(),
                 policy=policy,
+            )
+        place_label = request.location.label if request.location is not None else None
+        capability = resolve_capability(request.question, place_label=place_label)
+        if capability is not None and capability.source_mode == "corpus":
+            # A registry-validated corpus capability carries its own exact
+            # source bindings.  Keep the original request and avoid the outer
+            # agent loop, whose model prose and tool selection cannot add
+            # publication authority.
+            response = await self.static_service.ask(
+                request,
+                allow_live=False,
+                prefer_reviewed_quotes=True,
+            )
+            return AgentExecution(
+                response=response,
+                route=QueryRoute.RELATED,
+                tools=(_static_tool(response),),
+                policy=RequestExecutionPolicy(route="validated_capability"),
             )
         effective_request = (
             _live_place_correction(request) or _answer_mismatch_correction(request) or request

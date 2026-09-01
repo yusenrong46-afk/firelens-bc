@@ -63,6 +63,37 @@ def test_retrieval_import_refuses_a_ranking_report_disguised_as_labels(
         import_retrieval_suite(disguised, CORPUS, MANIFEST)
 
 
+@pytest.mark.parametrize(
+    ("field", "value", "match"),
+    (
+        ("admission_warnings", [{"bad": "shape"}], "admission warning"),
+        (
+            "quarantined_pages",
+            [
+                {
+                    "source_id": "firesmart_begins_at_home",
+                    "page_number": 10,
+                    "document_sha256": "0" * 64,
+                    "review_status": "pending_owner_review",
+                    "reason": "not bound to the admitted source revision",
+                }
+            ],
+            "quarantined page",
+        ),
+    ),
+)
+def test_retrieval_import_validates_current_admission_manifest_fields(
+    tmp_path: Path, field: str, value: object, match: str
+) -> None:
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    manifest[field] = value
+    changed = tmp_path / "manifest.json"
+    changed.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ReviewInputError, match=match):
+        import_retrieval_suite(DATASET, CORPUS, changed)
+
+
 def test_semantic_holdout_import_recomputes_overlap_from_the_bound_registry(
     tmp_path: Path,
 ) -> None:

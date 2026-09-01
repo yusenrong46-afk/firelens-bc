@@ -24,6 +24,9 @@ FROM_VERSION = "1.6.0"
 TO_VERSION = "1.6.2"
 FROZEN_STANDARD_RELEASE_TARGET = "1.6.0-rc.1"
 FROZEN_STANDARD_SHA256 = "55e16b86960d51fb732970691a0c00850f6c56eb258cd363fd74a418b34d1bef"
+FROZEN_PATCH_MANIFEST_SHA256 = (
+    "c579bb38a1f97e52a65a69d40ffc262eec1154e5b52b3df29d1440a40c36ae25"
+)
 BASE_COMMIT = "b09e0402143f4c4a0602f542504507d40786fdc0"
 BASE_TREE = "dc22981a24bf4648ee850b56a801f3bf43eee6eb"
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -91,29 +94,14 @@ _MANIFEST_FIELDS = {
 
 
 def patch_promotion_manifest_document(root: Path) -> dict[str, Any]:
-    """Build the deterministic patch manifest document for an explicit root."""
+    """Return the immutable V1.6.2 snapshot without rebinding current artifacts.
 
-    surface = public_contract_surface()
-    return {
-        "schema_version": SCHEMA_VERSION,
-        "from_version": FROM_VERSION,
-        "to_version": TO_VERSION,
-        "base_commit": BASE_COMMIT,
-        "base_tree": BASE_TREE,
-        "frozen_standard_path": STANDARD_RELATIVE,
-        "frozen_standard_sha256": FROZEN_STANDARD_SHA256,
-        "historical_promotion_materials": [
-            file_record(root, path) for path in HISTORICAL_PROMOTION_PATHS
-        ],
-        "governed_materials": [file_record(root, path) for path in GOVERNED_MATERIAL_PATHS],
-        **{key: list(value) for key, value in surface.items()},
-        "qualification": {
-            "status": "NOT_EXECUTED",
-            "candidate_commit": None,
-            "candidate_tree": None,
-            "reason": STATIC_QUALIFICATION_REASON,
-        },
-    }
+    ``governed_materials`` records what V1.6.2 evaluated.  Newer corpus or vector
+    artifacts are intentionally not compared to those historical hashes; their
+    identity belongs to their own candidate evidence.
+    """
+
+    return load_patch_promotion_manifest(root)
 
 
 def load_patch_promotion_manifest(root: Path) -> dict[str, Any]:
@@ -145,8 +133,34 @@ def validate_patch_manifest(root: Path, *, release_version: str) -> dict[str, An
     """Validate static patch identity without claiming exact-commit qualification."""
 
     manifest = load_patch_promotion_manifest(root)
-    if manifest != patch_promotion_manifest_document(root):
-        raise ValueError("V1.6.2 patch-promotion manifest identity drifted")
+    if file_sha256(root / MANIFEST_RELATIVE) != FROZEN_PATCH_MANIFEST_SHA256:
+        raise ValueError("frozen V1.6.2 patch-promotion manifest hash changed")
+    if (
+        manifest["schema_version"] != SCHEMA_VERSION
+        or manifest["from_version"] != FROM_VERSION
+        or manifest["to_version"] != TO_VERSION
+        or manifest["base_commit"] != BASE_COMMIT
+        or manifest["base_tree"] != BASE_TREE
+        or manifest["frozen_standard_path"] != STANDARD_RELATIVE
+        or manifest["frozen_standard_sha256"] != FROZEN_STANDARD_SHA256
+    ):
+        raise ValueError("frozen V1.6.2 patch-promotion manifest constants changed")
+    governed = manifest["governed_materials"]
+    if (
+        not isinstance(governed, list)
+        or [record.get("name") for record in governed if isinstance(record, dict)]
+        != list(GOVERNED_MATERIAL_PATHS)
+        or any(
+            not isinstance(record, dict)
+            or set(record) != {"name", "sha256", "size_bytes"}
+            or not isinstance(record["sha256"], str)
+            or re.fullmatch(r"[0-9a-f]{64}", record["sha256"]) is None
+            or not isinstance(record["size_bytes"], int)
+            or record["size_bytes"] < 0
+            for record in governed
+        )
+    ):
+        raise ValueError("frozen V1.6.2 governed-material snapshot is invalid")
     if file_sha256(root / STANDARD_RELATIVE) != FROZEN_STANDARD_SHA256:
         raise ValueError("frozen V1.6 standard hash changed")
     standard_text = (root / STANDARD_RELATIVE).read_text(encoding="utf-8")

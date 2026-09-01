@@ -34,6 +34,7 @@ from firelens.ingestion.pdf import (
 from firelens.ingestion.repairs import (
     apply_text_repairs,
     load_text_repairs,
+    quarantine_unapproved_repair_pages,
     validate_chunk_repair_provenance,
 )
 from firelens.storage import atomic_text_writer
@@ -70,9 +71,11 @@ def build_corpus(
     timestamp = (generated_at or datetime.now(UTC)).astimezone(UTC)
     chunks: list[ChunkRecord] = []
     source_entries: list[dict[str, Any]] = []
+    quarantined_pages: list[dict[str, Any]] = []
 
     for source in registry["sources"]:
-        if source.get("corpus_action") != "include":
+        corpus_action = source.get("corpus_action")
+        if corpus_action not in {"include", "include_quote_only"}:
             source_entries.append(
                 {
                     "source_id": source["source_id"],
@@ -81,9 +84,9 @@ def build_corpus(
                 }
             )
             continue
-        if source.get("review_status") != "approved_static":
+        if source.get("review_status") not in {"approved_static", "approved_quote_only"}:
             raise IngestionError(
-                f"Included source {source['source_id']} is not approved_static."
+                f"Included source {source['source_id']} is not approved for its publication lane."
             )
 
         raw_path = project_root / source["local_file"]
@@ -99,13 +102,19 @@ def build_corpus(
         if source["source_type"] == "pdf":
             page_records = ingest_pdf(raw_path, source, retrieved_at=timestamp)
             relevant_repairs = [
-                repair
-                for repair in repairs
-                if repair["source_id"] == source_id
-                and repair["review_status"] == "human_verified"
+                repair for repair in repairs if repair["source_id"] == source_id
             ]
-            if relevant_repairs:
-                page_records = apply_text_repairs(page_records, relevant_repairs)
+            page_records, quarantined = quarantine_unapproved_repair_pages(
+                page_records, relevant_repairs
+            )
+            quarantined_pages.extend(quarantined)
+            approved_repairs = [
+                repair
+                for repair in relevant_repairs
+                if repair["review_status"] == "human_verified"
+            ]
+            if approved_repairs:
+                page_records = apply_text_repairs(page_records, approved_repairs)
             record_path = output_dir / f"{source_id}.pages.jsonl"
             record_count = write_page_jsonl(page_records, record_path)
             source_chunks = chunk_page_records(page_records)
@@ -128,7 +137,7 @@ def build_corpus(
             {
                 "source_id": source_id,
                 "source_type": source["source_type"],
-                "corpus_action": "include",
+                "corpus_action": corpus_action,
                 "review_status": source["review_status"],
                 "canonical_url": source["canonical_url"],
                 "local_file": source["local_file"],
@@ -162,7 +171,8 @@ def build_corpus(
         "generated_at": timestamp.isoformat(),
         "combined_chunk_file": str(corpus_path.relative_to(project_root)),
         "included_source_count": sum(
-            entry.get("corpus_action") == "include" for entry in source_entries
+            entry.get("corpus_action") in {"include", "include_quote_only"}
+            for entry in source_entries
         ),
         "combined_chunk_count": len(chunks),
         "admission_policy_version": ADMISSION_POLICY_VERSION,
@@ -170,6 +180,7 @@ def build_corpus(
         "admission_warnings": [
             finding.as_dict() for finding in admission_findings if not finding.blocking
         ],
+        "quarantined_pages": quarantined_pages,
         "sources": source_entries,
     }
     _write_manifest(manifest, output_dir / "firelens_static_corpus.manifest.json")

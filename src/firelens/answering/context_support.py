@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from functools import lru_cache
 
+from firelens.answering.intent_conversation import is_true_deictic_followup
 from firelens.contracts import (
     EvidencePacket,
     QueryPlan,
@@ -439,9 +440,9 @@ def _aspect_support_decision(plan: QueryPlan, packet: EvidencePacket) -> Support
         # A planner may over-decompose a simple question, but its rewrite may not
         # lower the evidence bar. Only strong lexical coverage of the user's own
         # wording can override a missing proposed aspect.
-        deictic_question = any(
+        deictic_question = is_true_deictic_followup(plan.original_question) or any(
             marker in plan.original_question.casefold()
-            for marker in ("that", "those", "this", "simpler", "why does it", "why does that")
+            for marker in ("those", "this", "simpler", "why does it", "why does that")
         )
         resolved_request_supported = deictic_question and any(
             _aspect_supported(request.query, packet, minimum_ratio=0.6)

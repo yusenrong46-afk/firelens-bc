@@ -56,6 +56,7 @@ from firelens.operational_logging import log_operation
 from firelens.providers.base import AIProvider
 from firelens.publication.fallback import background_authority
 from firelens.retrieval.bm25 import BM25Index
+from firelens.source_requirements import SourceRequirement, source_requirement_for_question
 from firelens.traces import TraceRecorder, project_ask_trace_details
 
 _SOURCE_IDENTITY_STOPWORDS = frozenset(
@@ -208,6 +209,7 @@ class StaticRAGSupport:
         question = publication_question(request)
         return bool(
             plan.route == QueryRoute.RELATED
+            and source_requirement_for_question(question) == SourceRequirement.GENERAL_ALLOWED
             and support.status != SupportStatus.ANSWERABLE
             and classify_text(question) == RiskTier.C
             and not extract_snapshot(question).freshness_live

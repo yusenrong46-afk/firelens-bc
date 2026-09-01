@@ -12,6 +12,7 @@ from firelens.answering.location_intent import coarse_location_from_question
 from firelens.answering.return_intent import reviewed_return_condition_intent
 from firelens.answering.scope import corpus_identifiers
 from firelens.contracts import QueryRequest, ReasonCode
+from firelens.source_requirements import guided_capability
 
 _PACKING_EXCLUSION = re.compile(
     r"\b(?:not|isn['’]t|aren['’]t)\s+(?:really\s+)?"
@@ -42,9 +43,19 @@ _NAMED_INDIVIDUAL_FIRE = re.compile(
     r"\b(?!\s+(?:Cent(?:re|er)|Service|Guide|Program))"
 )
 _DEICTIC_FOLLOWUP = re.compile(
-    r"\b(?:it|its|that|this|they|them|there|those|these|"
+    r"\b(?:it|its|this|they|them|there|those|these|"
+    r"which one|"
     r"the (?:first|second|third|other|closest|nearest) one|"
     r"that (?:guidance|system|advice|status)|right now|what about)\b"
+)
+_TRUE_THAT_DEIXIS = re.compile(
+    r"^\s*(?:and\s+)?that\b|"
+    r"\bwhat\s+(?:does|is|was)\s+that\s+mean\b|"
+    r"\bwhy\s+(?:is|was|does|did)\s+that\b|"
+    r"\bhow\s+(?:does|did)\s+that\s+work\b|"
+    r"\b(?:is|was|does|did)\s+that\b|"
+    r"\bthat\s+(?:guidance|system|advice|status|fire|wildfire|incident|record)\b",
+    re.IGNORECASE,
 )
 _SELECTED_FIRE_DEIXIS = re.compile(
     r"\b(?:this|that|selected)\s+(?:fire|wildfire|incident|record)\b", re.I
@@ -65,7 +76,15 @@ def focused_question(question: str) -> str:
 
 def _is_elliptical_followup(question: str) -> bool:
     current = focused_question(question)
-    return len(current.split()) <= 16 and bool(_DEICTIC_FOLLOWUP.search(current.casefold()))
+    return len(current.split()) <= 16 and bool(
+        _DEICTIC_FOLLOWUP.search(current.casefold()) or _TRUE_THAT_DEIXIS.search(current)
+    )
+
+
+def is_true_deictic_followup(question: str) -> bool:
+    """Expose the narrow follow-up test without treating relative ``that`` as deixis."""
+
+    return _is_elliptical_followup(question)
 
 
 def prior_anchor_user_question(request: QueryRequest) -> str | None:
@@ -241,6 +260,10 @@ def is_packing_exclusion_question(request: QueryRequest) -> bool:
 def skips_provider_planning(request: QueryRequest) -> bool:
     """Skip provider planning when reviewed guidance is already determined."""
 
+    place_label = request.location.label if request.location is not None else None
+    capability = guided_capability(request.question, place_label=place_label)
+    if capability is not None and capability.source_lane == "reviewed_guidance":
+        return True
     if reviewed_guidance_intent(request.question):
         return True
     resolved = resolved_user_question(request)

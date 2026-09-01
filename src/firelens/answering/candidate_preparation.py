@@ -17,6 +17,7 @@ from firelens.contract_base import FrozenStrictModel
 RAW_RELATIVE = "data/typed_claims/candidates_pending_v1.yaml"
 SEED_RELATIVE = "data/typed_claims/candidate_preparation_seed_v2.yaml"
 CORPUS_RELATIVE = "data/processed/firelens_static_corpus.chunks.jsonl"
+PREPARED_RELATIVE = "data/typed_claims/prepared_candidates_v2.yaml"
 
 PreparationDisposition = Literal[
     "review_ready",
@@ -158,6 +159,84 @@ def build_prepared_candidates(root: Path) -> PreparedCandidateArtifact:
 
 def disposition_counts(artifact: PreparedCandidateArtifact) -> dict[str, int]:
     return dict(Counter(row.disposition for row in artifact.dispositions))
+
+
+def load_prepared_candidates(root: Path) -> PreparedCandidateArtifact:
+    """Load the immutable review queue without regenerating its provenance hash."""
+
+    return PreparedCandidateArtifact.model_validate(
+        yaml.safe_load((root / PREPARED_RELATIVE).read_text(encoding="utf-8"))
+    )
+
+
+def validate_prepared_candidate_bindings(root: Path) -> PreparedCandidateArtifact:
+    """Prove a historical prepared queue still binds to the current expanded corpus.
+
+    The queue's ``corpus_sha256`` records the corpus reviewed when it was prepared.
+    It is provenance, not a requirement that an append-only later corpus retain the
+    same whole-file hash.  Each prepared candidate is instead checked against its
+    surviving source chunks, raw-parent lineage, exact quote, and proposed surface.
+    """
+
+    artifact = load_prepared_candidates(root)
+    raw_payload: dict[str, Any] = yaml.safe_load(
+        (root / RAW_RELATIVE).read_text(encoding="utf-8")
+    )
+    raw_by_id = {str(row["claim_id"]): row for row in raw_payload.get("records", [])}
+    chunks = _load_chunks(root / CORPUS_RELATIVE)
+    if artifact.raw_queue_sha256 != file_sha256(root / RAW_RELATIVE):
+        raise ValueError("prepared candidate raw-queue lineage hash changed")
+    for candidate in artifact.prepared_candidates:
+        raw = raw_by_id.get(candidate.parent_candidate_id)
+        if raw is None:
+            raise ValueError(f"{candidate.candidate_id} has an unknown raw parent")
+        for field in (
+            "coverage_domain",
+            "authority",
+            "jurisdiction",
+            "source_id",
+            "source_revision",
+        ):
+            if getattr(candidate, field) != str(raw[field]):
+                raise ValueError(
+                    f"{candidate.candidate_id} {field} no longer matches its parent"
+                )
+        if candidate.source_span_ids != [str(value) for value in raw["source_span_ids"]]:
+            raise ValueError(f"{candidate.candidate_id} source-span lineage changed")
+        bound = [chunks.get(chunk_id) for chunk_id in candidate.source_span_ids]
+        if any(chunk is None for chunk in bound):
+            raise ValueError(
+                f"{candidate.candidate_id} references a missing current corpus chunk"
+            )
+        current = [chunk for chunk in bound if chunk is not None]
+        if any(str(chunk["source_id"]) != candidate.source_id for chunk in current):
+            raise ValueError(f"{candidate.candidate_id} current chunk source changed")
+        if any(
+            str(chunk["document_sha256"]) != candidate.source_document_sha256
+            for chunk in current
+        ):
+            raise ValueError(f"{candidate.candidate_id} current document binding changed")
+        if any(str(chunk["locator"]) != candidate.source_revision for chunk in current):
+            raise ValueError(f"{candidate.candidate_id} current source revision changed")
+        normalized_quote = " ".join(candidate.exact_source_quote.split())
+        if candidate.source_span_sha256 != normalized_sha256(candidate.exact_source_quote):
+            raise ValueError(f"{candidate.candidate_id} historical quote hash changed")
+        if not any(
+            normalized_quote in " ".join(str(chunk["text"]).split()) for chunk in current
+        ):
+            raise ValueError(
+                f"{candidate.candidate_id} quote is absent from the current corpus"
+            )
+        if candidate.proposed_surface_sha256 != normalized_sha256(candidate.proposed_surface):
+            raise ValueError(f"{candidate.candidate_id} proposed-surface hash changed")
+        errors = typed_preservation_errors(
+            candidate.proposed_surface, [candidate.exact_source_quote]
+        )
+        if errors:
+            raise ValueError(
+                f"{candidate.candidate_id} proposed surface changes source meaning: {errors}"
+            )
+    return artifact
 
 
 def _validate_dispositions(

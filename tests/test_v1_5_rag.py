@@ -133,6 +133,20 @@ class V15RoutingTests(unittest.TestCase):
         self.assertIn("What belongs in a grab-and-go bag?", resolved)
         self.assertNotIn("Untrusted previous assistant wording", resolved)
 
+    def test_which_one_closest_followup_resolves_the_prior_live_subject(self) -> None:
+        request = QueryRequest(
+            question="Which one is closest to me?",
+            history=[
+                {"role": "user", "content": "What official wildfire records are near Kelowna?"},
+                {"role": "assistant", "content": "Official records were returned."},
+            ],
+        )
+
+        resolved = resolved_user_question(request)
+
+        self.assertIn("What official wildfire records are near Kelowna?", resolved)
+        self.assertIn("Which one is closest to me?", resolved)
+
     def test_live_intents_use_only_supported_official_layers(self) -> None:
         self.assertEqual(
             live_layers_for_question("What active wildfires are in BC today?"),

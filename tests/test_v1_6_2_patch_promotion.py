@@ -13,6 +13,7 @@ from firelens.evaluation.v1_6_2_patch_promotion import (
     BASE_COMMIT,
     BASE_TREE,
     FROM_VERSION,
+    FROZEN_PATCH_MANIFEST_SHA256,
     FROZEN_STANDARD_RELEASE_TARGET,
     FROZEN_STANDARD_SHA256,
     GOVERNED_MATERIAL_PATHS,
@@ -61,6 +62,7 @@ def test_patch_manifest_binds_base_standard_governed_and_historical_materials() 
     manifest = json.loads((ROOT / MANIFEST_RELATIVE).read_text(encoding="utf-8"))
 
     assert manifest == patch_promotion_manifest_document(ROOT)
+    assert file_sha256(ROOT / MANIFEST_RELATIVE) == FROZEN_PATCH_MANIFEST_SHA256
     assert manifest["from_version"] == FROM_VERSION == "1.6.0"
     assert manifest["to_version"] == TO_VERSION == "1.6.2"
     assert manifest["base_commit"] == BASE_COMMIT
@@ -99,12 +101,16 @@ def test_patch_static_validator_accepts_current_bound_materials(tmp_path: Path) 
     assert set(report["version_surfaces"].values()) == {TO_VERSION}
 
 
-def test_patch_static_validator_fails_on_governed_or_version_drift(tmp_path: Path) -> None:
+def test_patch_static_validator_allows_newer_governed_artifacts_but_rejects_version_drift(
+    tmp_path: Path,
+) -> None:
     governed = _fixture_root(tmp_path / "governed")
     path = governed / GOVERNED_MATERIAL_PATHS[0]
     path.write_bytes(path.read_bytes() + b"\n")
-    with pytest.raises(ValueError, match="identity drifted"):
-        validate_patch_manifest(governed, release_version=TO_VERSION)
+    assert (
+        validate_patch_manifest(governed, release_version=TO_VERSION)["to_version"]
+        == TO_VERSION
+    )
 
     version = _fixture_root(tmp_path / "version")
     package_path = version / "apps/web/package.json"
@@ -144,7 +150,7 @@ def test_patch_static_validator_rejects_base_or_standard_binding_drift(
     manifest[field] = replacement
     manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
 
-    with pytest.raises(ValueError, match="identity drifted"):
+    with pytest.raises(ValueError, match="frozen V1.6.2 patch-promotion manifest hash changed"):
         validate_patch_manifest(root, release_version=TO_VERSION)
 
 
@@ -162,11 +168,6 @@ def test_patch_static_validator_rejects_coordinated_public_contract_drift(
         "public_contract_surface",
         lambda: drifted,
     )
-    (root / MANIFEST_RELATIVE).write_text(
-        json.dumps(patch_promotion_manifest_document(root), indent=2) + "\n",
-        encoding="utf-8",
-    )
-
     with pytest.raises(ValueError, match="public contract field response_mode_values drifted"):
         validate_patch_manifest(root, release_version=TO_VERSION)
 

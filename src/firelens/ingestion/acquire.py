@@ -4,16 +4,19 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import mimetypes
 import urllib.request
+from html import escape
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlparse
 
 import yaml
+from lxml import html
 
 from firelens.ingestion.pdf import IngestionError
-from firelens.storage import atomic_binary_writer
+from firelens.storage import atomic_binary_writer, atomic_text_writer
 
 USER_AGENT = "FireLens-BC-RAG/1.0 source-acquisition"
 MAX_SOURCE_BYTES = 32 * 1024 * 1024
@@ -25,6 +28,30 @@ APPROVED_SOURCE_HOSTS = frozenset(
         "www2.gov.bc.ca",
     }
 )
+
+
+def canonical_official_html(payload: bytes, *, required_quote: str) -> bytes:
+    """Return a stable article snapshot, excluding volatile transport shell data."""
+
+    document = cast(html.HtmlElement, html.fromstring(payload))
+    removable_nodes = cast(
+        list[html.HtmlElement],
+        document.xpath("//script|//style|//nav|//header|//footer"),
+    )
+    for node in removable_nodes:
+        node.drop_tree()
+    article = cast(list[html.HtmlElement], document.xpath("//main|//article"))
+    root = article[0] if article else document
+    heading = cast(list[html.HtmlElement], root.xpath(".//h1[1]"))
+    text = " ".join(root.text_content().split())
+    title = " ".join(heading[0].text_content().split()) if heading else "Official guidance"
+    if required_quote not in text:
+        raise IngestionError("Official article snapshot lacks its required exact quotation.")
+    return (
+        '<!doctype html><html><head><meta charset="utf-8"></head><body>'
+        f"<main><h1>{escape(title)}</h1><p>{escape(text)}</p></main>"
+        "</body></html>"
+    ).encode()
 
 
 def _load_sources(registry_path: Path) -> list[dict[str, Any]]:
@@ -88,11 +115,34 @@ def acquire_source(source: dict[str, Any], project_root: Path) -> Path:
         headers={"User-Agent": USER_AGENT},
     )
     try:
-        with urllib.request.urlopen(request, timeout=45) as response:
-            final_url = str(response.geturl())
-            if _validated_source_url({**source, "canonical_url": final_url}) != final_url:
-                raise IngestionError("Registered source redirected outside approved hosts.")
-            payload = response.read(MAX_SOURCE_BYTES + 1)
+
+        def fetch() -> tuple[bytes, str]:
+            with urllib.request.urlopen(request, timeout=45) as response:
+                return response.read(MAX_SOURCE_BYTES + 1), str(response.geturl())
+
+        payload, final_url = fetch()
+        raw_hashes: tuple[str, str] | None = None
+        if source.get("snapshot_policy") == "canonical_article_v1":
+            second_payload, second_url = fetch()
+            if second_url != final_url:
+                raise IngestionError(
+                    "Official source redirect changed between acquisition reads."
+                )
+            required_quote = str(source.get("required_exact_quote") or "")
+            first_raw = payload
+            first = canonical_official_html(first_raw, required_quote=required_quote)
+            second = canonical_official_html(second_payload, required_quote=required_quote)
+            if first != second:
+                raise IngestionError(
+                    "Official article content changed between acquisition reads."
+                )
+            payload = first
+            raw_hashes = (
+                hashlib.sha256(first_raw).hexdigest(),
+                hashlib.sha256(second_payload).hexdigest(),
+            )
+        if _validated_source_url({**source, "canonical_url": final_url}) != final_url:
+            raise IngestionError("Registered source redirected outside approved hosts.")
     except Exception as exc:
         if isinstance(exc, IngestionError):
             raise
@@ -105,6 +155,20 @@ def acquire_source(source: dict[str, Any], project_root: Path) -> Path:
 
     with atomic_binary_writer(destination) as stream:
         stream.write(payload)
+    if raw_hashes is not None:
+        record = destination.with_suffix(destination.suffix + ".acquisition.json")
+        with atomic_text_writer(record) as stream:
+            json.dump(
+                {
+                    "source_id": source["source_id"],
+                    "snapshot_policy": "canonical_article_v1",
+                    "raw_response_sha256": list(raw_hashes),
+                    "canonical_sha256": hashlib.sha256(payload).hexdigest(),
+                },
+                stream,
+                sort_keys=True,
+            )
+            stream.write("\n")
     return destination
 
 

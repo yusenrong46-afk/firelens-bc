@@ -16,7 +16,6 @@ from firelens.answering.intent_automaton import (
     parse_request_intent,
 )
 from firelens.answering.intent_conversation import (
-    _DEICTIC_FOLLOWUP,
     _deictic_action_boundary,
     _named_individual_fire_request,
     _routing_texts,
@@ -25,6 +24,7 @@ from firelens.answering.intent_conversation import (
     explicit_corpus_attribution,
     focused_question,
     is_packing_exclusion_question,
+    is_true_deictic_followup,
     prefers_general_background,
     prior_anchor_user_question,
     publication_question,
@@ -65,6 +65,7 @@ from firelens.contracts import (
     RetrievalRequest,
 )
 from firelens.publication.comparison_targets import alert_order_comparison_targets
+from firelens.source_requirements import guided_capability
 
 __all__ = (
     "conversation_planning_question",
@@ -198,6 +199,10 @@ _ROAD_EXPLANATORY_INTENT = re.compile(
     r"polic(?:y|ies)|common(?:ness)?|frequen(?:cy|t|tly)|histor(?:y|ical)|"
     r"explain(?:ed|ing)?)\b",
     re.IGNORECASE,
+)
+
+_COMPARISON_EXTRA_ASPECT = re.compile(
+    r"\b(?:evacuation\s+)?orders?\b\s+(?:and|plus|also)\b", re.IGNORECASE
 )
 
 
@@ -480,10 +485,10 @@ def apply_planning_decision(
     if decision.relation == QueryRelation.TANGENT and corpus_reference:
         required_aspects = required_aspects or [plan.original_question]
     retrieval_queries = list(decision.retrieval_queries) or [plan.original_question]
-    question_is_elliptical = bool(
-        len(plan.original_question.split()) <= 16
-        and _DEICTIC_FOLLOWUP.search(plan.original_question.casefold())
-    )
+    # Conversation history may resolve a genuinely elliptical turn, but a
+    # relative clause such as "mistakes that I should avoid" is not an
+    # antecedent.  Keep this shared predicate aligned with the resolver.
+    question_is_elliptical = is_true_deictic_followup(plan.original_question)
     if preserve_original_question and not question_is_elliptical:
         retrieval_queries = list(
             dict.fromkeys(
@@ -555,9 +560,23 @@ def reviewed_guidance_plan(plan: QueryPlan) -> QueryPlan:
         # guidance request from raising a schema exception. It is used only
         # after the semantic targets above have been selected.
         required_aspect = required_aspect[:160].rstrip()
+    capability = guided_capability(plan.original_question)
     atomic = alert_order_comparison_targets(plan.original_question)
+    required_aspects = list(capability.required_aspects) if capability else list(atomic)
+    required_aspects = required_aspects or [required_aspect]
+    if (
+        atomic
+        and capability is None
+        and _COMPARISON_EXTRA_ASPECT.search(plan.original_question)
+    ):
+        # A comparison can still contain a second requested fact.  Preserve
+        # that full request as a missing aspect while atomic alert/order
+        # targets remain eligible for separately bound publication.
+        required_aspects.append(required_aspect)
+    # Atomic alert/order targets are deterministic retrieval refinements.
+    # Capability aspects otherwise constrain support and publication only;
+    # they must not be expanded into broad raw retrieval queries.
     retrieval_queries = list(dict.fromkeys([retrieval_query, *atomic]))[:3]
-    required_aspects = list(atomic) or [required_aspect]
     return apply_planning_decision(
         plan,
         PlanningDecision(

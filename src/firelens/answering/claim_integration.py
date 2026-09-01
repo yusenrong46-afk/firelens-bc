@@ -9,7 +9,11 @@ from typing import Any
 
 import yaml
 
-from firelens.answering.candidate_preparation import PreparedCandidateArtifact
+from firelens.answering.candidate_preparation import (
+    PreparedCandidateArtifact,
+    normalized_sha256,
+    validate_prepared_candidate_bindings,
+)
 from firelens.answering.typed_records import TypedClaimInventory
 
 PREPARED_RELATIVE = "data/typed_claims/prepared_candidates_v2.yaml"
@@ -88,6 +92,56 @@ def build_integrated_inventory(root: Path) -> tuple[dict[str, Any], dict[str, An
         },
     }
     return inventory, manifest
+
+
+def validate_integrated_inventory_bindings(root: Path) -> TypedClaimInventory:
+    """Validate frozen approvals against the current corpus without regenerating history.
+
+    The V1.6 review journals and checked-in inventory preserve their historical
+    retrieval timestamps.  A later corpus expansion must prove that every approved
+    source binding still exists rather than rewriting those decision artifacts.
+    """
+
+    prepared = validate_prepared_candidate_bindings(root)
+    inventory_path = root / INVENTORY_RELATIVE
+    inventory = TypedClaimInventory.model_validate(
+        yaml.safe_load(inventory_path.read_text(encoding="utf-8"))
+    )
+    manifest = json.loads((root / "docs/reports/V1_6_RC_INTEGRATION_MANIFEST.json").read_text())
+    if manifest.get("prepared_artifact_sha256") != file_sha256(root / PREPARED_RELATIVE):
+        raise ValueError("integrated inventory prepared-artifact provenance changed")
+    if manifest.get("integrated_inventory_sha256") != file_sha256(inventory_path):
+        raise ValueError("integrated inventory snapshot hash changed")
+    decisions = _load_approved_decisions(root, prepared)
+    _validate_owner_gates(root)
+    chunks = _load_chunks(root / CORPUS_RELATIVE)
+    for record in inventory.records:
+        if record.binding_kind == "internal_static":
+            continue
+        bound = [chunks.get(chunk_id) for chunk_id in record.source_span_ids]
+        if any(chunk is None for chunk in bound):
+            raise ValueError(f"{record.claim_id} references a missing current corpus chunk")
+        current = [chunk for chunk in bound if chunk is not None]
+        if any(
+            str(chunk["document_sha256"]) != record.source_document_sha256 for chunk in current
+        ):
+            raise ValueError(f"{record.claim_id} document binding changed")
+        quote = " ".join(record.source_span_text.split())
+        if normalized_sha256(record.source_span_text) != record.source_span_sha256:
+            raise ValueError(f"{record.claim_id} source-span hash changed")
+        if not any(quote in " ".join(str(chunk["text"]).split()) for chunk in current):
+            raise ValueError(f"{record.claim_id} source quote is absent from current corpus")
+        if normalized_sha256(record.canonical_text) != record.approved_surface_sha256:
+            raise ValueError(f"{record.claim_id} approved-surface hash changed")
+    expected_ids = {
+        production_claim_id(row.candidate_id) for row in prepared.prepared_candidates
+    }
+    actual_ids = {record.claim_id for record in inventory.records}
+    if not expected_ids.issubset(actual_ids) or set(decisions) != {
+        row.candidate_id for row in prepared.prepared_candidates
+    }:
+        raise ValueError("integrated inventory approval lineage changed")
+    return inventory
 
 
 def _load_chunks(path: Path) -> dict[str, dict[str, Any]]:

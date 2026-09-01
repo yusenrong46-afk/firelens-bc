@@ -1,10 +1,20 @@
 {
-  "combined_chunk_count": 170,
+  "admission_policy_version": "firelens_corpus_admission.v1",
+  "admission_warnings": [],
+  "combined_chunk_count": 179,
   "combined_chunk_file": "data/processed/firelens_static_corpus.chunks.jsonl",
   "corpus_version": "firelens_static_corpus.v1",
-  "generated_at": "2026-07-26T22:27:40.295011+00:00",
-  "included_source_count": 8,
-  "provenance_migrated_at": "2026-07-30T21:06:05.693609+00:00",
+  "generated_at": "2026-09-01T01:17:36.439211+00:00",
+  "included_source_count": 10,
+  "quarantined_pages": [
+    {
+      "document_sha256": "c808a14bb873eb8b70930470976b0f2e091eed9cfdc1fe4b63d6325b4ae3c2ca",
+      "page_number": 10,
+      "reason": "The rendered spread is legible, but the PDF text layer interleaves several visual columns. The replacement preserves the visible wording and orders it by the page's headings. It was checked against the rendered page on 2026-07-26 and remains pending owner review.\n",
+      "review_status": "pending_owner_review",
+      "source_id": "firesmart_begins_at_home"
+    }
+  ],
   "registry_version": "r1.0",
   "repair_provenance_policy": "human_verified_only.v1",
   "sources": [
@@ -25,9 +35,9 @@
       "chunk_count": 47,
       "corpus_action": "include",
       "document_sha256": "c808a14bb873eb8b70930470976b0f2e091eed9cfdc1fe4b63d6325b4ae3c2ca",
-      "excluded_record_count": 3,
+      "excluded_record_count": 2,
       "local_file": "data/raw/firesmart_begins_at_home.pdf",
-      "record_count": 18,
+      "record_count": 17,
       "review_status": "approved_static",
       "source_id": "firesmart_begins_at_home",
       "source_type": "pdf"
@@ -113,6 +123,30 @@
       "review_status": "approved_static",
       "source_id": "bccdc_smoke_health_factsheet",
       "source_type": "pdf"
+    },
+    {
+      "canonical_url": "https://www2.gov.bc.ca/gov/content/safety/public-safety/emergency-alerts/receive-emergency-alert",
+      "chunk_count": 4,
+      "corpus_action": "include_quote_only",
+      "document_sha256": "f3de45c1a251125360b9b2b9c192b7579ca1d53a46b136657a88cd420862ec1d",
+      "excluded_record_count": 0,
+      "local_file": "data/raw/bc_emergency_alert.html",
+      "record_count": 1,
+      "review_status": "approved_quote_only",
+      "source_id": "bc_emergency_alert",
+      "source_type": "html"
+    },
+    {
+      "canonical_url": "https://www2.gov.bc.ca/gov/content/safety/emergency-management/preparedbc/know-your-hazards/wildfires/during-wildfire",
+      "chunk_count": 5,
+      "corpus_action": "include_quote_only",
+      "document_sha256": "a44a95864b0121b6617003bf1929cd3a78019fa2aa4309c84bfb5100384fbf05",
+      "excluded_record_count": 0,
+      "local_file": "data/raw/preparedbc_during_wildfire.html",
+      "record_count": 1,
+      "review_status": "approved_quote_only",
+      "source_id": "preparedbc_during_wildfire",
+      "source_type": "html"
     }
   ]
 }

@@ -8,6 +8,7 @@ from typing import Any, Literal
 from pydantic import Field, HttpUrl, field_validator
 
 from firelens.contract_base import FrozenStrictModel
+from firelens.guidance_capabilities import LocationMode, SourceLane
 
 MAX_RELATED_LINKS = 4
 RELATED_LINK_TITLE_MAX_CHARS = 120
@@ -153,6 +154,28 @@ class HealthResponse(FrozenStrictModel):
 
 class LivenessResponse(FrozenStrictModel):
     status: Literal["alive"] = "alive"
+
+
+class GuidedQuestionItem(FrozenStrictModel):
+    id: str
+    label: str
+    question: str
+    location_mode: LocationMode
+    source_lane: SourceLane
+
+
+class GuidedQuestionCategory(FrozenStrictModel):
+    id: str
+    label: str
+    questions: list[GuidedQuestionItem] = Field(min_length=1, max_length=8)
+
+
+class GuidedQuestionsResponse(FrozenStrictModel):
+    """Frozen public catalogue shape; capability internals stay private."""
+
+    schema_version: Literal["firelens.guided_questions.v1"]
+    catalogue_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    categories: list[GuidedQuestionCategory] = Field(min_length=1, max_length=8)
 
 
 class ErrorEnvelope(FrozenStrictModel):

@@ -19,12 +19,22 @@ from firelens.api.responses import (
     error_response,
     provider_error_status,
 )
+from firelens.api_contracts import (
+    GuidedQuestionCategory,
+    GuidedQuestionItem,
+    GuidedQuestionsResponse,
+)
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     AskResponse,
     QueryRequest,
     ResponseStatus,
     SearchResponse,
+)
+from firelens.guidance_capabilities import (
+    advertised_guided_questions,
+    guided_catalogue_sha256,
+    load_guided_question_registry,
 )
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.live_answering import LiveAnswerCoordinator
@@ -109,6 +119,36 @@ def install_answer_routes(
     current_runtime: Callable[[], Runtime],
     live_coordinator: LiveAnswerCoordinator,
 ) -> None:
+    @app.get("/api/v1/guided-questions", response_model=GuidedQuestionsResponse)
+    async def guided_questions() -> GuidedQuestionsResponse:
+        """Return the frozen client catalogue without exposing routing internals."""
+
+        registry = load_guided_question_registry(str(config.project_root))
+        advertised = {item.id for item in advertised_guided_questions(str(config.project_root))}
+        return GuidedQuestionsResponse(
+            schema_version=registry.schema_version,
+            catalogue_sha256=guided_catalogue_sha256(str(config.project_root)),
+            categories=[
+                GuidedQuestionCategory(
+                    id=category.id,
+                    label=category.label,
+                    questions=[
+                        GuidedQuestionItem(
+                            id=item.id,
+                            label=item.label,
+                            question=item.question,
+                            location_mode=item.location_mode,
+                            source_lane=item.source_lane,
+                        )
+                        for item in category.questions
+                        if item.id in advertised
+                    ],
+                )
+                for category in registry.categories
+                if any(item.id in advertised for item in category.questions)
+            ],
+        )
+
     if config.debug and config.deployment_environment != "production":
 
         @app.post("/api/v1/search", response_model=SearchResponse)

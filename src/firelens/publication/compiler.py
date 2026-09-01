@@ -212,6 +212,8 @@ def compile_high_risk_answer(
     *,
     trace_id: str,
     supported_aspects: Sequence[str] = (),
+    allowed_typed_claim_ids: Sequence[str] | None = None,
+    allowed_quote_texts: Sequence[str] | None = None,
 ) -> AskResponse:
     packet_errors = _packet_identity_errors(packet)
     if packet_errors:
@@ -231,6 +233,7 @@ def compile_high_risk_answer(
         packet,
         question=question,
         supported_aspects=supported_aspects,
+        allowed_typed_claim_ids=allowed_typed_claim_ids,
     )
     claims: list[PublicClaim] = []
     evidence: list[PublicEvidence] = []
@@ -246,14 +249,20 @@ def compile_high_risk_answer(
     uncovered_targets = list(_uncovered_publication_targets(claims, targets))
     covered_quotes = {support.quote for claim in claims for support in claim.supports}
     quote_index = len(claims)
+    allowed_quote_set = (
+        frozenset(allowed_quote_texts) if allowed_quote_texts is not None else None
+    )
     for candidate in packet.quote_candidates:
-        if classify_text(candidate.text) not in {RiskTier.A, RiskTier.B}:
+        bound_quote = allowed_quote_set is not None and candidate.text in allowed_quote_set
+        if allowed_quote_set is not None and not bound_quote:
+            continue
+        if not bound_quote and classify_text(candidate.text) not in {RiskTier.A, RiskTier.B}:
             continue
         evidence_item = next(
             (item for item in packet.items if item.evidence_id == candidate.evidence_id),
             None,
         )
-        if not is_atomic_official_quote_only(
+        if not bound_quote and not is_atomic_official_quote_only(
             candidate.text,
             source_text=(
                 evidence_item.context_text or evidence_item.primary_text
@@ -264,11 +273,15 @@ def compile_high_risk_answer(
             continue
         if not admitted_official_quote_source(evidence_item, candidate.text):
             continue
-        matched_targets = tuple(
-            target
-            for target in uncovered_targets
-            if target not in ALERT_ORDER_ATOMIC_TARGET_SET
-            and _quote_candidate_covers_target(candidate.text, target)
+        matched_targets = (
+            ("registry_bound_quote",)
+            if bound_quote
+            else tuple(
+                target
+                for target in uncovered_targets
+                if target not in ALERT_ORDER_ATOMIC_TARGET_SET
+                and _quote_candidate_covers_target(candidate.text, target)
+            )
         )
         if not matched_targets:
             continue
@@ -285,9 +298,11 @@ def compile_high_risk_answer(
         claims.append(claim)
         evidence.append(item)
         cards.append(card)
-        uncovered_targets = [
-            target for target in uncovered_targets if target not in matched_targets
-        ]
+        uncovered_targets = (
+            []
+            if bound_quote
+            else [target for target in uncovered_targets if target not in matched_targets]
+        )
     if not claims:
         return official_handoff_response(trace_id)
     limitations = list(packet.limitations)
@@ -338,10 +353,23 @@ def select_typed_claim_ids(
     *,
     question: str | None = None,
     supported_aspects: Sequence[str] = (),
+    allowed_typed_claim_ids: Sequence[str] | None = None,
 ) -> list[str]:
     asked = question or packet.question
     if is_terse_quote_only_request(asked):
         return []
+    if allowed_typed_claim_ids is not None:
+        primary_chunk_ids = {
+            chunk_id for item in packet.items for chunk_id in item.primary_chunk_ids
+        }
+        inventory = {record.claim_id: record for record in load_inventory().records}
+        return [
+            claim_id
+            for claim_id in allowed_typed_claim_ids
+            if claim_id in inventory
+            and inventory[claim_id].production_supported()
+            and primary_chunk_ids.intersection(inventory[claim_id].source_span_ids)
+        ]
     selected: list[str] = []
     targets = _publication_targets(asked, supported_aspects)
     evidence_by_id = {item.evidence_id: item for item in packet.items}

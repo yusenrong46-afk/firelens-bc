@@ -102,6 +102,35 @@ def apply_text_repairs(
     return repaired
 
 
+def quarantine_unapproved_repair_pages(
+    records: Sequence[PageRecord], repairs: Sequence[dict[str, Any]]
+) -> tuple[list[PageRecord], list[dict[str, Any]]]:
+    """Exclude pages with a pending repair before chunking, without approving it."""
+
+    targets = {
+        (repair["source_id"], int(repair["page_number"]), repair["document_sha256"]): repair
+        for repair in repairs
+        if repair["review_status"] != "human_verified"
+    }
+    kept: list[PageRecord] = []
+    quarantined: list[dict[str, Any]] = []
+    for record in records:
+        repair = targets.get((record.source_id, record.page_number, record.document_sha256))
+        if repair is None:
+            kept.append(record)
+            continue
+        quarantined.append(
+            {
+                "source_id": record.source_id,
+                "page_number": record.page_number,
+                "document_sha256": record.document_sha256,
+                "review_status": repair["review_status"],
+                "reason": repair["reason"],
+            }
+        )
+    return kept, quarantined
+
+
 def validate_chunk_repair_provenance(
     chunks: Sequence[Any], repairs: Sequence[dict[str, Any]]
 ) -> None:

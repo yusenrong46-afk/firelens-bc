@@ -1398,7 +1398,11 @@ class RealCorpusRAGIntegrationTests(unittest.IsolatedAsyncioTestCase):
                 }
             )
             chunks, corpus_version = load_corpus_resources(config)
-            self.assertEqual(len(chunks), 170)
+            manifest = json.loads(config.corpus_manifest_path.read_text(encoding="utf-8"))
+            declared_chunk_count = manifest["combined_chunk_count"]
+            self.assertIsInstance(declared_chunk_count, int)
+            self.assertGreater(declared_chunk_count, 0)
+            self.assertEqual(len(chunks), declared_chunk_count)
             self.assertFalse(
                 any(
                     chunk.source_id == "firesmart_begins_at_home" and chunk.page_number == 10

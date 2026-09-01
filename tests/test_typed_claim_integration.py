@@ -7,10 +7,10 @@ from pathlib import Path
 import yaml
 
 from firelens.answering.claim_integration import (
-    build_integrated_inventory,
     production_claim_id,
+    validate_integrated_inventory_bindings,
 )
-from firelens.answering.typed_records import TypedClaimInventory, load_inventory
+from firelens.answering.typed_records import load_inventory
 from firelens.publication.records import clear_authority_caches, versioned_records
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,13 +19,15 @@ MANIFEST = ROOT / "docs/reports/V1_6_RC_INTEGRATION_MANIFEST.json"
 
 
 def test_checked_in_rc_inventory_is_reproducible_from_human_decisions() -> None:
-    payload, manifest = build_integrated_inventory(ROOT)
-    rendered = yaml.safe_dump(payload, sort_keys=False, allow_unicode=True)
-    manifest["integrated_inventory_sha256"] = sha256(rendered.encode("utf-8")).hexdigest()
-
-    assert INVENTORY.read_text(encoding="utf-8") == rendered
-    assert json.loads(MANIFEST.read_text(encoding="utf-8")) == manifest
-    inventory = TypedClaimInventory.model_validate(payload)
+    inventory = validate_integrated_inventory_bindings(ROOT)
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    assert manifest["integrated_inventory_sha256"] == sha256(INVENTORY.read_bytes()).hexdigest()
+    assert (
+        manifest["prepared_artifact_sha256"]
+        == sha256(
+            (ROOT / "data/typed_claims/prepared_candidates_v2.yaml").read_bytes()
+        ).hexdigest()
+    )
     assert len(inventory.records) == 26
     assert len({record.claim_id for record in inventory.records}) == 26
 

@@ -9,7 +9,11 @@ from typing import Any, Literal
 from firelens.answering.service import StaticRAGService
 from firelens.config import FireLensConfig
 from firelens.contracts import HealthResponse
-from firelens.corpus_admission import audit_corpus_admission, blocking_findings
+from firelens.corpus_admission import (
+    ADMISSION_POLICY_VERSION,
+    audit_corpus_admission,
+    blocking_findings,
+)
 from firelens.errors import CorpusValidationError, IndexValidationError
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.ingestion.pdf import IngestionError
@@ -214,8 +218,8 @@ def load_corpus_resources(
     _validate_governed_corpus_json(config.corpus_path)
     chunks = tuple(load_chunk_records(config.corpus_path))
     corpus_version = _validate_corpus_manifest(manifest, chunks)
-    _validate_corpus_repairs(config, chunks)
-    _validate_corpus_admission(chunks)
+    _validate_corpus_repairs(config, chunks, manifest)
+    _validate_corpus_admission(chunks, manifest)
     return chunks, corpus_version
 
 
@@ -252,10 +256,11 @@ def _validate_corpus_manifest(manifest: dict[str, Any], chunks: tuple[ChunkRecor
     included = [
         source
         for source in manifest.get("sources", [])
-        if source.get("corpus_action") == "include"
+        if source.get("corpus_action") in {"include", "include_quote_only"}
     ]
     if not included or any(
-        source.get("review_status") != "approved_static" for source in included
+        source.get("review_status") not in {"approved_static", "approved_quote_only"}
+        for source in included
     ):
         raise CorpusValidationError("Static corpus includes an unapproved source.")
     if manifest.get("included_source_count") != len(included):
@@ -265,21 +270,111 @@ def _validate_corpus_manifest(manifest: dict[str, Any], chunks: tuple[ChunkRecor
         raise CorpusValidationError("Static corpus contains an unapproved source.")
     if manifest.get("repair_provenance_policy") != "human_verified_only.v1":
         raise CorpusValidationError("Static corpus repair provenance policy is missing.")
+    admission_policy = manifest.get("admission_policy_version")
+    if admission_policy is not None and admission_policy != ADMISSION_POLICY_VERSION:
+        raise CorpusValidationError("Static corpus admission policy is unsupported.")
+    warnings = manifest.get("admission_warnings")
+    if warnings is not None and (
+        not isinstance(warnings, list) or any(not isinstance(item, dict) for item in warnings)
+    ):
+        raise CorpusValidationError("Static corpus admission warnings are malformed.")
+    warning_fields = {"source_id", "chunk_id", "code", "detail", "blocking"}
+    if any(
+        set(item) != warning_fields
+        or not isinstance(item["source_id"], str)
+        or not isinstance(item["code"], str)
+        or not isinstance(item["detail"], str)
+        or (item["chunk_id"] is not None and not isinstance(item["chunk_id"], str))
+        or item["blocking"] is not False
+        for item in (warnings or [])
+    ):
+        raise CorpusValidationError("Static corpus admission warnings are invalid.")
+    quarantined = manifest.get("quarantined_pages")
+    if quarantined is not None and (
+        not isinstance(quarantined, list)
+        or any(not isinstance(item, dict) for item in quarantined)
+    ):
+        raise CorpusValidationError("Static corpus quarantined-page records are malformed.")
+    quarantine_fields = {
+        "source_id",
+        "page_number",
+        "document_sha256",
+        "review_status",
+        "reason",
+    }
+    if any(
+        set(item) != quarantine_fields
+        or not isinstance(item["source_id"], str)
+        or isinstance(item["page_number"], bool)
+        or not isinstance(item["page_number"], int)
+        or not isinstance(item["document_sha256"], str)
+        or not isinstance(item["review_status"], str)
+        or not isinstance(item["reason"], str)
+        for item in (quarantined or [])
+    ):
+        raise CorpusValidationError("Static corpus quarantined-page records are invalid.")
     return corpus_version
 
 
-def _validate_corpus_repairs(config: FireLensConfig, chunks: tuple[ChunkRecord, ...]) -> None:
+def _validate_corpus_repairs(
+    config: FireLensConfig,
+    chunks: tuple[ChunkRecord, ...],
+    manifest: dict[str, Any],
+) -> None:
     try:
         path = config.project_root / "data/repairs/text_overrides.yaml"
         strict_yaml_load(path.read_text(encoding="utf-8"), context="text repair registry")
         repairs = load_text_repairs(path)
         validate_chunk_repair_provenance(chunks, repairs)
+        expected_quarantine = {
+            (
+                str(repair["source_id"]),
+                int(repair["page_number"]),
+                str(repair["document_sha256"]),
+                str(repair["review_status"]),
+                str(repair["reason"]),
+            )
+            for repair in repairs
+            if repair["review_status"] != "human_verified"
+        }
+        if len(expected_quarantine) != sum(
+            repair["review_status"] != "human_verified" for repair in repairs
+        ):
+            raise CorpusValidationError(
+                "Text repair registry has duplicate quarantine targets."
+            )
+        recorded_rows = manifest.get("quarantined_pages", [])
+        recorded_quarantine = {
+            (
+                str(item.get("source_id")),
+                item.get("page_number"),
+                str(item.get("document_sha256")),
+                str(item.get("review_status")),
+                str(item.get("reason")),
+            )
+            for item in recorded_rows
+        }
+        if len(recorded_quarantine) != len(recorded_rows):
+            raise CorpusValidationError("Static corpus has duplicate quarantined-page records.")
+        if recorded_quarantine != expected_quarantine:
+            raise CorpusValidationError(
+                "Static corpus quarantined-page records differ from the repair registry."
+            )
     except (IngestionError, OSError, UnicodeDecodeError, ValueError) as exc:
         raise CorpusValidationError(str(exc)) from exc
 
 
-def _validate_corpus_admission(chunks: tuple[ChunkRecord, ...]) -> None:
-    admission_findings = blocking_findings(audit_corpus_admission(chunks))
+def _validate_corpus_admission(
+    chunks: tuple[ChunkRecord, ...], manifest: dict[str, Any]
+) -> None:
+    all_findings = audit_corpus_admission(chunks)
+    expected_warnings = [finding.as_dict() for finding in all_findings if not finding.blocking]
+    actual_warnings = manifest.get("admission_warnings")
+    if actual_warnings is not None and actual_warnings != expected_warnings:
+        raise CorpusValidationError(
+            "Static corpus admission warnings differ from the admitted corpus."
+        )
+    admission_findings = blocking_findings(all_findings)
     if admission_findings:
         first = admission_findings[0]
         raise CorpusValidationError(

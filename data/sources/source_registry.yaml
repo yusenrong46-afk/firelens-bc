@@ -195,3 +195,41 @@ sources:
       - recognizing general symptoms
     known_limitations:
       - Must not generate diagnoses or individualized treatment.
+
+  - source_id: bc_emergency_alert
+    title: If you receive a BC Emergency Alert
+    publisher: Province of British Columbia
+    canonical_url: "https://www2.gov.bc.ca/gov/content/safety/public-safety/emergency-alerts/receive-emergency-alert"
+    source_type: html
+    temporal_class: stable_guidance
+    authority_class: provincial_government
+    review_status: approved_quote_only
+    corpus_action: include_quote_only
+    local_file: data/raw/bc_emergency_alert.html
+    expected_sha256: f3de45c1a251125360b9b2b9c192b7579ca1d53a46b136657a88cd420862ec1d
+    snapshot_policy: canonical_article_v1
+    required_exact_quote: "Do not call 911 unless you are trapped and unable to evacuate or are experiencing a medical or safety emergency."
+    source_reviewed_on: "2026-08-31"
+    intended_use:
+      - immediate-danger emergency alert contact wording
+    known_limitations:
+      - Exact official quote only; never a structured or model-authored safety claim.
+
+  - source_id: preparedbc_during_wildfire
+    title: Stay safe during a wildfire
+    publisher: PreparedBC
+    canonical_url: "https://www2.gov.bc.ca/gov/content/safety/emergency-management/preparedbc/know-your-hazards/wildfires/during-wildfire"
+    source_type: html
+    temporal_class: stable_guidance
+    authority_class: provincial_government
+    review_status: approved_quote_only
+    corpus_action: include_quote_only
+    local_file: data/raw/preparedbc_during_wildfire.html
+    expected_sha256: a44a95864b0121b6617003bf1929cd3a78019fa2aa4309c84bfb5100384fbf05
+    snapshot_policy: canonical_article_v1
+    required_exact_quote: "If there is a wildfire, the most important thing you can do is follow all Evacuation Alerts and Orders."
+    source_reviewed_on: "2026-08-31"
+    intended_use:
+      - immediate-danger wildfire official contact wording
+    known_limitations:
+      - Exact official quote only; never a structured or model-authored safety claim.

@@ -7,6 +7,11 @@ from time import perf_counter
 from uuid import uuid4
 
 from firelens.answering.adaptive_retrieval import refine_if_needed
+from firelens.answering.capability_execution import (
+    bind_quote_candidates,
+    bind_retrieval_bundle,
+    capability_query_plan,
+)
 from firelens.answering.context import (
     EvidenceIndex,
     build_evidence_packet,
@@ -81,6 +86,7 @@ from firelens.contracts import (
     SupportStatus,
 )
 from firelens.errors import ProviderError
+from firelens.guidance_capabilities import CapabilityBinding, resolve_capability
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.providers.base import AIProvider
 from firelens.publication.fallback import official_handoff_response
@@ -123,24 +129,40 @@ class StaticRAGService(StaticRAGSupport):
         *,
         planning: PlanningResponse | None,
         planning_ms: float,
+        capability: CapabilityBinding | None = None,
     ) -> tuple[RetrievalBundle, EvidencePacket]:
-        bundle = await self.retrieval.search(plan)
+        bundle = (
+            RetrievalBundle()
+            if capability is not None and capability.source_mode == "corpus"
+            else await self.retrieval.search(plan)
+        )
         if planning is not None:
             bundle.provider_usage["planning"] = planning.usage
             bundle.provider_attempts["planning"] = planning.attempts
             bundle.provider_models["planning"] = planning.model
         bundle.timings_ms["planning"] = planning_ms
+        packet_hits = tuple(bundle.reranked_hits)
+        coverage_hits = tuple(bundle.fused_hits)
+        if capability is not None and capability.source_mode == "corpus":
+            bundle, packet_hits = bind_retrieval_bundle(
+                bundle,
+                capability,
+                self.evidence_index.by_id,
+            )
+            coverage_hits = packet_hits
         request_queries = tuple(item.query for item in plan.retrieval_requests)
         packet = build_evidence_packet(
             plan.normalized_question,
-            bundle.reranked_hits,
+            packet_hits,
             self.chunks,
             corpus_version=self.corpus_version,
             config=self.config,
             evidence_index=self.evidence_index,
             selection_aspects=tuple(dict.fromkeys([*plan.required_aspects, *request_queries])),
-            coverage_hits=bundle.fused_hits,
+            coverage_hits=coverage_hits,
         )
+        if capability is not None and capability.source_mode == "corpus":
+            packet = bind_quote_candidates(packet, capability)
         if self.config.retrieval_strategy == "adaptive_v1":
             refined = await refine_if_needed(
                 plan=plan,
@@ -167,8 +189,23 @@ class StaticRAGService(StaticRAGSupport):
         plan = plan_query(request, allow_live=allow_live)
         planning: PlanningResponse | None = None
         packet: EvidencePacket | None = None
+        place_label = request.location.label if request.location is not None else None
+        capability = resolve_capability(request.question, place_label=place_label)
 
-        if plan.route == QueryRoute.RELATED and skips_provider_planning(request):
+        if (
+            plan.route == QueryRoute.RELATED
+            and capability is not None
+            and capability.source_mode == "corpus"
+        ):
+            plan = capability_query_plan(plan, capability)
+            bundle, packet = await self._retrieve_for_plan(
+                plan,
+                request,
+                planning=None,
+                planning_ms=0.0,
+                capability=capability,
+            )
+        elif plan.route == QueryRoute.RELATED and skips_provider_planning(request):
             resolved = resolved_user_question(request)
             if resolved != plan.normalized_question:
                 plan = plan.model_copy(update={"normalized_question": resolved})
@@ -415,6 +452,18 @@ class StaticRAGService(StaticRAGSupport):
         publication_packet = _with_support_limitations(
             execution.evidence_packet, search.support
         )
+        place_label = request.location.label if request.location is not None else None
+        capability = resolve_capability(request.question, place_label=place_label)
+        allowed_typed_claim_ids = (
+            capability.typed_claim_ids
+            if capability is not None and capability.source_mode == "corpus"
+            else None
+        )
+        allowed_quote_texts = (
+            capability.exact_quote_texts
+            if capability is not None and capability.source_mode == "corpus"
+            else None
+        )
 
         if route == QueryRoute.CAPABILITY:
             topics = ", ".join(topic for topic, _example in TOPIC_CATALOGUE)
@@ -482,7 +531,9 @@ class StaticRAGService(StaticRAGSupport):
         current_request = snapshot.freshness_live
         selected_live_request = uses_selected_live_binding(request)
         personalized_conditional_request = is_personalized_conditional_request(question)
-        explicit_corpus_request = self._explicit_corpus_request(question)
+        explicit_corpus_request = self._explicit_corpus_request(question) or bool(
+            capability is not None and capability.source_mode == "corpus"
+        )
         # Only an actual conflicting EvidencePacket may take precedence over
         # an ordinary Tier-C explanation.  ``SupportDecision`` is separately
         # testable and may be injected as CONFLICT without source conflicts;
@@ -528,6 +579,8 @@ class StaticRAGService(StaticRAGSupport):
                 publication_packet,
                 trace_id=trace_id,
                 supported_aspects=search.support.supported_aspects,
+                allowed_typed_claim_ids=allowed_typed_claim_ids,
+                allowed_quote_texts=allowed_quote_texts,
             )
             if compiled is not None:
                 return await self._record_ask(request, compiled, route=route.value)
@@ -571,6 +624,8 @@ class StaticRAGService(StaticRAGSupport):
                 trace_id=trace_id,
                 supported_aspects=search.support.supported_aspects,
                 force_partial=True,
+                allowed_typed_claim_ids=allowed_typed_claim_ids,
+                allowed_quote_texts=allowed_quote_texts,
             )
             if compiled is not None:
                 return await self._record_ask(request, compiled, route=route.value)
@@ -600,6 +655,8 @@ class StaticRAGService(StaticRAGSupport):
             trace_id=trace_id,
             force_partial=search.support.status == SupportStatus.PARTIAL,
             supported_aspects=search.support.supported_aspects,
+            allowed_typed_claim_ids=allowed_typed_claim_ids,
+            allowed_quote_texts=allowed_quote_texts,
         )
         return await self._record_ask(
             request,
