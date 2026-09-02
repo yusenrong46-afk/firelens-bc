@@ -1,0 +1,10 @@
+{
+  "status": "ready_observed_then_degraded_under_load",
+  "release_version": "1.6.4",
+  "build_commit": "2eb940d069b24b2afbe522a464c387a1a42b0d9a",
+  "deployment_id": "dpl_2u24P51ZWETX8QiRazGVFKgUeU2b",
+  "preview_url": "https://firelens-no9fstydl-yusenrong46-9212s-projects.vercel.app",
+  "generation_model": "openai/gpt-5.6-luna",
+  "retrieval_text_strategy": "metadata_context_v1",
+  "ready_path": "/api/v1/health/ready"
+}

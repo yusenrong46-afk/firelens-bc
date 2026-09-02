@@ -25,6 +25,10 @@ The product must keep answering this as a live province snapshot.
 The grader now allows official-live provenance when the capability is a live
 snapshot or the lane token set includes `varies`.
 
+If a mixed case keeps official-live provenance because the non-live clause is
+explicitly unavailable (`not established` / `unavailable`), that is not
+`provenance_misrepresents_source_lane`.
+
 ## A. Live numerical / entity-type checks
 
 If the question asks for evacuation count/distribution and the oracle has an
