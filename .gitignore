@@ -37,6 +37,10 @@ tmp/
 .vercel
 
 # Generated campaign outputs and parked prior-eval working copies
+evals/sameday_stabilization/results.jsonl
+evals/sameday_stabilization/raw/
+evals/sameday_stabilization/actual_answers.md
+evals/sameday_stabilization/preview_ready.json
 benchmarks/firelens200/results/
 evals/v1_6_4_exposure/raw/
 evals/v1_6_4_exposure/screenshots/

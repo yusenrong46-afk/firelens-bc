@@ -577,11 +577,15 @@ def _build_ask_response(
         )
     if live:
         freshness = aggregate_live_freshness(live)
+        live_text = _published_live_text(request, packet)
+        unestablished = _unestablished_static_limitations(packet)
+        if unestablished:
+            live_text = f"{live_text}\n\n{unestablished[0]}"
         return AskResponse(
             status=ResponseStatus.ANSWER,
             trace_id=uuid4().hex,
             response_mode=ResponseMode.LIVE,
-            answer=_published_live_text(request, packet),
+            answer=live_text,
             live_results=live,
             aggregate_freshness=freshness,
             selected_live_result_id=selected_live_result_id(request, live),
@@ -590,7 +594,7 @@ def _build_ask_response(
                 freshness,
                 [
                     "This uses official records and is not a safety assessment.",
-                    *_unestablished_static_limitations(packet),
+                    *unestablished,
                 ],
             ),
         )

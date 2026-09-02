@@ -6,6 +6,7 @@ import json
 import re
 from datetime import UTC, datetime
 from typing import Any
+from uuid import uuid4
 
 from firelens.agent.budget import tool_fingerprint
 from firelens.agent.packet import AgentPacket, live_record_fact
@@ -28,6 +29,7 @@ from firelens.answering.location_intent import (
 )
 from firelens.answering.static_guidance_subject import static_guidance_retrieval_query
 from firelens.contracts import (
+    BACKGROUND_LIMITATION,
     CoarseResolvedLocation,
     LiveResultKind,
     LocationInput,
@@ -178,11 +180,21 @@ async def execute_tool(
             history=request.history,
             context=request.context,
         )
-        response = await static_service.ask(
-            static_request,
-            allow_live=False,
-            prefer_reviewed_quotes=False,
-        )
+        background = getattr(static_service, "_background_answer", None)
+        if callable(background):
+            response = await background(
+                static_request,
+                trace_id=uuid4().hex,
+                route="related",
+                limitations=(BACKGROUND_LIMITATION,),
+                observer=None,
+            )
+        else:
+            response = await static_service.ask(
+                static_request,
+                allow_live=False,
+                prefer_reviewed_quotes=False,
+            )
         packet.static_response = response
         packet.tool_names.append(name)
         packet.policy.consume_grounded_generation()

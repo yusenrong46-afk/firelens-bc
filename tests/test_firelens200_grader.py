@@ -104,6 +104,33 @@ def test_mixed_silent_clause_drop_is_a_hard_fail() -> None:
     assert "silent_missing_clause" in fails
 
 
+def test_mixed_explicit_unavailable_clause_is_not_a_false_provenance_fail() -> None:
+    case = _case(
+        id="FL200-072",
+        oracle_type="mixed",
+        question="Which current incidents are largest, and does largest mean most dangerous?",
+        expected={
+            "capability": ["rank_incidents", "conceptual_boundary"],
+            "source_lane": "official_live+general_or_reviewed",
+        },
+    )
+    text = (
+        "Unnamed perimeter C40983 has the largest official size among fetched records. "
+        "The requested non-live clause was not established from reviewed FireLens evidence "
+        "and was not silently replaced."
+    )
+    body = {
+        "response_mode": "live",
+        "provenance_class": "official_live",
+        "live_results": [{"result_id": "perimeter:1"}],
+        "answer_sections": [],
+        "answer": text,
+    }
+    fails = hard_failures(case, body, text, {})
+    assert "provenance_misrepresents_source_lane" not in fails
+    assert "silent_missing_clause" not in fails
+
+
 def test_quote_only_expected_from_general_knowledge_fails() -> None:
     case = _case(
         id="FL200-135",

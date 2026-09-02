@@ -315,6 +315,7 @@ def hard_failures(
         )
         == 0
         and not looks_like_short_poem(text)
+        and not _CLAUSE_MARKERS["UNAVAILABLE"].search(text)
     ):
         fails.append("provenance_misrepresents_source_lane")
     if unavailable and _ZERO_SAFE.search(text) and (body.get("roster_total") in {0, None}):

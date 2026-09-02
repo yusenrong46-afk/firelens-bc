@@ -6,8 +6,10 @@ from datetime import UTC, datetime
 
 import pytest
 
+from firelens.agent.compose import compose_response
 from firelens.agent.fallback_brain import planned_static_subrequest
 from firelens.agent.live_selection import selected_live_result_id
+from firelens.agent.packet import AgentPacket
 from firelens.agent.query_plan import AgentRequestMode, plan_agent_request
 from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
@@ -25,6 +27,7 @@ from firelens.answering.live_evacuation import (
 from firelens.answering.live_handoffs import related_live_links
 from firelens.answering.live_request_intent import is_selected_record_followup
 from firelens.contracts import (
+    AskResponse,
     ConversationTurn,
     Freshness,
     LiveResult,
@@ -33,6 +36,9 @@ from firelens.contracts import (
     QueryRequest,
     QueryRoute,
     ReasonCode,
+    ResponseMode,
+    ResponseStatus,
+    ValidationReport,
 )
 from firelens.guidance_capabilities import resolve_capability
 
@@ -266,3 +272,36 @@ def test_tell_me_more_about_that_one_is_a_selected_record_followup() -> None:
         ),
     ]
     assert selected_live_result_id(request, live) == "incident:quilpituk"
+
+
+def test_unestablished_mixed_clause_stays_visible_in_the_live_answer() -> None:
+    question = "Which current incidents are largest, and does largest mean most dangerous?"
+    request = QueryRequest(question=question)
+    packet = AgentPacket(
+        live_results=[
+            _record(
+                result_id="incident:largest",
+                kind=LiveResultKind.INCIDENT,
+                name="Large Fire",
+                size_hectares=100.0,
+            )
+        ],
+        static_response=AskResponse(
+            status=ResponseStatus.ANSWER,
+            trace_id="a" * 32,
+            response_mode=ResponseMode.SCOPE_REDIRECT,
+            answer="No reviewed passage established that clause.",
+            limitations=["No reviewed passage established that clause."],
+            validation=ValidationReport(
+                accepted=False,
+                citation_ids_valid=True,
+                quotes_exact=True,
+                claim_support_valid=False,
+                policy_valid=True,
+            ),
+        ),
+        query_plan=plan_agent_request(request),
+    )
+    response = compose_response(request, packet, "Large Fire is the largest fetched record.")
+    assert "not established" in (response.answer or "").casefold()
+    assert "large fire" in (response.answer or "").casefold()
