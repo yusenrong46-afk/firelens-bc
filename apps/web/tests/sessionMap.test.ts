@@ -14,6 +14,7 @@ function result(id: string, kind: LiveResult["kind"] = "incident"): LiveResult {
     status: "Being Held",
     geometry: { type: "Point", coordinates: [-119, 49] },
     geometry_relation: "unknown",
+    fire_of_note: false,
   };
 }
 

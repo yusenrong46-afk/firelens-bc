@@ -38,6 +38,20 @@ test("the standalone Sites test rebuilds dist before inspecting it", () => {
   assert.match(packageJson.scripts["test:sites"], /^npm run build && /);
 });
 
+test("production build typechecks the OpenAPI frontend types before bundling", () => {
+  assert.equal(packageJson.scripts.typecheck, "tsc --noEmit");
+  assert.match(packageJson.scripts.build, /^npm run typecheck && /);
+});
+
+test("quote-only answers do not read a non-existent publication.source_title", async () => {
+  const answerBody = await readFile(
+    new URL("../src/features/ask/AnswerBody.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(answerBody, /publication\?\.source_title/);
+  assert.match(answerBody, /proof_cards\?\.\[0\]\?\.source_title/);
+});
+
 test("warnings, provenance, and fetch time stay visible in CSS", async () => {
   const css = await readFile(new URL("../src/app/styles.css", import.meta.url), "utf8");
   assert.doesNotMatch(css, /\.status-banner__retrieved\s*\{[^}]*display:\s*none/);

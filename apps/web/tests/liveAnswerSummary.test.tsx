@@ -7,6 +7,8 @@ const response: AskResponse = {
   status: "answer",
   response_mode: "live",
   trace_id: "live-summary",
+  presentation_shell: "analysis",
+  provenance_class: "official_live",
   live_results: [{
     result_id: "incident:one",
     kind: "incident",
@@ -19,6 +21,7 @@ const response: AskResponse = {
     name: "Example Fire",
     geometry_relation: "unknown",
     geometry: { type: "Point", coordinates: [-119.5, 49.9] },
+    fire_of_note: false,
   }],
   aggregate_freshness: "fresh",
 };

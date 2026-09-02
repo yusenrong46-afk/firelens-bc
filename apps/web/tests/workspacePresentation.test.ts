@@ -15,6 +15,8 @@ const spatialResponse = {
   claims: [],
   evidence: [],
   limitations: [],
+  presentation_shell: "chat" as const,
+  provenance_class: "official_live" as const,
   live_results: [{
     result_id: "incident:1",
     kind: "incident" as const,
@@ -26,6 +28,7 @@ const spatialResponse = {
     geometry_relation: "nearby" as const,
     status: "Being Held",
     geometry: { type: "Point" as const, coordinates: [-119.5, 49.9] },
+    fire_of_note: false,
   }],
 };
 

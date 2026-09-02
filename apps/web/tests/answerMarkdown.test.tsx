@@ -16,6 +16,8 @@ describe("answer Markdown", () => {
       claims: [],
       evidence: [],
       limitations: [],
+      presentation_shell: "chat",
+      provenance_class: "clarification",
     } as AskResponse;
 
     render(<AnswerBody response={response} assistantText="" />);
@@ -45,6 +47,8 @@ describe("answer Markdown", () => {
       claims: [],
       evidence: [],
       limitations: [],
+      presentation_shell: "chat",
+      provenance_class: "mixed",
     } as AskResponse;
 
     render(<AnswerBody response={response} assistantText="Fallback text that should not be repeated." />);
@@ -142,5 +146,42 @@ describe("answer Markdown", () => {
 
     expect(container).toHaveTextContent(text);
     expect(container.querySelector("p")).toHaveTextContent(text);
+  });
+
+  it("labels quote-only answers from evidence title, not publication.source_title", () => {
+    const response = {
+      status: "answer",
+      response_mode: "grounded",
+      trace_id: "trace-quote-source",
+      answer: "When to call 9-1-1.",
+      presentation_shell: "chat",
+      provenance_class: "reviewed_guidance",
+      claims: [{
+        claim_id: "c1",
+        text: "Call 9-1-1 if you are in immediate danger.",
+        evidence_status: "verified_corpus",
+        publication: {
+          kind: "official_quote_only",
+          renderer_id: "quote",
+          review_status: "reviewed",
+          support_provenance: "corpus",
+        },
+      }],
+      evidence: [{
+        evidence_id: "e1",
+        title: "PreparedBC emergency guide",
+        publisher: "PreparedBC",
+        canonical_url: "https://example.test/preparedbc",
+        locator: null,
+        temporal_class: "stable_guidance",
+        review_provenance: "native_text",
+        primary_text: "Call 9-1-1 if you are in immediate danger.",
+        context_text: "",
+      }],
+      limitations: [],
+    } as AskResponse;
+
+    render(<AnswerBody response={response} assistantText="" />);
+    expect(screen.getByText("Source: PreparedBC emergency guide")).toBeInTheDocument();
   });
 });

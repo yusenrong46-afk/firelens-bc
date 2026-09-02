@@ -20,6 +20,7 @@ function point(id: string, lat: number, lng: number, status = "Being Held"): Liv
     name: id,
     geometry_relation: "nearby",
     geometry: { type: "Point", coordinates: [lng, lat] },
+    fire_of_note: false,
   };
 }
 

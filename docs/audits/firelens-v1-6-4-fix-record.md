@@ -38,3 +38,4 @@ BCWS `BCWS_ActiveFires_Points` exposes `FIRE_OF_NOTE_IND` and `WAS_FIRE_OF_NOTE_
 | F164-022 | DEFERRED | stretch | CSV helper exists |
 | F164-023 | DEFERRED | stretch | Saved-scope helper exists |
 | F164-024 | DONE | employer-first header | Product-first header; evaluator copy in How-it-works |
+| F164-E-001 | DONE | `publication.source_title` + incomplete V1.6.4 fixtures | Quote-only source uses evidence/proof-card title; `tsc` fixtures include required identity fields |

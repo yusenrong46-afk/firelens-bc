@@ -13,6 +13,7 @@ const base: LiveResult = {
   status: "Out of Control",
   geometry_relation: "nearby",
   geometry: { type: "Point", coordinates: [-123.12, 49.28] },
+  fire_of_note: false,
 };
 
 describe("isRenderableGeometry", () => {

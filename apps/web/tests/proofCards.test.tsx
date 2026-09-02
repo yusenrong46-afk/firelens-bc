@@ -104,6 +104,7 @@ const record: LiveResult = {
   name: "Listed Fire",
   geometry_relation: "nearby",
   geometry: { type: "Point", coordinates: [-119.5, 49.89] },
+  fire_of_note: false,
 };
 
 afterEach(() => {

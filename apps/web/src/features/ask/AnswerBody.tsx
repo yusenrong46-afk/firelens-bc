@@ -149,7 +149,7 @@ function QuoteOnlyAnswer({
   const shown = [emergency, routine].filter((item): item is string => Boolean(item));
   const excerpts = (shown.length ? shown : quotes).slice(0, 2);
   const remainder = quotes.filter((item) => !excerpts.includes(item));
-  const source = response.evidence?.[0]?.title || response.claims?.[0]?.publication?.source_title;
+  const source = response.evidence?.[0]?.title || response.proof_cards?.[0]?.source_title;
   return (
     <div className="answer-lead answer-lead--source-quote quote-distinction">
       {emergency && routine && (

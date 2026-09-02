@@ -31,6 +31,7 @@ function incident(index: number, fireCentre = index % 2 ? "Coastal Fire Centre" 
     size_hectares: index + 1,
     distance_km: index + 0.5,
     geometry: { type: "Point", coordinates: [-119.5, 49.9] },
+    fire_of_note: false,
   };
 }
 

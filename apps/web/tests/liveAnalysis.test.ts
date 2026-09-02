@@ -28,6 +28,7 @@ function incident(overrides: {
     geometry: { type: "Point", coordinates: [-119.5, 49.9] },
     size_hectares: 10,
     distance_km: 5,
+    fire_of_note: false,
     ...overrides,
   };
 }
