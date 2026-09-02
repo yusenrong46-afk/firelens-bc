@@ -20,6 +20,8 @@ data/evaluation
 data/index/embedding_cache.jsonl
 docs
 tests
+benchmarks
+evals
 prototype/firelens-rag-ui/tests
 prototype/firelens-rag-ui/*.png
 prototype/firelens-rag-ui/design-qa.md
