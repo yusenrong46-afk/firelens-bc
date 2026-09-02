@@ -24,20 +24,10 @@ def skip_owned_model_write(query_plan: AgentQueryPlan, packet: AgentPacket) -> b
         packet.policy.route = "ready_live"
         return True
     if query_plan.mode == AgentRequestMode.MIXED:
-        static = packet.static_response
-        if packet.live_results and accepted_reviewed_publication(packet):
-            # The public mixed composer renders the official-record and reviewed
-            # sections from this packet. An outer model turn cannot affect that
-            # published result, so avoid paying for prose that is discarded.
+        # Mixed answers are application-composed: successful clauses stay
+        # labelled, and an unestablished clause is named instead of dropped.
+        if packet.live_results:
             packet.policy.route = "ready_mixed"
-            return True
-        if packet.live_results and (
-            static is None or static.validation is None or not static.validation.accepted
-        ):
-            # A rejected reviewed clause must not trigger an ungrounded outer
-            # write. Keep the fetched official records and the visible
-            # non-live-clause limitation, but deterministically publish live.
-            packet.policy.route = "ready_live"
             return True
         return False
     skip = bool(packet.live_results and packet.static_response is None) or (

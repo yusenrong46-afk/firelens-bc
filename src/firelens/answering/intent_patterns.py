@@ -19,6 +19,10 @@ _PROHIBITED_PATTERNS = (
     r"\bwhether\s+(?:my|our)\s+.{0,40}\bsafe\b",
     r"\btell me\s+whether\s+to\s+evacuate\b",
     r"\bshould\s+(?:my|our)\s+family\s+(?:stay|leave|evacuate|return)\b",
+    r"\bshould\s+(?:my|our)\s+(?:elderly\s+)?"
+    r"(?:parents?|mom|dad|mother|father|child|children|kids|"
+    r"partner|spouse|friends?|relatives?)\s+"
+    r"(?:stay|leave|evacuate|return)\b",
     r"\b(?:can|could|may)\s+(?:i|we)\s+(?:return|go back)\s+home\b",
     r"\bis it okay to\s+(?:return|stay|leave|go back|evacuate|drive)\b",
     r"\bokay to return home\b",

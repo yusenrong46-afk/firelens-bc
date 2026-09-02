@@ -6,6 +6,7 @@ import re
 from collections.abc import Sequence
 
 from firelens.answering.intent import continues_prior_live_place
+from firelens.answering.intent_conversation import is_selected_record_followup
 from firelens.answering.live_analysis import official_display_name
 from firelens.answering.live_named_fire import requested_fire_identity
 from firelens.answering.location_intent import coarse_location_from_question
@@ -262,6 +263,7 @@ def is_selected_live_request(request: QueryRequest) -> bool:
             or _SELECTED_CLOSEST_RATIONALE.search(request.question)
             or _SELECTED_UNKNOWN.search(request.question)
             or _SELECTED_REFORMAT.match(request.question)
+            or is_selected_record_followup(request.question)
         )
     )
 

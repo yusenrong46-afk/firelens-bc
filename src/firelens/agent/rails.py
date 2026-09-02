@@ -20,6 +20,7 @@ _ALLOWED_TOOLS = {
     AgentTool.GET_OFFICIAL_FIRE.value,
     AgentTool.LIST_OFFICIAL_EVACUATIONS.value,
     AgentTool.SEARCH_REVIEWED_GUIDANCE.value,
+    AgentTool.ANSWER_GENERAL_BACKGROUND.value,
 }
 _FIRE_NAME = re.compile(
     r"\b([A-Z][A-Za-z0-9'’-]{2,}(?:\s+[A-Z][A-Za-z0-9'’-]{2,}){0,4})\s+"

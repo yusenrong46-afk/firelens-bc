@@ -251,10 +251,17 @@ def advertised_guided_questions(root: str | None = None) -> tuple[GuidedQuestion
     )
 
 
-_FIRE_CONTEXT = re.compile(r"\b(?:wildfire|wild fire|fire)\b", re.IGNORECASE)
+_FIRE_CONTEXT = re.compile(r"\b(?:wildfire|wild fire|fire|flames?)\b", re.IGNORECASE)
 _IMMEDIATE_EMERGENCY_CONDITION = re.compile(
     r"\b(?:immediate\s+danger|trapped|(?:unable\s+to|cannot|can't)\s+evacuate|"
     r"medical\s+emergency|safety\s+emergency)\b",
+    re.IGNORECASE,
+)
+_STRUCTURE_FIRE_EMERGENCY = re.compile(
+    r"\b(?:flames?|fire|wildfire)\b.{0,48}\b(?:near|at|by|beside|against)\b.{0,32}"
+    r"\b(?:houses?|homes?|buildings?|structures?)\b|"
+    r"\b(?:houses?|homes?|buildings?|structures?)\b.{0,40}"
+    r"\b(?:on fire|burning|in flames)\b",
     re.IGNORECASE,
 )
 _CONTACT_ACTION = re.compile(
@@ -297,10 +304,9 @@ def resolve_capability(
         }
         if normalized in accepted:
             return binding
-    if (
-        _FIRE_CONTEXT.search(question)
-        and _IMMEDIATE_EMERGENCY_CONDITION.search(question)
-        and _CONTACT_ACTION.search(question)
+    if _CONTACT_ACTION.search(question) and (
+        (_FIRE_CONTEXT.search(question) and _IMMEDIATE_EMERGENCY_CONDITION.search(question))
+        or _STRUCTURE_FIRE_EMERGENCY.search(question)
     ):
         return capabilities.get("immediate_danger_contact")
     return None

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
-from firelens.agent.fallback_brain import planned_static_subrequest
+from firelens.agent.fallback_brain import planned_static_subrequest, planned_static_tool
 from firelens.agent.query_plan_boundaries import (
     absence_all_clear_boundary as _absence_all_clear_boundary,
 )
@@ -48,6 +48,7 @@ from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
     continues_prior_live_place,
     conversation_planning_question,
+    has_independent_supported_live_clause,
     live_layers_for_question,
     live_query_requires_location,
     plan_query,
@@ -56,6 +57,7 @@ from firelens.answering.intent import (
     unsupported_live_topics,
 )
 from firelens.answering.intent_automaton import parse_request_intent
+from firelens.answering.intent_conversation import is_selected_record_followup
 from firelens.answering.intent_patterns import is_unresolved_smoke_observation
 from firelens.answering.intent_refresh import is_live_refresh_request
 from firelens.answering.intent_safety import is_empty_map_safety_inference
@@ -245,6 +247,11 @@ def _call(name: AgentTool, **arguments: str) -> PlannedToolCall:
     return PlannedToolCall(name=name, arguments=tuple(sorted(arguments.items())))
 
 
+def _static_call(question: str, static_query: str) -> PlannedToolCall:
+    tool = planned_static_tool(question) or AgentTool.SEARCH_REVIEWED_GUIDANCE
+    return _call(tool, query=static_query)
+
+
 def _visible_ordinal_result_id(request: QueryRequest) -> str | None:
     match = _VISIBLE_ORDINAL.search(request.question)
     if match is None:
@@ -377,6 +384,38 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             static_subrequest=None,
             tool_calls=(_call(AgentTool.GET_OFFICIAL_FIRE, result_id=selected),),
         )
+    if selected is None and is_selected_record_followup(request.question):
+        prior = prior_anchor_user_question(request)
+        prior_layers = live_layers_for_question(prior) if prior else ()
+        prior_location = coarse_location_from_question(prior) if prior else None
+        if prior_layers:
+            geography = (
+                AgentGeography.LOCATION_RADIUS
+                if prior_location is not None
+                and prior_location.label is not None
+                and not is_province_wide_label(prior_location.label)
+                else AgentGeography.PROVINCE_WIDE
+            )
+            location_label = (
+                prior_location.label
+                if prior_location is not None and geography == AgentGeography.LOCATION_RADIUS
+                else None
+            )
+            return AgentQueryPlan(
+                route=QueryRoute.LIVE,
+                mode=AgentRequestMode.LIVE,
+                live_layers=prior_layers,
+                geography=geography,
+                location_label=location_label,
+                static_subrequest=None,
+                tool_calls=tuple(
+                    _live_calls(
+                        prior_layers,
+                        geography=geography,
+                        location_label=location_label,
+                    )
+                ),
+            )
 
     if _UNBOUND_RECORD_REFERENCE.search(question):
         if selected is not None:
@@ -432,8 +471,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     ):
         layers = (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER)
     parsed_intent = parse_request_intent(planning_question)
-    supported_live_clause = parsed_intent.has_live_records
-    if topics and not supported_live_clause:
+    if topics and not has_independent_supported_live_clause(planning_question):
         layers = ()
     static_query = planned_static_subrequest(planning_question)
     multi_place_comparison = is_multi_place_fire_comparison(request.question)
@@ -530,7 +568,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
                 geography=AgentGeography.NONE,
                 location_label=None,
                 static_subrequest=static_query,
-                tool_calls=(_call(AgentTool.SEARCH_REVIEWED_GUIDANCE, query=static_query),),
+                tool_calls=(_static_call(planning_question, static_query),),
                 scope_result=AgentScopeResult.SCOPE_REDIRECT,
             )
         if public_plan.route == QueryRoute.LIVE or topics:
@@ -555,7 +593,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             location_label=None,
             static_subrequest=static_query,
             tool_calls=(
-                (_call(AgentTool.SEARCH_REVIEWED_GUIDANCE, query=static_query),)
+                (_static_call(planning_question, static_query),)
                 if static_query is not None
                 else ()
             ),
@@ -590,7 +628,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     calls = _live_calls(layers, geography=geography, location_label=location_label)
     mode = AgentRequestMode.MIXED if static_query else AgentRequestMode.LIVE
     if static_query:
-        calls.append(_call(AgentTool.SEARCH_REVIEWED_GUIDANCE, query=static_query))
+        calls.append(_static_call(planning_question, static_query))
     return AgentQueryPlan(
         route=QueryRoute.LIVE,
         mode=mode,

@@ -12,6 +12,7 @@ from firelens.agent.live_selection import (
 )
 from firelens.agent.packet import AgentPacket
 from firelens.answering.intent import live_layers_for_question
+from firelens.answering.intent_conversation import is_selected_record_followup
 from firelens.answering.intent_safety import is_empty_map_safety_inference
 from firelens.answering.limitation_policy import select_public_limitations
 from firelens.answering.live_analysis import (
@@ -128,12 +129,30 @@ def quoted_guidance_response(request: QueryRequest, packet: AgentPacket) -> AskR
     return compose_response(request, packet, answer)
 
 
+def request_with_selected(request: QueryRequest, packet: AgentPacket) -> QueryRequest:
+    if request.context.selected_live_result_id:
+        return request
+    if not is_selected_record_followup(request.question):
+        return request
+    bound = selected_live_result_id(request, packet.live_results)
+    if not bound:
+        return request
+    return request.model_copy(
+        update={
+            "context": request.context.model_copy(update={"selected_live_result_id": bound})
+        }
+    )
+
+
 def compose_response(
     request: QueryRequest,
     packet: AgentPacket,
     answer: str,
 ) -> AskResponse:
-    return _with_packet_fields(request, packet, _build_ask_response(request, packet, answer))
+    bound_request = request_with_selected(request, packet)
+    return _with_packet_fields(
+        bound_request, packet, _build_ask_response(bound_request, packet, answer)
+    )
 
 
 def _with_packet_fields(
@@ -428,7 +447,7 @@ def _build_ask_response(
         live
         and static is not None
         and static.response_mode == ResponseMode.BACKGROUND
-        and static.claims
+        and (static.claims or static.answer)
         and not static.evidence
         and static.validation is not None
         and static.validation.accepted
@@ -439,7 +458,9 @@ def _build_ask_response(
             packet,
             static_answer=None,
         )
-        background_text = render_claim_texts(static.claims)
+        background_text = (
+            render_claim_texts(static.claims) if static.claims else (static.answer or "")
+        )
         return AskResponse(
             status=ResponseStatus.ANSWER,
             trace_id=static.trace_id,

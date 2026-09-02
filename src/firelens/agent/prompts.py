@@ -119,4 +119,24 @@ OPENROUTER_TOOLS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "answer_general_background",
+            "description": (
+                "Answer a non-live clause from labelled general knowledge when it is "
+                "not reviewed preparedness guidance."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Standalone non-live clause",
+                    }
+                },
+                "additionalProperties": False,
+            },
+        },
+    },
 ]

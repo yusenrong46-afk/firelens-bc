@@ -364,7 +364,7 @@ def official_analysis_answer(
     if is_fire_geography_analysis(request.question):
         return geography_answer(request.question, records)
     if _COUNT.search(request.question):
-        return _count(records, roster_total)
+        return _count(records, roster_total, request.question)
     if static_answer and (
         ("alert" in lowered and "order" in lowered)
         or "grab-and-go" in lowered
@@ -627,10 +627,19 @@ def _most_fire_centre(records: Sequence[LiveResult]) -> str:
     )
 
 
-def _count(records: Sequence[LiveResult], roster_total: int | None) -> str:
+def _count(records: Sequence[LiveResult], roster_total: int | None, question: str = "") -> str:
     incident_count = sum(item.kind == LiveResultKind.INCIDENT for item in records)
     perimeter_count = sum(item.kind == LiveResultKind.PERIMETER for item in records)
+    evacuation_count = sum(item.kind == LiveResultKind.EVACUATION for item in records)
     shown = len(records)
+    lowered = question.casefold()
+    if is_evacuation_record_question(question) or re.search(
+        r"\bevacuation\s+records?\b", lowered
+    ):
+        return (
+            f"Official layers return {evacuation_count} evacuation records. "
+            "This is a record count, not a safety determination."
+        )
     if roster_total is not None and roster_total > shown:
         return (
             f"This bounded official response shows {shown} of {roster_total} "

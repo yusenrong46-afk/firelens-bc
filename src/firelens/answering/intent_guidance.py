@@ -39,7 +39,13 @@ def is_evac_definition(tokens: tuple[str, ...]) -> bool:
 
 
 def _is_control_stage_definition(tokens: tuple[str, ...]) -> bool:
-    if not (frozenset(tokens) & lex.DEFINITION_WORDS):
+    token_set = frozenset(tokens)
+    asks_definition = bool(
+        token_set & lex.DEFINITION_WORDS
+        or token_set & {"explain", "define", "describe", "describes"}
+        or lex.has_phrase(tokens, ("what", "is"))
+    )
+    if not asks_definition:
         return False
     return bool(
         lex.has_phrase(tokens, ("being", "held"))

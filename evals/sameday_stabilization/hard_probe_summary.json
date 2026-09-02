@@ -1,0 +1,27 @@
+{
+  "profile": "rc2.2",
+  "mode": "offline",
+  "executed": 105,
+  "passed": 91,
+  "failed": 14,
+  "minimum_passed": 86,
+  "minimum_passed_met": true,
+  "cost_usd": 0.0,
+  "failed_ids": [
+    "F06",
+    "F07",
+    "F09",
+    "F10",
+    "H01",
+    "H02",
+    "H03",
+    "I04",
+    "I08",
+    "K03",
+    "K09",
+    "L01",
+    "L02",
+    "L05"
+  ],
+  "paired_regressions_vs_v1_6_4_exposure": []
+}

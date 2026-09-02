@@ -13,11 +13,20 @@ _EVACUATION_RECORD_QUERY = re.compile(
     r"\b(?:is|are)\b.{0,100}\bunder\b.{0,100}\b(?:order|alert|evacuat)|"
     r"\b(?:is|are)\s+there\b.{0,100}\b(?:evacuation\s+)?(?:alerts?|orders?)\b|"
     r"\b(?:show|list|find)\b.{0,100}\b(?:evacuation|evac)\b|"
+    r"\b(?:how\s+many|count|number\s+of|break(?:\s+|-)?down|by\s+type)\b.{0,80}"
+    r"\bevacuation\s+records?\b|"
+    r"\bevacuation\s+records?\b.{0,80}"
+    r"\b(?:how\s+many|count|returned|current|by\s+type|break(?:\s+|-)?down)\b|"
     r"\b(?:evacuation|evac)\s+(?:alerts?|orders?)\b.{0,120}"
     r"\b(?:active|current|near|nearby|around|within|across|throughout|"
     r"right\s+now|today|tonight|in\s+effect)\b",
     re.IGNORECASE,
 )
+_TYPE_BREAKDOWN = re.compile(
+    r"\b(?:by\s+type|break(?:\s+|-)?down|grouped|distribution)\b",
+    re.IGNORECASE,
+)
+_RETURNED_SNAPSHOT = re.compile(r"\b(?:returned|current)\b", re.IGNORECASE)
 _PROVINCE_SCOPE = re.compile(
     r"\b(?:across|throughout|all\s+of|in)\s+"
     r"(?:bc|b\.c\.?|british\s+columbia|the\s+province)(?=\W|$)|"
@@ -60,7 +69,49 @@ def evacuation_answer(
         if item.kind == LiveResultKind.EVACUATION
         and (not statuses or item.status.casefold() in statuses)
     ]
-    province_wide = bool(_PROVINCE_SCOPE.search(request.question))
+    province_wide = bool(_PROVINCE_SCOPE.search(request.question)) or (
+        location is None and bool(_RETURNED_SNAPSHOT.search(request.question))
+    )
+    if _TYPE_BREAKDOWN.search(request.question):
+        type_counts = Counter(
+            (item.status or "unknown").strip() or "unknown"
+            for item in (
+                [
+                    item
+                    for item in records
+                    if item.kind == LiveResultKind.EVACUATION
+                    and (not statuses or item.status.casefold() in statuses)
+                ]
+                if province_wide
+                else [
+                    item
+                    for item in records
+                    if item.kind == LiveResultKind.EVACUATION
+                    and (not statuses or item.status.casefold() in statuses)
+                    and (
+                        item.geometry_relation
+                        in {GeometryRelation.INSIDE, GeometryRelation.NEARBY}
+                        or (
+                            item.distance_km is not None
+                            and item.distance_km <= nearby_radius_km
+                        )
+                    )
+                ]
+            )
+        )
+        if not type_counts:
+            return (
+                "No fetched official fire-related evacuation records were available "
+                "to group by type. That is not an all-clear."
+            )
+        grouped = "; ".join(
+            f"{status}: {count}" for status, count in sorted(type_counts.items())
+        )
+        return (
+            f"Returned official evacuation records by type: {grouped}. "
+            f"Total: {sum(type_counts.values())} official evacuation records. "
+            "This is not a stay-or-leave instruction."
+        )
     if not province_wide:
         candidates = [
             item

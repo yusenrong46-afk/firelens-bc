@@ -171,6 +171,29 @@ async def execute_tool(
                 "claim_count": len(response.claims),
             }
         )
+    if name == AgentTool.ANSWER_GENERAL_BACKGROUND.value:
+        query = str(arguments.get("query") or request.question)
+        static_request = QueryRequest(
+            question=query,
+            history=request.history,
+            context=request.context,
+        )
+        response = await static_service.ask(
+            static_request,
+            allow_live=False,
+            prefer_reviewed_quotes=False,
+        )
+        packet.static_response = response
+        packet.tool_names.append(name)
+        packet.policy.consume_grounded_generation()
+        return json.dumps(
+            {
+                "status": response.status.value,
+                "response_mode": response.response_mode.value,
+                "answer": response.answer,
+                "claim_count": len(response.claims),
+            }
+        )
     raise ToolInputError()
 
 

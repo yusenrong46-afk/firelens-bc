@@ -35,5 +35,15 @@ output/*
 !output/.gitkeep
 tmp/
 .vercel
+
+# Generated campaign outputs and parked prior-eval working copies
+benchmarks/firelens200/results/
+evals/v1_6_4_exposure/raw/
+evals/v1_6_4_exposure/screenshots/
+evals/v1_6_4_exposure/*.md
+evals/v1_6_4_exposure/results.jsonl
+evals/v1_6_4_exposure/scorecard.json
+evals/v1_6_4_exposure/scorecard.md
+docs/releases/v1.6.4-exposure-verdict.md
 .env*
 config/runtime_candidate.v1.json

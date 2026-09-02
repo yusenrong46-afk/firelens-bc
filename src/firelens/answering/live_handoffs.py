@@ -55,6 +55,31 @@ _RELATED_LIVE_LINKS = {
         url=HttpUrl("https://wildfiresituation.nrs.gov.bc.ca/"),
         description="Official wildfire situation, incidents, notices, and response information.",
     ),
+    "reception centre": RelatedLink(
+        title="EmergencyInfoBC",
+        url=HttpUrl("https://www.emergencyinfobc.gov.bc.ca/"),
+        description=(
+            "Official provincial emergency information, including local-authority "
+            "reception-centre notices."
+        ),
+    ),
+    "utility outage": RelatedLink(
+        title="BC Hydro outages",
+        url=HttpUrl("https://www.bchydro.com/power-outages.html"),
+        description="Official current power-outage information from the utility.",
+    ),
+    "park closure": RelatedLink(
+        title="BC Parks",
+        url=HttpUrl("https://bcparks.ca/"),
+        description="Official park status, advisories, and closures.",
+    ),
+    "insurance boundary": RelatedLink(
+        title="Insurance Bureau of Canada",
+        url=HttpUrl("https://www.ibc.ca/"),
+        description=(
+            "General insurer and policy-holder information. FireLens does not determine coverage."
+        ),
+    ),
 }
 
 

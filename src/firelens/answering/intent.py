@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 
+from firelens.answering import intent_lexicon as lex
 from firelens.answering.capability_intent import is_capability_question
 from firelens.answering.intent_automaton import (
     RecordOperation,
@@ -43,6 +44,8 @@ from firelens.answering.intent_safety import (
     is_empty_map_safety_inference,
     trust_explanation_limitations,
 )
+from firelens.answering.live_analysis_distance import is_freshness_question
+from firelens.answering.live_evacuation import is_evacuation_record_question
 from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.location_intent import (
     asks_for_personal_location,
@@ -172,6 +175,7 @@ _UNSUPPORTED_LIVE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
         "weather or smoke forecast",
         re.compile(
             rf"\bwhat\s+will\s+(?:the\s+)?(?:wind|weather|smoke)\b|"
+            r"\blive\s+weather\b|"
             rf"\b(?:wind|weather|smoke)\b.{{0,60}}"
             rf"\b(?:forecast|speed|direction|{_CURRENT_CUE_TEXT})\b|"
             rf"\b(?:forecast|{_CURRENT_CUE_TEXT})\b.{{0,60}}"
@@ -188,6 +192,37 @@ _UNSUPPORTED_LIVE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
             rf"\b{_CURRENT_CUE_TEXT}\b|"
             rf"\b{_CURRENT_CUE_TEXT}\b.{{0,60}}"
             r"\b(?:firefighting\s+)?(?:aircraft|airtankers?|air tankers?|helicopters?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "reception centre",
+        re.compile(r"\breception\s+cent(?:re|er)s?\b", re.IGNORECASE),
+    ),
+    (
+        "utility outage",
+        re.compile(
+            r"\b(?:power|electricity|hydro)\s+(?:out|outage|outages)\b|"
+            r"\bpower\s+out\b|"
+            r"\boutage\b.{0,40}\b(?:power|electricity|hydro|utility)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "park closure",
+        re.compile(
+            r"\b(?:provincial\s+)?parks?\b.{0,48}\b(?:closed|closure|closures)\b|"
+            r"\b(?:closed|closure|closures)\b.{0,48}\b(?:provincial\s+)?parks?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "insurance boundary",
+        re.compile(
+            r"\binsurance\s+claim\b|"
+            r"\b(?:make|file)\s+an?\s+insurance\b|"
+            r"\binsurance\b.{0,48}\b(?:claim|coverage|covered|policy)\b|"
+            r"\b(?:claim|coverage|covered)\b.{0,48}\binsurance\b",
             re.IGNORECASE,
         ),
     ),
@@ -319,7 +354,30 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
                 LiveResultKind.EVACUATION,
             )
         )
+    if (
+        is_evacuation_record_question(question)
+        and LiveResultKind.EVACUATION not in layers
+        and not parsed.has_reviewed_guidance
+    ):
+        layers.append(LiveResultKind.EVACUATION)
+    if is_freshness_question(question):
+        tokens = frozenset(lex.tokenize(question))
+        if tokens & lex.FIRE_WORDS and LiveResultKind.INCIDENT not in layers:
+            layers.append(LiveResultKind.INCIDENT)
+        if tokens & lex.EVACUATION_WORDS and LiveResultKind.EVACUATION not in layers:
+            layers.append(LiveResultKind.EVACUATION)
+        if not layers:
+            layers.extend((LiveResultKind.INCIDENT, LiveResultKind.EVACUATION))
     return tuple(dict.fromkeys(layers))
+
+
+def has_independent_supported_live_clause(question: str) -> bool:
+    """Keep live fetch only when a clause asks for owned records, not a handoff domain."""
+
+    return any(
+        clause.is_live and not unsupported_live_topics(clause.text)
+        for clause in parse_request_intent(question).clauses
+    )
 
 
 def unsupported_live_topics(question: str) -> tuple[str, ...]:

@@ -45,7 +45,7 @@ _NAMED_INDIVIDUAL_FIRE = re.compile(
 )
 _DEICTIC_FOLLOWUP = re.compile(
     r"\b(?:it|its|this|they|them|there|those|these|"
-    r"which one|"
+    r"which one|that one|this one|tell me more|"
     r"the (?:first|second|third|other|closest|nearest) one|"
     r"that (?:guidance|system|advice|status)|right now|what about)\b"
 )
@@ -61,6 +61,22 @@ _TRUE_THAT_DEIXIS = re.compile(
 _SELECTED_FIRE_DEIXIS = re.compile(
     r"\b(?:this|that|selected)\s+(?:fire|wildfire|incident|record)\b", re.I
 )
+_SELECTED_RECORD_FOLLOWUP = re.compile(
+    r"^\s*(?:"
+    r"tell\s+me\s+more\s+about\s+(?:that|this|it)(?:\s+one)?|"
+    r"more\s+about\s+(?:that|this)(?:\s+one)?|"
+    r"what\s+about\s+(?:that|this)\s+one|"
+    r"(?:and\s+)?that\s+one"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def is_selected_record_followup(question: str) -> bool:
+    """Recognize a deictic request for the already-resolved live record."""
+
+    current = focused_question(question).strip()
+    return bool(_SELECTED_RECORD_FOLLOWUP.search(current))
 
 
 def focused_question(question: str) -> str:
@@ -118,7 +134,7 @@ def conversation_planning_question(request: QueryRequest) -> str:
     """Attach prior context unless the turn explicitly names a selected fire."""
 
     current = focused_question(request.question)
-    if _SELECTED_FIRE_DEIXIS.search(current):
+    if _SELECTED_FIRE_DEIXIS.search(current) or is_selected_record_followup(current):
         return current
     return resolved_user_question(request)
 

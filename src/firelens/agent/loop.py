@@ -12,6 +12,7 @@ from firelens.agent.compose import (
     handoff_answer,
     no_substitute_response,
     quoted_guidance_response,
+    request_with_selected,
     safety_response,
 )
 from firelens.agent.failures import EXPECTED_TOOL_FAILURES, record_expected_failure
@@ -131,6 +132,7 @@ async def run_agent_loop(
             packet,
         )
     await prefetch_evidence(request, live_coordinator, static_service, packet, query_plan)
+    request = request_with_selected(request, packet)
     skip_provider = skip_owned_model_write(query_plan, packet)
     if provider is None or skip_provider:
         answer = await _offline_loop(request, live_coordinator, static_service, packet)

@@ -85,6 +85,7 @@ RECORD_COMMANDS = frozenset(
 RECORD_NOUNS = frozenset(
     {
         "activity",
+        "briefing",
         "count",
         "counts",
         "details",
@@ -238,7 +239,6 @@ PLACE_STOPWORDS = frozenset(
         "untrusted",
     }
 )
-# Colon-fronted prompt labels ("Harder:", "Please:") are discourse, not geography.
 DISCOURSE_PREFIX_WORDS = frozenset(
     {
         "actually",
@@ -362,15 +362,11 @@ GOVERNED_GUIDANCE_TOPICS = frozenset(
     }
 )
 GUIDANCE_ACTIONS = frozenset({"pack", "prepare", "protect", "reduce"})
-# Commands that can keep a live ask alive inside a mixed guidance clause.
-# Excludes noun-like "list"/"find" so packing lists and "where can I find
-# guidance" stay reviewed rather than live records.
+# Live-record commands inside mixed guidance; excludes noun-like list/find.
 LIVE_RECORD_ASK_COMMANDS = frozenset(
     {"check", "display", "fetch", "get", "map", "pull", "show"}
 )
-# Household-prep tokens that authorize static prefetch without claiming a
-# reviewed-guidance clause. Downstream must project this set; it is not a
-# second request grammar.
+# Household-prep tokens for static prefetch; not a second request grammar.
 PREFETCH_GUIDANCE_TOKENS = (
     GUIDANCE_ACTIONS
     | STRONG_GUIDANCE_TOPICS
@@ -406,6 +402,8 @@ REQUEST_STARTERS = frozenset(
         "when",
         "where",
         "which",
+        "why",
+        "write",
     }
 )
 

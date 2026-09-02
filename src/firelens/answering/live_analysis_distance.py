@@ -29,8 +29,9 @@ _THREE_FACT_CLOSEST = re.compile(
     re.IGNORECASE,
 )
 _FRESHNESS_ASK = re.compile(
-    r"\b(?:when\b.{0,100}\b(?:updated|retrieved)|last\s+updated|"
-    r"source\s+update|retrieval\s+time)\b",
+    r"\b(?:when\b.{0,100}\b(?:updated|retrieved|checked)|last\s+(?:updated|checked)|"
+    r"source\s+update|retrieval\s+time|sources?\s+last\s+checked|"
+    r"fresh(?:ness)?)\b",
     re.IGNORECASE,
 )
 _EVACUATION_ASK = re.compile(r"\bevacuation\b", re.IGNORECASE)

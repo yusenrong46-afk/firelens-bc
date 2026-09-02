@@ -14,6 +14,7 @@ from firelens.answering.intent import (
     unsupported_live_topics,
 )
 from firelens.answering.intent_automaton import parse_request_intent
+from firelens.answering.intent_refresh import is_live_refresh_request
 from firelens.answering.intent_safety import is_empty_map_safety_inference
 from firelens.answering.live_analysis import compose_official_answer
 from firelens.answering.live_request_intent import is_selected_live_request
@@ -49,14 +50,38 @@ def planned_static_subrequest(question: str) -> str | None:
     parsed = parse_request_intent(question)
     layers = live_layers_for_question(question)
     if layers or parsed.has_live_records:
-        if parsed.has_reviewed_guidance or parsed.has_prefetchable_guidance:
-            return parsed.reviewed_guidance_text or parsed.static_subrequest_text
-        return None
+        if is_live_refresh_request(question) and not parsed.has_reviewed_guidance:
+            return None
+        static_text = parsed.reviewed_guidance_text or parsed.static_subrequest_text
+        if static_text is None:
+            return None
+        if len(parsed.clauses) == 1 and not parsed.has_reviewed_guidance:
+            return None
+        return static_text
     if unsupported_live_topics(question):
         return parsed.reviewed_guidance_text
     if should_prefetch_reviewed_guidance(question):
         return question
     return None
+
+
+def planned_static_tool(question: str) -> AgentTool | None:
+    """Choose reviewed retrieval or labelled general background for a static clause."""
+
+    static_query = planned_static_subrequest(question)
+    if static_query is None:
+        return None
+    parsed_static = parse_request_intent(static_query)
+    parsed_full = parse_request_intent(question)
+    if (
+        parsed_static.has_reviewed_guidance
+        or reviewed_guidance_intent(static_query)
+        or parsed_full.has_reviewed_guidance
+        or reviewed_guidance_intent(question)
+        or parsed_full.has_prefetchable_guidance
+    ):
+        return AgentTool.SEARCH_REVIEWED_GUIDANCE
+    return AgentTool.ANSWER_GENERAL_BACKGROUND
 
 
 def heuristic_tool_calls(request: QueryRequest) -> list[dict[str, Any]]:
@@ -93,9 +118,10 @@ def heuristic_tool_calls(request: QueryRequest) -> list[dict[str, Any]]:
                 }
             )
     if static_query is not None:
+        static_tool = planned_static_tool(question) or AgentTool.SEARCH_REVIEWED_GUIDANCE
         calls.append(
             {
-                "name": AgentTool.SEARCH_REVIEWED_GUIDANCE.value,
+                "name": static_tool.value,
                 "arguments": {"query": static_query},
             }
         )
