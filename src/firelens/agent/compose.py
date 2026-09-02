@@ -13,6 +13,7 @@ from firelens.agent.live_selection import (
 from firelens.agent.packet import AgentPacket
 from firelens.answering.intent import live_layers_for_question
 from firelens.answering.intent_safety import is_empty_map_safety_inference
+from firelens.answering.limitation_policy import select_public_limitations
 from firelens.answering.live_analysis import (
     compose_official_answer,
     official_display_name,
@@ -30,6 +31,7 @@ from firelens.answering.live_response_support import (
     empty_live_response,
     records_section_heading,
 )
+from firelens.answering.registered_suggestions import registered_suggestions
 from firelens.contract_composition import canonical_live_or_mixed_answer
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
@@ -180,13 +182,24 @@ def _with_packet_fields(
         updates["selected_live_result_id"] = packet.live_results[0].result_id
     if packet.resolved_location is not None and response.resolved_location is None:
         updates["resolved_location"] = packet.resolved_location
-    if not updates:
-        return response
-    if "history_text" in updates:
-        return AskResponse.model_validate(
-            response.model_copy(update=updates).model_dump(mode="python")
-        )
-    return response.model_copy(update=updates)
+    requested = _requested_live_layers(request, packet)
+    if requested and not response.requested_layers:
+        updates["requested_layers"] = list(requested)
+    if packet.roster_total is not None:
+        updates["roster_total"] = max(packet.roster_total, len(packet.live_results))
+    working = response.model_copy(update=updates) if updates else response
+    public_limits = select_public_limitations(list(working.limitations))
+    suggestions = registered_suggestions(question=request.question, response=working)
+    extra: dict[str, Any] = {}
+    if public_limits != list(working.limitations):
+        extra["limitations"] = public_limits
+        extra["history_text"] = None
+    if suggestions and not working.suggested_questions:
+        extra["suggested_questions"] = suggestions
+    if not extra:
+        return working if updates else response
+    merged = working.model_copy(update=extra)
+    return AskResponse.model_validate(merged.model_dump(mode="python"))
 
 
 def _missing_selected(request: QueryRequest, packet: AgentPacket) -> bool:

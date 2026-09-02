@@ -33,6 +33,8 @@ from firelens.contracts import (
     freshness_for_observation,
 )
 from firelens.live_contracts import stale_observation_limitations
+from firelens.live_http import decoded_response_headers as _decoded_response_headers
+from firelens.live_http import official_flag as _official_flag
 from firelens.live_support import (
     DEFAULT_LAYER_DEFINITIONS,
     OFFICIAL_FALLBACK_URLS,
@@ -48,7 +50,9 @@ from firelens.live_support import (
 from firelens.live_support import (
     GEOCODER_MIN_SCORE as GEOCODER_MIN_SCORE,
 )
-from firelens.live_support import LAYER_URLS as _LAYER_URLS
+from firelens.live_support import (
+    LAYER_URLS as _LAYER_URLS,
+)
 from firelens.live_support import (
     CacheEntry as _CacheEntry,
 )
@@ -64,7 +68,9 @@ from firelens.live_support import (
 from firelens.live_support import (
     authority as _authority,
 )
-from firelens.live_support import geojson_crs_is_wgs84 as _geojson_crs_is_wgs84
+from firelens.live_support import (
+    geojson_crs_is_wgs84 as _geojson_crs_is_wgs84,
+)
 from firelens.live_support import (
     geometry_relation as geometry_relation,
 )
@@ -82,24 +88,6 @@ from firelens.live_support import (
 )
 
 LAYER_URLS = _LAYER_URLS
-_WIRE_BODY_HEADERS = frozenset({"content-encoding", "content-length", "transfer-encoding"})
-
-
-def _decoded_response_headers(headers: httpx.Headers) -> httpx.Headers:
-    """Keep metadata headers, not encodings that applied to the wire bytes.
-
-    ``aiter_bytes()`` already decompresses gzip. Rebuilding a response with the
-    original ``Content-Encoding`` makes httpx decode the JSON a second time and
-    fail closed as an unavailable live layer.
-    """
-
-    return httpx.Headers(
-        [
-            (name, value)
-            for name, value in headers.multi_items()
-            if name.lower() not in _WIRE_BODY_HEADERS
-        ]
-    )
 
 
 class LiveDataService:
@@ -529,6 +517,9 @@ class LiveDataService:
                 is not None
                 else None
             ),
+            fire_of_note=_official_flag(_property(properties, "FIRE_OF_NOTE_IND"))
+            or str(_property(properties, "FIRE_STATUS") or "").strip().casefold()
+            == "fire of note",
             geometry_relation=relation,
             geometry=geometry,
         )

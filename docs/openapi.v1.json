@@ -224,6 +224,10 @@
             "title": "Live Results",
             "type": "array"
           },
+          "presentation_shell": {
+            "$ref": "#/components/schemas/PresentationShell",
+            "default": "chat"
+          },
           "proof_cards": {
             "items": {
               "$ref": "#/components/schemas/ProofCard"
@@ -231,6 +235,10 @@
             "maxItems": 12,
             "title": "Proof Cards",
             "type": "array"
+          },
+          "provenance_class": {
+            "$ref": "#/components/schemas/ProvenanceClass",
+            "default": "clarification"
           },
           "reason_code": {
             "anyOf": [
@@ -248,6 +256,14 @@
             },
             "maxItems": 4,
             "title": "Related Links",
+            "type": "array"
+          },
+          "requested_layers": {
+            "items": {
+              "$ref": "#/components/schemas/LiveResultKind"
+            },
+            "maxItems": 3,
+            "title": "Requested Layers",
             "type": "array"
           },
           "required_input": {
@@ -273,6 +289,26 @@
           "response_mode": {
             "$ref": "#/components/schemas/ResponseMode",
             "default": "abstention"
+          },
+          "roster_total": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roster Total"
+          },
+          "sample_record_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Sample Record Ids",
+            "type": "array"
           },
           "selected_live_result_id": {
             "anyOf": [
@@ -307,6 +343,16 @@
             "maxItems": 6,
             "title": "Suggested Questions",
             "type": "array"
+          },
+          "suggestion_omission_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuggestionOmissionReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "supported_items": {
             "items": {
@@ -1089,6 +1135,76 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "LiveCurrentSummary": {
+        "additionalProperties": false,
+        "description": "Zero-generation current-state summary. Unavailable layers stay null.",
+        "properties": {
+          "evacuation_record_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evacuation Record Count"
+          },
+          "freshness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AggregateFreshness"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "incident_record_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incident Record Count"
+          },
+          "limitation": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Limitation",
+            "type": "string"
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved At"
+          },
+          "source_status": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Source Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_status",
+          "limitation"
+        ],
+        "title": "LiveCurrentSummary",
+        "type": "object"
+      },
       "LiveLayerStatus": {
         "additionalProperties": false,
         "description": "Source-level freshness and availability, including zero-result layers.",
@@ -1325,6 +1441,11 @@
               }
             ],
             "title": "Fire Centre"
+          },
+          "fire_of_note": {
+            "default": false,
+            "title": "Fire Of Note",
+            "type": "boolean"
           },
           "fire_zone": {
             "anyOf": [
@@ -1731,6 +1852,54 @@
         "title": "NearMeResponse",
         "type": "object"
       },
+      "PresentationShell": {
+        "enum": [
+          "chat",
+          "analysis",
+          "spatial",
+          "pending"
+        ],
+        "title": "PresentationShell",
+        "type": "string"
+      },
+      "ProductEventRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "event": {
+            "enum": [
+              "guided_catalog_opened",
+              "guided_question_selected",
+              "live_summary_loaded",
+              "map_opened",
+              "evidence_opened",
+              "authority_handoff_opened",
+              "analysis_exported",
+              "saved_scope_added",
+              "feedback_submitted"
+            ],
+            "title": "Event",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event"
+        ],
+        "title": "ProductEventRequest",
+        "type": "object"
+      },
+      "ProductEventResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted": {
+            "const": true,
+            "default": true,
+            "title": "Accepted",
+            "type": "boolean"
+          }
+        },
+        "title": "ProductEventResponse",
+        "type": "object"
+      },
       "ProofCard": {
         "additionalProperties": false,
         "properties": {
@@ -1880,6 +2049,17 @@
         ],
         "title": "ProofCard",
         "type": "object"
+      },
+      "ProvenanceClass": {
+        "enum": [
+          "official_live",
+          "reviewed_guidance",
+          "general_knowledge",
+          "mixed",
+          "clarification"
+        ],
+        "title": "ProvenanceClass",
+        "type": "string"
       },
       "PublicClaim": {
         "additionalProperties": false,
@@ -2179,7 +2359,9 @@
           "draft_validation_failed",
           "model_abstained",
           "conflicting_evidence",
-          "high_risk_claim_not_structured"
+          "high_risk_claim_not_structured",
+          "unclear_input",
+          "missing_source_antecedent"
         ],
         "title": "ReasonCode",
         "type": "string"
@@ -2246,7 +2428,9 @@
       },
       "RequiredInputKind": {
         "enum": [
-          "location"
+          "location",
+          "source",
+          "clarification"
         ],
         "title": "RequiredInputKind",
         "type": "string"
@@ -2274,6 +2458,18 @@
           "error"
         ],
         "title": "ResponseStatus",
+        "type": "string"
+      },
+      "SuggestionOmissionReason": {
+        "enum": [
+          "not_applicable",
+          "refusal",
+          "emergency_handoff",
+          "unclear_input",
+          "no_safe_next_step",
+          "none_registered"
+        ],
+        "title": "SuggestionOmissionReason",
         "type": "string"
       },
       "TruthClass": {
@@ -2377,7 +2573,7 @@
   "info": {
     "description": "Evidence-bound wildfire guidance plus bounded official incident, perimeter, and evacuation records. Not emergency direction.",
     "title": "FireLens BC",
-    "version": "1.6.3"
+    "version": "1.6.4"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -2886,6 +3082,202 @@
           }
         },
         "summary": "Live Nearby"
+      }
+    },
+    "/api/v1/live/summary": {
+      "get": {
+        "operationId": "live_summary_api_v1_live_summary_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveCurrentSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Live Summary"
+      }
+    },
+    "/api/v1/product-events": {
+      "post": {
+        "operationId": "product_event_api_v1_product_events_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductEventResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Product Event"
       }
     }
   }

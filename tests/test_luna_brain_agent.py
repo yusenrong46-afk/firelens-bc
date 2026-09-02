@@ -2966,9 +2966,10 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         answer = response.answer or ""
         self.assertIn("10 fetched official records", answer)
         self.assertIn("Status distribution", answer)
-        self.assertIn("sample of 8 of 10", answer)
-        self.assertIn("Fire 1", answer)
-        self.assertNotIn("Fire 9:", answer)
+        self.assertIn("priority sample of 8 of 10", answer)
+        self.assertIn("Fire 9:", answer)
+        self.assertIn("Fire 10:", answer)
+        self.assertNotIn("Fire 6:", answer)
 
     def test_closest_official_next_check_adds_selected_record_handoff(self) -> None:
         nearest = _with_distance(

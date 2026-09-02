@@ -5,16 +5,16 @@ wildfire capability.** FireLens combines useful chat, official incident records,
 reviewed preparedness guidance, and deterministic analysis without presenting
 model output as official evidence.
 
-[**Open the public V1.6.3 demo**](https://firelens-bc.vercel.app) ·
+[**Open the public V1.6.4 demo**](https://firelens-bc.vercel.app) ·
 [Read the case study](docs/portfolio/CLIMATE_DECISION_INTELLIGENCE_CASE_STUDY.md) ·
 [Use the 3–5 minute demo script](docs/portfolio/DEMO_SCRIPT.md)
 
 ![FireLens BC Civic Intelligence Desk showing a deterministic wildfire distribution analysis](docs/assets/firelens-v1-6-overview.jpg)
 
 _Deterministic fixture data—not a current wildfire or evacuation report. The
-screenshot demonstrates the V1.6.3 interface, not current conditions._
+screenshot demonstrates the V1.6.4 interface, not current conditions._
 
-> **Project status:** A public V1.6.3 demo is available. Runtime identity, readiness, and qualification evidence remain commit-bound; this README does not confer emergency authority or turn a fluent model answer into proof.
+> **Project status:** A public V1.6.4 demo is available. Runtime identity, readiness, and qualification evidence remain commit-bound; this README does not confer emergency authority or turn a fluent model answer into proof.
 
 ## What FireLens does
 
@@ -73,7 +73,7 @@ publication authority:
 > **Models propose language. Source contracts, deterministic validation, and
 > authorized human decisions determine what may be published.**
 
-## What V1.6.3 demonstrates
+## What V1.6.4 demonstrates
 
 - Authority-bound reviewed claims and a disposition ledger for all 36 raw
   candidates; unresolved source repairs remain non-compilable.
@@ -86,9 +86,13 @@ publication authority:
 - Deterministic provincial/regional analysis and closest-record answers without
   provider-written live facts.
 - A Civic Intelligence Desk interface that adapts between Chat, Analysis, and
-  Spatial layouts instead of showing a map for every answer.
+  Spatial layouts from the backend `presentation_shell` instead of a frontend
+  free-text classifier. Mixed answers stay in chat and do not auto-open a dense
+  map.
 - Per-item publication presentation for reviewed claims, official quotations,
   live records, general background, partial results, and unknowns.
+- One backend-owned interpretation and one authoritative official result set
+  per request, with ranked Fire-of-Note samples and response-aware provenance.
 - Empty-result, unavailable-layer, unit-conversion, prompt-injection, and
   quote-negation rails.
 - A hash-bound 50-question UX catalog, deterministic ProductBench tier, hard
@@ -112,7 +116,7 @@ claim that every official source is continuously available.
 | General knowledge or reviewed guidance | Focused Chat with optional source disclosure; no map |
 | Multi-record live question | Analysis with Summary / Map / Records; Summary opens first |
 | Named, nearby, or closest incident | Spatial answer/record rail with useful map context |
-| Mixed live and guidance | Concise chat plus only the necessary analytical or spatial context |
+| Mixed live and guidance | Two labelled chat sections and a ranked sample; no auto-open dense map |
 | Unknown, error, or clarification | Compact state with one primary next action |
 
 The Analysis view computes snapshot-only counts, fire-centre rankings, status

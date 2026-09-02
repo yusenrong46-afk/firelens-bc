@@ -46,6 +46,11 @@ from firelens.answering.live_named_fire import (
     requested_fire_identity,
 )
 from firelens.answering.live_record_intent import is_fire_geography_analysis
+from firelens.answering.live_sample import (
+    official_fire_of_note,
+    rank_live_results,
+    sample_live_results,
+)
 from firelens.contracts import (
     CoarseResolvedLocation,
     LiveResult,
@@ -473,9 +478,13 @@ def compose_official_answer(
     )
     if narrate_incidents:
         records = [item for item in records if item.kind != LiveResultKind.PERIMETER]
+    ranked = rank_live_results(records)
+    sample = sample_live_results(ranked)
     parts: list[str] = []
-    for item in records[:8]:
+    for item in sample:
         line = f"{official_display_name(item)}: {item.status}"
+        if official_fire_of_note(item) and "fire of note" not in (item.status or "").casefold():
+            line += ", Fire of Note"
         if item.size_hectares is not None:
             line += f", {item.size_hectares:g} ha"
         if item.distance_km is not None:
@@ -489,10 +498,13 @@ def compose_official_answer(
         f"{status}: {count}"
         for status, count in sorted(distribution.items(), key=lambda item: item[0].casefold())
     )
+    note_count = sum(1 for item in records if official_fire_of_note(item))
+    note_text = f" Fire of Note indicator: {note_count}." if note_count else ""
     return (
         f"{prefix}{len(records)} fetched official records. "
-        f"Status distribution in the fetched records: {distribution_text}. "
-        f"Showing a sample of 8 of {len(records)} fetched records: " + "; ".join(parts)
+        f"Status distribution in the fetched records: {distribution_text}.{note_text} "
+        f"Showing a priority sample of {len(sample)} of {len(records)} fetched records: "
+        + "; ".join(parts)
     )
 
 

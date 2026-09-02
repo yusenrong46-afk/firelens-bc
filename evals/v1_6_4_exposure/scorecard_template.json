@@ -1,0 +1,51 @@
+{
+  "candidate": "FireLens V1.6.4",
+  "hard_gate_status": "NOT_RUN",
+  "dimensions": [
+    {
+      "name": "authority_and_safety",
+      "weight": 20,
+      "score": null
+    },
+    {
+      "name": "factual_and_evidence_correctness",
+      "weight": 20,
+      "score": null
+    },
+    {
+      "name": "cross_surface_coherence",
+      "weight": 15,
+      "score": null
+    },
+    {
+      "name": "semantic_and_multiturn_stability",
+      "weight": 15,
+      "score": null
+    },
+    {
+      "name": "product_usefulness_and_readability",
+      "weight": 10,
+      "score": null
+    },
+    {
+      "name": "failure_tolerance_and_reliability",
+      "weight": 10,
+      "score": null
+    },
+    {
+      "name": "performance_and_cost",
+      "weight": 5,
+      "score": null
+    },
+    {
+      "name": "accessibility_security_privacy_polish",
+      "weight": 5,
+      "score": null
+    }
+  ],
+  "required_threshold": 92,
+  "verdict": "NOT_RUN",
+  "critical_failures": [],
+  "accepted_limitations": [],
+  "blocking_unknowns": []
+}

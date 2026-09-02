@@ -13,6 +13,8 @@ V16_STARTING_COMMIT = "3de745a22ad0801e19563f90ac64f18609ecae03"
 # before V1.6; the campaign edited them without a full rewrite.
 V16_MODIFIED_MODULE_EXCEPTIONS = frozenset(
     {
+        "src/firelens/agent/compose.py",
+        "src/firelens/answering/live_analysis.py",
         "src/firelens/answering/service.py",
         "src/firelens/contracts.py",
         "src/firelens/evaluation/capture.py",

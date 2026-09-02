@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import type { LiveResult } from "../../shared/api/api";
 import { ClusteredPointMarkers } from "./ClusteredPointMarkers";
 import { MatchingRecordList, ProvinceRecordList } from "./LiveRecordLists";
+import { MapContextLayers } from "./MapContextLayers";
 import { MapScope } from "./MapScope";
 import {
   filterMapResults,
@@ -71,6 +72,8 @@ export function LiveMap({
   selectedResultId,
   onSelectResult,
   onAskAboutResult,
+  contextLayersEnabled = false,
+  onContextLayersChange,
 }: {
   results: LiveResult[];
   matchingResults?: LiveResult[] | undefined;
@@ -82,6 +85,8 @@ export function LiveMap({
   selectedResultId?: string | undefined;
   onSelectResult?: ((resultId: string) => void) | undefined;
   onAskAboutResult?: ((resultId: string, question: string) => void) | undefined;
+  contextLayersEnabled?: boolean | undefined;
+  onContextLayersChange?: ((enabled: boolean) => void) | undefined;
 }) {
   const [hiddenKinds, setHiddenKinds] = useState<Set<LiveResult["kind"]>>(new Set());
   const [statusMode, setStatusMode] = useState<IncidentStatusMode>("all");
@@ -165,6 +170,9 @@ export function LiveMap({
           Open BCWS map
         </a>
       </div>
+      {onContextLayersChange && (
+        <MapContextLayers enabled={contextLayersEnabled} onChange={onContextLayersChange} />
+      )}
       {freshnessState === "stale" && (
         <p className="live-map__warning" role="status">
           Cached official records; refresh failed. These records may be outdated.

@@ -3,20 +3,20 @@
 Status: current architecture authority for Ask, trust, packaging, and proof UX.
 Date: 2026-08-28
 
-The V1.6.3 branch candidate is committed. Exact current HEAD/tree identity is
+The V1.6.4 branch candidate is committed. Exact current HEAD/tree identity is
 required in the external current candidate-evidence record after execution;
 this architecture document does not embed a self-referential commit identifier
 and does not affirm that matching CI evidence already exists. The tracked
-package, runtime, Docker, and OpenAPI identity is `1.6.3`, but that identity is
+package, runtime, Docker, and OpenAPI identity is `1.6.4`, but that identity is
 not a deployment or release statement. Exact-Git qualification evidence remains
 separate and incomplete until its required local, CI, independent, paid,
 preview, and human gates are recorded.
 
 The RC1/RC2 standards and their recorded reports remain historical, frozen
-materials. V1.6.3 is a separate patch promotion: it binds the V1.6.2 functional
-parent, a new exact commit/tree, and immutable governed artifacts without
-rewriting an older standard, hard-probe input, human decision, or report to claim
-patch qualification.
+materials. V1.6.3 remains the historical functional parent. V1.6.4 is a
+separate patch promotion: it binds that parent, a new exact commit/tree, and
+immutable governed artifacts without rewriting an older standard, hard-probe
+input, human decision, or report to claim patch qualification.
 
 This document replaces the V1.5 technical handbook for runtime Ask behaviour.
 `docs/TECHNICAL_HANDBOOK.md` is historical (2026-07-30). Qualification evidence
@@ -222,6 +222,8 @@ exceptions only to the 650-line target: the hard 800-line cap still applies.
 
 | Module | Baseline | Current | Bounded repair and deferred split |
 | --- | ---: | ---: | --- |
+| `src/firelens/agent/compose.py` | 612 | 661 | Added packet identity fields and public limitation/suggestion binding. The one-turn compose owner stays intact so live, mixed, and clarification routes keep a single result-set writer. |
+| `src/firelens/answering/live_analysis.py` | 640 | 662 | Added deterministic sample ranking and honest unnamed-record labels. Distance, roster, and official-prose rendering remain one owner so the ranked sample cannot diverge from the authorized set. |
 | `src/firelens/evaluation/capture.py` | 734 | 754 | Added paired private-attestation and preview-raw-evidence capture guards. The immutable before/after artifact roster remains one owner; splitting it during this repair would add serializer and evidence-schema churn. |
 | `src/firelens/evaluation/release_surfaces.py` | 778 | 797 | Extracted raw preview-response validation to `preview_raw_evidence.py`. The remaining preview/deployment qualification surface is deferred because a wider split would change governed report validation during an active qualification campaign. |
 | `src/firelens/live.py` | 739 | 739 | Corrected paginated aggregate freshness in place. A full adapter split is deferred because the one-line safety fix does not justify moving the fail-closed fetch and normalization boundary. |

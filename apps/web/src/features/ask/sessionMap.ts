@@ -23,24 +23,48 @@ export function deriveSessionMapView(
   response: AskResponse | undefined,
   provinceResults: LiveResult[] | undefined,
   provinceUnavailable: string[] | undefined,
+  contextLayersEnabled = false,
 ): SessionMapView {
+  const mapMatchingResults = response?.live_results ?? [];
+  if (!response) {
+    const idleResults = provinceResults ?? [];
+    return {
+      mapResults: idleResults,
+      mapMatchingResults: [],
+      mapProvinceResults: idleResults,
+      mapFocus: undefined,
+      mapFocusResults: [],
+      mapAggregateFreshness: displayedAggregateFreshness(idleResults),
+      mapUnavailableLayers: [...new Set(provinceUnavailable ?? [])],
+    };
+  }
+  if (!contextLayersEnabled) {
+    return {
+      mapResults: mapMatchingResults,
+      mapMatchingResults,
+      mapProvinceResults: [],
+      mapFocus: response.resolved_location ?? undefined,
+      mapFocusResults: mapMatchingResults,
+      mapAggregateFreshness: displayedAggregateFreshness(mapMatchingResults),
+      mapUnavailableLayers: [...new Set(response.unavailable_layers ?? [])],
+    };
+  }
   const resultById = new Map<string, LiveResult>();
-  for (const result of response?.live_results ?? []) resultById.set(result.result_id, result);
+  for (const result of mapMatchingResults) resultById.set(result.result_id, result);
   for (const result of provinceResults ?? []) {
     if (!resultById.has(result.result_id)) resultById.set(result.result_id, result);
   }
   const mapResults = [...resultById.values()];
-  const mapMatchingResults = response?.live_results ?? [];
   const matchingResultIds = new Set(mapMatchingResults.map((result) => result.result_id));
   return {
     mapResults,
     mapMatchingResults,
     mapProvinceResults: mapResults.filter((result) => !matchingResultIds.has(result.result_id)),
-    mapFocus: response?.resolved_location ?? undefined,
-    mapFocusResults: response?.live_results ?? [],
+    mapFocus: response.resolved_location ?? undefined,
+    mapFocusResults: mapMatchingResults,
     mapAggregateFreshness: displayedAggregateFreshness(mapResults),
     mapUnavailableLayers: [
-      ...new Set([...(provinceUnavailable ?? []), ...(response?.unavailable_layers ?? [])]),
+      ...new Set([...(provinceUnavailable ?? []), ...(response.unavailable_layers ?? [])]),
     ],
   };
 }

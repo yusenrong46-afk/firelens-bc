@@ -79,6 +79,7 @@ class CapabilityBinding(FrozenStrictModel):
     typed_claim_ids: tuple[str, ...] = ()
     chunk_ids: tuple[str, ...] = ()
     exact_quote_texts: tuple[str, ...] = Field(default=(), max_length=6)
+    accepted_paraphrases: tuple[str, ...] = Field(default=(), max_length=16)
     live_layers: tuple[str, ...] = ()
     guided_eligible: bool = True
     guided_question_ids: tuple[str, ...] = ()
@@ -290,9 +291,11 @@ def resolve_capability(
     capabilities = load_validated_capabilities(root)
     normalized = normalize_guided_question(question)
     for binding in capabilities.values():
-        if normalized in {
-            normalize_guided_question(candidate) for candidate in binding.canonical_questions
-        }:
+        accepted = {
+            normalize_guided_question(candidate)
+            for candidate in (*binding.canonical_questions, *binding.accepted_paraphrases)
+        }
+        if normalized in accepted:
             return binding
     if (
         _FIRE_CONTEXT.search(question)

@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   preferredContextSurface,
-  questionExplicitlyRequestsMap,
-  questionRequestsMap,
   shouldOfferContextMap,
   shouldUseAnalyticalWorkspace,
   workspaceLayout,
@@ -32,15 +30,15 @@ const spatialResponse = {
 };
 
 describe("task-first workspace presentation", () => {
-  it("recognizes direct and distribution-style map questions", () => {
-    expect(questionRequestsMap("Where is Mountain Fire near Kelowna?")).toBe(true);
-    expect(questionRequestsMap("Show wildfire geographic distribution across B.C.")).toBe(true);
-    expect(questionRequestsMap("What belongs in a grab-and-go bag?")).toBe(false);
-  });
-
-  it("distinguishes literal map asks from spatial analysis wording", () => {
-    expect(questionExplicitlyRequestsMap("Show these incidents on a map")).toBe(true);
-    expect(questionExplicitlyRequestsMap("Show the wildfire distribution across B.C.")).toBe(false);
+  it("opens the map from backend presentation_shell, not question wording", () => {
+    expect(preferredContextSurface({
+      mode: "live",
+      response: { ...spatialResponse, presentation_shell: "spatial" },
+    })).toBe("map");
+    expect(preferredContextSurface({
+      mode: "mixed",
+      response: { ...spatialResponse, response_mode: "mixed", presentation_shell: "chat" },
+    })).toBe("evidence");
   });
 
   it("offers a context map only for live or mixed spatial responses", () => {
@@ -75,7 +73,7 @@ describe("task-first workspace presentation", () => {
   it("defaults answers to evidence and opens the map first only for explicit map analysis", () => {
     expect(preferredContextSurface({ mode: "live", question: "Status please" })).toBe("evidence");
     expect(preferredContextSurface({ mode: "live", question: "Where is Mountain Fire?" })).toBe("evidence");
-    expect(preferredContextSurface({ mode: "mixed", question: "Show this on a map" })).toBe("map");
+    expect(preferredContextSurface({ mode: "mixed", question: "Show this on a map" })).toBe("evidence");
     expect(preferredContextSurface({ mode: "live", question: "Wildfire distribution across B.C." })).toBe("evidence");
     expect(preferredContextSurface({ mode: "mixed", question: "What should I prepare?" })).toBe("evidence");
   });
@@ -84,6 +82,7 @@ describe("task-first workspace presentation", () => {
     const firstResult = spatialResponse.live_results[0]!;
     const multiRecordResponse = {
       ...spatialResponse,
+      presentation_shell: "analysis" as const,
       live_results: [
         firstResult,
         { ...firstResult, result_id: "incident:2", status: "Out of Control" },
@@ -93,6 +92,10 @@ describe("task-first workspace presentation", () => {
       mode: "live",
       response: multiRecordResponse,
     })).toBe(true);
+    expect(shouldUseAnalyticalWorkspace({
+      mode: "mixed",
+      response: { ...multiRecordResponse, response_mode: "mixed", presentation_shell: "chat" },
+    })).toBe(false);
     expect(shouldUseAnalyticalWorkspace({
       mode: "live",
       response: spatialResponse,
@@ -123,6 +126,7 @@ describe("task-first workspace presentation", () => {
     const firstResult = spatialResponse.live_results[0]!;
     const distributionResponse = {
       ...spatialResponse,
+      presentation_shell: "analysis" as const,
       live_results: [
         firstResult,
         { ...firstResult, result_id: "incident:2", status: "Out of Control" },

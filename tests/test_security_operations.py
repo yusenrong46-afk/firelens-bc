@@ -357,6 +357,10 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
                 "stage_latency_ms",
                 "fallback_category",
                 "candidate_id",
+                "stage_metrics",
+                "input_tokens",
+                "output_tokens",
+                "cost_usd",
             },
         )
         self.assertEqual(event["schema_version"], "firelens.operational_event.v3")

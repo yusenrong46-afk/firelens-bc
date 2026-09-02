@@ -1,6 +1,7 @@
 import { ArrowRight, Crosshair, Funnel, MagnifyingGlass, MapPin, X } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchGuidedQuestions, type GuidedQuestionCategory } from "../../shared/api/api";
+import { emitProductEvent } from "../../shared/telemetry";
 
 function expandPlace(question: string, place: string): string {
   const trimmedPlace = place.trim();
@@ -46,11 +47,13 @@ function isGuidedQuestionCatalogue(value: unknown): value is { categories: Guide
 
 export function AskStartPanel({
   locationLabel,
+  currentState,
   onSelectQuestion,
   onLocationChange,
   onUseApproximateLocation,
 }: {
   locationLabel: string;
+  currentState?: string | undefined;
   onSelectQuestion: (question: string) => void;
   onLocationChange: (value: string) => void;
   onUseApproximateLocation: () => void;
@@ -81,16 +84,17 @@ export function AskStartPanel({
         setCatalogueState("ready");
       })
       .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          catalogueRequestedRef.current = false;
+          return;
+        }
         if (!active) return;
-        if (error instanceof DOMException && error.name === "AbortError") return;
         setCatalogueState("failed");
         requestAnimationFrame(() => (retryRef.current ?? triggerRef.current)?.focus());
       });
     return () => {
       active = false;
       controller.abort();
-      catalogueRequestedRef.current = false;
-      setCatalogueState("idle");
     };
   }, [catalogueRequest, open]);
 
@@ -127,7 +131,12 @@ export function AskStartPanel({
       .filter((category) => category.questions.length > 0);
   }, [catalogue, categoryId, search]);
 
+  useEffect(() => {
+    if (open) emitProductEvent("guided_catalog_opened");
+  }, [open]);
+
   function selectQuestion(question: string) {
+    emitProductEvent("guided_question_selected");
     const expandedQuestion = expandPlace(question, locationLabel);
     onSelectQuestion(expandedQuestion);
     setAnnouncement(`Filled composer with: ${expandedQuestion}`);
@@ -150,6 +159,9 @@ export function AskStartPanel({
         <span className="panel-label">British Columbia wildfire information</span>
         <h1>Ask about a fire, a B.C. place, or preparedness.</h1>
         <p>Official incidents, reviewed guidance, and labelled background stay separate.</p>
+        {currentState && (
+          <p className="ask-start-panel__current-state" role="status">{currentState}</p>
+        )}
       </div>
       <div className="ask-start-panel__console">
         <div className="ask-start-panel__console-heading">
@@ -198,7 +210,7 @@ export function AskStartPanel({
                     <X size={19} aria-hidden="true" />
                   </button>
                 </div>
-                {catalogueState === "loading" ? (
+                {catalogueState !== "ready" ? (
                   <p className="guided-questions__empty" role="status">Loading guided questions…</p>
                 ) : filteredCategories.length > 0 ? (
                   <div className="guided-questions__categories">

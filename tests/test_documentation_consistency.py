@@ -23,13 +23,13 @@ def test_current_documentation_preserves_v1_6_rc2_authority_boundaries() -> None
     assert "Exact quote only" in readme
     assert "## What FireLens does" in readme
     assert "## Why this is not “just a chatbot”" in readme
-    assert "## What V1.6.3 demonstrates" in readme
+    assert "## What V1.6.4 demonstrates" in readme
     assert "https://firelens-bc.vercel.app" in readme
     assert "## How an answer becomes publishable" in readme
     assert "## Adaptive views" in readme
     assert "## Quick start" in readme
     assert "## Verification and evidence" in readme
-    assert "A public V1.6.3 demo is available" in readme
+    assert "A public V1.6.4 demo is available" in readme
     assert "Runtime identity" in readme
     assert "qualification evidence remain commit-bound" in readme
     assert "does not confer emergency authority" in readme
@@ -43,7 +43,7 @@ def test_current_documentation_preserves_v1_6_rc2_authority_boundaries() -> None
     assert "Preview and production configuration reject" in readme
     assert "production-ready" not in readme.casefold()
     assert "current architecture authority" in architecture
-    assert "V1.6.3 branch candidate is committed" in architecture
+    assert "V1.6.4 branch candidate is committed" in architecture
     assert "required in the external current candidate-evidence record" in architecture
     assert "does not affirm that matching CI evidence already exists" in architecture
     assert "345aaab2bef2fb3f580401dd79303a6b840fc88a" not in architecture
@@ -63,15 +63,15 @@ def test_current_documentation_preserves_v1_6_rc2_authority_boundaries() -> None
     assert (
         "tracked Python package, web package, runtime default, Docker configuration" in runbook
     )
-    assert "are `1.6.3`" in runbook
+    assert "are `1.6.4`" in runbook
     assert "separate from the historical `1.6.0-rc.1` and RC2 records" in runbook
-    assert "clean V1.6.3 commit before freezing" in runbook
+    assert "clean V1.6.4 commit before freezing" in runbook
     assert "matching CI candidate-evidence artifact" in runbook
     assert "Candidate-evidence v2 must bind the unchanged historical hard-probe" in runbook
     assert "--expectation-profile rc2.2" in runbook
     assert "RC2.1 expectation profile/manifest" in runbook
-    assert "Do not name a historical RC1/RC2 commit as the V1.6.3 candidate" in runbook
-    assert "## Unreleased — V1.6.3" in changelog
+    assert "Do not name a historical RC1/RC2 commit as the V1.6.4 candidate" in runbook
+    assert "## Unreleased — V1.6.4" in changelog
     assert "PB15-style source-extraction defects remain source-repair work" in changelog
     assert "committed local engineering candidate" in changelog
     assert "must be bound by external current candidate evidence" in changelog

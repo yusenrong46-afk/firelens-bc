@@ -77,6 +77,8 @@ export function EvidencePanel({
     mapFocusResults,
     mapLoading,
     mapMessage,
+    contextLayersEnabled,
+    setContextLayersEnabled,
     mapResults,
     mapMatchingResults,
     mapProvinceResults,
@@ -167,6 +169,8 @@ export function EvidencePanel({
             selectedResultId={selectedLiveResultId}
             onSelectResult={setSelectedLiveResultId}
             onAskAboutResult={askAboutResult}
+            contextLayersEnabled={contextLayersEnabled}
+            onContextLayersChange={setContextLayersEnabled}
           />
         </Suspense>
         {mapLoading && <p className="map-surface-status" role="status">Loading map…</p>}

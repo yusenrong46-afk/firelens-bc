@@ -126,6 +126,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/live/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Live Summary */
+        get: operations["live_summary_api_v1_live_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/product-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Product Event */
+        post: operations["product_event_api_v1_product_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -190,21 +224,32 @@ export interface components {
             limitations?: string[];
             /** Live Results */
             live_results?: components["schemas"]["LiveResult"][];
+            /** @default chat */
+            presentation_shell: components["schemas"]["PresentationShell"];
             /** Proof Cards */
             proof_cards?: components["schemas"]["ProofCard"][];
+            /** @default clarification */
+            provenance_class: components["schemas"]["ProvenanceClass"];
             reason_code?: components["schemas"]["ReasonCode"] | null;
             /** Related Links */
             related_links?: components["schemas"]["RelatedLink"][];
+            /** Requested Layers */
+            requested_layers?: components["schemas"]["LiveResultKind"][];
             required_input?: components["schemas"]["RequiredInput"] | null;
             resolved_location?: components["schemas"]["CoarseResolvedLocation"] | null;
             /** @default abstention */
             response_mode: components["schemas"]["ResponseMode"];
+            /** Roster Total */
+            roster_total?: number | null;
+            /** Sample Record Ids */
+            sample_record_ids?: string[];
             /** Selected Live Result Id */
             selected_live_result_id?: string | null;
             status: components["schemas"]["ResponseStatus"];
             status_banner?: components["schemas"]["AnswerStatusBanner"] | null;
             /** Suggested Questions */
             suggested_questions?: string[];
+            suggestion_omission_reason?: components["schemas"]["SuggestionOmissionReason"] | null;
             /** Supported Items */
             supported_items?: string[];
             /** Trace Id */
@@ -514,6 +559,23 @@ export interface components {
             zdr_required: boolean;
         };
         /**
+         * LiveCurrentSummary
+         * @description Zero-generation current-state summary. Unavailable layers stay null.
+         */
+        LiveCurrentSummary: {
+            /** Evacuation Record Count */
+            evacuation_record_count?: number | null;
+            freshness?: components["schemas"]["AggregateFreshness"] | null;
+            /** Incident Record Count */
+            incident_record_count?: number | null;
+            /** Limitation */
+            limitation: string;
+            /** Retrieved At */
+            retrieved_at?: string | null;
+            /** Source Status */
+            source_status: string;
+        };
+        /**
          * LiveLayerStatus
          * @description Source-level freshness and availability, including zero-result layers.
          */
@@ -584,6 +646,11 @@ export interface components {
             distance_km?: number | null;
             /** Fire Centre */
             fire_centre?: string | null;
+            /**
+             * Fire Of Note
+             * @default false
+             */
+            fire_of_note: boolean;
             /** Fire Zone */
             fire_zone?: string | null;
             freshness: components["schemas"]["Freshness"];
@@ -717,6 +784,28 @@ export interface components {
             unavailable_layers?: components["schemas"]["LiveResultKind"][];
             viewport: components["schemas"]["MapViewport"];
         };
+        /**
+         * PresentationShell
+         * @enum {string}
+         */
+        PresentationShell: "chat" | "analysis" | "spatial" | "pending";
+        /** ProductEventRequest */
+        ProductEventRequest: {
+            /**
+             * Event
+             * @enum {string}
+             */
+            event: "guided_catalog_opened" | "guided_question_selected" | "live_summary_loaded" | "map_opened" | "evidence_opened" | "authority_handoff_opened" | "analysis_exported" | "saved_scope_added" | "feedback_submitted";
+        };
+        /** ProductEventResponse */
+        ProductEventResponse: {
+            /**
+             * Accepted
+             * @default true
+             * @constant
+             */
+            accepted: true;
+        };
         /** ProofCard */
         ProofCard: {
             /** Authority */
@@ -752,6 +841,11 @@ export interface components {
             support_state: "supported" | "structured_reviewed" | "official_live_typed" | "official_quote_only" | "source_linked_explanation" | "unknown" | "background" | "conflict" | "live_record";
             truth_class: components["schemas"]["TruthClass"];
         };
+        /**
+         * ProvenanceClass
+         * @enum {string}
+         */
+        ProvenanceClass: "official_live" | "reviewed_guidance" | "general_knowledge" | "mixed" | "clarification";
         /** PublicClaim */
         PublicClaim: {
             /** Claim Id */
@@ -847,7 +941,7 @@ export interface components {
          * ReasonCode
          * @enum {string}
          */
-        ReasonCode: "capability_overview" | "scope_redirect" | "personalized_safety_decision" | "personalized_medical_advice" | "policy_manipulation" | "live_data_required" | "planning_unavailable" | "retrieval_unavailable" | "retrieval_incomplete" | "no_approved_evidence" | "wrong_temporal_class" | "required_authority_missing" | "approved_static_evidence" | "generation_unavailable" | "draft_validation_failed" | "model_abstained" | "conflicting_evidence" | "high_risk_claim_not_structured";
+        ReasonCode: "capability_overview" | "scope_redirect" | "personalized_safety_decision" | "personalized_medical_advice" | "policy_manipulation" | "live_data_required" | "planning_unavailable" | "retrieval_unavailable" | "retrieval_incomplete" | "no_approved_evidence" | "wrong_temporal_class" | "required_authority_missing" | "approved_static_evidence" | "generation_unavailable" | "draft_validation_failed" | "model_abstained" | "conflicting_evidence" | "high_risk_claim_not_structured" | "unclear_input" | "missing_source_antecedent";
         /**
          * RelatedLink
          * @description An official destination for information FireLens does not ingest live.
@@ -878,7 +972,7 @@ export interface components {
          * RequiredInputKind
          * @enum {string}
          */
-        RequiredInputKind: "location";
+        RequiredInputKind: "location" | "source" | "clarification";
         /**
          * ResponseMode
          * @enum {string}
@@ -889,6 +983,11 @@ export interface components {
          * @enum {string}
          */
         ResponseStatus: "answer" | "abstention" | "error";
+        /**
+         * SuggestionOmissionReason
+         * @enum {string}
+         */
+        SuggestionOmissionReason: "not_applicable" | "refusal" | "emergency_handoff" | "unclear_input" | "no_safe_next_step" | "none_registered";
         /**
          * TruthClass
          * @enum {string}
@@ -1306,6 +1405,185 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NearMeResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    live_summary_api_v1_live_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveCurrentSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    product_event_api_v1_product_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductEventRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductEventResponse"];
                 };
             };
             /** @description Bad Request */

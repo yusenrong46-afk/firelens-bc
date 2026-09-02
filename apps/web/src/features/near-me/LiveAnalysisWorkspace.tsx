@@ -193,6 +193,8 @@ export function LiveAnalysisWorkspace({
               selectedResultId={session.selectedLiveResultId}
               onSelectResult={session.setSelectedLiveResultId}
               onAskAboutResult={session.askAboutResult}
+              contextLayersEnabled={session.contextLayersEnabled}
+              onContextLayersChange={session.setContextLayersEnabled}
             />
           </Suspense>
           )}

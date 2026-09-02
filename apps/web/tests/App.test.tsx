@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
 import { App } from "../src/app/App";
+import { wrapAppFetch } from "./fetchStub";
 
 const answer = {
   status: "answer",
@@ -95,11 +96,11 @@ describe("FireLens Source Lens", () => {
     );
   });
 
-  it("enters the analytical shell while a distribution answer is still loading", async () => {
+  it("does not enter the analytical shell from question wording while loading", async () => {
     let resolveAsk!: (response: Response) => void;
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(() => new Promise<Response>((resolve) => {
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockImplementation(() => new Promise<Response>((resolve) => {
       resolveAsk = resolve;
-    })));
+    }))));
     const user = userEvent.setup();
     render(<App />);
 
@@ -109,12 +110,14 @@ describe("FireLens Source Lens", () => {
     );
     await user.click(screen.getByLabelText("Send question"));
 
-    await waitFor(() => expect(document.querySelector("main.workspace--analysis")).toBeInTheDocument());
     expect(screen.getByText("Preparing your response…")).toBeInTheDocument();
+    expect(document.querySelector("main.workspace--analysis")).not.toBeInTheDocument();
 
     resolveAsk(new Response(JSON.stringify({
       status: "answer",
       response_mode: "live",
+      presentation_shell: "analysis",
+      provenance_class: "official_live",
       trace_id: "trace-pending-analysis",
       answer: "Two official incident records are in this bounded result.",
       claims: [],
@@ -165,9 +168,13 @@ describe("FireLens Source Lens", () => {
       freshness: "fresh",
       geometry: { type: "Point", coordinates: [-119.5, 49.9] },
     }));
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(new Response(JSON.stringify({
       status: "answer",
-      response_mode: "mixed",
+      response_mode: "live",
+      presentation_shell: "analysis",
+      provenance_class: "official_live",
+      roster_total: 3,
+      sample_record_ids: ["incident:1", "incident:2", "incident:3"],
       trace_id: "trace-analysis",
       answer: "Three official incident records are in this bounded result.",
       suggested_questions: [],
@@ -177,7 +184,7 @@ describe("FireLens Source Lens", () => {
       live_results: liveResults,
       aggregate_freshness: "fresh",
       validation: { accepted: true },
-    }), { status: 200 })));
+    }), { status: 200 }))));
     const { container } = render(<App />);
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Show wildfire distribution by status across B.C.");
@@ -195,7 +202,7 @@ describe("FireLens Source Lens", () => {
     expect(screen.getByText("FireLens response ready.")).toBeInTheDocument();
     expect(screen.getByLabelText("Clear conversation history")).toHaveTextContent("New conversation");
     expect(screen.getByLabelText("Response feedback")).toBeInTheDocument();
-    expect(screen.getByLabelText("Civic Intelligence Desk")).toBeInTheDocument();
+    expect(screen.getByLabelText("Official B.C. wildfire information")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Explore live map/i })).toHaveAttribute(
       "href",
       "https://wildfiresituation.nrs.gov.bc.ca/map",
@@ -242,9 +249,11 @@ describe("FireLens Source Lens", () => {
       geometry: { type: "Point", coordinates: [-119.5, 49.9] },
     }));
     const operationAnswer = "Source updates range from August 22 to August 23; both records were retrieved at 12:01 UTC.";
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(new Response(JSON.stringify({
       status: "answer",
       response_mode: "live",
+      presentation_shell: "analysis",
+      provenance_class: "official_live",
       trace_id: "trace-analysis-operation-answer",
       answer: operationAnswer,
       suggested_questions: [],
@@ -254,7 +263,7 @@ describe("FireLens Source Lens", () => {
       live_results: liveResults,
       aggregate_freshness: "fresh",
       validation: { accepted: true },
-    }), { status: 200 })));
+    }), { status: 200 }))));
 
     render(<App />);
     const user = userEvent.setup();
@@ -279,9 +288,11 @@ describe("FireLens Source Lens", () => {
       retrieved_at: "2026-08-23T12:01:00Z",
       freshness: "fresh",
     }));
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(new Response(JSON.stringify({
       status: "answer",
       response_mode: "live",
+      presentation_shell: "analysis",
+      provenance_class: "official_live",
       trace_id: "trace-analysis-no-map",
       answer: "Two official incident records are in this bounded result.",
       suggested_questions: [],
@@ -294,7 +305,7 @@ describe("FireLens Source Lens", () => {
       live_results: liveResults,
       aggregate_freshness: "fresh",
       validation: { accepted: true },
-    }), { status: 200 })));
+    }), { status: 200 }))));
 
     render(<App />);
     const user = userEvent.setup();
@@ -313,6 +324,52 @@ describe("FireLens Source Lens", () => {
     expect(screen.queryByRole("button", { name: "View official map context" })).not.toBeInTheDocument();
   });
 
+  it("keeps mixed live-plus-guidance answers in chat without auto-opening a province map", async () => {
+    const liveResults = [
+      { result_id: "incident:mix-1", fire_centre: "Kamloops Fire Centre", status: "Out of Control" },
+      { result_id: "incident:mix-2", fire_centre: "Coastal Fire Centre", status: "Being Held" },
+    ].map((item) => ({
+      ...item,
+      kind: "incident",
+      authority: "BC Wildfire Service",
+      source_url: `https://example.test/${item.result_id}`,
+      source_updated_at: "2026-08-23T12:00:00Z",
+      retrieved_at: "2026-08-23T12:01:00Z",
+      freshness: "fresh",
+      geometry: { type: "Point", coordinates: [-119.5, 49.9] },
+    }));
+    vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: "answer",
+      response_mode: "mixed",
+      presentation_shell: "chat",
+      provenance_class: "mixed",
+      roster_total: 2,
+      sample_record_ids: ["incident:mix-1", "incident:mix-2"],
+      trace_id: "trace-mixed-chat",
+      answer: "Official records are listed below. Keep water and food in a grab-and-go bag.",
+      answer_sections: [
+        { kind: "current_records", heading: "Current official records", text: "Two official incident records are in this bounded result." },
+        { kind: "reviewed_guidance", heading: "Reviewed preparedness guidance", text: "Keep water and food in a grab-and-go bag." },
+      ],
+      claims: answer.claims,
+      evidence: answer.evidence,
+      limitations: [],
+      live_results: liveResults,
+      aggregate_freshness: "fresh",
+      validation: { accepted: true },
+    }), { status: 200 }))));
+    render(<App />);
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Current wildfire records, and what should I pack?");
+    await user.click(screen.getByLabelText("Send question"));
+
+    expect(await screen.findByText("Current official records")).toBeInTheDocument();
+    expect(screen.getByText("Reviewed preparedness guidance")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Analysis view" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Official wildfire records map" })).not.toBeInTheDocument();
+    expect(document.querySelector("main.workspace--analysis")).not.toBeInTheDocument();
+  });
+
   it("opens literal map requests as context and restores focus when closed", async () => {
     const liveResult = {
       result_id: "incident:map-request",
@@ -326,7 +383,7 @@ describe("FireLens Source Lens", () => {
       name: "Mountain Fire",
       geometry: { type: "Point", coordinates: [-119.5, 49.9] },
     };
-    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockImplementation((url: string) => Promise.resolve(
       new Response(JSON.stringify(String(url).startsWith("/api/v1/live/map") ? {
         generated_at: "2026-08-23T12:01:00Z",
         results: [liveResult],
@@ -335,6 +392,9 @@ describe("FireLens Source Lens", () => {
       } : {
         status: "answer",
         response_mode: "live",
+        presentation_shell: "spatial",
+        provenance_class: "official_live",
+        resolved_location: { latitude: 49.9, longitude: -119.5 },
         trace_id: "trace-explicit-map",
         answer: "Mountain Fire is Being Held.",
         claims: [],
@@ -342,7 +402,7 @@ describe("FireLens Source Lens", () => {
         limitations: [],
         live_results: [liveResult],
       }), { status: 200 }),
-    )));
+    ))));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Show Mountain Fire on the map");
@@ -361,15 +421,17 @@ describe("FireLens Source Lens", () => {
       results: [],
       unavailable_layers: [],
     }), { status: 200 })));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
-    expect(screen.getByRole("link", { name: "FireLens BC V1.6" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /FireLens BC/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Ask about a fire, a B.C. place, or preparedness." })).toBeInTheDocument();
+    expect(await screen.findByText(/12 incident records were returned/)).toBeInTheDocument();
+    expect(screen.getByText(/3 evacuation records were returned/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Browse guided questions" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "How FireLens works" })).toBeInTheDocument();
-    expect(screen.getByText("For employers & evaluators")).toBeInTheDocument();
-    expect(screen.getByText("Official-source data. Not a safety assessment.")).toBeInTheDocument();
+    expect(screen.getByText("Sources, methods, and limits")).toBeInTheDocument();
+    expect(screen.getByText("FireLens is not a safety assessment.")).toBeInTheDocument();
     expect(screen.getByText("Sources and status boundaries appear with each answer.")).toHaveClass("response-announcement");
     expect(screen.queryByText("Start with an example")).not.toBeInTheDocument();
     expect(screen.queryByText("0 of 6 turns in context")).not.toBeInTheDocument();
@@ -395,7 +457,7 @@ describe("FireLens Source Lens", () => {
       writable: true,
       value: scrollIntoView,
     });
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(answer), { status: 200 })));
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(new Response(JSON.stringify(answer), { status: 200 }))));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What belongs in a grab-and-go bag?");
@@ -418,7 +480,7 @@ describe("FireLens Source Lens", () => {
   });
 
   it("renders a capability response with API suggestions and no evidence", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(
       new Response(JSON.stringify({
         status: "answer",
         response_mode: "capability",
@@ -429,7 +491,7 @@ describe("FireLens Source Lens", () => {
         evidence: [],
         limitations: [],
       }), { status: 200 }),
-    ));
+    )));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What can you help me with?");
@@ -442,7 +504,7 @@ describe("FireLens Source Lens", () => {
   });
 
   it("renders optional authority-labelled answer sections", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(
       new Response(JSON.stringify({
         status: "answer",
         response_mode: "mixed",
@@ -482,7 +544,7 @@ describe("FireLens Source Lens", () => {
         aggregate_freshness: "fresh",
         validation: { accepted: true },
       }), { status: 200 }),
-    ));
+    )));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What is happening?");
@@ -500,7 +562,7 @@ describe("FireLens Source Lens", () => {
   });
 
   it("keeps reviewed-source conflicts visible beside live records", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(
       new Response(JSON.stringify({
         ...answer,
         response_mode: "mixed",
@@ -526,7 +588,7 @@ describe("FireLens Source Lens", () => {
         }],
         aggregate_freshness: "fresh",
       }), { status: 200 }),
-    ));
+    )));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Show this fire and explain the conflicting guidance.");
@@ -538,9 +600,9 @@ describe("FireLens Source Lens", () => {
   });
 
   it("renders a verified answer and its local evidence", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(
       new Response(JSON.stringify(answer), { status: 200 }),
-    ));
+    )));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What goes in a grab-and-go bag?");
@@ -559,10 +621,12 @@ describe("FireLens Source Lens", () => {
 
   it("renders labelled background without an evidence interaction", async () => {
     const backgroundClaim = "Embers can travel ahead of a wildfire front.";
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(
       new Response(JSON.stringify({
         status: "answer",
         response_mode: "background",
+        presentation_shell: "chat",
+        provenance_class: "general_knowledge",
         trace_id: "trace-background",
         answer: backgroundClaim,
         suggested_questions: [],
@@ -575,13 +639,15 @@ describe("FireLens Source Lens", () => {
         evidence: [],
         limitations: ["General background — not verified against the FireLens corpus."],
       }), { status: 200 }),
-    ));
+    )));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Why can embers be dangerous?");
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByText("General knowledge")).toBeInTheDocument();
+    expect(screen.getByText("General model knowledge. Not a safety assessment.")).toBeInTheDocument();
+    expect(screen.queryByText("Official live records. Not a safety assessment.")).not.toBeInTheDocument();
     expect(screen.getByText(
       "General model knowledge · not checked against FireLens sources",
     )).toBeInTheDocument();
@@ -616,7 +682,7 @@ describe("FireLens Source Lens", () => {
           live_results: [],
         }), { status: 200 }));
       });
-      vi.stubGlobal("fetch", fetchMock);
+      vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
       const user = userEvent.setup();
       render(<App />);
 
@@ -635,7 +701,7 @@ describe("FireLens Source Lens", () => {
   );
 
   it("keeps unsupported live requests useful with an official next link", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(
       new Response(JSON.stringify({
         status: "answer",
         response_mode: "scope_redirect",
@@ -651,7 +717,7 @@ describe("FireLens Source Lens", () => {
         }],
         resolved_location: { latitude: 49.89, longitude: -119.5 },
       }), { status: 200 }),
-    ));
+    )));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What is the current air quality in Kelowna?");
@@ -667,7 +733,7 @@ describe("FireLens Source Lens", () => {
   });
 
   it("renders a typed abstention without evidence", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(
       new Response(JSON.stringify({
         status: "abstention",
         response_mode: "abstention",
@@ -679,7 +745,7 @@ describe("FireLens Source Lens", () => {
         limitations: ["Static guidance cannot establish current status."],
         reason_code: "live_data_required",
       }), { status: 200 }),
-    ));
+    )));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Is a fire active near me right now?");
@@ -688,13 +754,13 @@ describe("FireLens Source Lens", () => {
     expect(await screen.findByText("FireLens did not generate guidance")).toBeInTheDocument();
     expect(screen.getAllByText("Current source unavailable").length).toBeGreaterThan(0);
     expect(screen.getByText("Static guidance cannot establish current status.")).toBeInTheDocument();
-    expect(screen.getByText(/live_data_required/)).toBeInTheDocument();
+    expect(screen.queryByText(/live_data_required/)).not.toBeInTheDocument();
     expect(screen.queryByText("Answer evidence and support")).not.toBeInTheDocument();
   });
 
   it("labels a personal-safety abstention and exposes its actual official handoff", async () => {
     const officialUrl = "https://www.emergencyinfobc.gov.bc.ca/";
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(
       new Response(JSON.stringify({
         status: "abstention",
         response_mode: "abstention",
@@ -710,7 +776,7 @@ describe("FireLens Source Lens", () => {
           description: "Current evacuation notices from issuing authorities.",
         }],
       }), { status: 200 }),
-    ));
+    )));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Should I evacuate now?");
@@ -718,9 +784,8 @@ describe("FireLens Source Lens", () => {
 
     expect(await screen.findByText("Personal safety boundary")).toBeInTheDocument();
     expect(screen.getByText("FireLens cannot decide whether you should evacuate.")).toBeInTheDocument();
-    expect(screen.getByRole("link", {
-      name: /EmergencyInfoBC current evacuation information/,
-    })).toHaveAttribute("href", officialUrl);
+    expect(screen.getByText("EmergencyInfoBC current evacuation information")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Open official source/ })).toHaveAttribute("href", officialUrl);
     expect(screen.queryByText(/Use the official-current-information link/)).not.toBeInTheDocument();
   });
 
@@ -738,7 +803,7 @@ describe("FireLens Source Lens", () => {
       geometry_relation: "nearby",
       geometry: { type: "Point", coordinates: [-123.5, 49.5] },
     };
-    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockImplementation((url: string) => {
       if (String(url).startsWith("/api/v1/live/map")) {
         return Promise.resolve(new Response(JSON.stringify({
           generated_at: "2026-07-28T12:00:00Z",
@@ -760,7 +825,7 @@ describe("FireLens Source Lens", () => {
         live_results: [liveResult],
         unavailable_layers: ["evacuation"],
       }), { status: 200 }));
-    }));
+    })));
     const user = userEvent.setup();
     const { container } = render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Is there an active wildfire now?");
@@ -827,7 +892,7 @@ describe("FireLens Source Lens", () => {
         unavailable_layers: [],
       }), { status: 200 }));
     });
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
 
@@ -836,7 +901,10 @@ describe("FireLens Source Lens", () => {
 
     expect((await screen.findAllByText("Fresh Question Fire is the matching official record.")).length).toBeGreaterThan(0);
     await user.click(await screen.findByRole("button", { name: "View official map context" }));
-    expect(screen.getByRole("heading", { name: "BC wildfire information — mixed freshness", level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Current BC wildfire information", level: 1 })).toBeInTheDocument();
+    expect(screen.queryByText("Stale Province Fire")).not.toBeInTheDocument();
+    await user.click(screen.getByLabelText("Show additional B.C. context layers"));
+    expect(await screen.findByRole("heading", { name: "BC wildfire information — mixed freshness", level: 1 })).toBeInTheDocument();
     expect(screen.getByText(/Official records include stale cached data/)).toBeInTheDocument();
   });
 
@@ -884,7 +952,7 @@ describe("FireLens Source Lens", () => {
         unavailable_layers: [],
       }), { status: 200 }));
     });
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
 
@@ -895,14 +963,20 @@ describe("FireLens Source Lens", () => {
     expect(await screen.findByRole("heading", { name: "Matching this question", level: 2 })).toBeInTheDocument();
     const matchingList = screen.getByRole("list", { name: "Matching this question" });
     expect(within(matchingList).getByText("Question Fire")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Rest of B.C.", level: 2 })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Rest of B.C.", level: 2 })).not.toBeInTheDocument();
+    await user.click(screen.getByLabelText("Show additional B.C. context layers"));
+    expect(await screen.findByRole("heading", { name: "Rest of B.C.", level: 2 })).toBeInTheDocument();
     expect(screen.queryByText("Province Fire")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Show rest of B\.C\./ }));
     const provinceList = screen.getByRole("list", { name: "Rest of B.C." });
     const provinceNames = within(provinceList).getAllByRole("button").map((button) => button.querySelector("strong")?.textContent);
-    expect(provinceNames).toEqual(["Province Fire", "Evacuation area EA-7", "Wildfire perimeter"]);
-    expect(within(provinceList).getByRole("link", { name: "Open GIS dataset for Wildfire perimeter, record perimeter:province" })).toBeInTheDocument();
+    expect(provinceNames).toEqual([
+      "Province Fire",
+      "Unnamed evacuation record EA-7",
+      "Unnamed perimeter perimeter:province",
+    ]);
+    expect(within(provinceList).getByRole("link", { name: /Open GIS dataset/ })).toBeInTheDocument();
   });
 
   it("focuses the map from a named community without asking for location again", async () => {
@@ -951,7 +1025,7 @@ describe("FireLens Source Lens", () => {
         resolved_location: { latitude: 49.89, longitude: -119.5 },
       }), { status: 200 }));
     });
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
 
@@ -1024,7 +1098,7 @@ describe("FireLens Source Lens", () => {
         selected_live_result_id: "incident:7",
       }), { status: 200 }));
     });
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
 
@@ -1074,7 +1148,7 @@ describe("FireLens Source Lens", () => {
         aggregate_freshness: "fresh",
       }), { status: 200 }));
     });
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
 
@@ -1137,7 +1211,7 @@ describe("FireLens Source Lens", () => {
         },
       }), { status: 200 }));
     });
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "How close is the wildfire perimeter near me today?");
@@ -1192,7 +1266,7 @@ describe("FireLens Source Lens", () => {
         aggregate_freshness: "fresh",
       }), { status: 200 }));
     });
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
 
@@ -1257,7 +1331,7 @@ describe("FireLens Source Lens", () => {
         },
       }), { status: 200 }));
     });
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "How close is the wildfire perimeter near me today?");
@@ -1275,7 +1349,7 @@ describe("FireLens Source Lens", () => {
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(
       new Response(JSON.stringify(answer), { status: 200 }),
     ));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
 
@@ -1334,7 +1408,7 @@ describe("FireLens Source Lens", () => {
         validation: { accepted: true },
       }), { status: 200 }));
     });
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
 
@@ -1367,7 +1441,7 @@ describe("FireLens Source Lens", () => {
         history_text: boundedHistory,
       }), { status: 200 }),
     ));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
 
@@ -1389,7 +1463,7 @@ describe("FireLens Source Lens", () => {
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(
       new Response(JSON.stringify(answer), { status: 200 }),
     ));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
 
@@ -1410,7 +1484,7 @@ describe("FireLens Source Lens", () => {
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(
       new Response(JSON.stringify(answer), { status: 200 }),
     ));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
 
@@ -1430,7 +1504,7 @@ describe("FireLens Source Lens", () => {
   });
 
   it("keeps mixed reviewed sources labelled when live records are also present", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockImplementation((url: string) => {
       if (String(url).startsWith("/api/v1/live/map")) {
         return Promise.resolve(new Response(JSON.stringify({
           generated_at: "2026-08-15T18:00:00Z",
@@ -1457,7 +1531,7 @@ describe("FireLens Source Lens", () => {
           geometry: { type: "Point", coordinates: [-123.12, 49.28] },
         }],
       }), { status: 200 }));
-    }));
+    })));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "surface:mixed");
@@ -1470,7 +1544,7 @@ describe("FireLens Source Lens", () => {
   });
 
   it("uses the stale map title when the answer records are stale and the province map is empty", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockImplementation((url: string) => {
       if (String(url).startsWith("/api/v1/live/map")) {
         return Promise.resolve(new Response(JSON.stringify({
           generated_at: "2026-08-15T18:00:00Z",
@@ -1502,7 +1576,7 @@ describe("FireLens Source Lens", () => {
           geometry: { type: "Point", coordinates: [-123.12, 49.28] },
         }],
       }), { status: 200 }));
-    }));
+    })));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "surface:live-stale");
@@ -1526,7 +1600,7 @@ describe("FireLens Source Lens", () => {
       name: `Surface Test Fire ${String(index + 1).padStart(2, "0")}`,
       geometry: { type: "Point" as const, coordinates: [-123.12 + index * 0.1, 49.28] },
     }));
-    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockImplementation((url: string) => {
       if (String(url).startsWith("/api/v1/live/map")) {
         return Promise.resolve(new Response(JSON.stringify({
           generated_at: "2026-08-15T18:00:00Z",
@@ -1539,6 +1613,10 @@ describe("FireLens Source Lens", () => {
       return Promise.resolve(new Response(JSON.stringify({
         status: "answer",
         response_mode: "live",
+        presentation_shell: "analysis",
+        provenance_class: "official_live",
+        roster_total: 20,
+        sample_record_ids: liveResults.slice(0, 8).map((item) => item.result_id),
         trace_id: "twenty-records",
         answer: "Current official information: matching fires are listed.",
         claims: [],
@@ -1547,7 +1625,7 @@ describe("FireLens Source Lens", () => {
         aggregate_freshness: "fresh",
         live_results: liveResults,
       }), { status: 200 }));
-    }));
+    })));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "surface:live-fresh");
@@ -1570,7 +1648,7 @@ describe("FireLens Source Lens", () => {
         },
       },
     });
-    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockImplementation((url: string, init?: RequestInit) => {
       if (String(url).startsWith("/api/v1/live/map")) {
         return Promise.resolve(new Response(JSON.stringify({
           generated_at: "2026-08-15T18:00:00Z",
@@ -1619,7 +1697,7 @@ describe("FireLens Source Lens", () => {
           geometry: { type: "Point", coordinates: [-123.12, 49.28] },
         }],
       }), { status: 200 }));
-    }));
+    })));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "surface:requires-location");
@@ -1633,14 +1711,14 @@ describe("FireLens Source Lens", () => {
   });
 
   it("offers retry only for a retryable provider failure", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(
       new Response(JSON.stringify({
         trace_id: "trace-error",
         error_kind: "rate_limit",
         message: "The required OpenRouter service is unavailable.",
         retryable: true,
       }), { status: 503 }),
-    ));
+    )));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "How should I prepare for wildfire?");
@@ -1658,12 +1736,12 @@ describe("FireLens Source Lens", () => {
   });
 
   it("explains when retrying an unchanged structured request is unlikely to help", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(new Response(JSON.stringify({
       trace_id: "trace-not-retryable",
       error_kind: "invalid_request",
       message: "This request could not be processed as written.",
       retryable: false,
-    }), { status: 400 })));
+    }), { status: 400 }))));
     const user = userEvent.setup();
     render(<App />);
 
@@ -1702,7 +1780,7 @@ describe("FireLens Source Lens", () => {
     },
   ])("shows truthful retry guidance for a $label failure without retrying automatically", async ({ fetchResult, message }) => {
     const fetchMock = vi.fn().mockImplementation(fetchResult);
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
 
@@ -1724,7 +1802,7 @@ describe("FireLens Source Lens", () => {
   });
 
   it("has no automated accessibility violations in a retryable service failure", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("<html>bad gateway</html>", { status: 502 })));
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(new Response("<html>bad gateway</html>", { status: 502 }))));
     const user = userEvent.setup();
     const { container } = render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Where is Mountain Fire near Kelowna?");
@@ -1735,7 +1813,7 @@ describe("FireLens Source Lens", () => {
   });
 
   it("keeps a named Mountain Fire answer first with the map closed", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(new Response(JSON.stringify({
       status: "answer",
       response_mode: "live",
       trace_id: "trace-mountain-kelowna",
@@ -1756,7 +1834,7 @@ describe("FireLens Source Lens", () => {
         geometry: { type: "Point", coordinates: [-119.5, 49.9] },
       }],
       aggregate_freshness: "fresh",
-    }), { status: 200 })));
+    }), { status: 200 }))));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Where is Mountain Fire near Kelowna?");
@@ -1777,9 +1855,9 @@ describe("FireLens Source Lens", () => {
   });
 
   it("has no automated accessibility violations in the evidence state", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(
       new Response(JSON.stringify(answer), { status: 200 }),
-    ));
+    )));
     const user = userEvent.setup();
     const { container } = render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What should I pack?");

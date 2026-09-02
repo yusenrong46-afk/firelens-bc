@@ -1,5 +1,37 @@
 # Changelog
 
+## Unreleased — V1.6.4
+
+### Changed
+
+- One request now produces one backend-owned interpretation and one
+  authoritative result set. Answer, map, records, provenance, limitations, and
+  suggestions may present that set, but they may not independently reinterpret
+  it.
+- Mixed live-and-guidance answers stay in chat with two labelled sections and a
+  ranked sample of at most eight official records. They no longer auto-open a
+  dense province map.
+- Official samples rank Fire of Note, Out of Control, and evacuation-associated
+  records before ordinary Being Held rows. Unnamed records use honest labels.
+- Provenance chrome is response-aware. General knowledge no longer claims
+  official-source data.
+- Registry-owned capability paraphrases, missing-antecedent clarification, and
+  unclear-input clarification replace frontend free-text classifiers.
+- Idle current-state copy comes from a zero-generation live summary. Unavailable
+  layers stay null, never zero.
+- Adaptive retrieval remains baseline after a paired experiment that did not
+  show a material safety or cost benefit.
+
+### Known limits
+
+- PB15-style source-extraction defects remain source-repair work. An unreadable
+  exact span is omitted or handed off; it is not converted into FireLens advice.
+- This section describes a committed local engineering candidate. Its exact
+  current HEAD and tree must be bound by external current candidate evidence;
+  this changelog does not affirm that such evidence exists. Exact-Git
+  qualification, paid evaluation, human review, live/production verification,
+  and release authorization are not established here.
+
 ## Unreleased — V1.6.3
 
 ### Changed

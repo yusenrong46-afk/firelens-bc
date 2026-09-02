@@ -30,7 +30,7 @@ export function HowFireLensWorks({ open, onClose }: { open: boolean; onClose: ()
       >
         <div className="project-dialog__header">
           <div>
-            <span className="panel-label">FireLens BC V1.6</span>
+            <span className="panel-label">FireLens BC methods</span>
             <h2 ref={heading} id="project-dialog-title" tabIndex={-1}>How FireLens works</h2>
           </div>
           <button ref={closeButton} type="button" onClick={onClose} aria-label="Close how FireLens works">
@@ -39,6 +39,7 @@ export function HowFireLensWorks({ open, onClose }: { open: boolean; onClose: ()
         </div>
         <p className="project-dialog__lead" id="project-dialog-description">
           FireLens uses official records, reviewed claims, and deterministic checks to control factual publication.
+          Employers and evaluators can use this panel for sources, methods, and publication limits.
         </p>
         <ol className="project-flow">
           <li><Database size={23} /><div><strong>Acquire governed evidence</strong><span>Live facts use typed official records; guidance uses reviewed sources.</span></div></li>

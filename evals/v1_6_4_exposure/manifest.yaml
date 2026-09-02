@@ -1,0 +1,55 @@
+# FireLens V1.6.4 public-exposure evaluation identity.
+# Performance ceilings below were frozen BEFORE any Gate M measurement.
+# Candidate SHA / preview URL are bound after the clean commit and deploy.
+
+schema_version: firelens.v1_6_4_exposure.manifest.v1
+candidate: FireLens V1.6.4
+campaign: public_exposure_evaluation
+scoring_origin: bound_preview
+gate_a_origin: local_committed_sha
+retrieval_strategy: baseline
+release_version: "1.6.4"
+
+identity:
+  status: PENDING_COMMIT_AND_PREVIEW
+  git_commit: null
+  git_tree: null
+  preview_url: null
+  deployment_id: null
+  ready_status: null
+  provider: null
+  model_id: null
+  reasoning_setting: null
+  prompt_policy_hash: null
+  corpus_manifest_sha256: a66e2975deb4ce81c02bdc1e9d961950e9e61dbe7b706533a66a9504bb1bb546
+  vector_manifest_sha256: a88acf8956aefdfeabc4915dd2e2a3cd8be6b9e2924cf9f2e791b5ed91de1516
+  capability_registry_sha256: e198c2688514edfa83042262e887d8b26a602c3c7dadbb5f919b324d60f1af6b
+  hard_probe_dataset_sha256: ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035
+  eval_cases_sha256: b8c561e16eee9486fff03c7808f7ac4beca47778cc286aa5b9274ad30616c95c
+  environment_config_hash: null
+  eval_manifest_hash: null
+  bound_at: null
+
+# Frozen before measurement. Do not raise these after seeing results.
+performance_thresholds_frozen: true
+performance_thresholds:
+  ready_must_be_healthy: true
+  first_useful_content_p75_ms: 2500
+  current_summary_api_warm_p95_ms: 3000
+  deterministic_live_analytical_p95_ms: 5000
+  reviewed_general_generative_p95_ms: 15000
+  mixed_live_plus_guidance_p95_ms: 20000
+  concurrent_users: 10
+  representative_requests: 100
+  max_http_5xx_rate: 0.01
+  max_result_contract_mismatches: 0
+  concurrent_p95_vs_single_user_max_ratio: 2.0
+  parent_latency_regression_max: 0.15
+  parent_cost_per_100_regression_max: 0.15
+
+hard_probe_expectation_profile: rc2.2
+claimbench_v2_floor: 332
+hard_probe_offline_floor: 86
+
+parent_commit_v1_6_3: f8543e91b86645cc82221761bf63649e5a865191
+implementation_branch: codex/v1-6-4-coherent-truth

@@ -291,6 +291,7 @@ class LiveResult(FrozenStrictModel):
     fire_centre: str | None = Field(default=None, max_length=200)
     fire_zone: str | None = Field(default=None, max_length=200)
     issuer: str | None = Field(default=None, max_length=300)
+    fire_of_note: bool = False
     geometry_relation: GeometryRelation = GeometryRelation.UNKNOWN
     geometry: dict[str, Any]
     distance_km: float | None = Field(default=None, ge=0)
@@ -592,3 +593,14 @@ class NearMeResponse(FrozenStrictModel):
             ):
                 raise ValueError("near-me layer counts must match the full result roster")
         return self
+
+
+class LiveCurrentSummary(FrozenStrictModel):
+    """Zero-generation current-state summary. Unavailable layers stay null."""
+
+    incident_record_count: int | None = Field(default=None, ge=0)
+    evacuation_record_count: int | None = Field(default=None, ge=0)
+    source_status: str = Field(min_length=1, max_length=80)
+    retrieved_at: datetime | None = None
+    freshness: AggregateFreshness | None = None
+    limitation: str = Field(min_length=1, max_length=300)

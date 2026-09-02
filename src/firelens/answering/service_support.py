@@ -15,6 +15,7 @@ from firelens.answering.intent import (
     skips_provider_planning,
 )
 from firelens.answering.live_request_intent import uses_selected_live_binding
+from firelens.answering.registered_suggestions import registered_suggestions
 from firelens.answering.responses import (
     provider_abstention as _provider_abstention,
 )
@@ -52,7 +53,7 @@ from firelens.contracts import (
 )
 from firelens.errors import ProviderError
 from firelens.ingestion.chunking import ChunkRecord
-from firelens.operational_logging import log_operation
+from firelens.operational_logging import log_operation, usage_cost_usd, usage_tokens
 from firelens.providers.base import AIProvider
 from firelens.publication.fallback import background_authority
 from firelens.retrieval.bm25 import BM25Index
@@ -252,6 +253,10 @@ class StaticRAGSupport:
     async def _record_ask(
         self, request: QueryRequest, response: AskResponse, *, route: str, **details: object
     ) -> AskResponse:
+        if not response.suggested_questions:
+            suggestions = registered_suggestions(question=request.question, response=response)
+            if suggestions:
+                response = response.model_copy(update={"suggested_questions": suggestions})
         trace_details = project_ask_trace_details(details)
         operation = self._active_operations.pop(response.trace_id, None)
         if operation is not None:
@@ -271,6 +276,7 @@ class StaticRAGSupport:
                 )
             if isinstance(details.get("repair_count"), int) and details["repair_count"]:
                 stages.append("grounded_repair")
+            usage = details.get("generation_usage")
             log_operation(
                 trace_id=response.trace_id,
                 route=route,
@@ -294,6 +300,9 @@ class StaticRAGSupport:
                 release_version=self.config.release_version,
                 build_commit=self.config.build_commit,
                 deployment_environment=self.config.deployment_environment,
+                input_tokens=usage_tokens(usage, "prompt_tokens", "input_tokens"),
+                output_tokens=usage_tokens(usage, "completion_tokens", "output_tokens"),
+                cost_usd=usage_cost_usd(usage),
             )
         await self.trace_recorder.record(
             response.trace_id,

@@ -1565,7 +1565,25 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   white-space: normal;
   overflow-wrap: anywhere;
 }
-.conversation-panel--analytical .status-banner__summary p { display: none; }
+.conversation-panel--analytical .status-banner__summary p { display: block; white-space: normal; overflow-wrap: anywhere; }
+.conversation-panel--analytical .answer-lead,
+.conversation-panel--analytical .answer-markdown,
+.quote-distinction { overflow-wrap: anywhere; white-space: normal; }
+.live-map__context-layers {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 6px 8px;
+  margin: 0 0 12px;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+.live-map__context-layers small { grid-column: 2; color: var(--muted); }
+.authority-handoff-cards { display: grid; gap: 12px; margin-top: 16px; }
+.authority-handoff-card { padding: 12px 14px; border: 1px solid var(--hairline-soft); border-radius: 10px; }
+.authority-handoff-card__topic { font-weight: 600; }
+.authority-handoff-card__authority,
+.authority-handoff-card__why { color: var(--muted); }
 .conversation-panel--analytical .status-banner > a { display: none; }
 .conversation-toolbar--clear-only {
   position: static;
@@ -2192,7 +2210,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 
   /* Analysis is a persistent answer rail beside one full-height snapshot canvas. */
   .workspace--analysis .conversation-panel {
-    --analysis-rail-width: clamp(380px, 30vw, 440px);
+    --analysis-rail-width: clamp(420px, 36vw, 560px);
     position: relative;
     display: grid;
     grid-template-columns: var(--analysis-rail-width) minmax(0, 1fr);

@@ -52,9 +52,10 @@ export function mapPopupGeometryMeaning(result: LiveResult): string {
 export function resultDisplayName(result: LiveResult): string {
   const name = result.name?.trim();
   if (name && name.toLowerCase() !== "unnamed official record") return name;
-  const incidentNumber = result.incident_number?.trim();
-  if (incidentNumber) return `${resultKindLabel(result.kind)} ${incidentNumber}`;
-  return resultKindLabel(result.kind);
+  const incidentNumber = result.incident_number?.trim() || result.result_id;
+  if (result.kind === "evacuation") return `Unnamed evacuation record ${incidentNumber}`;
+  if (result.kind === "perimeter") return `Unnamed perimeter ${incidentNumber}`;
+  return `Unnamed incident ${incidentNumber}`;
 }
 
 export function resultStatus(result: LiveResult): string {

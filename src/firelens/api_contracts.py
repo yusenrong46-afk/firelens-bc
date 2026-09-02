@@ -18,15 +18,15 @@ _HISTORY_SECTION_LABELS = {
     "current_records": "Official current records",
     "reviewed_guidance": "Reviewed guidance",
     "conflicting_guidance": "Conflicting reviewed sources",
-    "general_background": "General background (not corpus-verified)",
+    "general_background": "General background",
     "official_handoff": "Official source handoff",
     "uncertainty": "Uncertainty about what FireLens could establish",
 }
 _HISTORY_MODE_LABELS = {
-    "grounded": "Reviewed guidance",
+    "grounded": "Reviewed official guidance",
     "partial": "Reviewed guidance + uncertainty",
     "conflict": "Conflicting reviewed sources",
-    "background": "General background (not corpus-verified)",
+    "background": "General background",
     "live": "Official current records",
     "mixed": "Mixed official and labelled non-live information",
     "capability": "FireLens capability information",

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AskStartPanel } from "../src/features/ask/AskStartPanel";
 import catalogue from "../../../data/capabilities/guided_questions.v1.json";
+import { wrapAppFetch } from "./fetchStub";
 
 // The API adds the integrity envelope around this real 24-question registry.
 const loadedCatalogue = { ...catalogue, catalogue_sha256: "0".repeat(64) };
@@ -27,7 +28,7 @@ function renderPanel({ locationLabel = "Kelowna, BC", onSelectQuestion = vi.fn()
 
 describe("AskStartPanel", () => {
   beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response()));
+    vi.stubGlobal("fetch", wrapAppFetch(() => response()));
   });
   afterEach(() => {
     cleanup();
@@ -50,7 +51,7 @@ describe("AskStartPanel", () => {
 
     expect(onSelectQuestion).toHaveBeenCalledTimes(1);
     expect(onSelectQuestion).toHaveBeenCalledWith("What official wildfire records are near Kelowna, BC?");
-    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes("guided-questions"))).toBe(true);
     expect(screen.getByRole("status")).toHaveTextContent("Filled composer with: What official wildfire records are near Kelowna, BC?");
   });
 
@@ -60,7 +61,7 @@ describe("AskStartPanel", () => {
       init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
       if (fetchMock.mock.calls.length === 2) queueMicrotask(() => resolve(response()));
     }));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch(fetchMock));
     renderPanel();
 
     await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
@@ -75,7 +76,7 @@ describe("AskStartPanel", () => {
 
   it("keeps the free-text/place controls available when the catalogue fails", async () => {
     const user = userEvent.setup();
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+    vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockRejectedValue(new Error("offline"))));
     renderPanel();
 
     await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
@@ -128,7 +129,7 @@ describe("AskStartPanel", () => {
         ? { ...category, questions: category.questions.slice(0, -1) }
         : category),
     };
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(malformed), { status: 200 })));
+    vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(malformed), { status: 200 }))));
     renderPanel();
     await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
     expect(await screen.findByRole("status", { name: "Guided questions status" })).toHaveTextContent(/temporarily unavailable/i);
@@ -140,7 +141,7 @@ describe("AskStartPanel", () => {
     const fetchMock = vi.fn()
       .mockRejectedValueOnce(new Error("offline"))
       .mockResolvedValueOnce(response());
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", wrapAppFetch(fetchMock));
     renderPanel();
     await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
     await screen.findByRole("button", { name: "Retry guided questions" });

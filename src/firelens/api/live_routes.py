@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 from firelens.api.responses import ERROR_RESPONSES, deadline_response, error_response
 from firelens.config import FireLensConfig
 from firelens.contracts import (
+    LiveCurrentSummary,
     LiveMapResponse,
     LiveResultKind,
     NearMeRequest,
@@ -142,6 +143,63 @@ def install_live_routes(
                 request_started=request_started,
                 route="live_map",
             )
+
+    @app.get(
+        "/api/v1/live/summary", response_model=LiveCurrentSummary, responses=ERROR_RESPONSES
+    )
+    async def live_summary() -> LiveCurrentSummary | JSONResponse:
+        request_started = perf_counter()
+        try:
+            async with asyncio.timeout(config.public_request_deadline_seconds):
+                payload = await current_live_service().map_results(
+                    layers=(LiveResultKind.INCIDENT, LiveResultKind.EVACUATION)
+                )
+        except TimeoutError:
+            return deadline_response(config, "live_summary")
+        except LiveDataUnavailable as exc:
+            return _live_failure_response(
+                exc,
+                config=config,
+                request_started=request_started,
+                route="live_summary",
+            )
+        unavailable = set(payload.unavailable_layers)
+        incident_count = (
+            None
+            if LiveResultKind.INCIDENT in unavailable
+            else sum(item.kind == LiveResultKind.INCIDENT for item in payload.results)
+        )
+        evacuation_count = (
+            None
+            if LiveResultKind.EVACUATION in unavailable
+            else sum(item.kind == LiveResultKind.EVACUATION for item in payload.results)
+        )
+        limitation = (
+            "These are returned official records, not a claim that every fire or "
+            "evacuation in B.C. is shown. Unavailable layers are not zero."
+        )
+        if incident_count is None or evacuation_count is None:
+            missing = ", ".join(layer.value for layer in payload.unavailable_layers)
+            limitation = (
+                f"Official {missing} records were unavailable. That is not an all-clear "
+                "and is not a zero count."
+            )
+        return LiveCurrentSummary(
+            incident_record_count=incident_count,
+            evacuation_record_count=evacuation_count,
+            source_status=(
+                "partial"
+                if unavailable
+                else (
+                    payload.aggregate_freshness.value
+                    if payload.aggregate_freshness
+                    else "returned"
+                )
+            ),
+            retrieved_at=payload.generated_at,
+            freshness=payload.aggregate_freshness,
+            limitation=limitation,
+        )
 
     @app.post(
         "/api/v1/live/nearby",

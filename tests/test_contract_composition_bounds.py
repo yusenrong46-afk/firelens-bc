@@ -403,9 +403,7 @@ class PublicContractBoundTests(unittest.TestCase):
 
         self.assertIsNotNone(response.history_text)
         history = response.history_text or ""
-        self.assertTrue(
-            history.startswith("Authority: General background (not corpus-verified). Answer:")
-        )
+        self.assertTrue(history.startswith("Authority: General background. Answer:"))
         self.assertEqual(history.count(BACKGROUND_LIMITATION), 1)
         self.assertNotIn("mode=", history)
 

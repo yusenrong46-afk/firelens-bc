@@ -1,8 +1,10 @@
 import { ArrowSquareOut, Crosshair, UserCircle, WarningCircle } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { FeedbackControls } from "../feedback/FeedbackControls";
+import { emitProductEvent } from "../../shared/telemetry";
 import { resultDisplayName } from "../near-me/liveResultPresentation";
 import { AnswerBody } from "./AnswerBody";
+import { abstentionPresentation } from "./abstentionPresentation";
 import { AskStartPanel } from "./AskStartPanel";
 import { getAnswerSections } from "./answerSections";
 import {
@@ -30,6 +32,7 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
 }) {
   const {
     assistantText,
+    liveSummary,
     claims,
     clearHistory,
     clearManualLocation,
@@ -125,6 +128,7 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
           <>
             <AskStartPanel
               locationLabel={locationLabel}
+              currentState={liveSummary ? assistantText : undefined}
               onLocationChange={(value) => { setLocationLabel(value); clearManualLocation(); }}
               onUseApproximateLocation={useApproximateLocation}
               onSelectQuestion={fillComposer}
@@ -171,12 +175,18 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
               </div>
             )}
             {(response?.related_links ?? []).length > 0 && (
-              <div className="related-service-links" aria-label="Related official services">
+              <div className="related-service-links authority-handoff-cards" aria-label="Official authority handoffs">
                 {(response?.related_links ?? []).map((item) => (
-                  <a key={item.url} href={item.url} target="_blank" rel="noreferrer">
-                    <span><strong>{item.title}</strong><small>{item.description}</small></span>
-                    <ArrowSquareOut size={18} aria-hidden="true" />
-                  </a>
+                  <article key={item.url} className="authority-handoff-card">
+                    <p className="authority-handoff-card__topic">{item.title}</p>
+                    <p className="authority-handoff-card__authority">{handoffAuthority(item.title)}</p>
+                    <p>{item.description}</p>
+                    <p className="authority-handoff-card__why">FireLens does not ingest this live source, so it hands off to the official owner.</p>
+                    <a href={item.url} target="_blank" rel="noreferrer" onClick={() => emitProductEvent("authority_handoff_opened")}>
+                      <span>Open official source</span>
+                      <ArrowSquareOut size={18} aria-hidden="true" />
+                    </a>
+                  </article>
                 ))}
               </div>
             )}
@@ -234,7 +244,7 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
             <WarningCircle size={22} />
             <div>
               <strong>FireLens did not generate guidance</strong>
-              <p>Reason: {view.response.reason_code || "insufficient evidence"}</p>
+              <p>{abstentionPresentation(view.response.reason_code).title}</p>
               {visibleLimitations.map((item) => <p key={item}>{item}</p>)}
             </div>
           </div>
@@ -259,4 +269,13 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
       )}
     </section>
   );
+}
+
+function handoffAuthority(title: string): string {
+  const lowered = title.toLocaleLowerCase();
+  if (lowered.includes("drivebc")) return "DriveBC";
+  if (lowered.includes("aqhi") || lowered.includes("air quality")) return "Environment and Climate Change Canada";
+  if (lowered.includes("emergencyinfo")) return "EmergencyInfoBC";
+  if (lowered.includes("bc wildfire") || lowered.includes("bcws")) return "BC Wildfire Service";
+  return "Official authority";
 }

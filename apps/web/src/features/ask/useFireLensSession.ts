@@ -3,8 +3,11 @@ import {
   askFireLens,
   type AskResponse,
   type ConversationTurn,
+  fetchLiveSummary,
+  fetchReadyHealth,
   FireLensApiError,
   FireLensClientError,
+  type LiveCurrentSummary,
   type LocationInput,
   type LiveResult,
   type MapContext,
@@ -19,6 +22,7 @@ import {
   type Claim,
   type ViewState,
 } from "./responseModel";
+import { emitProductEvent } from "../../shared/telemetry";
 import { deriveSessionMapView, type MapAggregateFreshness } from "./sessionMap";
 
 export type FireLensSession = {
@@ -58,14 +62,21 @@ export type FireLensSession = {
   submitLocation: (event: FormEvent<HTMLFormElement>) => void;
   submit: (event: FormEvent<HTMLFormElement>) => void;
   clearManualLocation: () => void;
+  releaseVersion: string | undefined;
+  liveSummary: LiveCurrentSummary | undefined;
+  contextLayersEnabled: boolean;
+  setContextLayersEnabled: (enabled: boolean) => void;
 };
 
 export function useFireLensSession(): FireLensSession {
   const [mapVisible, setMapVisible] = useState(false);
-  const provinceMap = useProvinceMap(mapVisible);
+  const [contextLayersEnabled, setContextLayersEnabled] = useState(false);
+  const [releaseVersion, setReleaseVersion] = useState<string>();
+  const [liveSummary, setLiveSummary] = useState<LiveCurrentSummary>();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
   const [view, setView] = useState<ViewState>({ kind: "idle" });
+  const provinceMap = useProvinceMap(mapVisible && (contextLayersEnabled || view.kind === "idle"));
   const [history, setHistory] = useState<ConversationTurn[]>([]);
   const [locationLabel, setLocationLabel] = useState("");
   const [activeLocation, setActiveLocation] = useState<LocationInput>();
@@ -93,9 +104,26 @@ export function useFireLensSession(): FireLensSession {
         response,
         provinceMap.data?.results,
         provinceMap.data?.unavailable_layers,
+        contextLayersEnabled,
       ),
-    [provinceMap.data?.results, provinceMap.data?.unavailable_layers, response],
+    [contextLayersEnabled, provinceMap.data?.results, provinceMap.data?.unavailable_layers, response],
   );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchReadyHealth(controller.signal)
+      .then((payload) => {
+        if (payload.release_version) setReleaseVersion(payload.release_version);
+      })
+      .catch(() => undefined);
+    void fetchLiveSummary(controller.signal)
+      .then((payload) => {
+        setLiveSummary(payload);
+        emitProductEvent("live_summary_loaded");
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
   const requiresLocation = response?.required_input?.kind === "location";
 
   useEffect(() => {
@@ -272,8 +300,8 @@ export function useFireLensSession(): FireLensSession {
         ? "Preparing your response…"
         : view.kind === "unavailable" || view.kind === "error"
           ? (view.message ?? "FireLens is unavailable.")
-          : provinceMap.loading
-            ? "Loading…"
+          : liveSummary
+            ? currentSummaryText(liveSummary)
             : "Ask about a mapped fire, wildfire preparedness, or an everyday question. FireLens labels official sources, reviewed evidence, and general knowledge differently.";
 
   return {
@@ -315,5 +343,19 @@ export function useFireLensSession(): FireLensSession {
     clearManualLocation: () => {
       setLocationMessage("");
     },
+    releaseVersion,
+    liveSummary,
+    contextLayersEnabled,
+    setContextLayersEnabled,
   };
+}
+
+function currentSummaryText(summary: LiveCurrentSummary): string {
+  const incidents = summary.incident_record_count == null
+    ? "Incident records are currently unavailable."
+    : `${summary.incident_record_count} incident records were returned.`;
+  const evacuations = summary.evacuation_record_count == null
+    ? " Evacuation records are currently unavailable."
+    : ` ${summary.evacuation_record_count} evacuation records were returned.`;
+  return `${incidents}${evacuations} ${summary.limitation}`;
 }

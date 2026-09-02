@@ -12,6 +12,7 @@ from firelens.answering.location_intent import coarse_location_from_question
 from firelens.answering.return_intent import reviewed_return_condition_intent
 from firelens.answering.scope import corpus_identifiers
 from firelens.contracts import QueryRequest, ReasonCode
+from firelens.guidance_capabilities import resolve_capability
 from firelens.source_requirements import guided_capability
 
 _PACKING_EXCLUSION = re.compile(
@@ -233,6 +234,9 @@ def prefers_general_background(request: QueryRequest) -> bool:
     if is_packing_exclusion_question(request):
         return True
     if reviewed_guidance_intent(current):
+        return False
+    place_label = request.location.label if request.location is not None else None
+    if resolve_capability(current, place_label=place_label) is not None:
         return False
     if _historical_wildfire_explanation(current, temporal_scope=parsed.temporal_scope):
         return True

@@ -190,7 +190,7 @@ jobs:
             --output config/runtime_candidate.v1.json \
             --commit "$CANDIDATE_SHA" \
             --benchmark-id firelens_v1_6_2 \
-            --release-version 1.6.3
+            --release-version 1.6.4
           runtime_candidate=$?
           npm --prefix apps/web run build
           frontend_build=$?
@@ -236,7 +236,7 @@ jobs:
               (
                   "runtime_candidate",
                   "scripts/write_runtime_candidate.py --commit $CANDIDATE_SHA "
-                  "--benchmark-id firelens_v1_6_2 --release-version 1.6.3",
+                  "--benchmark-id firelens_v1_6_2 --release-version 1.6.4",
               ),
               ("frontend_build", "npm --prefix apps/web run build"),
               (
@@ -323,7 +323,7 @@ jobs:
             --output-dir candidate-evidence \
             --commit "$CANDIDATE_SHA" \
             --tree "$CANDIDATE_TREE" \
-            --release-version 1.6.3 \
+            --release-version 1.6.4 \
             --generated-at "$source_date" \
             --builder-id "https://github.com/$GITHUB_REPOSITORY/actions/workflows/candidate.yml" \
             --invocation-id "$GITHUB_RUN_ID:$GITHUB_RUN_ATTEMPT" \

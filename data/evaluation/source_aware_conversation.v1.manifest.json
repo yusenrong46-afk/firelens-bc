@@ -3,7 +3,7 @@
   "dataset_id": "source_aware_conversation_v1",
   "dataset_sha256": "10386a7ce4921a3891fd4b134e03e4a6cd35c60006bd9102a483c61ca7f445cf",
   "guided_registry_sha256": "31ec26f03d9514e13afcea4a673275fff468371ba3bb98d356f43b41f2f4f2e1",
-  "capability_registry_sha256": "14d63e86539492d0e8c8d2eb40be3901c3e0a587df0595692141e80dd1b96d14",
+  "capability_registry_sha256": "e198c2688514edfa83042262e887d8b26a602c3c7dadbb5f919b324d60f1af6b",
   "status": "development_unsealed",
   "canonical_case_count": 24,
   "paraphrase_count": 72,

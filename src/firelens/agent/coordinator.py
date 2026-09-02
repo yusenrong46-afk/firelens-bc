@@ -12,6 +12,12 @@ from firelens.agent.loop import run_agent_loop
 from firelens.agent.query_plan import AgentRequestMode, AgentScopeResult, build_agent_query_plan
 from firelens.agent.rails import input_seatbelt
 from firelens.agent.tools import AgentTool
+from firelens.answering.input_clarity import (
+    is_low_substance_question,
+    missing_source_antecedent,
+    missing_source_antecedent_response,
+    unclear_input_response,
+)
 from firelens.answering.intent import (
     live_layers_for_question,
     plan_query,
@@ -305,6 +311,20 @@ class FireLensAgent:
                 route=QueryRoute.PROHIBITED,
                 tools=(),
                 policy=policy,
+            )
+        if is_low_substance_question(request.question):
+            return AgentExecution(
+                response=unclear_input_response(),
+                route=QueryRoute.PROHIBITED,
+                tools=(),
+                policy=RequestExecutionPolicy(route="unclear_input"),
+            )
+        if missing_source_antecedent(request):
+            return AgentExecution(
+                response=missing_source_antecedent_response(),
+                route=QueryRoute.PROHIBITED,
+                tools=(),
+                policy=RequestExecutionPolicy(route="missing_source_antecedent"),
             )
         place_label = request.location.label if request.location is not None else None
         capability = resolve_capability(request.question, place_label=place_label)

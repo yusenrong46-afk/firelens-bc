@@ -15,7 +15,7 @@ from firelens.privacy_policy import (
     resolve_openrouter_privacy_from_env,
 )
 
-DEFAULT_RELEASE_VERSION = "1.6.3"
+DEFAULT_RELEASE_VERSION = "1.6.4"
 
 
 def _read_dotenv(path: Path) -> dict[str, str]:

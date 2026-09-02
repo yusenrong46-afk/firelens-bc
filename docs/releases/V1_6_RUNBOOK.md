@@ -1,6 +1,6 @@
-# FireLens BC V1.6.3 candidate runbook
+# FireLens BC V1.6.4 candidate runbook
 
-This runbook prepares the V1.6.3 engineering candidate. It does not replace
+This runbook prepares the V1.6.4 engineering candidate. It does not replace
 independent semantic, accessibility, safety, retrieval, UX, or human review.
 It does not authorize push, deploy, or paid runs.
 
@@ -19,21 +19,21 @@ Round 1, Round 2, Round 3, and structured-publication reports remain snapshots
 of their recorded identities.
 
 The tracked Python package, web package, runtime default, Docker configuration,
-and OpenAPI are `1.6.3`. This is a local V1.6.3 engineering candidate,
-not a qualified release. Candidate evidence may bind `1.6.3` only after a clean
+and OpenAPI are `1.6.4`. This is a local V1.6.4 engineering candidate,
+not a qualified release. Candidate evidence may bind `1.6.4` only after a clean
 commit exists; a workflow label may not relabel the runnable artifact.
 
-The V1.6.3 patch promotion is separate from the historical `1.6.0-rc.1` and
-RC2 records. It binds the V1.6.2 functional parent. The frozen standard, probes,
-reports, and Thomas's prior human decisions remain byte-preserved. A V1.6.3
+The V1.6.4 patch promotion is separate from the historical `1.6.0-rc.1` and
+RC2 records. It binds the V1.6.3 functional parent. The frozen standard, probes,
+reports, and Thomas's prior human decisions remain byte-preserved. A V1.6.4
 qualification records a new exact commit/tree and its own artifacts; it never
 retrofits historical evidence.
 
 ## Candidate preflight
 
-1. Create a clean V1.6.3 commit before freezing. Record its exact Git commit
+1. Create a clean V1.6.4 commit before freezing. Record its exact Git commit
    and Git tree, then produce the matching CI candidate-evidence artifact. Do
-   not name a historical RC1/RC2 commit as the V1.6.3 candidate; those reports
+   not name a historical RC1/RC2 commit as the V1.6.4 candidate; those reports
    remain snapshots of their recorded identities.
 2. Confirm `docs/ARCHITECTURE_V1_6.md` is the Ask authority, not
    `docs/TECHNICAL_HANDBOOK.md`.
@@ -132,20 +132,20 @@ $(PYTHON) scripts/deploy_vercel.py --dry-run
 `scripts/deploy_vercel.py` refuses a dirty tree, reads `git rev-parse HEAD`,
 and constructs pinned `npx vercel@58.1.0 deploy --yes` with both `--build-env`
 and `--env` for `FIRELENS_BUILD_COMMIT=<full SHA>` and
-`FIRELENS_RELEASE_VERSION=1.6.3`, plus
+`FIRELENS_RELEASE_VERSION=1.6.4`, plus
 `FIRELENS_BENCHMARK_ID=firelens_v1_6_2`, so readiness cannot keep a stale
 project `1.6.0-rc.1` after that deploy. Preview is the default. `--prod` is
 explicit.
 `make vercel-preview` and `make vercel-production` invoke the same wrapper.
 
 After an authorized deploy, `/api/v1/health/ready` must report that exact SHA
-and `release_version=1.6.3`. The generated candidate identity is
+and `release_version=1.6.4`. The generated candidate identity is
 `firelens-v1-6-2:<full SHA>`; historical callers that do not set
 `FIRELENS_BENCHMARK_ID` retain the legacy `rc2` default.
 
 If production still reports `1.6.0-rc.1` or another version, the Vercel project environment
 variable `FIRELENS_RELEASE_VERSION` is overriding the wrapper and must be
-set to `1.6.3` or removed. Do not rename the benchmark identifier to match.
+set to `1.6.4` or removed. Do not rename the benchmark identifier to match.
 
 ## After qualification
 

@@ -41,7 +41,7 @@ _HEADLINES: dict[str, str] = {
     "grounded": "Grounded in reviewed official sources",
     "partial": "Partially supported by reviewed sources",
     "conflict": "Reviewed sources conflict",
-    "background": "General background — not corpus-checked",
+    "background": "General model knowledge — not checked against reviewed sources",
     "mixed": "Official records plus reviewed guidance",
     "capability": "What you can ask FireLens",
     "scope_redirect": "Outside FireLens live sources",

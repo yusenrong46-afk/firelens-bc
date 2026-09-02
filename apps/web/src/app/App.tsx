@@ -13,18 +13,34 @@ import {
   LiveAnalysisWorkspace,
   preloadAnalysisCharts,
 } from "../features/near-me/LiveAnalysisWorkspace";
+import { emitProductEvent } from "../shared/telemetry";
 import { HowFireLensWorks } from "./HowFireLensWorks";
 import {
   preferredContextSurface,
-  questionExplicitlyRequestsMap,
   shouldOfferContextMap,
   shouldUseAnalyticalWorkspace,
   workspaceLayout,
 } from "./workspacePresentation";
 import "./styles.css";
 
-const ANALYTICAL_QUERY =
-  /\b(?:distribution|distributed|by\s+(?:status|region|fire[- ]?centre)|fire[- ]?centre\s+counts?|where\s+are\s+the\s+most)\b/i;
+function provenanceBoundary(response: { provenance_class?: string | undefined } | undefined, viewKind: string): string {
+  if (viewKind === "idle" || viewKind === "loading" || !response) {
+    return "FireLens is not a safety assessment.";
+  }
+  if (response.provenance_class === "general_knowledge") {
+    return "General model knowledge. Not a safety assessment.";
+  }
+  if (response.provenance_class === "official_live") {
+    return "Official live records. Not a safety assessment.";
+  }
+  if (response.provenance_class === "reviewed_guidance") {
+    return "Reviewed official guidance. Not a safety assessment.";
+  }
+  if (response.provenance_class === "mixed") {
+    return "Mixed official records and labelled guidance. Not a safety assessment.";
+  }
+  return "FireLens is not a safety assessment.";
+}
 
 export function App() {
   const session = useFireLensSession();
@@ -46,13 +62,7 @@ export function App() {
     mode: session.mode,
     response: session.response,
   });
-  // Enter the final desktop shell immediately after an explicitly analytical
-  // submission. The response record shape remains final presentation
-  // authority; this pending-only hint prevents a late full-page rail/canvas
-  // jump on slower connections.
-  const pendingAnalyticalWorkspace = session.view.kind === "loading"
-    && ANALYTICAL_QUERY.test(session.visibleQuestion ?? "");
-  const analyticalWorkspace = responseAnalyticalWorkspace || pendingAnalyticalWorkspace;
+  const analyticalWorkspace = responseAnalyticalWorkspace;
   const showMap = (session.view.kind === "idle" && idleMapOpen)
     || (!analyticalWorkspace && contextOpen && mapAvailable && contextSurface === "map");
   const evidenceOpen = contextOpen && contextSurface === "evidence";
@@ -69,11 +79,11 @@ export function App() {
     setIdleMapOpen(false);
     const preferred = preferredContextSurface({
       mode: session.mode,
-      question: session.visibleQuestion,
+      response: session.response,
     });
     const shouldOpenPreferredMap = preferred === "map"
       && !analyticalWorkspace
-      && questionExplicitlyRequestsMap(session.visibleQuestion);
+      && session.response?.presentation_shell === "spatial";
     if (shouldOpenPreferredMap) contextTriggerRef.current = null;
     setContextSurface(preferred);
     setContextOpen(shouldOpenPreferredMap);
@@ -100,13 +110,10 @@ export function App() {
   }, [analyticalWorkspace, session.setMapVisible, showMap]);
 
   useEffect(() => {
-    if (
-      session.view.kind === "loading"
-      && ANALYTICAL_QUERY.test(session.visibleQuestion ?? "")
-    ) {
+    if (session.response?.presentation_shell === "analysis") {
       void preloadAnalysisCharts();
     }
-  }, [session.view.kind, session.visibleQuestion]);
+  }, [session.response?.presentation_shell]);
 
   function showEvidence() {
     if (!contextOpen) {
@@ -117,6 +124,7 @@ export function App() {
     setIdleMapOpen(false);
     setContextSurface("evidence");
     setContextOpen(true);
+    emitProductEvent("evidence_opened");
   }
 
   function showOfficialMap() {
@@ -128,6 +136,7 @@ export function App() {
     if (session.view.kind === "idle") setIdleMapOpen(true);
     setContextSurface("map");
     setContextOpen(true);
+    emitProductEvent("map_opened");
   }
 
   function closeContext() {
@@ -143,9 +152,9 @@ export function App() {
       <header className="topbar">
         <a className="brand" href="#top">
           <img src="/assets/firelens-mark.png" alt="" />
-          <span><strong>FireLens</strong> BC <small>V1.6</small></span>
+          <span><strong>FireLens</strong> BC <small>{session.releaseVersion ? `V${session.releaseVersion}` : ""}</small></span>
         </a>
-        <span className="topbar-lockup" aria-label="Civic Intelligence Desk">Civic Intelligence Desk</span>
+        <span className="topbar-lockup" aria-label="Official B.C. wildfire information">Official B.C. wildfire information</span>
         <div className="topbar-actions">
           <button
             className="topbar-project"
@@ -156,7 +165,7 @@ export function App() {
             onClick={() => setProjectOpen((open) => !open)}
           >
             <Info size={18} />
-            <span className="topbar-project__detail"><strong>How FireLens works</strong><small>For employers &amp; evaluators</small></span>
+            <span className="topbar-project__detail"><strong>How FireLens works</strong><small>Sources, methods, and limits</small></span>
             <span className="topbar-project__compact-label">How it works</span>
           </button>
           {analyticalWorkspace && (
@@ -187,7 +196,7 @@ export function App() {
       <ConnectionStatus />
       <div className="boundary">
         <Shield size={17} />
-        <span>Official-source data. Not a safety assessment.</span>
+        <span>{provenanceBoundary(session.response, session.view.kind)}</span>
       </div>
       <HowFireLensWorks open={projectOpen} onClose={closeProject} />
       <main className={`workspace workspace--${layout} ${showContext ? "workspace--split" : "workspace--solo"} ${showMap ? "workspace--map" : "workspace--evidence"}`}>

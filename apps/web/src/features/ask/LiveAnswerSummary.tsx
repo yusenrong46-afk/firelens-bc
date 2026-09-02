@@ -35,13 +35,21 @@ export function LiveAnswerSummary({
   if (results.length === 0) return null;
   const freshnessWarning = response.aggregate_freshness === "stale"
     || response.aggregate_freshness === "mixed";
-  const top = results.slice(0, 3);
+  const sampleIds = response.sample_record_ids ?? [];
+  const sampled = sampleIds.length
+    ? sampleIds
+      .map((resultId) => results.find((item) => item.result_id === resultId))
+      .filter((item): item is LiveResult => item != null)
+    : results.slice(0, 8);
+  const top = sampled.slice(0, 8);
+  const rosterTotal = response.roster_total ?? results.length;
   return (
     <div className="live-answer-summary" aria-label="Live answer summary">
       <p className="live-answer-summary__place">
         <strong>Official records returned</strong>
         {" · "}
-        {results.length} {results.length === 1 ? "record" : "records"}
+        {rosterTotal} {rosterTotal === 1 ? "record" : "records"}
+        {rosterTotal > top.length ? ` · priority sample of ${top.length}` : ""}
       </p>
       {!freshnessWarning && (
         <p className="live-answer-summary__fresh">

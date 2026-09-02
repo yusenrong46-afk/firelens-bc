@@ -66,14 +66,11 @@ export function AnswerBody({
       {!analytical && quoteOnlyAnswer && (
         <span className="panel-label answer-source-kicker">Exact official source wording</span>
       )}
-      {!hasAnswerSections && lead && (
-        <AnswerMarkdown className={quoteOnlyAnswer
-          ? "answer-lead answer-lead--source-quote"
-          : "answer-lead"}
-        >
-          {lead}
-        </AnswerMarkdown>
-      )}
+      {!hasAnswerSections && quoteOnlyAnswer && response ? (
+        <QuoteOnlyAnswer response={response} fallback={lead} />
+      ) : !hasAnswerSections && lead ? (
+        <AnswerMarkdown className="answer-lead">{lead}</AnswerMarkdown>
+      ) : null}
       {hasAnswerSections && (
         <div className="answer-sections" aria-label="Authority-labelled answer">
           {answerSections.map((section) => (
@@ -131,5 +128,47 @@ export function AnswerBody({
         </aside>
       )}
     </>
+  );
+}
+
+function QuoteOnlyAnswer({
+  response,
+  fallback,
+}: {
+  response: AskResponse;
+  fallback: string;
+}) {
+  const quotes = (response.claims ?? [])
+    .map((claim) => claim.text.trim())
+    .filter(Boolean);
+  if (quotes.length === 0) {
+    return <AnswerMarkdown className="answer-lead answer-lead--source-quote">{fallback}</AnswerMarkdown>;
+  }
+  const emergency = quotes.find((text) => /9\s*-\s*1\s*-\s*1|911/.test(text));
+  const routine = quotes.find((text) => /EmergencyInfoBC|local authorit/i.test(text));
+  const shown = [emergency, routine].filter((item): item is string => Boolean(item));
+  const excerpts = (shown.length ? shown : quotes).slice(0, 2);
+  const remainder = quotes.filter((item) => !excerpts.includes(item));
+  const source = response.evidence?.[0]?.title || response.claims?.[0]?.publication?.source_title;
+  return (
+    <div className="answer-lead answer-lead--source-quote quote-distinction">
+      {emergency && routine && (
+        <p>
+          <strong>Immediate danger versus routine official information.</strong>
+        </p>
+      )}
+      {excerpts.map((quote) => (
+        <blockquote key={quote}>
+          <p>{quote}</p>
+        </blockquote>
+      ))}
+      {source ? <p className="quote-distinction__source">Source: {source}</p> : null}
+      {remainder.length > 0 && (
+        <details>
+          <summary>View exact wording</summary>
+          {remainder.map((quote) => <p key={quote}>{quote}</p>)}
+        </details>
+      )}
+    </div>
   );
 }

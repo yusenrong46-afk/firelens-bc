@@ -426,6 +426,18 @@
         "GQ-11"
       ],
       "guided_eligible": true,
+      "accepted_paraphrases": [
+        "What mistakes should I avoid while evacuating?",
+        "What are mistakes that I should avoid while evacuating?",
+        "Which evacuation mistakes should I avoid?",
+        "What should I not do during an evacuation?",
+        "What common errors should evacuees avoid?",
+        "What mistakes should I avoid during an evacuation?",
+        "What are the mistakes I should avoid while evacuating?",
+        "Which mistakes should I avoid when evacuating?",
+        "What evacuation mistakes should I avoid?",
+        "According to official guidance, what mistakes should I avoid during an evacuation?"
+      ],
       "exact_quote_texts": [
         "Do NOT shut off your natural gas when you receive an evacuation order."
       ]

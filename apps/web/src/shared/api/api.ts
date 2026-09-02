@@ -14,7 +14,7 @@ export type NearMeRequest = components["schemas"]["NearMeRequest"];
 export type NearMeResponse = components["schemas"]["NearMeResponse"];
 export type FeedbackCategory = components["schemas"]["FeedbackRequest"]["category"];
 
-/** The guided-question catalogue is served by the V1.6.3 backend endpoint.
+/** The guided-question catalogue is served by the V1.6.4 backend endpoint.
  * Keep this narrow client type local until the public generated schema is
  * intentionally regenerated; the endpoint contract itself is frozen. */
 export type GuidedQuestion = {
@@ -190,6 +190,73 @@ export async function askFireLens(
       throw apiError(payload, response);
     }
     return payload as AskResponse;
+  });
+}
+
+export type LiveCurrentSummary = {
+  incident_record_count: number | null;
+  evacuation_record_count: number | null;
+  source_status: string;
+  retrieved_at: string | null;
+  freshness: string | null;
+  limitation: string;
+};
+
+export type ProductEventName =
+  | "guided_catalog_opened"
+  | "guided_question_selected"
+  | "live_summary_loaded"
+  | "map_opened"
+  | "evidence_opened"
+  | "authority_handoff_opened"
+  | "analysis_exported"
+  | "saved_scope_added"
+  | "feedback_submitted";
+
+export async function fetchReadyHealth(signal?: AbortSignal): Promise<{ release_version?: string }> {
+  const endpoint = "/api/v1/health/ready";
+  return withRequestDeadline(endpoint, signal, async (deadlineSignal) => {
+    const response = await fetchResponse(endpoint, { signal: deadlineSignal });
+    const payload = await readJsonResponse(response, endpoint);
+    const releaseVersion = (payload as { release_version?: string }).release_version;
+    if (releaseVersion) {
+      return { release_version: releaseVersion };
+    }
+    if (!response.ok) {
+      throw apiError(payload, response);
+    }
+    return payload as { release_version?: string };
+  });
+}
+
+export async function fetchLiveSummary(signal?: AbortSignal): Promise<LiveCurrentSummary> {
+  const endpoint = "/api/v1/live/summary";
+  return withRequestDeadline(endpoint, signal, async (deadlineSignal) => {
+    const response = await fetchResponse(endpoint, { signal: deadlineSignal });
+    const payload = await readJsonResponse(response, endpoint);
+    if (!response.ok) {
+      throw apiError(payload, response);
+    }
+    return payload as LiveCurrentSummary;
+  });
+}
+
+export async function postProductEvent(
+  event: ProductEventName,
+  signal?: AbortSignal,
+): Promise<void> {
+  const endpoint = "/api/v1/product-events";
+  return withRequestDeadline(endpoint, signal, async (deadlineSignal) => {
+    const response = await fetchResponse(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event }),
+      signal: deadlineSignal,
+    });
+    if (!response.ok && response.status !== 204) {
+      const payload = await readJsonResponse(response, endpoint);
+      throw apiError(payload, response);
+    }
   });
 }
 

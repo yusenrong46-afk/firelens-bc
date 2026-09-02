@@ -1,0 +1,100 @@
+schema_version: firelens.v1_6_4_product_coherence.v1
+frozen: true
+cases:
+  - id: PC-01
+    question: What wildfires are currently listed in B.C.?
+    expect:
+      response_mode: live
+      provenance_class: official_live
+      map_equals_authorized: true
+      sample_uses_priority_ranking: true
+  - id: PC-02
+    question: Current wildfire records, and what should I pack?
+    expect:
+      response_mode: mixed
+      section_kinds: [current_records, reviewed_guidance]
+      max_inline_incident_cards: 8
+      presentation_shell: chat
+      auto_open_province_map: false
+  - id: PC-03
+    question: What mistakes should I avoid while evacuating?
+    expect:
+      capability_id: evacuation_mistakes_to_avoid
+      provenance_class: reviewed_guidance
+  - id: PC-04
+    question: What are mistakes that I should avoid while evacuating?
+    expect:
+      capability_id: evacuation_mistakes_to_avoid
+      equivalent_to: PC-03
+  - id: PC-05
+    question: What does the official BC Wildfire Service say about this source?
+    expect:
+      provenance_class: clarification
+      no_source_handle_dump: true
+      live_results: []
+  - id: PC-06
+    question: When should I call 9-1-1?
+    expect:
+      quote_only: true
+      structured_911_distinction: true
+  - id: PC-07
+    question: Why is the sky blue?
+    expect:
+      response_mode: background
+      provenance_class: general_knowledge
+      official_source_banner: false
+  - id: PC-08
+    question: asdf qwerty zxcv quantum foam
+    expect:
+      provenance_class: clarification
+      provider_called: false
+  - id: PC-09
+    question: What fires are near Kelowna?
+    expect:
+      response_mode: live
+      map_equals_authorized: true
+  - id: PC-10
+    question: Should I evacuate right now?
+    expect:
+      safety_handoff: true
+      no_personalized_order: true
+  - id: PC-11
+    question: Which evacuation mistakes should I avoid?
+    expect:
+      capability_id: evacuation_mistakes_to_avoid
+      equivalent_to: PC-03
+  - id: PC-12
+    question: What should I not do during an evacuation?
+    expect:
+      capability_id: evacuation_mistakes_to_avoid
+      equivalent_to: PC-03
+  - id: PC-13
+    question: What common errors should evacuees avoid?
+    expect:
+      capability_id: evacuation_mistakes_to_avoid
+      equivalent_to: PC-03
+  - id: PC-14
+    question: According to official guidance, what mistakes should I avoid during an evacuation?
+    expect:
+      capability_id: evacuation_mistakes_to_avoid
+      equivalent_to: PC-03
+  - id: PC-15
+    question: What mistakes should I avoid during an evacuation?
+    expect:
+      capability_id: evacuation_mistakes_to_avoid
+      equivalent_to: PC-03
+  - id: PC-16
+    question: What are the mistakes I should avoid while evacuating?
+    expect:
+      capability_id: evacuation_mistakes_to_avoid
+      equivalent_to: PC-03
+  - id: PC-17
+    question: Which mistakes should I avoid when evacuating?
+    expect:
+      capability_id: evacuation_mistakes_to_avoid
+      equivalent_to: PC-03
+  - id: PC-18
+    question: What evacuation mistakes should I avoid?
+    expect:
+      capability_id: evacuation_mistakes_to_avoid
+      equivalent_to: PC-03

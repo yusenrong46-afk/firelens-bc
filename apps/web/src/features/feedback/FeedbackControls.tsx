@@ -2,6 +2,7 @@ import { Check, Flag, ThumbsUp } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 
 import { FeedbackCategory, submitFeedback } from "../../shared/api/api";
+import { emitProductEvent } from "../../shared/telemetry";
 
 const ISSUE_CATEGORIES: { value: FeedbackCategory; label: string }[] = [
   { value: "incorrect_or_unsupported", label: "Incorrect or unsupported" },
@@ -27,6 +28,7 @@ export function FeedbackControls({ traceId }: { traceId: string }) {
     setStatus("sending");
     try {
       await submitFeedback(traceId, category);
+      emitProductEvent("feedback_submitted");
       setStatus("sent");
       setShowIssues(false);
     } catch {

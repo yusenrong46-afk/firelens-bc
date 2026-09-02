@@ -38,13 +38,11 @@ _FIRE_RECORD_ASK = re.compile(r"\b(?:fire|wildfire|incident)s?\b", re.IGNORECASE
 
 
 def official_display_name(result: LiveResult) -> str:
-    """Prefer a real name, then the fire number, then the result id."""
+    """Prefer a real official name, then an honest unnamed label."""
 
-    name = (result.name or "").strip()
-    if name and name.casefold() != _PLACEHOLDER_NAME:
-        return name
-    number = (result.incident_number or "").strip()
-    return number or result.result_id
+    from firelens.answering.live_sample import official_display_label
+
+    return official_display_label(result)
 
 
 def is_ranked_distance_question(question: str) -> bool:

@@ -26,6 +26,12 @@ from firelens.contract_composition import (
 )
 from firelens.contract_composition import is_canonical_conflict_answer
 from firelens.evidence_packet_identity import validate_evidence_packet_identity
+from firelens.llm_io import GenerationResponse as GenerationResponse
+from firelens.llm_io import PlanningResponse as PlanningResponse
+from firelens.presentation_identity import PresentationShell as PresentationShell
+from firelens.presentation_identity import ProvenanceClass as ProvenanceClass
+from firelens.presentation_identity import SuggestionOmissionReason as SuggestionOmissionReason
+from firelens.presentation_identity import attach_result_identity
 from firelens.proof_presentation import AnswerStatusBanner, ProofCard, attach_proof_presentation
 from firelens.publication_contracts import PublicationAuthority
 from firelens.publication_response_binding import (
@@ -58,6 +64,7 @@ DistanceDerivation = _live_contracts.DistanceDerivation
 Freshness = _live_contracts.Freshness
 GeometryRelation = _live_contracts.GeometryRelation
 LiveLayerStatus = _live_contracts.LiveLayerStatus
+LiveCurrentSummary = _live_contracts.LiveCurrentSummary
 LiveMapResponse = _live_contracts.LiveMapResponse
 LivePagination = _live_contracts.LivePagination
 LiveResult = _live_contracts.LiveResult
@@ -77,8 +84,6 @@ MAX_BACKGROUND_CLAIMS = 3
 
 
 class ClaimText(Protocol):
-    """Structural type shared by draft and public claim renderers."""
-
     text: str
 
 
@@ -91,8 +96,7 @@ def render_claim_texts(claims: Iterable[ClaimText]) -> str:
 class QueryRoute(StrEnum):
     CAPABILITY = "capability"
     RELATED = "related"
-    # Source compatibility for Python callers.  Historic serialized "static"
-    # values are accepted by _missing_ below, but new responses say "related".
+    # Historic serialized "static" values are accepted by _missing_.
     STATIC = "related"
     TANGENT = "tangent"
     LIVE = "live"
@@ -174,6 +178,8 @@ class ReasonCode(StrEnum):
     MODEL_ABSTAINED = "model_abstained"
     CONFLICTING_EVIDENCE = "conflicting_evidence"
     HIGH_RISK_CLAIM_NOT_STRUCTURED = "high_risk_claim_not_structured"
+    UNCLEAR_INPUT = "unclear_input"
+    MISSING_SOURCE_ANTECEDENT = "missing_source_antecedent"
 
 
 class SupportStatus(StrEnum):
@@ -193,6 +199,8 @@ class ResponseStatus(StrEnum):
 
 class RequiredInputKind(StrEnum):
     LOCATION = "location"
+    SOURCE = "source"
+    CLARIFICATION = "clarification"
 
 
 class MapContext(FrozenStrictModel):
@@ -528,6 +536,12 @@ class AskResponse(StrictModel):
     live_results: list[LiveResult] = Field(default_factory=list)
     aggregate_freshness: AggregateFreshness | None = None
     unavailable_layers: list[LiveResultKind] = Field(default_factory=list)
+    requested_layers: list[LiveResultKind] = Field(default_factory=list, max_length=3)
+    roster_total: int | None = Field(default=None, ge=0)
+    sample_record_ids: list[str] = Field(default_factory=list, max_length=8)
+    presentation_shell: PresentationShell = PresentationShell.CHAT
+    provenance_class: ProvenanceClass = ProvenanceClass.CLARIFICATION
+    suggestion_omission_reason: SuggestionOmissionReason | None = None
     required_input: RequiredInput | None = None
     selected_live_result_id: str | None = Field(default=None, min_length=1, max_length=200)
     resolved_location: CoarseResolvedLocation | None = None
@@ -569,7 +583,14 @@ class AskResponse(StrictModel):
             )
             if error:
                 raise ValueError(error)
+        attach_result_identity(self)
         attach_proof_presentation(self)
+        if self.sample_record_ids:
+            live_ids = {item.result_id for item in self.live_results}
+            if any(result_id not in live_ids for result_id in self.sample_record_ids):
+                raise ValueError("sample record IDs must belong to the authorized result set")
+        if self.roster_total is not None and self.roster_total < len(self.live_results):
+            raise ValueError("roster total cannot be smaller than the authorized result set")
         return self
 
     def _validate_answer_sections(self) -> None:
@@ -775,17 +796,3 @@ class AskResponse(StrictModel):
             raise ValueError("answer status requires a non-abstention response mode")
         if self.claims or self.evidence or self.live_results:
             raise ValueError("abstention and error responses cannot contain evidence claims")
-
-
-class PlanningResponse(FrozenStrictModel):
-    model: str
-    decision: PlanningDecision
-    usage: dict[str, Any] = Field(default_factory=dict)
-    attempts: int = Field(default=1, ge=1)
-
-
-class GenerationResponse(FrozenStrictModel):
-    model: str
-    draft: GroundedDraft | BackgroundDraft
-    usage: dict[str, Any] = Field(default_factory=dict)
-    attempts: int = Field(default=1, ge=1)

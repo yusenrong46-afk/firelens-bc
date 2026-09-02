@@ -8,6 +8,7 @@ import { StatusBanner } from "../src/features/ask/StatusBanner";
 import { ResponseModeBadge } from "../src/features/ask/responseModeBadge";
 import { MatchingRecordList } from "../src/features/near-me/LiveRecordLists";
 import type { AskResponse, LiveResult } from "../src/shared/api/api";
+import { wrapAppFetch } from "./fetchStub";
 
 const grounded = {
   status: "answer",
@@ -112,7 +113,7 @@ afterEach(() => {
 
 describe("proof-carrying answer surface", () => {
   it("shows one status banner, one limitation, and the claim/source controls", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(grounded), { status: 200 })));
+    vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(grounded), { status: 200 }))));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What belongs in a grab-and-go bag?");
@@ -166,7 +167,7 @@ describe("proof-carrying answer surface", () => {
         review_state: "Approved static corpus",
       })),
     };
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(quoteOnly), { status: 200 })));
+    vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(quoteOnly), { status: 200 }))));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What does the source say?");
@@ -210,7 +211,7 @@ describe("proof-carrying answer surface", () => {
         support_label: "Reviewed structured claim",
       })),
     };
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(rejected), { status: 200 })));
+    vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(rejected), { status: 200 }))));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Can this be trusted?");
@@ -250,7 +251,7 @@ describe("proof-carrying answer surface", () => {
         support_label: "Reviewed structured claim",
       })),
     };
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(failedCritical), { status: 200 })));
+    vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(failedCritical), { status: 200 }))));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Did critical fields pass?");
@@ -291,7 +292,7 @@ describe("proof-carrying answer surface", () => {
         support_label: "Reviewed structured claim",
       })),
     };
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(orphaned), { status: 200 })));
+    vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(orphaned), { status: 200 }))));
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Can an orphan card be reused?");
