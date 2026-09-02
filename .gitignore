@@ -45,5 +45,11 @@ evals/v1_6_4_exposure/results.jsonl
 evals/v1_6_4_exposure/scorecard.json
 evals/v1_6_4_exposure/scorecard.md
 docs/releases/v1.6.4-exposure-verdict.md
+benchmarks/firelens200/Cursor_*.md
+benchmarks/firelens200/FireLens200_Catalog.md
+benchmarks/firelens200/Independent_Judge_Prompt.md
+benchmarks/firelens200/firelens200_index.csv
+benchmarks/firelens200/human_review_template.csv
+benchmarks/firelens200/render_firelens200_report.py
 .env*
 config/runtime_candidate.v1.json
