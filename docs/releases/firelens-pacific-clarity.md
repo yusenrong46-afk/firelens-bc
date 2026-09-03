@@ -16,4 +16,13 @@ Authority invariants preserved. ClaimBench v2 floor held. Hard probe rc2.2 offli
 Initial JS gzip +2.55% (≤5% cap). CSS grew; map/charts remain lazy. No extra provider calls for UI.
 
 ## Deploy status
-See evals/pacific_clarity/production_verification.md after preview/production verification.
+
+Production verified at https://firelens-bc.vercel.app/
+
+- deployment_id: `dpl_6hi3MjUuxWwsCQejPqCv8EgyC6t9`
+- build_commit: `422d80dd346c0edf71eea41e144dcf2089dc2397`
+- Product Reality Gate: 16/16 on production
+- Evidence: `evals/pacific_clarity/production_verification.md`
+
+Terminal state: FIRELENS_PACIFIC_CLARITY_PRODUCTION_VERIFIED
+
