@@ -1,44 +1,12 @@
-/* FireLens BC — one coherent design layer.
+/* FireLens BC — presentation layer.
+   Design tokens live in tokens.css (Pacific Clarity).
+   Shell geometry lives in shell.css.
    Constraints enforced by the sealed frontend-surface gate:
    direct text >= 16px (small / .panel-label / .assistant-name /
    .selected-kicker >= 12px), interactive targets >= 44px, axe A/AA clean.
    Hierarchy therefore comes from weight, color, case, and space. */
 
-:root {
-  font-family: "Inter", system-ui, sans-serif;
-  font-synthesis: none;
-  color: var(--ink);
-  background: var(--paper);
-
-  --ink: #1a2b26;
-  --ink-soft: #40534c;
-  --muted: #55665f;
-  --forest: #1c4636;
-  --forest-deep: #061d18;
-  --forest-tint: #e3ede5;
-  --ember: #d94d1d;
-  --ember-deep: #a83b18;
-  --ember-tint: #fbe9e1;
-  --paper: #f5f3ec;
-  --canvas: #e7e4da;
-  --surface: #ffffff;
-  --hairline: rgba(26, 43, 38, 0.14);
-  --hairline-soft: rgba(26, 43, 38, 0.09);
-  --amber-bg: #fdf4e3;
-  --amber-edge: #c98a3d;
-  --amber-ink: #6d4a15;
-
-  --radius-panel: 22px;
-  --radius-card: 12px;
-  --radius-field: 14px;
-
-  --shadow-panel:
-    0 1px 2px rgba(14, 32, 26, 0.05),
-    0 12px 32px rgba(14, 32, 26, 0.12),
-    0 34px 80px rgba(14, 32, 26, 0.14);
-  --shadow-card: 0 1px 2px rgba(14, 32, 26, 0.05), 0 6px 18px rgba(14, 32, 26, 0.07);
-  --shadow-map: 0 1px 3px rgba(14, 32, 26, 0.08), 0 24px 60px rgba(14, 32, 26, 0.16);
-}
+/* Tokens imported via App.tsx before this file. */
 
 * { box-sizing: border-box; }
 html, body, #root { margin: 0; min-width: 320px; min-height: 100vh; }
@@ -101,81 +69,13 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   font-size: 16px;
 }
 
-.app-shell { min-height: 100vh; background: var(--canvas); }
+.app-shell { min-height: 100vh; background: var(--warm-mist); }
 
-.topbar {
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 0 28px;
-  background: var(--forest-deep);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-.topbar a:focus-visible { outline-color: #ffc2a3; }
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 11px;
-  color: #fff;
-  text-decoration: none;
-}
-.brand img {
-  width: 38px;
-  height: 38px;
-  object-fit: cover;
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
-}
-.brand span {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 7px;
-  font: 500 25px/1 "Newsreader", Georgia, serif;
-  letter-spacing: -0.4px;
-}
-.brand strong { font-weight: 600; }
-.brand small {
-  align-self: center;
-  padding: 3px 8px;
-  color: #ffd0ba;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 208, 186, 0.35);
-  border-radius: 999px;
-  font: 600 12px/1 "Inter", system-ui, sans-serif;
-  letter-spacing: 0.06em;
-}
-.official-link {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  padding: 0 16px;
-  color: #eaf2ec;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 999px;
-  text-decoration: none;
-  font-size: 16px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.official-link:hover { color: #fff; background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.4); }
-
+/* Superseded desktop topbar/boundary — hidden from Pacific Clarity layout. */
+.topbar,
 .boundary {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 28px;
-  color: #f4f2e9;
-  background: var(--forest-deep);
-  border-bottom: 1px solid rgba(167, 184, 102, .35);
-  font: 500 15px/1.35 "Inter", system-ui, sans-serif;
+  display: none !important;
 }
-.boundary svg { flex: 0 0 auto; color: #a7b866; }
-.boundary, .boundary span { font: inherit; }
 
 #conversation, #official-map { scroll-margin-top: 88px; outline: none; }
 
@@ -1191,55 +1091,11 @@ button:focus-visible, a:focus-visible, input:focus-visible {
    The answer is the primary surface. Evidence and the map share one contextual
    region, and the map is not mounted for non-spatial responses. */
 
-.topbar {
-  height: 88px;
-  padding-inline: clamp(20px, 3vw, 46px);
-  background: var(--forest-deep);
-}
-.brand img { width: 42px; height: 54px; border-radius: 0; box-shadow: none; }
-.brand span { gap: 12px; font-size: 34px; letter-spacing: -0.7px; }
-.official-link { border-radius: 11px; }
 
 .topbar-actions,
 .workspace-jump,
-.workspace-jump button {
-  display: flex;
-  align-items: center;
-}
-.topbar-actions { gap: 12px; }
-.topbar-lockup {
-  display: inline-flex;
-  align-items: center;
-  gap: 16px;
-  margin-right: auto;
-  padding-left: 20px;
-  color: #f0a075;
-  border-left: 1px solid rgba(244, 242, 233, .45);
-  font: 500 15px "Inter", system-ui, sans-serif;
-}
-.workspace-jump { gap: 4px; }
-.workspace-jump button {
-  min-height: 44px;
-  gap: 7px;
-  padding: 0 13px;
-  color: #dce9df;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-}
 .workspace-jump button:hover,
-.workspace-jump__active {
-  color: #fff !important;
-  background: rgba(255, 255, 255, 0.12) !important;
-  border-color: rgba(255, 255, 255, 0.22) !important;
-}
 
-.topbar button:focus-visible {
-  outline-color: #ffc2a3;
-}
 
 .conversation-scroll {
   padding: clamp(24px, 4vw, 50px) clamp(22px, 5vw, 68px) 24px;
@@ -1433,34 +1289,11 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 
 /* ---------- V1.6 adaptive answer and analysis workspace ---------- */
 
-.topbar { background: var(--forest-deep); }
 .topbar-anchor,
-.topbar-project {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 10px;
-  color: #eaf2ec;
-  background: transparent;
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  text-decoration: none;
-}
 .topbar-anchor:hover,
-.topbar-project:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
 .topbar-anchor,
 .topbar-project,
 .workspace-jump button,
-.official-link { font-family: "Inter", system-ui, sans-serif; font-size: 15px; font-weight: 600; }
-.topbar-project > span { display: grid; gap: 1px; text-align: left; }
-.topbar-project strong { font-size: 16px; }
-.topbar-project small { color: rgba(234, 242, 236, 0.78); font-size: 12px; font-weight: 500; }
-.topbar-project__compact-label { font-size: 16px; }
-.topbar-project__compact-label { display: none !important; }
 
 .workspace,
 .workspace--solo,
@@ -1730,16 +1563,11 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .project-dialog__limit { margin: 18px 0 0; color: var(--ink-soft); font-size: 16px; }
 
 @media (max-width: 920px) {
-  .topbar-project { min-width: 44px; }
-  .topbar-project__detail { display: none !important; }
-  .topbar-project__compact-label { display: inline !important; }
   .project-flow,
   .project-dialog__facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 620px) {
-  .topbar-anchor { display: none; }
-  .topbar-actions { max-width: 100%; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
   .workspace,
   .workspace--solo,
   .workspace--split,
@@ -2046,20 +1874,12 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 
 @media (max-width: 920px) {
-  .topbar-lockup { display: none; }
-  .topbar { height: auto; min-height: 60px; padding: 8px 14px; }
-  .topbar-actions { margin-left: auto; }
-  .topbar-project__detail small { display: none; }
-  .official-link { display: none; }
-  .boundary { padding-inline: 16px; }
 }
 
 
 @media (max-width: 620px) {
   .ask-start-panel__console { grid-template-columns: 1fr; }
   .ask-start-panel__intro h1 { font-size: 28px; }
-  .brand span { font-size: 20px; }
-  .boundary span { font: inherit; line-height: 1.4; }
   .workspace { padding-inline: 8px; }
   .workspace .conversation-scroll { padding-inline: 16px; }
   .question-bubble { width: 92%; }
@@ -2082,22 +1902,6 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 
 /* ---------- Home and inline source proof ---------- */
-.topbar-home {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 12px;
-  color: #eaf2ec;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 600;
-}
-.topbar-home:hover { color: #fff; background: rgba(255, 255, 255, 0.16); }
-.brand { cursor: pointer; }
 
 .source-proof {
   margin: 20px 0 6px;

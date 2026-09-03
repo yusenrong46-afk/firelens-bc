@@ -222,6 +222,31 @@ def multi_place_comparison_limit(request: QueryRequest) -> AskResponse:
     )
 
 
+def multiple_fire_centre_clarification(
+    request: QueryRequest, centres: tuple[str, ...]
+) -> AskResponse:
+    labels = [label.removesuffix(" Fire Centre") for label in centres]
+    if len(labels) == 2:
+        choice = f"{labels[0]} or {labels[1]}"
+    else:
+        choice = ", ".join(labels[:-1]) + f", or {labels[-1]}"
+    return AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id=uuid4().hex,
+        response_mode=ResponseMode.REQUIRES_INPUT,
+        answer=f"Which Fire Centre should I use: {choice}?",
+        required_input=RequiredInput(
+            kind=RequiredInputKind.LOCATION,
+            prompt=f"Choose one Fire Centre: {choice}.",
+            continuation_question=request.question,
+        ),
+        reason_code=ReasonCode.UNCLEAR_INPUT,
+        limitations=[
+            "No official records were looked up because the question named more than one Fire Centre."
+        ],
+    )
+
+
 def absence_all_clear_boundary() -> AskResponse:
     return AskResponse(
         status=ResponseStatus.ABSTENTION,

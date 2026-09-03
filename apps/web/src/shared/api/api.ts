@@ -213,19 +213,18 @@ export type ProductEventName =
   | "saved_scope_added"
   | "feedback_submitted";
 
-export async function fetchReadyHealth(signal?: AbortSignal): Promise<{ release_version?: string }> {
+export async function fetchReadyHealth(signal?: AbortSignal): Promise<{
+  release_version?: string;
+  status?: string;
+}> {
   const endpoint = "/api/v1/health/ready";
   return withRequestDeadline(endpoint, signal, async (deadlineSignal) => {
     const response = await fetchResponse(endpoint, { signal: deadlineSignal });
     const payload = await readJsonResponse(response, endpoint);
-    const releaseVersion = (payload as { release_version?: string }).release_version;
-    if (releaseVersion) {
-      return { release_version: releaseVersion };
-    }
     if (!response.ok) {
       throw apiError(payload, response);
     }
-    return payload as { release_version?: string };
+    return payload as { release_version?: string; status?: string };
   });
 }
 

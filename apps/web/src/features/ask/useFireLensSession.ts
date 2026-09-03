@@ -64,7 +64,9 @@ export type FireLensSession = {
   submit: (event: FormEvent<HTMLFormElement>) => void;
   clearManualLocation: () => void;
   releaseVersion: string | undefined;
+  readiness: "ready" | "not_ready" | "unknown";
   liveSummary: LiveCurrentSummary | undefined;
+  activeLocation: LocationInput | undefined;
   contextLayersEnabled: boolean;
   setContextLayersEnabled: (enabled: boolean) => void;
 };
@@ -73,6 +75,7 @@ export function useFireLensSession(): FireLensSession {
   const [mapVisible, setMapVisible] = useState(false);
   const [contextLayersEnabled, setContextLayersEnabled] = useState(false);
   const [releaseVersion, setReleaseVersion] = useState<string>();
+  const [readiness, setReadiness] = useState<"ready" | "not_ready" | "unknown">("unknown");
   const [liveSummary, setLiveSummary] = useState<LiveCurrentSummary>();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
@@ -115,15 +118,20 @@ export function useFireLensSession(): FireLensSession {
     const controller = new AbortController();
     void fetchReadyHealth(controller.signal)
       .then((payload) => {
+        setReadiness(payload.status === "ready" ? "ready" : "not_ready");
         if (payload.release_version) setReleaseVersion(payload.release_version);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        setReadiness("not_ready");
+      });
     void fetchLiveSummary(controller.signal)
       .then((payload) => {
         setLiveSummary(payload);
         emitProductEvent("live_summary_loaded");
       })
-      .catch(() => undefined);
+      .catch(() => {
+        setLiveSummary(undefined);
+      });
     return () => controller.abort();
   }, []);
   const requiresLocation = response?.required_input?.kind === "location";
@@ -348,7 +356,9 @@ export function useFireLensSession(): FireLensSession {
       setLocationMessage("");
     },
     releaseVersion,
+    readiness,
     liveSummary,
+    activeLocation,
     contextLayersEnabled,
     setContextLayersEnabled,
   };

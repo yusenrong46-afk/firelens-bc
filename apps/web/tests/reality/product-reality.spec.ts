@@ -98,7 +98,7 @@ test.describe("Product Reality Gate", () => {
       const body = await ask(page, question);
       expect(["live", "mixed"], `${question}: ${body.response_mode} (${body.reason_code})`).toContain(body.response_mode);
       expect(body.answer ?? "", question).toMatch(/Kelowna/i);
-      await page.getByRole("button", { name: "New search" }).click();
+      await page.getByRole("button", { name: "Home" }).first().click();
       await expect(page.getByRole("heading", { name: START_HEADING })).toBeVisible();
     }
   });
@@ -109,14 +109,14 @@ test.describe("Product Reality Gate", () => {
     expect(["grounded", "partial"], `mode was ${body.response_mode} (${body.reason_code})`).toContain(body.response_mode);
     expect((body.evidence ?? []).length).toBeGreaterThan(0);
 
-    const proof = page.getByRole("region", { name: "Where this answer comes from" });
+    const proof = page.getByRole("region", { name: /source of this information|where this answer comes from/i });
     await expect(proof).toBeVisible();
-    await expect(proof.getByRole("heading", { name: "Where this comes from" })).toBeVisible();
+    await expect(proof.getByRole("heading", { name: /source of this information|where this comes from/i })).toBeVisible();
     const links = proof.getByRole("link");
     expect(await links.count()).toBeGreaterThan(0);
     const href = await links.first().getAttribute("href");
     expect(href ?? "").toMatch(/^https?:\/\//);
-    await expect(proof.locator("strong").first()).not.toBeEmpty();
+    await expect(proof.locator("strong, .source-proof__publisher").first()).not.toBeEmpty();
   });
 
   test("Home: one click returns to the start from an answer", async ({ page }) => {
@@ -124,7 +124,7 @@ test.describe("Product Reality Gate", () => {
     await ask(page, "how many fires in bc");
     await expect(page.getByRole("heading", { name: START_HEADING })).toHaveCount(0);
 
-    await page.getByRole("button", { name: "New search" }).click();
+    await page.getByRole("button", { name: "Home" }).first().click();
     await expect(page.getByRole("heading", { name: START_HEADING })).toBeVisible();
     await expect(page.getByLabel("Ask FireLens a question")).toHaveValue("");
 
@@ -152,7 +152,7 @@ test.describe("Product Reality Gate", () => {
       expect(answerOverflow, "answer page overflows horizontally").toBeLessThanOrEqual(1);
       const scrollers = await nestedVerticalScrollers(page);
       expect(scrollers, `nested scrollers: ${scrollers.join(", ")}`).toEqual([]);
-      await expect(page.getByRole("button", { name: "New search" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Home" }).first()).toBeVisible();
     });
   }
 
@@ -162,7 +162,10 @@ test.describe("Product Reality Gate", () => {
     await page.reload({ waitUntil: "load" });
     await expect(page.getByRole("heading", { name: START_HEADING })).toBeVisible();
     await ask(page, "wildfire kelowna");
-    await page.getByRole("button", { name: "Show these on the map" }).click();
+    const mapToggle = page.getByRole("button", { name: "Show these on the map" });
+    if (await mapToggle.count()) {
+      await mapToggle.click();
+    }
     await expect(page.locator("#official-map .leaflet-container")).toBeVisible({ timeout: 30_000 });
     expect(failures, failures.join("\n")).toEqual([]);
   });
@@ -181,16 +184,14 @@ test.describe("Product Reality Gate", () => {
   test("General knowledge is labelled as such and carries no false source proof", async ({ page }) => {
     await openHome(page);
     const body = await ask(page, "Why do wildfires spread faster uphill?");
-    // Either honest outcome is acceptable: a generated explanation validated
-    // against a reviewed source (with its proof shown), or labelled general
-    // knowledge with no source proof. Never a garbled exact-quote fragment.
     expect(["background", "grounded", "partial"], `mode was ${body.response_mode} (${body.reason_code})`).toContain(body.response_mode);
     expect(body.answer ?? "").not.toMatch(/\n[•\x83]|\x83|did not pass claim-support validation/);
     expect((body.answer ?? "").length).toBeGreaterThan(60);
-    const proof = page.getByRole("region", { name: "Where this answer comes from" });
+    const proof = page.getByRole("region", { name: /source of this information|where this answer comes from/i });
     if (body.response_mode === "background") {
       await expect(page.locator(".response-badge")).toHaveText("General knowledge");
       await expect(proof).toHaveCount(0);
+      await expect(page.getByText(/General knowledge — not checked against FireLens sources|General model knowledge/i)).toBeVisible();
     } else {
       expect((body.evidence ?? []).length).toBeGreaterThan(0);
       await expect(page.locator(".response-badge")).toHaveText(/reviewed guidance|official source/);
@@ -213,7 +214,27 @@ test.describe("Product Reality Gate", () => {
     await input.press("Enter");
     await expect(page.getByRole("alert", { name: "We couldn't complete this question" })).toBeVisible();
     await page.unroute(ASK);
-    await page.getByRole("button", { name: "New search" }).click();
+    await page.getByRole("button", { name: "Home" }).first().click();
     await expect(page.getByRole("heading", { name: START_HEADING })).toBeVisible();
+  });
+
+  test("Multiple Fire Centres: ask which scope instead of silently picking one", async ({ page }) => {
+    await openHome(page);
+    const body = await ask(page, "What is happening within the Kamloops or Cariboo Fire Centre?");
+    expect(["requires_input", "scope_redirect", "abstention"]).toContain(body.response_mode);
+    expect(body.answer ?? "").toMatch(/Which Fire Centre should I use|Kamloops|Cariboo/i);
+  });
+
+  test("Readiness failure: 503 with release_version is not shown as healthy live data", async ({ page }) => {
+    await page.route("**/api/v1/health/ready", (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ status: "not_ready", release_version: "1.6.4" }),
+      }),
+    );
+    await openHome(page);
+    await expect(page.getByText(/Live data unavailable|Official data delayed/i).first()).toBeVisible();
+    await expect(page.locator(".live-data-status--live")).toHaveCount(0);
   });
 });

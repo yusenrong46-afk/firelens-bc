@@ -1,0 +1,80 @@
+/* FireLens — Pacific Clarity design tokens */
+
+:root {
+  font-family: "Inter", system-ui, sans-serif;
+  font-synthesis: none;
+  color: var(--ink);
+  background: var(--warm-mist);
+
+  --bc-navy: #013366;
+  --pacific-blue: #17556d;
+  --deep-ocean: #0e5566;
+  --coastal-teal: #2e716f;
+  --rainforest: #346b5c;
+
+  --sea-glass: #ddeae7;
+  --water-blue: #e7f0f2;
+  --warm-mist: #f7f6f1;
+  --warm-stone: #e9e4da;
+  --snow: #fbfcfa;
+
+  --ink: #102a3a;
+  --slate: #526675;
+  --muted-slate: #72818c;
+  --divider: #d8dedc;
+
+  --cedar: #9c6849;
+  --wildfire-orange: #d84a1b;
+  --critical-red: #9d2e22;
+  --success-green: #225e3b;
+  --warning-amber: #8a4b08;
+
+  --status-ooc-bg: #fce8e4;
+  --status-ooc-text: #9d2e22;
+  --status-held-bg: #f9edd9;
+  --status-held-text: #8a4b08;
+  --status-uc-bg: #e4f1e8;
+  --status-uc-text: #225e3b;
+  --status-out-bg: #eff1f2;
+  --status-out-text: #475569;
+
+  /* Compatibility aliases for existing selectors */
+  --ink-soft: var(--slate);
+  --muted: var(--muted-slate);
+  --forest: var(--bc-navy);
+  --forest-deep: var(--deep-ocean);
+  --forest-tint: var(--sea-glass);
+  --ember: var(--wildfire-orange);
+  --ember-deep: var(--critical-red);
+  --ember-tint: var(--status-ooc-bg);
+  --paper: var(--warm-mist);
+  --canvas: var(--warm-stone);
+  --surface: var(--snow);
+  --hairline: var(--divider);
+  --hairline-soft: color-mix(in srgb, var(--divider) 70%, transparent);
+  --amber-bg: var(--status-held-bg);
+  --amber-edge: var(--warning-amber);
+  --amber-ink: var(--warning-amber);
+
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --radius-map: 20px;
+  --radius-panel: 16px;
+  --radius-field: 12px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --shadow-elevated: 0 1px 2px rgba(16, 42, 58, 0.04), 0 18px 48px rgba(16, 42, 58, 0.08);
+  --shadow-panel: var(--shadow-elevated);
+  --shadow-card: none;
+  --shadow-map: var(--shadow-elevated);
+
+  --font-display: "Newsreader", "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+  --font-ui: "Inter", system-ui, sans-serif;
+}

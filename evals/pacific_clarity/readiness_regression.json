@@ -1,0 +1,8 @@
+{
+  "case": "ready_503_with_release_version",
+  "prior_assumption": "Frontend treated any HealthResponse with release_version as ready",
+  "observed": "fetchReadyHealth returned early on release_version before checking response.ok; backend returns 503 with release_version when not_ready",
+  "fix": "Parse body, throw on !response.ok, only then accept payload; session readiness drives LiveDataStatus",
+  "tests": ["apps/web/tests/fetchReadyHealth.test.ts"],
+  "status": "fixed"
+}

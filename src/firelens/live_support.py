@@ -220,12 +220,36 @@ def official_fire_centre_label(label: str | None) -> str | None:
     return _FIRE_CENTRE_QUERY_LABELS.get(normalized)
 
 
-def official_fire_centre_from_question(question: str) -> str | None:
-    """Extract only an explicit, allowlisted BCWS Fire Centre name."""
+def official_fire_centres_from_question(question: str) -> tuple[str, ...]:
+    """Return every distinct allowlisted BCWS Fire Centre named in the question."""
     normalized = " ".join(question.casefold().split())
+    found: list[str] = []
     for official_label in FIRE_CENTRE_CODE_NAMES.values():
         if re.search(rf"(?<!\w){re.escape(official_label.casefold())}(?!\w)", normalized):
-            return official_label
+            found.append(official_label)
+            continue
+        # Allow "Kamloops or Cariboo Fire Centre" where only the last token
+        # carries the "Fire Centre" suffix.
+        bare = official_label.removesuffix(" Fire Centre").casefold()
+        if re.search(
+            rf"(?<!\w){re.escape(bare)}(?!\w).{{0,40}}?\bfire\s+cent(?:re|er)\b",
+            normalized,
+        ):
+            found.append(official_label)
+    # Preserve official roster order while dropping duplicates.
+    return tuple(dict.fromkeys(found))
+
+
+def official_fire_centre_from_question(question: str) -> str | None:
+    """Extract only an explicit, allowlisted BCWS Fire Centre name.
+
+    When the question names two or more distinct Fire Centres, return None so
+    the planner can ask which administrative scope to use instead of silently
+    selecting the first match.
+    """
+    matches = official_fire_centres_from_question(question)
+    if len(matches) == 1:
+        return matches[0]
     return None
 
 

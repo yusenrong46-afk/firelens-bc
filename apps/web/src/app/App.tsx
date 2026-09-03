@@ -1,5 +1,5 @@
-import { ArrowSquareOut, House, Info, MapTrifold, Shield } from "@phosphor-icons/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { House, Info, MapTrifold } from "@phosphor-icons/react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
@@ -13,34 +13,27 @@ import {
   LiveAnalysisWorkspace,
   preloadAnalysisCharts,
 } from "../features/near-me/LiveAnalysisWorkspace";
+import { BCWS_MAP_URL } from "../shared/officialLinks";
 import { emitProductEvent } from "../shared/telemetry";
+import { ContextChips, deriveContextChips } from "./ContextChips";
 import { HowFireLensWorks } from "./HowFireLensWorks";
+import { LiveDataStatus } from "./LiveDataStatus";
+import { OfficialSourcesCard } from "./OfficialSourcesCard";
+import { deriveRecentQuestions, ProductSidebar } from "./ProductSidebar";
 import {
   preferredContextSurface,
   shouldOfferContextMap,
   shouldUseAnalyticalWorkspace,
   workspaceLayout,
 } from "./workspacePresentation";
+import "./tokens.css";
+import "./shell.css";
+import "./answer.css";
 import "./styles.css";
 
-function provenanceBoundary(response: { provenance_class?: string | undefined } | undefined, viewKind: string): string {
-  if (viewKind === "idle" || viewKind === "loading" || !response) {
-    return "FireLens is not a safety assessment.";
-  }
-  if (response.provenance_class === "general_knowledge") {
-    return "General model knowledge. Not a safety assessment.";
-  }
-  if (response.provenance_class === "official_live") {
-    return "Official live records. Not a safety assessment.";
-  }
-  if (response.provenance_class === "reviewed_guidance") {
-    return "Reviewed official guidance. Not a safety assessment.";
-  }
-  if (response.provenance_class === "mixed") {
-    return "Mixed official records and labelled guidance. Not a safety assessment.";
-  }
-  return "FireLens is not a safety assessment.";
-}
+const CompactLiveMap = lazy(() =>
+  import("../features/near-me/LiveMap").then((module) => ({ default: module.LiveMap })),
+);
 
 export function App() {
   const session = useFireLensSession();
@@ -48,11 +41,16 @@ export function App() {
   const [idleMapOpen, setIdleMapOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mapDismissed, setMapDismissed] = useState(false);
   const contextRef = useRef<HTMLElement>(null);
+  const mapRailRef = useRef<HTMLElement>(null);
   const contextTriggerRef = useRef<HTMLElement | null>(null);
   const mapTriggerRef = useRef<HTMLButtonElement>(null);
   const restoreContextFocusRef = useRef(false);
+  const composerFocusRef = useRef<HTMLInputElement | null>(null);
   const closeProject = useCallback(() => setProjectOpen(false), []);
+
   const mapAvailable = shouldOfferContextMap({
     mode: session.mode,
     question: session.visibleQuestion,
@@ -63,20 +61,42 @@ export function App() {
     response: session.response,
   });
   const analyticalWorkspace = responseAnalyticalWorkspace;
-  const showMap = (session.view.kind === "idle" && idleMapOpen)
-    || (!analyticalWorkspace && contextOpen && mapAvailable && contextSurface === "map");
-  const evidenceOpen = contextOpen && contextSurface === "evidence";
-  const showContext = showMap || evidenceOpen;
+  const spatialShell = session.response?.presentation_shell === "spatial"
+    && (session.mode === "live" || session.mode === "mixed")
+    && !analyticalWorkspace;
+  const showCompactMapRail = !mapDismissed && (
+    spatialShell
+    || (session.view.kind === "idle" && idleMapOpen)
+    || (!analyticalWorkspace && contextOpen && mapAvailable && contextSurface === "map")
+  );
+  const evidenceOpen = contextOpen && contextSurface === "evidence" && !spatialShell;
+  const showEvidencePanel = evidenceOpen;
+  const showMap = showCompactMapRail;
   const layout = workspaceLayout({ analytical: analyticalWorkspace, spatial: showMap });
+
+  const recentQuestions = useMemo(
+    () => deriveRecentQuestions(session.history, session.visibleQuestion),
+    [session.history, session.visibleQuestion],
+  );
+  const contextChips = useMemo(
+    () => deriveContextChips({
+      response: session.response,
+      locationLabel: session.activeLocation?.label ?? session.locationLabel,
+      activeRadiusKm: session.activeLocation?.radius_km,
+    }),
+    [session.activeLocation, session.locationLabel, session.response],
+  );
 
   useEffect(() => {
     if (session.view.kind === "idle") {
       setIdleMapOpen(false);
       setContextOpen(false);
       setContextSurface("evidence");
+      setMapDismissed(false);
       return;
     }
     setIdleMapOpen(false);
+    setMapDismissed(false);
     const preferred = preferredContextSurface({
       mode: session.mode,
       response: session.response,
@@ -86,24 +106,29 @@ export function App() {
       && session.response?.presentation_shell === "spatial";
     if (shouldOpenPreferredMap) contextTriggerRef.current = null;
     setContextSurface(preferred);
-    setContextOpen(shouldOpenPreferredMap);
+    setContextOpen(false);
   }, [analyticalWorkspace, session.mode, session.response?.trace_id, session.view.kind, session.visibleQuestion]);
 
   useEffect(() => {
-    if (!showContext) return;
-    contextRef.current?.scrollIntoView?.({ block: "start", inline: "nearest" });
+    if (!showEvidencePanel) return;
     contextRef.current?.focus({ preventScroll: true });
-  }, [contextSurface, showContext]);
+  }, [contextSurface, showEvidencePanel]);
 
   useEffect(() => {
-    if (showContext || !restoreContextFocusRef.current) return;
+    if (!showCompactMapRail || showEvidencePanel) return;
+    mapRailRef.current?.focus({ preventScroll: true });
+  }, [idleMapOpen, showCompactMapRail, showEvidencePanel, session.response?.trace_id]);
+
+  useEffect(() => {
+    if (showCompactMapRail || showEvidencePanel || !restoreContextFocusRef.current) return;
     restoreContextFocusRef.current = false;
     const trigger = contextTriggerRef.current?.isConnected
       ? contextTriggerRef.current
-      : mapTriggerRef.current;
+      : mapTriggerRef.current
+        ?? document.querySelector<HTMLElement>('button[aria-controls="answer-context"]');
     contextTriggerRef.current = null;
     trigger?.focus();
-  }, [showContext]);
+  }, [showCompactMapRail, showEvidencePanel]);
 
   useEffect(() => {
     if (!analyticalWorkspace) session.setMapVisible(showMap);
@@ -122,18 +147,20 @@ export function App() {
         : null;
     }
     setIdleMapOpen(false);
+    setMapDismissed(false);
     setContextSurface("evidence");
     setContextOpen(true);
     emitProductEvent("evidence_opened");
   }
 
   function showOfficialMap() {
-    if (!contextOpen) {
+    if (!showCompactMapRail) {
       contextTriggerRef.current = document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
     }
     if (session.view.kind === "idle") setIdleMapOpen(true);
+    setMapDismissed(false);
     setContextSurface("map");
     setContextOpen(true);
     emitProductEvent("map_opened");
@@ -143,6 +170,7 @@ export function App() {
     restoreContextFocusRef.current = true;
     setIdleMapOpen(false);
     setContextOpen(false);
+    setMapDismissed(true);
   }
 
   function goHome() {
@@ -150,102 +178,198 @@ export function App() {
     setIdleMapOpen(false);
     setContextOpen(false);
     setProjectOpen(false);
+    setMobileNavOpen(false);
     window.scrollTo({ top: 0 });
   }
+
+  function fillFromRecent(question: string) {
+    session.setQuery(question);
+    setMobileNavOpen(false);
+    requestAnimationFrame(() => {
+      const input = document.querySelector<HTMLInputElement>('input[aria-label="Ask FireLens a question"]');
+      input?.focus();
+    });
+  }
+
+  const layoutClass = analyticalWorkspace
+    ? "pc-layout pc-layout--solo"
+    : showCompactMapRail
+      ? "pc-layout"
+      : "pc-layout pc-layout--no-map";
 
   return (
     <div className="app-shell" id="top">
       <a className="skip-link" href="#conversation">Skip to conversation</a>
       {showMap && <a className="skip-link" href="#official-map">Skip to official map</a>}
-      <header className="topbar">
-        <a className="brand" href="/" aria-label="FireLens home" onClick={(event) => { event.preventDefault(); goHome(); }}>
-          <img src="/assets/firelens-mark.png" alt="" />
-          <span><strong>FireLens</strong></span>
-        </a>
-        <span className="topbar-lockup">B.C. wildfire information</span>
-        <div className="topbar-actions">
-          {session.view.kind !== "idle" && (
-            <button className="topbar-home" type="button" onClick={goHome}>
-              <House size={17} /> New search
-            </button>
-          )}
-          <button
-            className="topbar-project"
-            type="button"
-            aria-label="How FireLens works"
-            aria-expanded={projectOpen}
-            aria-controls="how-firelens-works"
-            onClick={() => setProjectOpen((open) => !open)}
-          >
-            <Info size={18} />
-            <span className="topbar-project__detail"><strong>How FireLens works</strong><small>Sources, methods, and limits</small></span>
-            <span className="topbar-project__compact-label">How it works</span>
-          </button>
-          {analyticalWorkspace && (
-            <a className="topbar-anchor" href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
-              <MapTrifold size={17} /> Explore live map
-            </a>
-          )}
-          {(session.view.kind === "idle" || (mapAvailable && !showContext && !analyticalWorkspace)) && (
-            <nav className="workspace-jump" aria-label="Choose workspace context">
-              <button
-                ref={mapTriggerRef}
-                type="button"
-                className={showMap ? "workspace-jump__active" : ""}
-                onClick={showOfficialMap}
-                aria-pressed={showMap}
-                aria-expanded={showMap}
-                aria-controls="answer-context"
-              >
-                <MapTrifold size={17} /> {session.view.kind === "idle" ? "Explore live map" : "Open map"}
-              </button>
-            </nav>
-          )}
-          <a className="official-link" href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
-            <ArrowSquareOut size={18} /> BC Wildfire Service map
-          </a>
-        </div>
-      </header>
       <ConnectionStatus />
-      <div className="boundary">
-        <Shield size={17} />
-        <span>{provenanceBoundary(session.response, session.view.kind)}</span>
-      </div>
       <HowFireLensWorks open={projectOpen} onClose={closeProject} />
-      <main className={`workspace workspace--${layout} ${showContext ? "workspace--split" : "workspace--solo"} ${showMap ? "workspace--map" : "workspace--evidence"}`}>
-        <ConversationPanel
-          session={session}
-          analytical={analyticalWorkspace}
-          analysisSlot={responseAnalyticalWorkspace ? (
-            <LiveAnalysisWorkspace
-              session={session}
-              answerIdentity={session.response?.trace_id ?? ""}
-              evidenceOpen={showContext && contextSurface === "evidence"}
-              onOpenEvidence={() => {
-                session.setSelected(0);
-                showEvidence();
-              }}
-            />
-          ) : undefined}
-          onOpenEvidence={showEvidence}
-          onOpenMap={showOfficialMap}
-          contextOpen={showContext}
-          contextSurface={contextSurface}
-        />
-        {showContext && (
-          <EvidencePanel
-            session={session}
-            surface={showMap ? "map" : "evidence"}
-            mapAvailable={!analyticalWorkspace && (session.view.kind === "idle" || mapAvailable)}
-            panelRef={contextRef}
-            onClose={closeContext}
-            onSurfaceChange={(surface) => {
-              if (surface === "map") showOfficialMap();
-              else showEvidence();
-            }}
-          />
+      <div className="pc-frame">
+        <header className="pc-mobile-header">
+          <a
+            className="pc-mobile-header__brand"
+            href="/"
+            aria-label="FireLens home"
+            onClick={(event) => { event.preventDefault(); goHome(); }}
+          >
+            <img src="/assets/firelens-mark.png" alt="" />
+            <strong>FireLens</strong>
+          </a>
+          <div className="pc-mobile-header__actions">
+            <button type="button" onClick={goHome} aria-label="Home"><House size={18} /></button>
+            <button
+              type="button"
+              aria-label="How FireLens works"
+              aria-expanded={projectOpen}
+              onClick={() => setProjectOpen((open) => !open)}
+            >
+              <Info size={18} />
+            </button>
+            <a href={BCWS_MAP_URL} target="_blank" rel="noreferrer" aria-label="Official BCWS map">
+              <MapTrifold size={18} />
+            </a>
+            <button
+              type="button"
+              aria-expanded={mobileNavOpen}
+              aria-controls="mobile-recent"
+              onClick={() => setMobileNavOpen((open) => !open)}
+            >
+              Recent
+            </button>
+          </div>
+        </header>
+        {mobileNavOpen && recentQuestions.length > 0 && (
+          <div id="mobile-recent" className="product-sidebar__recent" style={{ marginBottom: 16 }}>
+            <h2 className="product-sidebar__recent-heading">Recent questions</h2>
+            <ul>
+              {recentQuestions.map((item) => (
+                <li key={item.text}>
+                  <button
+                    type="button"
+                    className={item.current ? "recent-question recent-question--current" : "recent-question"}
+                    onClick={() => fillFromRecent(item.text)}
+                  >
+                    {item.text}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
-      </main>
+
+        <div className={layoutClass}>
+          <ProductSidebar
+            homeActive={session.view.kind === "idle"}
+            onHome={goHome}
+            onHowItWorks={() => setProjectOpen((open) => !open)}
+            onClear={() => { session.clearHistory(); goHome(); }}
+            onSelectQuestion={fillFromRecent}
+            howItWorksOpen={projectOpen}
+            recentQuestions={recentQuestions}
+          />
+
+          <div className="pc-main">
+            {!showCompactMapRail && (
+              <div className="pc-main__status">
+                <LiveDataStatus liveSummary={session.liveSummary} readiness={session.readiness} />
+                {session.view.kind === "idle" && (
+                  <button
+                    ref={mapTriggerRef}
+                    type="button"
+                    className="product-nav"
+                    onClick={showOfficialMap}
+                    aria-pressed={showMap}
+                  >
+                    <MapTrifold size={17} /> Explore live map
+                  </button>
+                )}
+              </div>
+            )}
+            <main
+              className={`workspace workspace--${layout} workspace--solo ${showMap ? "workspace--map" : "workspace--evidence"}`}
+            >
+              <ConversationPanel
+                session={session}
+                analytical={analyticalWorkspace}
+                analysisSlot={responseAnalyticalWorkspace ? (
+                  <LiveAnalysisWorkspace
+                    session={session}
+                    answerIdentity={session.response?.trace_id ?? ""}
+                    evidenceOpen={showEvidencePanel}
+                    onOpenEvidence={() => {
+                      session.setSelected(0);
+                      showEvidence();
+                    }}
+                  />
+                ) : undefined}
+                onOpenEvidence={showEvidence}
+                onOpenMap={showOfficialMap}
+                contextOpen={showCompactMapRail || showEvidencePanel}
+                contextSurface={showCompactMapRail ? "map" : contextSurface}
+                contextChips={<ContextChips chips={contextChips} />}
+                composerFocusRef={composerFocusRef}
+              />
+              {showEvidencePanel && (
+                <EvidencePanel
+                  session={session}
+                  surface="evidence"
+                  mapAvailable={false}
+                  panelRef={contextRef}
+                  onClose={closeContext}
+                  onSurfaceChange={(surface) => {
+                    if (surface === "map") showOfficialMap();
+                    else showEvidence();
+                  }}
+                />
+              )}
+            </main>
+            <p className="pc-disclaimer">
+              FireLens provides information, not decisions. For emergencies call 9-1-1 and follow local authorities.
+            </p>
+          </div>
+
+          {showCompactMapRail && !analyticalWorkspace && (
+            <aside
+              className="pc-map-rail"
+              aria-label="Map"
+              id={showEvidencePanel ? undefined : "answer-context"}
+              ref={mapRailRef}
+              tabIndex={-1}
+            >
+              <div className="pc-map-rail__toolbar">
+                <LiveDataStatus liveSummary={session.liveSummary} readiness={session.readiness} />
+                {(idleMapOpen || contextOpen || spatialShell) && (
+                  <button
+                    type="button"
+                    className="context-close"
+                    aria-label="Close answer context"
+                    onClick={closeContext}
+                  >
+                    Close
+                  </button>
+                )}
+              </div>
+              <Suspense fallback={<p role="status">Loading map…</p>}>
+                <CompactLiveMap
+                  variant={spatialShell && !idleMapOpen ? "compact" : "full"}
+                  results={session.mapResults}
+                  matchingResults={session.mapMatchingResults}
+                  provinceResults={session.mapProvinceResults}
+                  aggregateFreshness={session.mapAggregateFreshness}
+                  unavailableLayers={session.mapUnavailableLayers}
+                  focus={session.mapFocus}
+                  focusResults={session.mapFocusResults}
+                  selectedResultId={session.selectedLiveResultId}
+                  onSelectResult={session.setSelectedLiveResultId}
+                  onAskAboutResult={session.askAboutResult}
+                  contextLayersEnabled={session.contextLayersEnabled}
+                  onContextLayersChange={session.setContextLayersEnabled}
+                />
+              </Suspense>
+              <OfficialSourcesCard />
+            </aside>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

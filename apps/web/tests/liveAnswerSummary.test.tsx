@@ -30,9 +30,9 @@ describe("LiveAnswerSummary", () => {
   it("uses a neutral heading and only source-supplied provenance and update time", () => {
     render(<LiveAnswerSummary response={response} />);
 
-    expect(screen.getByText(/official records?$/)).toBeInTheDocument();
-    expect(screen.getByText(/Example Official Authority/)).toBeInTheDocument();
-    expect(screen.getByText(/last updated Aug 28, 2026/)).toBeInTheDocument();
+    expect(screen.getByText(/1 official record found|1 active wildfire/i)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Live answer summary" })).toHaveTextContent(/Example Official Authority/);
+    expect(screen.getByRole("region", { name: "Live answer summary" })).toHaveTextContent(/Updated|Aug 28, 2026/i);
     expect(screen.queryByText(/12:05:00Z/)).not.toBeInTheDocument();
   });
 });

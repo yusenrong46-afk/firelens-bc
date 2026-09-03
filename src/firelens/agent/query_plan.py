@@ -57,6 +57,7 @@ from firelens.live import LiveDataErrorKind, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
 from firelens.live_support import (
     official_fire_centre_from_question,
+    official_fire_centres_from_question,
     official_fire_centre_label,
 )
 from firelens.understanding.place import PlaceKind
@@ -528,6 +529,21 @@ def _plan_request_body(request: QueryRequest) -> AgentQueryPlan:
             terminal_response=boundary.multi_place_comparison_limit(request),
         )
     question_location = coarse_location_from_question(request.question)
+    named_fire_centres = official_fire_centres_from_question(request.question)
+    if len(named_fire_centres) > 1 and request.location is None:
+        return AgentQueryPlan(
+            route=QueryRoute.LIVE,
+            mode=AgentRequestMode.TERMINAL,
+            live_layers=layers,
+            geography=AgentGeography.NONE,
+            location_label=None,
+            static_subrequest=static_query,
+            tool_calls=(),
+            scope_result=AgentScopeResult.REQUIRES_INPUT,
+            terminal_response=boundary.multiple_fire_centre_clarification(
+                request, named_fire_centres
+            ),
+        )
     explicit_fire_centre = official_fire_centre_from_question(request.question)
     if explicit_fire_centre is not None:
         # An official Fire Centre is an administrative source field, not a
