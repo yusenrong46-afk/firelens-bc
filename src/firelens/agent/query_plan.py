@@ -3,64 +3,22 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Any
 
+import firelens.agent.query_plan_boundaries as boundary
 from firelens.agent.fallback_brain import planned_static_subrequest, planned_static_tool
-from firelens.agent.query_plan_boundaries import (
-    absence_all_clear_boundary as _absence_all_clear_boundary,
-)
-from firelens.agent.query_plan_boundaries import (
-    empty_map_location_prompt as _empty_map_location_prompt,
-)
-from firelens.agent.query_plan_boundaries import (
-    evacuation_alert_distance_boundary as _evacuation_alert_distance_boundary,
-)
-from firelens.agent.query_plan_boundaries import (
-    is_personal_travel_or_fuel_decision as _is_personal_travel_or_fuel_decision,
-)
-from firelens.agent.query_plan_boundaries import (
-    location_prompt as _location_prompt,
-)
-from firelens.agent.query_plan_boundaries import (
-    multi_place_comparison_limit as _multi_place_comparison_limit,
-)
-from firelens.agent.query_plan_boundaries import (
-    ordinal_out_of_list_prompt as _ordinal_out_of_list_prompt,
-)
-from firelens.agent.query_plan_boundaries import (
-    ordinal_without_list_prompt as _ordinal_without_list_prompt,
-)
-from firelens.agent.query_plan_boundaries import (
-    record_reference_prompt as _record_reference_prompt,
-)
-from firelens.agent.query_plan_boundaries import (
-    scope_redirect as _scope_redirect,
-)
-from firelens.agent.query_plan_boundaries import (
-    selection_prompt as _selection_prompt,
-)
-from firelens.agent.query_plan_boundaries import (
-    smoke_observation_location_prompt as _smoke_observation_location_prompt,
-)
-from firelens.agent.query_plan_boundaries import (
-    travel_or_fuel_boundary as _travel_or_fuel_boundary,
-)
-from firelens.agent.query_plan_boundaries import (
-    unbound_live_redirect as _unbound_live_redirect,
-)
 from firelens.agent.tools import AgentTool
+from firelens.answering.clause_boundaries import clause_boundaries, wants_evacuation_records
 from firelens.answering.intent import (
     continues_prior_live_place,
     conversation_planning_question,
-    has_independent_supported_live_clause,
     live_layers_for_question,
     live_query_requires_location,
     plan_query,
     prefers_general_background,
     prior_anchor_user_question,
-    unsupported_live_topics,
 )
 from firelens.answering.intent_automaton import parse_request_intent
 from firelens.answering.intent_conversation import is_selected_record_followup
@@ -80,7 +38,12 @@ from firelens.answering.location_intent import (
     is_province_wide_question,
     place_mention_for_question,
 )
+from firelens.answering.unsupported_live import (
+    has_independent_supported_live_clause,
+    unsupported_live_topics,
+)
 from firelens.contracts import (
+    AnswerSection,
     AskResponse,
     LiveResultKind,
     LocationInput,
@@ -188,6 +151,9 @@ class AgentQueryPlan:
     tool_calls: tuple[PlannedToolCall, ...]
     scope_result: AgentScopeResult = AgentScopeResult.READY
     terminal_response: AskResponse | None = None
+    # Clauses answered by saying what FireLens will not or cannot do; the
+    # composer adds each as its own section so no clause is dropped.
+    boundaries: tuple[AnswerSection, ...] = ()
 
     def __post_init__(self) -> None:
         if (
@@ -246,6 +212,7 @@ class AgentQueryPlan:
                 if self.terminal_response is not None
                 else None
             ),
+            "boundaries": [section.kind.value for section in self.boundaries],
         }
 
 
@@ -301,9 +268,11 @@ def _ordinal_plan(request: QueryRequest) -> AgentQueryPlan | None:
     if visible:
         if index < len(visible):
             return _selected_record_plan(visible[index])
-        return _terminal_plan(_ordinal_out_of_list_prompt(ordinal_label(index), len(visible)))
+        return _terminal_plan(
+            boundary.ordinal_out_of_list_prompt(ordinal_label(index), len(visible))
+        )
     if request.context.selected_live_result_id:
-        return _terminal_plan(_ordinal_without_list_prompt(ordinal_label(index)))
+        return _terminal_plan(boundary.ordinal_without_list_prompt(ordinal_label(index)))
     return None
 
 
@@ -327,8 +296,40 @@ def _live_calls(
 
 
 def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
-    """Create the deterministic plan projection before external place resolution."""
+    """Create the deterministic plan projection before external place resolution.
 
+    Clauses the plan declines or cannot serve travel with it as boundaries. A
+    declined evacuation decision beside a located records clause also fetches
+    the official evacuation records for that place: the fact the person can
+    have, next to the decision they must make with the issuing authority.
+    """
+
+    plan = _plan_request_body(request)
+    if plan.mode == AgentRequestMode.TERMINAL:
+        return plan
+    boundaries = clause_boundaries(conversation_planning_question(request))
+    if not boundaries:
+        return plan
+    layers = plan.live_layers
+    calls = plan.tool_calls
+    if (
+        wants_evacuation_records(boundaries)
+        and plan.geography == AgentGeography.LOCATION_RADIUS
+        and LiveResultKind.EVACUATION not in layers
+    ):
+        layers = (*layers, LiveResultKind.EVACUATION)
+        calls = (
+            *calls,
+            *_live_calls(
+                (LiveResultKind.EVACUATION,),
+                geography=plan.geography,
+                location_label=plan.location_label,
+            ),
+        )
+    return replace(plan, live_layers=layers, tool_calls=calls, boundaries=boundaries)
+
+
+def _plan_request_body(request: QueryRequest) -> AgentQueryPlan:
     question = request.question
     if _FINANCE_FIRE_METAPHOR.search(question):
         return AgentQueryPlan(
@@ -355,7 +356,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             static_subrequest=None,
             tool_calls=(),
             scope_result=AgentScopeResult.SCOPE_REDIRECT,
-            terminal_response=_absence_all_clear_boundary(),
+            terminal_response=boundary.absence_all_clear_boundary(),
         )
     if re.search(r"\bignore\b.{0,60}\bevacuation\s+alert\b", question, re.IGNORECASE):
         return AgentQueryPlan(
@@ -367,9 +368,9 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             static_subrequest=None,
             tool_calls=(),
             scope_result=AgentScopeResult.SCOPE_REDIRECT,
-            terminal_response=_evacuation_alert_distance_boundary(),
+            terminal_response=boundary.evacuation_alert_distance_boundary(),
         )
-    if _is_personal_travel_or_fuel_decision(question):
+    if boundary.is_personal_travel_or_fuel_decision(question):
         return AgentQueryPlan(
             route=QueryRoute.LIVE,
             mode=AgentRequestMode.TERMINAL,
@@ -379,7 +380,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             static_subrequest=None,
             tool_calls=(),
             scope_result=AgentScopeResult.SCOPE_REDIRECT,
-            terminal_response=_travel_or_fuel_boundary(),
+            terminal_response=boundary.travel_or_fuel_boundary(),
         )
     if (
         is_unresolved_smoke_observation(question)
@@ -395,7 +396,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             static_subrequest=None,
             tool_calls=(),
             scope_result=AgentScopeResult.REQUIRES_INPUT,
-            terminal_response=_smoke_observation_location_prompt(),
+            terminal_response=boundary.smoke_observation_location_prompt(),
         )
     public_plan = plan_query(request)
     if public_plan.route == QueryRoute.TANGENT and prefers_general_background(request):
@@ -467,7 +468,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             static_subrequest=None,
             tool_calls=(),
             scope_result=AgentScopeResult.SCOPE_REDIRECT,
-            terminal_response=_record_reference_prompt(),
+            terminal_response=boundary.record_reference_prompt(),
         )
 
     if requires_selected_live_record(request):
@@ -480,7 +481,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             static_subrequest=None,
             tool_calls=(),
             scope_result=AgentScopeResult.SCOPE_REDIRECT,
-            terminal_response=_selection_prompt(),
+            terminal_response=boundary.selection_prompt(),
         )
 
     planning_question = conversation_planning_question(request)
@@ -518,7 +519,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             static_subrequest=static_query,
             tool_calls=(),
             scope_result=AgentScopeResult.REQUIRES_INPUT,
-            terminal_response=_multi_place_comparison_limit(request),
+            terminal_response=boundary.multi_place_comparison_limit(request),
         )
     question_location = coarse_location_from_question(request.question)
     explicit_fire_centre = official_fire_centre_from_question(request.question)
@@ -562,7 +563,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             static_subrequest=None,
             tool_calls=(),
             scope_result=AgentScopeResult.REQUIRES_INPUT,
-            terminal_response=_empty_map_location_prompt(request),
+            terminal_response=boundary.empty_map_location_prompt(request),
         )
     named = extracted_located_fire_name(planning_question)
     if named and location is not None and location.label is not None:
@@ -596,7 +597,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             static_subrequest=static_query,
             tool_calls=(),
             scope_result=AgentScopeResult.SCOPE_REDIRECT,
-            terminal_response=_scope_redirect(()),
+            terminal_response=boundary.scope_redirect(()),
         )
     if not layers:
         if topics and static_query is not None:
@@ -621,7 +622,9 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
                 tool_calls=(),
                 scope_result=AgentScopeResult.SCOPE_REDIRECT,
                 terminal_response=(
-                    _scope_redirect(topics) if topics else _unbound_live_redirect()
+                    boundary.scope_redirect(topics)
+                    if topics
+                    else boundary.unbound_live_redirect()
                 ),
             )
         return AgentQueryPlan(
@@ -648,7 +651,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             static_subrequest=static_query,
             tool_calls=(),
             scope_result=AgentScopeResult.REQUIRES_INPUT,
-            terminal_response=_location_prompt(request, unresolved=False),
+            terminal_response=boundary.location_prompt(request, unresolved=False),
         )
 
     geography = (
@@ -719,5 +722,5 @@ async def build_agent_query_plan(
         static_subrequest=plan.static_subrequest,
         tool_calls=(),
         scope_result=AgentScopeResult.REQUIRES_INPUT,
-        terminal_response=_location_prompt(request, unresolved=True),
+        terminal_response=boundary.location_prompt(request, unresolved=True),
     )

@@ -20,7 +20,6 @@ from firelens.answering.intent import (
     live_query_requires_location,
     plan_query,
     static_guidance_fragment,
-    unsupported_live_topics,
 )
 from firelens.answering.live_request_intent import (
     is_distance_request,
@@ -28,6 +27,7 @@ from firelens.answering.live_request_intent import (
     is_unsupported_selected_request,
 )
 from firelens.answering.location_intent import coarse_location_from_question
+from firelens.answering.unsupported_live import unsupported_live_topics
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
     AnswerSectionKind,

@@ -39,7 +39,6 @@ from firelens.agent.query_plan import AgentQueryPlan
 from firelens.agent.rails import execution_allowed, output_rail_errors
 from firelens.agent.runtime_tools import execute_tool
 from firelens.agent.tools import AgentTool
-from firelens.answering.intent import unsupported_live_topics
 from firelens.answering.live_analysis import (
     official_analysis_answer,
     replace_ungrounded_live_hedge,
@@ -54,6 +53,7 @@ from firelens.answering.live_request_intent import (
     is_unsupported_selected_request,
 )
 from firelens.answering.location_intent import is_national_scope_question
+from firelens.answering.unsupported_live import unsupported_live_topics
 from firelens.contracts import AskResponse, QueryRequest, QueryRoute
 from firelens.errors import ProviderError
 from firelens.live_answering import LiveAnswerCoordinator

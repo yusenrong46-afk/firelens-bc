@@ -84,9 +84,17 @@ _OLDEST = re.compile(
     re.IGNORECASE,
 )
 _COUNT = re.compile(
-    r"\bhow many\b.{0,80}\b(?:fires?|wildfires?|fire\s+records?|records?)\b",
+    r"\bhow many\b.{0,80}\b(?:fires?|wildfires?|incidents?|fire\s+records?|records?)\b",
     re.IGNORECASE,
 )
+
+
+def is_record_count_question(question: str) -> bool:
+    """ "How many fires / incidents / records ...": answered with a record count."""
+
+    return _COUNT.search(question) is not None
+
+
 _FIRE_CENTRE_MOST = re.compile(
     r"\bfire centres?\b.{0,40}\bmost\b|\bmost\b.{0,40}\bfire centres?\b",
     re.IGNORECASE,

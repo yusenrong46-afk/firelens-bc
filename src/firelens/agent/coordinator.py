@@ -12,6 +12,7 @@ from firelens.agent.loop import run_agent_loop
 from firelens.agent.query_plan import AgentRequestMode, AgentScopeResult, build_agent_query_plan
 from firelens.agent.rails import input_seatbelt
 from firelens.agent.tools import AgentTool
+from firelens.answering.clause_boundaries import _EVACUATION_DECISION, clause_boundaries
 from firelens.answering.input_clarity import (
     is_low_substance_question,
     missing_source_antecedent,
@@ -34,7 +35,9 @@ from firelens.answering.location_intent import (
     coarse_location_from_question,
 )
 from firelens.answering.responses import safe_abstention
+from firelens.answering.unsupported_live import has_independent_supported_live_clause
 from firelens.contracts import (
+    AnswerSectionKind,
     AskResponse,
     EvidenceStatus,
     LiveResultKind,
@@ -244,13 +247,20 @@ def _useful_safety_boundary(
             related_links=official_safety_links(include_road_conditions=True),
             limitations=["FireLens did not recommend or rank an evacuation route."],
         )
+    # "Is it safe to stay tonight?" asks the same decision as "should I
+    # evacuate?", but is answered in the words the person used.
+    decision = (
+        "FireLens cannot decide whether you should evacuate."
+        if _EVACUATION_DECISION.search(request.question)
+        else "FireLens cannot judge your personal safety; that is a decision it cannot "
+        "make for you."
+    )
     stated_location = request.location or coarse_location_from_question(request.question)
     if stated_location is not None:
         place = stated_location.label or "the provided location"
         answer = (
-            "FireLens cannot decide whether you should evacuate. You can ask it to "
-            f"check official evacuation alerts and orders for {place}; always follow "
-            "instructions from the issuing local authority."
+            f"{decision} You can ask it to check official evacuation alerts and orders "
+            f"for {place}; always follow instructions from the issuing local authority."
         )
         return AskResponse(
             status=ResponseStatus.ABSTENTION,
@@ -264,9 +274,8 @@ def _useful_safety_boundary(
             ],
         )
     answer = (
-        "FireLens cannot decide whether you should evacuate. It can check official "
-        "evacuation alerts and orders for a BC community; always follow instructions "
-        "from the issuing local authority."
+        f"{decision} It can check official evacuation alerts and orders for a BC "
+        "community; always follow instructions from the issuing local authority."
     )
     return AskResponse(
         status=ResponseStatus.ANSWER,
@@ -286,6 +295,25 @@ def _useful_safety_boundary(
     )
 
 
+def _declines_only_one_clause(request: QueryRequest) -> bool:
+    """A personal decision beside a located records clause is answered clause by clause.
+
+    "What fires are near Kelowna, and should I evacuate?" gets the official
+    records for Kelowna and, as its own section, the decision FireLens will not
+    make. The decision alone, or with no place to look up, keeps the whole-turn
+    safety response.
+    """
+
+    if not has_independent_supported_live_clause(request.question):
+        return False
+    if request.location is None and coarse_location_from_question(request.question) is None:
+        return False
+    return any(
+        section.kind == AnswerSectionKind.SAFETY_BOUNDARY
+        for section in clause_boundaries(request.question)
+    )
+
+
 class FireLensAgent:
     """Select and execute only application-owned tools for one public request."""
 
@@ -299,7 +327,7 @@ class FireLensAgent:
 
     async def answer(self, request: QueryRequest) -> AgentExecution:
         seatbelt = input_seatbelt(request)
-        if seatbelt is not None:
+        if seatbelt is not None and not _declines_only_one_clause(request):
             reason, answer = seatbelt
             policy = RequestExecutionPolicy(route="prohibited")
             return AgentExecution(

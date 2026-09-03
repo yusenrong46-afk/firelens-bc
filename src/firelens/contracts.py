@@ -19,9 +19,6 @@ from firelens.assistant_history import render_assistant_history as render_assist
 from firelens.claim_trust import ClaimTrust
 from firelens.contract_base import FrozenStrictModel, StrictModel
 from firelens.contract_composition import (
-    BOUNDED_CONFLICT_TEXT as BOUNDED_CONFLICT_TEXT,
-)
-from firelens.contract_composition import (
     DETERMINISTIC_CONFLICT_TEXT as DETERMINISTIC_CONFLICT_TEXT,
 )
 from firelens.contract_composition import is_canonical_conflict_answer
@@ -140,6 +137,8 @@ class AnswerSectionKind(StrEnum):
     GENERAL_BACKGROUND = "general_background"
     OFFICIAL_HANDOFF = "official_handoff"
     UNCERTAINTY = "uncertainty"
+    SAFETY_BOUNDARY = "safety_boundary"  # a personal decision FireLens declines on purpose
+    UNAVAILABLE = "unavailable"  # a clause FireLens holds no data for (earlier days, forecasts)
 
 
 class AuthorityClass(StrEnum):
@@ -619,6 +618,8 @@ class AskResponse(StrictModel):
             ),
             AnswerSectionKind.OFFICIAL_HANDOFF: bool(self.related_links),
             AnswerSectionKind.UNCERTAINTY: bool(self.limitations),
+            AnswerSectionKind.SAFETY_BOUNDARY: bool(self.related_links),
+            AnswerSectionKind.UNAVAILABLE: bool(self.limitations),
         }
         unsupported = [kind.value for kind in kinds if not requirements[kind]]
         if unsupported:

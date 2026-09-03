@@ -8,13 +8,13 @@ from firelens.answering.intent import (
     live_layers_for_question,
     plan_query,
     static_guidance_fragment,
-    unsupported_live_topics,
 )
 from firelens.answering.location_intent import coarse_location_from_question
 from firelens.answering.request_grammar import (
     parse_request_facets,
     requests_non_bc_national_scope,
 )
+from firelens.answering.unsupported_live import unsupported_live_topics
 from firelens.contracts import LiveResultKind, QueryRequest, QueryRoute
 from firelens.live_answering import LiveAnswerCoordinator
 

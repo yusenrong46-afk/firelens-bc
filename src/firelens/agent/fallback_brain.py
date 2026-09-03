@@ -7,11 +7,11 @@ from typing import Any
 
 from firelens.agent.packet import AgentPacket
 from firelens.agent.tools import AgentTool
+from firelens.answering.clause_boundaries import is_boundary_clause
 from firelens.answering.intent import (
     conversation_planning_question,
     live_layers_for_question,
     reviewed_guidance_intent,
-    unsupported_live_topics,
 )
 from firelens.answering.intent_automaton import parse_request_intent
 from firelens.answering.intent_refresh import is_live_refresh_request
@@ -19,6 +19,7 @@ from firelens.answering.intent_safety import is_empty_map_safety_inference
 from firelens.answering.live_analysis import compose_official_answer
 from firelens.answering.live_request_intent import is_selected_live_request
 from firelens.answering.location_intent import coarse_location_from_question
+from firelens.answering.unsupported_live import unsupported_live_topics
 from firelens.contracts import LiveResultKind, QueryRequest
 
 _PREDICTION = re.compile(
@@ -56,6 +57,10 @@ def planned_static_subrequest(question: str) -> str | None:
         if static_text is None:
             return None
         if len(parsed.clauses) == 1 and not parsed.has_reviewed_guidance:
+            return None
+        # A declined decision, an unavailable comparison or a handoff topic is
+        # answered by its own section, never by the model.
+        if is_boundary_clause(static_text):
             return None
         return static_text
     if unsupported_live_topics(question):

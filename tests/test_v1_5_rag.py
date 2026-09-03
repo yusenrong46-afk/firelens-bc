@@ -19,9 +19,9 @@ from firelens.answering.intent import (
     resolved_user_question,
     reviewed_guidance_intent,
     static_guidance_fragment,
-    unsupported_live_topics,
 )
 from firelens.answering.planner import planning_messages
+from firelens.answering.unsupported_live import unsupported_live_topics
 from firelens.config import FireLensConfig
 from firelens.contracts import (
     AuthorityClass,

@@ -95,6 +95,11 @@ def _split_clauses(question: str) -> tuple[str, ...]:
         right = question[match.end() :].strip(" ,.?;+")
         separator = match.group(0)
         explicit = bool(re.search(r"[+?;]", separator))
+        # A bare comma only separates two requests ("how many fires, what
+        # changed"); it never cuts a request off its own preamble.
+        bare_comma = separator.strip() == ","
+        if bare_comma and not _looks_like_clause(left):
+            continue
         if left and right and (explicit or _looks_like_clause(right)):
             pieces.append(left)
             start = match.end()

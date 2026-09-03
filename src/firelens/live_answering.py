@@ -8,7 +8,6 @@ from uuid import uuid4
 from firelens.answering.intent import (
     live_layers_for_question,
     live_query_requires_location,
-    unsupported_live_topics,
 )
 from firelens.answering.live_composition import supported_static_when_live_missing
 from firelens.answering.live_distance import location_request
@@ -30,6 +29,7 @@ from firelens.answering.live_response_support import (
 )
 from firelens.answering.live_static_request import extract_static_request
 from firelens.answering.location_intent import coarse_location_from_question
+from firelens.answering.unsupported_live import unsupported_live_topics
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
     PUBLIC_ANSWER_MAX_CHARS,

@@ -8,6 +8,7 @@ from typing import Any
 
 from firelens.agent.budget import RequestExecutionPolicy
 from firelens.contracts import (
+    AnswerSection,
     AskResponse,
     CoarseResolvedLocation,
     LiveResult,
@@ -59,6 +60,12 @@ class AgentPacket:
     policy: RequestExecutionPolicy = field(default_factory=RequestExecutionPolicy)
     tool_fingerprints: list[tuple[str, str]] = field(default_factory=list)
     query_plan: Any | None = None
+
+    @property
+    def boundaries(self) -> tuple[AnswerSection, ...]:
+        """Clauses the plan declined or cannot serve, each owed its own section."""
+
+        return tuple(getattr(self.query_plan, "boundaries", ()) or ())
 
     def mark_unavailable(
         self, layers: tuple[LiveResultKind, ...] | list[LiveResultKind]

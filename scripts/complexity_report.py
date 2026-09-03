@@ -59,7 +59,16 @@ class _PyVisitor(ast.NodeVisitor):
         if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
             if func.value.id == "re":
                 name = func.attr
-        if name in {"compile", "search", "match", "fullmatch", "sub", "findall", "finditer", "split"}:
+        if name in {
+            "compile",
+            "search",
+            "match",
+            "fullmatch",
+            "sub",
+            "findall",
+            "finditer",
+            "split",
+        }:
             self.regex_literals += 1
         self.generic_visit(node)
 
@@ -121,8 +130,12 @@ def backend_metrics() -> dict[str, object]:
             ("fallback_named_functions", visitor.fallback_names),
         ):
             totals[key] += value
-    production = [m for m in per_module if "/evaluation/" not in str(m["module"])
-                  and "/review_workspace/" not in str(m["module"])]
+    production = [
+        m
+        for m in per_module
+        if "/evaluation/" not in str(m["module"])
+        and "/review_workspace/" not in str(m["module"])
+    ]
     semantic_modules = [
         m["module"]
         for m in production
@@ -161,8 +174,12 @@ def frontend_metrics() -> dict[str, object]:
     css_loc = sum(_lines(p) for p in css_files)
     css_text = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in css_files)
     media_queries = len(re.findall(r"@media", css_text))
-    overflow_rules = len(re.findall(r"overflow(?:-[xy])?\s*:\s*(?:auto|scroll|hidden)", css_text))
-    viewport_heights = len(re.findall(r"\b(?:100|min-)?(?:d|s|l)?vh\b|height:\s*100(?:d|s|l)?vh", css_text))
+    overflow_rules = len(
+        re.findall(r"overflow(?:-[xy])?\s*:\s*(?:auto|scroll|hidden)", css_text)
+    )
+    viewport_heights = len(
+        re.findall(r"\b(?:100|min-)?(?:d|s|l)?vh\b|height:\s*100(?:d|s|l)?vh", css_text)
+    )
     important = len(re.findall(r"!important", css_text))
     selectors = re.findall(r"^\s*([.#][A-Za-z0-9_-]+)[^{]*\{", css_text, flags=re.M)
     from collections import Counter
@@ -170,7 +187,9 @@ def frontend_metrics() -> dict[str, object]:
     counts = Counter(selectors)
     redefined = sum(1 for _, n in counts.items() if n > 1)
     ts_text = "\n".join(
-        p.read_text(encoding="utf-8", errors="replace") for p in ts_files if not p.name.endswith(".d.ts")
+        p.read_text(encoding="utf-8", errors="replace")
+        for p in ts_files
+        if not p.name.endswith(".d.ts")
     )
     scroll_js = len(re.findall(r"scrollTo\(|scrollIntoView|scrollTop\s*[+-]?=", ts_text))
     bundle: dict[str, object] = {}
@@ -207,7 +226,9 @@ def evaluation_metrics() -> dict[str, object]:
         except SyntaxError:
             continue
         for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
+            if isinstance(
+                node, (ast.FunctionDef, ast.AsyncFunctionDef)
+            ) and node.name.startswith("test"):
                 test_functions += 1
     web_tests = sorted((ROOT / "apps" / "web" / "tests").rglob("*.ts*"))
     e2e = [p for p in web_tests if "e2e" in p.parts]

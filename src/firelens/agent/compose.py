@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import uuid4
 
+from firelens.agent.compose_boundaries import with_boundaries
 from firelens.agent.live_scope import packet_scope_limitations
 from firelens.agent.live_selection import (
     selected_live_result_id,
@@ -199,9 +200,10 @@ def compose_response(
     answer: str,
 ) -> AskResponse:
     bound_request = request_with_selected(request, packet)
-    return _with_packet_fields(
+    response = _with_packet_fields(
         bound_request, packet, _build_ask_response(bound_request, packet, answer)
     )
+    return with_boundaries(response, packet)
 
 
 def _with_packet_fields(
@@ -244,9 +246,13 @@ def _with_packet_fields(
         updates["selected_live_result_id"] = request.context.selected_live_result_id
     if packet.resolved_location is not None and response.resolved_location is None:
         updates["resolved_location"] = packet.resolved_location
-    requested = _requested_live_layers(request, packet)
-    if requested and not response.requested_layers:
-        updates["requested_layers"] = list(requested)
+    # The plan's layers are what was asked for, even when one returned nothing;
+    # the validator's fallback only knows the kinds that came back.
+    requested = list(
+        dict.fromkeys([*_requested_live_layers(request, packet), *response.requested_layers])
+    )
+    if requested and requested != list(response.requested_layers):
+        updates["requested_layers"] = requested
     if packet.roster_total is not None:
         updates["roster_total"] = max(packet.roster_total, len(packet.live_results))
     working = response.model_copy(update=updates) if updates else response

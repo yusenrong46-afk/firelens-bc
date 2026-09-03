@@ -292,8 +292,14 @@ PREFETCH_GUIDANCE_TOKENS = (
 )
 REQUEST_STARTERS = frozenset(
     {
+        "am",
         "are",
         "can",
+        "should",
+        "must",
+        "who",
+        "will",
+        "would",
         "check",
         "compare",
         "could",
@@ -375,9 +381,12 @@ NEAR_PLACE_INFORMATION_REQUEST = re.compile(
     r"(?=[,;:.?!]|$)",
     re.IGNORECASE,
 )
+# A bare comma also separates clauses when what follows reads as a new request
+# ("how many fires, what changed since yesterday"); `_looks_like_clause` decides.
 TOP_LEVEL_SEPARATOR = re.compile(
     r"\s*(?:\+|[?;](?=\s|$)|\.(?=\s|$))\s*|"
-    r"\s*(?:,\s*)?(?:and|also|plus|but|then|with)\s+",
+    r"\s*(?:,\s*)?(?:and|also|plus|but|then|with)\s+|"
+    r"\s*,\s*(?=\S)",
     re.IGNORECASE,
 )
 

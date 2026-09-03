@@ -21,6 +21,8 @@ _HISTORY_SECTION_LABELS = {
     "general_background": "General background",
     "official_handoff": "Official source handoff",
     "uncertainty": "Uncertainty about what FireLens could establish",
+    "safety_boundary": "A personal safety decision FireLens did not make",
+    "unavailable": "Information FireLens does not hold",
 }
 _HISTORY_MODE_LABELS = {
     "grounded": "Reviewed official guidance",

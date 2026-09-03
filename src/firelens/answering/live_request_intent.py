@@ -13,7 +13,7 @@ import re
 from collections.abc import Sequence
 
 from firelens.answering.intent import continues_prior_live_place
-from firelens.answering.live_analysis import official_display_name
+from firelens.answering.live_analysis import is_record_count_question, official_display_name
 from firelens.answering.live_focus import focused_record_answer
 from firelens.answering.live_named_fire import requested_fire_identity
 from firelens.answering.location_intent import coarse_location_from_question
@@ -60,10 +60,6 @@ _EXACT_UNIVERSAL_DISTANCE_REQUEST = re.compile(
 _SELECTED_LOCATION_PATTERN = re.compile(
     r"^\s*where(?:\s+is|['’]s)\s+(?:the\s+)?(?P<identity>[A-Za-z0-9'’.-]+"
     r"(?:\s+[A-Za-z0-9'’.-]+){0,8})[?.!]*\s*$",
-    re.IGNORECASE,
-)
-_COUNT_PATTERN = re.compile(
-    r"\bhow many\b.{0,60}\b(?:fires?|wildfires?)(?:\s+records?)?\b",
     re.IGNORECASE,
 )
 _CLOSEST_RATIONALE = re.compile(
@@ -253,7 +249,7 @@ def render_live_record_answer(
 
     if is_selected_live_request(request) and shown:
         return focused_record_answer(request, shown[0])
-    if _COUNT_PATTERN.search(request.question):
+    if is_record_count_question(request.question):
         incident_count = sum(item.kind == LiveResultKind.INCIDENT for item in shown)
         perimeter_count = sum(item.kind == LiveResultKind.PERIMETER for item in shown)
         return (

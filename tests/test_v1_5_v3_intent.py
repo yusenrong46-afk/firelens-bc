@@ -10,7 +10,6 @@ from firelens.answering.intent import (
     reviewed_guidance_intent,
     reviewed_return_condition_intent,
     static_guidance_fragment,
-    unsupported_live_topics,
 )
 from firelens.answering.intent_safety import (
     empty_map_safety_routing,
@@ -22,6 +21,7 @@ from firelens.answering.live_request_intent import (
     is_unbound_distance_request,
 )
 from firelens.answering.location_intent import is_out_of_province_label
+from firelens.answering.unsupported_live import unsupported_live_topics
 from firelens.contracts import (
     ConversationTurn,
     LiveResultKind,

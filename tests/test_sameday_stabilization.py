@@ -15,7 +15,6 @@ from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
     live_layers_for_question,
     plan_query,
-    unsupported_live_topics,
 )
 from firelens.answering.intent_automaton import ClauseIntentKind, parse_request_intent
 from firelens.answering.intent_conversation import is_selected_record_followup
@@ -26,6 +25,7 @@ from firelens.answering.live_evacuation import (
     is_evacuation_record_question,
 )
 from firelens.answering.live_handoffs import related_live_links
+from firelens.answering.unsupported_live import unsupported_live_topics
 from firelens.contracts import (
     AskResponse,
     ConversationTurn,
