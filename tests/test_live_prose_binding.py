@@ -102,6 +102,37 @@ def test_ordinary_fire_roster_does_not_narrate_perimeters_as_extra_fires() -> No
     assert "perimeter" not in answer.casefold()
 
 
+def test_status_filtered_count_counts_only_that_status() -> None:
+    roster = _incident_perimeter_roster()
+    roster[0] = roster[0].model_copy(update={"status": "Out of Control"})
+
+    answer = compose_official_answer(
+        QueryRequest(question="How many out of control fires are there in BC?"), roster
+    )
+
+    assert "lists 1 fire in British Columbia as Out of Control, out of 3 listed" in answer
+    assert "not a safety assessment" in answer
+
+    held = compose_official_answer(
+        QueryRequest(question="how many fires are being held?"), roster
+    )
+    assert "lists 2 fires in British Columbia as Being Held, out of 3 listed" in held
+
+    plain = compose_official_answer(QueryRequest(question="how many fires in bc"), roster)
+    assert "lists 3 fires in British Columbia right now" in plain
+
+    none = compose_official_answer(
+        QueryRequest(question="How many fires are under control in BC?"), roster
+    )
+    assert "lists no fires in British Columbia with that status right now" in none
+    assert "under control" not in none.casefold()
+
+    # The public binding rail must accept per-status counts as record-derived.
+    for text in (answer, held, none):
+        assert live_answer_binding_error(text, roster) is None
+    assert live_answer_binding_error("BC Wildfire Service lists 7 fires as Being Held.", roster)
+
+
 def test_ordinary_fire_roster_keeps_requested_evacuation_record_while_omitting_perimeter() -> (
     None
 ):

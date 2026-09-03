@@ -84,6 +84,11 @@ _PERSONAL_DECISION = re.compile(
     r"drive|travel|risk|danger(?:ous)?|worr(?:y|ied)|okay\s+to|ok\s+to)\b",
     re.IGNORECASE,
 )
+# Asking what a term means is a guidance question, not a field of the record.
+_DEFINITION = re.compile(
+    r"\b(?:means?|meaning|definitions?|defined?|stages?\s+of\s+(?:wildfire\s+|fire\s+)?control)\b",
+    re.IGNORECASE,
+)
 # A capitalized "<Name> Fire" names a different record than the focus.
 _NAMED_FIRE = re.compile(
     r"\b(?:[A-Z][A-Za-z0-9'’.-]*\s+){1,4}(?:Fire|Wildfire|Complex)\b(?!\s+Cent(?:re|er))"
@@ -230,7 +235,7 @@ def focus_reference(question: str) -> FocusReference | None:
     text = " ".join(question.split())
     if not text or _PERSONAL_DECISION.search(text) or is_province_scope(text):
         return None
-    if _OWN_SUBJECT.search(text) or _NAMED_FIRE.search(text):
+    if _OWN_SUBJECT.search(text) or _NAMED_FIRE.search(text) or _DEFINITION.search(text):
         return None
     pointing = _POINTING.search(text) is not None
     pronoun = _PRONOUN.search(text) is not None

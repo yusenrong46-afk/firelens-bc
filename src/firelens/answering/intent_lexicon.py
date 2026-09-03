@@ -383,8 +383,11 @@ NEAR_PLACE_INFORMATION_REQUEST = re.compile(
 )
 # A bare comma also separates clauses when what follows reads as a new request
 # ("how many fires, what changed since yesterday"); `_looks_like_clause` decides.
+# A period ends a request only when it does not close an abbreviation such as
+# "B.C.", "U.S.", "St.", "Mt.", "e.g." ("What records does B.C. list?").
 TOP_LEVEL_SEPARATOR = re.compile(
-    r"\s*(?:\+|[?;](?=\s|$)|\.(?=\s|$))\s*|"
+    r"\s*(?:\+|[?;](?=\s|$)|(?<!\b[A-Za-z])(?<!\b[A-Za-z]\.[A-Za-z])"
+    r"(?<!\b[SsMmFf]t)(?<!\be\.g)(?<!\bi\.e)\.(?=\s|$))\s*|"
     r"\s*(?:,\s*)?(?:and|also|plus|but|then|with)\s+|"
     r"\s*,\s*(?=\S)",
     re.IGNORECASE,

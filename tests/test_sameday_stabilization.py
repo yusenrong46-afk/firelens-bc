@@ -274,6 +274,31 @@ def test_tell_me_more_about_that_one_is_a_selected_record_followup() -> None:
     assert selected_live_result_id(request, live) == "incident:quilpituk"
 
 
+def test_ordinal_follow_up_binds_the_named_record_identity() -> None:
+    """ "The second one" answers about a record and says which one it is."""
+
+    request = QueryRequest(
+        question="What about the second one?",
+        history=[
+            ConversationTurn(role="user", content="Show the three nearest fires to Kelowna."),
+            ConversationTurn(role="assistant", content="BC Wildfire Service lists 3 fires."),
+        ],
+        context=MapContext(),
+    )
+    live = [
+        _record(result_id="incident:a", kind=LiveResultKind.INCIDENT, name="Alpha Creek"),
+        _record(result_id="incident:b", kind=LiveResultKind.INCIDENT, name="Bravo Creek"),
+        _record(result_id="perimeter:a", kind=LiveResultKind.PERIMETER, name="Alpha Creek"),
+    ]
+    assert selected_live_result_id(request, live) == "incident:b"
+    assert (
+        selected_live_result_id(
+            QueryRequest(question="What about the fifth one?", context=MapContext()), live
+        )
+        is None
+    )
+
+
 def test_unestablished_mixed_clause_stays_visible_in_the_live_answer() -> None:
     question = "Which current incidents are largest, and does largest mean most dangerous?"
     request = QueryRequest(question=question)

@@ -3,9 +3,9 @@
   "catalog_id": "productbench_journeys_50",
   "raw_catalog_path": "data/evaluation/productbench_journeys_50.json",
   "raw_catalog_schema": "firelens.productbench_journeys.v1",
-  "raw_catalog_sha256": "916596abd6eafeb568149415cb8aa5e018172909b19c8102b14b53d9edca5759",
+  "raw_catalog_sha256": "e285fa6bdf5e3731d797f96fc5145929fc66e3d1c50b2cc947fa25d1a8676e9f",
   "executable_catalog_schema": "firelens.productbench_executable_catalog.v2",
-  "executable_catalog_sha256": "feedc08d9b9bfe4af5813714e5516c8fb0337fd1db274246db1d2e29eaa5d0dd",
+  "executable_catalog_sha256": "a7da28ac2c943a3d0d4aa68d51553ef10c89ca21809121bdb03e113352baf820",
   "case_count": 50,
   "case_ids": [
     "PB-01", "PB-02", "PB-03", "PB-04", "PB-05", "PB-06", "PB-07", "PB-08", "PB-09", "PB-10",
@@ -29,6 +29,6 @@
   "catalog_binding": "current_unsealed_catalog_snapshot",
   "prior_immutability_proven": false,
   "qualification_role": "not_sealed_not_release_proof",
-  "contract_sha256": "f332199556f137ab2d59d990647c68c35937ace7c885e269c44d2d7261aa5e84",
+  "contract_sha256": "6e8c89d699e5a0ebc7fd7f2fd7e8f2a7b484e1294d8f95c5d1613f9b98c1b433",
   "provider_calls_in_catalog_build": 0
 }

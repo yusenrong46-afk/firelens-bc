@@ -181,13 +181,15 @@ def _clause_disposition(cap: str, body: dict[str, Any], text: str) -> str | None
             "personalized_medical_advice",
         }:
             return "PASS"
+        if cap == "personalized_safety_boundary" and kinds & {"safety_boundary"}:
+            return "PASS"
         if cap == "call_911" and (
             body.get("provenance_class") == "official_quote_only"
             or "9-1-1" in text
             or "911" in text
         ):
             return "PASS"
-        if _CLAUSE_MARKERS["UNAVAILABLE"].search(text):
+        if kinds & {"unavailable"} or _CLAUSE_MARKERS["UNAVAILABLE"].search(text):
             return "UNAVAILABLE"
         return None
     if cap.endswith("_handoff") or cap in {

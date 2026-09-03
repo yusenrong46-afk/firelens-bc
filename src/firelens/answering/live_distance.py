@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from firelens.answering.live_analysis import closest_locatable_result, official_display_name
 from firelens.answering.live_focus import focused_record_answer
+from firelens.answering.live_listing import listing_place
 from firelens.contracts import (
     AskResponse,
     LiveResult,
@@ -69,8 +70,9 @@ def distance_answer(request: QueryRequest, records: Sequence[LiveResult]) -> str
         if chosen.distance_basis == "incident_point"
         else "the edge of its mapped perimeter"
     )
+    place = listing_place(request) or "the place you asked about"
     return (
         f"{official_display_name(chosen)} is {chosen.distance_km:g} km in a straight line "
-        f"from the place you asked about, measured to {basis}. That is not driving "
+        f"from {place}, measured to {basis}. That is not driving "
         "distance, and not a safety assessment."
     )

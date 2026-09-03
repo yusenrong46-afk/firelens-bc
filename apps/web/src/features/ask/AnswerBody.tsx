@@ -74,8 +74,8 @@ export function AnswerBody({
       ) : null}
       {hasAnswerSections && (
         <div className="answer-sections" aria-label="Authority-labelled answer">
-          {answerSections.map((section) => (
-            <section className="answer-section" key={section.kind}>
+          {answerSections.map((section, index) => (
+            <section className="answer-section" key={`${section.kind}-${index}`}>
               <span className="answer-section__authority">{answerSectionAuthority(section.kind)}</span>
               <h2>{section.heading}</h2>
               <AnswerMarkdown headingContext="section">{section.text}</AnswerMarkdown>

@@ -91,7 +91,10 @@ def test_grounded_response_carries_proof_cards_and_checklist() -> None:
     assert response.status_banner is not None
     assert response.status_banner.headline == "Grounded in reviewed official sources"
     assert GROUNDED_PUBLIC_WORDING in response.status_banner.detail
-    assert response.status_banner.freshness_label == "Reviewed guidance; does not change day to day"
+    assert (
+        response.status_banner.freshness_label
+        == "Reviewed guidance; does not change day to day"
+    )
     assert response.supported_items == []
     assert response.unknown_items == ["Stable guidance only."]
     card = response.proof_cards[0]

@@ -583,8 +583,10 @@ async def build_report_async(
                 not item.get("checks", {}).get("no_authority_escalation", False)
                 for item in results
             ),
+            # An unrelated question is answered safely either as labelled general
+            # knowledge or with the product scope note; never with source proof.
             "safe_general_answer_rate": sum(
-                item.get("response_mode") == "background"
+                item.get("response_mode") in {"background", "capability"}
                 and item.get("checks", {}).get("no_source_implication", False)
                 for item in results
             )

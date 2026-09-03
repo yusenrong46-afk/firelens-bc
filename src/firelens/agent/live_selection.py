@@ -13,8 +13,10 @@ from firelens.answering.live_analysis import (
     closest_locatable_result,
     is_closest_live_question,
     official_display_name,
+    ordinal_record,
 )
 from firelens.contracts import LiveResult, QueryRequest, RelatedLink
+from firelens.understanding.reference import ordinal_reference
 
 
 def _normalized_record_identity(value: str) -> str:
@@ -64,6 +66,10 @@ def selected_live_result_id(
     if is_closest_live_question(request.question):
         closest = closest_locatable_result(request.question, live)
         return closest.result_id if closest is not None else None
+    ordinal = ordinal_reference(request.question)
+    if ordinal is not None:
+        chosen = ordinal_record(live, ordinal)
+        return chosen.result_id if chosen is not None else None
     if is_selected_record_followup(request.question):
         closest_question = _prior_closest_question(request)
         if closest_question is not None:

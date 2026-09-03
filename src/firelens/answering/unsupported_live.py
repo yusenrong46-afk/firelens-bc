@@ -29,8 +29,9 @@ _UNSUPPORTED_LIVE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "air quality",
         re.compile(
-            rf"\b(?:what|how)\s+(?:is|are)\s+(?:the\s+)?"
+            rf"\b(?:what|how)(?:'s|\s+(?:is|are))\s+(?:the\s+)?"
             rf"(?:air quality|aqhi|smoke conditions?)\b|"
+            rf"\b(?:air quality|aqhi)\s+(?:in|near|around|for)\s+[A-Z]|"
             rf"\bis\s+(?:it|.{{1,50}})\s+smoky\b|"
             rf"\b{_CURRENT_CUE_TEXT}\b.{{0,60}}\b"
             rf"(?:air quality|aqhi|smoke conditions?|smoky)\b|"

@@ -304,7 +304,7 @@ def compile_high_risk_answer(
             else [target for target in uncovered_targets if target not in matched_targets]
         )
     if not claims:
-        return official_handoff_response(trace_id)
+        return official_handoff_response(trace_id, packet)
     limitations = list(packet.limitations)
     reason = None
     has_quote_only = any(
@@ -482,9 +482,38 @@ def _structured_covers_publication_target(
 
 
 def packet_requires_structured(packet: EvidencePacket, question: str = "") -> bool:
-    texts = [question, *(item.primary_text for item in packet.items)]
+    """Whether this answer must be compiled from exact wording, not generated.
+
+    True when the question itself asks for an action, quantity, or status
+    (Tier A/B), when the retrieved guidance tells people what to do (Tier A
+    passages: actions, evacuation terms), or when the question is about official
+    status vocabulary (stages of control, alert/order).  A passage that merely contains a
+    number or names an organisation (Tier B) does not force compilation:
+    nearly every real source passage does, and judging on that pushed almost
+    every explanatory question into garbled exact-quote fragments.  Generated
+    sentences that carry a quantity or status are still dropped claim by claim
+    in ``GroundedAnswerEngine.answer``.
+    """
+
+    if question and (
+        classify_text(question) in {RiskTier.A, RiskTier.B} or _STATUS_QUESTION.search(question)
+    ):
+        return True
+    texts = [item.primary_text for item in packet.items]
     texts.extend(candidate.text for candidate in packet.quote_candidates)
-    return any(classify_text(text) in {RiskTier.A, RiskTier.B} for text in texts if text)
+    return any(classify_text(text) == RiskTier.A for text in texts if text)
+
+
+# Questions about official status vocabulary (stages of control, alert/order
+# levels) are answered in exact wording.  The risk classifier treats these as
+# ordinary words, so name them here; a passage that merely mentions a stage in
+# passing does not force compilation.
+_STATUS_QUESTION = re.compile(
+    r"\b(?:out\s+of\s+control|being\s+held|under\s+control|"
+    r"stages?\s+of\s+(?:wildfire\s+|fire\s+)?control|control\s+stages?|"
+    r"evacuation\s+(?:alert|order)s?|all[\s-]clear)\b",
+    re.IGNORECASE,
+)
 
 
 def public_mixed_answer(packet: object, connective: str) -> str:

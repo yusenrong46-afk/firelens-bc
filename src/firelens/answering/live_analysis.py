@@ -423,18 +423,24 @@ def _basis_words(basis: str | None) -> str:
     )
 
 
-def _ordinal_record(records: Sequence[LiveResult], index: int) -> str:
-    """Count through this lookup's incidents when no shown list was sent."""
+def ordinal_record(records: Sequence[LiveResult], index: int) -> LiveResult | None:
+    """The record an ordinal ("the second one") names: incidents in list order."""
 
     incidents = [item for item in records if item.kind == LiveResultKind.INCIDENT] or list(
         records
     )
-    if index >= len(incidents):
+    return incidents[index] if index < len(incidents) else None
+
+
+def _ordinal_record(records: Sequence[LiveResult], index: int) -> str:
+    """Count through this lookup's incidents when no shown list was sent."""
+
+    chosen = ordinal_record(records, index)
+    if chosen is None:
         return (
             f"There is no {ordinal_label(index)} record in this list. Select a fire on the "
             "map or ask about one of the records shown."
         )
-    chosen = incidents[index]
     distance = (
         f" It is {chosen.distance_km:g} km away in a straight line."
         if chosen.distance_km is not None
@@ -530,6 +536,22 @@ def _most_fire_centre(records: Sequence[LiveResult]) -> str:
     )
 
 
+_ASKED_STATUS = re.compile(
+    r"\b(out[\s-]+of[\s-]+control|being[\s-]+held|under[\s-]+control)\b",
+    re.IGNORECASE,
+)
+
+
+def _asked_status(question: str) -> str | None:
+    """The BC Wildfire Service status a count question filters on, if any."""
+
+    match = _ASKED_STATUS.search(question)
+    if match is None:
+        return None
+    status = " ".join(match.group(1).casefold().replace("-", " ").split())
+    return status
+
+
 def _count(
     records: Sequence[LiveResult], roster_total: int | None, request: QueryRequest
 ) -> str:
@@ -557,6 +579,30 @@ def _count(
         )
         count = f"{evacuation_count} evacuation record{'' if evacuation_count == 1 else 's'}"
         return f"{evacuation_publisher} lists {count} {where} right now. {not_safety}"
+    status_filter = _asked_status(question)
+    if status_filter is not None:
+        matching = [
+            item
+            for item in records
+            if item.kind == LiveResultKind.INCIDENT
+            and " ".join((item.status or "").casefold().split()) == status_filter
+        ]
+        scope = (
+            f"out of {incident_count} listed"
+            if roster_total is None or roster_total <= shown
+            else f"on this page of {shown} records"
+        )
+        if not matching:
+            # The rail that binds control stages to fetched records would
+            # reject naming a stage no record carries, so say "that status".
+            return (
+                f"{publisher} lists no fires {where} with that status right now, "
+                f"{scope}. {not_safety}"
+            )
+        count = f"{len(matching)} fire{'' if len(matching) == 1 else 's'}"
+        return (
+            f"{publisher} lists {count} {where} as {matching[0].status}, {scope}. {not_safety}"
+        )
     if roster_total is not None and roster_total > shown:
         return (
             f"{publisher} currently publishes {roster_total} matching records {where}; this "

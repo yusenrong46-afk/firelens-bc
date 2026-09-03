@@ -52,6 +52,15 @@ def live_answer_binding_error(answer: str, live_results: Sequence[Any]) -> str |
         == "incident"
     )
     allowed_counts = {len(live_results), incident_count}
+    # "12 fires ... as Out of Control": a per-status count of incident records.
+    per_status: dict[str, int] = {}
+    for item in live_results:
+        kind = str(getattr(getattr(item, "kind", None), "value", getattr(item, "kind", "")))
+        if kind != "incident":
+            continue
+        status = " ".join(str(getattr(item, "status", "") or "").casefold().split())
+        per_status[status] = per_status.get(status, 0) + 1
+    allowed_counts.update(per_status.values())
     for match in _FIRE_COUNT.finditer(answer):
         if int(match.group(1)) not in allowed_counts:
             return "live answer fire counts must match fetched official records"

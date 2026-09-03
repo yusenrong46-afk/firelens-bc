@@ -182,6 +182,10 @@ def _support_tokens(text: str) -> frozenset[str]:
             normalized.add("kit")
         elif token in {"phase", "phases", "stage", "stages"}:
             normalized.add("stage")
+        elif token in {"house", "houses", "home", "homes", "property", "properties"}:
+            normalized.add("home")
+        elif token.startswith("protect") or token.startswith("defend"):
+            normalized.add("protect")
         elif token.endswith("s") and len(token) > 4:
             normalized.add(token[:-1])
         else:

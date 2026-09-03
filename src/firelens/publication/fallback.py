@@ -19,6 +19,7 @@ from firelens.contracts import (
     PublicClaim,
     PublicEvidence,
     ReasonCode,
+    RelatedLink,
     ResponseMode,
     ResponseStatus,
     TemporalClass,
@@ -203,7 +204,30 @@ def quote_only_claim(
     return claim, evidence, card
 
 
-def official_handoff_response(trace_id: str) -> AskResponse:
+def official_handoff_response(
+    trace_id: str, packet: EvidencePacket | None = None
+) -> AskResponse:
+    """Hand off to the issuing authority, linking the reviewed sources that were read."""
+
+    links: list[RelatedLink] = []
+    seen: set[str] = set()
+    for item in packet.items if packet is not None else ():
+        if item.canonical_url in seen:
+            continue
+        seen.add(item.canonical_url)
+        title = " ".join(item.title.split())[:120] or "Official source"
+        publisher = " ".join(item.publisher.split()) or "official publisher"
+        links.append(
+            RelatedLink(
+                title=title,
+                url=HttpUrl(item.canonical_url),
+                description=f"Reviewed {publisher} guidance related to this question."[:200],
+            )
+        )
+        if len(links) == 3:
+            break
+    # The sentence is pinned by the hard probe; the related sources are how the
+    # person actually gets to the official wording.
     return AskResponse(
         status=ResponseStatus.ANSWER,
         trace_id=trace_id,
@@ -214,4 +238,5 @@ def official_handoff_response(trace_id: str) -> AskResponse:
         ),
         reason_code=ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED,
         limitations=[UNCOVERED_LIMITATION],
+        related_links=links,
     )

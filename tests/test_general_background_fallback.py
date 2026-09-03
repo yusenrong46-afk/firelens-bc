@@ -90,6 +90,44 @@ class GeneralBackgroundFallbackTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.response_mode, ResponseMode.GROUNDED)
         self.assertTrue(response.evidence)
 
+    async def test_rejected_draft_on_ordinary_question_falls_back_to_background(self) -> None:
+        """A generated summary that fails claim validation is not a 'validation failed' handoff."""
+
+        class MutatingProvider(RelatedPlanner):
+            async def generate_grounded(self, messages, *, output_schema):  # type: ignore[no-untyped-def]
+                result = await super().generate_grounded(messages, output_schema=output_schema)
+                draft = result.draft
+                assert draft is not None
+                mutated = [replace_claim(claim) for claim in draft.claims]
+                return result.model_copy(
+                    update={"draft": draft.model_copy(update={"claims": mutated})}
+                )
+
+        def replace_claim(claim):  # type: ignore[no-untyped-def]
+            return claim.model_copy(
+                update={"text": "Wildfires always move exactly twice as fast on every hill."}
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _provider, _config = await make_runtime(
+                Path(directory), provider=MutatingProvider()
+            )
+            support = SupportDecision(
+                status=SupportStatus.ANSWERABLE,
+                reason_code=ReasonCode.APPROVED_STATIC_EVIDENCE,
+                explanation="Approved stable guidance is available.",
+            )
+            with patch("firelens.answering.service.decide_support", return_value=support):
+                response = await runtime.service.ask(
+                    QueryRequest(question="How do wildfires spread?")
+                )
+            await runtime.aclose()
+
+        self.assertEqual(response.response_mode, ResponseMode.BACKGROUND)
+        self.assertNotEqual(response.reason_code, ReasonCode.DRAFT_VALIDATION_FAILED)
+        self.assertFalse(response.evidence)
+        self.assertNotIn("twice as fast", response.answer or "")
+
     async def test_ordinary_wildfire_explanations_remain_labelled_background(self) -> None:
         questions = (
             "Why are wildfires dangerous?",

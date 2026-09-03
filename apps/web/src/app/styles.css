@@ -1794,11 +1794,14 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 .ask-start-panel {
   max-width: none;
+  min-width: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   padding: 0;
 }
 .ask-start-panel__intro {
+  min-width: 0;
   padding: clamp(28px, 4vw, 48px) clamp(20px, 5vw, 64px) 8px;
 }
 .ask-start-panel__intro h1 {
@@ -1843,6 +1846,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   cursor: pointer;
   font: 500 15px "Inter", system-ui, sans-serif;
   text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .ask-start-panel__starters button:hover { background: #e2ebdd; border-color: var(--forest); }
 .ask-start-panel__current-state {

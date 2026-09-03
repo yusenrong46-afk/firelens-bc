@@ -41,6 +41,7 @@ from firelens.answering.intent import (
 )
 from firelens.answering.live_request_intent import uses_selected_live_binding
 from firelens.answering.planner import planning_messages, planning_schema
+from firelens.answering.product_scope import SCOPE_NOTE, is_outside_wildfire_scope
 from firelens.answering.responses import (
     conflict_response as _conflict_response,
 )
@@ -487,6 +488,18 @@ class StaticRAGService(StaticRAGSupport):
             )
             return await self._record_ask(request, response, route=route.value)
 
+        if route == QueryRoute.TANGENT and is_outside_wildfire_scope(request):
+            response = AskResponse(
+                status=ResponseStatus.ANSWER,
+                trace_id=trace_id,
+                response_mode=ResponseMode.CAPABILITY,
+                answer=SCOPE_NOTE,
+                limitations=search.plan.limitations,
+                suggested_questions=list(SUGGESTED_QUESTIONS[:6]),
+                reason_code=ReasonCode.CAPABILITY_OVERVIEW,
+            )
+            return await self._record_ask(request, response, route=route.value)
+
         if route == QueryRoute.TANGENT:
             return await self._background_answer(
                 request,
@@ -658,6 +671,34 @@ class StaticRAGService(StaticRAGSupport):
             allowed_typed_claim_ids=allowed_typed_claim_ids,
             allowed_quote_texts=allowed_quote_texts,
         )
+        if (
+            outcome.response.reason_code
+            in {ReasonCode.DRAFT_VALIDATION_FAILED, ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED}
+            and not outcome.response.claims
+            and self._allows_general_background_fallback(
+                request,
+                search.plan,
+                search.support.model_copy(
+                    update={"status": SupportStatus.INSUFFICIENT_EVIDENCE}
+                ),
+                explicit_corpus_request=explicit_corpus_request,
+            )
+        ):
+            # An ordinary explanatory question whose generated summary could not
+            # be tied to the retrieved passages, or whose passages yielded no
+            # publishable exact wording, gets the same labelled general
+            # background it would have received had retrieval found nothing,
+            # instead of a "validation failed" or "no structured claim" handoff.
+            # Reviewed-guidance, live, personalized, and Tier A/B questions are
+            # excluded by ``_allows_general_background_fallback``.
+            return await self._background_answer(
+                request,
+                trace_id=trace_id,
+                route=route.value,
+                limitations=search.plan.limitations,
+                observer=observer,
+                evidence_packet=packet,
+            )
         return await self._record_ask(
             request,
             outcome.response,

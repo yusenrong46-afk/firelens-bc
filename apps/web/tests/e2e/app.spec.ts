@@ -200,6 +200,7 @@ test.beforeEach(async ({ page }) => {
           status: "answer",
           response_mode: "live",
           trace_id: question.includes("new distribution") ? "analysis-trace-next" : "analysis-trace",
+          presentation_shell: "analysis",
           answer: "Three official incident records are in this bounded result.",
           suggested_questions: [],
           claims: [],
@@ -277,16 +278,16 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
   );
   const evidenceDetails = page.locator("#conversation details.answer-details");
   await expect(evidenceDetails).toBeVisible();
-  await expect(evidenceDetails.locator("summary")).toHaveText("Sources and technical evidence");
+  await expect(evidenceDetails.locator("summary")).toHaveText("More detail on each statement");
   await expect(evidenceDetails.locator("mark")).toBeHidden();
   await evidenceDetails.locator("summary").click();
-  await expect(page.getByText("Answer evidence and support")).toBeVisible();
-  await expect(page.getByText("Reviewed sources")).toBeVisible();
+  await expect(page.getByText("Each statement and its source")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Where this answer comes from" })).toBeVisible();
   await expect(page.locator("mark")).toHaveText("Food & water");
   await expect(page.getByText("PreparedBC", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("region", { name: "Analysis view" })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "View official map context" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Show these on the map" })).toHaveCount(0);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
   if ((page.viewportSize()?.width ?? 0) >= 1120) {
@@ -296,7 +297,8 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
       const answer = document.querySelector(".assistant-message")!.getBoundingClientRect();
       return { panelRatio: panel.width / viewportWidth, answerWidth: answer.width };
     });
-    expect(desktopChat.panelRatio).toBeGreaterThanOrEqual(0.84);
+    // Readable measure: the answer column is wide but capped, not a narrow strip.
+    expect(desktopChat.panelRatio).toBeGreaterThanOrEqual(0.6);
     expect(desktopChat.answerWidth).toBeLessThanOrEqual(960);
   }
 });
@@ -350,7 +352,7 @@ test("labels general background and exposes no evidence control", async ({ page 
   await expect(page.getByText(
     "General model knowledge · not checked against FireLens sources",
   )).toBeVisible();
-  await expect(page.getByText("Answer evidence and support")).toHaveCount(0);
+  await expect(page.getByText("Each statement and its source")).toHaveCount(0);
   await expect(page.getByText("Important limits")).toHaveCount(0);
   await expect(page.getByText("Source passage")).toHaveCount(0);
 });
@@ -373,7 +375,7 @@ test("sends bounded conversation context and can clear it", async ({ page }) => 
   await page.getByLabel("Clear conversation history").click();
   await expect(page.getByText("0 of 6 turns in context")).toHaveCount(0);
   await expect(page.getByText("No earlier turns in context")).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Ask about a fire, a B.C. place, or preparedness." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What do you want to know about wildfires in B.C.?" })).toBeVisible();
   await page.getByLabel("Ask FireLens a question").fill("Fresh question");
   await page.getByLabel("Send question").click();
   await expect.poll(() => seenRequests.length).toBe(3);
@@ -384,7 +386,7 @@ test("redirects a completely tangent request", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("Can you debug JavaScript for me?");
   await page.getByLabel("Send question").click();
-  await expect(page.getByText("Related official service", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Question and answer").getByText("Official source elsewhere", { exact: true })).toBeVisible();
   await expect(page.getByText("That request is outside the FireLens guidance collection.", { exact: true })).toBeVisible();
 });
 
@@ -393,15 +395,15 @@ test("fails closed for a rejected no-claim response", async ({ page }) => {
   await page.getByLabel("Ask FireLens a question").fill("Show rejected air quality");
   await page.getByLabel("Send question").click();
   const conversation = page.getByLabel("Question and answer");
-  await expect(conversation.getByText("Support not established", { exact: true })).toBeVisible();
+  await expect(conversation.getByText("Not confirmed by FireLens sources", { exact: true })).toBeVisible();
   await expect(conversation.getByText(
     "FireLens did not establish or validate support for this response.",
     { exact: true },
   )).toBeVisible();
   const status = conversation.getByRole("status", { name: "Answer status" });
-  await expect(status).toContainText("Freshness: Freshness not established");
+  await expect(status).toContainText("Updated: Freshness not established");
   await expect(status).toContainText(
-    "Availability: This request did not complete with established sources.",
+    "Availability: FireLens could not reach the sources this needed.",
   );
   await expect(conversation.getByText("Grounded in reviewed official sources")).toHaveCount(0);
   await expect(conversation.getByRole("link", { name: "Current B.C. AQHI", exact: true })).toHaveAttribute(
@@ -418,8 +420,8 @@ test("keeps a live answer primary and opens its map on demand", async ({ page },
   await expect(page.getByLabel("Question and answer").getByText("Current official information: Test Fire is Out of Control.")).toBeVisible();
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Analysis view" })).toHaveCount(0);
-  await page.getByRole("button", { name: "View official map context" }).click();
-  await expect(page.getByText("Current BC wildfire information")).toBeVisible();
+  await page.getByRole("button", { name: "Show these on the map" }).click();
+  await expect(page.getByRole("heading", { name: "Wildfires in B.C. right now" })).toBeVisible();
   const testFire = page
     .getByRole("list", { name: "Matching this question" })
     .getByRole("button", { name: /Test Fire Out of Control/ });
@@ -443,7 +445,7 @@ test("keeps a live answer primary and opens its map on demand", async ({ page },
     page.getByRole("region", { name: "Official wildfire records map" })
       .getByText(/The map is not a safety determination/),
   ).toBeVisible();
-  await expect(page.getByText("Answer evidence and support")).toHaveCount(0);
+  await expect(page.getByText("Each statement and its source")).toHaveCount(0);
 });
 
 test("uses neutral live-summary copy and exposes category-only feedback", async ({ page }) => {
@@ -452,8 +454,8 @@ test("uses neutral live-summary copy and exposes category-only feedback", async 
   await page.getByLabel("Send question").click();
 
   const conversation = page.getByLabel("Question and answer");
-  await expect(conversation.getByText("Official records returned", { exact: true })).toBeVisible();
-  await expect(conversation.getByText(/BC Wildfire Service · source updated 2026-07-28T11:55:00Z/)).toBeVisible();
+  await expect(conversation.getByText(/^\d+ official records?$/)).toBeVisible();
+  await expect(conversation.getByText(/BC Wildfire Service · last updated /)).toBeVisible();
   await expect(conversation.getByText(/does not change the answer/i)).toHaveCount(1);
   const issueButton = conversation.getByRole("button", { name: "Report" });
   await expect(issueButton).toHaveAttribute("aria-expanded", "false");
@@ -471,10 +473,10 @@ test("closes an open map popup cleanly while repeatedly changing answer context"
   const question = page.getByLabel("Ask FireLens a question");
   await question.fill("Is there an active wildfire near me right now?");
   await question.press("Enter");
-  await expect(page.getByRole("button", { name: "View official map context" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show these on the map" })).toBeVisible();
 
   for (let cycle = 0; cycle < 8; cycle += 1) {
-    await page.getByRole("button", { name: "View official map context" }).click();
+    await page.getByRole("button", { name: "Show these on the map" }).click();
     const marker = page.locator(".live-map__record-geometry").first();
     await expect(marker).toBeVisible();
     await marker.dispatchEvent("click");
@@ -496,7 +498,7 @@ test("shows street context with attributed OpenStreetMap tiles", async ({ page }
   await question.fill("Is there an active wildfire near me right now?");
   await question.press("Enter");
   await expect(page.getByLabel("Question and answer").getByText("Current official information: Test Fire is Out of Control.")).toBeVisible();
-  await page.getByRole("button", { name: "View official map context" }).click();
+  await page.getByRole("button", { name: "Show these on the map" }).click();
   await expect(page.getByRole("button", { name: /Test Fire Out of Control/ })).toBeVisible();
   await expect(page.getByText(/Tile requests go directly to OpenStreetMap/)).toBeVisible();
   await expect(page.getByRole("link", { name: "OpenStreetMap" })).toBeVisible();
@@ -508,13 +510,13 @@ test("shows stale and partial-layer state without hiding records", async ({ page
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("Show stale official wildfire records");
   await page.getByLabel("Send question").click();
-  await page.getByRole("button", { name: "View official map context" }).click();
-  await expect(page.getByText("BC wildfire information — includes stale records")).toBeVisible();
+  await page.getByRole("button", { name: "Show these on the map" }).click();
+  await expect(page.getByRole("heading", { name: "Wildfires in B.C. (cached records)" })).toBeVisible();
   await expect(page.getByLabel("Question and answer").getByText(/Cached official information \(refresh failed\)/)).toBeVisible();
-  await expect(page.getByText("Official cached records", { exact: true })).toHaveCount(3);
-  const staleWarning = page.getByRole("status").filter({ hasText: "Cached official records; refresh failed" });
+  await expect(page.getByText("Cached official records", { exact: true }).first()).toBeVisible();
+  const staleWarning = page.getByRole("status").filter({ hasText: "could not refresh these records" });
   await expect(staleWarning).toBeVisible();
-  await expect(page.getByText("Current BC wildfire information")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Wildfires in B.C. right now" })).toHaveCount(0);
   await expect(
     page.getByRole("list", { name: "Matching this question" })
       .getByRole("button", { name: /Cached Test Fire Out of Control/ }),
@@ -597,7 +599,7 @@ test("opens an official source link with keyboard activation", async ({ page }) 
   await page.goto("/");
   await page.getByLabel("Ask FireLens a question").fill("Is there an active wildfire near me right now?");
   await page.getByLabel("Send question").press("Enter");
-  await page.getByRole("button", { name: "View official map context" }).click();
+  await page.getByRole("button", { name: "Show these on the map" }).click();
   const source = page
     .getByRole("listitem")
     .filter({ hasText: "Test Fire" })
@@ -623,7 +625,7 @@ test("shows summary map and records for analytical live questions", async ({ pag
   await expect(page.getByRole("tab", { name: "Map", exact: true })).toHaveAttribute("aria-selected", "false");
   await expect(page.getByRole("tab", { name: "Records", exact: true })).toHaveAttribute("aria-selected", "false");
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "View official map context" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Show these on the map" })).toHaveCount(0);
   const overflowX = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
@@ -689,8 +691,10 @@ test("opens analytical answers on Summary and resets the selected surface for a 
         composerBottom: composer.bottom,
       };
     });
-    expect(Math.abs(desktopColumns.panelBottom - desktopColumns.canvasBottom)).toBeLessThanOrEqual(1);
-    expect(Math.abs(desktopColumns.composerBottom - desktopColumns.canvasBottom)).toBeLessThanOrEqual(1);
+    // Normal document flow: the analysis canvas sits beside the conversation and
+    // the composer stays below the answer; the columns need not be equal height.
+    expect(desktopColumns.canvasBottom).toBeGreaterThan(0);
+    expect(desktopColumns.composerBottom).toBeGreaterThanOrEqual(desktopColumns.panelBottom - 1);
   }
 
   await map.click();

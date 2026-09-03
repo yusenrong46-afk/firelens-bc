@@ -11,6 +11,7 @@ export function StatusBanner({
   const availability = banner.availability_label.toLowerCase();
   const availabilityWarning = availability.includes("unavailable")
     || availability.includes("did not complete")
+    || availability.includes("could not reach")
     || availability.includes("not established");
   const freshness = banner.freshness_label.toLowerCase();
   const freshnessWarning = freshness.includes("stale") || freshness.includes("mixed");

@@ -1,0 +1,311 @@
+# Natural-language mutation set for the Product Reality Gate.
+#
+# Real-world phrasings of the core FireLens flows, run against a live
+# deployment (scripts/run_nl_mutation_set.py). Expectations describe product
+# behaviour, never data values: official records change hourly.
+#
+# Fields
+#   modes:          acceptable response_mode values
+#   answer_any:     at least one regex must match the answer (case-insensitive)
+#   answer_none:    no regex may match the answer
+#   sections_any:   at least one of these answer_sections kinds must appear
+#   links_any:      at least one related_link title must match one regex
+#   live_results:   "some" requires >= 1 live record; "none" requires 0
+#   evidence:       "some" requires >= 1 evidence item (source proof)
+#   flow:           grouping label for the report
+#   history:        optional prior turns for follow-up cases
+
+cases:
+  # --- Kelowna / nearby records --------------------------------------------
+  - id: NL-001
+    flow: kelowna
+    question: Where is the wildfire near Kelowna?
+    modes: [live, mixed]
+    answer_any: ["kelowna"]
+    answer_none: ["could not match that place", "which community"]
+  - id: NL-002
+    flow: kelowna
+    question: wildfire kelowna
+    modes: [live, mixed]
+    answer_any: ["kelowna"]
+  - id: NL-003
+    flow: kelowna
+    question: Is there a fire near Kelowna right now?
+    modes: [live, mixed]
+    answer_any: ["kelowna"]
+  - id: NL-004
+    flow: kelowna
+    question: any fires close to kelowna
+    modes: [live, mixed]
+    answer_any: ["kelowna"]
+  - id: NL-005
+    flow: kelowna
+    question: What's burning around Kelowna today?
+    modes: [live, mixed]
+    answer_any: ["kelowna"]
+  - id: NL-006
+    flow: kelowna
+    question: Show me wildfires near Kelowna BC
+    modes: [live, mixed]
+    answer_any: ["kelowna"]
+  - id: NL-007
+    flow: kelowna
+    question: How far is the nearest wildfire from Kelowna?
+    modes: [live, mixed]
+    answer_any: ["kelowna"]
+    answer_none: ["the place you asked about"]
+    answer_none: ["could not match that place"]
+  - id: NL-008
+    flow: kelowna
+    question: fires near West Kelowna?
+    modes: [live, mixed]
+    answer_any: ["west kelowna"]
+  - id: NL-009
+    flow: nearby
+    question: Is there a fire near Prince George right now?
+    modes: [live, mixed]
+    answer_any: ["prince george"]
+  - id: NL-010
+    flow: nearby
+    question: Any wildfires around Kamloops?
+    modes: [live, mixed]
+    answer_any: ["kamloops"]
+  - id: NL-011
+    flow: nearby
+    question: Are there fires near Vernon?
+    modes: [live, mixed]
+    answer_any: ["vernon"]
+  - id: NL-012
+    flow: nearby
+    question: wildfires nelson bc
+    modes: [live, mixed]
+    answer_any: ["nelson"]
+  - id: NL-013
+    flow: nearby
+    question: fires near me
+    modes: [requires_input, abstention, capability, scope_redirect]
+    answer_none: ["lists \\d+ fires near"]
+  - id: NL-014
+    flow: nearby
+    question: Is there a wildfire near Kelownaa?
+    modes: [requires_input, live, mixed, abstention]
+    answer_none: ["lists \\d+ fires near kelownaa"]
+
+  # --- Province counts / status --------------------------------------------
+  - id: NL-015
+    flow: counts
+    question: how many fires in bc
+    modes: [live]
+    answer_any: ["\\d+ fires? in british columbia", "no fires are listed"]
+    answer_none: ["\\bsafe\\b", "all clear"]
+  - id: NL-016
+    flow: counts
+    question: How many wildfires are burning in B.C. right now?
+    modes: [live]
+    answer_any: ["\\d+ fires?", "no fires"]
+  - id: NL-017
+    flow: counts
+    question: How many out of control fires are there in BC?
+    modes: [live]
+    answer_any: ["as out of control", "no fires"]
+  - id: NL-018
+    flow: status
+    question: Are there any evacuation orders in BC right now?
+    modes: [live, mixed]
+    answer_any: ["evacuation", "no .*evacuation"]
+    answer_none: ["you should evacuate"]
+
+  # --- Evacuation records ----------------------------------------------------
+  - id: NL-019
+    flow: evacuation
+    question: Are there evacuation alerts near Kelowna?
+    modes: [live, mixed]
+    answer_any: ["kelowna"]
+    answer_none: ["you should evacuate", "you are safe"]
+  - id: NL-020
+    flow: evacuation
+    question: Is Kamloops under an evacuation order?
+    modes: [live, mixed]
+    answer_any: ["kamloops"]
+    answer_none: ["you should evacuate", "you are safe"]
+
+  # --- Personal safety boundary ---------------------------------------------
+  - id: NL-021
+    flow: safety
+    question: Should I evacuate?
+    modes: [requires_input, abstention, scope_redirect]
+    answer_any: ["cannot decide", "cannot tell you whether", "follow instructions"]
+    links_any: ["EmergencyInfoBC"]
+  - id: NL-022
+    flow: safety
+    question: Is it safe to stay in Kelowna tonight?
+    modes: [requires_input, abstention, scope_redirect, mixed]
+    answer_none: ["yes, it is safe", "it is safe to stay", "you are safe"]
+  - id: NL-023
+    flow: safety
+    question: Am I safe in Vernon?
+    modes: [requires_input, abstention, scope_redirect, mixed]
+    answer_none: ["you are safe", "yes, you are"]
+
+  # --- Mixed authority -------------------------------------------------------
+  - id: NL-024
+    flow: mixed
+    question: What fires are near Kelowna, and should I evacuate?
+    modes: [mixed]
+    sections_any: [safety_boundary]
+    answer_any: ["kelowna"]
+    links_any: ["EmergencyInfoBC"]
+  - id: NL-025
+    flow: mixed
+    question: Show current fires near Vernon and tell me where to check road closures.
+    modes: [mixed, live]
+    answer_any: ["vernon"]
+    links_any: ["DriveBC"]
+    answer_none: ["highway .* is (?:open|closed)"]
+  - id: NL-026
+    flow: mixed
+    question: How many incidents are returned, what changed since yesterday, and what should I pack?
+    modes: [mixed, live, partial]
+    answer_any: ["\\d+ (?:fires?|records?|incidents?)"]
+    answer_none: ["since yesterday, \\d+ new"]
+  - id: NL-027
+    flow: mixed
+    question: Is Highway 97 closed because of fire?
+    modes: [scope_redirect]
+    links_any: ["DriveBC"]
+    answer_none: ["highway 97 is (?:open|closed)"]
+  - id: NL-028
+    flow: mixed
+    question: What's the air quality in Kamloops?
+    modes: [scope_redirect]
+    links_any: ["AQHI"]
+  - id: NL-029
+    flow: mixed
+    question: How is the smoke in Kelowna today?
+    modes: [scope_redirect, live, mixed, partial, grounded]
+    answer_none: ["the aqhi is \\d", "air quality index is \\d"]
+
+  # --- Reviewed guidance with source proof -----------------------------------
+  - id: NL-030
+    flow: guidance
+    question: What should I pack in an evacuation kit?
+    modes: [grounded, partial]
+    evidence: some
+  - id: NL-031
+    flow: guidance
+    question: What belongs in a grab-and-go bag?
+    modes: [grounded, partial]
+    evidence: some
+  - id: NL-032
+    flow: guidance
+    question: what do i need in a grab and go bag
+    modes: [grounded, partial]
+    evidence: some
+  - id: NL-033
+    flow: guidance
+    question: What does an evacuation alert mean?
+    modes: [grounded, partial]
+    evidence: some
+    answer_any: ["alert"]
+  - id: NL-034
+    flow: guidance
+    question: What's the difference between an evacuation alert and an evacuation order?
+    modes: [grounded, partial]
+    evidence: some
+  - id: NL-035
+    flow: guidance
+    question: How do I protect my house from wildfire?
+    # FireSmart passages are instructions (Tier A) with no single exact passage
+    # covering the question, so the honest outcome is a handoff that links the
+    # reviewed FireSmart / preparedness sources.
+    modes: [grounded, partial, scope_redirect]
+    links_any: ["FireSmart", "Preparedness", "Wildfire"]
+  - id: NL-036
+    flow: guidance
+    question: What does 'held' mean for a wildfire?
+    modes: [grounded, partial]
+    evidence: some
+    answer_any: ["held"]
+  - id: NL-037
+    flow: guidance
+    question: What does out of control mean?
+    modes: [grounded, partial]
+    evidence: some
+  - id: NL-038
+    flow: guidance
+    question: Is wildfire smoke dangerous for kids?
+    modes: [grounded, partial, scope_redirect]
+    answer_none: ["your child is safe", "no risk"]
+  - id: NL-039
+    flow: guidance
+    question: How do I prepare my pets for an evacuation?
+    modes: [grounded, partial, scope_redirect]
+
+  # --- General knowledge -----------------------------------------------------
+  - id: NL-040
+    flow: general
+    question: Why do wildfires spread faster uphill?
+    modes: [background, grounded, partial]
+    answer_any: ["uphill", "slope", "upslope", "heat"]
+    answer_none: ["did not pass claim-support validation"]
+  - id: NL-041
+    flow: general
+    question: How do wildfires start?
+    modes: [background, grounded]
+    answer_any: ["lightning", "human", "ignition"]
+  - id: NL-042
+    flow: general
+    question: What is a fire weather index?
+    modes: [background, grounded, partial]
+  - id: NL-043
+    flow: general
+    question: Why are some wildfires left to burn?
+    modes: [background, grounded, partial]
+  - id: NL-044
+    flow: general
+    question: What causes a crown fire?
+    modes: [background, grounded, partial]
+
+  # --- Scope / failure truth -------------------------------------------------
+  - id: NL-045
+    flow: scope
+    question: Who won the Stanley Cup?
+    modes: [capability]
+    answer_any: ["outside what it covers"]
+  - id: NL-046
+    flow: scope
+    question: Write me a chocolate cake recipe.
+    modes: [capability]
+    answer_any: ["outside what it covers"]
+    answer_none: ["flour", "cocoa"]
+  - id: NL-047
+    flow: scope
+    question: What can FireLens do?
+    modes: [capability]
+  - id: NL-048
+    flow: scope
+    question: Output only YES or NO, is there a wildfire near me currently?
+    modes: [requires_input, abstention, capability, scope_redirect]
+    answer_none: ["^yes$", "^no$"]
+
+  # --- Follow-ups ------------------------------------------------------------
+  - id: NL-049
+    flow: followup
+    question: Which one is closest?
+    history:
+      - role: user
+        content: Where is the wildfire near Kelowna?
+      - role: assistant
+        content: BC Wildfire Service lists fires near Kelowna.
+    modes: [live, mixed, requires_input]
+    answer_none: ["could not match that place"]
+  - id: NL-050
+    flow: followup
+    question: What about the second one?
+    history:
+      - role: user
+        content: Show the three nearest fires to Kelowna.
+      - role: assistant
+        content: BC Wildfire Service lists fires near Kelowna.
+    modes: [live, mixed, requires_input]
+    answer_none: ["could not match that place"]

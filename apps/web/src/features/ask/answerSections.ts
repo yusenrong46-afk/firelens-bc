@@ -11,6 +11,8 @@ const SECTION_KINDS = new Set<AnswerSectionKind>([
   "general_background",
   "official_handoff",
   "uncertainty",
+  "safety_boundary",
+  "unavailable",
 ]);
 
 const AUTHORITY_LABELS: Record<AnswerSectionKind, string> = {
@@ -20,6 +22,8 @@ const AUTHORITY_LABELS: Record<AnswerSectionKind, string> = {
   general_background: "General background",
   official_handoff: "Official next step",
   uncertainty: "What FireLens cannot establish",
+  safety_boundary: "Your decision, with official help",
+  unavailable: "Not available from official records",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {

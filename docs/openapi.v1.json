@@ -46,7 +46,9 @@
           "conflicting_guidance",
           "general_background",
           "official_handoff",
-          "uncertainty"
+          "uncertainty",
+          "safety_boundary",
+          "unavailable"
         ],
         "title": "AnswerSectionKind",
         "type": "string"

@@ -185,7 +185,7 @@ export interface components {
          * @description Authority-labelled parts composed by the application agent.
          * @enum {string}
          */
-        AnswerSectionKind: "current_records" | "reviewed_guidance" | "conflicting_guidance" | "general_background" | "official_handoff" | "uncertainty";
+        AnswerSectionKind: "current_records" | "reviewed_guidance" | "conflicting_guidance" | "general_background" | "official_handoff" | "uncertainty" | "safety_boundary" | "unavailable";
         /** AnswerStatusBanner */
         AnswerStatusBanner: {
             /** Availability Label */

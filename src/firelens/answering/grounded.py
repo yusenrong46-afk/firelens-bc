@@ -277,6 +277,10 @@ class GroundedAnswerEngine:
                 allowed_typed_claim_ids=allowed_typed_claim_ids,
                 allowed_quote_texts=allowed_quote_texts,
             )
+            # Never fall through to generation here: a packet that gives
+            # instructions can only be answered in exact wording. The risk
+            # classifier cannot recognise every reversed instruction ("Proceed
+            # into dense smoke"), so generated prose is not a safe substitute.
             if force_partial:
                 response = _force_partial_response(response)
             return self._outcome(
@@ -443,7 +447,24 @@ class GroundedAnswerEngine:
                     salvaged = True
                 else:
                     validation = repair_validation or original_validation
-                    response = self._validation_handoff(trace_id, evidence_packet, validation)
+                    # Before telling the person the summary failed, try the
+                    # exact-wording compiler: a reviewed passage that covers the
+                    # question is a better answer than a validation notice.
+                    response = compile_high_risk_answer(
+                        question,
+                        evidence_packet,
+                        trace_id=trace_id,
+                        supported_aspects=supported_aspects,
+                        allowed_typed_claim_ids=allowed_typed_claim_ids,
+                        allowed_quote_texts=allowed_quote_texts,
+                    )
+                    if response.claims:
+                        if force_partial:
+                            response = _force_partial_response(response)
+                    else:
+                        response = self._validation_handoff(
+                            trace_id, evidence_packet, validation
+                        )
                     return self._outcome(
                         response,
                         observations,
@@ -488,16 +509,24 @@ class GroundedAnswerEngine:
                 )
             )
         if not public_claims:
-            response = self._validation_handoff(
-                trace_id,
+            # Every generated sentence carried a quantity, status, or action.
+            # Those may only be published as exact source wording, so compile
+            # the quote-only answer instead of abandoning the question.
+            response = compile_high_risk_answer(
+                question,
                 evidence_packet,
-                _validation_failure("high-risk generated claims cannot be published"),
+                trace_id=trace_id,
+                supported_aspects=supported_aspects,
+                allowed_typed_claim_ids=allowed_typed_claim_ids,
+                allowed_quote_texts=allowed_quote_texts,
             )
+            if force_partial:
+                response = _force_partial_response(response)
             return self._outcome(
                 response,
                 observations,
                 observer,
-                validation=validation,
+                validation=response.validation or validation,
                 repair_count=repair_count,
                 model=model,
                 usage=usage,
