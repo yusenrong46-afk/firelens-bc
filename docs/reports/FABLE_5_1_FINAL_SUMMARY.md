@@ -40,9 +40,10 @@ We moved complexity toward a small number of strong trust boundaries:
 ## 6. Remaining imperfections
 * FireLens-200 harness marks some cases for REVIEW only (quality polish rather than broken contracts).
 * Performance measurement (before/after) still needs to be run.
-* Preview deploy + production verification are pending due to deploy permissions.
+* Preview deploy + preview reality gate are complete; production verification remains pending due to deploy permissions.
 
 ## 7. Deployment details
 * Local verification is complete.
-* Next: preview deploy → run Product Reality Gate on the preview URL → smoke test production → rollback if any critical check fails.
+* Preview deploy + reality gate were completed successfully.
+* Next: production deploy → run Product Reality Gate on production → smoke test production → rollback if any critical check fails.
 
