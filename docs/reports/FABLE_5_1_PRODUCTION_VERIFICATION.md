@@ -14,12 +14,12 @@ Date: 2026-09-03
    * Source-aware conversation: `passed = true`
    * FireLens-200 focused: PASS/REVIEW only; FAIL: 0
 
-## Pending (requires deploy permissions)
-* Preview deploy + preview Reality Gate have completed.
-  * Preview URL: https://firelens-gxw0zii31-yusenrong46-9212s-projects.vercel.app
+## Deploy + Reality Gate verification (Vercel)
+* Preview:
+  * URL: https://firelens-gxw0zii31-yusenrong46-9212s-projects.vercel.app
   * Product Reality Gate: PASS (14/14)
-* Production deploy + production Reality Gate are still pending (requires Vercel production promotion).
-
-Once Vercel credentials are available in this environment, we can run:
-* `make vercel-production`
+* Production:
+  * URL: https://firelens-apmj87f1p-yusenrong46-9212s-projects.vercel.app
+  * (Aliased as `https://firelens-bc.vercel.app`)
+  * Product Reality Gate: PASS (14/14)
 
