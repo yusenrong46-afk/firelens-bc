@@ -147,10 +147,10 @@ describe("proof-carrying answer surface", () => {
     const quoteOnly = {
       ...grounded,
       status_banner: {
-        headline: "Grounded in reviewed official sources",
+        headline: "From reviewed official guidance",
         detail: "All content is a reviewed FireLens claim.",
         freshness_label: "Stable reviewed guidance",
-        availability_label: "Sources required for this request were available.",
+        availability_label: "The sources this needed were available.",
       },
       claims: grounded.claims.map((claim) => ({
         ...claim,
@@ -164,7 +164,7 @@ describe("proof-carrying answer surface", () => {
       proof_cards: grounded.proof_cards.map((card) => ({
         ...card,
         support_state: "structured_reviewed",
-        support_label: "Reviewed structured claim",
+        support_label: "Reviewed official guidance",
         review_state: "Approved static corpus",
       })),
     };
@@ -174,21 +174,21 @@ describe("proof-carrying answer surface", () => {
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What does the source say?");
     await user.click(screen.getByLabelText("Send question"));
 
-    expect(await screen.findByText("Official wording from a source")).toBeInTheDocument();
+    expect(await screen.findByText("Exact wording from an official source")).toBeInTheDocument();
     expect(screen.getByText(
-      "FireLens is showing an exact source quotation. It has not been approved as a structured FireLens claim.",
+      "FireLens is showing the source's own words rather than a summary.",
     )).toBeInTheDocument();
     expect(screen.getByText("Exact official source wording")).toBeInTheDocument();
     expect(document.querySelector(".answer-lead--source-quote")).toBeInTheDocument();
-    expect(screen.getAllByText("Exact source wording — not a structured FireLens claim").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Exact wording from the source").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Keep water and food in a grab-and-go bag.")).toHaveLength(1);
     expect(screen.queryByText("Preparedness sources")).not.toBeInTheDocument();
     expect(screen.getByText("Official source excerpt")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Keep water and food in a grab-and-go bag\./ }));
     expect(screen.getAllByText("Source extraction only; no structured-claim review").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Stable source wording").length).toBeGreaterThan(0);
-    expect(screen.getByText("Answer evidence and support")).toBeInTheDocument();
-    expect(screen.queryByText("Reviewed structured claim")).not.toBeInTheDocument();
+    expect(screen.getByText("Each statement and its source")).toBeInTheDocument();
+    expect(screen.queryByText("Reviewed official guidance")).not.toBeInTheDocument();
   });
 
   it("downgrades rejected validation to unknown even when older proof fields strengthen it", async () => {
@@ -209,7 +209,7 @@ describe("proof-carrying answer surface", () => {
       proof_cards: grounded.proof_cards.map((card) => ({
         ...card,
         support_state: "structured_reviewed",
-        support_label: "Reviewed structured claim",
+        support_label: "Reviewed official guidance",
       })),
     };
     vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(rejected), { status: 200 }))));
@@ -218,9 +218,8 @@ describe("proof-carrying answer surface", () => {
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Can this be trusted?");
     await user.click(screen.getByLabelText("Send question"));
 
-    expect(await screen.findByText("Support not established")).toBeInTheDocument();
-    expect(screen.getAllByText("Not established from FireLens sources").length).toBeGreaterThan(0);
-    expect(screen.queryByText("Reviewed structured claim")).not.toBeInTheDocument();
+    expect((await screen.findAllByText("Not confirmed by FireLens sources")).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Reviewed official guidance")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Keep water and food in a grab-and-go bag\./ }));
     const proofCard = screen.getByRole("article", {
       name: "Proof card for Keep water and food in a grab-and-go bag.",
@@ -249,7 +248,7 @@ describe("proof-carrying answer surface", () => {
       proof_cards: grounded.proof_cards.map((card) => ({
         ...card,
         support_state: "structured_reviewed",
-        support_label: "Reviewed structured claim",
+        support_label: "Reviewed official guidance",
       })),
     };
     vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(failedCritical), { status: 200 }))));
@@ -263,7 +262,7 @@ describe("proof-carrying answer surface", () => {
     const proofCard = await screen.findByRole("article", {
       name: "Proof card for Keep water and food in a grab-and-go bag.",
     });
-    expect(within(proofCard).getByText("Not established from FireLens sources")).toBeInTheDocument();
+    expect(within(proofCard).getByText("Not confirmed by FireLens sources")).toBeInTheDocument();
     expect(within(proofCard).getByText("Authority not established")).toBeInTheDocument();
     expect(within(proofCard).getByText("Review state not established")).toBeInTheDocument();
     expect(within(proofCard).getByText("Critical-field validation not established")).toBeInTheDocument();
@@ -290,7 +289,7 @@ describe("proof-carrying answer surface", () => {
         claim_id: "C2",
         claim_text: "Stale structured orphan",
         support_state: "structured_reviewed",
-        support_label: "Reviewed structured claim",
+        support_label: "Reviewed official guidance",
       })),
     };
     vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(orphaned), { status: 200 }))));
@@ -326,7 +325,7 @@ describe("proof-carrying answer surface", () => {
         claim_id: record.result_id,
         claim_text: "Listed Fire",
         support_state: "live_record",
-        support_label: "Official live record as published",
+        support_label: "Official record as published",
         authority: record.authority,
         exact_passage: record.status,
         source_title: "Listed Fire",
@@ -413,7 +412,7 @@ describe("proof-carrying answer surface", () => {
         claim_id: record.result_id,
         claim_text: "Listed Fire",
         support_state: "live_record",
-        support_label: "Official live record as published",
+        support_label: "Official record as published",
         authority: record.authority,
         exact_passage: record.status,
         source_title: "Listed Fire",
@@ -582,7 +581,7 @@ describe("proof-carrying answer surface", () => {
         exact_passage: record.status,
         source_title: "Listed Fire",
         source_revision: record.source_updated_at,
-        review_state: "Official live record as published",
+        review_state: "Official record as published",
         critical_fields_checked: "Rendered from typed live fields",
         freshness: "stale",
         official_url: record.source_url,
@@ -633,7 +632,7 @@ describe("proof-carrying answer surface", () => {
         exact_passage: record.status,
         source_title: "Listed Fire",
         source_revision: record.source_updated_at,
-        review_state: "Official live record as published",
+        review_state: "Official record as published",
         critical_fields_checked: "Rendered from typed live fields",
         freshness: "fresh",
         official_url: record.source_url,
@@ -677,7 +676,7 @@ describe("proof-carrying answer surface", () => {
         claim_id: record.result_id,
         claim_text: "Listed Fire",
         support_state: "live_record",
-        support_label: "Official live record as published",
+        support_label: "Official record as published",
         authority: record.authority,
         exact_passage: record.status,
         source_title: "Listed Fire",
@@ -734,7 +733,7 @@ describe("proof-carrying answer surface", () => {
         exact_passage: record.status,
         source_title: "Listed Fire",
         source_revision: record.source_updated_at,
-        review_state: "Official live record as published",
+        review_state: "Official record as published",
         critical_fields_checked: "Rendered from typed live fields",
         freshness: "fresh",
         official_url: record.source_url,
@@ -770,20 +769,20 @@ describe("proof-carrying answer surface", () => {
       }],
       validation: { accepted: false },
       status_banner: {
-        headline: "Grounded in reviewed official sources",
+        headline: "From reviewed official guidance",
         detail: "All content was validated against reviewed sources.",
         freshness_label: "Stable reviewed guidance",
-        availability_label: "Sources required for this request were available.",
+        availability_label: "The sources this needed were available.",
         official_escalation_title: "Broken older escalation",
         official_escalation_url: null,
       },
     } as unknown as AskResponse;
 
     expect(getStatusBanner(response)).toEqual({
-      headline: "Support not established",
+      headline: "Not confirmed by FireLens sources",
       detail: "FireLens did not establish or validate support for this response.",
       freshness_label: "Freshness not established",
-      availability_label: "This request did not complete with established sources.",
+      availability_label: "FireLens could not reach the sources this needed.",
       retrieval_completed_at: null,
       source_updated_at: null,
       official_escalation_title: "Current B.C. AQHI",
@@ -820,8 +819,8 @@ describe("proof-carrying answer surface", () => {
     } as unknown as AskResponse;
 
     expect(getStatusBanner(response)).toMatchObject({
-      headline: "Reviewed claims plus source wording",
-      detail: "Reviewed structured claims and extraction-only source wording are labelled separately.",
+      headline: "Reviewed guidance plus exact source wording",
+      detail: "Reviewed guidance and exact source wording are labelled separately.",
       freshness_label: "Stable guidance and source wording",
     });
   });
@@ -840,8 +839,8 @@ describe("proof-carrying answer surface", () => {
       status_banner: {
         headline: "Outside FireLens live sources",
         detail: "Use the related official service for information FireLens does not ingest live.",
-        freshness_label: "Freshness not applicable",
-        availability_label: "Sources required for this request were available.",
+        freshness_label: "Does not change day to day",
+        availability_label: "The sources this needed were available.",
       },
     } as unknown as AskResponse)).toMatchObject({
       headline: "Select an official record to continue",
@@ -866,8 +865,8 @@ describe("proof-carrying answer surface", () => {
       status_banner: {
         headline: "Outside FireLens live sources",
         detail: "Use the related official service for information FireLens does not ingest live.",
-        freshness_label: "Freshness not applicable",
-        availability_label: "Sources required for this request were available.",
+        freshness_label: "Does not change day to day",
+        availability_label: "The sources this needed were available.",
       },
     } as unknown as AskResponse;
 
@@ -916,8 +915,8 @@ describe("proof-carrying answer surface", () => {
       status_banner: {
         headline: "Outside FireLens live sources",
         detail: "Use the related official service for information FireLens does not ingest live.",
-        freshness_label: "Freshness not applicable",
-        availability_label: "Sources required for this request were available.",
+        freshness_label: "Does not change day to day",
+        availability_label: "The sources this needed were available.",
       },
     } as unknown as AskResponse;
 
@@ -945,8 +944,8 @@ describe("proof-carrying answer surface", () => {
       status_banner: {
         headline: "Outside FireLens live sources",
         detail: "Use the related official service for information FireLens does not ingest live.",
-        freshness_label: "Freshness not applicable",
-        availability_label: "Sources required for this request were available.",
+        freshness_label: "Does not change day to day",
+        availability_label: "The sources this needed were available.",
       },
     } as unknown as AskResponse;
 
@@ -955,7 +954,7 @@ describe("proof-carrying answer surface", () => {
       detail: "Use the related official service for information FireLens does not ingest live.",
     });
     render(<ResponseModeBadge mode="scope_redirect" reasonCode="scope_redirect" />);
-    expect(screen.getByText("Related official service")).toBeInTheDocument();
+    expect(screen.getByText("Official source elsewhere")).toBeInTheDocument();
   });
 
   it("does not call an unknown source identifier a reviewed-source handoff", () => {
@@ -972,8 +971,8 @@ describe("proof-carrying answer surface", () => {
       status_banner: {
         headline: "Outside FireLens live sources",
         detail: "Use the related official service for information FireLens does not ingest live.",
-        freshness_label: "Freshness not applicable",
-        availability_label: "Sources required for this request were available.",
+        freshness_label: "Does not change day to day",
+        availability_label: "The sources this needed were available.",
       },
     } as unknown as AskResponse;
 
@@ -1000,7 +999,7 @@ describe("proof-carrying answer surface", () => {
         }}
       />,
     );
-    expect(screen.getByText(/Fetched:/)).toBeInTheDocument();
+    expect(screen.getByText(/Checked:/)).toBeInTheDocument();
   });
 
   it("projects an unknown publication kind as unknown rather than a reviewed source fact", () => {
@@ -1018,7 +1017,7 @@ describe("proof-carrying answer surface", () => {
       proof_cards: grounded.proof_cards.map((card) => ({
         ...card,
         support_state: "structured_reviewed",
-        support_label: "Reviewed structured claim",
+        support_label: "Reviewed official guidance",
         truth_class: "source_fact",
         publication_state: "verified",
       })),
@@ -1031,8 +1030,8 @@ describe("proof-carrying answer surface", () => {
       publication_state: "rejected",
       truth_class: "unknown",
     });
-    expect(card!.support_label).not.toBe("Reviewed structured claim");
-    expect(card!.support_label).not.toBe("Supported by an exact reviewed quotation");
+    expect(card!.support_label).not.toBe("Reviewed official guidance");
+    expect(card!.support_label).not.toBe("Quoted from a reviewed source");
   });
 
   it("downgrades a proof card when its claim has no publication authority", () => {

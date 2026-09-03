@@ -37,9 +37,9 @@ export function ConversationEvidenceDetails({
 
   return (
     <details className="answer-details">
-      <summary>Sources and technical evidence</summary>
+      <summary>More detail on each statement</summary>
       <div className="claim-group">
-        <span className="panel-label">Answer evidence and support</span>
+        <span className="panel-label">Each statement and its source</span>
         <div className="claim-list">
           {claims.map((claim, index) => {
             const state = getClaimSupportState(response, claim);

@@ -332,7 +332,16 @@
         "GQ-09"
       ],
       "guided_eligible": true,
-      "exact_quote_texts": []
+      "exact_quote_texts": [],
+      "accepted_paraphrases": [
+        "What is the difference between an evacuation alert and an evacuation order?",
+        "Evacuation alert vs evacuation order",
+        "What does an evacuation alert mean?",
+        "What does an evacuation order mean?",
+        "Is an evacuation alert the same as an order?",
+        "How is an alert different from an order?",
+        "What's the difference between an alert and an order?"
+      ]
     },
     {
       "id": "evacuation_order_actions",
@@ -378,7 +387,15 @@
         "GQ-10"
       ],
       "guided_eligible": true,
-      "exact_quote_texts": []
+      "exact_quote_texts": [],
+      "accepted_paraphrases": [
+        "What do I do if there is an evacuation order?",
+        "What should I do during an evacuation order?",
+        "What happens when an evacuation order is issued?",
+        "What am I supposed to do under an evacuation order?",
+        "What should I do if my area is under an evacuation order?",
+        "Evacuation order: what should I do?"
+      ]
     },
     {
       "id": "evacuation_mistakes_to_avoid",
@@ -481,7 +498,14 @@
         "GQ-12"
       ],
       "guided_eligible": true,
-      "exact_quote_texts": []
+      "exact_quote_texts": [],
+      "accepted_paraphrases": [
+        "When can I go home after an evacuation?",
+        "When will evacuees be allowed to return?",
+        "How do I know when it is safe to return after an evacuation order?",
+        "When can I return home after being evacuated?",
+        "Who decides when evacuees can go back home?"
+      ]
     },
     {
       "id": "grab_go_bag_contents",
@@ -515,6 +539,18 @@
       "guided_eligible": true,
       "exact_quote_texts": [
         "Grab-and-Go Bag\n• Pen & notepad\n• Phone charger & battery bank\n• Flashlight\n• Radio\n• First aid kit\n• Personal toiletries\n• Seasonal clothing\n• Food & water\n• Batteries\n• Whistle\n• Emergency plan"
+      ],
+      "accepted_paraphrases": [
+        "What should I pack in an evacuation kit?",
+        "What should I put in an emergency kit for a wildfire?",
+        "What goes in a grab-and-go bag?",
+        "What do I need in a grab and go bag?",
+        "What should I pack if I have to evacuate?",
+        "What should be in my wildfire evacuation bag?",
+        "What items belong in a grab-and-go bag?",
+        "What should I pack for a wildfire evacuation?",
+        "Evacuation kit checklist",
+        "What to pack in a grab and go bag"
       ]
     },
     {
@@ -557,6 +593,14 @@
       "guided_eligible": true,
       "exact_quote_texts": [
         "TIP: Pets are part of the family too. Pack them grab-and-go bags\nwith food, water, leashes and carriers. It’s a good idea to\ninclude a recent picture, along with copies of vaccination\nrecords and health information. Consider talking to your\nmunicipality, regional district or band office about what\norganizations or resources are available for animals during\nemergencies. Plan ahead for where they might stay."
+      ],
+      "accepted_paraphrases": [
+        "What should I pack for my pets if we evacuate?",
+        "What do I need for my dog during a wildfire evacuation?",
+        "How do I prepare my pets for a wildfire evacuation?",
+        "What should go in a pet grab-and-go bag?",
+        "What should I bring for my cat if we are evacuated?",
+        "Pet evacuation kit for wildfires"
       ]
     },
     {
@@ -598,6 +642,13 @@
       "exact_quote_texts": [
         "¢ Gather your grab-and-go bags, emergency plan, copies of\nimportant documents and cherished mementos. Have them\nat the front door or already packed in your vehicle",
         "¢ Small first aid kit and\npersonal medications"
+      ],
+      "accepted_paraphrases": [
+        "What documents should I bring when evacuating?",
+        "Should I pack my medications for an evacuation?",
+        "What paperwork do I need if I have to evacuate?",
+        "What important documents should be in my grab-and-go bag?",
+        "Which medications and documents should I take during an evacuation?"
       ]
     },
     {
@@ -639,7 +690,14 @@
         "GQ-16"
       ],
       "guided_eligible": true,
-      "exact_quote_texts": []
+      "exact_quote_texts": [],
+      "accepted_paraphrases": [
+        "How should I prepare my car for an evacuation?",
+        "How do I plan an evacuation route?",
+        "Should I keep my gas tank full during wildfire season?",
+        "How do I get my vehicle ready to evacuate?",
+        "What should I do to prepare my evacuation route?"
+      ]
     },
     {
       "id": "smoke_exposure_reduction",
@@ -685,6 +743,14 @@
         "Use a portable HEPA air cleaner or a do-it-yourself air cleaner to filter the air in one area of your home.",
         "Visit public spaces such as community centres, libraries, and shopping malls which tend to have cleaner, cooler indoor air.",
         "Take it easy and limit outdoor exercise on smoky days because the harder you breathe, the more smoke you inhale."
+      ],
+      "accepted_paraphrases": [
+        "How do I protect myself from wildfire smoke?",
+        "How can I avoid breathing wildfire smoke?",
+        "What can I do about wildfire smoke?",
+        "How do I reduce my exposure to smoke from wildfires?",
+        "How do I stay safe from wildfire smoke?",
+        "Tips for dealing with wildfire smoke"
       ]
     },
     {
@@ -733,7 +799,14 @@
         "GQ-18"
       ],
       "guided_eligible": true,
-      "exact_quote_texts": []
+      "exact_quote_texts": [],
+      "accepted_paraphrases": [
+        "Who is most at risk from wildfire smoke?",
+        "Is wildfire smoke dangerous for kids?",
+        "Is wildfire smoke worse for older people?",
+        "Which people are more vulnerable to wildfire smoke?",
+        "Who should be most careful about wildfire smoke?"
+      ]
     },
     {
       "id": "smoke_n95_guidance",
@@ -776,6 +849,13 @@
       "guided_eligible": true,
       "exact_quote_texts": [
         "If you need to be outdoors, consider wearing a well-fitted N95/KN95/KF94 respirator to filter the air you breath in."
+      ],
+      "accepted_paraphrases": [
+        "Do N95 masks help with wildfire smoke?",
+        "Should I wear an N95 for wildfire smoke?",
+        "Does a mask protect against wildfire smoke?",
+        "Will an N95 respirator protect me from smoke?",
+        "Are N95 masks useful during wildfire smoke?"
       ]
     },
     {
@@ -811,7 +891,14 @@
         "GQ-20"
       ],
       "guided_eligible": true,
-      "exact_quote_texts": []
+      "exact_quote_texts": [],
+      "accepted_paraphrases": [
+        "How do I keep smoke out of my house?",
+        "How can I make the air in my home cleaner during wildfire smoke?",
+        "Should I close my windows during wildfire smoke?",
+        "How do I keep indoor air clean when it is smoky outside?",
+        "Does an air purifier help with wildfire smoke?"
+      ]
     },
     {
       "id": "stages_of_control",
@@ -858,6 +945,15 @@
         "Out of Control\nAt this stage, the wildfire is spreading or is anticipated to spread beyond the current perimeter, or control line. In this case, BC Wildfire Service applies more aggressive suppression and control methods such as establishing control lines, burn-offs, dropping water, foam or retardant.",
         "Being Held\nAt this stage, the wildfire is projected, based on fuel and weather conditions and resource availability, to remain within the current perimeter, control line or boundary. At this point, crews may finish establishing control lines, conduct fuel management activities and mop-up (extinguishing a fire after it has been brought under control).",
         "Under Control\nAt this stage, the wildfire is not projected to spread beyond the current perimeter. BC Wildfire Service may continue to patrol the fire and extinguish hot spots while moving gear, equipment and personnel to another incident."
+      ],
+      "accepted_paraphrases": [
+        "What does out of control mean for a wildfire?",
+        "What does being held mean?",
+        "What does under control mean for a fire?",
+        "What are the wildfire status stages?",
+        "What do the fire status labels mean?",
+        "What is the difference between being held and under control?",
+        "What does it mean when a fire is out of control?"
       ]
     },
     {
@@ -892,6 +988,13 @@
       "guided_eligible": true,
       "exact_quote_texts": [
         "The BC Wildfire Service uses a ranking scale from 1 to 6 to describe fire behaviour based on a set of visual indicators."
+      ],
+      "accepted_paraphrases": [
+        "What is a wildfire rank?",
+        "What does rank 5 fire mean?",
+        "What do fire ranks mean?",
+        "How are wildfires ranked?",
+        "What is fire rank?"
       ]
     },
     {
@@ -934,7 +1037,13 @@
         "GQ-23"
       ],
       "guided_eligible": true,
-      "exact_quote_texts": []
+      "exact_quote_texts": [],
+      "accepted_paraphrases": [
+        "What is the non-combustible zone around a house?",
+        "What is FireSmart's non combustible zone?",
+        "How far should combustible material be from my house?",
+        "What is the 1.5 metre non-combustible zone?"
+      ]
     },
     {
       "id": "firesmart_home_assessment",
@@ -973,7 +1082,13 @@
         "GQ-24"
       ],
       "guided_eligible": true,
-      "exact_quote_texts": []
+      "exact_quote_texts": [],
+      "accepted_paraphrases": [
+        "What is a FireSmart assessment?",
+        "How do I get a FireSmart home assessment?",
+        "What does a FireSmart home assessment involve?",
+        "What is a FireSmart home evaluation?"
+      ]
     },
     {
       "id": "immediate_danger_contact",
@@ -1015,6 +1130,12 @@
         "Do not call 911 unless you are trapped and unable to evacuate or are experiencing a medical or safety emergency.",
         "If a wildfire is directly threatening your community, the best information sources are your municipality, regional district, band office or local authority.",
         "You can follow EmergencyInfoBC to get notifications for Evacuation Alerts and Evacuation Orders issued by local authorities, as well as other information you may need to respond and recover from emergencies."
+      ],
+      "accepted_paraphrases": [
+        "Who do I call if a wildfire is threatening my house?",
+        "Who do I call in a wildfire emergency?",
+        "What number do I call if I am in danger from a wildfire?",
+        "Who should I contact if I am in immediate danger from a fire?"
       ]
     }
   ]

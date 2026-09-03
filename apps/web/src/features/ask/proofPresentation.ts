@@ -1,7 +1,7 @@
 import type { AskResponse } from "../../shared/api/api";
 
 export const GROUNDED_PUBLIC_WORDING =
-  "Grounded in reviewed official sources with exact supporting quotations and automated critical-field checks.";
+  "Based on reviewed official guidance, quoted exactly.";
 
 export const BCWS_MAP_URL = "https://wildfiresituation.nrs.gov.bc.ca/map";
 
@@ -230,15 +230,15 @@ function unknownProofCard(card: ProofCardView): ProofCardView {
 }
 
 const HEADLINES: Record<string, string> = {
-  grounded: "Grounded in reviewed official sources",
-  partial: "Partially supported by reviewed sources",
-  conflict: "Reviewed sources conflict",
+  grounded: "From reviewed official guidance",
+  partial: "Partly from reviewed guidance",
+  conflict: "Official sources disagree",
   background: "General knowledge",
-  mixed: "Official records plus reviewed guidance",
+  mixed: "Official records and reviewed guidance",
   capability: "What you can ask FireLens",
-  scope_redirect: "Outside FireLens live sources",
-  abstention: "FireLens could not establish this",
-  requires_input: "A BC place is needed to continue",
+  scope_redirect: "Not something FireLens tracks",
+  abstention: "FireLens could not answer this from its sources",
+  requires_input: "Name a B.C. place to continue",
 };
 
 function isValidRelatedLink(link: unknown): boolean {
@@ -277,22 +277,22 @@ export function isReviewedSourceHandoff(
 }
 
 function liveHeadline(freshness: string | null | undefined): string {
-  if (freshness === "stale") return "Official cached records";
-  if (freshness === "mixed") return "Official records with mixed freshness";
-  if (freshness === "fresh") return "Official current records";
+  if (freshness === "stale") return "Cached official records";
+  if (freshness === "mixed") return "Official records, some out of date";
+  if (freshness === "fresh") return "Current official records";
   return "Official records";
 }
 
 const SUPPORT_LABELS: Record<SupportState, string> = {
-  supported: "Supported by an exact reviewed quotation",
-  structured_reviewed: "Reviewed structured claim",
-  official_live_typed: "Official live record",
-  official_quote_only: "Exact source wording — not a structured FireLens claim",
-  source_linked_explanation: "Source-linked explanation",
-  unknown: "Not established from FireLens sources",
-  background: "General background — not a reviewed quotation",
-  conflict: "Conflicting reviewed sources; no winner chosen",
-  live_record: "Official live record as published",
+  supported: "Quoted from a reviewed source",
+  structured_reviewed: "Reviewed official guidance",
+  official_live_typed: "Official record",
+  official_quote_only: "Exact wording from the source",
+  source_linked_explanation: "Explanation linked to a source",
+  unknown: "Not confirmed by FireLens sources",
+  background: "General knowledge, not from a source",
+  conflict: "Sources disagree",
+  live_record: "Official record as published",
 };
 
 const KIND_SUPPORT_STATE: Record<string, SupportState> = {
@@ -420,15 +420,15 @@ function publicationBanner(response: AskResponse): Pick<
 
   if (hasQuoteOnly && hasReviewed) {
     return {
-      headline: "Reviewed claims plus source wording",
-      detail: "Reviewed structured claims and extraction-only source wording are labelled separately.",
+      headline: "Reviewed guidance plus exact source wording",
+      detail: "Reviewed guidance and exact source wording are labelled separately.",
       freshness_label: "Stable guidance and source wording",
     };
   }
   if (hasQuoteOnly && states.every((state) => state === "official_quote_only")) {
     return {
-      headline: "Official wording from a source",
-      detail: "FireLens is showing an exact source quotation. It has not been approved as a structured FireLens claim.",
+      headline: "Exact wording from an official source",
+      detail: "FireLens is showing the source's own words rather than a summary.",
       freshness_label: "Stable source wording",
     };
   }
@@ -450,7 +450,7 @@ function publicationBanner(response: AskResponse): Pick<
   }
   if (hasUnknown) {
     return {
-      headline: hasReviewed ? "Reviewed claims with unresolved content" : "Support not established",
+      headline: hasReviewed ? "Reviewed guidance with unconfirmed content" : "Not confirmed by FireLens sources",
       detail: hasReviewed
         ? "Reviewed claims and content not established from FireLens sources are labelled separately."
         : "FireLens did not establish this content from its reviewed or official sources.",
@@ -470,11 +470,11 @@ function resultName(result: NonNullable<AskResponse["live_results"]>[number]): s
 }
 
 function freshnessLabel(response: AskResponse): string {
-  if (response.aggregate_freshness === "stale") return "Stale cached official records";
-  if (response.aggregate_freshness === "mixed") return "Mixed freshness — check each record timestamp";
-  if (response.aggregate_freshness === "fresh") return "Fresh official records";
+  if (response.aggregate_freshness === "stale") return "Cached official records; the live refresh failed";
+  if (response.aggregate_freshness === "mixed") return "Some records are out of date; check each record's time";
+  if (response.aggregate_freshness === "fresh") return "Current official records";
   if ((response.evidence ?? []).length > 0) return "Stable reviewed guidance";
-  return "Freshness not applicable";
+  return "Does not change day to day";
 }
 
 function availabilityLabel(response: AskResponse): string {
@@ -483,9 +483,9 @@ function availabilityLabel(response: AskResponse): string {
     return `Unavailable layers: ${layers.join(", ")}. That is not an all-clear.`;
   }
   if (response.status === "error" || response.response_mode === "abstention") {
-    return "This request did not complete with established sources.";
+    return "FireLens could not reach the sources this needed.";
   }
-  return "Sources required for this request were available.";
+  return "The sources this needed were available.";
 }
 
 function escalation(response: AskResponse): { title?: string; url?: string } {
@@ -509,7 +509,7 @@ function bannerDetail(response: AskResponse): string {
     return "This explanation uses general model knowledge, not reviewed quotations.";
   }
   if (mode === "live") {
-    return "These facts come from official BC wildfire records. This is not a safety determination.";
+    return "These facts come from official B.C. wildfire records. This is not a safety assessment.";
   }
   if (mode === "mixed") {
     return "Official records and reviewed guidance are labelled separately below.";
@@ -543,10 +543,10 @@ export function getStatusBanner(response: AskResponse | undefined): StatusBanner
     const retrieved = response.live_results?.map((item) => item.retrieved_at).filter(Boolean).sort().at(-1);
     const updated = response.live_results?.map((item) => item.source_updated_at).filter(Boolean).sort().at(-1);
     return {
-      headline: "Support not established",
+      headline: "Not confirmed by FireLens sources",
       detail: "FireLens did not establish or validate support for this response.",
       freshness_label: "Freshness not established",
-      availability_label: "This request did not complete with established sources.",
+      availability_label: "FireLens could not reach the sources this needed.",
       retrieval_completed_at: retrieved ?? null,
       source_updated_at: updated ?? null,
       official_escalation_title: official.title ?? null,

@@ -1,4 +1,4 @@
-import { ArrowSquareOut, Info, MapTrifold, Shield } from "@phosphor-icons/react";
+import { ArrowSquareOut, House, Info, MapTrifold, Shield } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
@@ -145,17 +145,30 @@ export function App() {
     setContextOpen(false);
   }
 
+  function goHome() {
+    session.clearHistory();
+    setIdleMapOpen(false);
+    setContextOpen(false);
+    setProjectOpen(false);
+    window.scrollTo({ top: 0 });
+  }
+
   return (
     <div className="app-shell" id="top">
       <a className="skip-link" href="#conversation">Skip to conversation</a>
       {showMap && <a className="skip-link" href="#official-map">Skip to official map</a>}
       <header className="topbar">
-        <a className="brand" href="#top">
+        <a className="brand" href="/" aria-label="FireLens home" onClick={(event) => { event.preventDefault(); goHome(); }}>
           <img src="/assets/firelens-mark.png" alt="" />
-          <span><strong>FireLens</strong> BC <small>{session.releaseVersion ? `V${session.releaseVersion}` : ""}</small></span>
+          <span><strong>FireLens</strong></span>
         </a>
-        <span className="topbar-lockup" aria-label="Official B.C. wildfire information">Official B.C. wildfire information</span>
+        <span className="topbar-lockup">B.C. wildfire information</span>
         <div className="topbar-actions">
+          {session.view.kind !== "idle" && (
+            <button className="topbar-home" type="button" onClick={goHome}>
+              <House size={17} /> New search
+            </button>
+          )}
           <button
             className="topbar-project"
             type="button"

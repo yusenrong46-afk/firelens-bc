@@ -6,6 +6,7 @@ import { answerSectionAuthority, getAnswerSections } from "./answerSections";
 import { splitLimitations } from "./limitationsPresentation";
 import { LiveAnswerSummary } from "./LiveAnswerSummary";
 import { getStatusBanner } from "./proofPresentation";
+import { SourceProof } from "./SourceProof";
 import { StatusBanner } from "./StatusBanner";
 
 export function AnswerBody({
@@ -54,7 +55,7 @@ export function AnswerBody({
     && (response?.response_mode === "live"
       || response?.response_mode === "grounded"
       || response?.response_mode === "mixed")
-    && /^(Official (?:current |cached )?records|Official records with mixed freshness|Grounded in reviewed official sources|Partially supported by reviewed sources|Official records plus reviewed guidance)$/i.test(
+    && /^(Official records|(?:Current|Cached) official records|Official records, some out of date|From reviewed official guidance|Partly from reviewed guidance|Official records and reviewed guidance)$/i.test(
       banner.headline,
     )
     && !freshnessWarning,
@@ -88,10 +89,12 @@ export function AnswerBody({
           onSelectResult={onSelectLiveResult}
         />
       )}
+      {!backgroundMode && <SourceProof response={response} showExcerpts={!quoteOnlyAnswer} />}
       {!analytical
         && !backgroundMode
         && !compactOfficialHandoff
         && banner
+        && !(liveSummary && compactBanner)
         && <StatusBanner banner={banner} compact={compactBanner && !freshnessWarning} />}
       {backgroundMode && (
         <p className="answer-provenance" role="note">

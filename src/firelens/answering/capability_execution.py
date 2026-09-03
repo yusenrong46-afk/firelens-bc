@@ -79,7 +79,11 @@ def bind_retrieval_bundle(
 ) -> tuple[RetrievalBundle, tuple[RetrievalHit, ...]]:
     """Project retrieval onto prevalidated chunks without inventing evidence."""
 
-    if binding.source_mode != "corpus":
+    if binding.source_mode != "corpus" or any(
+        chunk_id not in chunks_by_id for chunk_id in binding.chunk_ids
+    ):
+        # A binding whose prevalidated chunks are not in this corpus cannot
+        # project anything; ordinary retrieval stands.
         return bundle, tuple(bundle.reranked_hits)
     hits = tuple(
         _bound_hit(chunks_by_id[chunk_id], rank, binding.retrieval_queries)

@@ -112,10 +112,10 @@ export function EvidencePanel({
       .filter((item): item is { support: Support; evidence: Evidence } => Boolean(item.evidence));
 
   const contextTitle = surface === "map"
-    ? "Official map context"
+    ? "Map"
     : selectedClaim
-      ? "Evidence for the selected claim"
-      : "Answer context";
+      ? "Source for this statement"
+      : "Sources";
 
   return (
     <aside

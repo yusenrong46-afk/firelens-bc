@@ -29,11 +29,11 @@ def allows_current_language(freshness: Any) -> bool:
 def official_records_headline(freshness: Any) -> str:
     value = freshness_value(freshness)
     if value == "stale":
-        return "Official cached records"
+        return "Cached official records"
     if value == "mixed":
-        return "Official records with mixed freshness"
+        return "Official records, some out of date"
     if value == "fresh":
-        return "Official current records"
+        return "Current official records"
     return "Official records"
 
 

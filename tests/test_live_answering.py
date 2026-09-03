@@ -398,7 +398,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(
             response.answer_sections[0].heading,
-            "Official records with mixed freshness",
+            "Official records, some out of date",
         )
 
     async def test_missing_location_requests_input_before_live_fetch(self) -> None:

@@ -10,11 +10,11 @@ export function MapContextLayers({
       <input
         type="checkbox"
         checked={enabled}
-        aria-label="Show additional B.C. context layers"
+        aria-label="Show all fires in B.C."
         onChange={(event) => onChange(event.target.checked)}
       />
-      Show additional B.C. context layers
-      <small>These records are not in the authorized answer set.</small>
+      Show all fires in B.C.
+      <small>Adds the rest of the province; the answer above covers only the records it names.</small>
     </label>
   );
 }

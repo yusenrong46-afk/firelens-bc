@@ -129,18 +129,18 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
             <AskStartPanel
               locationLabel={locationLabel}
               currentState={liveSummary ? assistantText : undefined}
+              composer={<QuestionComposer idle loading={false} query={query} onQueryChange={setQuery} onSubmit={submit} inputRef={composerRef} />}
               onLocationChange={(value) => { setLocationLabel(value); clearManualLocation(); }}
               onUseApproximateLocation={useApproximateLocation}
               onSelectQuestion={fillComposer}
             />
-            <QuestionComposer idle loading={false} query={query} onQueryChange={setQuery} onSubmit={submit} inputRef={composerRef} />
           </>
         )}
 
         {view.kind !== "idle" && <div className={`assistant-message assistant-message--${view.kind}`} ref={(node) => revealAssistantMessage(node, true)}>
           <img src="/assets/firelens-mark.png" alt="" />
           <div>
-            <span className="assistant-name">FireLens BC</span>
+            <span className="assistant-name">FireLens</span>
             {mode && (
               <ResponseModeBadge
                 mode={mode}
@@ -171,7 +171,7 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
             )}
             {!analytical && (mode === "live" || mode === "mixed") && onOpenMap && (
               <div className="answer-context-actions">
-                <button type="button" aria-controls="answer-context" aria-expanded={contextOpen && contextSurface === "map"} onClick={onOpenMap}>View official map context</button>
+                <button type="button" aria-controls="answer-context" aria-expanded={contextOpen && contextSurface === "map"} onClick={onOpenMap}>Show these on the map</button>
               </div>
             )}
             {(response?.related_links ?? []).length > 0 && (
@@ -181,7 +181,7 @@ export function ConversationPanel({ session, analytical = false, analysisSlot, o
                     <p className="authority-handoff-card__topic">{item.title}</p>
                     <p className="authority-handoff-card__authority">{handoffAuthority(item.title)}</p>
                     <p>{item.description}</p>
-                    <p className="authority-handoff-card__why">FireLens does not ingest this live source, so it hands off to the official owner.</p>
+                    <p className="authority-handoff-card__why">FireLens does not track this itself; the official source has the current information.</p>
                     <a href={item.url} target="_blank" rel="noreferrer" onClick={() => emitProductEvent("authority_handoff_opened")}>
                       <span>Open official source</span>
                       <ArrowSquareOut size={18} aria-hidden="true" />

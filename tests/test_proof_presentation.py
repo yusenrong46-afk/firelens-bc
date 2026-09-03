@@ -91,7 +91,7 @@ def test_grounded_response_carries_proof_cards_and_checklist() -> None:
     assert response.status_banner is not None
     assert response.status_banner.headline == "Grounded in reviewed official sources"
     assert GROUNDED_PUBLIC_WORDING in response.status_banner.detail
-    assert response.status_banner.freshness_label == "Stable reviewed guidance"
+    assert response.status_banner.freshness_label == "Reviewed guidance; does not change day to day"
     assert response.supported_items == []
     assert response.unknown_items == ["Stable guidance only."]
     card = response.proof_cards[0]
@@ -154,8 +154,8 @@ def test_stale_live_banner_escalates_to_official_map() -> None:
         ],
     )
     assert response.status_banner is not None
-    assert response.status_banner.headline == "Official cached records"
-    assert "Stale" in response.status_banner.freshness_label
+    assert response.status_banner.headline == "Cached official records"
+    assert "Cached" in response.status_banner.freshness_label
     assert "evacuation" in response.status_banner.availability_label
     assert "not an all-clear" in response.status_banner.availability_label.lower()
     assert response.status_banner.official_escalation_title == "Open BCWS map"
@@ -284,7 +284,7 @@ def _forged_structured_reviewed_card(claim_id: str, text: str) -> ProofCard:
         source_revision="Emergency guidance",
         review_state="Human-verified source transcription",
         critical_fields_checked="Critical fields checked and preserved",
-        freshness="Stable reviewed guidance",
+        freshness="Reviewed guidance; does not change day to day",
         official_url="https://example.test/e1",
         publication=PublicationAuthority(
             kind=PublicationKind.STRUCTURED_REVIEWED,
@@ -448,7 +448,7 @@ def test_rejected_publication_is_not_strengthened_by_additive_proof_fields(
                 source_revision="Emergency guidance",
                 review_state="Human-verified source transcription",
                 critical_fields_checked="Critical fields checked and preserved",
-                freshness="Stable reviewed guidance",
+                freshness="Reviewed guidance; does not change day to day",
                 official_url="https://example.test/e1",
                 publication=PublicationAuthority(
                     kind=PublicationKind.STRUCTURED_REVIEWED,
@@ -530,7 +530,7 @@ def test_rejected_no_claim_response_replaces_strengthening_banner() -> None:
         status_banner=AnswerStatusBanner(
             headline="Grounded in reviewed official sources",
             detail="All content was validated against reviewed sources.",
-            freshness_label="Stable reviewed guidance",
+            freshness_label="Reviewed guidance; does not change day to day",
             availability_label="Sources required for this request were available.",
             official_escalation_title="Current B.C. AQHI",
             official_escalation_url=(

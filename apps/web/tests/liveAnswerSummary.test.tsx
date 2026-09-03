@@ -30,9 +30,9 @@ describe("LiveAnswerSummary", () => {
   it("uses a neutral heading and only source-supplied provenance and update time", () => {
     render(<LiveAnswerSummary response={response} />);
 
-    expect(screen.getByText("Official records returned")).toBeInTheDocument();
+    expect(screen.getByText(/official records?$/)).toBeInTheDocument();
     expect(screen.getByText(/Example Official Authority/)).toBeInTheDocument();
-    expect(screen.getByText(/2026-08-28T12:00:00Z/)).toBeInTheDocument();
+    expect(screen.getByText(/last updated Aug 28, 2026/)).toBeInTheDocument();
     expect(screen.queryByText(/12:05:00Z/)).not.toBeInTheDocument();
   });
 });

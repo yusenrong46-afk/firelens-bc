@@ -149,25 +149,25 @@ export function LiveMap({
         <div>
           <span>
             {freshnessState === "stale"
-              ? "Official cached records"
+              ? "Cached official records"
               : freshnessState === "mixed"
-                ? "Official records — mixed freshness"
+                ? "Official records, some out of date"
                 : freshnessState === "fresh"
-                  ? "Official live records"
+                  ? "Current official records"
                   : "Official wildfire map"}
           </span>
           <h1>
             {freshnessState === "stale"
-              ? "BC wildfire information — includes stale records"
+              ? "Wildfires in B.C. (cached records)"
               : freshnessState === "mixed"
-                ? "BC wildfire information — mixed freshness"
+                ? "Wildfires in B.C. (some records out of date)"
                 : freshnessState === "fresh"
-                  ? "Current BC wildfire information"
+                  ? "Wildfires in B.C. right now"
                   : "Wildfires across British Columbia"}
           </h1>
         </div>
         <a href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
-          Open BCWS map
+          Open the BC Wildfire Service map
         </a>
       </div>
       {onContextLayersChange && (
@@ -175,12 +175,12 @@ export function LiveMap({
       )}
       {freshnessState === "stale" && (
         <p className="live-map__warning" role="status">
-          Cached official records; refresh failed. These records may be outdated.
+          FireLens could not refresh these records, so it is showing its last cached copy. They may be out of date.
         </p>
       )}
       {freshnessState === "mixed" && (
         <p className="live-map__warning" role="status">
-          Official records include stale cached data because a refresh failed. Check each record timestamp.
+          Some of these records are cached copies because a refresh failed. Check each record's update time.
         </p>
       )}
       {unavailableLayers.length > 0 && (

@@ -23,14 +23,14 @@ export function StatusBanner({
       </div>
       <div className="status-banner__metadata">
         <span className={freshnessWarning ? "status-banner__warning" : undefined}>
-          <strong>Freshness:</strong> {banner.freshness_label}
+          <strong>Updated:</strong> {banner.freshness_label}
         </span>
         {availabilityWarning && (
           <span className="status-banner__warning"><strong>Availability:</strong> {banner.availability_label}</span>
         )}
         {banner.retrieval_completed_at && (
           <span className="status-banner__retrieved">
-            <strong>Fetched:</strong> {formatTimestamp(banner.retrieval_completed_at)}
+            <strong>Checked:</strong> {formatTimestamp(banner.retrieval_completed_at)}
           </span>
         )}
       </div>
@@ -66,7 +66,7 @@ export function ProofCard({ card }: { card: ProofCardView }) {
         <a href={card.official_url} target="_blank" rel="noreferrer">Open official source</a>
       )}
       <details className="proof-card__technical">
-        <summary>Technical binding details</summary>
+        <summary>How FireLens checked this</summary>
         <dl>
           <div><dt>Support state</dt><dd>{card.support_state.replaceAll("_", " ")}</dd></div>
           <div><dt>Authority</dt><dd>{card.authority}</dd></div>

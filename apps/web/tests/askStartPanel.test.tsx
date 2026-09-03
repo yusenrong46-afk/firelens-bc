@@ -40,7 +40,7 @@ describe("AskStartPanel", () => {
     const user = userEvent.setup();
     renderPanel({ onSelectQuestion });
 
-    expect(screen.getByRole("heading", { name: "Ask about a fire, a B.C. place, or preparedness." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "What do you want to know about wildfires in B.C.?" })).toBeInTheDocument();
     expect(screen.getByLabelText("BC community for a nearby lookup")).toBeInTheDocument();
     const trigger = screen.getByRole("button", { name: /Browse guided questions/ });
     await user.click(trigger);

@@ -412,8 +412,8 @@ def _banner_detail(response: Any, mode: str) -> str:
         return "This explanation uses general model knowledge, not reviewed quotations."
     if mode == "live":
         return (
-            "These facts come from official BC wildfire records. "
-            "This is not a safety determination."
+            "These facts come from official B.C. wildfire records. "
+            "This is not a safety assessment."
         )
     if mode == "mixed":
         return "Official records and reviewed guidance are labelled separately below."
@@ -441,13 +441,13 @@ def _freshness_label(response: Any) -> str:
     freshness = response.aggregate_freshness
     value = freshness.value if hasattr(freshness, "value") else freshness
     if value == "stale":
-        return "Stale cached official records"
+        return "Cached official records; the live refresh failed"
     if value == "mixed":
-        return "Mixed freshness — check each record timestamp"
+        return "Some records are out of date; check each record's time"
     if value == "fresh":
-        return "Fresh official records"
+        return "Current official records"
     if response.evidence:
-        return "Stable reviewed guidance"
+        return "Reviewed guidance; does not change day to day"
     return "Freshness not applicable"
 
 
@@ -527,10 +527,10 @@ def _critical_fields(trust: Any) -> str:
 def _card_freshness(response: Any, trust: Any) -> str:
     if trust is not None:
         mapping = {
-            "stable_guidance": "Stable reviewed guidance",
-            "fresh": "Fresh official records",
-            "stale": "Stale cached official records",
-            "mixed": "Mixed freshness",
+            "stable_guidance": "Reviewed guidance; does not change day to day",
+            "fresh": "Current official records",
+            "stale": "Cached official records; the live refresh failed",
+            "mixed": "Some records are out of date",
             "unknown": "Freshness unknown",
         }
         return mapping.get(trust.freshness, str(trust.freshness))

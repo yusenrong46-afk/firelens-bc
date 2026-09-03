@@ -108,16 +108,18 @@ def _fire_sentences(fires: Sequence[LiveResult], *, measured: bool) -> list[str]
 def _evacuation_sentence(evacuations: Sequence[LiveResult], place: str | None) -> str:
     publisher = evacuations[0].authority
     where = f" near {place}" if place else ""
+    grouped: dict[tuple[str, str | None, str | None], int] = {}
+    for record in evacuations:
+        key = (official_display_label(record), record.status, record.issuer)
+        grouped[key] = grouped.get(key, 0) + 1
     described = "; ".join(
-        f"{official_display_label(record)}"
-        + (f" ({record.status}" + (f", issued by {record.issuer})" if record.issuer else ")"))
-        for record in evacuations[:NAMED_IN_PROSE]
+        f"{label} ({status}"
+        + (f", issued by {issuer}" if issuer else "")
+        + (f", {count} areas" if count > 1 else "")
+        + ")"
+        for (label, status, issuer), count in list(grouped.items())[:NAMED_IN_PROSE]
     )
-    more = (
-        f" and {len(evacuations) - NAMED_IN_PROSE} more"
-        if len(evacuations) > NAMED_IN_PROSE
-        else ""
-    )
+    more = f" and {len(grouped) - NAMED_IN_PROSE} more" if len(grouped) > NAMED_IN_PROSE else ""
     return f"{publisher} lists {_plural(len(evacuations), 'evacuation record')}{where}: {described}{more}."
 
 

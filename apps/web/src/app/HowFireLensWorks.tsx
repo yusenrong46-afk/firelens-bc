@@ -30,7 +30,7 @@ export function HowFireLensWorks({ open, onClose }: { open: boolean; onClose: ()
       >
         <div className="project-dialog__header">
           <div>
-            <span className="panel-label">FireLens BC methods</span>
+            <span className="panel-label">About</span>
             <h2 ref={heading} id="project-dialog-title" tabIndex={-1}>How FireLens works</h2>
           </div>
           <button ref={closeButton} type="button" onClick={onClose} aria-label="Close how FireLens works">
@@ -38,28 +38,21 @@ export function HowFireLensWorks({ open, onClose }: { open: boolean; onClose: ()
           </button>
         </div>
         <p className="project-dialog__lead" id="project-dialog-description">
-          FireLens uses official records, reviewed claims, and deterministic checks to control factual publication.
-          Employers and evaluators can use this panel for sources, methods, and publication limits.
+          FireLens answers questions about wildfires in British Columbia using official records and
+          reviewed guidance, and shows you where each answer comes from.
         </p>
         <ol className="project-flow">
-          <li><Database size={23} /><div><strong>Acquire governed evidence</strong><span>Live facts use typed official records; guidance uses reviewed sources.</span></div></li>
-          <li><Code size={23} /><div><strong>Analyze with application-owned code</strong><span>Counts, distance, freshness, and grouping use structured fields.</span></div></li>
-          <li><ShieldCheck size={23} /><div><strong>Validate before presentation</strong><span>Identity, authority, quotations, fields, and failure states are checked.</span></div></li>
-          <li><CheckCircle size={23} /><div><strong>Keep uncertainty visible</strong><span>Unsupported material stays a quote, limitation, unknown, or handoff.</span></div></li>
+          <li><Database size={23} /><div><strong>Official records</strong><span>Fire locations, status, size, and evacuation orders and alerts come from the BC Wildfire Service and EmergencyInfoBC, fetched when you ask.</span></div></li>
+          <li><Code size={23} /><div><strong>Counts and distances are calculated, not guessed</strong><span>Straight-line distances, counts, and update times are computed from the official records.</span></div></li>
+          <li><ShieldCheck size={23} /><div><strong>Guidance is quoted from reviewed sources</strong><span>Preparedness and safety guidance is shown with the publisher, document, and exact passage.</span></div></li>
+          <li><CheckCircle size={23} /><div><strong>Limits are stated</strong><span>If FireLens cannot confirm something, it says so and points you to the official source instead of guessing.</span></div></li>
         </ol>
-        <details className="project-dialog__details">
-          <summary>Implementation details</summary>
-          <div className="project-dialog__facts" aria-label="V1.6 implementation facts">
-            <span><strong>26</strong> bound typed claims</span>
-            <span><strong>36/36</strong> raw candidates dispositioned</span>
-            <span><strong>50</strong> user-end evaluation questions</span>
-            <span><strong>0</strong> generation for high-risk structured guidance</span>
-          </div>
-        </details>
         <div className="project-dialog__links">
+          <a href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">BC Wildfire Service map <ArrowSquareOut size={17} /></a>
+          <a href="https://www.emergencyinfobc.gov.bc.ca/" target="_blank" rel="noreferrer">EmergencyInfoBC <ArrowSquareOut size={17} /></a>
           <a href="/openapi.json" target="_blank" rel="noreferrer">OpenAPI contract <ArrowSquareOut size={17} /></a>
         </div>
-        <p className="project-dialog__limit">Not emergency advice, independent certification, or release approval.</p>
+        <p className="project-dialog__limit">FireLens is not emergency advice. In immediate danger, call 9-1-1 and follow instructions from local authorities.</p>
       </section>
   );
 }

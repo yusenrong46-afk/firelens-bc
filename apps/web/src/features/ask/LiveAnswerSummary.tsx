@@ -1,5 +1,6 @@
 import type { AskResponse, LiveResult } from "../../shared/api/api";
 import {
+  formatTimestamp,
   resultDisplayName,
   resultStatus,
 } from "../near-me/liveResultPresentation";
@@ -18,7 +19,7 @@ function latestStamp(results: LiveResult[]): string | undefined {
 
 function provenance(results: LiveResult[]): string {
   const authorities = [...new Set(results.map((item) => item.authority.trim()).filter(Boolean))];
-  if (authorities.length === 0) return "Official source authority not supplied";
+  if (authorities.length === 0) return "Official source not named";
   if (authorities.length === 1) return authorities[0]!;
   if (authorities.length === 2) return authorities.join(" and ");
   return `${authorities.slice(0, 2).join(", ")}, and other official authorities`;
@@ -46,15 +47,13 @@ export function LiveAnswerSummary({
   return (
     <div className="live-answer-summary" aria-label="Live answer summary">
       <p className="live-answer-summary__place">
-        <strong>Official records returned</strong>
-        {" · "}
-        {rosterTotal} {rosterTotal === 1 ? "record" : "records"}
-        {rosterTotal > top.length ? ` · priority sample of ${top.length}` : ""}
+        <strong>{rosterTotal === 1 ? "1 official record" : `${rosterTotal} official records`}</strong>
+        {rosterTotal > top.length ? ` · the ${top.length} closest are listed here; the map has all of them` : ""}
       </p>
       {!freshnessWarning && (
         <p className="live-answer-summary__fresh">
           {provenance(results)}
-          {latestStamp(results) ? ` · source updated ${latestStamp(results)}` : " · source update time not supplied"}
+          {latestStamp(results) ? ` · last updated ${formatTimestamp(latestStamp(results)!)}` : " · update time not published"}
         </p>
       )}
       <ul className="live-answer-summary__records" aria-label="Top matching records">
@@ -71,8 +70,8 @@ export function LiveAnswerSummary({
         ))}
       </ul>
       <p className="live-answer-summary__links">
-        <a href={BCWS_MAP_URL} target="_blank" rel="noreferrer">BCWS map</a>
-        <a href={EVAC_INFO_URL} target="_blank" rel="noreferrer">Evacuations</a>
+        <a href={BCWS_MAP_URL} target="_blank" rel="noreferrer">BC Wildfire Service map</a>
+        <a href={EVAC_INFO_URL} target="_blank" rel="noreferrer">EmergencyInfoBC evacuations</a>
       </p>
     </div>
   );

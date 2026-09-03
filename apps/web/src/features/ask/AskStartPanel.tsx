@@ -1,5 +1,5 @@
 import { ArrowRight, Crosshair, Funnel, MagnifyingGlass, MapPin, X } from "@phosphor-icons/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { fetchGuidedQuestions, type GuidedQuestionCategory } from "../../shared/api/api";
 import { emitProductEvent } from "../../shared/telemetry";
 
@@ -45,15 +45,24 @@ function isGuidedQuestionCatalogue(value: unknown): value is { categories: Guide
   return valid && questionIds.length === 24 && new Set(questionIds).size === 24;
 }
 
+const STARTER_QUESTIONS = [
+  "Where is the wildfire near Kelowna?",
+  "Are there evacuation orders near Kamloops?",
+  "How many fires are burning in B.C. right now?",
+  "What should I pack in an evacuation kit?",
+];
+
 export function AskStartPanel({
   locationLabel,
   currentState,
+  composer,
   onSelectQuestion,
   onLocationChange,
   onUseApproximateLocation,
 }: {
   locationLabel: string;
   currentState?: string | undefined;
+  composer?: ReactNode;
   onSelectQuestion: (question: string) => void;
   onLocationChange: (value: string) => void;
   onUseApproximateLocation: () => void;
@@ -156,31 +165,34 @@ export function AskStartPanel({
     <section className="conversation-intro ask-start-panel">
       <p className="response-announcement" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
       <div className="ask-start-panel__intro">
-        <span className="panel-label">British Columbia wildfire information</span>
-        <h1>Ask about a fire, a B.C. place, or preparedness.</h1>
-        <p>Official incidents, reviewed guidance, and labelled background stay separate.</p>
+        <h1>What do you want to know about wildfires in B.C.?</h1>
+        <p>Ask in your own words. FireLens answers from official BC Wildfire Service and EmergencyInfoBC records and reviewed guidance, and shows where each answer comes from.</p>
+        {composer}
+        <ul className="ask-start-panel__starters" aria-label="Example questions">
+          {STARTER_QUESTIONS.map((question) => (
+            <li key={question}>
+              <button type="button" onClick={() => onSelectQuestion(question)}>{question}</button>
+            </li>
+          ))}
+        </ul>
         {currentState && (
           <p className="ask-start-panel__current-state" role="status">{currentState}</p>
         )}
       </div>
       <div className="ask-start-panel__console">
-        <div className="ask-start-panel__console-heading">
-          <span className="panel-label">Start a query</span>
-          <span>Free text first</span>
-        </div>
         <label className="ask-start-panel__place">
-          <span>B.C. place <small>Optional</small></span>
+          <span>Your B.C. community <small>Optional, for "near me" questions</small></span>
           <input
             aria-label="BC community for a nearby lookup"
             value={locationLabel}
             onChange={(event) => onLocationChange(event.target.value)}
-            placeholder="Add a place for nearby questions"
+            placeholder="For example, Kelowna"
             maxLength={120}
           />
         </label>
         <button type="button" className="ask-start-panel__approx" aria-label="Use approximate location" onClick={onUseApproximateLocation}>
           <Crosshair size={18} aria-hidden="true" />
-          <span>Use approximate location <small>Not stored</small></span>
+          <span>Use my approximate location <small>Not stored</small></span>
         </button>
         <div className="guided-questions">
           {catalogueState !== "failed" ? (
