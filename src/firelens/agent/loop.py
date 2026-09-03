@@ -12,6 +12,7 @@ from firelens.agent.compose import (
     handoff_answer,
     no_substitute_response,
     quoted_guidance_response,
+    request_with_plan_selection,
     request_with_selected,
     safety_response,
 )
@@ -91,6 +92,7 @@ async def run_agent_loop(
 ) -> tuple[AskResponse, QueryRoute, tuple[AgentTool, ...], AgentPacket]:
     """Run one Ask through Luna (or the offline stand-in) and rails."""
 
+    request = request_with_plan_selection(request, query_plan)
     packet = AgentPacket(query_plan=query_plan)
     unsupported = tuple(unsupported_live_topics(request.question))
     packet.related_links = related_live_links(unsupported)

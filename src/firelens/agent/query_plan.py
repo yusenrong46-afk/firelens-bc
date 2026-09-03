@@ -27,6 +27,12 @@ from firelens.agent.query_plan_boundaries import (
     multi_place_comparison_limit as _multi_place_comparison_limit,
 )
 from firelens.agent.query_plan_boundaries import (
+    ordinal_out_of_list_prompt as _ordinal_out_of_list_prompt,
+)
+from firelens.agent.query_plan_boundaries import (
+    ordinal_without_list_prompt as _ordinal_without_list_prompt,
+)
+from firelens.agent.query_plan_boundaries import (
     record_reference_prompt as _record_reference_prompt,
 )
 from firelens.agent.query_plan_boundaries import (
@@ -88,6 +94,7 @@ from firelens.live_support import (
     official_fire_centre_label,
 )
 from firelens.understanding.place import PlaceKind
+from firelens.understanding.reference import ordinal_label, ordinal_reference
 
 
 class AgentRequestMode(StrEnum):
@@ -116,20 +123,6 @@ class AgentScopeResult(StrEnum):
     REQUIRES_INPUT = "requires_input"
     SCOPE_REDIRECT = "scope_redirect"
 
-
-_VISIBLE_ORDINAL = re.compile(
-    r"\b(?:the\s+)?(?P<rank>first|second|third|1st|2nd|3rd)\s+"
-    r"(?:one|fire|wildfire|incident|record)\b",
-    re.IGNORECASE,
-)
-_VISIBLE_ORDINAL_INDEX = {
-    "first": 0,
-    "1st": 0,
-    "second": 1,
-    "2nd": 1,
-    "third": 2,
-    "3rd": 2,
-}
 
 # These questions use wildfire language as a metaphor, not as a request for
 # current incident records. Keep this small and explicit: a generic mention of
@@ -221,6 +214,17 @@ class AgentQueryPlan:
     def authorizes(self, name: str, arguments: dict[str, Any] | None) -> bool:
         return any(call.matches(name, arguments) for call in self.tool_calls)
 
+    @property
+    def selected_result_id(self) -> str | None:
+        """The exact record a SELECTED plan is about; the request context mirrors it."""
+
+        if self.mode != AgentRequestMode.SELECTED:
+            return None
+        for call in self.tool_calls:
+            if call.name == AgentTool.GET_OFFICIAL_FIRE:
+                return call.as_arguments().get("result_id")
+        return None
+
     def model_dump(self, *, mode: str = "python") -> dict[str, Any]:
         """Return the bounded deterministic projection used by offline evidence."""
 
@@ -254,13 +258,53 @@ def _static_call(question: str, static_query: str) -> PlannedToolCall:
     return _call(tool, query=static_query)
 
 
-def _visible_ordinal_result_id(request: QueryRequest) -> str | None:
-    match = _VISIBLE_ORDINAL.search(request.question)
-    if match is None:
+def _selected_record_plan(result_id: str) -> AgentQueryPlan:
+    return AgentQueryPlan(
+        route=QueryRoute.LIVE,
+        mode=AgentRequestMode.SELECTED,
+        live_layers=(),
+        geography=AgentGeography.SELECTED_RECORD,
+        location_label=None,
+        static_subrequest=None,
+        tool_calls=(_call(AgentTool.GET_OFFICIAL_FIRE, result_id=result_id),),
+    )
+
+
+def _terminal_plan(response: AskResponse) -> AgentQueryPlan:
+    return AgentQueryPlan(
+        route=QueryRoute.LIVE,
+        mode=AgentRequestMode.TERMINAL,
+        live_layers=(),
+        geography=AgentGeography.NONE,
+        location_label=None,
+        static_subrequest=None,
+        tool_calls=(),
+        scope_result=AgentScopeResult.SCOPE_REDIRECT,
+        terminal_response=response,
+    )
+
+
+def _ordinal_plan(request: QueryRequest) -> AgentQueryPlan | None:
+    """ "The second one" counts through the list the person is looking at.
+
+    The client sends that list as `visible_live_result_ids`, in display order.
+    A position inside it binds that exact record, even when another record is
+    selected; a position outside it, or an ordinal with a selection but no list,
+    gets an explicit clarification. Without a list or a selection the planner
+    falls through to the conversation-history path.
+    """
+
+    index = ordinal_reference(request.question)
+    if index is None:
         return None
-    index = _VISIBLE_ORDINAL_INDEX[match.group("rank").casefold()]
     visible = request.context.visible_live_result_ids
-    return visible[index] if index < len(visible) else None
+    if visible:
+        if index < len(visible):
+            return _selected_record_plan(visible[index])
+        return _terminal_plan(_ordinal_out_of_list_prompt(ordinal_label(index), len(visible)))
+    if request.context.selected_live_result_id:
+        return _terminal_plan(_ordinal_without_list_prompt(ordinal_label(index)))
+    return None
 
 
 def _live_calls(
@@ -365,27 +409,11 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
             tool_calls=(),
         )
     selected = request.context.selected_live_result_id
-    ordinal_selected = _visible_ordinal_result_id(request)
-    if selected is None and ordinal_selected is not None:
-        return AgentQueryPlan(
-            route=QueryRoute.LIVE,
-            mode=AgentRequestMode.SELECTED,
-            live_layers=(),
-            geography=AgentGeography.SELECTED_RECORD,
-            location_label=None,
-            static_subrequest=None,
-            tool_calls=(_call(AgentTool.GET_OFFICIAL_FIRE, result_id=ordinal_selected),),
-        )
+    ordinal_plan = _ordinal_plan(request)
+    if ordinal_plan is not None:
+        return ordinal_plan
     if selected and uses_selected_live_binding(request):
-        return AgentQueryPlan(
-            route=QueryRoute.LIVE,
-            mode=AgentRequestMode.SELECTED,
-            live_layers=(),
-            geography=AgentGeography.SELECTED_RECORD,
-            location_label=None,
-            static_subrequest=None,
-            tool_calls=(_call(AgentTool.GET_OFFICIAL_FIRE, result_id=selected),),
-        )
+        return _selected_record_plan(selected)
     if selected is None and is_selected_record_followup(request.question):
         prior = prior_anchor_user_question(request)
         prior_layers = live_layers_for_question(prior) if prior else ()

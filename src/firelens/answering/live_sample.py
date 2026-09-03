@@ -93,24 +93,46 @@ def information_value_key(
     )
 
 
-def rank_live_results(records: Sequence[LiveResult]) -> list[LiveResult]:
-    """Return records in stable information-value order."""
+_KIND_ORDER = {
+    LiveResultKind.INCIDENT: 0,
+    LiveResultKind.PERIMETER: 1,
+    LiveResultKind.EVACUATION: 2,
+}
+
+
+def display_order(records: Sequence[LiveResult]) -> list[LiveResult]:
+    """The one order a person sees: prose, record cards, map roster, "the second one".
+
+    A lookup measured from a place lists fires nearest first (incidents, then
+    perimeters, then evacuation records; records without a mappable distance
+    last). A lookup with no place to measure from lists by information value:
+    Fires of Note and out-of-control fires first, then by size.
+    """
 
     associated = _evacuation_associated_ids(records)
+    if not any(item.distance_km is not None for item in records):
+        return sorted(
+            records,
+            key=lambda item: information_value_key(item, evacuation_associated_ids=associated),
+        )
     return sorted(
         records,
-        key=lambda item: information_value_key(item, evacuation_associated_ids=associated),
+        key=lambda item: (
+            _KIND_ORDER.get(item.kind, 3),
+            item.distance_km if item.distance_km is not None else float("inf"),
+            information_value_key(item, evacuation_associated_ids=associated),
+        ),
     )
 
 
 def sample_live_results(
     records: Sequence[LiveResult], *, limit: int = INLINE_SAMPLE_LIMIT
 ) -> list[LiveResult]:
-    """Return the priority sample used for inline answer cards and prose."""
+    """The first records in display order, used for inline answer cards and prose."""
 
     if limit <= 0:
         return []
-    return rank_live_results(records)[:limit]
+    return display_order(records)[:limit]
 
 
 def sample_record_ids(

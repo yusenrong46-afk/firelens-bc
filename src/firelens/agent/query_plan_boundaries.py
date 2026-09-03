@@ -149,6 +149,41 @@ def selection_prompt() -> AskResponse:
     )
 
 
+def ordinal_out_of_list_prompt(position: str, shown: int) -> AskResponse:
+    """The list last shown has no record at the requested position."""
+
+    count = f"{shown} official record{'s' if shown != 1 else ''}"
+    return AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id=uuid4().hex,
+        response_mode=ResponseMode.SCOPE_REDIRECT,
+        answer=(
+            f"The list currently shown has {count}, so there is no {position} one. "
+            "Select the record you mean on the map or in the list, or ask for a wider "
+            "area. FireLens did not substitute a different record."
+        ),
+        reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+        limitations=["No official record was fetched for a position outside the shown list."],
+    )
+
+
+def ordinal_without_list_prompt(position: str) -> AskResponse:
+    """An ordinal arrived with a selection but no list to count through."""
+
+    return AskResponse(
+        status=ResponseStatus.ANSWER,
+        trace_id=uuid4().hex,
+        response_mode=ResponseMode.SCOPE_REDIRECT,
+        answer=(
+            f"FireLens does not have the list you are counting through, so it cannot tell "
+            f"which record is the {position} one. Ask for current records near a BC "
+            "community first, or select the record on the map."
+        ),
+        reason_code=ReasonCode.LIVE_DATA_REQUIRED,
+        limitations=["No official record was fetched for an ordinal without a shown list."],
+    )
+
+
 def record_reference_prompt() -> AskResponse:
     """Keep an ambiguous roster reference from selecting a record implicitly."""
 

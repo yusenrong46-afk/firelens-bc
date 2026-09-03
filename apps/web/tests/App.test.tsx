@@ -1371,7 +1371,7 @@ describe("FireLens Source Lens", () => {
     ]);
   });
 
-  it("binds ordinal live-record follow-ups and retains the server selection", async () => {
+  it("sends the shown list for ordinal follow-ups, keeps it through a focused answer, and retains the server selection", async () => {
     const liveResults = [
       { result_id: "incident:first", name: "First Fire", status: "Out of Control" },
       { result_id: "incident:second", name: "Second Fire", status: "Being Held" },
@@ -1392,6 +1392,8 @@ describe("FireLens Source Lens", () => {
         return Promise.resolve(new Response(JSON.stringify({ results: [], unavailable_layers: [] }), { status: 200 }));
       }
       askCount += 1;
+      // The server answers a position or a deictic follow-up with the one
+      // record it is about, as the real service does.
       const selected = askCount > 1 ? "incident:second" : undefined;
       return Promise.resolve(new Response(JSON.stringify({
         status: "answer",
@@ -1402,7 +1404,7 @@ describe("FireLens Source Lens", () => {
         claims: [],
         evidence: [],
         limitations: [],
-        live_results: liveResults,
+        live_results: selected ? liveResults.filter((item) => item.result_id === selected) : liveResults,
         aggregate_freshness: "fresh",
         ...(selected ? { selected_live_result_id: selected } : {}),
         validation: { accepted: true },
@@ -1420,8 +1422,10 @@ describe("FireLens Source Lens", () => {
     await user.click(screen.getByLabelText("Send question"));
     expect(await screen.findByText("PB027 answer")).toBeInTheDocument();
     await waitFor(() => expect(askCallOptions(fetchMock)).toHaveLength(2));
+    const rosterIds = ["incident:first", "incident:second", "incident:third"];
     const secondPayload = JSON.parse(String(askCallOptions(fetchMock)[1]?.body));
-    expect(secondPayload.context?.selected_live_result_id).toBe("incident:second");
+    expect(secondPayload.context?.visible_live_result_ids).toEqual(rosterIds);
+    expect(secondPayload.context?.selected_live_result_id).toBeUndefined();
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "How far is that one from Kamloops?");
     await user.click(screen.getByLabelText("Send question"));
@@ -1429,6 +1433,8 @@ describe("FireLens Source Lens", () => {
     await waitFor(() => expect(askCallOptions(fetchMock)).toHaveLength(3));
     const thirdPayload = JSON.parse(String(askCallOptions(fetchMock)[2]?.body));
     expect(thirdPayload.context?.selected_live_result_id).toBe("incident:second");
+    // The focused answer about one record did not shrink the list being counted through.
+    expect(thirdPayload.context?.visible_live_result_ids).toEqual(rosterIds);
   });
 
   it("uses the server-bounded assistant history representation", async () => {

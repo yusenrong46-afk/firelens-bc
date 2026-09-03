@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -176,7 +176,7 @@ class CacheEntry:
     features: tuple[dict[str, Any], ...]
 
 
-def property_value(properties: dict[str, Any], *names: str) -> Any:
+def property_value(properties: Mapping[str, Any], *names: str) -> Any:
     folded = {str(key).casefold(): value for key, value in properties.items()}
     for name in names:
         value = folded.get(name.casefold())

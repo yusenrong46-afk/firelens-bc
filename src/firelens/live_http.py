@@ -29,3 +29,16 @@ def decoded_response_headers(headers: httpx.Headers) -> httpx.Headers:
             if name.lower() not in _WIRE_BODY_HEADERS
         ]
     )
+
+
+def envelope_params(bbox: tuple[float, float, float, float] | None) -> dict[str, str]:
+    """ArcGIS query parameters restricting a query to a WGS84 envelope."""
+
+    if bbox is None:
+        return {}
+    return {
+        "geometry": ",".join(str(value) for value in bbox),
+        "geometryType": "esriGeometryEnvelope",
+        "inSR": "4326",
+        "spatialRel": "esriSpatialRelIntersects",
+    }

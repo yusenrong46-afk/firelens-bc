@@ -20,6 +20,7 @@ from firelens.answering.live_analysis_distance import (
     closest_locatable_result,
     ranked_live_results_for_request,
 )
+from firelens.answering.plain_time import human_time
 from firelens.contracts import (
     AnswerSection,
     AnswerSectionKind,
@@ -534,9 +535,9 @@ def test_selected_record_explains_distance_clock_and_unknowns_without_model_infe
 
     assert "12 km" in rationale
     assert "model did not choose" in rationale.casefold()
-    assert selected.source_updated_at.isoformat() in clocks
-    assert selected.retrieved_at.isoformat() in clocks
-    assert "separate clocks" in clocks
+    assert human_time(selected.source_updated_at) in clocks
+    assert human_time(selected.retrieved_at) in clocks
+    assert "two different clocks" in clocks
     assert "future spread" in unknowns
     assert "personal evacuation decision" in unknowns
 

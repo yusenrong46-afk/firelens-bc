@@ -23,6 +23,7 @@ import {
   type ViewState,
 } from "./responseModel";
 import { emitProductEvent } from "../../shared/telemetry";
+import { EMPTY_ROSTER, nextRoster, type Roster } from "./roster";
 import { deriveSessionMapView, type MapAggregateFreshness } from "./sessionMap";
 
 export type FireLensSession = {
@@ -82,6 +83,7 @@ export function useFireLensSession(): FireLensSession {
   const [activeLocation, setActiveLocation] = useState<LocationInput>();
   const [locationMessage, setLocationMessage] = useState("");
   const [selectedLiveResultId, setSelectedLiveResultId] = useState<string>();
+  const [roster, setRoster] = useState<Roster>(EMPTY_ROSTER);
   const activeRequest = useRef<AbortController | null>(null);
 
   const response = view.kind === "answer" || view.kind === "abstention" ? view.response : undefined;
@@ -101,12 +103,12 @@ export function useFireLensSession(): FireLensSession {
   const mapView = useMemo(
     () =>
       deriveSessionMapView(
-        response,
+        view.kind === "idle" ? undefined : roster,
         provinceMap.data?.results,
         provinceMap.data?.unavailable_layers,
         contextLayersEnabled,
       ),
-    [contextLayersEnabled, provinceMap.data?.results, provinceMap.data?.unavailable_layers, response],
+    [contextLayersEnabled, provinceMap.data?.results, provinceMap.data?.unavailable_layers, roster, view.kind],
   );
 
   useEffect(() => {
@@ -150,16 +152,16 @@ export function useFireLensSession(): FireLensSession {
         : undefined;
       const effectiveLocation = locationOverride ?? activeLocation ?? typedLocation;
       if (effectiveLocation) setActiveLocation(effectiveLocation);
+      // The roster is the list the person is counting through ("the second
+      // one"), in the order the answer listed it.
       const context: MapContext = {
-        visible_live_result_ids: (response?.live_results ?? (mapVisible ? mapView.mapResults : []))
-          .slice(0, 100)
-          .map((result) => result.result_id),
+        visible_live_result_ids: roster.results.slice(0, 100).map((result) => result.result_id),
       };
       const contextSelected = selectedResultIdForQuestion(
         normalized,
         selectedLiveResultId,
         selectedResultOverride,
-        response?.live_results ?? [],
+        roster.results,
       );
       if (contextSelected) context.selected_live_result_id = contextSelected;
       const nextResponse = await askFireLens(
@@ -175,6 +177,7 @@ export function useFireLensSession(): FireLensSession {
         { role: "assistant", content: nextResponse.history_text ?? responseText(nextResponse) },
       ];
       setHistory(nextHistory.slice(-6));
+      setRoster((previous) => nextRoster(previous, nextResponse));
       setView({
         kind: nextResponse.status === "answer" ? "answer" : "abstention",
         question: normalized,
@@ -232,6 +235,7 @@ export function useFireLensSession(): FireLensSession {
     setActiveLocation(undefined);
     setLocationMessage("");
     setSelectedLiveResultId(undefined);
+    setRoster(EMPTY_ROSTER);
     setView({ kind: "idle" });
   }
 

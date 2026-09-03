@@ -453,22 +453,46 @@ def test_selected_record_does_not_overbind_general_or_ambiguous_pronouns(questio
     (
         "Tell me about Bald Range Fire",
         "Which fire is closest to Kelowna?",
-        "What about the second fire?",
     ),
 )
-def test_existing_selection_binds_named_closest_and_ordinal_requests(question: str) -> None:
+def test_a_turn_with_its_own_subject_is_not_bound_to_a_stale_selection(question: str) -> None:
+    """Focus fills in what the words leave implicit; it never overrides a named subject."""
+
+    plan = _plan(question, selected="incident:7")
+
+    assert plan.mode != AgentRequestMode.SELECTED
+    assert plan.geography != AgentGeography.SELECTED_RECORD
+    assert all(call.name != AgentTool.GET_OFFICIAL_FIRE for call in plan.tool_calls)
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "How far is that one from Kelowna?",
+        "Is it under control?",
+        "Where is it?",
+        "status?",
+        "distance from Kelowna?",
+        "What's its size and status?",
+    ),
+)
+def test_anaphoric_and_elliptical_turns_bind_the_selected_record(question: str) -> None:
+    """FL200-108: a follow-up about the record in focus fetches exactly that record."""
+
     plan = _plan(question, selected="incident:7")
 
     assert plan.mode == AgentRequestMode.SELECTED
-    assert plan.geography == AgentGeography.SELECTED_RECORD
-    assert len(plan.tool_calls) == 1
-    assert plan.tool_calls[0].name == AgentTool.GET_OFFICIAL_FIRE
+    assert plan.tool_calls[0].as_arguments() == {"result_id": "incident:7"}
 
 
-def test_visible_roster_ordinal_binds_exact_stable_record_id() -> None:
+@pytest.mark.parametrize(
+    "question",
+    ("Tell me more about the second one.", "What about the 2nd fire?", "record 2?", "#2"),
+)
+def test_visible_roster_ordinal_binds_exact_stable_record_id(question: str) -> None:
     plan = plan_agent_request(
         QueryRequest(
-            question="Tell me more about the second one.",
+            question=question,
             context=MapContext(
                 visible_live_result_ids=["incident:1", "incident:2", "incident:3"]
             ),
@@ -478,6 +502,50 @@ def test_visible_roster_ordinal_binds_exact_stable_record_id() -> None:
     assert plan.mode == AgentRequestMode.SELECTED
     assert plan.geography == AgentGeography.SELECTED_RECORD
     assert plan.tool_calls[0].as_arguments() == {"result_id": "incident:2"}
+
+
+def test_ordinal_counts_through_the_shown_list_even_when_another_record_is_selected() -> None:
+    """FL200-108: 'the second one' means the second in the list shown, not the selection."""
+
+    plan = plan_agent_request(
+        QueryRequest(
+            question="What about the second fire?",
+            context=MapContext(
+                selected_live_result_id="incident:1",
+                visible_live_result_ids=["incident:1", "incident:2", "incident:3"],
+            ),
+        )
+    )
+
+    assert plan.mode == AgentRequestMode.SELECTED
+    assert plan.tool_calls[0].as_arguments() == {"result_id": "incident:2"}
+
+
+def test_ordinal_outside_the_shown_list_asks_instead_of_substituting() -> None:
+    plan = plan_agent_request(
+        QueryRequest(
+            question="What about the third one?",
+            context=MapContext(
+                selected_live_result_id="incident:1",
+                visible_live_result_ids=["incident:1", "incident:2"],
+            ),
+        )
+    )
+
+    assert plan.mode == AgentRequestMode.TERMINAL
+    assert plan.tool_calls == ()
+    assert plan.terminal_response is not None
+    assert "2 official records" in plan.terminal_response.answer
+    assert "no third one" in plan.terminal_response.answer
+
+
+def test_ordinal_with_a_selection_but_no_shown_list_asks_for_the_list() -> None:
+    plan = _plan("What about the second fire?", selected="incident:7")
+
+    assert plan.mode == AgentRequestMode.TERMINAL
+    assert plan.tool_calls == ()
+    assert plan.terminal_response is not None
+    assert "does not have the list" in plan.terminal_response.answer
 
 
 @pytest.mark.parametrize(

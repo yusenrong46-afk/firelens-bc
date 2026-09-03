@@ -567,7 +567,7 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             httpx.Response(200, headers=wire_headers, content=payload)
         rebuilt = httpx.Response(
             200,
-            headers=live_module._decoded_response_headers(wire_headers),
+            headers=live_module.decoded_response_headers(wire_headers),
             content=payload,
         )
         self.assertEqual(rebuilt.json(), {"ok": True})
@@ -760,6 +760,8 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             nonlocal query_calls
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 0})
             query_calls += 1
             return httpx.Response(200, json={"type": "FeatureCollection", "features": []})
 
@@ -1027,8 +1029,10 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(query_calls, 1)
-        self.assertEqual([row.result_id for row in first.results], ["incident:1", "incident:2"])
-        self.assertEqual([row.result_id for row in second.results], ["incident:3"])
+        self.assertEqual(
+            [row.result_id for row in first.results], ["incident:K00001", "incident:K00002"]
+        )
+        self.assertEqual([row.result_id for row in second.results], ["incident:K00003"])
         self.assertEqual(beyond.results, [])
         self.assertEqual(first.pagination.total_results, 3)
         self.assertEqual(first.pagination.total_pages, 2)
@@ -1202,6 +1206,57 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             [status.available for status in response.layer_statuses],
             [True, False],
         )
+
+    async def test_empty_page_while_publisher_counts_records_is_unavailable_not_zero(
+        self,
+    ) -> None:
+        # Observed during a BC Wildfire Service republish: the record count says
+        # 1362, the first page returns nothing, and the next page is full.
+        state = {"page_empty": False}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 1})
+            features = (
+                []
+                if state["page_empty"]
+                else [
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "OBJECTID": 1,
+                            "FIRE_NUMBER": "K51490",
+                            "FIRE_STATUS": "Being Held",
+                        },
+                        "geometry": {"type": "Point", "coordinates": [-119.5, 49.9]},
+                    }
+                ]
+            )
+            return httpx.Response(200, json={"type": "FeatureCollection", "features": features})
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            cold = LiveDataService(client=client)
+            state["page_empty"] = True
+            first = await cold.map_results(layers=(LiveResultKind.INCIDENT,))
+            self.assertEqual(first.results, [])
+            self.assertEqual(first.unavailable_layers, [LiveResultKind.INCIDENT])
+            self.assertIn("1 published records", first.limitations[-1])
+
+            warm = LiveDataService(client=client, fresh_seconds=0)
+            state["page_empty"] = False
+            complete = await warm.map_results(layers=(LiveResultKind.INCIDENT,))
+            self.assertEqual([item.result_id for item in complete.results], ["incident:K51490"])
+            state["page_empty"] = True
+            during_republish = await warm.map_results(layers=(LiveResultKind.INCIDENT,))
+
+        # A cached copy outranks an incomplete refresh, and says it is a copy.
+        self.assertEqual(
+            [item.result_id for item in during_republish.results], ["incident:K51490"]
+        )
+        self.assertEqual(during_republish.unavailable_layers, [])
+        self.assertEqual(during_republish.results[0].freshness, Freshness.STALE)
 
     async def test_inactive_and_non_wildfire_records_are_not_displayed(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:

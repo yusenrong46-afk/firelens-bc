@@ -1419,7 +1419,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             (row["result_id"], row["status"]) for row in map_response.json()["results"]
         }
         self.assertEqual(chat_records, map_records)
-        self.assertEqual(chat_records, {("incident:17", "Being Held")})
+        self.assertEqual(chat_records, {("incident:K12345", "Being Held")})
         for row in map_response.json()["results"]:
             self.assertEqual(row["kind"], LiveResultKind.INCIDENT.value)
             self.assertTrue(row["authority"])
@@ -1442,7 +1442,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(nearby_payload["pagination"]["total_results"], 1)
         self.assertEqual(nearby_payload["pagination"]["returned_results"], 1)
-        self.assertEqual(nearby_payload["results"][0]["result_id"], "incident:17")
+        self.assertEqual(nearby_payload["results"][0]["result_id"], "incident:K12345")
         self.assertEqual(
             nearby_payload["layer_statuses"][0]["matching_result_count"],
             nearby_payload["pagination"]["total_results"],

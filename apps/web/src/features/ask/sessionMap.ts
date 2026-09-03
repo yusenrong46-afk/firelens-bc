@@ -1,4 +1,5 @@
-import type { AskResponse, LiveResult } from "../../shared/api/api";
+import type { LiveResult } from "../../shared/api/api";
+import type { Roster } from "./roster";
 
 export type MapAggregateFreshness = "fresh" | "stale" | "mixed" | undefined;
 
@@ -20,13 +21,13 @@ export type SessionMapView = {
 };
 
 export function deriveSessionMapView(
-  response: AskResponse | undefined,
+  roster: Roster | undefined,
   provinceResults: LiveResult[] | undefined,
   provinceUnavailable: string[] | undefined,
   contextLayersEnabled = false,
 ): SessionMapView {
-  const mapMatchingResults = response?.live_results ?? [];
-  if (!response) {
+  const mapMatchingResults = roster?.results ?? [];
+  if (!roster) {
     const idleResults = provinceResults ?? [];
     return {
       mapResults: idleResults,
@@ -43,10 +44,10 @@ export function deriveSessionMapView(
       mapResults: mapMatchingResults,
       mapMatchingResults,
       mapProvinceResults: [],
-      mapFocus: response.resolved_location ?? undefined,
+      mapFocus: roster.focus,
       mapFocusResults: mapMatchingResults,
       mapAggregateFreshness: displayedAggregateFreshness(mapMatchingResults),
-      mapUnavailableLayers: [...new Set(response.unavailable_layers ?? [])],
+      mapUnavailableLayers: roster.unavailableLayers,
     };
   }
   const resultById = new Map<string, LiveResult>();
@@ -60,11 +61,9 @@ export function deriveSessionMapView(
     mapResults,
     mapMatchingResults,
     mapProvinceResults: mapResults.filter((result) => !matchingResultIds.has(result.result_id)),
-    mapFocus: response.resolved_location ?? undefined,
+    mapFocus: roster.focus,
     mapFocusResults: mapMatchingResults,
     mapAggregateFreshness: displayedAggregateFreshness(mapResults),
-    mapUnavailableLayers: [
-      ...new Set([...(provinceUnavailable ?? []), ...(response.unavailable_layers ?? [])]),
-    ],
+    mapUnavailableLayers: [...new Set([...(provinceUnavailable ?? []), ...roster.unavailableLayers])],
   };
 }

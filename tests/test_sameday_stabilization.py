@@ -18,6 +18,7 @@ from firelens.answering.intent import (
     unsupported_live_topics,
 )
 from firelens.answering.intent_automaton import ClauseIntentKind, parse_request_intent
+from firelens.answering.intent_conversation import is_selected_record_followup
 from firelens.answering.live_analysis import official_analysis_answer
 from firelens.answering.live_analysis_distance import is_freshness_question
 from firelens.answering.live_evacuation import (
@@ -25,7 +26,6 @@ from firelens.answering.live_evacuation import (
     is_evacuation_record_question,
 )
 from firelens.answering.live_handoffs import related_live_links
-from firelens.answering.live_request_intent import is_selected_record_followup
 from firelens.contracts import (
     AskResponse,
     ConversationTurn,

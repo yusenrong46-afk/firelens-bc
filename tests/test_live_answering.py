@@ -8,6 +8,7 @@ from typing import Any, cast
 from firelens.agent import FireLensAgent
 from firelens.answering.intent import live_layers_for_question
 from firelens.answering.intent_automaton import ClauseIntentKind, parse_request_intent
+from firelens.answering.plain_time import human_time
 from firelens.contracts import (
     CoarseResolvedLocation,
     Freshness,
@@ -180,7 +181,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
                     ["incident:7"],
                 )
                 if "updated" in question.casefold():
-                    self.assertIn(timestamp.isoformat(), response.answer or "")
+                    self.assertIn(human_time(timestamp), response.answer or "")
                 if question == "How large is this fire?":
                     self.assertIn("123.4 hectares", response.answer or "")
 

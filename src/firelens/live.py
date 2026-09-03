@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 import math
 import time
@@ -33,61 +32,38 @@ from firelens.contracts import (
     freshness_for_observation,
 )
 from firelens.live_contracts import stale_observation_limitations
-from firelens.live_http import decoded_response_headers as _decoded_response_headers
-from firelens.live_http import official_flag as _official_flag
+from firelens.live_http import decoded_response_headers, envelope_params, official_flag
+from firelens.live_identity import feature_identity, record_ids
 from firelens.live_support import (
     DEFAULT_LAYER_DEFINITIONS,
+    LAYER_URLS,
     OFFICIAL_FALLBACK_URLS,
     WGS84_GEOD,
+    CacheEntry,
+    LayerDefinition,
+    LiveDataErrorKind,
+    LiveDataUnavailable,
     _BBox,
     _CacheKey,
+    authority,
     bc_region_entry,
+    geojson_crs_is_wgs84,
+    geometry_relation,
+    map_geometry_state,
+    property_value,
     regional_lookup_limitations,
-)
-from firelens.live_support import (
-    GEOCODER_ACCEPTED_PRECISIONS as GEOCODER_ACCEPTED_PRECISIONS,
-)
-from firelens.live_support import (
-    GEOCODER_MIN_SCORE as GEOCODER_MIN_SCORE,
-)
-from firelens.live_support import (
-    LAYER_URLS as _LAYER_URLS,
-)
-from firelens.live_support import (
-    CacheEntry as _CacheEntry,
-)
-from firelens.live_support import (
-    LayerDefinition as LayerDefinition,
-)
-from firelens.live_support import (
-    LiveDataErrorKind as LiveDataErrorKind,
-)
-from firelens.live_support import (
-    LiveDataUnavailable as LiveDataUnavailable,
-)
-from firelens.live_support import (
-    authority as _authority,
-)
-from firelens.live_support import (
-    geojson_crs_is_wgs84 as _geojson_crs_is_wgs84,
-)
-from firelens.live_support import (
-    geometry_relation as geometry_relation,
-)
-from firelens.live_support import (
-    map_geometry_state as map_geometry_state,
-)
-from firelens.live_support import (
-    property_value as _property,
-)
-from firelens.live_support import (
-    resolve_bc_location as _resolve_bc_location,
-)
-from firelens.live_support import (
-    timestamp as _timestamp,
+    resolve_bc_location,
+    timestamp,
 )
 
-LAYER_URLS = _LAYER_URLS
+__all__ = [
+    "LAYER_URLS",
+    "LayerDefinition",
+    "LiveDataErrorKind",
+    "LiveDataService",
+    "LiveDataUnavailable",
+    "geometry_relation",
+]
 
 
 class LiveDataService:
@@ -140,7 +116,7 @@ class LiveDataService:
         self.bbox_grid_degrees = bbox_grid_degrees
         self.max_upstream_concurrency = max_upstream_concurrency
         self.layer_definitions = dict(layer_definitions or DEFAULT_LAYER_DEFINITIONS)
-        self._cache: OrderedDict[_CacheKey, _CacheEntry] = OrderedDict()
+        self._cache: OrderedDict[_CacheKey, CacheEntry] = OrderedDict()
         self._cached_feature_count = 0
         self._locks = {kind: asyncio.Lock() for kind in LiveResultKind}
         self._upstream_semaphore = asyncio.Semaphore(max_upstream_concurrency)
@@ -171,13 +147,13 @@ class LiveDataService:
                     chunks.append(chunk)
                 return httpx.Response(
                     response.status_code,
-                    headers=_decoded_response_headers(response.headers),
+                    headers=decoded_response_headers(response.headers),
                     content=b"".join(chunks),
                     request=response.request,
                 )
 
     async def resolve_location(self, location: LocationInput) -> tuple[float, float]:
-        return await _resolve_bc_location(self._get, location)
+        return await resolve_bc_location(self._get, location)
 
     def _layer(self, kind: LiveResultKind) -> LayerDefinition:
         try:
@@ -217,13 +193,13 @@ class LiveDataService:
 
         return lower(west), lower(south), upper(east), upper(north)
 
-    def _cache_get(self, key: _CacheKey) -> _CacheEntry | None:
+    def _cache_get(self, key: _CacheKey) -> CacheEntry | None:
         entry = self._cache.get(key)
         if entry is not None:
             self._cache.move_to_end(key)
         return entry
 
-    def _cache_put(self, key: _CacheKey, entry: _CacheEntry) -> None:
+    def _cache_put(self, key: _CacheKey, entry: CacheEntry) -> None:
         previous = self._cache.pop(key, None)
         if previous is not None:
             self._cached_feature_count -= len(previous.features)
@@ -252,16 +228,8 @@ class LiveDataService:
             "resultOffset": offset,
             "resultRecordCount": 1000,
             "orderByFields": "OBJECTID ASC",
+            **envelope_params(bbox),
         }
-        if bbox is not None:
-            params.update(
-                {
-                    "geometry": ",".join(str(value) for value in bbox),
-                    "geometryType": "esriGeometryEnvelope",
-                    "inSR": "4326",
-                    "spatialRel": "esriSpatialRelIntersects",
-                }
-            )
         response = await self._get(
             f"{self._layer(kind).url}/query",
             params=params,
@@ -270,7 +238,7 @@ class LiveDataService:
         payload = response.json()
         if not isinstance(payload, dict) or not isinstance(payload.get("features"), list):
             raise LiveDataUnavailable(f"{kind.value} source returned an invalid schema")
-        if not _geojson_crs_is_wgs84(payload):
+        if not geojson_crs_is_wgs84(payload):
             raise LiveDataUnavailable(f"{kind.value} source declared an unsupported output CRS")
         features = payload["features"]
         if any(
@@ -281,6 +249,24 @@ class LiveDataService:
         ):
             raise LiveDataUnavailable(f"{kind.value} source returned malformed features")
         return features, bool(payload.get("exceededTransferLimit"))
+
+    async def _published_count(self, kind: LiveResultKind, *, bbox: _BBox | None) -> int | None:
+        """How many records the publisher says this query has, or None if it does not say."""
+
+        params = {
+            "where": "1=1",
+            "returnCountOnly": "true",
+            "f": "json",
+            **envelope_params(bbox),
+        }
+        try:
+            response = await self._get(f"{self._layer(kind).url}/query", params=params)
+            response.raise_for_status()
+            payload = response.json()
+        except (httpx.HTTPError, ValueError):
+            return None
+        count = payload.get("count") if isinstance(payload, dict) else None
+        return count if isinstance(count, int) and count >= 0 else None
 
     async def _source_metadata(self, kind: LiveResultKind) -> datetime:
         definition = self._layer(kind)
@@ -300,7 +286,7 @@ class LiveDataService:
         if not definition.required_fields.issubset(field_names):
             raise LiveDataUnavailable(f"{kind.value} source schema did not match")
         editing = payload.get("editingInfo")
-        updated = _timestamp(
+        updated = timestamp(
             editing.get("dataLastEditDate") if isinstance(editing, dict) else None
         )
         if updated is None:
@@ -312,7 +298,8 @@ class LiveDataService:
         kind: LiveResultKind,
         *,
         bbox: tuple[float, float, float, float] | None,
-    ) -> _CacheEntry:
+        previous: CacheEntry | None = None,
+    ) -> CacheEntry:
         source_updated_at, (page, exceeded) = await asyncio.gather(
             self._source_metadata(kind),
             self._fetch_page(kind, offset=0, bbox=bbox),
@@ -325,7 +312,7 @@ class LiveDataService:
         for page_number in range(self.max_pages):
             if page_number:
                 page, exceeded = await self._fetch_page(kind, offset=offset, bbox=bbox)
-            page_ids = tuple(self._feature_identity(kind, feature) for feature in page)
+            page_ids = tuple(feature_identity(kind, feature) for feature in page)
             if page and page_ids in seen_pages:
                 raise LiveDataUnavailable(f"{kind.value} source repeated a result page")
             seen_pages.add(page_ids)
@@ -363,7 +350,7 @@ class LiveDataService:
                 )
             features.extend(new_features)
             geometry_bytes += sum(new_geometry_sizes)
-            seen_feature_ids.update(self._feature_identity(kind, item) for item in new_features)
+            seen_feature_ids.update(feature_identity(kind, item) for item in new_features)
             if not exceeded and len(page) < 1000:
                 break
             if not page:
@@ -374,7 +361,21 @@ class LiveDataService:
                 f"{kind.value} source exceeded the pagination limit",
                 kind=LiveDataErrorKind.BOUNDED_LIMIT,
             )
-        entry = _CacheEntry(
+        # While BC Wildfire Service republishes a view, a page can come back
+        # empty although the publisher still counts its records (observed:
+        # offset 0 empty, offset 1000 full). A fetch that shrinks or empties is
+        # checked against the publisher's own count before it can mean "fewer
+        # fires": fewer rows than counted is an incomplete answer, never zero.
+        shrank = previous is not None and len(features) < len(previous.features)
+        if not features or shrank:
+            published = await self._published_count(kind, bbox=bbox)
+            if published is not None and len(features) < published:
+                raise LiveDataUnavailable(
+                    f"{kind.value} source returned {len(features)} of {published} "
+                    "published records",
+                    kind=LiveDataErrorKind.INVALID_RESPONSE,
+                )
+        entry = CacheEntry(
             fetched_monotonic=time.monotonic(),
             retrieved_at=datetime.now(UTC),
             source_updated_at=source_updated_at,
@@ -382,20 +383,12 @@ class LiveDataService:
         )
         return entry
 
-    @staticmethod
-    def _feature_identity(kind: LiveResultKind, feature: dict[str, Any]) -> str:
-        properties = feature["properties"]
-        object_id = _property(properties, "OBJECTID", "objectid", "GlobalID", "FIRE_NUMBER")
-        if object_id is not None:
-            return f"{kind.value}:{object_id}"
-        return hashlib.sha256(json.dumps(feature, sort_keys=True).encode("utf-8")).hexdigest()
-
     async def _features(
         self,
         kind: LiveResultKind,
         *,
         bbox: tuple[float, float, float, float] | None,
-    ) -> tuple[_CacheEntry, Freshness]:
+    ) -> tuple[CacheEntry, Freshness]:
         normalized_bbox = self._normalized_bbox(bbox)
         cache_key = (kind, normalized_bbox)
         cached = self._cache_get(cache_key)
@@ -412,7 +405,7 @@ class LiveDataService:
             ):
                 return cached, Freshness.FRESH
             try:
-                refreshed = await self._refresh(kind, bbox=normalized_bbox)
+                refreshed = await self._refresh(kind, bbox=normalized_bbox, previous=cached)
                 self._cache_put(cache_key, refreshed)
                 return refreshed, Freshness.FRESH
             except (
@@ -428,6 +421,8 @@ class LiveDataService:
                     <= self.stale_if_error_seconds
                 ):
                     return cached, Freshness.STALE
+                if isinstance(exc, LiveDataUnavailable):
+                    raise LiveDataUnavailable(str(exc), kind=exc.kind) from exc
                 raise LiveDataUnavailable(f"{kind.value} source is unavailable") from exc
 
     def _to_result(
@@ -435,6 +430,7 @@ class LiveDataService:
         kind: LiveResultKind,
         feature: dict[str, Any],
         *,
+        result_id: str,
         retrieved_at: datetime,
         freshness: Freshness,
         source_updated_at: datetime,
@@ -442,11 +438,6 @@ class LiveDataService:
     ) -> LiveResult:
         properties = feature["properties"]
         geometry = feature["geometry"]
-        object_id = _property(properties, "OBJECTID", "objectid", "GlobalID", "FIRE_NUMBER")
-        if object_id is None:
-            object_id = hashlib.sha256(
-                json.dumps(feature, sort_keys=True).encode("utf-8")
-            ).hexdigest()[:16]
         relation = GeometryRelation.UNKNOWN
         if location is not None:
             latitude, longitude, radius_km = location
@@ -456,22 +447,22 @@ class LiveDataService:
                 longitude=longitude,
                 radius_km=radius_km,
             )
-        record_updated = _timestamp(_property(properties, "DATE_MODIFIED"))
+        record_updated = timestamp(property_value(properties, "DATE_MODIFIED"))
         updated = record_updated or source_updated_at
-        size = _property(properties, "FIRE_SIZE_HECTARES", "CURRENT_SIZE", "SIZE_HA")
+        size = property_value(properties, "FIRE_SIZE_HECTARES", "CURRENT_SIZE", "SIZE_HA")
         observed_freshness = freshness_for_observation(
             freshness, source_updated_at=updated, retrieved_at=retrieved_at
         )
         return LiveResult(
-            result_id=f"{kind.value}:{object_id}",
+            result_id=result_id,
             kind=kind,
-            authority=_authority(kind),
+            authority=authority(kind),
             source_url=HttpUrl(self._layer(kind).url),
             source_updated_at=updated,
             retrieved_at=retrieved_at,
             freshness=observed_freshness,
             status=str(
-                _property(
+                property_value(
                     properties,
                     "FIRE_STATUS",
                     "ORDER_ALERT_STATUS",
@@ -483,7 +474,7 @@ class LiveDataService:
             name=(
                 str(raw_name).strip()
                 if (
-                    raw_name := _property(
+                    raw_name := property_value(
                         properties,
                         "INCIDENT_NAME",
                         "FIRE_NAME",
@@ -496,29 +487,32 @@ class LiveDataService:
             ),
             incident_number=(
                 str(value)
-                if (value := _property(properties, "FIRE_NUMBER", "INCIDENT_NUMBER"))
+                if (value := property_value(properties, "FIRE_NUMBER", "INCIDENT_NUMBER"))
                 is not None
                 else None
             ),
             size_hectares=float(size) if isinstance(size, (int, float)) else None,
             fire_centre=(
                 str(value)
-                if (value := _property(properties, "FIRE_CENTRE", "FIRE_CENTER")) is not None
+                if (value := property_value(properties, "FIRE_CENTRE", "FIRE_CENTER"))
+                is not None
                 else None
             ),
             fire_zone=(
                 str(value)
-                if (value := _property(properties, "FIRE_ZONE")) is not None
+                if (value := property_value(properties, "FIRE_ZONE")) is not None
                 else None
             ),
             issuer=(
                 str(value)
-                if (value := _property(properties, "ISSUING_AGENCY", "ISSUED_BY", "AGENCY"))
+                if (
+                    value := property_value(properties, "ISSUING_AGENCY", "ISSUED_BY", "AGENCY")
+                )
                 is not None
                 else None
             ),
-            fire_of_note=_official_flag(_property(properties, "FIRE_OF_NOTE_IND"))
-            or str(_property(properties, "FIRE_STATUS") or "").strip().casefold()
+            fire_of_note=official_flag(property_value(properties, "FIRE_OF_NOTE_IND"))
+            or str(property_value(properties, "FIRE_STATUS") or "").strip().casefold()
             == "fire of note",
             geometry_relation=relation,
             geometry=geometry,
@@ -541,7 +535,7 @@ class LiveDataService:
                 [],
                 LiveLayerStatus(
                     kind=kind,
-                    authority=_authority(kind),
+                    authority=authority(kind),
                     source_url=HttpUrl(source_definition.url),
                     available=False,
                     matching_result_count=0,
@@ -551,10 +545,14 @@ class LiveDataService:
             )
         results: list[LiveResult] = []
         skipped_invalid = False
-        for feature in entry.features:
+        # Identity is assigned over the whole fetch so duplicate official keys
+        # are numbered consistently, whichever rows are shown.
+        for feature, result_id in zip(
+            entry.features, record_ids(kind, entry.features), strict=True
+        ):
             properties = feature["properties"]
             status = str(
-                _property(
+                property_value(
                     properties,
                     "FIRE_STATUS",
                     "ORDER_ALERT_STATUS",
@@ -573,7 +571,7 @@ class LiveDataService:
             }:
                 continue
             if kind == LiveResultKind.EVACUATION:
-                event_type = str(_property(properties, "EVENT_TYPE") or "").casefold()
+                event_type = str(property_value(properties, "EVENT_TYPE") or "").casefold()
                 if event_type and "fire" not in event_type:
                     continue
             state = map_geometry_state(feature.get("geometry"), bounds)
@@ -584,6 +582,7 @@ class LiveDataService:
                 result = self._to_result(
                     kind,
                     feature,
+                    result_id=result_id,
                     retrieved_at=entry.retrieved_at,
                     freshness=freshness,
                     source_updated_at=entry.source_updated_at,
@@ -595,7 +594,7 @@ class LiveDataService:
             results,
             LiveLayerStatus(
                 kind=kind,
-                authority=_authority(kind),
+                authority=authority(kind),
                 source_url=HttpUrl(self._layer(kind).url),
                 available=True,
                 source_updated_at=entry.source_updated_at,

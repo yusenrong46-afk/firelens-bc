@@ -41,6 +41,7 @@ from firelens.answering.live_evacuation import (
     evacuation_answer,
     is_evacuation_record_question,
 )
+from firelens.answering.live_focus import focused_record_answer
 from firelens.answering.live_named_fire import (
     extracted_located_fire_name,
     requested_fire_identity,
@@ -48,7 +49,6 @@ from firelens.answering.live_named_fire import (
 from firelens.answering.live_record_intent import is_fire_geography_analysis
 from firelens.answering.live_sample import (
     official_fire_of_note,
-    rank_live_results,
     sample_live_results,
 )
 from firelens.contracts import (
@@ -61,6 +61,7 @@ from firelens.live_support import (
     annotated_distance_fields,
     geometry_relation,
 )
+from firelens.understanding.reference import ordinal_label, ordinal_reference
 
 _NEARBY_RADIUS_KM = 50.0
 
@@ -104,12 +105,6 @@ _UNKNOWN_SELECTED_ASK = re.compile(
     re.IGNORECASE,
 )
 _PRECISE_COORD = re.compile(r"\b-?\d{1,3}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}\b")
-_ORDINAL_FIRE = re.compile(
-    r"\b(?:the\s+)?(?P<rank>first|second|third|1st|2nd|3rd)\s+"
-    r"(?:one|fire|wildfire|incident|record)\b",
-    re.IGNORECASE,
-)
-_ORDINAL_RANK = {"first": 0, "1st": 0, "second": 1, "2nd": 1, "third": 2, "3rd": 2}
 
 
 def official_information_prefix(records: Sequence[LiveResult]) -> str:
@@ -221,15 +216,17 @@ def filter_requested_named_fire_results(
     queried = requested_fire_identity(request)
     if queried is None:
         return list(records)
-    normalized_query = _normalized_record_name(queried)
-    query_variants = {
-        normalized_query,
-        normalized_query.removesuffix(" fire").removesuffix(" wildfire"),
-    }
+
+    def variants(value: str) -> set[str]:
+        # "Creek" and "Creek Fire" name the same record.
+        normalized = _normalized_record_name(value)
+        return {normalized, normalized.removesuffix(" fire").removesuffix(" wildfire")}
+
+    query_variants = variants(queried)
 
     def normalized_identities(item: LiveResult) -> set[str]:
         values = (official_display_name(item), item.name or "", item.incident_number or "")
-        return {_normalized_record_name(value) for value in values if value}
+        return set().union(*(variants(value) for value in values if value))
 
     exact = [item for item in records if normalized_identities(item) & query_variants]
     if exact:
@@ -319,11 +316,11 @@ def official_analysis_answer(
                 f"{official_display_name(matched)}, status {matched.status}."
             )
         return f"No fetched official record is named {queried}."
-    ordinal = _ORDINAL_FIRE.search(request.question)
+    ordinal = ordinal_reference(request.question)
     if ordinal is not None:
         if selected_binding:
             return None
-        return _ordinal_record(records, ordinal.group("rank"))
+        return _ordinal_record(records, ordinal)
     has_incident_records = any(item.kind == LiveResultKind.INCIDENT for item in records)
     has_evacuation_records = any(item.kind == LiveResultKind.EVACUATION for item in records)
     mixed_fire_lookup = bool(
@@ -430,46 +427,7 @@ def compose_official_answer(
                 "establish the fire's cause, future spread, local safety, or a personal "
                 "evacuation decision."
             )
-        if is_freshness_question(request.question):
-            return (
-                f"Freshness: the official source updated {official_display_name(selected)} at "
-                f"{selected.source_updated_at.isoformat()}. FireLens retrieved that record "
-                f"at {selected.retrieved_at.isoformat()}. These are separate clocks."
-            )
-        if (
-            "source" in lowered
-            or "reported" in lowered
-            or "published" in lowered
-            or "updated" in lowered
-        ):
-            timestamp = selected.source_updated_at.isoformat()
-            freshness = freshness_language.freshness_value(selected.freshness)
-            freshness_clause = (
-                f" Record freshness: {freshness}." if freshness is not None else ""
-            )
-            return (
-                f"Official source for {official_display_name(selected)}: "
-                f"{selected.authority}. The official record timestamp is "
-                f"{timestamp}.{freshness_clause}"
-            )
-        if "size" in lowered or "hectare" in lowered or "how large" in lowered:
-            status_clause = (
-                f" Its official status is {selected.status}." if "status" in lowered else ""
-            )
-            if selected.size_hectares is None:
-                return (
-                    f"The official record for {official_display_name(selected)} "
-                    f"does not provide a size value.{status_clause}"
-                )
-            return (
-                f"The official record reports {official_display_name(selected)} at "
-                f"{selected.size_hectares:g} hectares.{status_clause}"
-            )
-        return (
-            f"{official_display_name(selected)}: {selected.status}. "
-            "Open the selected official record for the fields its publishing "
-            "authority provides."
-        )
+        return focused_record_answer(request, selected)
     narrate_incidents = any(
         item.kind == LiveResultKind.INCIDENT for item in records
     ) and not re.search(
@@ -478,8 +436,7 @@ def compose_official_answer(
     )
     if narrate_incidents:
         records = [item for item in records if item.kind != LiveResultKind.PERIMETER]
-    ranked = rank_live_results(records)
-    sample = sample_live_results(ranked)
+    sample = sample_live_results(records)
     parts: list[str] = []
     for item in sample:
         line = f"{official_display_name(item)}: {item.status}"
@@ -508,11 +465,12 @@ def compose_official_answer(
     )
 
 
-def _ordinal_record(records: Sequence[LiveResult], rank: str) -> str:
+def _ordinal_record(records: Sequence[LiveResult], index: int) -> str:
+    """Count through this lookup's incidents when no shown list was sent."""
+
     incidents = [item for item in records if item.kind == LiveResultKind.INCIDENT] or list(
         records
     )
-    index = _ORDINAL_RANK[rank.casefold()]
     if index >= len(incidents):
         return (
             "Select a mapped official record before asking about that position in the "
@@ -525,7 +483,7 @@ def _ordinal_record(records: Sequence[LiveResult], rank: str) -> str:
         else ""
     )
     return (
-        f"{official_display_name(chosen)} is the {rank.casefold()} official incident "
+        f"{official_display_name(chosen)} is the {ordinal_label(index)} official incident "
         f"in this lookup, status {chosen.status}.{distance}"
     )
 

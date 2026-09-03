@@ -131,9 +131,10 @@ def rewrite_manifest(
         # Only hashes moved: substitute them in place so the hand-formatted
         # ID lists keep their layout and the diff stays reviewable.
         for key, value in scalars.items():
+            replacement = json.dumps(value).replace("\\", "\\\\")
             text = re.sub(
                 rf'("{re.escape(key)}":\s*)("[^"]*"|\d+)',
-                lambda match, value=value: match.group(1) + json.dumps(value),
+                rf"\g<1>{replacement}",
                 text,
                 count=1,
             )

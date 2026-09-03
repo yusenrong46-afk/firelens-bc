@@ -1172,7 +1172,10 @@ def test_same_name_different_ids_are_not_merged() -> None:
                 layers=(LiveResultKind.INCIDENT,)
             )
 
-        assert [item.result_id for item in response.results] == ["incident:11", "incident:12"]
+        assert [item.result_id for item in response.results] == [
+            "incident:K11111",
+            "incident:K22222",
+        ]
         assert {item.name for item in response.results} == {"Ridge Fire"}
 
     asyncio.run(run())
@@ -1208,11 +1211,57 @@ def test_stable_source_identifier_survives_rename() -> None:
                 layers=(LiveResultKind.INCIDENT,)
             )
 
-        assert [item.result_id for item in response.results] == ["incident:44"]
+        assert [item.result_id for item in response.results] == ["incident:K51402"]
         assert response.results[0].name == "Renamed Creek"
         assert response.results[0].incident_number == "K51402"
 
     asyncio.run(run())
+
+
+def test_record_identity_survives_a_publisher_objectid_rebuild() -> None:
+    """The same fire keeps its id when BCWS republishes the view with new OBJECTIDs."""
+    from firelens.live_identity import record_ids
+
+    before = [
+        {"properties": {"OBJECTID": 1201, "FIRE_NUMBER": "K52125"}, "geometry": None},
+        {"properties": {"OBJECTID": 1202, "FIRE_NUMBER": "K52126"}, "geometry": None},
+    ]
+    after = [
+        {"properties": {"OBJECTID": 1111, "FIRE_NUMBER": "K52125"}, "geometry": None},
+        {"properties": {"OBJECTID": 1112, "FIRE_NUMBER": "K52126"}, "geometry": None},
+    ]
+    assert record_ids(LiveResultKind.INCIDENT, before) == record_ids(
+        LiveResultKind.INCIDENT, after
+    )
+    assert record_ids(LiveResultKind.INCIDENT, before) == ("incident:K52125", "incident:K52126")
+
+
+def test_evacuation_identity_is_the_official_description_and_never_merges_rows() -> None:
+    from firelens.live_identity import record_ids
+
+    def row(object_id: int, status: str, agency: str = "Squamish-Lillooet Regional District"):
+        return {
+            "properties": {
+                "OBJECTID": object_id,
+                "EMRG_OAA_SYSID": object_id,
+                "EVENT_NAME": "Pear Lake Wildfire",
+                "ORDER_ALERT_NAME": "Pear Lake Wildfire",
+                "ISSUING_AGENCY": agency,
+                "ORDER_ALERT_STATUS": status,
+            },
+            "geometry": None,
+        }
+
+    first = record_ids(
+        LiveResultKind.EVACUATION, [row(33, "Alert"), row(36, "Order"), row(37, "Order")]
+    )
+    republished = record_ids(
+        LiveResultKind.EVACUATION, [row(7, "Alert"), row(8, "Order"), row(9, "Order")]
+    )
+    assert first == republished
+    assert len(set(first)) == 3  # alert and order polygons for one agency stay distinct rows
+    assert first[1] != first[2] and first[2].endswith("#2")
+    assert all(item.startswith("evacuation:") for item in first)
 
 
 def test_compiled_live_distance_includes_basis() -> None:

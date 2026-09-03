@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from firelens.contracts import QueryRequest
-from firelens.understanding.place import DOMAIN_NOUNS, FUNCTION_WORDS
+from firelens.understanding.place_vocabulary import DOMAIN_NOUNS, FUNCTION_WORDS
 
 _LOCATED_NAMED_FIRE = re.compile(
     r"\bwhere(?:\s+is|['’]s)\s+(?:the\s+)?"

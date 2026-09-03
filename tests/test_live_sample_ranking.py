@@ -9,7 +9,7 @@ from firelens.answering.input_clarity import (
     is_low_substance_question,
     missing_source_antecedent,
 )
-from firelens.answering.live_sample import official_display_label, rank_live_results
+from firelens.answering.live_sample import display_order, official_display_label
 from firelens.contracts import (
     Freshness,
     GeometryRelation,
@@ -18,6 +18,7 @@ from firelens.contracts import (
     QueryRequest,
 )
 from firelens.guidance_capabilities import resolve_capability
+from firelens.live_contracts import bind_distance_derivation
 
 
 def _record(**updates: object) -> LiveResult:
@@ -60,13 +61,59 @@ def test_priority_sample_puts_fire_of_note_and_out_of_control_first() -> None:
     )
     shuffled = [held, ooc, note]
     Random(7).shuffle(shuffled)
-    ranked = rank_live_results(shuffled)
+    ranked = display_order(shuffled)
     assert [item.result_id for item in ranked] == [
         "incident:note",
         "incident:ooc",
         "incident:held",
     ]
     assert official_display_label(held) == "Unnamed incident N71932"
+
+
+def test_lookup_measured_from_a_place_lists_nearest_first_across_kinds() -> None:
+    """The order a person reads is the order "the second one" counts through."""
+
+    def located(result_id: str, km: float | None, **updates: object) -> LiveResult:
+        record = _record(
+            result_id=result_id, incident_number=result_id.split(":")[1], **updates
+        )
+        if km is None:
+            return record
+        derivation = bind_distance_derivation(
+            result_id=result_id,
+            distance_km=km,
+            distance_basis="incident_point",
+            calculated_at=record.retrieved_at,
+            input_freshness=record.freshness,
+        )
+        return record.model_copy(
+            update={
+                "distance_km": km,
+                "distance_basis": "incident_point",
+                "distance_derivation": derivation,
+            }
+        )
+
+    far_note = located("incident:K1", 45.0, fire_of_note=True, size_hectares=25_000.0)
+    near_small = located("incident:K2", 12.0, size_hectares=0.5)
+    unlocated = located("incident:K3", None, size_hectares=900.0)
+    perimeter = _record(
+        result_id="perimeter:K1",
+        kind=LiveResultKind.PERIMETER,
+        incident_number="K1",
+        geometry={
+            "type": "Polygon",
+            "coordinates": [[[-119, 49], [-118, 49], [-118, 50], [-119, 49]]],
+        },
+    )
+    shuffled = [unlocated, perimeter, far_note, near_small]
+    Random(3).shuffle(shuffled)
+    assert [item.result_id for item in display_order(shuffled)] == [
+        "incident:K2",
+        "incident:K1",
+        "incident:K3",
+        "perimeter:K1",
+    ]
 
 
 def test_ranking_is_deterministic_under_shuffle() -> None:
@@ -78,11 +125,11 @@ def test_ranking_is_deterministic_under_shuffle() -> None:
     ]
     records[3] = records[3].model_copy(update={"fire_of_note": True, "name": "Note Fire"})
     records[8] = records[8].model_copy(update={"status": "Out of Control", "name": "OOC Fire"})
-    first = [item.result_id for item in rank_live_results(records)]
+    first = [item.result_id for item in display_order(records)]
     for seed in range(5):
         copy = list(records)
         Random(seed).shuffle(copy)
-        assert [item.result_id for item in rank_live_results(copy)] == first
+        assert [item.result_id for item in display_order(copy)] == first
 
 
 def test_evacuation_mistake_paraphrases_resolve_same_capability() -> None:

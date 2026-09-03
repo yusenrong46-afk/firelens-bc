@@ -17,28 +17,6 @@ type LiveResultReference = {
   incident_number?: string | null;
 };
 
-const ORDINAL_WORDS: Record<string, number> = {
-  first: 0,
-  second: 1,
-  third: 2,
-};
-const ORDINAL_TOKEN = "(?:first|second|third|[1-9]\\d*(?:st|nd|rd|th)?)";
-const ORDINAL_REFERENCE = new RegExp(
-  `(?:\\b(?:the\\s+)?(${ORDINAL_TOKEN})\\s+(?:one|fire|wildfire|record|incident|perimeter|evacuation)s?\\b|\\b(?:the\\s+)?(${ORDINAL_TOKEN})(?=\\s*(?:[?.!]|$))|\\b(?:number|no\\.?)\\s*#?\\s*(${ORDINAL_TOKEN})\\b|#\\s*(${ORDINAL_TOKEN})\\b)`,
-  "i",
-);
-
-function ordinalIndex(question: string): number | undefined {
-  const match = ORDINAL_REFERENCE.exec(question);
-  if (!match) return undefined;
-  const token = [match[1], match[2], match[3], match[4]].find(Boolean);
-  if (!token) return undefined;
-  const normalized = token.toLowerCase();
-  if (normalized in ORDINAL_WORDS) return ORDINAL_WORDS[normalized];
-  const numeric = Number.parseInt(normalized.replace(/(?:st|nd|rd|th)$/i, ""), 10);
-  return Number.isSafeInteger(numeric) && numeric > 0 ? numeric - 1 : undefined;
-}
-
 function normalizedIdentity(value: string): string {
   return value.toLocaleLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
 }
@@ -74,11 +52,8 @@ export function selectedResultIdForQuestion(
   const trimmed = question.trim();
   const explicit = explicitVisibleResultId(trimmed, availableResults);
   if (explicit) return explicit;
-  const ordinal = ordinalIndex(trimmed);
-  // An explicit ordinal takes precedence over a prior selection. If it cannot
-  // be resolved in the visible roster, fail closed rather than falling back to
-  // a stale selected record.
-  if (ordinal !== undefined) return availableResults[ordinal]?.result_id;
+  // Positions ("the second one") are resolved by the server against the roster
+  // sent as visible_live_result_ids, so the client never guesses them here.
   if (!selectedId) return undefined;
   if (DEICTIC_FOLLOW_UP.test(trimmed)) return selectedId;
   if (REFORMAT_FOLLOW_UP.test(trimmed)) return selectedId;

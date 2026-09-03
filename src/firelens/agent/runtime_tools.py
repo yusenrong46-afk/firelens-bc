@@ -21,6 +21,7 @@ from firelens.answering.live_analysis import (
 from firelens.answering.live_analysis_distance import ranked_live_results_for_request
 from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.live_record_intent import is_fire_geography_analysis
+from firelens.answering.live_sample import display_order
 from firelens.answering.location_intent import (
     coarse_location_from_question,
     is_national_scope_question,
@@ -216,6 +217,9 @@ def _extend_unique(packet: AgentPacket, results: list[Any]) -> None:
             continue
         packet.live_results.append(item)
         seen.add(item.result_id)
+    # Fix the order here so the model's facts, the prose, the cards and the
+    # roster a person counts through all agree.
+    packet.live_results[:] = display_order(packet.live_results)
 
 
 async def _fetch_selected(

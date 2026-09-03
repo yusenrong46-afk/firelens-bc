@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from uuid import uuid4
 
 from firelens.answering.live_analysis import closest_locatable_result, official_display_name
+from firelens.answering.live_focus import focused_record_answer
 from firelens.contracts import (
     AskResponse,
     LiveResult,
@@ -55,6 +56,8 @@ def distance_answer(request: QueryRequest, records: Sequence[LiveResult]) -> str
     chosen: LiveResult | None = None
     if selected_id:
         chosen = next((item for item in records if item.result_id == selected_id), None)
+        if chosen is not None:
+            return focused_record_answer(request, chosen)
     else:
         chosen = closest_locatable_result(request.question, records)
         if chosen is None:

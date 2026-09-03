@@ -20,6 +20,7 @@ from firelens.answering.live_analysis import (
     compose_official_answer,
     filter_requested_named_fire_results,
 )
+from firelens.answering.plain_time import human_time
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
     AskResponse,
@@ -774,27 +775,80 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertNotIn("Ridge Fire", execution.response.answer or "")
 
-    async def test_selection_overrides_named_closest_and_ordinal_record_choice(self) -> None:
+    async def test_a_fire_named_in_the_turn_moves_the_focus_off_the_stale_selection(
+        self,
+    ) -> None:
+        """The person's words outrank map state: naming Creek Fire is about Creek Fire."""
+
         selected = _fire(result_id="incident:7", name="Selected Fire", size_hectares=12.0)
         other = _fire(result_id="incident:8", name="Creek Fire", size_hectares=2.0)
         agent = _agent([selected, other])
 
-        for question in (
-            "Tell me about Creek Fire",
-            "Which fire is closest to Kelowna?",
-            "What about the second fire?",
-        ):
-            with self.subTest(question=question):
-                execution = await agent.answer(
-                    QueryRequest(
-                        question=question,
-                        context=MapContext(selected_live_result_id="incident:7"),
-                    )
-                )
+        execution = await agent.answer(
+            QueryRequest(
+                question="Tell me about Creek Fire",
+                context=MapContext(selected_live_result_id="incident:7"),
+            )
+        )
 
-                self.assertEqual(execution.response.selected_live_result_id, "incident:7")
-                self.assertIn("Selected Fire", execution.response.answer or "")
-                self.assertNotIn("Creek Fire", execution.response.answer or "")
+        self.assertEqual(execution.response.selected_live_result_id, "incident:8")
+        self.assertIn("Creek Fire", execution.response.answer or "")
+        self.assertNotIn("Selected Fire", execution.response.answer or "")
+
+    async def test_closest_fire_question_is_answered_from_the_roster_not_the_selection(
+        self,
+    ) -> None:
+        selected = _fire(result_id="incident:7", name="Selected Fire", size_hectares=12.0)
+        near = _fire(result_id="incident:8", name="Creek Fire", size_hectares=2.0)
+        agent = _agent([selected, near])
+
+        execution = await agent.answer(
+            QueryRequest(
+                question="Which fire is closest to Kelowna?",
+                context=MapContext(selected_live_result_id="incident:7"),
+            )
+        )
+
+        self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
+        self.assertIn(AgentTool.LIST_OFFICIAL_FIRES, execution.tools)
+        self.assertNotIn(AgentTool.GET_OFFICIAL_FIRE, execution.tools)
+
+    async def test_ordinal_follows_the_shown_list_not_the_selection(self) -> None:
+        """FL200-108: after focusing one record, "the second one" is still the list's second."""
+
+        first = _fire(result_id="incident:7", name="Selected Fire", size_hectares=12.0)
+        second = _fire(result_id="incident:8", name="Creek Fire", size_hectares=2.0)
+        agent = _agent([first, second])
+
+        execution = await agent.answer(
+            QueryRequest(
+                question="What about the second fire?",
+                context=MapContext(
+                    selected_live_result_id="incident:7",
+                    visible_live_result_ids=["incident:7", "incident:8"],
+                ),
+            )
+        )
+
+        self.assertEqual(execution.response.selected_live_result_id, "incident:8")
+        self.assertIn("Creek Fire", execution.response.answer or "")
+        self.assertNotIn("Selected Fire", execution.response.answer or "")
+
+    async def test_ordinal_with_a_selection_but_no_list_is_an_explicit_clarification(
+        self,
+    ) -> None:
+        agent = _agent([_fire(result_id="incident:7", name="Selected Fire")])
+
+        execution = await agent.answer(
+            QueryRequest(
+                question="What about the second fire?",
+                context=MapContext(selected_live_result_id="incident:7"),
+            )
+        )
+
+        answer = execution.response.answer or ""
+        self.assertIn("does not have the list", answer)
+        self.assertNotIn("Selected Fire", answer)
 
     async def test_closest_near_a_place_names_a_fetched_fire(self) -> None:
         agent = _agent([_fire(result_id="incident:7", name="Mountain Fire")])
@@ -910,7 +964,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         answer = execution.response.answer or ""
         self.assertIn("Quilpituk Creek", answer)
         self.assertIn("K51402", answer)
-        self.assertIn("Point", answer)
+        self.assertIn("marked on the map as a point", answer)
         self.assertNotIn("-119.5", answer)
         self.assertNotIn("locatable geometry", answer.casefold())
 
@@ -1482,7 +1536,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
                 answer = execution.response.answer or ""
                 self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
-                self.assertNotIn("Select a mapped fire", answer)
+                self.assertNotIn("not sure which record", answer)
                 self.assertIn("Vernon Perimeter", answer)
                 self.assertRegex(answer, r"\d+(?:\.\d+)? km")
 
@@ -1493,7 +1547,29 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(execution.response.response_mode, ResponseMode.ABSTENTION)
-        self.assertIn("Select a mapped fire", execution.response.answer or "")
+        self.assertIn("not sure which record", execution.response.answer or "")
+        self.assertIn("Select a fire on the map", execution.response.answer or "")
+
+    async def test_selected_record_lost_to_an_unavailable_layer_is_not_reported_as_gone(
+        self,
+    ) -> None:
+        agent = FireLensAgent(
+            cast(Any, SilentStatic()),
+            LiveAnswerCoordinator(cast(Any, UnavailableLiveService())),
+        )
+        execution = await agent.answer(
+            QueryRequest(
+                question="How big is it?",
+                context=MapContext(selected_live_result_id="incident:K51490"),
+            )
+        )
+
+        answer = execution.response.answer or ""
+        self.assertEqual(execution.response.response_mode, ResponseMode.ABSTENTION)
+        self.assertIn("could not load that record", answer)
+        self.assertIn("not an all-clear", answer)
+        self.assertNotIn("no longer", answer)
+        self.assertEqual(execution.response.unavailable_layers, [LiveResultKind.INCIDENT])
 
     async def test_selected_id_missing_from_nearby_page_still_resolves(self) -> None:
         selected = _fire(result_id="incident:101", name="Far Fire")
@@ -2441,7 +2517,8 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(packet.retrieved_at, _timestamp())
 
     async def test_selected_update_question_uses_packet_timestamp(self) -> None:
-        agent = _agent([_fire(result_id="incident:7", name="Mountain Fire")])
+        fire = _fire(result_id="incident:7", name="Mountain Fire")
+        agent = _agent([fire])
         execution = await agent.answer(
             QueryRequest(
                 question="When was this fire last updated?",
@@ -2449,7 +2526,10 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             )
         )
 
-        self.assertIn("2026-08-15", execution.response.answer or "")
+        answer = execution.response.answer or ""
+        self.assertIn(human_time(fire.source_updated_at), answer)
+        self.assertIn("BC Wildfire Service last updated this record", answer)
+        self.assertNotIn(fire.source_updated_at.isoformat(), answer)
 
     async def test_selected_status_and_size_question_keeps_both_requested_fields(self) -> None:
         agent = _agent(
@@ -2476,7 +2556,8 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("Select a mapped official record", answer)
 
     async def test_selected_information_update_question_keeps_source_freshness(self) -> None:
-        agent = _agent([_fire(result_id="incident:7", name="Mountain Fire")])
+        fire = _fire(result_id="incident:7", name="Mountain Fire")
+        agent = _agent([fire])
         execution = await agent.answer(
             QueryRequest(
                 question="When was that information last updated?",
@@ -2486,9 +2567,25 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
         answer = execution.response.answer or ""
         self.assertEqual(execution.response.selected_live_result_id, "incident:7")
-        self.assertIn("2026-08-15", answer)
-        self.assertIn("fresh", answer.casefold())
+        self.assertIn(human_time(fire.source_updated_at), answer)
+        self.assertIn(" ago", answer)
         self.assertNotIn("Select a mapped official record", answer)
+
+    async def test_stale_selected_record_says_it_is_a_cached_copy(self) -> None:
+        fire = _fire(result_id="incident:7", name="Mountain Fire").model_copy(
+            update={"freshness": Freshness.STALE}
+        )
+        agent = _agent([fire])
+        execution = await agent.answer(
+            QueryRequest(
+                question="Is it still burning?",
+                context=MapContext(selected_live_result_id="incident:7"),
+            )
+        )
+
+        answer = execution.response.answer or ""
+        self.assertIn("cached copy", answer)
+        self.assertNotIn("current", answer.casefold())
 
     def test_kilometre_rail_allows_radius_phrasing(self) -> None:
         for answer in (

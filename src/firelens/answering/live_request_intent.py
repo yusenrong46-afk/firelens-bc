@@ -1,4 +1,11 @@
-"""Deterministic recognition and rendering for live-record follow-up requests."""
+"""Requests about one live record, expressed over the shared focus reading.
+
+`firelens.understanding.focus` reads whether a turn is about the record in
+focus and which attribute it asks. This module binds that reading to the
+request (is a record selected? is a place stated?) for the planner, the agent
+loop and the composers, and keeps the one safety distinction that is not an
+attribute: a universal evacuation-distance rule is guidance, not geometry.
+"""
 
 from __future__ import annotations
 
@@ -6,12 +13,13 @@ import re
 from collections.abc import Sequence
 
 from firelens.answering.intent import continues_prior_live_place
-from firelens.answering.intent_conversation import is_selected_record_followup
 from firelens.answering.live_analysis import official_display_name
+from firelens.answering.live_focus import focused_record_answer
 from firelens.answering.live_named_fire import requested_fire_identity
 from firelens.answering.location_intent import coarse_location_from_question
 from firelens.contracts import AggregateFreshness, LiveResult, LiveResultKind, QueryRequest
 from firelens.freshness_language import official_information_prefix
+from firelens.understanding.focus import FocusAttribute, focus_reference
 
 _DISTANCE_PATTERN = re.compile(
     r"\b(?:how far|how close|distance|kilomet(?:er|re)s?|miles?)\b", re.IGNORECASE
@@ -49,133 +57,24 @@ _EXACT_UNIVERSAL_DISTANCE_REQUEST = re.compile(
     r"evacuation\s+(?:distance|radius)\b",
     re.IGNORECASE,
 )
-_SELECTED_ENTITY_PATTERN = re.compile(
-    r"\b(?:this|that|selected)\s+(?:fire|wildfire|incident|perimeter|record)\b",
-    re.IGNORECASE,
-)
 _SELECTED_LOCATION_PATTERN = re.compile(
     r"^\s*where(?:\s+is|['’]s)\s+(?:the\s+)?(?P<identity>[A-Za-z0-9'’.-]+"
     r"(?:\s+[A-Za-z0-9'’.-]+){0,8})[?.!]*\s*$",
+    re.IGNORECASE,
+)
+_COUNT_PATTERN = re.compile(
+    r"\bhow many\b.{0,60}\b(?:fires?|wildfires?)(?:\s+records?)?\b",
+    re.IGNORECASE,
+)
+_CLOSEST_RATIONALE = re.compile(
+    r"\bwhy\b.{0,80}\b(?:this|that|selected)\s+"
+    r"(?:fire|wildfire|incident|record)\b.{0,80}\b(?:closest|nearest)\b",
     re.IGNORECASE,
 )
 
 
 def _normalized_record_identity(value: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9]+", " ", value.casefold()).split())
-
-
-_SELECTED_ATTRIBUTE_PATTERN = re.compile(
-    r"\b(?:status|happening|details?|size|large|big|hectares?|source|publisher|dataset|"
-    r"updated|updates?|update time|update timestamp|perimeter|map|location|position)\b",
-    re.IGNORECASE,
-)
-_SELECTED_UNSUPPORTED_PATTERN = re.compile(
-    r"\b(?:why|cause|caused|start(?:ed)?|ignition|will|predict(?:ed|ion)?|forecast|"
-    r"reach|arrive|spread to|contained?|controlled?|go out)\b",
-    re.IGNORECASE,
-)
-_SELECTED_PRONOUN_UNSUPPORTED_PATTERN = re.compile(
-    r"^\s*(?:"
-    r"(?:when|why)\s+did\s+it\s+start|"
-    r"what\s+caused\s+it|"
-    r"when\s+will\s+it\s+(?:reach|arrive|spread|be\s+contained|"
-    r"be\s+controlled|go\s+out)\b.*|"
-    r"will\s+it\s+(?:reach|arrive|spread|be\s+contained|be\s+controlled|"
-    r"go\s+out)\b.*|"
-    r"is\s+it\s+going\s+to\s+(?:reach|arrive|spread)\b.*"
-    r")[?!.]*\s*$",
-    re.IGNORECASE,
-)
-_SELECTED_LIVE_ELLIPTICAL = re.compile(
-    r"^\s*(?:"
-    r"(?:what|which)\s+(?:source|publisher|dataset)\s+(?:reported|published)\s+it|"
-    r"who\s+(?:reported|published)\s+it|"
-    r"what(?:'s|\s+is)\s+its\s+"
-    r"(?:(?:present|current|latest)\s+)?(?:status|size|source|perimeter|location)"
-    r"(?:\s+and\s+(?:(?:present|current|latest)\s+)?"
-    r"(?:status|size|source|perimeter|location))?|"
-    r"how\s+(?:large|big)\s+is\s+it|"
-    r"when\s+was\s+(?:it|that\s+information)(?:\s+last)?\s+updated|"
-    r"(?:what|any)\s+updates?(?:\s+on\s+it)?|"
-    r"(?:and\s+)?(?:the\s+)?(?:perimeter|map|location)"
-    r")[?!.]*\s*$",
-    re.IGNORECASE,
-)
-_SELECTED_DEICTIC_STATUS = re.compile(
-    r"^\s*is\s+it\s+(?:still\s+)?(?:burning|active)[?!.]*\s*$",
-    re.IGNORECASE,
-)
-_SELECTED_DEICTIC_OFFICIAL_DETAILS = re.compile(
-    r"^\s*what\s+official\s+(?:details?|information)\s+(?:are|is)\s+"
-    r"(?:on|for)\s+it[?!.]*\s*$",
-    re.IGNORECASE,
-)
-_SELECTED_DISTANCE_ELLIPTICAL = re.compile(
-    r"^\s*(?:how\s+(?:far|close)(?:\s+away)?\s+is\s+it"
-    r"(?:\s+(?:from|to)\s+[a-z][a-z .'-]{1,80})?|"
-    r"(?:what(?:'s|\s+is)\s+(?:the\s+)?)?distance\s+from\s+"
-    r"[a-z][a-z .'-]{1,80}?\s+to\s+it)[?!.]*\s*$",
-    re.IGNORECASE,
-)
-_SOURCE_PATTERN = re.compile(
-    r"\b(?:what|which|who|where).{0,30}\b(?:source|reported|published|dataset)\b|"
-    r"\b(?:source|publisher|dataset)\b",
-    re.IGNORECASE,
-)
-_UPDATED_PATTERN = re.compile(
-    r"\b(?:when\s+(?:was|is)\b.{0,100}\bupdated|"
-    r"last updated|source updated|record updated|update time|update timestamp)\b",
-    re.IGNORECASE,
-)
-_SIZE_PATTERN = re.compile(r"\b(?:how (?:large|big)|size|hectares?|ha)\b", re.I)
-_COUNT_PATTERN = re.compile(
-    r"\bhow many\b.{0,60}\b(?:fires?|wildfires?)(?:\s+records?)?\b",
-    re.IGNORECASE,
-)
-_ORDINAL_RECORD_PATTERN = re.compile(
-    r"\b(?:the\s+)?(?:first|second|third|1st|2nd|3rd)\s+"
-    r"(?:one|fire|wildfire|incident|record)\b",
-    re.IGNORECASE,
-)
-_CLOSEST_RECORD_PATTERN = re.compile(r"\b(?:closest|nearest)\b", re.IGNORECASE)
-_SELECTED_CLOSEST_RATIONALE = re.compile(
-    r"\bwhy\b.{0,80}\b(?:this|that|selected)\s+"
-    r"(?:fire|wildfire|incident|record)\b.{0,80}\b(?:closest|nearest)\b",
-    re.IGNORECASE,
-)
-_SELECTED_UNKNOWN = re.compile(
-    r"\b(?:what|which)\b.{0,80}\b(?:this|that|selected)\s+"
-    r"(?:fire|wildfire|incident|record)\b.{0,80}"
-    r"\b(?:uncertain|not\s+certain|unknown|not\s+known)\b",
-    re.IGNORECASE,
-)
-_SELECTED_REFORMAT = re.compile(
-    r"^\s*(?:please\s+)?(?:give|show|put)\s+(?:me\s+)?(?:the\s+)?"
-    r"answer\s+first(?:,?\s+then\s+(?:the\s+)?evidence)?[.!?]*\s*$",
-    re.IGNORECASE,
-)
-_SINGULAR_STATUS_PATTERN = re.compile(
-    r"\b(?:what(?:'s|\s+is)|is)\s+(?:the\s+)?status\s+(?:of\s+)?"
-    r"(?:this|that|the|a|an|it|its)\s+(?:fire|wildfire|incident|record)\b|"
-    r"\b(?:this|that|the|a|an)\s+(?:fire|wildfire|incident|record)\s+status\b|"
-    r"\bwhat(?:'s|\s+is)\s+its\s+status\b",
-    re.IGNORECASE,
-)
-_SINGULAR_SIZE_PATTERN = re.compile(
-    r"\b(?:how\s+(?:large|big)\s+is|what(?:'s|\s+is)\s+(?:the\s+)?size\s+of)\s+"
-    r"(?:this|that|the|a|an|it|its)\s+(?:fire|wildfire|incident|record)\b|"
-    r"\bhow\s+(?:large|big)\s+is\s+it\b|"
-    r"\bwhat(?:'s|\s+is)\s+its\s+size\b",
-    re.IGNORECASE,
-)
-
-
-_DEICTIC_DISTANCE = re.compile(
-    r"\b(?:how\s+(?:far|close).{0,40}\b(?:this|that|it)\b|"
-    r"how\s+(?:far|close)\s+is\s+it\b|"
-    r"distance\s+(?:from|to)\s+.+\s+to\s+it\b)",
-    re.IGNORECASE,
-)
 
 
 def is_prescriptive_evacuation_distance_request(request: QueryRequest) -> bool:
@@ -205,6 +104,15 @@ def is_prescriptive_evacuation_distance_request(request: QueryRequest) -> bool:
     )
 
 
+def _focus_asks(request: QueryRequest, attribute: FocusAttribute) -> bool:
+    """Whether a record is selected and the turn asks this attribute about it."""
+
+    if not request.context.selected_live_result_id:
+        return False
+    focus = focus_reference(request.question)
+    return focus is not None and attribute in focus.attributes
+
+
 def is_unbound_distance_request(request: QueryRequest) -> bool:
     """Deictic distance without a selected record. Named-place how-close proceeds."""
 
@@ -214,7 +122,8 @@ def is_unbound_distance_request(request: QueryRequest) -> bool:
         return False
     if requested_fire_identity(request) or continues_prior_live_place(request):
         return False
-    if _DEICTIC_DISTANCE.search(request.question):
+    focus = focus_reference(request.question)
+    if focus is not None and focus.anaphoric and FocusAttribute.DISTANCE in focus.attributes:
         return True
     if not is_distance_request(request):
         return False
@@ -232,40 +141,27 @@ def is_distance_request(request: QueryRequest) -> bool:
 
     if is_prescriptive_evacuation_distance_request(request):
         return False
-    if not _DISTANCE_PATTERN.search(request.question):
-        return False
+    if _focus_asks(request, FocusAttribute.DISTANCE):
+        return True
     return bool(
-        _EXPLICIT_FIRE_PATTERN.search(request.question)
-        or (
-            request.context.selected_live_result_id
-            and _SELECTED_DISTANCE_ELLIPTICAL.match(request.question)
-        )
+        _DISTANCE_PATTERN.search(request.question)
+        and _EXPLICIT_FIRE_PATTERN.search(request.question)
     )
 
 
 def is_selected_live_request(request: QueryRequest) -> bool:
     """Recognize supported attribute questions about the selected live record."""
 
-    named_location_bound = selected_location_identity(request) is not None
-
-    return bool(
-        request.context.selected_live_result_id
-        and (
-            (
-                _SELECTED_ENTITY_PATTERN.search(request.question)
-                and _SELECTED_ATTRIBUTE_PATTERN.search(request.question)
-                and not _SELECTED_UNSUPPORTED_PATTERN.search(request.question)
-            )
-            or named_location_bound
-            or _SELECTED_LIVE_ELLIPTICAL.match(request.question)
-            or _SELECTED_DEICTIC_STATUS.match(request.question)
-            or _SELECTED_DEICTIC_OFFICIAL_DETAILS.match(request.question)
-            or _SELECTED_CLOSEST_RATIONALE.search(request.question)
-            or _SELECTED_UNKNOWN.search(request.question)
-            or _SELECTED_REFORMAT.match(request.question)
-            or is_selected_record_followup(request.question)
-        )
-    )
+    if not request.context.selected_live_result_id:
+        return False
+    # "Why is this fire the closest?" explains the lookup's ranking; it is
+    # answered from the lookup, not from a record field.
+    if selected_location_identity(request) is not None or _CLOSEST_RATIONALE.search(
+        request.question
+    ):
+        return True
+    focus = focus_reference(request.question)
+    return focus is not None and focus.attribute != FocusAttribute.UNSUPPORTED
 
 
 def selected_location_identity(request: QueryRequest) -> str | None:
@@ -314,45 +210,37 @@ def selected_location_matches_record(
 def is_unsupported_selected_request(request: QueryRequest) -> bool:
     """Recognize selected-record asks unavailable official fields cannot answer."""
 
-    if _SELECTED_CLOSEST_RATIONALE.search(request.question):
+    if _CLOSEST_RATIONALE.search(request.question):
         return False
-    return bool(
-        request.context.selected_live_result_id
-        and (
-            (
-                _SELECTED_ENTITY_PATTERN.search(request.question)
-                and _SELECTED_UNSUPPORTED_PATTERN.search(request.question)
-            )
-            or _SELECTED_PRONOUN_UNSUPPORTED_PATTERN.match(request.question)
-        )
-    )
+    if not request.context.selected_live_result_id:
+        return False
+    focus = focus_reference(request.question)
+    return focus is not None and focus.attribute == FocusAttribute.UNSUPPORTED
 
 
 def uses_selected_live_binding(request: QueryRequest) -> bool:
-    """Keep an existing map selection authoritative for explicit record asks."""
+    """Whether the turn is about the selected record rather than a subject of its own.
 
-    if not request.context.selected_live_result_id:
-        return False
-    return bool(
-        is_selected_live_request(request)
-        or is_unsupported_selected_request(request)
-        or is_distance_request(request)
-        or requested_fire_identity(request)
-        or _CLOSEST_RECORD_PATTERN.search(request.question)
-        or _ORDINAL_RECORD_PATTERN.search(request.question)
-    )
+    Positions in the shown list ("the second one") are resolved by the planner
+    against that list before this rule applies. A turn that names its own
+    subject (a place roster, a fire by name, "which is closest") is about that
+    subject even while a record stays selected.
+    """
+
+    return is_selected_live_request(request) or is_unsupported_selected_request(request)
 
 
 def requires_selected_live_record(request: QueryRequest) -> bool:
     """Do not infer which record a singular size or status question names."""
 
+    if request.context.selected_live_result_id or requested_fire_identity(request) is not None:
+        return False
+    focus = focus_reference(request.question)
     return bool(
-        not request.context.selected_live_result_id
-        and requested_fire_identity(request) is None
-        and (
-            _SINGULAR_STATUS_PATTERN.search(request.question)
-            or _SINGULAR_SIZE_PATTERN.search(request.question)
-        )
+        focus is not None
+        and focus.anaphoric
+        and focus.attributes
+        and set(focus.attributes) <= {FocusAttribute.STATUS, FocusAttribute.SIZE}
     )
 
 
@@ -363,40 +251,8 @@ def render_live_record_answer(
 ) -> str:
     """Render the same bounded summary or selected-record attribute deterministically."""
 
-    selected_request = is_selected_live_request(request)
-    summary = "; ".join(f"{official_display_name(item)}: {item.status}" for item in shown[:5])
-    if selected_request and _UPDATED_PATTERN.search(request.question):
-        selected = shown[0]
-        display_name = official_display_name(selected)
-        return (
-            f"The official source record for {display_name} was updated at "
-            f"{selected.source_updated_at.isoformat()}."
-            if selected.source_updated_at is not None
-            else f"The official source record for {display_name} does not provide an update timestamp."
-        )
-    if selected_request and _SOURCE_PATTERN.search(request.question):
-        selected = shown[0]
-        display_name = official_display_name(selected)
-        return (
-            f"Official source for {display_name}: {selected.authority}. "
-            "Open the linked official record for its source data and source timestamp."
-        )
-    if selected_request and _SIZE_PATTERN.search(request.question):
-        selected = shown[0]
-        display_name = official_display_name(selected)
-        status = (
-            f" Its official status is {selected.status}."
-            if re.search(r"\bstatus\b", request.question, re.IGNORECASE)
-            else ""
-        )
-        return (
-            f"The official record reports {display_name} at "
-            f"{selected.size_hectares:g} hectares.{status}"
-            if selected.size_hectares is not None
-            else (
-                f"The official record for {display_name} does not provide a size value.{status}"
-            )
-        )
+    if is_selected_live_request(request) and shown:
+        return focused_record_answer(request, shown[0])
     if _COUNT_PATTERN.search(request.question):
         incident_count = sum(item.kind == LiveResultKind.INCIDENT for item in shown)
         perimeter_count = sum(item.kind == LiveResultKind.PERIMETER for item in shown)
@@ -405,4 +261,5 @@ def render_live_record_answer(
             f"and {perimeter_count} perimeter records. This is a record count, not a "
             "distinct-fire count or a safety determination."
         )
+    summary = "; ".join(f"{official_display_name(item)}: {item.status}" for item in shown[:5])
     return official_information_prefix(aggregate_freshness) + summary

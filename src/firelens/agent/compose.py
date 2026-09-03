@@ -11,6 +11,7 @@ from firelens.agent.live_selection import (
     selected_official_handoff,
 )
 from firelens.agent.packet import AgentPacket
+from firelens.agent.query_plan import AgentQueryPlan
 from firelens.answering.intent import live_layers_for_question
 from firelens.answering.intent_conversation import is_selected_record_followup
 from firelens.answering.intent_safety import is_empty_map_safety_inference
@@ -78,20 +79,38 @@ def safety_response(request: QueryRequest) -> AskResponse:
     )
 
 
-def no_substitute_response(request: QueryRequest) -> AskResponse:
+def no_substitute_response(
+    request: QueryRequest, packet: AgentPacket | None = None
+) -> AskResponse:
+    """Say why the one record asked about cannot be answered, without swapping in another."""
+
+    if not request.context.selected_live_result_id:
+        answer = (
+            "FireLens is not sure which record you mean. Select a fire on the map, or ask "
+            "for the current records near a B.C. community first."
+        )
+    elif packet is not None and packet.unavailable_layers:
+        answer = (
+            "FireLens could not load that record from the official source just now, so it "
+            "cannot answer about it. That is not an all-clear. Try again in a few minutes, "
+            "or open the official record linked below."
+        )
+    else:
+        answer = (
+            "That record is no longer in the current official publication, so FireLens "
+            "cannot answer about it. It may have been marked out or republished. FireLens "
+            "will not substitute a different record."
+        )
     return AskResponse(
         status=ResponseStatus.ABSTENTION,
         trace_id=uuid4().hex,
         response_mode=ResponseMode.ABSTENTION,
-        answer=(
-            "Select a mapped fire or perimeter before asking about a specific record. "
-            "FireLens will not substitute a different nearby record."
-        ),
+        answer=answer,
         reason_code=ReasonCode.LIVE_DATA_REQUIRED,
         selected_live_result_id=request.context.selected_live_result_id,
+        unavailable_layers=list(packet.unavailable_layers) if packet is not None else [],
         limitations=[
             "FireLens did not substitute a different nearby fire.",
-            "FireLens did not substitute the nearest fire for an unbound reference.",
             "No matching record is not a safety determination.",
         ],
     )
@@ -129,13 +148,43 @@ def quoted_guidance_response(request: QueryRequest, packet: AgentPacket) -> AskR
     return compose_response(request, packet, answer)
 
 
+def request_with_plan_selection(request: QueryRequest, plan: AgentQueryPlan) -> QueryRequest:
+    """The plan decides which record this turn is about ("the second one")."""
+
+    selected = plan.selected_result_id
+    if selected is None or selected == request.context.selected_live_result_id:
+        return request
+    return request.model_copy(
+        update={
+            "context": request.context.model_copy(update={"selected_live_result_id": selected})
+        }
+    )
+
+
+def _named_record_id(request: QueryRequest, packet: AgentPacket) -> str | None:
+    """The one fetched record the turn names ("Tell me about Creek Fire"), if any."""
+
+    if extracted_located_fire_name(request.question) is None:
+        return None
+    return packet.live_results[0].result_id if len(packet.live_results) == 1 else None
+
+
 def request_with_selected(request: QueryRequest, packet: AgentPacket) -> QueryRequest:
-    if request.context.selected_live_result_id:
-        return request
-    if not is_selected_record_followup(request.question):
-        return request
-    bound = selected_live_result_id(request, packet.live_results)
-    if not bound:
+    """Bind the turn to the record it is about.
+
+    A fire named in the turn moves the focus to that record, even while another
+    stays selected on the map. Otherwise a deictic follow-up without a selection
+    binds to the record deterministic code already identified.
+    """
+
+    bound = _named_record_id(request, packet)
+    if bound is None:
+        if request.context.selected_live_result_id or not is_selected_record_followup(
+            request.question
+        ):
+            return request
+        bound = selected_live_result_id(request, packet.live_results)
+    if not bound or bound == request.context.selected_live_result_id:
         return request
     return request.model_copy(
         update={
@@ -193,12 +242,6 @@ def _with_packet_fields(
             updates["history_text"] = None
     if request.context.selected_live_result_id and not response.selected_live_result_id:
         updates["selected_live_result_id"] = request.context.selected_live_result_id
-    elif (
-        not response.selected_live_result_id
-        and len(packet.live_results) == 1
-        and extracted_located_fire_name(request.question) is not None
-    ):
-        updates["selected_live_result_id"] = packet.live_results[0].result_id
     if packet.resolved_location is not None and response.resolved_location is None:
         updates["resolved_location"] = packet.resolved_location
     requested = _requested_live_layers(request, packet)
@@ -379,7 +422,7 @@ def _build_ask_response(
             static_answer=static.answer if static is not None else None,
         )
     if _missing_selected(request, packet):
-        return no_substitute_response(request)
+        return no_substitute_response(request, packet)
     if not live and static is None and not links:
         if "unresolved_place" in packet.unknown_topics:
             return _unresolved_place_response(request)
@@ -424,7 +467,7 @@ def _build_ask_response(
         selected_id = request.context.selected_live_result_id
         selected = next((item for item in live if item.result_id == selected_id), None)
         if selected is None:
-            return no_substitute_response(request)
+            return no_substitute_response(request, packet)
         return AskResponse(
             status=ResponseStatus.ANSWER,
             trace_id=uuid4().hex,
