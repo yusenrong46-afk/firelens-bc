@@ -20,9 +20,8 @@ to quantify any latency or throughput regressions introduced by:
 * stable selection + ordinal binding,
 * and evidence/proof presentation changes.
 
-## C. Deployment preview + production verification (pending)
-Preview deployment is done and the Product Reality Gate passed (14/14):
-* https://firelens-gxw0zii31-yusenrong46-9212s-projects.vercel.app
-
-Production deploy + production Reality Gate remain pending (requires Vercel production promotion).
+## C. Deployment
+Preview and production both passed the Product Reality Gate (14/14).
+* Preview: https://firelens-gxw0zii31-yusenrong46-9212s-projects.vercel.app
+* Production: https://firelens-bc.vercel.app
 
