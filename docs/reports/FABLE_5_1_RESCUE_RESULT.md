@@ -2,7 +2,7 @@
 
 Date: 2026-09-03
 Branch: `fable/firelens-product-rescue`
-Code commit: `afed5c0`
+Code commit: `681ff72`
 
 ## What we changed (high signal)
 * Evidence-first UX: answer first, then inline “where it comes from” and “official sources”; map/records appear only when useful.

@@ -15,12 +15,11 @@ Date: 2026-09-03
    * FireLens-200 focused: PASS/REVIEW only; FAIL: 0
 
 ## Pending (requires deploy permissions)
-* Preview deploy of the exact commit (`fable/firelens-product-rescue` → Vercel preview).
-* Run Product Reality Gate against the preview deployment URL (via `FIRELENS_REALITY_URL`).
-* Run the same smoke checks against production.
-* If any “critical” checks fail, roll back to the recorded production deployment target.
+* Preview deploy + preview Reality Gate have completed.
+  * Preview URL: https://firelens-gxw0zii31-yusenrong46-9212s-projects.vercel.app
+  * Product Reality Gate: PASS (14/14)
+* Production deploy + production Reality Gate are still pending (requires Vercel production promotion).
 
 Once Vercel credentials are available in this environment, we can run:
-* `make vercel-preview`
 * `make vercel-production`
 

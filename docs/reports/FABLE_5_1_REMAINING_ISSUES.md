@@ -21,10 +21,8 @@ to quantify any latency or throughput regressions introduced by:
 * and evidence/proof presentation changes.
 
 ## C. Deployment preview + production verification (pending)
-Local gates are passing. Next is to:
-* deploy the exact commit as a preview,
-* run the Product Reality Gate against that preview URL,
-* then run the same smoke checks against production.
+Preview deployment is done and the Product Reality Gate passed (14/14):
+* https://firelens-gxw0zii31-yusenrong46-9212s-projects.vercel.app
 
-This step may require Vercel authentication/permissions in the environment.
+Production deploy + production Reality Gate remain pending (requires Vercel production promotion).
 
