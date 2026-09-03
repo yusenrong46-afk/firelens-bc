@@ -198,6 +198,11 @@ describe("FireLens Source Lens", () => {
     expect(shortAnswer.compareDocumentPosition(analysisRegion) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(analysisRegion.closest(".analysis-surface-slot")).toBeInTheDocument();
     expect(analysisRegion.closest(".conversation-scroll")).not.toBeInTheDocument();
+    expect(document.querySelector(".pc-layout--solo")).not.toBeInTheDocument();
+    expect(
+      analysisRegion.compareDocumentPosition(screen.getByLabelText("Ask FireLens a question"))
+      & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(document.querySelector(".conversation-scroll")).not.toHaveAttribute("aria-live");
     expect(screen.getByText("FireLens response ready.")).toBeInTheDocument();
     expect(screen.getByLabelText("Clear conversation history")).toHaveTextContent("New conversation");
@@ -412,7 +417,7 @@ describe("FireLens Source Lens", () => {
     const mapContext = await screen.findByRole("complementary", { name: "Map" });
     expect(mapContext).toHaveFocus();
     await user.click(screen.getByRole("button", { name: "Close answer context" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Open map" })).toHaveFocus());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Show these on the map" })).toHaveFocus());
   });
 
   it("starts with a task-first question workspace and keeps the map optional", async () => {
@@ -464,6 +469,10 @@ describe("FireLens Source Lens", () => {
     expect(
       await screen.findByLabelText("Question and answer"),
     ).toHaveTextContent("Keep water and food in a grab-and-go bag.");
+    const answerText = screen.getByLabelText("Question and answer").querySelector(".assistant-message")!;
+    const composer = screen.getByLabelText("Ask FireLens a question");
+    expect(answerText.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.querySelector(".pc-composer-stack--follow-up")).toBeInTheDocument();
     expect(scrollIntoView).toHaveBeenCalled();
   });
 

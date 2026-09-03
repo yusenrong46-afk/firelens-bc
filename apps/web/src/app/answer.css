@@ -18,6 +18,7 @@
   background: transparent;
   font-size: 16px;
   color: var(--ink);
+  text-overflow: ellipsis;
 }
 
 .composer-input input:focus {
@@ -36,6 +37,23 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+.composer-input button[type="submit"] svg,
+.composer--idle .composer-input button[type="submit"] svg,
+.conversation-panel--idle .composer--idle .composer-input button[type="submit"] svg {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  filter: none;
+}
+
+.composer-input button[type="submit"]:hover:not(:disabled) svg {
+  filter: none;
+  box-shadow: none;
 }
 
 .composer-input button[type="submit"]:disabled {
@@ -303,6 +321,62 @@
   max-height: none !important;
 }
 
-.workspace {
+.app-shell .workspace,
+.app-shell .workspace--solo,
+.app-shell .workspace--split,
+.app-shell .workspace--map,
+.app-shell .workspace--evidence {
+  min-height: 0;
+  width: 100%;
+  padding: 0;
+  gap: 0;
   overflow: visible;
+}
+
+.conversation-panel:not(.conversation-panel--idle) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pc-composer-stack--follow-up {
+  margin-top: auto;
+  padding: 16px 16px 18px;
+  background: var(--snow);
+  border-top: 1px solid var(--divider);
+}
+
+.conversation-panel:not(.conversation-panel--idle) .composer {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.conversation-panel--idle {
+  overflow: visible;
+}
+
+.app-shell .analysis-workspace {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 16px 0 0;
+}
+
+.app-shell .analysis-surface-slot {
+  width: 100%;
+  min-width: 0;
+  padding: 0 16px 16px;
+}
+
+@media (min-width: 1280px) {
+  .conversation-toolbar--clear-only {
+    display: none;
+  }
+}
+
+.composer-input input::placeholder {
+  color: var(--muted-slate);
 }

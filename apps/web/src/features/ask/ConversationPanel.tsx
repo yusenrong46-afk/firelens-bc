@@ -98,15 +98,23 @@ export function ConversationPanel({
     setAnnouncement(announcementForState(view.kind, priorState));
   }, [view.kind]);
 
+  const followUpComposer = view.kind !== "idle" ? (
+    <div className="pc-composer-stack pc-composer-stack--follow-up">
+      {contextChips}
+      <QuestionComposer
+        continuationPending={requiresLocation}
+        idle={false}
+        loading={view.kind === "loading"}
+        query={query}
+        onQueryChange={setQuery}
+        onSubmit={submit}
+        inputRef={composerRef}
+      />
+    </div>
+  ) : null;
+
   return (
     <section className={`conversation-panel ${analytical ? "conversation-panel--analytical" : ""} ${view.kind === "idle" ? "conversation-panel--idle" : ""}`} id="conversation" aria-label="Question and answer" tabIndex={-1}>
-      {view.kind !== "idle" && (
-        <div className="pc-composer-stack">
-          <QuestionComposer continuationPending={requiresLocation} idle={false} loading={view.kind === "loading"} query={query}
-            onQueryChange={setQuery} onSubmit={submit} inputRef={composerRef} />
-          {contextChips}
-        </div>
-      )}
       {view.kind !== "idle" && (
         <ConversationToolbar priorTurnCount={earlierTurns.length} onClear={clearHistory} />
       )}
@@ -203,10 +211,14 @@ export function ConversationPanel({
             )}
             {!analytical && (mode === "live" || mode === "mixed") && onOpenMap && (
               <div className="answer-context-actions">
-                <button type="button" aria-controls="answer-context" aria-expanded={contextOpen && contextSurface === "map"} onClick={onOpenMap}>
-                  {contextOpen && contextSurface === "map" ? "Map open" : "Open map"}
+                <button
+                  type="button"
+                  aria-controls="answer-context"
+                  aria-expanded={contextOpen && contextSurface === "map"}
+                  onClick={onOpenMap}
+                >
+                  Show these on the map
                 </button>
-                <button type="button" onClick={onOpenMap}>Show these on the map</button>
               </div>
             )}
             {(response?.related_links ?? []).length > 0 && (
@@ -297,6 +309,7 @@ export function ConversationPanel({
       {analytical && analysisSlot && (
         <div className="analysis-surface-slot">{analysisSlot}</div>
       )}
+      {followUpComposer}
     </section>
   );
 }

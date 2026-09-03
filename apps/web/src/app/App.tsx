@@ -1,4 +1,4 @@
-import { House, Info, MapTrifold } from "@phosphor-icons/react";
+import { Clock, House, Info, MapTrifold } from "@phosphor-icons/react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
@@ -28,8 +28,8 @@ import {
 } from "./workspacePresentation";
 import "./tokens.css";
 import "./shell.css";
-import "./answer.css";
 import "./styles.css";
+import "./answer.css";
 
 const CompactLiveMap = lazy(() =>
   import("../features/near-me/LiveMap").then((module) => ({ default: module.LiveMap })),
@@ -191,11 +191,9 @@ export function App() {
     });
   }
 
-  const layoutClass = analyticalWorkspace
-    ? "pc-layout pc-layout--solo"
-    : showCompactMapRail
-      ? "pc-layout"
-      : "pc-layout pc-layout--no-map";
+  const layoutClass = showCompactMapRail
+    ? "pc-layout"
+    : "pc-layout pc-layout--no-map";
 
   return (
     <div className="app-shell" id="top">
@@ -229,11 +227,12 @@ export function App() {
             </a>
             <button
               type="button"
+              aria-label="Recent questions"
               aria-expanded={mobileNavOpen}
               aria-controls="mobile-recent"
               onClick={() => setMobileNavOpen((open) => !open)}
             >
-              Recent
+              <Clock size={18} />
             </button>
           </div>
         </header>
