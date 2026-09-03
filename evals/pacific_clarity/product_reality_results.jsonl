@@ -1,0 +1,719 @@
+{
+  "config": {
+    "argv": [
+      "/opt/homebrew/Cellar/node/25.9.0_3/bin/node",
+      "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/node_modules/.bin/playwright",
+      "test",
+      "--config=playwright.reality.config.ts"
+    ],
+    "configFile": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/playwright.reality.config.ts",
+    "rootDir": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../../evals/pacific_clarity/product_reality_results.jsonl"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "product-reality.spec.ts",
+      "file": "product-reality.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Product Reality Gate",
+          "file": "product-reality.spec.ts",
+          "line": 75,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Kelowna: an ordinary question returns official records and offers the map",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4896,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:56:46.266Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-0951470aa8a0792d6835",
+              "file": "product-reality.spec.ts",
+              "line": 76,
+              "column": 3
+            },
+            {
+              "title": "Kelowna variants all resolve to the same place",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3924,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:56:52.566Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-835530c796f35dfeccd7",
+              "file": "product-reality.spec.ts",
+              "line": 95,
+              "column": 3
+            },
+            {
+              "title": "Source proof: a guidance answer shows publisher, title and link inline",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 792,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:56:56.496Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-f327bb13f4814de0438d",
+              "file": "product-reality.spec.ts",
+              "line": 106,
+              "column": 3
+            },
+            {
+              "title": "Home: one click returns to the start from an answer",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1115,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:56:57.293Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-641440e86810d5af1f73",
+              "file": "product-reality.spec.ts",
+              "line": 122,
+              "column": 3
+            },
+            {
+              "title": "UI: no horizontal jam and one scroll owner on phone",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2274,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:56:58.411Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-cb6630b2045523edd1bd",
+              "file": "product-reality.spec.ts",
+              "line": 143,
+              "column": 5
+            },
+            {
+              "title": "UI: no horizontal jam and one scroll owner on narrow phone",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1070,
+                      "error": {
+                        "message": "Error: answer page overflows horizontally\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m3\u001b[39m",
+                        "stack": "Error: answer page overflows horizontally\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m3\u001b[39m\n    at /Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts:152:68",
+                        "location": {
+                          "file": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts",
+                          "column": 68,
+                          "line": 152
+                        },
+                        "snippet": "  150 |       await ask(page, \"Where is the wildfire near Kelowna?\");\n  151 |       const answerOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);\n> 152 |       expect(answerOverflow, \"answer page overflows horizontally\").toBeLessThanOrEqual(1);\n      |                                                                    ^\n  153 |       const scrollers = await nestedVerticalScrollers(page);\n  154 |       expect(scrollers, `nested scrollers: ${scrollers.join(\", \")}`).toEqual([]);\n  155 |       await expect(page.getByRole(\"button\", { name: \"Home\" }).first()).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts",
+                            "column": 68,
+                            "line": 152
+                          },
+                          "message": "Error: answer page overflows horizontally\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m3\u001b[39m\n\n  150 |       await ask(page, \"Where is the wildfire near Kelowna?\");\n  151 |       const answerOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);\n> 152 |       expect(answerOverflow, \"answer page overflows horizontally\").toBeLessThanOrEqual(1);\n      |                                                                    ^\n  153 |       const scrollers = await nestedVerticalScrollers(page);\n  154 |       expect(scrollers, `nested scrollers: ${scrollers.join(\", \")}`).toEqual([]);\n  155 |       await expect(page.getByRole(\"button\", { name: \"Home\" }).first()).toBeVisible();\n    at /Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts:152:68"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:57:00.689Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/test-results/product-reality-Product-Re-7af3b-croll-owner-on-narrow-phone/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/test-results/product-reality-Product-Re-7af3b-croll-owner-on-narrow-phone/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/test-results/product-reality-Product-Re-7af3b-croll-owner-on-narrow-phone/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts",
+                        "column": 68,
+                        "line": 152
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-ae7b6aad8bb4f3ca5c4d",
+              "file": "product-reality.spec.ts",
+              "line": 143,
+              "column": 5
+            },
+            {
+              "title": "UI: no horizontal jam and one scroll owner on tablet",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 844,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:57:02.026Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-352a430dbd9cc56d65c3",
+              "file": "product-reality.spec.ts",
+              "line": 143,
+              "column": 5
+            },
+            {
+              "title": "UI: no horizontal jam and one scroll owner on laptop",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1131,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:57:02.947Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-31038969ef54ca7d382c",
+              "file": "product-reality.spec.ts",
+              "line": 143,
+              "column": 5
+            },
+            {
+              "title": "UI: no horizontal jam and one scroll owner on laptop at 200% zoom",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 949,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:57:04.082Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-bb11ed867dabd956b3d8",
+              "file": "product-reality.spec.ts",
+              "line": 143,
+              "column": 5
+            },
+            {
+              "title": "Map assets: hard refresh then map open loads every chunk",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1648,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:57:05.035Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-a39f2bc944c1a53bdedf",
+              "file": "product-reality.spec.ts",
+              "line": 159,
+              "column": 3
+            },
+            {
+              "title": "Mixed authority: records are answered and the safety decision is handed off, not dropped",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6065,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('link', { name: /EmergencyInfoBC/ }).first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('link', { name: /EmergencyInfoBC/ }).first()\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('link', { name: /EmergencyInfoBC/ }).first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('link', { name: /EmergencyInfoBC/ }).first()\u001b[22m\n\n    at /Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts:181:79",
+                        "location": {
+                          "file": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts",
+                          "column": 79,
+                          "line": 181
+                        },
+                        "snippet": "  179 |     expect(body.answer ?? \"\").toMatch(/Kelowna/i);\n  180 |     expect(body.answer ?? \"\").toMatch(/cannot decide|cannot tell you whether|follow instructions/i);\n> 181 |     await expect(page.getByRole(\"link\", { name: /EmergencyInfoBC/ }).first()).toBeVisible();\n      |                                                                               ^\n  182 |   });\n  183 |\n  184 |   test(\"General knowledge is labelled as such and carries no false source proof\", async ({ page }) => {"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts",
+                            "column": 79,
+                            "line": 181
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('link', { name: /EmergencyInfoBC/ }).first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('link', { name: /EmergencyInfoBC/ }).first()\u001b[22m\n\n\n  179 |     expect(body.answer ?? \"\").toMatch(/Kelowna/i);\n  180 |     expect(body.answer ?? \"\").toMatch(/cannot decide|cannot tell you whether|follow instructions/i);\n> 181 |     await expect(page.getByRole(\"link\", { name: /EmergencyInfoBC/ }).first()).toBeVisible();\n      |                                                                               ^\n  182 |   });\n  183 |\n  184 |   test(\"General knowledge is labelled as such and carries no false source proof\", async ({ page }) => {\n    at /Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts:181:79"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:57:06.686Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/test-results/product-reality-Product-Re-ca929-n-is-handed-off-not-dropped/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/test-results/product-reality-Product-Re-ca929-n-is-handed-off-not-dropped/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/test-results/product-reality-Product-Re-ca929-n-is-handed-off-not-dropped/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts",
+                        "column": 79,
+                        "line": 181
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-efa7b989b94f452fffea",
+              "file": "product-reality.spec.ts",
+              "line": 173,
+              "column": 3
+            },
+            {
+              "title": "General knowledge is labelled as such and carries no false source proof",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5234,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:57:13.019Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-800fa76662ae26b11123",
+              "file": "product-reality.spec.ts",
+              "line": 184,
+              "column": 3
+            },
+            {
+              "title": "Unsupported live topic hands off to the official service",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 526,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:57:18.329Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-f8234bf694834fdd99d7",
+              "file": "product-reality.spec.ts",
+              "line": 202,
+              "column": 3
+            },
+            {
+              "title": "Failure truth: a broken backend is reported, not disguised",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 569,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:57:18.859Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-4d7df22cb147473c790a",
+              "file": "product-reality.spec.ts",
+              "line": 209,
+              "column": 3
+            },
+            {
+              "title": "Multiple Fire Centres: ask which scope instead of silently picking one",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 539,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:57:19.433Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-eac81dc090f9fed61049",
+              "file": "product-reality.spec.ts",
+              "line": 221,
+              "column": 3
+            },
+            {
+              "title": "Readiness failure: 503 with release_version is not shown as healthy live data",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 509,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-03T21:57:19.978Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f0b45b2f6f1d832d334-ecd69a34f25c85dadcd8",
+              "file": "product-reality.spec.ts",
+              "line": 228,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-03T21:56:46.044Z",
+    "duration": 34468.297,
+    "expected": 14,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}
