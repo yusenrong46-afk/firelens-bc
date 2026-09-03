@@ -94,12 +94,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4896,
+                      "duration": 4483,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:56:46.266Z",
+                      "startTime": "2026-09-03T22:17:56.706Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -128,12 +128,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3924,
+                      "duration": 6984,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:56:52.566Z",
+                      "startTime": "2026-09-03T22:18:01.351Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -162,12 +162,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 792,
+                      "duration": 1020,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:56:56.496Z",
+                      "startTime": "2026-09-03T22:18:08.340Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -196,12 +196,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1115,
+                      "duration": 743,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:56:57.293Z",
+                      "startTime": "2026-09-03T22:18:09.365Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -230,12 +230,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2274,
+                      "duration": 757,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:56:58.411Z",
+                      "startTime": "2026-09-03T22:18:10.111Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -250,7 +250,7 @@
             },
             {
               "title": "UI: no horizontal jam and one scroll owner on narrow phone",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -263,58 +263,18 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 1070,
-                      "error": {
-                        "message": "Error: answer page overflows horizontally\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m3\u001b[39m",
-                        "stack": "Error: answer page overflows horizontally\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m3\u001b[39m\n    at /Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts:152:68",
-                        "location": {
-                          "file": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts",
-                          "column": 68,
-                          "line": 152
-                        },
-                        "snippet": "  150 |       await ask(page, \"Where is the wildfire near Kelowna?\");\n  151 |       const answerOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);\n> 152 |       expect(answerOverflow, \"answer page overflows horizontally\").toBeLessThanOrEqual(1);\n      |                                                                    ^\n  153 |       const scrollers = await nestedVerticalScrollers(page);\n  154 |       expect(scrollers, `nested scrollers: ${scrollers.join(\", \")}`).toEqual([]);\n  155 |       await expect(page.getByRole(\"button\", { name: \"Home\" }).first()).toBeVisible();"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts",
-                            "column": 68,
-                            "line": 152
-                          },
-                          "message": "Error: answer page overflows horizontally\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m3\u001b[39m\n\n  150 |       await ask(page, \"Where is the wildfire near Kelowna?\");\n  151 |       const answerOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);\n> 152 |       expect(answerOverflow, \"answer page overflows horizontally\").toBeLessThanOrEqual(1);\n      |                                                                    ^\n  153 |       const scrollers = await nestedVerticalScrollers(page);\n  154 |       expect(scrollers, `nested scrollers: ${scrollers.join(\", \")}`).toEqual([]);\n  155 |       await expect(page.getByRole(\"button\", { name: \"Home\" }).first()).toBeVisible();\n    at /Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts:152:68"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 1655,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:57:00.689Z",
+                      "startTime": "2026-09-03T22:18:10.872Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/test-results/product-reality-Product-Re-7af3b-croll-owner-on-narrow-phone/test-failed-1.png"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/test-results/product-reality-Product-Re-7af3b-croll-owner-on-narrow-phone/error-context.md"
-                        },
-                        {
-                          "name": "trace",
-                          "contentType": "application/zip",
-                          "path": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/test-results/product-reality-Product-Re-7af3b-croll-owner-on-narrow-phone/trace.zip"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts",
-                        "column": 68,
-                        "line": 152
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "3f0b45b2f6f1d832d334-ae7b6aad8bb4f3ca5c4d",
@@ -335,15 +295,15 @@
                   "projectName": "",
                   "results": [
                     {
-                      "workerIndex": 1,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 844,
+                      "duration": 922,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:57:02.026Z",
+                      "startTime": "2026-09-03T22:18:12.539Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -369,15 +329,15 @@
                   "projectName": "",
                   "results": [
                     {
-                      "workerIndex": 1,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1131,
+                      "duration": 917,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:57:02.947Z",
+                      "startTime": "2026-09-03T22:18:13.465Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -403,15 +363,15 @@
                   "projectName": "",
                   "results": [
                     {
-                      "workerIndex": 1,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 949,
+                      "duration": 797,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:57:04.082Z",
+                      "startTime": "2026-09-03T22:18:14.385Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -437,15 +397,15 @@
                   "projectName": "",
                   "results": [
                     {
-                      "workerIndex": 1,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1648,
+                      "duration": 1312,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:57:05.035Z",
+                      "startTime": "2026-09-03T22:18:15.186Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -460,7 +420,7 @@
             },
             {
               "title": "Mixed authority: records are answered and the safety decision is handed off, not dropped",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -471,60 +431,20 @@
                   "projectName": "",
                   "results": [
                     {
-                      "workerIndex": 1,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 6065,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('link', { name: /EmergencyInfoBC/ }).first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('link', { name: /EmergencyInfoBC/ }).first()\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('link', { name: /EmergencyInfoBC/ }).first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('link', { name: /EmergencyInfoBC/ }).first()\u001b[22m\n\n    at /Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts:181:79",
-                        "location": {
-                          "file": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts",
-                          "column": 79,
-                          "line": 181
-                        },
-                        "snippet": "  179 |     expect(body.answer ?? \"\").toMatch(/Kelowna/i);\n  180 |     expect(body.answer ?? \"\").toMatch(/cannot decide|cannot tell you whether|follow instructions/i);\n> 181 |     await expect(page.getByRole(\"link\", { name: /EmergencyInfoBC/ }).first()).toBeVisible();\n      |                                                                               ^\n  182 |   });\n  183 |\n  184 |   test(\"General knowledge is labelled as such and carries no false source proof\", async ({ page }) => {"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts",
-                            "column": 79,
-                            "line": 181
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('link', { name: /EmergencyInfoBC/ }).first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('link', { name: /EmergencyInfoBC/ }).first()\u001b[22m\n\n\n  179 |     expect(body.answer ?? \"\").toMatch(/Kelowna/i);\n  180 |     expect(body.answer ?? \"\").toMatch(/cannot decide|cannot tell you whether|follow instructions/i);\n> 181 |     await expect(page.getByRole(\"link\", { name: /EmergencyInfoBC/ }).first()).toBeVisible();\n      |                                                                               ^\n  182 |   });\n  183 |\n  184 |   test(\"General knowledge is labelled as such and carries no false source proof\", async ({ page }) => {\n    at /Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts:181:79"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 1028,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:57:06.686Z",
+                      "startTime": "2026-09-03T22:18:16.501Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/test-results/product-reality-Product-Re-ca929-n-is-handed-off-not-dropped/test-failed-1.png"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/test-results/product-reality-Product-Re-ca929-n-is-handed-off-not-dropped/error-context.md"
-                        },
-                        {
-                          "name": "trace",
-                          "contentType": "application/zip",
-                          "path": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/test-results/product-reality-Product-Re-ca929-n-is-handed-off-not-dropped/trace.zip"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z/apps/web/tests/reality/product-reality.spec.ts",
-                        "column": 79,
-                        "line": 181
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "3f0b45b2f6f1d832d334-efa7b989b94f452fffea",
@@ -545,15 +465,15 @@
                   "projectName": "",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5234,
+                      "duration": 14651,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:57:13.019Z",
+                      "startTime": "2026-09-03T22:18:17.533Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -579,15 +499,15 @@
                   "projectName": "",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 526,
+                      "duration": 666,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:57:18.329Z",
+                      "startTime": "2026-09-03T22:18:32.190Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -613,15 +533,15 @@
                   "projectName": "",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 569,
+                      "duration": 535,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:57:18.859Z",
+                      "startTime": "2026-09-03T22:18:32.860Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -647,15 +567,15 @@
                   "projectName": "",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 539,
+                      "duration": 526,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:57:19.433Z",
+                      "startTime": "2026-09-03T22:18:33.398Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -681,15 +601,15 @@
                   "projectName": "",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 509,
+                      "duration": 477,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-03T21:57:19.978Z",
+                      "startTime": "2026-09-03T22:18:33.929Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -709,11 +629,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-09-03T21:56:46.044Z",
-    "duration": 34468.297,
-    "expected": 14,
+    "startTime": "2026-09-03T22:17:56.483Z",
+    "duration": 37997.095,
+    "expected": 16,
     "skipped": 0,
-    "unexpected": 2,
+    "unexpected": 0,
     "flaky": 0
   }
 }
