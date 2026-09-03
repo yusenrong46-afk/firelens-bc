@@ -202,7 +202,7 @@ export function App() {
             </nav>
           )}
           <a className="official-link" href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
-            <ArrowSquareOut size={18} /> Official BCWS map
+            <ArrowSquareOut size={18} /> BC Wildfire Service map
           </a>
         </div>
       </header>

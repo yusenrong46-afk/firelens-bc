@@ -8,6 +8,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from firelens.api.frontend import frontend_integrity_errors
 from firelens.config import DEFAULT_RELEASE_VERSION
 from firelens.privacy_policy import (
     APPROVED_PRODUCTION_PRIVACY,
@@ -102,6 +103,9 @@ def main() -> None:
 
     subprocess.run(["npm", "ci"], cwd=frontend, check=True)
     subprocess.run(["npm", "run", "build"], cwd=frontend, check=True)
+    integrity = frontend_integrity_errors(output)
+    if integrity:
+        raise SystemExit("frontend build is incomplete: " + "; ".join(integrity))
 
     try:
         commit = _resolve_build_commit(root)

@@ -172,9 +172,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   color: #f4f2e9;
   background: var(--forest-deep);
   border-bottom: 1px solid rgba(167, 184, 102, .35);
-  font: 500 16px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  letter-spacing: .015em;
-  text-transform: uppercase;
+  font: 500 15px/1.35 "Inter", system-ui, sans-serif;
 }
 .boundary svg { flex: 0 0 auto; color: #a7b866; }
 .boundary, .boundary span { font: inherit; }
@@ -1217,9 +1215,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   padding-left: 20px;
   color: #f0a075;
   border-left: 1px solid rgba(244, 242, 233, .45);
-  font: 500 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  letter-spacing: .015em;
-  text-transform: uppercase;
+  font: 500 15px "Inter", system-ui, sans-serif;
 }
 .workspace-jump { gap: 4px; }
 .workspace-jump button {
@@ -1459,7 +1455,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .topbar-anchor,
 .topbar-project,
 .workspace-jump button,
-.official-link { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 16px; letter-spacing: .015em; text-transform: uppercase; }
+.official-link { font-family: "Inter", system-ui, sans-serif; font-size: 15px; font-weight: 600; }
 .topbar-project > span { display: grid; gap: 1px; text-align: left; }
 .topbar-project strong { font-size: 16px; }
 .topbar-project small { color: rgba(234, 242, 236, 0.78); font-size: 12px; font-weight: 500; }

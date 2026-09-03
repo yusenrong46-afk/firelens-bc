@@ -426,8 +426,8 @@ describe("FireLens Source Lens", () => {
     render(<App />);
     expect(screen.getByRole("link", { name: /FireLens home/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "What do you want to know about wildfires in B.C.?" })).toBeInTheDocument();
-    expect(await screen.findByText(/12 incident records were returned/)).toBeInTheDocument();
-    expect(screen.getByText(/3 evacuation records were returned/)).toBeInTheDocument();
+    expect(await screen.findByText(/lists 12 fires in B\.C\./)).toBeInTheDocument();
+    expect(screen.getByText(/3 evacuation orders and alerts/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Browse guided questions" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "How FireLens works" })).toBeInTheDocument();
     expect(screen.getByText("Sources, methods, and limits")).toBeInTheDocument();

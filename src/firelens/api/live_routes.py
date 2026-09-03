@@ -175,14 +175,14 @@ def install_live_routes(
             else sum(item.kind == LiveResultKind.EVACUATION for item in payload.results)
         )
         limitation = (
-            "These are returned official records, not a claim that every fire or "
-            "evacuation in B.C. is shown. Unavailable layers are not zero."
+            "These counts are the records the official sources returned when FireLens "
+            "checked, not a promise that every fire or evacuation in B.C. is listed."
         )
         if incident_count is None or evacuation_count is None:
             missing = ", ".join(layer.value for layer in payload.unavailable_layers)
             limitation = (
-                f"Official {missing} records were unavailable. That is not an all-clear "
-                "and is not a zero count."
+                f"FireLens could not reach the official {missing} records. That is not an "
+                "all-clear and is not a zero count."
             )
         return LiveCurrentSummary(
             incident_record_count=incident_count,
