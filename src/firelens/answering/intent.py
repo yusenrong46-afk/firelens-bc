@@ -50,7 +50,7 @@ from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.location_intent import (
     asks_for_personal_location,
     coarse_location_from_question,
-    is_province_wide_label,
+    is_province_wide_question,
 )
 from firelens.answering.request_facets import contents_request_facet
 from firelens.answering.request_grammar import parse_request_facets
@@ -330,10 +330,8 @@ def live_layers_for_question(question: str) -> tuple[LiveResultKind, ...]:
     layers = list(parsed.live_layers)
     if (
         named is None
-        and (
-            (original_location is not None and is_province_wide_label(original_location.label))
-            or any(is_province_wide_label(label) for label in parsed.live_location_candidates)
-        )
+        and original_location is None
+        and is_province_wide_question(question)
         and any(clause.operation == RecordOperation.LIST for clause in parsed.clauses)
         and set(layers) == {LiveResultKind.INCIDENT, LiveResultKind.PERIMETER}
     ):

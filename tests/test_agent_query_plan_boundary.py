@@ -287,7 +287,7 @@ def test_positive_live_grammar_families_authorize_bounded_fire_tools(
         ),
         (
             "Bring up the current incident picture for the Thompson region.",
-            "Thompson region",
+            "Thompson",
         ),
         ("Revelstoke wildfire report now.", "Revelstoke"),
     ),

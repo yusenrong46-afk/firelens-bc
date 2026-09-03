@@ -1,0 +1,61 @@
+{
+  "captured_at_utc": "2026-09-03T02:19:55.325603+00:00",
+  "workspace": "/Users/thomas/Downloads/firelens-v1-6-integration-20260826T003225Z",
+  "rescue_branch": "fable/firelens-product-rescue",
+  "starting_sha": "b24a73bb8e965408a58c0f0a1fd0f20d37bcb8ba",
+  "starting_tree": "62e63f91e14d27c59cc525e62aad23bcc00072c5",
+  "origin_main_sha": "b24a73bb8e965408a58c0f0a1fd0f20d37bcb8ba",
+  "preserved_prior_work": {
+    "branch": "fix/v1-6-usable-ask-ux",
+    "wip_commit": "f47b708975fb6e623f13af58d33f0a0997462569",
+    "note": "Uncommitted Aug-27/28 'Loosen FireLens UX rails' experiments (39 files) committed as WIP on their own branch; base b09e040 predates V1.6.2-V1.6.4. Not merged into rescue branch."
+  },
+  "production": {
+    "url": "https://firelens-bc.vercel.app",
+    "deployment_id": "dpl_E93arKWwBxZXr798xNTAnMgBkxsX",
+    "build_commit": "b24a73bb8e965408a58c0f0a1fd0f20d37bcb8ba",
+    "release_version": "1.6.4",
+    "candidate_id": "firelens-v1-6-rc2:b24a73bb8e965408a58c0f0a1fd0f20d37bcb8ba",
+    "status": "ready",
+    "generation_model": "openai/gpt-5.6-luna",
+    "retrieval_text_strategy": "metadata_context_v1",
+    "chunk_count": 179,
+    "ready_response": {
+      "status": "ready",
+      "corpus_ready": true,
+      "index_ready": true,
+      "provider_configured": true,
+      "zdr_required": true,
+      "zdr_policy_state": "required_stages_eligible",
+      "data_collection": "deny",
+      "allow_fallbacks": false,
+      "embedding_zdr": "required",
+      "reranking_zdr": "optional",
+      "generation_zdr": "required",
+      "embedding_zdr_state": "eligible",
+      "generation_zdr_state": "eligible",
+      "reranking_zdr_state": "zdr_optional",
+      "provider_state": "available",
+      "corpus_version": "firelens_static_corpus.v1",
+      "chunk_count": 179,
+      "release_version": "1.6.4",
+      "build_commit": "b24a73bb8e965408a58c0f0a1fd0f20d37bcb8ba",
+      "deployment_id": "dpl_E93arKWwBxZXr798xNTAnMgBkxsX",
+      "candidate_id": "firelens-v1-6-rc2:b24a73bb8e965408a58c0f0a1fd0f20d37bcb8ba",
+      "candidate_sha256": "91d6bb5b97edabe3aed605819bffba3be998dd885686336470e18937f2cbfd72",
+      "embedding_model": "openai/text-embedding-3-small",
+      "rerank_model": "cohere/rerank-4-pro",
+      "generation_model": "openai/gpt-5.6-luna",
+      "retrieval_text_strategy": "metadata_context_v1",
+      "rate_limit_scope": "instance_local",
+      "problems": []
+    }
+  },
+  "rollback_target": {
+    "deployment_id": "dpl_E93arKWwBxZXr798xNTAnMgBkxsX",
+    "build_commit": "b24a73bb8e965408a58c0f0a1fd0f20d37bcb8ba",
+    "release_version": "1.6.4",
+    "vercel_project": "prj_2aXvVXkFJZKAp5ReOAwDw5Kq5WTZ",
+    "vercel_org": "team_AewB0gNEwKvTOeGFr3718mnG"
+  }
+}

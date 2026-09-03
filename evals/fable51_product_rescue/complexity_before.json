@@ -1,0 +1,313 @@
+{
+  "backend": {
+    "fallback_or_compat_named_functions": 4,
+    "functions": 2060,
+    "if_branches": 5737,
+    "modules": 270,
+    "modules_over_500": [
+      "src/firelens/agent/compose.py",
+      "src/firelens/agent/query_plan.py",
+      "src/firelens/answering/grounded.py",
+      "src/firelens/answering/intent.py",
+      "src/firelens/answering/intent_automaton.py",
+      "src/firelens/answering/intent_lexicon.py",
+      "src/firelens/answering/live_analysis.py",
+      "src/firelens/answering/location_intent.py",
+      "src/firelens/answering/service.py",
+      "src/firelens/answering/typed_snapshot.py",
+      "src/firelens/benchmark.py",
+      "src/firelens/cli.py",
+      "src/firelens/contextual_retrieval_experiment.py",
+      "src/firelens/contracts.py",
+      "src/firelens/evaluation/candidate_evidence_common.py",
+      "src/firelens/evaluation/candidate_evidence_validation.py",
+      "src/firelens/evaluation/capture.py",
+      "src/firelens/evaluation/claimbench_v2_catalog.py",
+      "src/firelens/evaluation/frontend_manual_review.py",
+      "src/firelens/evaluation/frontend_map.py",
+      "src/firelens/evaluation/frontend_privacy.py",
+      "src/firelens/evaluation/frontend_protocol.py",
+      "src/firelens/evaluation/hard_probe_cli.py",
+      "src/firelens/evaluation/hard_probe_expectations.py",
+      "src/firelens/evaluation/limitation_cases.py",
+      "src/firelens/evaluation/live_slo_evidence_cli.py",
+      "src/firelens/evaluation/preview_raw_evidence.py",
+      "src/firelens/evaluation/product_question_cases.py",
+      "src/firelens/evaluation/product_question_cli.py",
+      "src/firelens/evaluation/productbench_v2.py",
+      "src/firelens/evaluation/qualification_reports.py",
+      "src/firelens/evaluation/release_surfaces.py",
+      "src/firelens/evaluation/runtime_artifact.py",
+      "src/firelens/evaluation/semantic_holdout.py",
+      "src/firelens/evaluation/semantic_holdout_freeze_cli.py",
+      "src/firelens/evaluation/semantic_inputs.py",
+      "src/firelens/evaluation/source_aware_conversation.py",
+      "src/firelens/evaluation/upgrade_cli.py",
+      "src/firelens/evaluation/ux.py",
+      "src/firelens/evaluation/v3_exploratory_roster.py",
+      "src/firelens/live.py",
+      "src/firelens/live_answering.py",
+      "src/firelens/live_contracts.py",
+      "src/firelens/live_support.py",
+      "src/firelens/proof_presentation.py",
+      "src/firelens/providers/openrouter.py",
+      "src/firelens/publication/compiler.py",
+      "src/firelens/review_workspace/cli.py",
+      "src/firelens/review_workspace/input_common.py",
+      "src/firelens/review_workspace/inputs.py",
+      "src/firelens/review_workspace/journal.py",
+      "src/firelens/review_workspace/qualification.py",
+      "src/firelens/review_workspace/session.py",
+      "src/firelens/runtime_artifact.py"
+    ],
+    "modules_over_650": [
+      "src/firelens/agent/compose.py",
+      "src/firelens/agent/query_plan.py",
+      "src/firelens/answering/live_analysis.py",
+      "src/firelens/answering/service.py",
+      "src/firelens/contextual_retrieval_experiment.py",
+      "src/firelens/contracts.py",
+      "src/firelens/evaluation/capture.py",
+      "src/firelens/evaluation/frontend_manual_review.py",
+      "src/firelens/evaluation/limitation_cases.py",
+      "src/firelens/evaluation/live_slo_evidence_cli.py",
+      "src/firelens/evaluation/qualification_reports.py",
+      "src/firelens/evaluation/release_surfaces.py",
+      "src/firelens/evaluation/ux.py",
+      "src/firelens/evaluation/v3_exploratory_roster.py",
+      "src/firelens/live.py",
+      "src/firelens/review_workspace/cli.py",
+      "src/firelens/review_workspace/session.py",
+      "src/firelens/runtime_artifact.py"
+    ],
+    "modules_over_800": [],
+    "python_loc": 75352,
+    "python_loc_excluding_evaluation_and_review": 40223,
+    "question_interpreting_modules_with_patterns": [
+      "src/firelens/agent/query_plan.py",
+      "src/firelens/agent/query_plan_boundaries.py",
+      "src/firelens/answering/capability_intent.py",
+      "src/firelens/answering/intent.py",
+      "src/firelens/answering/intent_automaton.py",
+      "src/firelens/answering/intent_automaton_rules.py",
+      "src/firelens/answering/intent_conversation.py",
+      "src/firelens/answering/intent_lexicon.py",
+      "src/firelens/answering/intent_patterns.py",
+      "src/firelens/answering/intent_safety.py",
+      "src/firelens/answering/intent_spans.py",
+      "src/firelens/answering/live_record_intent.py",
+      "src/firelens/answering/live_request_intent.py",
+      "src/firelens/answering/location_intent.py",
+      "src/firelens/answering/location_intent_patterns.py",
+      "src/firelens/answering/request_facets.py",
+      "src/firelens/answering/return_intent.py"
+    ],
+    "regex_call_sites": 573,
+    "regex_like_string_literals": 690,
+    "regex_like_string_literals_in_question_modules": 314,
+    "top_pattern_modules": [
+      {
+        "branches": 0,
+        "fallback_named_functions": 0,
+        "loc": 179,
+        "module": "src/firelens/answering/intent_patterns.py",
+        "pattern_strings": 105,
+        "regex_calls": 3
+      },
+      {
+        "branches": 45,
+        "fallback_named_functions": 0,
+        "loc": 488,
+        "module": "src/firelens/answering/critical_fields.py",
+        "pattern_strings": 69,
+        "regex_calls": 55
+      },
+      {
+        "branches": 25,
+        "fallback_named_functions": 0,
+        "loc": 380,
+        "module": "src/firelens/answering/validate.py",
+        "pattern_strings": 59,
+        "regex_calls": 7
+      },
+      {
+        "branches": 29,
+        "fallback_named_functions": 0,
+        "loc": 510,
+        "module": "src/firelens/answering/typed_snapshot.py",
+        "pattern_strings": 56,
+        "regex_calls": 56
+      },
+      {
+        "branches": 38,
+        "fallback_named_functions": 0,
+        "loc": 646,
+        "module": "src/firelens/answering/location_intent.py",
+        "pattern_strings": 40,
+        "regex_calls": 43
+      },
+      {
+        "branches": 2,
+        "fallback_named_functions": 0,
+        "loc": 647,
+        "module": "src/firelens/answering/intent_lexicon.py",
+        "pattern_strings": 35,
+        "regex_calls": 35
+      },
+      {
+        "branches": 24,
+        "fallback_named_functions": 0,
+        "loc": 408,
+        "module": "src/firelens/answering/live_request_intent.py",
+        "pattern_strings": 31,
+        "regex_calls": 32
+      },
+      {
+        "branches": 40,
+        "fallback_named_functions": 0,
+        "loc": 648,
+        "module": "src/firelens/answering/intent.py",
+        "pattern_strings": 26,
+        "regex_calls": 23
+      },
+      {
+        "branches": 0,
+        "fallback_named_functions": 0,
+        "loc": 34,
+        "module": "src/firelens/answering/capability_intent.py",
+        "pattern_strings": 17,
+        "regex_calls": 1
+      },
+      {
+        "branches": 18,
+        "fallback_named_functions": 0,
+        "loc": 172,
+        "module": "src/firelens/agent/rails.py",
+        "pattern_strings": 15,
+        "regex_calls": 15
+      },
+      {
+        "branches": 80,
+        "fallback_named_functions": 0,
+        "loc": 671,
+        "module": "src/firelens/answering/live_analysis.py",
+        "pattern_strings": 15,
+        "regex_calls": 16
+      },
+      {
+        "branches": 2,
+        "fallback_named_functions": 0,
+        "loc": 128,
+        "module": "src/firelens/answering/live_record_intent.py",
+        "pattern_strings": 15,
+        "regex_calls": 15
+      },
+      {
+        "branches": 17,
+        "fallback_named_functions": 0,
+        "loc": 251,
+        "module": "src/firelens/answering/semantic_invariants.py",
+        "pattern_strings": 15,
+        "regex_calls": 16
+      },
+      {
+        "branches": 29,
+        "fallback_named_functions": 0,
+        "loc": 298,
+        "module": "src/firelens/answering/intent_conversation.py",
+        "pattern_strings": 12,
+        "regex_calls": 14
+      },
+      {
+        "branches": 24,
+        "fallback_named_functions": 0,
+        "loc": 385,
+        "module": "src/firelens/providers/fake.py",
+        "pattern_strings": 12,
+        "regex_calls": 3
+      },
+      {
+        "branches": 17,
+        "fallback_named_functions": 0,
+        "loc": 202,
+        "module": "src/firelens/answering/live_named_fire.py",
+        "pattern_strings": 8,
+        "regex_calls": 9
+      },
+      {
+        "branches": 15,
+        "fallback_named_functions": 0,
+        "loc": 191,
+        "module": "src/firelens/answering/live_analysis_distance.py",
+        "pattern_strings": 7,
+        "regex_calls": 7
+      },
+      {
+        "branches": 4,
+        "fallback_named_functions": 0,
+        "loc": 91,
+        "module": "src/firelens/answering/request_facets.py",
+        "pattern_strings": 7,
+        "regex_calls": 7
+      },
+      {
+        "branches": 59,
+        "fallback_named_functions": 0,
+        "loc": 684,
+        "module": "src/firelens/agent/query_plan.py",
+        "pattern_strings": 6,
+        "regex_calls": 8
+      },
+      {
+        "branches": 3,
+        "fallback_named_functions": 0,
+        "loc": 126,
+        "module": "src/firelens/answering/intent_safety.py",
+        "pattern_strings": 6,
+        "regex_calls": 6
+      }
+    ]
+  },
+  "commit": "b24a73bb8e965408a58c0f0a1fd0f20d37bcb8ba",
+  "evaluation": {
+    "browser_journey_files": [
+      "apps/web/tests/e2e/app.spec.ts"
+    ],
+    "eval_scripts": 45,
+    "frontend_test_files": 24,
+    "python_test_files": 142,
+    "python_test_functions": 1576,
+    "python_test_loc": 50508
+  },
+  "frontend": {
+    "bundle": {
+      "css": {
+        "LiveMap-CIGW-MKW.css": 15607,
+        "index-BA4RoIOb.css": 76861
+      },
+      "js": {
+        "AnalysisCharts-D17MTUiT.js": 392356,
+        "LiveMap-3R4geGkI.js": 180910,
+        "index-2UzfvpGw.js": 524444,
+        "index-CuKRLV_B.js": 66
+      },
+      "total_css_bytes": 92468,
+      "total_js_bytes": 1097776
+    },
+    "css_bytes": 91392,
+    "css_files": [
+      "apps/web/src/app/styles.css",
+      "apps/web/src/features/ask/conversationAccessibility.css",
+      "apps/web/src/features/near-me/analysisWorkspace.css"
+    ],
+    "css_loc": 2787,
+    "generated_api_schema_loc": 1663,
+    "important_declarations": 39,
+    "js_scroll_corrections": 5,
+    "media_queries": 15,
+    "overflow_auto_scroll_hidden_rules": 25,
+    "selectors_defined_more_than_once": 141,
+    "ts_tsx_loc_handwritten": 6035,
+    "viewport_height_units": 6
+  }
+}

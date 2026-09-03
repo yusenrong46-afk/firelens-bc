@@ -420,11 +420,11 @@ def test_happening_without_a_current_fire_record_stays_non_live(question: str) -
         ("Are there current fire occurrences around Fernie?", "Fernie"),
         (
             "Bring up the current incident picture for the Thompson region.",
-            "Thompson region",
+            "Thompson",
         ),
         (
             "Show the latest incident overview for the Cariboo region.",
-            "Cariboo region",
+            "Cariboo",
         ),
         ("Revelstoke wildfire report now.", "Revelstoke"),
         ("Smithers fire summary at the moment.", "Smithers"),

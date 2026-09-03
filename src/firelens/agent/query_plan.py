@@ -72,6 +72,7 @@ from firelens.answering.location_intent import (
     is_out_of_province_label,
     is_province_wide_label,
     is_province_wide_question,
+    place_mention_for_question,
 )
 from firelens.contracts import (
     AskResponse,
@@ -86,6 +87,7 @@ from firelens.live_support import (
     official_fire_centre_from_question,
     official_fire_centre_label,
 )
+from firelens.understanding.place import PlaceKind
 
 
 class AgentRequestMode(StrEnum):
@@ -474,7 +476,10 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     if topics and not has_independent_supported_live_clause(planning_question):
         layers = ()
     static_query = planned_static_subrequest(planning_question)
-    multi_place_comparison = is_multi_place_fire_comparison(request.question)
+    multi_place_comparison = (
+        is_multi_place_fire_comparison(request.question)
+        and not parsed_intent.requests_non_bc_scope  # "from Atlantic to Pacific" is scope
+    )
     if multi_place_comparison and request.location is None:
         return AgentQueryPlan(
             route=QueryRoute.LIVE,
@@ -543,9 +548,15 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
         or public_plan.route == QueryRoute.LIVE
         or topics
     )
+    question_place = place_mention_for_question(request.question)
     outside_bc_scope = bool(
         parsed_intent.requests_non_bc_scope
         or (location is not None and is_out_of_province_label(location.label))
+        or (
+            question_location is None
+            and question_place is not None
+            and question_place.kind == PlaceKind.OUT_OF_PROVINCE
+        )
     )
     if actual_live_request and outside_bc_scope:
         return AgentQueryPlan(

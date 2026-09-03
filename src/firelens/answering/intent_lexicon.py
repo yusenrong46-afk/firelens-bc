@@ -106,27 +106,6 @@ RECORD_NOUNS = frozenset(
     }
 )
 SCOPE_WORDS = frozenset({"across", "around", "in", "near", "nearby", "throughout", "within"})
-ANALYSIS_WORDS = frozenset(
-    {
-        "concentrated",
-        "concentration",
-        "closest",
-        "count",
-        "counts",
-        "density",
-        "distributed",
-        "distribution",
-        "fewest",
-        "geographic",
-        "geographically",
-        "geography",
-        "largest",
-        "most",
-        "nearest",
-        "oldest",
-        "regions",
-    }
-)
 EXPOSITORY_WORDS = frozenset(
     {
         "affect",
@@ -201,67 +180,6 @@ DEFINITION_WORDS = frozenset(
         "meaning",
         "versus",
         "vs",
-    }
-)
-AUDIENCE_WORDS = frozenset(
-    {
-        "children",
-        "everyone",
-        "families",
-        "family",
-        "homeowners",
-        "kids",
-        "people",
-        "public",
-        "residents",
-        "students",
-        "visitors",
-        "workplaces",
-    }
-)
-PLACE_STOPWORDS = frozenset(
-    {
-        "active",
-        "canada",
-        "canadian",
-        "current",
-        "latest",
-        "nation",
-        "national",
-        "nationally",
-        "nationwide",
-        "now",
-        "official",
-        "preamble",
-        "reported",
-        "today",
-        "tonight",
-        "untrusted",
-    }
-)
-DISCOURSE_PREFIX_WORDS = frozenset(
-    {
-        "actually",
-        "also",
-        "easier",
-        "easiest",
-        "example",
-        "finally",
-        "first",
-        "half",
-        "harder",
-        "hardest",
-        "instruction",
-        "note",
-        "ok",
-        "okay",
-        "please",
-        "prompt",
-        "question",
-        "second",
-        "skip",
-        "task",
-        "wait",
     }
 )
 FUNCTION_WORDS = frozenset(
@@ -412,37 +330,12 @@ FRONTED_SCOPE = re.compile(
     r"(?P<separator>[:,\-\u2013\u2014]|\s+plus\s+)\s*(?P<request>.+)$",
     re.IGNORECASE,
 )
-TRAILING_SCOPE = re.compile(
-    r"\b(?:near|around|round|within|in|across|throughout|from|"
-    r"close(?:st)?\s+to|nearest\s+to)\s+(?:the\s+)?"
-    r"(?P<place>[a-z][a-z .'-]{1,100})",
-    re.IGNORECASE,
-)
-RADIUS_SCOPE = re.compile(
-    r"\bwithin\s+(?P<radius>\d+(?:\.\d+)?)\s*"
-    r"(?:km|kilomet(?:er|re)s?)\s+of\s+(?:the\s+)?"
-    r"(?P<place>[a-z][a-z .'-]{1,80}?)"
-    r"(?=[,;:.?!]|\s+(?:and|but|then)\b|$)",
-    re.IGNORECASE,
-)
 COMPACT_RADIUS_SCOPE = re.compile(
     r"^\s*(?:show|list|find|check)?\s*(?:current\s+|active\s+)?"
     r"(?:wildfires?|fires?|incidents?)\s+"
     r"(?P<place>[a-z][a-z .'-]{1,80}?)\s+"
     r"(?P<radius>\d+(?:\.\d+)?)\s*"
     r"(?:km|kilomet(?:er|re)s?)[?!.,]*\s*$",
-    re.IGNORECASE,
-)
-CLOSEST_FIRE_TO_SCOPE = re.compile(
-    r"\b(?:closest|nearest)\s+(?:active\s+|official\s+|mapped\s+)*"
-    r"(?:wildfires?|fires?|incidents?|perimeters?)\s+(?:to|from|near)\s+"
-    r"(?:the\s+)?(?P<place>[a-z][a-z .'-]{1,80}?)"
-    r"(?=\s+(?:from\s+(?:nearest|closest)\s+to\s+(?:farthest|furthest)|"
-    r"in\s+order|and|but|then|with)\b|[,;:.?!]|$)",
-    re.IGNORECASE,
-)
-COMPACT_CLOSEST_FIRE_SCOPE = re.compile(
-    r"^\s*(?:closest|nearest)\s+(?:[a-z][a-z'-]*\s+)?(?:wildfires?|fires?|incidents?)\s+(?P<place>[a-z][a-z .'-]{1,80}?)[?!.,]*\s*$",
     re.IGNORECASE,
 )
 LIVE_RECORDS_CLOSEST_SCOPE = re.compile(
@@ -452,49 +345,6 @@ LIVE_RECORDS_CLOSEST_SCOPE = re.compile(
     r"(?:to|from|near)\s+(?:the\s+)?"
     r"(?P<place>[a-z][a-z .'-]{1,80}?)"
     r"(?=[,;:.?!]|$)",
-    re.IGNORECASE,
-)
-COMPACT_EVACUATION_SCOPE = re.compile(
-    r"^\s*(?:(?:show|list|check|find|get|display)\s+)?(?:(?:current|active|latest)\s+)?(?:evac(?:uation)?\s+)?(?:alerts?|orders?)\s+(?P<place>[a-z][a-z .'-]{1,80}?)\s+(?:right\s+now|today|tonight|currently|now)[?!.,]*\s*$",
-    re.IGNORECASE,
-)
-FIRE_ON_SCOPE = re.compile(
-    r"\b(?:fires?|wildfires?|incidents?|perimeters?)\s+on\s+(?:the\s+)?"
-    r"(?P<place>[a-z][a-z .'-]{1,80}?)"
-    r"(?=\s+(?:right\s+now|currently|today|and|but|then)\b|[,;:.?!]|$)",
-    re.IGNORECASE,
-)
-QUALIFIED_PLACE_FIRE_SCOPE = re.compile(
-    r"\b(?:current|active|latest|official|reported)\s+"
-    r"(?P<place>[a-z][a-z .'-]{1,60}?)\s+"
-    r"(?:wildfires?|fires?|incidents?)\b",
-    re.IGNORECASE,
-)
-CLOSEST_NEAR_SCOPE = re.compile(
-    r"\b(?:which|what)\s+(?:official\s+)?"
-    r"(?:wildfire|fire|incident|perimeter)\s+"
-    r"near\s+(?:the\s+)?(?P<place>[a-z][a-z .'-]{1,80}?)\s+"
-    r"is\s+(?:the\s+)?(?:closest|nearest)\s+to\s+(?:the\s+)?"
-    r"(?:city|town|community|place)\b|"
-    r"\b(?:which|what)\s+(?:official\s+)?"
-    r"(?:wildfire|fire|incident|perimeter)\s+"
-    r"near\s+(?:the\s+)?(?P<bare_place>[a-z][a-z .'-]{1,80}?)\s+"
-    r"is\s+(?:the\s+)?(?:closest|nearest)(?=[?.,;]|$)",
-    re.IGNORECASE,
-)
-NEAREST_FIRE_TO_SCOPE = re.compile(
-    r"\b(?:what|which)\s+(?:is\s+)?(?:the\s+)?(?:nearest|closest)\s+"
-    r"(?:official\s+)?(?:wildfire|fire|incident|perimeter)\s+"
-    r"(?:to|from|near)\s+(?:the\s+)?(?P<place>[a-z][a-z .'-]{1,80}?)"
-    r"(?=[,;:.?!]|\s+(?:and|but|then)\b|$)",
-    re.IGNORECASE,
-)
-FIRE_NEAREST_TO_SCOPE = re.compile(
-    r"\b(?:which|what)\s+(?:official\s+)?"
-    r"(?:wildfire|fire|incident|perimeter)\s+is\s+"
-    r"(?:the\s+)?(?:nearest|closest)\s+(?:to|from|near)\s+"
-    r"(?:the\s+)?(?P<place>[a-z][a-z .'-]{1,80}?)"
-    r"(?=[,;:.?!]|\s+(?:and|but|then)\b|$)",
     re.IGNORECASE,
 )
 FIRST_PERSON_PLACE = re.compile(
@@ -523,67 +373,6 @@ NEAR_PLACE_INFORMATION_REQUEST = re.compile(
     r")\s+(?:near|around)\s+(?:the\s+)?"
     r"(?P<place>[a-z][a-z .'-]{1,80}?)"
     r"(?=[,;:.?!]|$)",
-    re.IGNORECASE,
-)
-LOCALITY_MODIFIER_PREFIX = re.compile(
-    r"^\s*downtown\s+(?P<place>[a-z][a-z .'-]{1,80})\s*$",
-    re.IGNORECASE,
-)
-NEAREST_BARE_SCOPE = re.compile(
-    r"\b(?:nearest|closest)\s+(?!to\b|mapped\b|official\b|wildfire\b|fire\b|perimeter\b)"
-    r"(?P<place>[a-z][a-z .'-]{1,80})",
-    re.IGNORECASE,
-)
-REPORT_FOR_SCOPE = re.compile(
-    r"\b(?:fire|wildfire|incident|perimeter)\s+"
-    r"(?:activity|information|occurrences?|status|update|report|records?|overview|snapshot|"
-    r"picture|summary|situation)\s+for\s+(?:the\s+)?"
-    r"(?P<place>[a-z][a-z .'-]{1,100})",
-    re.IGNORECASE,
-)
-COMMAND_OWNED_SCOPE = re.compile(
-    r"^\s*(?:please\s+)?(?:bring\s+up\s+|catch\s+(?:me|us)\s+up\s+on\s+|"
-    r"show\s+(?:me\s+)?(?:the\s+)?|"
-    r"give\s+(?:me\s+)?(?:the\s+)?|display\s+(?:the\s+)?)?"
-    r"(?P<place>(?!(?:current|latest|official|national|nationwide|active|"
-    r"reported|today|tonight|now)\b)[a-z][a-z .'-]{1,60}?)\s+"
-    r"(?:wildfire|fire)\s+"
-    r"(?:activity|occurrences?|status|update|report|records?|overview|snapshot|"
-    r"picture|summary|situation)\b",
-    re.IGNORECASE,
-)
-MAP_SCOPE = re.compile(
-    r"^\s*(?:please\s+)?map\s+(?P<place>[a-z][a-z .'-]{1,80})\s*$",
-    re.IGNORECASE,
-)
-MAP_FOCUS_SCOPE = re.compile(
-    r"\b(?:put|move|focus|centre|center|zoom)\s+(?:the\s+)?map\s+"
-    r"(?:on|to|at|near|around)\s+(?:the\s+)?"
-    r"(?P<place>[a-z][a-z .'-]{1,80})",
-    re.IGNORECASE,
-)
-UNDER_ALERT_SCOPE = re.compile(
-    r"\b(?:is|are|whether)\s+(?:the\s+)?"
-    r"(?P<place>[a-z][a-z .'-]{1,60}?)\s+"
-    r"(?:is\s+|are\s+)?(?:under|on)\s+(?:an?\s+)?"
-    r"(?:(?:evacuation|evac)\s+)?(?:alerts?|orders?)\b",
-    re.IGNORECASE,
-)
-EXISTENTIAL_EVACUATION_SCOPE = re.compile(
-    r"\b(?:is|are)\s+there\s+(?:an?\s+)?"
-    r"(?:"
-    r"(?:(?:evacuation|evac)\s+)?(?:alerts?|orders?)\s+"
-    r"(?:for|in|near|around)\s+(?:the\s+)?(?P<place_after>[a-z][a-z .'-]{1,60})"
-    r"|"
-    r"(?P<place_before>[a-z][a-z .'-]{1,60}?)\s+"
-    r"(?:(?:evacuation|evac)\s+)?(?:alerts?|orders?)"
-    r")\b",
-    re.IGNORECASE,
-)
-TIME_TAIL = re.compile(
-    r"\s+(?:right\s+now|currently|current|latest|today|tonight|now|at\s+present|"
-    r"at\s+the\s+moment|this\s+(?:morning|afternoon|evening|week)|"
-    r"last\s+(?:season|summer|year|week)|last\s+updated|yesterday)\b.*$",
     re.IGNORECASE,
 )
 TOP_LEVEL_SEPARATOR = re.compile(

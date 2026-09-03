@@ -1,0 +1,32 @@
+{
+  "pytest_non_browser": {
+    "passed": 2017,
+    "skipped": 13
+  },
+  "claimbench_v2": {
+    "total": 332,
+    "unsafe_false_accept_rate": 0.0,
+    "passed": null
+  },
+  "hard_probe_offline_rc2_2": {
+    "executed": 105,
+    "passed": 91,
+    "failed": 14,
+    "minimum_passed": 86,
+    "minimum_passed_met": true,
+    "elapsed_seconds": 0.9,
+    "cost_usd": 0.0
+  },
+  "hard_probe_offline_historical_profile": {
+    "executed": 105,
+    "passed": 82,
+    "failed": 23,
+    "minimum_passed": 86,
+    "minimum_passed_met": false,
+    "elapsed_seconds": 0.9,
+    "cost_usd": 0.0
+  },
+  "vitest": {
+    "passed": 168
+  }
+}

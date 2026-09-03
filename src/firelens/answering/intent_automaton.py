@@ -4,44 +4,28 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from enum import StrEnum
 from functools import lru_cache
 
 from firelens.answering import intent_automaton_rules as rules
 from firelens.answering import intent_lexicon as lex
 from firelens.answering import intent_spans as spans
+from firelens.answering.intent_automaton_types import (
+    ClauseIntentKind,
+    RecordOperation,
+    TemporalScope,
+)
 from firelens.answering.intent_guidance import is_evac_definition, is_guidance
 from firelens.answering.intent_refresh import is_refresh_snapshot_tokens
 from firelens.contracts import LiveResultKind
 
-
-class ClauseIntentKind(StrEnum):
-    """Application-owned clause classes; none grants publication authority."""
-
-    LIVE_RECORDS = "live_records"
-    REVIEWED_GUIDANCE = "reviewed_guidance"
-    PRODUCT_HELP = "product_help"
-    STATIC_BACKGROUND = "static_background"
-    OTHER = "other"
-
-
-class TemporalScope(StrEnum):
-    """Time ownership used to prevent historical/future text becoming live."""
-
-    CURRENT = "current"
-    NONCURRENT = "noncurrent"
-    UNSPECIFIED = "unspecified"
-
-
-class RecordOperation(StrEnum):
-    """Bounded operations supported by deterministic live-record tools."""
-
-    LIST = "list"
-    LOCATE = "locate"
-    STATUS = "status"
-    ANALYZE = "analyze"
-    PERIMETER = "perimeter"
-    EVACUATION = "evacuation"
+__all__ = [
+    "ClauseIntentKind",
+    "ParsedClauseIntent",
+    "ParsedRequestIntent",
+    "RecordOperation",
+    "TemporalScope",
+    "parse_request_intent",
+]
 
 
 def _temporal_scope(tokens: tuple[str, ...], text: str) -> TemporalScope:
@@ -505,6 +489,13 @@ def _parse_clause(text: str) -> ParsedClauseIntent:
         )
     )
     evacuation = _current_evacuation(tokens, temporal)
+    if (
+        fire_operation is None
+        and not evacuation
+        and temporal != TemporalScope.NONCURRENT
+        and not (guidance or product_help or _is_expository(tokens))
+    ):
+        fire_operation, evacuation = spans.implied_place_operation(text, tokens)
     layers: list[LiveResultKind] = []
     operation = fire_operation
     all_three_layers = rules.all_three_official_record_layers(text)

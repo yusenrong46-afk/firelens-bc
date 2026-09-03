@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 from firelens.contracts import QueryRequest
+from firelens.understanding.place import DOMAIN_NOUNS, FUNCTION_WORDS
 
 _LOCATED_NAMED_FIRE = re.compile(
     r"\bwhere(?:\s+is|['’]s)\s+(?:the\s+)?"
@@ -18,6 +19,11 @@ _PREFIXED_NAMED_FIRE = re.compile(
     r"(?=\s+(?:right\s+now|today|tonight|currently|now)\b|[?!.]|$)",
     re.IGNORECASE,
 )
+_WHERE_IS_NAMED_FIRE = re.compile(
+    r"(?i:\bwhere(?:\s+is|['’]s)\s+(?:the\s+)?)"
+    r"(?P<name>[A-Z][A-Za-z0-9'’.-]*(?:\s+[A-Z][A-Za-z0-9'’.-]*){0,4})\s+"
+    r"(?i:(?:fire|wildfire)\s*(?:right\s+now|today|currently|now)?\s*[?!.]*\s*$)"
+)
 _BCWS_INCIDENT_NUMBER = re.compile(
     r"(?<![A-Za-z0-9])(?P<number>[A-Za-z]\d{4,6})(?![A-Za-z0-9])"
 )
@@ -26,22 +32,24 @@ _FIRE_FOLLOW_UP = re.compile(
     r"the\s+(?:fire|wildfire|incident)|same\s+(?:fire|wildfire|incident))\b",
     re.IGNORECASE,
 )
-_GENERIC_LOCATED_NAMES = frozenset(
-    {
-        "a",
-        "active",
-        "any",
-        "closest",
-        "current",
-        "first",
-        "local",
-        "nearest",
-        "second",
-        "that",
-        "the",
-        "third",
-        "this",
-    }
+# A fire name has a name head. Function words (near, the, that ...) and
+# ordinal / proximity adjectives are not names; "near Kelowna" is a place.
+_GENERIC_LOCATED_NAMES = (
+    FUNCTION_WORDS
+    | DOMAIN_NOUNS
+    | frozenset(
+        {
+            "first",
+            "second",
+            "third",
+            "fourth",
+            "fifth",
+            "local",
+            "biggest",
+            "largest",
+            "smallest",
+        }
+    )
 )
 _GUIDANCE_NAMED_SUBJECTS = frozenset(
     {
@@ -151,6 +159,7 @@ def extracted_located_fire_name(question: str) -> str | None:
         if base and base.casefold().split()[0] not in _GENERIC_LOCATED_NAMES:
             return f"{base} Fire"
     for pattern in (
+        _WHERE_IS_NAMED_FIRE,
         _TELL_ABOUT_FIRE,
         _STILL_BURNING_FIRE,
         _STATUS_NAMED_FIRE,

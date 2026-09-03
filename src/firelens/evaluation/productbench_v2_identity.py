@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
@@ -95,6 +96,54 @@ def executable_catalog_payload(
         "case_count": len(contract_rows),
         "cases": contract_rows,
     }
+
+
+def rewrite_manifest(
+    *,
+    manifest_path: Path,
+    catalog: dict[str, Any],
+    contract_rows: list[dict[str, Any]],
+    raw_catalog_sha256: str,
+    contract_sha256: str,
+    executable_catalog_schema: str,
+    executable_catalog_sha256: str,
+    tiers: list[str],
+) -> dict[str, Any]:
+    """Rewrite the unsealed manifest's derived fields and return the new manifest."""
+
+    text = manifest_path.read_text(encoding="utf-8")
+    manifest = cast(dict[str, Any], json.loads(text))
+    scalars: dict[str, Any] = {
+        "raw_catalog_schema": catalog["schema_version"],
+        "raw_catalog_sha256": raw_catalog_sha256,
+        "case_count": len(catalog["cases"]),
+        "contract_sha256": contract_sha256,
+        "executable_catalog_schema": executable_catalog_schema,
+        "executable_catalog_sha256": executable_catalog_sha256,
+    }
+    lists: dict[str, Any] = {
+        "case_ids": [str(case["id"]) for case in catalog["cases"]],
+        "tiers": {
+            tier: [row["id"] for row in contract_rows if row["tier"] == tier] for tier in tiers
+        },
+    }
+    if all(manifest.get(key) == value for key, value in lists.items()):
+        # Only hashes moved: substitute them in place so the hand-formatted
+        # ID lists keep their layout and the diff stays reviewable.
+        for key, value in scalars.items():
+            text = re.sub(
+                rf'("{re.escape(key)}":\s*)("[^"]*"|\d+)',
+                lambda match, value=value: match.group(1) + json.dumps(value),
+                text,
+                count=1,
+            )
+        manifest.update(scalars)
+    else:
+        manifest.update(scalars)
+        manifest.update(lists)
+        text = json.dumps(manifest, indent=2) + "\n"
+    manifest_path.write_text(text, encoding="utf-8")
+    return manifest
 
 
 def identity(

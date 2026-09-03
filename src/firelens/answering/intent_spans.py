@@ -1,8 +1,7 @@
-"""Location and national-span helpers owned by the typed intent automaton.
+"""Location and national-span helpers used by the typed intent automaton.
 
-Downstream routing must not call this module.  It exists only so the parser can
-stay under the production size bound while remaining the sole owner of those
-fields.
+Place spans come from :mod:`firelens.understanding.place`; this module only
+adapts them to the parser's clause model and owns the national-scope check.
 """
 
 from __future__ import annotations
@@ -10,32 +9,41 @@ from __future__ import annotations
 import re
 
 from firelens.answering import intent_lexicon as lex
+from firelens.answering.intent_automaton_types import RecordOperation
+from firelens.understanding.place import (
+    PlaceKind,
+    PlaceMention,
+    extract_place,
+    normalize_question,
+)
 
-
-def clean_fronted_scope(candidate: str) -> str:
-    candidate = candidate.strip()
-    candidate = re.sub(r"^(?:for|near|around|in)\s+", "", candidate, flags=re.IGNORECASE)
-    return candidate.strip()
-
-
-def plausible_fronted_scope(candidate: str) -> bool:
-    cleaned = clean_fronted_scope(candidate)
-    tokens = lex.tokenize(cleaned)
-    token_set = frozenset(tokens)
-    return bool(
-        tokens
-        and len(tokens) <= 5
-        and tokens[0] not in lex.REQUEST_STARTERS
-        and not token_set
-        & (
-            lex.FIRE_WORDS
-            | lex.RECORD_NOUNS
-            | lex.AUDIENCE_WORDS
-            | lex.PLACE_STOPWORDS
-            | lex.DISCOURSE_PREFIX_WORDS
-            | {"blank", "empty", "map"}
-        )
-    )
+_LIVE_PLACE_KINDS = frozenset({PlaceKind.COMMUNITY, PlaceKind.PERSONAL, PlaceKind.FIRE_CENTRE})
+_PLACE_STATE_WORDS = frozenset(
+    {
+        "safe",
+        "ok",
+        "okay",
+        "threatened",
+        "evacuated",
+        "evacuating",
+        "affected",
+        "danger",
+        "risk",
+    }
+)
+# Explanatory or figurative sentences ("why is fire near homes dangerous",
+# "my workload is a fire near deadline") are not record requests.
+_NON_REQUEST_MARKERS = frozenset(
+    {"why", "how", "my", "our", "your", "his", "her", "their", "like", "as", "if", "because",
+     "metaphor", "means", "meaning"}
+)  # fmt: skip
+_SINGULAR_FIRE_NOUNS = frozenset({"fire", "wildfire", "blaze"})
+_WORD = re.compile(r"[A-Za-z0-9][A-Za-z0-9'’.\-]*")
+_FRONTED_PLACE = re.compile(
+    r"^\s*(?P<place>[A-Za-z][A-Za-z0-9'’.\-]*(?:\s+[A-Za-z][A-Za-z0-9'’.\-]*){0,3})\s*"
+    r"(?P<separator>[—–:,]|\s-\s|\.\s|\s+plus\s+)",
+    re.IGNORECASE,
+)
 
 
 def _canada_is_country_qualifier(tokens: tuple[str, ...]) -> bool:
@@ -57,10 +65,7 @@ def requests_non_bc_scope(tokens: tuple[str, ...]) -> bool:
     """True only for an explicit non-BC national *record* span."""
 
     token_set = frozenset(tokens)
-    if lex.has_any_phrase(tokens, lex.NATIONAL_PARK_PHRASES):
-        national_park = True
-    else:
-        national_park = False
+    national_park = lex.has_any_phrase(tokens, lex.NATIONAL_PARK_PHRASES)
     if lex.has_any_phrase(tokens, lex.NATIONAL_SCOPE_PHRASES):
         return True
     if token_set & {"nationwide", "nationally"}:
@@ -78,174 +83,61 @@ def requests_non_bc_scope(tokens: tuple[str, ...]) -> bool:
     return False
 
 
-def _rejected_place(candidate: str) -> bool:
-    tokens = lex.tokenize(candidate)
-    token_set = frozenset(tokens)
-    if not tokens:
-        return True
-    if token_set & (lex.AUDIENCE_WORDS | lex.PLACE_STOPWORDS | lex.DISCOURSE_PREFIX_WORDS):
-        return True
-    if re.search(r"\b(?:and|or|versus|vs)\b", candidate, flags=re.IGNORECASE):
-        return True
-    return False
+def implied_live_place(text: str, tokens: tuple[str, ...]) -> PlaceMention | None:
+    """A stated place that makes a verb-less short clause a current-records request.
 
+    "wildfire near kelowna?", "fires kelowna", "Is Fort St. John safe?" name a
+    place; "write a wildfire haiku" only has a compound noun after "wildfire".
+    """
 
-def _noisy_place(candidate: str) -> bool:
-    token_set = frozenset(lex.tokenize(candidate))
-    return bool(
-        token_set
-        & (
-            lex.FIRE_WORDS
-            | lex.PERIMETER_WORDS
-            | lex.EVACUATION_WORDS
-            | lex.RECORD_NOUNS
-            | {"mapped", "official", "home", "house", "property", "every", "any"}
-        )
-    )
-
-
-def _finalize_place(candidate: str) -> str | None:
-    candidate = lex.TIME_TAIL.sub("", candidate).strip(" ,.?;+'")
-    candidate = re.sub(r"^(?:a|an|the)\s+", "", candidate, flags=re.IGNORECASE)
-    modifier = lex.LOCALITY_MODIFIER_PREFIX.match(candidate)
-    if modifier is not None:
-        candidate = modifier.group("place").strip(" ,.?;+'").strip()
-    if not candidate:
+    if len(tokens) > 8 or frozenset(tokens) & _NON_REQUEST_MARKERS:
         return None
-    if _noisy_place(candidate):
-        salvaged = re.search(
-            r"\b(?:to|from|near)\s+(?P<place>[a-z][a-z .'-]{1,80})$",
-            candidate,
-            flags=re.IGNORECASE,
-        )
-        if salvaged is None:
+    mention = extract_place(text, live=True)
+    if mention is None or mention.kind not in _LIVE_PLACE_KINDS:
+        return None
+    if mention.span is not None and len(tokens) > 2:
+        before = _WORD.findall(normalize_question(text)[: mention.span[0]])
+        if before and before[-1].casefold() in _SINGULAR_FIRE_NOUNS:
             return None
-        candidate = salvaged.group("place").strip(" ,.?;+'")
-        candidate = re.sub(r"^(?:a|an|the)\s+", "", candidate, flags=re.IGNORECASE)
-    if not candidate or _noisy_place(candidate) or _rejected_place(candidate):
-        return None
-    return candidate
+    return mention
 
 
-def _named_place_from_text(text: str) -> str | None:
-    compact_radius = lex.COMPACT_RADIUS_SCOPE.search(text)
-    if compact_radius is not None:
-        candidate = _finalize_place(compact_radius.group("place"))
-        if candidate:
-            return candidate
-    radius = lex.RADIUS_SCOPE.search(text)
-    if radius is not None:
-        candidate = _finalize_place(radius.group("place"))
-        if candidate:
-            return candidate
-    closest_fire = lex.CLOSEST_FIRE_TO_SCOPE.search(text)
-    if closest_fire is not None:
-        candidate = _finalize_place(closest_fire.group("place"))
-        if candidate:
-            return candidate
-    compact_closest_fire = lex.COMPACT_CLOSEST_FIRE_SCOPE.search(text)
-    if compact_closest_fire is not None:
-        candidate = _finalize_place(compact_closest_fire.group("place"))
-        if candidate:
-            return candidate
-    live_records_closest = lex.LIVE_RECORDS_CLOSEST_SCOPE.search(text)
-    if live_records_closest is not None:
-        candidate = _finalize_place(live_records_closest.group("place"))
-        if candidate:
-            return candidate
-    fire_on_scope = lex.FIRE_ON_SCOPE.search(text)
-    if fire_on_scope is not None:
-        candidate = _finalize_place(fire_on_scope.group("place"))
-        if candidate:
-            return candidate
-    qualified_place_fire = lex.QUALIFIED_PLACE_FIRE_SCOPE.search(text)
-    if qualified_place_fire is not None:
-        candidate = _finalize_place(qualified_place_fire.group("place"))
-        if candidate:
-            return candidate
-    closest = lex.CLOSEST_NEAR_SCOPE.search(text)
-    if closest is not None:
-        candidate = _finalize_place(
-            closest.groupdict().get("place") or closest.group("bare_place")
-        )
-        if candidate:
-            return candidate
-    nearest_to = lex.NEAREST_FIRE_TO_SCOPE.search(text)
-    if nearest_to is not None:
-        candidate = _finalize_place(nearest_to.group("place"))
-        if candidate:
-            return candidate
-    fire_nearest_to = lex.FIRE_NEAREST_TO_SCOPE.search(text)
-    if fire_nearest_to is not None:
-        candidate = _finalize_place(fire_nearest_to.group("place"))
-        if candidate:
-            return candidate
-    alerted = lex.UNDER_ALERT_SCOPE.search(text)
-    if alerted is not None:
-        candidate = _finalize_place(alerted.group("place"))
-        if candidate:
-            return candidate
-    compact_evacuation = lex.COMPACT_EVACUATION_SCOPE.search(text)
-    if compact_evacuation is not None:
-        candidate = _finalize_place(compact_evacuation.group("place"))
-        if candidate:
-            return candidate
-    mapped_focus = lex.MAP_FOCUS_SCOPE.search(text)
-    if mapped_focus is not None:
-        candidate = _finalize_place(mapped_focus.group("place"))
-        if candidate:
-            return candidate
-    existential = lex.EXISTENTIAL_EVACUATION_SCOPE.search(text)
-    if existential is not None:
-        raw = existential.group("place_after") or existential.group("place_before")
-        candidate = _finalize_place(raw or "")
-        if candidate:
-            return candidate
-    matches = tuple(
-        (
-            *lex.TRAILING_SCOPE.finditer(text),
-            *lex.REPORT_FOR_SCOPE.finditer(text),
-            *lex.NEAREST_BARE_SCOPE.finditer(text),
-        )
-    )
-    if matches:
-        candidate = _finalize_place(matches[-1].group("place"))
-        if candidate:
-            return candidate
-    mapped = lex.MAP_SCOPE.search(text)
-    if mapped is not None:
-        candidate = _finalize_place(mapped.group("place"))
-        if candidate:
-            return candidate
-    owned = lex.COMMAND_OWNED_SCOPE.search(text)
-    if owned is not None:
-        candidate = owned.group("place").strip()
-        candidate = re.sub(
-            r"^(?:bring\s+up\s+|catch\s+(?:me|us)\s+up\s+on\s+|"
-            r"show\s+(?:me\s+)?(?:the\s+)?|give\s+(?:me\s+)?(?:the\s+)?|"
-            r"display\s+(?:the\s+)?)",
-            "",
-            candidate,
-            flags=re.IGNORECASE,
-        )
-        finalized = _finalize_place(candidate)
-        if finalized:
-            return finalized
-    return None
+def implied_place_operation(
+    text: str, tokens: tuple[str, ...]
+) -> tuple[RecordOperation | None, bool]:
+    """(fire operation, evacuation) implied by a stated place in a verb-less clause.
+
+    "wildfire near kelowna?" lists fires; "Is Fort St. John safe?" checks every
+    official layer for that place (the personal-safety boundary is added
+    downstream). Anything else implies nothing.
+    """
+
+    if implied_live_place(text, tokens) is None:
+        return None, False
+    token_set = frozenset(tokens)
+    if token_set & _PLACE_STATE_WORDS and not token_set & lex.DEFINITION_WORDS:
+        return RecordOperation.LIST, True  # "Is Kelowna safe from the fire?" needs every layer
+    if lex.has_fire(tokens):
+        return RecordOperation.LIST, False
+    return None, False
 
 
 def implicit_nearby_location(question: str) -> str | None:
-    """Return a stated place for a bounded FireLens-context nearby request."""
+    """Return a stated place for a bounded FireLens-context nearby request.
 
-    nearby_place = lex.NEAR_PLACE_INFORMATION_REQUEST.search(question)
-    if nearby_place is not None:
-        return _finalize_place(nearby_place.group("place"))
-    if lex.NEARBY_INFORMATION_REQUEST.search(question) is None:
+    "I'm in Kelowna. Anything nearby I should know about?" names no fire word,
+    but inside FireLens a nearby request with a stated place is a live request.
+    """
+
+    if (
+        lex.NEARBY_INFORMATION_REQUEST.search(question) is None
+        and lex.NEAR_PLACE_INFORMATION_REQUEST.search(question) is None
+    ):
         return None
-    match = lex.FIRST_PERSON_PLACE.search(question) or lex.THIRD_PARTY_PLACE.search(question)
-    if match is None:
+    mention = extract_place(question, live=True)
+    if mention is None or not mention.is_community:
         return None
-    return _finalize_place(match.group("place"))
+    return mention.label
 
 
 def is_context_location_declaration(text: str) -> bool:
@@ -259,25 +151,35 @@ def is_context_location_declaration(text: str) -> bool:
 
 
 def location_candidate(text: str, *, is_live: bool) -> str | None:
+    """Community label for one clause, or None."""
+
     if not is_live:
         return None
-    named = _named_place_from_text(text)
-    if named:
-        return named
-    fronted = lex.FRONTED_SCOPE.search(text)
-    if fronted is None:
+    mention = extract_place(text, live=True)
+    if mention is None or mention.kind != PlaceKind.COMMUNITY:
         return None
-    candidate = clean_fronted_scope(fronted.group("place"))
-    if not plausible_fronted_scope(candidate):
-        return None
-    return _finalize_place(candidate)
+    return mention.label
 
 
 def fronted_scope_for_question(question: str) -> str | None:
-    match = lex.FRONTED_SCOPE.search(question)
+    """Return a leading place label such as "Kelowna — any fires?"."""
+
+    match = _FRONTED_PLACE.match(question)
     if match is None:
         return None
-    candidate = clean_fronted_scope(match.group("place"))
-    if not plausible_fronted_scope(candidate) or _rejected_place(candidate):
+    mention = extract_place(question, live=True)
+    if mention is None or not mention.is_community or mention.span is None:
         return None
-    return candidate
+    if mention.span[0] < match.start("place") or mention.span[1] > match.end("place"):
+        return None
+    return mention.label
+
+
+def plausible_fronted_scope(candidate: str) -> bool:
+    """True when the whole candidate is one place name ("Nelson", not "Show fires")."""
+
+    cleaned = " ".join(candidate.split()).strip(" ,.;:?!'\"")
+    mention = extract_place(f"{cleaned} — any fires?", live=True)
+    if mention is None or not mention.is_community or mention.span is None:
+        return False
+    return mention.span[0] == 0 and mention.span[1] >= len(cleaned) - 1

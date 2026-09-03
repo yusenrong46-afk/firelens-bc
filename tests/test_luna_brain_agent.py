@@ -776,11 +776,11 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_selection_overrides_named_closest_and_ordinal_record_choice(self) -> None:
         selected = _fire(result_id="incident:7", name="Selected Fire", size_hectares=12.0)
-        other = _fire(result_id="incident:8", name="Other Fire", size_hectares=2.0)
+        other = _fire(result_id="incident:8", name="Creek Fire", size_hectares=2.0)
         agent = _agent([selected, other])
 
         for question in (
-            "Tell me about Other Fire",
+            "Tell me about Creek Fire",
             "Which fire is closest to Kelowna?",
             "What about the second fire?",
         ):
@@ -794,7 +794,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
                 self.assertEqual(execution.response.selected_live_result_id, "incident:7")
                 self.assertIn("Selected Fire", execution.response.answer or "")
-                self.assertNotIn("Other Fire", execution.response.answer or "")
+                self.assertNotIn("Creek Fire", execution.response.answer or "")
 
     async def test_closest_near_a_place_names_a_fetched_fire(self) -> None:
         agent = _agent([_fire(result_id="incident:7", name="Mountain Fire")])
