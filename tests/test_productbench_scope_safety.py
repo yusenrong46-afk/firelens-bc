@@ -273,7 +273,7 @@ async def test_unavailable_refresh_never_claims_that_a_snapshot_was_fetched() ->
 
     public = " ".join([execution.response.answer or "", *execution.response.limitations])
     assert execution.response.response_mode == ResponseMode.ABSTENTION
-    assert "official live wildfire layers were unavailable" in public.casefold()
+    assert "could not reach the bc wildfire service fire list" in public.casefold()
     assert "fetched a current official snapshot" not in public.casefold()
     assert len(static.calls) == 0
 

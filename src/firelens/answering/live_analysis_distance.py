@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from datetime import datetime
 
 from firelens import freshness_language
+from firelens.answering.plain_time import human_time, time_ago
 from firelens.contracts import LiveResult, LiveResultKind, QueryRequest
 
 _PLACEHOLDER_NAME = "unnamed official record"
@@ -121,43 +122,40 @@ def ranked_live_results_for_request(
 
 def freshness_summary(records: Sequence[LiveResult]) -> str:
     if not records:
-        return "No fetched official record supplied a source or retrieval timestamp."
+        return "No official record was loaded, so there is no update time to report."
     source_times = sorted({item.source_updated_at for item in records})
     retrieval_times = sorted({item.retrieved_at for item in records})
 
-    def describe(label: str, values: Sequence[datetime]) -> str:
-        rendered = [value.isoformat() for value in values]
-        if len(rendered) == 1:
-            return f"{label} {rendered[0]}"
-        return f"{label} range from {rendered[0]} to {rendered[-1]}"
+    def describe(values: Sequence[datetime]) -> str:
+        if len(values) == 1 or values[0] == values[-1]:
+            return f"{time_ago(values[-1])} ({human_time(values[-1])})"
+        return f"between {human_time(values[0])} and {human_time(values[-1])}"
 
     return (
-        describe("Fetched official source update time:", source_times)
-        + ". "
-        + describe("FireLens retrieval times", retrieval_times)
-        + ". Source update and FireLens retrieval are separate clocks."
+        f"The publisher last updated these records {describe(source_times)}. FireLens "
+        f"fetched them {describe(retrieval_times)}; those are two different clocks."
     )
 
 
 def ranked_distance_answer(records: Sequence[LiveResult]) -> str:
     ranked = _unique_ranked_incidents(records)
     if not ranked:
-        return "The fetched official records do not include locatable geometry for ranking."
+        return "None of the fires listed has a mappable position, so FireLens cannot rank them by distance."
     entries = [
-        f"{index}. {official_display_name(item)} — {item.distance_km:g} km"
+        f"{index}. {official_display_name(item)}, {item.distance_km:g} km"
         for index, item in enumerate(ranked[:10], start=1)
     ]
     return (
-        "Nearest to farthest among fetched locatable official records: "
+        "Nearest to farthest: "
         + "; ".join(entries)
-        + ". Distances are geodesic, not driving distances or safety assessments."
+        + ". Distances are straight-line, not driving distance, and not a safety assessment."
     )
 
 
 def closest_three_facts(request: QueryRequest, records: Sequence[LiveResult]) -> str:
     chosen = closest_locatable_result(request.question, records)
     if chosen is None:
-        return "The fetched official records do not include locatable geometry for this answer."
+        return "None of the fires listed has a mappable position, so FireLens cannot say which is closest."
     size = (
         f"{chosen.size_hectares:g} hectares"
         if chosen.size_hectares is not None
@@ -166,7 +164,7 @@ def closest_three_facts(request: QueryRequest, records: Sequence[LiveResult]) ->
     return (
         f"1. Record: {official_display_name(chosen)}. "
         f"2. Official status: {chosen.status}. "
-        f"3. Distance and size: {chosen.distance_km:g} km geodesic; {size}."
+        f"3. Distance and size: {chosen.distance_km:g} km in a straight line; {size}."
     )
 
 
@@ -184,7 +182,7 @@ def size_roster(records: Sequence[LiveResult]) -> str:
         else:
             parts.append(f"{name}: {item.size_hectares:g} hectares")
     if not parts:
-        return "The official records do not report burned hectares for the fetched fires."
+        return "The official records do not give a size for any of the fires listed."
     prefix = freshness_language.official_information_prefix(
         freshness_language.aggregate_freshness_from_records(list(records))
     )

@@ -393,7 +393,9 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.aggregate_freshness, "mixed")
         self.assertNotIn("current", response.answer.casefold())
         self.assertNotIn("latest", response.answer.casefold())
-        self.assertTrue(any("stale cached" in item.casefold() for item in response.limitations))
+        self.assertTrue(
+            any("cached copies" in item.casefold() for item in response.limitations)
+        )
         self.assertEqual(
             response.answer_sections[0].heading,
             "Official records with mixed freshness",
@@ -662,7 +664,7 @@ class LiveAnswerCoordinatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(mapped_wording.response_mode, ResponseMode.LIVE)
         self.assertIsNotNone(mapped_wording.resolved_location)
         self.assertIn("Target perimeter", mapped_wording.answer or "")
-        self.assertIn("km geodesic", mapped_wording.answer or "")
+        self.assertIn("km in a straight line", mapped_wording.answer or "")
 
     async def test_distance_followup_never_substitutes_for_an_unmatched_selection(self) -> None:
         timestamp = datetime(2026, 8, 13, tzinfo=UTC)

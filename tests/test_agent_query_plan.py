@@ -191,9 +191,7 @@ def test_unselected_roster_reference_requires_a_selection_instead_of_refetching(
     assert plan.mode == AgentRequestMode.TERMINAL
     assert plan.tool_calls == ()
     assert plan.terminal_response is not None
-    assert "Select a mapped official record or name the fire" in (
-        plan.terminal_response.answer or ""
-    )
+    assert "not sure which record you mean" in (plan.terminal_response.answer or "")
 
 
 def test_implicit_nearby_mixed_request_preserves_reviewed_smoke_half() -> None:
@@ -590,7 +588,9 @@ def test_singular_size_or_status_requires_an_explicit_selection(question: str) -
     assert plan.mode == AgentRequestMode.TERMINAL
     assert plan.tool_calls == ()
     assert plan.terminal_response is not None
-    assert "Select a mapped official record" in (plan.terminal_response.answer or "")
+    assert "Select a fire on the map or in the list first" in (
+        plan.terminal_response.answer or ""
+    )
 
 
 def test_explicit_unresolved_region_is_resumable_and_fetch_free() -> None:

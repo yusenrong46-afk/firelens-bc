@@ -181,7 +181,7 @@ class MixedClauseOutcomeTests(unittest.IsolatedAsyncioTestCase):
             ],
         )
         assert response.answer is not None
-        self.assertIn("2 incident records", response.answer)
+        self.assertIn("lists 2 fires in British Columbia", response.answer)
         self.assertIn("Include water, medication", response.answer)
         self.assertIn("what changed since yesterday", response.answer)
         self.assertIn("keeps no earlier copies", response.answer)

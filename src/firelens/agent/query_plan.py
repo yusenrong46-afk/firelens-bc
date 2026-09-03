@@ -25,7 +25,10 @@ from firelens.answering.intent_conversation import is_selected_record_followup
 from firelens.answering.intent_patterns import is_unresolved_smoke_observation
 from firelens.answering.intent_refresh import is_live_refresh_request
 from firelens.answering.intent_safety import is_empty_map_safety_inference
-from firelens.answering.live_named_fire import extracted_located_fire_name
+from firelens.answering.live_named_fire import (
+    extracted_located_fire_name,
+    requested_fire_identity,
+)
 from firelens.answering.live_request_intent import (
     requires_selected_live_record,
     uses_selected_live_binding,
@@ -154,6 +157,8 @@ class AgentQueryPlan:
     # Clauses answered by saying what FireLens will not or cannot do; the
     # composer adds each as its own section so no clause is dropped.
     boundaries: tuple[AnswerSection, ...] = ()
+    # The fire the person named, in their words ("Phantom Ridge", "K51402").
+    asked_fire_name: str | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -307,6 +312,7 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     plan = _plan_request_body(request)
     if plan.mode == AgentRequestMode.TERMINAL:
         return plan
+    plan = replace(plan, asked_fire_name=requested_fire_identity(request))
     boundaries = clause_boundaries(conversation_planning_question(request))
     if not boundaries:
         return plan

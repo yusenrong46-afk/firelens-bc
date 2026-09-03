@@ -48,10 +48,12 @@ def location_prompt(request: QueryRequest, *, unresolved: bool) -> AskResponse:
             "Enter a BC community name (for example Kelowna or Prince George) or "
             "share an approximate location to continue."
         )
-        limitation = "The place label did not resolve to a BC community, so no official records were fetched."
+        limitation = (
+            "That place did not match a BC community, so no official records were looked up."
+        )
     else:
-        answer = "A BC community or approximate location is needed before FireLens can look up current official records for this request."
-        limitation = "No official records were fetched because a location is required."
+        answer = "FireLens needs a BC community or an approximate location before it can look up the current official records for this."
+        limitation = "No official records were looked up because a location is needed first."
     return AskResponse(
         status=ResponseStatus.ANSWER,
         trace_id=uuid4().hex,
@@ -72,7 +74,7 @@ def empty_map_location_prompt(request: QueryRequest) -> AskResponse:
         status=ResponseStatus.ANSWER,
         trace_id=uuid4().hex,
         response_mode=ResponseMode.REQUIRES_INPUT,
-        answer="No. No evacuation orders shown on a map does not mean you are safe, and it is not an all-clear. Enter a BC community so FireLens can check bounded official evacuation records.",
+        answer="No. An empty map does not mean you are safe, and it is not an all-clear. Enter a BC community so FireLens can check the official evacuation orders and alerts for it.",
         required_input=RequiredInput(
             kind=RequiredInputKind.LOCATION,
             prompt="Enter a BC community FireLens can check for official evacuation records.",
@@ -132,9 +134,9 @@ def unbound_live_redirect() -> AskResponse:
         status=ResponseStatus.ANSWER,
         trace_id=uuid4().hex,
         response_mode=ResponseMode.SCOPE_REDIRECT,
-        answer="Select a mapped official record or name a British Columbia community before asking about that current fire. FireLens did not substitute a record.",
+        answer="FireLens is not sure which fire you mean. Select it on the map, name it, or name a BC community to look near.",
         reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-        limitations=["No current record was fetched for an unbound reference."],
+        limitations=["No record was looked up because the reference was unclear."],
     )
 
 
@@ -143,9 +145,9 @@ def selection_prompt() -> AskResponse:
         status=ResponseStatus.ANSWER,
         trace_id=uuid4().hex,
         response_mode=ResponseMode.SCOPE_REDIRECT,
-        answer="Select a mapped official record before asking for one record's size or status. FireLens will not choose a nearby record for you.",
+        answer="Select a fire on the map or in the list first, or name it, and FireLens will give its size and status. It will not pick one for you.",
         reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-        limitations=["No official record was fetched because no exact record was selected."],
+        limitations=["No record was looked up because none was selected."],
     )
 
 
@@ -163,7 +165,9 @@ def ordinal_out_of_list_prompt(position: str, shown: int) -> AskResponse:
             "area. FireLens did not substitute a different record."
         ),
         reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-        limitations=["No official record was fetched for a position outside the shown list."],
+        limitations=[
+            "No record was looked up because the list has no record at that position."
+        ],
     )
 
 
@@ -180,7 +184,7 @@ def ordinal_without_list_prompt(position: str) -> AskResponse:
             "community first, or select the record on the map."
         ),
         reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-        limitations=["No official record was fetched for an ordinal without a shown list."],
+        limitations=["No record was looked up because there is no list to count through."],
     )
 
 
@@ -192,12 +196,11 @@ def record_reference_prompt() -> AskResponse:
         trace_id=uuid4().hex,
         response_mode=ResponseMode.SCOPE_REDIRECT,
         answer=(
-            "Select a mapped official record or name the fire you mean before asking "
-            "which record FireLens is referring to. FireLens will not choose one from "
-            "the roster."
+            "FireLens is not sure which record you mean. Select it on the map or in the "
+            "list, or name the fire, and it will answer about that one."
         ),
         reason_code=ReasonCode.LIVE_DATA_REQUIRED,
-        limitations=["No official record was fetched for an unselected reference."],
+        limitations=["No record was looked up because the reference was unclear."],
     )
 
 
@@ -214,7 +217,7 @@ def multi_place_comparison_limit(request: QueryRequest) -> AskResponse:
         ),
         reason_code=ReasonCode.LIVE_DATA_REQUIRED,
         limitations=[
-            "No official records were fetched because one request cannot bind two distance origins."
+            "No official records were looked up because one question named two places to measure from."
         ],
     )
 

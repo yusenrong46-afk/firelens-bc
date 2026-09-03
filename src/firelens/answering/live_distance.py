@@ -61,17 +61,16 @@ def distance_answer(request: QueryRequest, records: Sequence[LiveResult]) -> str
     else:
         chosen = closest_locatable_result(request.question, records)
         if chosen is None:
-            return (
-                "The official records do not include locatable geometry for a "
-                "closest-fire answer."
-            )
+            return "None of the fires listed has a mappable position, so FireLens cannot say which is closest."
     if chosen is None or chosen.distance_km is None:
-        return "The official record does not include locatable geometry for a distance answer."
+        return "The official record has no mappable position, so FireLens cannot measure a distance to it."
     basis = (
-        "incident point" if chosen.distance_basis == "incident_point" else "perimeter boundary"
+        "its reported location"
+        if chosen.distance_basis == "incident_point"
+        else "the edge of its mapped perimeter"
     )
     return (
-        f"{official_display_name(chosen)} is {chosen.distance_km:g} km geodesic "
-        f"from the requested place, measured to the official {basis}. "
-        "This is not driving distance or a safety assessment."
+        f"{official_display_name(chosen)} is {chosen.distance_km:g} km in a straight line "
+        f"from the place you asked about, measured to {basis}. That is not driving "
+        "distance, and not a safety assessment."
     )

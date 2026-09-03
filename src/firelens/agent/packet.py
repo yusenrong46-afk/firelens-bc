@@ -89,6 +89,12 @@ class AgentPacket:
             for item in self.live_results
             if item.incident_number
         )
+        # The fire the person named is their own words, so "No current official
+        # record is named Phantom Ridge Fire" may repeat it.
+        asked = getattr(self.query_plan, "asked_fire_name", None)
+        if asked:
+            names.add(asked.casefold())
+            names.add(f"{asked} fire".casefold())
         return {name for name in names if name}
 
     def allowed_result_ids(self) -> set[str]:

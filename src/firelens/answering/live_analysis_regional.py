@@ -38,7 +38,7 @@ def geography_answer(question: str, records: Sequence[LiveResult]) -> str:
         return f"{limitation} {unavailable}" if limitation else unavailable
     incidents = [item for item in records if item.kind == LiveResultKind.INCIDENT]
     if not incidents:
-        unavailable = "The fetched official records do not include wildfire incidents."
+        unavailable = "The official records loaded do not include any fires."
         return f"{limitation} {unavailable}" if limitation else unavailable
     centres = Counter(
         item.fire_centre.strip()
@@ -55,23 +55,21 @@ def geography_answer(question: str, records: Sequence[LiveResult]) -> str:
         leaders = [name for name, count in ordered if count == highest]
         missing_centre_count = len(incidents) - sum(centres.values())
         missing_note = (
-            f" {missing_centre_count} fetched incident records were omitted from the "
-            "fire-centre breakdown because the official centre label was unavailable."
+            f" {missing_centre_count} of the fires listed have no fire-centre label in the "
+            "official record and are left out of this breakdown."
             if missing_centre_count
             else ""
         )
         centre_summary = _regional_count_summary(ordered, leaders, highest)
         breakdown = (
-            "These fetched incident records use the official fire-centre label for "
-            f"regional grouping. {centre_summary} Statuses in the same records: "
-            f"{status_text}. This is a record count, not a safety determination."
-            f"{missing_note}"
+            f"Grouped by the fire centre named in each official record: {centre_summary} "
+            f"By status: {status_text}. That is a count of records, not a safety "
+            f"assessment.{missing_note}"
         )
         return f"{limitation} {breakdown}" if limitation else breakdown
     unavailable = (
-        "The official layer did not provide a fire-centre field. "
-        f"Statuses in the fetched incident records: {status_text}. "
-        "This is a record count, not a safety determination."
+        "The official records do not name a fire centre. "
+        f"By status: {status_text}. That is a count of records, not a safety assessment."
     )
     return f"{limitation} {unavailable}" if limitation else unavailable
 
@@ -84,17 +82,16 @@ def _regional_count_summary(
     noun = "incident" if highest == 1 else "incidents"
     if len(leaders) == 1:
         leader_summary = (
-            f"{leaders[0]} has {highest} {noun}, the highest count in this bounded result."
+            f"{leaders[0]} has {highest} {noun}, the most of any fire centre listed."
         )
     else:
         leader_summary = (
-            f"{_join_words(list(leaders))} are tied for the highest count in this bounded "
-            f"result, with {highest} {noun} each."
+            f"{_join_words(list(leaders))} are tied for the most, with {highest} {noun} each."
         )
     remaining = [(name, count) for name, count in ordered if name not in leaders]
     if not remaining:
         return leader_summary
-    return f"{leader_summary} Other fire-centre counts: {_counted_labels(remaining)}."
+    return f"{leader_summary} {_counted_labels(remaining)}."
 
 
 def _counted_labels(items: Sequence[tuple[str, int]], *, label_first: bool = False) -> str:
@@ -117,8 +114,8 @@ def _geography_limitation(question: str) -> str:
     if _NORTH_SOUTH_COMPARISON.search(question) or directional_bc_region_label(question):
         return (
             "The official records do not provide a validated north/south classification "
-            "for the requested directional B.C. region, so FireLens cannot determine "
-            "which fetched incidents belong there or make a north-versus-south comparison."
+            "for the requested directional B.C. region, so FireLens cannot say which "
+            "of the fires listed belong there or compare north with south."
         )
     if _LATITUDE_DENSITY.search(question):
         return (

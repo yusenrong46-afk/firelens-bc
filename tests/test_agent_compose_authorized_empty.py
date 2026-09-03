@@ -30,6 +30,6 @@ def test_authorized_empty_live_plan_stays_an_explicit_no_match_response() -> Non
 
     public = " ".join([response.answer or "", *response.limitations]).casefold()
     assert response.response_mode == ResponseMode.LIVE
-    assert "no matching official wildfire records" in public
+    assert "no fires are listed near kamloops" in public
     assert "not an all-clear" in public
     assert "outside firelens" not in public

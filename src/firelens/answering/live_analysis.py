@@ -42,15 +42,12 @@ from firelens.answering.live_evacuation import (
     is_evacuation_record_question,
 )
 from firelens.answering.live_focus import focused_record_answer
+from firelens.answering.live_listing import listing_answer, listing_place
 from firelens.answering.live_named_fire import (
     extracted_located_fire_name,
     requested_fire_identity,
 )
 from firelens.answering.live_record_intent import is_fire_geography_analysis
-from firelens.answering.live_sample import (
-    official_fire_of_note,
-    sample_live_results,
-)
 from firelens.contracts import (
     CoarseResolvedLocation,
     LiveResult,
@@ -61,6 +58,7 @@ from firelens.live_support import (
     annotated_distance_fields,
     geometry_relation,
 )
+from firelens.understanding.fire_name import INCIDENT_NUMBER
 from firelens.understanding.reference import ordinal_label, ordinal_reference
 
 _NEARBY_RADIUS_KM = 50.0
@@ -70,11 +68,6 @@ _EXPLICIT_FIRE_LOOKUP = re.compile(
     re.IGNORECASE,
 )
 
-_EXISTENCE = re.compile(
-    r"\b(?:is there|are there|does there exist)\b.{0,80}\b(?:called|named)\s+"
-    r"[\"']?(?P<name>[A-Za-z][A-Za-z0-9'’.-]*(?:\s+[A-Za-z0-9'’.-]*){0,6})[\"']?",
-    re.IGNORECASE,
-)
 _TWO_LARGEST = re.compile(
     r"\b(?:two|2)\s+largest\b|\bcompare\b.+\blargest\b|\blargest\b.+\bcompare\b",
     re.IGNORECASE,
@@ -155,35 +148,22 @@ def annotate_live_results(
     return annotated
 
 
-def extracted_existence_name(question: str) -> str | None:
-    match = _EXISTENCE.search(question)
-    if match is None:
-        return None
-    name = " ".join(match.group("name").split()).strip(" ?.!'\"")
-    name = re.sub(
-        r"\s+(?:in\s+(?:bc|british columbia)|today|right now|currently)$",
-        "",
-        name,
-        flags=re.IGNORECASE,
+def named_fire_not_found(name: str) -> str:
+    """The requested fire is not in the current official list; say so, without a substitute."""
+
+    if INCIDENT_NUMBER.fullmatch(name):
+        return (
+            f"No current official record has the fire number {name}. It may have been "
+            "removed from the current list; try asking for the fires near a community."
+        )
+    display = name if name.casefold().split()[-1] in _FIRE_WORDS else f"{name} Fire"
+    return (
+        f"No current official record is named {display}. It may be listed under another "
+        "name or fire number; try asking for the fires near a community."
     )
-    return name or None
 
 
-def record_matches_name(result: LiveResult, queried: str) -> bool:
-    needle = queried.casefold()
-    haystacks = [
-        official_display_name(result).casefold(),
-        (result.name or "").casefold(),
-        (result.incident_number or "").casefold(),
-    ]
-    for item in haystacks:
-        if not item:
-            continue
-        if item == needle or needle == item:
-            return True
-        if needle in item:
-            return True
-    return False
+_FIRE_WORDS = frozenset({"fire", "wildfire", "complex", "blaze"})
 
 
 def _normalized_record_name(value: str) -> str:
@@ -291,7 +271,7 @@ def official_analysis_answer(
             # record composer below will identify the exact fetched result.
             return None
         if not records:
-            return f"No fetched official record matched the named fire {located_name}."
+            return named_fire_not_found(located_name)
         matched = records[0]
         identity = official_display_name(matched)
         if (
@@ -301,29 +281,20 @@ def official_analysis_answer(
             identity = f"{identity} ({matched.incident_number})"
         geometry_type = str(matched.geometry.get("type") or "").strip()
         mapped_geometry = (
-            f" Its official mapped geometry is a {geometry_type}."
-            if geometry_type in {"Point", "Polygon", "MultiPolygon"}
+            " It is marked on the map as a point."
+            if geometry_type == "Point"
+            else " Its outline is drawn on the map."
+            if geometry_type in {"Polygon", "MultiPolygon"}
             else ""
         )
         distance = (
-            f" It is {matched.distance_km:g} km geodesic from the stated community "
-            f"to the official {matched.distance_basis.replace('_', ' ')}."
+            f" It is {matched.distance_km:g} km in a straight line from "
+            f"{listing_place(request) or 'the place you asked about'}, measured to "
+            f"{_basis_words(matched.distance_basis)}."
             if matched.distance_km is not None and matched.distance_basis is not None
             else ""
         )
-        return (
-            f"The fetched official {matched.kind.value} record matches {identity}, "
-            f"status {matched.status}.{mapped_geometry}{distance}"
-        )
-    queried = extracted_existence_name(request.question)
-    if queried:
-        if any(record_matches_name(item, queried) for item in records):
-            matched = next(item for item in records if record_matches_name(item, queried))
-            return (
-                f"Yes. A fetched official record matches {queried}: "
-                f"{official_display_name(matched)}, status {matched.status}."
-            )
-        return f"No fetched official record is named {queried}."
+        return f"{identity} is listed as {matched.status} by {matched.authority}.{mapped_geometry}{distance}"
     ordinal = ordinal_reference(request.question)
     if ordinal is not None:
         if selected_binding:
@@ -344,10 +315,7 @@ def official_analysis_answer(
             nearby_radius_km=_NEARBY_RADIUS_KM,
         )
     if _OLDEST.search(request.question):
-        return (
-            "The official records available for this request do not report a "
-            "start or ignition date."
-        )
+        return "The official records do not give a start or ignition date for these fires."
     if _TWO_LARGEST.search(request.question):
         return _two_largest(records)
     if _FIRE_CENTRE_MOST.search(request.question):
@@ -369,7 +337,7 @@ def official_analysis_answer(
     if is_fire_geography_analysis(request.question):
         return geography_answer(request.question, records)
     if _COUNT.search(request.question):
-        return _count(records, roster_total, request.question)
+        return _count(records, roster_total, request)
     if static_answer and (
         ("alert" in lowered and "order" in lowered)
         or "grab-and-go" in lowered
@@ -412,28 +380,28 @@ def compose_official_answer(
         )
         if selected is None:
             return (
-                "Select a mapped fire or perimeter before asking about a specific record. "
-                "FireLens will not substitute a different nearby record."
+                "The record you selected is no longer in the current official list. Select "
+                "a fire on the map or in the list, or name it, and FireLens will answer "
+                "about that one."
             )
         if _CLOSEST_RATIONALE_ASK.search(request.question):
             if selected.distance_km is None or selected.distance_basis is None:
                 return (
-                    "The selected official record does not include a bound distance, so "
-                    "FireLens cannot re-establish why it ranked closest."
+                    f"The official record for {official_display_name(selected)} has no "
+                    "mappable position, so FireLens cannot say how close it is."
                 )
-            basis = selected.distance_basis.replace("_", " ")
             return (
-                f"FireLens kept {official_display_name(selected)} selected because the "
-                f"preceding deterministic lookup ranked its {selected.distance_km:g} km "
-                f"geodesic distance to the official {basis}. The model did not choose "
-                "the record."
+                f"{official_display_name(selected)} is the closest because its straight-line "
+                f"distance, {selected.distance_km:g} km measured to "
+                f"{_basis_words(selected.distance_basis)}, is the shortest of the records "
+                "listed. That is a measurement, not a judgment of which fire matters most."
             )
         if _UNKNOWN_SELECTED_ASK.search(request.question):
             return (
-                f"The fetched official record establishes {official_display_name(selected)}'s "
-                f"reported status ({selected.status}) and source timestamp. It does not "
-                "establish the fire's cause, future spread, local safety, or a personal "
-                "evacuation decision."
+                f"The official record for {official_display_name(selected)} gives its status "
+                f"({selected.status}) and when it was last updated. It does not say what "
+                "caused the fire, how it will spread, whether an area is safe, or whether "
+                "anyone should evacuate."
             )
         return focused_record_answer(request, selected)
     narrate_incidents = any(
@@ -444,32 +412,14 @@ def compose_official_answer(
     )
     if narrate_incidents:
         records = [item for item in records if item.kind != LiveResultKind.PERIMETER]
-    sample = sample_live_results(records)
-    parts: list[str] = []
-    for item in sample:
-        line = f"{official_display_name(item)}: {item.status}"
-        if official_fire_of_note(item) and "fire of note" not in (item.status or "").casefold():
-            line += ", Fire of Note"
-        if item.size_hectares is not None:
-            line += f", {item.size_hectares:g} ha"
-        if item.distance_km is not None:
-            line += f", {item.distance_km:g} km"
-        parts.append(line)
-    prefix = official_information_prefix(records)
-    if len(records) <= 8:
-        return prefix + "; ".join(parts)
-    distribution = Counter(item.status or "Status not reported" for item in records)
-    distribution_text = "; ".join(
-        f"{status}: {count}"
-        for status, count in sorted(distribution.items(), key=lambda item: item[0].casefold())
-    )
-    note_count = sum(1 for item in records if official_fire_of_note(item))
-    note_text = f" Fire of Note indicator: {note_count}." if note_count else ""
+    return listing_answer(request, records, roster_total=roster_total)
+
+
+def _basis_words(basis: str | None) -> str:
     return (
-        f"{prefix}{len(records)} fetched official records. "
-        f"Status distribution in the fetched records: {distribution_text}.{note_text} "
-        f"Showing a priority sample of {len(sample)} of {len(records)} fetched records: "
-        + "; ".join(parts)
+        "its reported location"
+        if basis == "incident_point"
+        else "the edge of its mapped perimeter"
     )
 
 
@@ -481,18 +431,18 @@ def _ordinal_record(records: Sequence[LiveResult], index: int) -> str:
     )
     if index >= len(incidents):
         return (
-            "Select a mapped official record before asking about that position in the "
-            "list. FireLens will not substitute a different nearby record."
+            f"There is no {ordinal_label(index)} record in this list. Select a fire on the "
+            "map or ask about one of the records shown."
         )
     chosen = incidents[index]
     distance = (
-        f" It is {chosen.distance_km:g} km geodesic from the stated community."
+        f" It is {chosen.distance_km:g} km away in a straight line."
         if chosen.distance_km is not None
         else ""
     )
     return (
-        f"{official_display_name(chosen)} is the {ordinal_label(index)} official incident "
-        f"in this lookup, status {chosen.status}.{distance}"
+        f"{official_display_name(chosen)} is the {ordinal_label(index)} fire in this list, "
+        f"listed as {chosen.status}.{distance}"
     )
 
 
@@ -511,11 +461,11 @@ def strip_precise_coordinates(answer: str) -> str:
 def _max_hectares(records: Sequence[LiveResult]) -> str:
     sized = [item for item in records if item.size_hectares is not None]
     if not sized:
-        return "The official records do not report burned hectares for the fetched fires."
+        return "The official records do not give a size for any of the fires listed."
     chosen = max(sized, key=lambda item: item.size_hectares or 0.0)
     return (
-        f"{official_display_name(chosen)} has the largest official size "
-        f"among fetched records at {chosen.size_hectares:g} hectares."
+        f"{official_display_name(chosen)} is the largest of the fires listed, at "
+        f"{chosen.size_hectares:g} hectares according to {chosen.authority}."
     )
 
 
@@ -526,41 +476,32 @@ def _two_largest(records: Sequence[LiveResult]) -> str:
         reverse=True,
     )
     if len(sized) < 2:
-        return "The official records do not report burned hectares for two fires to compare."
+        return "The official records do not give sizes for two fires to compare."
     first, second = sized[0], sized[1]
     return (
-        f"{official_display_name(first)} is larger at {first.size_hectares:g} "
-        f"hectares. {official_display_name(second)} is next at "
-        f"{second.size_hectares:g} hectares among fetched records."
+        f"{official_display_name(first)} is the largest of the fires listed, at "
+        f"{first.size_hectares:g} hectares. {official_display_name(second)} is next, at "
+        f"{second.size_hectares:g} hectares."
     )
 
 
 def _closest(request: QueryRequest, records: Sequence[LiveResult]) -> str:
     chosen = closest_locatable_result(request.question, records)
     if chosen is None:
-        return (
-            "The official records do not include locatable geometry for a closest-fire answer."
-        )
-    basis = (
-        "incident point" if chosen.distance_basis == "incident_point" else "perimeter boundary"
-    )
+        return "None of the fires listed has a mappable position, so FireLens cannot say which is closest."
+    place = listing_place(request) or "the place you asked about"
+    size = ""
     if _SIZE_ASK.search(request.question):
         size = (
-            f"The official area is {chosen.size_hectares:g} hectares."
+            f" It is {chosen.size_hectares:g} hectares."
             if chosen.size_hectares is not None
-            else "The official record does not report an area."
-        )
-        return (
-            f"{official_display_name(chosen)} is the closest official record among "
-            f"fetched locatable records, {chosen.distance_km:g} km geodesic measured "
-            f"to the official {basis}. {size} This is not driving distance or a safety "
-            "assessment."
+            else " The official record does not give its size."
         )
     return (
-        f"{official_display_name(chosen)} is the closest official record among "
-        f"fetched locatable records, {chosen.distance_km:g} km geodesic measured "
-        f"to the official {basis}. This is not driving distance or a safety "
-        "assessment."
+        f"{official_display_name(chosen)} is the closest fire listed to {place}: "
+        f"{chosen.distance_km:g} km in a straight line, measured to "
+        f"{_basis_words(chosen.distance_basis)}.{size} That is not driving distance, "
+        "and not a safety assessment."
     )
 
 
@@ -571,9 +512,7 @@ def _most_fire_centre(records: Sequence[LiveResult]) -> str:
         if item.kind == LiveResultKind.INCIDENT and item.fire_centre
     ]
     if not centres:
-        return (
-            "The official records do not report a fire-centre field for the fetched incidents."
-        )
+        return "The official records do not say which fire centre the fires listed belong to."
     counts = Counter(centres)
     count = max(counts.values())
     leaders = sorted(
@@ -582,42 +521,56 @@ def _most_fire_centre(records: Sequence[LiveResult]) -> str:
     )
     if len(leaders) > 1:
         return (
-            f"{', '.join(leaders)} are tied for the most listed incidents among "
-            f"fetched records, with {count} each. This is a record count, not a "
-            "safety determination."
+            f"{', '.join(leaders)} are tied for the most fires listed, with {count} each. "
+            "That is a count of records, not a safety assessment."
         )
-    name = leaders[0]
     return (
-        f"{name} has the most listed incidents among fetched records, with {count}. "
-        "This is a record count, not a safety determination."
+        f"{leaders[0]} has the most fires listed, with {count}. That is a count of "
+        "records, not a safety assessment."
     )
 
 
-def _count(records: Sequence[LiveResult], roster_total: int | None, question: str = "") -> str:
+def _count(
+    records: Sequence[LiveResult], roster_total: int | None, request: QueryRequest
+) -> str:
+    """ "How many fires ...": the record counts, said as counts of records."""
+
     incident_count = sum(item.kind == LiveResultKind.INCIDENT for item in records)
     perimeter_count = sum(item.kind == LiveResultKind.PERIMETER for item in records)
     evacuation_count = sum(item.kind == LiveResultKind.EVACUATION for item in records)
     shown = len(records)
-    lowered = question.casefold()
+    question = request.question
+    place = (
+        listing_place(request)
+        if any(item.distance_km is not None for item in records)
+        else None
+    )
+    where = f"near {place}" if place else "in British Columbia"
+    publisher = next((item.authority for item in records), "BC Wildfire Service")
+    not_safety = "That is a count of records, not a safety assessment."
     if is_evacuation_record_question(question) or re.search(
-        r"\bevacuation\s+records?\b", lowered
+        r"\bevacuation\s+records?\b", question, re.IGNORECASE
     ):
-        return (
-            f"Official layers return {evacuation_count} evacuation records. "
-            "This is a record count, not a safety determination."
+        evacuation_publisher = next(
+            (item.authority for item in records if item.kind == LiveResultKind.EVACUATION),
+            "EmergencyInfoBC",
         )
+        count = f"{evacuation_count} evacuation record{'' if evacuation_count == 1 else 's'}"
+        return f"{evacuation_publisher} lists {count} {where} right now. {not_safety}"
     if roster_total is not None and roster_total > shown:
         return (
-            f"This bounded official response shows {shown} of {roster_total} "
-            f"matching official records ({incident_count} incidents and "
-            f"{perimeter_count} perimeters on this page). This is a record "
-            "count, not a distinct-fire count or a safety determination."
+            f"{publisher} currently publishes {roster_total} matching records {where}; this "
+            f"page shows {shown} of them ({incident_count} incidents and {perimeter_count} "
+            f"perimeters). {not_safety}"
         )
-    return (
-        f"Official layers return {incident_count} incident records "
-        f"and {perimeter_count} perimeter records. This is a record count, not "
-        "a distinct-fire count or a safety determination."
+    fires = f"{incident_count} fire{'' if incident_count == 1 else 's'}"
+    breakdown = (
+        f" ({incident_count} incident records and {perimeter_count} perimeter records; a "
+        "fire can appear as both)"
+        if perimeter_count
+        else ""
     )
+    return f"{publisher} lists {fires} {where} right now{breakdown}. {not_safety}"
 
 
 def _guidance_with_halves(question: str, static_answer: str) -> str:

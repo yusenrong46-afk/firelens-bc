@@ -23,7 +23,11 @@ from firelens.answering.live_analysis import (
 )
 from firelens.answering.live_composition import supported_static_when_live_missing
 from firelens.answering.live_distance import distance_answer
-from firelens.answering.live_named_fire import extracted_located_fire_name
+from firelens.answering.live_listing import listing_place
+from firelens.answering.live_named_fire import (
+    extracted_located_fire_name,
+    requested_fire_identity,
+)
 from firelens.answering.live_request_intent import (
     is_distance_request,
     is_selected_live_request,
@@ -32,6 +36,7 @@ from firelens.answering.live_request_intent import (
 )
 from firelens.answering.live_response_support import (
     empty_live_response,
+    official_sources_checked,
     records_section_heading,
 )
 from firelens.answering.registered_suggestions import registered_suggestions
@@ -52,6 +57,7 @@ from firelens.contracts import (
     aggregate_live_freshness,
     render_claim_texts,
 )
+from firelens.understanding.fire_name import INCIDENT_NUMBER
 
 _STALE_RECORDS_LIMITATION = (
     "A live refresh failed; some official records shown are cached and may be outdated."
@@ -224,11 +230,9 @@ def _with_packet_fields(
         updates["history_text"] = None
     if packet.unavailable_layers:
         updates["unavailable_layers"] = list(packet.unavailable_layers)
-        names = ", ".join(
-            dict.fromkeys(layer.value.replace("_", " ") for layer in packet.unavailable_layers)
-        )
         layer_unavailable = (
-            f"Some official layers are unavailable: {names}. That is not an all-clear."
+            f"FireLens could not load {official_sources_checked(tuple(packet.unavailable_layers))} "
+            "just now, so this may be incomplete. That is not an all-clear."
         )
         if layer_unavailable not in limitations:
             limitations.append(layer_unavailable)
@@ -268,6 +272,15 @@ def _with_packet_fields(
         return working if updates else response
     merged = working.model_copy(update=extra)
     return AskResponse.model_validate(merged.model_dump(mode="python"))
+
+
+def _place_reading_of_name(request: QueryRequest) -> list[str]:
+    """ "Kelowna fire" found no fire named Kelowna: offer the community reading instead."""
+
+    name = requested_fire_identity(request)
+    if name is None or INCIDENT_NUMBER.fullmatch(name):
+        return []
+    return [f"What official wildfire records are near {name}?"]
 
 
 def _missing_selected(request: QueryRequest, packet: AgentPacket) -> bool:
@@ -441,6 +454,7 @@ def _build_ask_response(
                 unavailable_layers=packet.unavailable_layers,
                 resolved_location=packet.resolved_location,
                 retrieved_at=packet.retrieved_at,
+                place=listing_place(request),
             )
             if "named_fire_not_found" in packet.unknown_topics:
                 specific = (
@@ -465,6 +479,7 @@ def _build_ask_response(
                             # answer. Clear the prior empty-result rendering whenever
                             # the named-fire wording changes.
                             "history_text": None,
+                            "suggested_questions": _place_reading_of_name(request),
                         }
                     ).model_dump(mode="python")
                 )
@@ -655,6 +670,7 @@ def _build_ask_response(
                 unavailable_layers=packet.unavailable_layers,
                 resolved_location=packet.resolved_location,
                 retrieved_at=packet.retrieved_at,
+                place=listing_place(request),
             )
             current = (
                 empty.answer_sections[0].text if empty.answer_sections else (empty.answer or "")

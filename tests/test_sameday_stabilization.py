@@ -184,7 +184,7 @@ def test_source_last_checked_is_a_freshness_live_question() -> None:
     )
     answer = official_analysis_answer(QueryRequest(question=question), records)
     assert answer is not None
-    assert "source update" in answer.casefold() or "retrieved" in answer.casefold()
+    assert "last updated" in answer.casefold() and "fetched" in answer.casefold()
 
 
 @pytest.mark.parametrize(

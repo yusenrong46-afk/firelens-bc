@@ -16,6 +16,7 @@ from firelens.answering.intent_automaton_types import (
 )
 from firelens.answering.intent_guidance import is_evac_definition, is_guidance
 from firelens.answering.intent_refresh import is_refresh_snapshot_tokens
+from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.contracts import LiveResultKind
 
 __all__ = [
@@ -501,6 +502,8 @@ def _parse_clause(text: str) -> ParsedClauseIntent:
         and not (guidance or product_help or _is_expository(tokens))
     ):
         fire_operation, evacuation = spans.implied_place_operation(text, tokens)
+        if fire_operation is None and not evacuation and extracted_located_fire_name(text):
+            fire_operation = RecordOperation.STATUS  # "Is the Bald Range fire out of control?"
     layers: list[LiveResultKind] = []
     operation = fire_operation
     all_three_layers = rules.all_three_official_record_layers(text)

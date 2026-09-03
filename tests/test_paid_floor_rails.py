@@ -300,7 +300,7 @@ def test_empty_available_layers_with_a_place_stay_live() -> None:
         retrieved_at=datetime(2026, 8, 26, 18, 34, 38, tzinfo=UTC),
     )
     assert response.response_mode == ResponseMode.LIVE
-    assert "no matching official wildfire records" in (response.answer or "").casefold()
+    assert "no fires are listed" in (response.answer or "").casefold()
 
 
 def test_okanagan_region_resolves_without_the_community_geocoder() -> None:

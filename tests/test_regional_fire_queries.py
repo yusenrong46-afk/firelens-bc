@@ -205,7 +205,7 @@ class RegionalFireQueryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(service.resolve_calls, 0)
         self.assertIsNone(execution.response.required_input)
         self.assertIn("do not provide a validated north/south classification", answer)
-        self.assertIn("cannot determine which fetched incidents belong", answer)
+        self.assertIn("cannot say which of the fires listed belong there", answer)
         self.assertIn("Prince George Fire Centre has 2 incidents", answer)
         self.assertIn("Coastal Fire Centre has 1 incident", answer)
         self.assertNotIn("A BC place is needed", answer)

@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from typing import Any, cast
 
 from firelens.agent import FireLensAgent
+from firelens.answering.plain_time import human_time
 from firelens.contracts import (
     AnswerSectionKind,
     Freshness,
@@ -84,13 +85,16 @@ def test_empty_official_map_never_becomes_an_all_clear() -> None:
         assert response.reason_code == ReasonCode.LIVE_DATA_REQUIRED
         assert response.live_results == []
         assert response.resolved_location is not None
-        assert "no matching official wildfire records" in public_text
+        assert (
+            "no fires, and no evacuation orders or alerts, are listed near kelowna"
+            in public_text
+        )
         assert "does not mean the area is safe" in public_text
         assert "not an all-clear" in public_text
-        assert "not a safety determination" in public_text
+        assert "not a safety assessment" in public_text
         assert "checked" in public_text
         assert "bc wildfire service" in public_text
-        assert "2026-08-23" in public_text
+        assert human_time(datetime(2026, 8, 23, tzinfo=UTC)).casefold() in public_text
         assert response.status_banner is not None
         assert response.status_banner.retrieval_completed_at == datetime(
             2026, 8, 23, tzinfo=UTC
@@ -217,13 +221,13 @@ def test_empty_live_partially_unavailable_layers_is_never_an_all_clear() -> None
         assert "checked" in public
         assert "bc wildfire service" in public
         assert "not an all-clear" in public
-        assert "no matching official wildfire records" in public
+        assert "are listed near kelowna in the sources firelens could reach" in public
         assert "you are safe" not in public
         assert response.status_banner is not None
         assert response.status_banner.retrieval_completed_at is not None
         assert response.status_banner.retrieval_completed_at.tzinfo is not None
         assert any(
-            "not a safety determination" in item.casefold() for item in response.limitations
+            "not a safety assessment" in item.casefold() for item in response.limitations
         )
         assert any("not an all-clear" in item.casefold() for item in response.limitations)
 

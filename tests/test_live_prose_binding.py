@@ -95,9 +95,10 @@ def test_ordinary_fire_roster_does_not_narrate_perimeters_as_extra_fires() -> No
         _incident_perimeter_roster(),
     )
 
-    assert "Fire 1: Being Held" in answer
-    assert "Fire 2: Being Held" in answer
-    assert "Fire 3: Being Held" in answer
+    assert "lists 3 fires" in answer
+    assert "Fire 1 is listed as Being Held" in answer
+    assert "Fire 2 is listed as Being Held" in answer
+    assert "Fire 3 is listed as Being Held" in answer
     assert "perimeter" not in answer.casefold()
 
 
@@ -119,8 +120,8 @@ def test_ordinary_fire_roster_keeps_requested_evacuation_record_while_omitting_p
         [*roster, evacuation],
     )
 
-    assert "Fire 1: Being Held" in answer
-    assert "Fire 1 evacuation alert: Alert" in answer
+    assert "Fire 1 is listed as Being Held" in answer
+    assert "1 evacuation record: Fire 1 evacuation alert (Alert)" in answer
     assert "perimeter" not in answer.casefold()
 
 
@@ -136,8 +137,8 @@ def test_explicit_perimeter_or_multilayer_roster_keeps_perimeter_records(questio
         QueryRequest(question=question), _incident_perimeter_roster()
     )
 
-    assert "Fire 1: Being Held" in answer
-    assert "Fire 1 perimeter: Mapped perimeter" in answer
+    assert "lists 3 fires and 3 perimeters" in answer
+    assert "Fire 1 is listed as Being Held" in answer
 
 
 def test_mixed_fire_lookup_keeps_live_incidents_ahead_of_future_evacuation_guidance() -> None:
@@ -406,11 +407,11 @@ def test_multi_record_freshness_keeps_source_and_retrieval_clocks_separate() -> 
         [first, second],
     )
 
-    assert "source update" in answer.casefold()
-    assert "FireLens retrieval" in answer
-    assert "separate clocks" in answer
-    assert first.source_updated_at.isoformat() in answer
-    assert second.retrieved_at.isoformat() in answer
+    assert "last updated these records" in answer
+    assert "FireLens fetched them" in answer
+    assert "two different clocks" in answer
+    assert human_time(first.source_updated_at) in answer
+    assert human_time(second.retrieved_at) in answer
 
 
 def test_ranked_closest_list_is_stable_and_does_not_select_only_one_record() -> None:
@@ -534,12 +535,12 @@ def test_selected_record_explains_distance_clock_and_unknowns_without_model_infe
     )
 
     assert "12 km" in rationale
-    assert "model did not choose" in rationale.casefold()
+    assert "not a judgment" in rationale.casefold()
     assert human_time(selected.source_updated_at) in clocks
     assert human_time(selected.retrieved_at) in clocks
     assert "two different clocks" in clocks
-    assert "future spread" in unknowns
-    assert "personal evacuation decision" in unknowns
+    assert "how it will spread" in unknowns
+    assert "whether anyone should evacuate" in unknowns
 
 
 def test_named_selected_location_cannot_publish_a_stale_selected_record() -> None:
@@ -563,7 +564,7 @@ def test_named_selected_location_cannot_publish_a_stale_selected_record() -> Non
     )
 
     assert response.response_mode == ResponseMode.ABSTENTION
-    assert "will not substitute" in (response.answer or "")
+    assert "no longer in the current official publication" in (response.answer or "")
     assert "Bald Range" not in (response.answer or "")
 
 
@@ -642,7 +643,7 @@ def test_province_distribution_ignores_retained_community_location() -> None:
     )
 
     assert execution.response.response_mode == ResponseMode.LIVE
-    assert "regional grouping" in (execution.response.answer or "")
+    assert "Grouped by the fire centre" in (execution.response.answer or "")
     assert execution.response.resolved_location is None
     assert live.map_calls >= 1
     assert live.nearby_calls == 0

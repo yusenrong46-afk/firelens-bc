@@ -23,6 +23,7 @@ from enum import StrEnum
 from functools import lru_cache
 
 from firelens.live_support import official_fire_centre_from_question
+from firelens.understanding.fire_name import extract_fire_name
 from firelens.understanding.place_vocabulary import (
     CIVIC_PREFIXES,
     DIRECTION_WORDS,
@@ -101,7 +102,6 @@ _SENTENCE_MARKERS = frozenset(
     {"did", "does", "do", "is", "are", "was", "were", "will", "would", "can", "could",
      "should", "has", "have", "had"}
 )  # fmt: skip
-_CAPITALIZED_FIRE_NOUNS = frozenset({"Fire", "Wildfire", "Complex", "Blaze"})
 # A weak anchor becomes strong when the previous word makes it locative.
 _STRENGTHENING_PREVIOUS = frozenset(
     {"close", "closest", "nearest", "next", "north", "south", "east", "west", "outside", "out",
@@ -303,10 +303,10 @@ def _read_span(text: str, start: int) -> tuple[str, int, int, str | None] | None
 
 
 def _names_a_fire(text: str, end: int) -> bool:
-    """True when a capitalized fire noun follows the span ("Pine Fire")."""
+    """True when the span ending at ``end`` is a fire's name ("the Bald Range fire")."""
 
-    following = _TOKEN.match(text, end + 1) if end < len(text) and text[end] == " " else None
-    return following is not None and following.group(0).strip(".?!") in _CAPITALIZED_FIRE_NOUNS
+    mention = extract_fire_name(text)
+    return mention is not None and mention.span[0] <= end <= mention.span[1]
 
 
 def _anchor_strength(text: str, match: re.Match[str]) -> str | None:

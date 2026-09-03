@@ -899,9 +899,8 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(execution.response.live_results)
         answer = execution.response.answer or ""
-        self.assertIn("do not report that fact", answer)
+        self.assertIn("No current official record is named Mountain Fire", answer)
         self.assertIn("No unrelated nearby record was substituted", answer)
-        self.assertNotIn("Mountain Fire", answer)
         self.assertNotIn("Unrelated Ridge Fire", answer)
         rebuilt = AskResponse.model_validate(execution.response.model_dump(mode="python"))
         self.assertIn("No unrelated nearby record was substituted", rebuilt.history_text or "")
@@ -1067,7 +1066,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
-        self.assertIn("do not report", (execution.response.answer or "").casefold())
+        self.assertIn("do not give", (execution.response.answer or "").casefold())
         self.assertNotIn("840", execution.response.answer or "")
 
     async def test_geography_distribution_uses_official_centres(self) -> None:
@@ -1108,7 +1107,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(execution.response.response_mode, ResponseMode.LIVE)
         self.assertIn("Kamloops has 2 incidents", answer)
         self.assertIn("Southeast has 1 incident", answer)
-        self.assertIn("highest count in this bounded result", answer)
+        self.assertIn("the most of any fire centre listed", answer)
         self.assertNotIn("Phantom", answer)
         self.assertNotIn("Perimeter-only status", answer)
 
@@ -1157,13 +1156,13 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         cases = (
             (
                 "Break down the current wildfire count by region in BC.",
-                "These fetched incident records use the official fire-centre label",
+                "Grouped by the fire centre named in each official record",
                 (),
             ),
             (
                 "Are active wildfires more concentrated in northern or southern BC?",
                 "The official records do not provide a validated north/south classification",
-                ("north-versus-south",),
+                ("compare north with south",),
             ),
             (
                 "Show current wildfire density by latitude bands across BC.",
@@ -1252,13 +1251,11 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
         answer = execution.response.answer or ""
         self.assertIn(
-            "Kamloops Fire Centre has 2 incidents, the highest count in this bounded result.",
+            "Kamloops Fire Centre has 2 incidents, the most of any fire centre listed.",
             answer,
         )
-        self.assertIn("Other fire-centre counts: Southeast Fire Centre has 1 incident.", answer)
-        self.assertIn(
-            "Statuses in the same records: 2 Being Held and 1 Out of Control.", answer
-        )
+        self.assertIn("Southeast Fire Centre has 1 incident.", answer)
+        self.assertIn("By status: 2 Being Held and 1 Out of Control.", answer)
         self.assertNotIn("=", answer)
 
     async def test_regional_count_summary_explains_ties_and_singular_counts(self) -> None:
@@ -1271,13 +1268,10 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
         answer = execution.response.answer or ""
         self.assertIn(
-            "Coastal and Kamloops are tied for the highest count in this bounded result, "
-            "with 1 incident each.",
+            "Coastal and Kamloops are tied for the most, with 1 incident each.",
             answer,
         )
-        self.assertIn(
-            "Statuses in the same records: 1 Being Held and 1 Out of Control.", answer
-        )
+        self.assertIn("By status: 1 Being Held and 1 Out of Control.", answer)
 
     async def test_largest_wildfire_by_hectares_uses_full_bc_map(self) -> None:
         live = CountingMapService(
@@ -1648,7 +1642,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             QueryRequest(question="Which official fire is the oldest?")
         )
 
-        self.assertIn("do not report", (execution.response.answer or "").casefold())
+        self.assertIn("do not give", (execution.response.answer or "").casefold())
         self.assertIn("start", (execution.response.answer or "").casefold())
         self.assertNotIn("Current official information:", execution.response.answer or "")
 
@@ -1659,11 +1653,15 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         answer = execution.response.answer or ""
-        self.assertEqual(
+        self.assertTrue(
+            answer.startswith("No current official record is named Phantom Ridge Fire."),
             answer,
-            "No fetched official record is named Phantom Ridge Fire.",
         )
         self.assertNotIn("Mountain Fire", answer)
+        self.assertEqual(
+            execution.response.suggested_questions,
+            ["What official wildfire records are near Phantom Ridge?"],
+        )
 
     async def test_fire_number_is_used_when_name_is_missing(self) -> None:
         agent = _agent(
@@ -1713,7 +1711,8 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         answer = execution.response.answer or ""
-        self.assertIn("100 of 240", answer)
+        self.assertIn("publishes 240 matching records", answer)
+        self.assertIn("shows 100 of them", answer)
         self.assertNotRegex(answer, r"contains 100 incident records and 0 perimeter")
 
     async def test_evac_yes_no_answers_the_asked_place(self) -> None:
@@ -1877,11 +1876,15 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         answer = execution.response.answer or ""
-        self.assertEqual(
+        self.assertTrue(
+            answer.startswith("No current official record is named Phantom Ridge Fire."),
             answer,
-            "No fetched official record is named Phantom Ridge Fire.",
         )
         self.assertNotIn("Mountain Fire", answer)
+        self.assertEqual(
+            execution.response.suggested_questions,
+            ["What official wildfire records are near Phantom Ridge?"],
+        )
 
     async def test_published_answer_strips_precise_coordinates(self) -> None:
         agent = FireLensAgent(
@@ -1955,7 +1958,9 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(provider.messages)
         self.assertEqual(execution.response.response_mode, ResponseMode.SCOPE_REDIRECT)
-        self.assertIn("Select a mapped official record", execution.response.answer or "")
+        self.assertIn(
+            "Select a fire on the map or in the list first", execution.response.answer or ""
+        )
 
     async def test_unselected_size_follow_up_after_a_place_list_requires_selection(
         self,
@@ -1988,7 +1993,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(execution.response.response_mode, ResponseMode.SCOPE_REDIRECT)
         answer = execution.response.answer or ""
-        self.assertIn("Select a mapped official record", answer)
+        self.assertIn("Select a fire on the map or in the list first", answer)
         self.assertNotIn("Bald Range", answer)
         self.assertNotIn("Ridge Fire", answer)
 
@@ -2009,7 +2014,9 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(execution.response.response_mode, ResponseMode.SCOPE_REDIRECT)
-        self.assertIn("Select a mapped official record", execution.response.answer or "")
+        self.assertIn(
+            "Select a fire on the map or in the list first", execution.response.answer or ""
+        )
         self.assertNotIn("Bald Range", execution.response.answer or "")
 
     async def test_tell_me_about_named_fire_filters_the_roster(self) -> None:
@@ -2143,7 +2150,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         answer = execution.response.answer or ""
-        self.assertIn("Select a mapped official record", answer)
+        self.assertIn("There is no second record in this list", answer)
         self.assertNotIn("Bald Range", answer)
 
     def test_compose_official_answer_does_not_substitute_selected(self) -> None:
@@ -2154,7 +2161,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             ),
             [_fire(result_id="incident:8", name="Other Fire")],
         )
-        self.assertIn("will not substitute", answer)
+        self.assertIn("no longer in the current official list", answer)
         self.assertNotIn("Other Fire", answer)
 
     async def test_map_how_far_keeps_the_selected_record(self) -> None:
@@ -2553,7 +2560,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(execution.response.selected_live_result_id, "incident:7")
         self.assertIn("Being Held", answer)
         self.assertIn("42.5 hectares", answer)
-        self.assertNotIn("Select a mapped official record", answer)
+        self.assertNotIn("Select a fire on the map", answer)
 
     async def test_selected_information_update_question_keeps_source_freshness(self) -> None:
         fire = _fire(result_id="incident:7", name="Mountain Fire")
@@ -2569,7 +2576,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(execution.response.selected_live_result_id, "incident:7")
         self.assertIn(human_time(fire.source_updated_at), answer)
         self.assertIn(" ago", answer)
-        self.assertNotIn("Select a mapped official record", answer)
+        self.assertNotIn("Select a fire on the map", answer)
 
     async def test_stale_selected_record_says_it_is_a_cached_copy(self) -> None:
         fire = _fire(result_id="incident:7", name="Mountain Fire").model_copy(
@@ -2744,7 +2751,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
 
         answer = execution.response.answer or ""
         self.assertNotIn("Current official information", answer)
-        self.assertIn("cached records", answer)
+        self.assertIn("cached copy", answer)
         self.assertIn("Mountain Fire", answer)
         self.assertTrue(
             any("cached and may be outdated" in item for item in execution.response.limitations)
@@ -3061,12 +3068,13 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         answer = response.answer or ""
-        self.assertIn("10 fetched official records", answer)
-        self.assertIn("Status distribution", answer)
-        self.assertIn("priority sample of 8 of 10", answer)
-        self.assertIn("Fire 9:", answer)
-        self.assertIn("Fire 10:", answer)
-        self.assertNotIn("Fire 6:", answer)
+        self.assertIn("lists 10 fires in British Columbia", answer)
+        self.assertIn("Of these, 6 are Being Held and 4 are Out of Control.", answer)
+        # Out-of-control fires lead the prose; the rest are pointed to, not dropped.
+        self.assertIn("Fire 10 is listed as Out of Control", answer)
+        self.assertIn("The other 7 are in the list below and on the map.", answer)
+        self.assertNotIn("Fire 6", answer)
+        self.assertEqual(len(response.live_results), 10)
 
     def test_closest_official_next_check_adds_selected_record_handoff(self) -> None:
         nearest = _with_distance(

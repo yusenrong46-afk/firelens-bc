@@ -14,6 +14,7 @@ from firelens.agent.packet import AgentPacket
 from firelens.agent.rails import output_rail_errors
 from firelens.answering.live_analysis import annotate_live_results
 from firelens.answering.live_response_support import empty_live_response
+from firelens.answering.plain_time import human_time
 from firelens.answering.validate import validate_draft
 from firelens.claim_trust import corpus_claim_trust
 from firelens.contracts import (
@@ -483,11 +484,11 @@ def test_empty_live_response_states_checked_sources_and_fetch_time() -> None:
         retrieved_at=retrieved,
     )
     public = " ".join([response.answer or "", *response.limitations]).casefold()
-    assert "no matching official wildfire records" in public
+    assert "no fires are listed" in public
     assert "not an all-clear" in public
     assert "checked" in public
-    assert "bc wildfire service incidents" in public
-    assert "2026-08-23t15:30:00+00:00" in public
+    assert "bc wildfire service fire list" in public
+    assert human_time(retrieved).casefold() in public
     assert response.status_banner is not None
     assert response.status_banner.retrieval_completed_at == retrieved
     assert "you are safe" not in public
@@ -521,10 +522,10 @@ def test_empty_live_partial_or_all_unavailable_is_never_an_all_clear(
         retrieved_at=retrieved,
     )
     public = " ".join([response.answer or "", *response.limitations]).casefold()
-    assert "unavailable" in public
+    assert "unavailable" in public or "could not" in public
     assert "not an all-clear" in public
     assert "checked" in public
-    assert "2026-08-23t15:30:00+00:00" in public
+    assert human_time(retrieved).casefold() in public
     assert "you are safe" not in public
     assert response.status_banner is not None
     assert response.status_banner.retrieval_completed_at == retrieved

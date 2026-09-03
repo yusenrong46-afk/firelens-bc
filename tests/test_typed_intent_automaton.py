@@ -813,7 +813,10 @@ def test_named_individual_fire_question_uses_live_record_boundary() -> None:
 
     assert not prefers_general_background(request)
     assert plan_query(request).route == QueryRoute.LIVE
-    assert plan_agent_request(request).mode == AgentRequestMode.TERMINAL
+    plan = plan_agent_request(request)
+    # The named fire is looked up; the record itself says cause is not published.
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.asked_fire_name == "Mountain"
 
 
 def test_agency_name_is_not_misread_as_a_named_fire_record() -> None:
