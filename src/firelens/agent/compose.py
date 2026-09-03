@@ -312,6 +312,7 @@ def _packet_live_answer(
     """Compose live text without turning an unavailable layer into a zero result."""
 
     if packet.live_results and packet.unavailable_layers:
+        place = listing_place(request) or "the place you asked about"
         unavailable = [layer.value.replace("_", " ") for layer in packet.unavailable_layers]
         names = (
             unavailable[0]
@@ -325,7 +326,7 @@ def _packet_live_answer(
         return (
             f"FireLens could not verify {names} records because the official {names} "
             f"{layer_label} unavailable. Available official records in this response: "
-            f"{summary}."
+            f"{summary} for {place}."
         )
     return compose_official_answer(
         request,
