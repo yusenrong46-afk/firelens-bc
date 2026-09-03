@@ -325,6 +325,9 @@ export function App() {
             <p className="pc-disclaimer">
               FireLens provides information, not decisions. For emergencies call 9-1-1 and follow local authorities.
             </p>
+            {!showCompactMapRail && (session.mode === "live" || session.mode === "mixed") && (
+              <OfficialSourcesCard />
+            )}
           </div>
 
           {showCompactMapRail && !analyticalWorkspace && (

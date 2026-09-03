@@ -4,6 +4,7 @@
   min-height: 100vh;
   background: var(--warm-mist);
   color: var(--ink);
+  overflow-x: clip;
 }
 
 .pc-frame {
@@ -473,6 +474,23 @@
     padding: var(--space-4) var(--space-3) var(--space-6);
   }
   .product-sidebar__name { font-size: 28px; }
+  .pc-mobile-header__actions {
+    gap: 4px;
+  }
+  .pc-mobile-header__actions button,
+  .pc-mobile-header__actions a {
+    min-width: 40px;
+    padding: 8px;
+  }
+  .live-answer-summary {
+    padding: var(--space-4);
+  }
+  .live-answer-summary__headline {
+    font-size: 22px;
+  }
+  .live-answer-lead__top {
+    flex-direction: column;
+  }
 }
 
 @media (forced-colors: active) {
