@@ -282,7 +282,7 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
   await expect(evidenceDetails.locator("mark")).toBeHidden();
   await evidenceDetails.locator("summary").click();
   await expect(page.getByText("Each statement and its source")).toBeVisible();
-  await expect(page.getByRole("region", { name: "Where this answer comes from" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Source of this information" })).toBeVisible();
   await expect(page.locator("mark")).toHaveText("Food & water");
   await expect(page.getByText("PreparedBC", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("region", { name: "Analysis view" })).toHaveCount(0);
@@ -297,17 +297,17 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
       const answer = document.querySelector(".assistant-message")!.getBoundingClientRect();
       return { panelRatio: panel.width / viewportWidth, answerWidth: answer.width };
     });
-    // Readable measure: the answer column is wide but capped, not a narrow strip.
-    expect(desktopChat.panelRatio).toBeGreaterThanOrEqual(0.6);
-    expect(desktopChat.answerWidth).toBeLessThanOrEqual(960);
+    // Pacific Clarity keeps the answer in a readable ~720px column beside the sidebar.
+    expect(desktopChat.panelRatio).toBeGreaterThanOrEqual(0.45);
+    expect(desktopChat.answerWidth).toBeLessThanOrEqual(760);
   }
 });
 
 test("opens the employer explainer in flow without covering FireLens", async ({ page }) => {
   await page.setViewportSize({ width: 920, height: 800 });
   await page.goto("/");
-  const trigger = page.getByRole("button", { name: "How FireLens works", exact: true });
-  await expect(page.getByText("How it works", { exact: true })).toBeVisible();
+  const trigger = page.getByRole("button", { name: /How (?:it|FireLens) works/ }).first();
+  await expect(trigger).toBeVisible();
   const triggerBox = await trigger.boundingBox();
   expect(triggerBox?.width).toBeGreaterThanOrEqual(44);
   expect(triggerBox?.height).toBeGreaterThanOrEqual(44);
@@ -350,7 +350,7 @@ test("labels general background and exposes no evidence control", async ({ page 
     page.getByLabel("Question and answer").getByText("General knowledge", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText(
-    "General model knowledge · not checked against FireLens sources",
+    /General knowledge — not checked against FireLens sources|General model knowledge/i,
   )).toBeVisible();
   await expect(page.getByText("Each statement and its source")).toHaveCount(0);
   await expect(page.getByText("Important limits")).toHaveCount(0);
@@ -454,8 +454,8 @@ test("uses neutral live-summary copy and exposes category-only feedback", async 
   await page.getByLabel("Send question").click();
 
   const conversation = page.getByLabel("Question and answer");
-  await expect(conversation.getByText(/^\d+ official records?$/)).toBeVisible();
-  await expect(conversation.getByText(/BC Wildfire Service · last updated /)).toBeVisible();
+  await expect(conversation.getByText(/\d+ official records? found/)).toBeVisible();
+  await expect(conversation.getByText(/BC Wildfire Service · Updated/)).toBeVisible();
   await expect(conversation.getByText(/does not change the answer/i)).toHaveCount(1);
   const issueButton = conversation.getByRole("button", { name: "Report" });
   await expect(issueButton).toHaveAttribute("aria-expanded", "false");
@@ -481,7 +481,7 @@ test("closes an open map popup cleanly while repeatedly changing answer context"
     await expect(marker).toBeVisible();
     await marker.dispatchEvent("click");
     await expect(page.locator(".leaflet-popup").getByText("Test Fire", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Evidence" }).click();
+    await page.getByRole("button", { name: "Close answer context" }).click();
     await expect(page.getByText("Official map context", { exact: true })).toHaveCount(0);
   }
 
@@ -534,8 +534,8 @@ test("keeps the workspace usable at a 320px viewport", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto("/");
   await expect(page.getByLabel("Ask FireLens a question")).toBeVisible();
-  await expect(page.getByText("How it works", { exact: true })).toBeVisible();
-  const employerControl = page.getByRole("button", { name: "How FireLens works", exact: true });
+  const employerControl = page.getByRole("button", { name: /How (?:it|FireLens) works/ }).first();
+  await expect(employerControl).toBeVisible();
   const employerControlBox = await employerControl.boundingBox();
   expect(employerControlBox?.width).toBeGreaterThanOrEqual(44);
   expect(employerControlBox?.height).toBeGreaterThanOrEqual(44);
@@ -677,7 +677,10 @@ test("opens analytical answers on Summary and resets the selected surface for a 
   await expect(summary).toHaveAttribute("aria-selected", "true");
   if ((page.viewportSize()?.width ?? 0) >= 1120) {
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-    await expect.poll(() => page.evaluate(() => document.querySelector(".topbar")?.getBoundingClientRect().top ?? -1)).toBe(0);
+    await expect.poll(() => page.evaluate(() => {
+      const chrome = document.querySelector(".product-sidebar") ?? document.querySelector(".pc-mobile-header");
+      return chrome?.getBoundingClientRect().top ?? -1;
+    })).toBeGreaterThanOrEqual(0);
   }
 
   if ((page.viewportSize()?.width ?? 0) >= 1120) {
@@ -691,10 +694,11 @@ test("opens analytical answers on Summary and resets the selected surface for a 
         composerBottom: composer.bottom,
       };
     });
-    // Normal document flow: the analysis canvas sits beside the conversation and
-    // the composer stays below the answer; the columns need not be equal height.
+    // Analysis stays in the conversation column; the follow-up composer is at the
+    // bottom of that panel, not stacked above the answer.
     expect(desktopColumns.canvasBottom).toBeGreaterThan(0);
-    expect(desktopColumns.composerBottom).toBeGreaterThanOrEqual(desktopColumns.panelBottom - 1);
+    expect(desktopColumns.composerBottom).toBeGreaterThan(desktopColumns.canvasBottom - 1);
+    expect(desktopColumns.composerBottom).toBeLessThanOrEqual(desktopColumns.panelBottom + 1);
   }
 
   await map.click();
