@@ -1,0 +1,18 @@
+{
+  "before": {
+    "index_js_gzip_kb": 155.37,
+    "index_css_gzip_kb": 12.55,
+    "LiveMap_js_gzip_kb": 55.91,
+    "AnalysisCharts_js_gzip_kb": 113.43
+  },
+  "after": {
+    "index_js_gzip_kb": 159.33,
+    "index_css_gzip_kb": 14.32,
+    "LiveMap_js_gzip_kb": 56.00,
+    "AnalysisCharts_js_gzip_kb": 113.43
+  },
+  "index_js_gzip_delta_pct": 2.55,
+  "index_css_gzip_delta_pct": 14.1,
+  "js_within_5pct_cap": true,
+  "extra_model_or_retrieval_calls": false
+}

@@ -198,12 +198,17 @@ describe("FireLens Source Lens", () => {
     expect(shortAnswer.compareDocumentPosition(analysisRegion) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(analysisRegion.closest(".analysis-surface-slot")).toBeInTheDocument();
     expect(analysisRegion.closest(".conversation-scroll")).not.toBeInTheDocument();
+    expect(document.querySelector(".pc-layout--solo")).not.toBeInTheDocument();
+    expect(
+      analysisRegion.compareDocumentPosition(screen.getByLabelText("Ask FireLens a question"))
+      & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(document.querySelector(".conversation-scroll")).not.toHaveAttribute("aria-live");
     expect(screen.getByText("FireLens response ready.")).toBeInTheDocument();
     expect(screen.getByLabelText("Clear conversation history")).toHaveTextContent("New conversation");
     expect(screen.getByLabelText("Response feedback")).toBeInTheDocument();
-    expect(screen.getByText("B.C. wildfire information")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Explore live map/i })).toHaveAttribute(
+    expect(screen.getByText("B.C. wildfire intelligence")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Official map/i })).toHaveAttribute(
       "href",
       "https://wildfiresituation.nrs.gov.bc.ca/map",
     );
@@ -412,7 +417,7 @@ describe("FireLens Source Lens", () => {
     const mapContext = await screen.findByRole("complementary", { name: "Map" });
     expect(mapContext).toHaveFocus();
     await user.click(screen.getByRole("button", { name: "Close answer context" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Open map" })).toHaveFocus());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Show these on the map" })).toHaveFocus());
   });
 
   it("starts with a task-first question workspace and keeps the map optional", async () => {
@@ -424,15 +429,14 @@ describe("FireLens Source Lens", () => {
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
     render(<App />);
-    expect(screen.getByRole("link", { name: /FireLens home/ })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /FireLens home/ }).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: "What do you want to know about wildfires in B.C.?" })).toBeInTheDocument();
     expect(await screen.findByText(/lists 12 fires in B\.C\./)).toBeInTheDocument();
     expect(screen.getByText(/3 evacuation orders and alerts/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Browse guided questions" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "How FireLens works" })).toBeInTheDocument();
-    expect(screen.getByText("Sources, methods, and limits")).toBeInTheDocument();
-    expect(screen.getByText("FireLens is not a safety assessment.")).toBeInTheDocument();
-    expect(screen.getByText("Sources and status boundaries appear with each answer.")).toHaveClass("response-announcement");
+    expect(screen.getByRole("button", { name: "How it works" })).toBeInTheDocument();
+    expect(screen.getByText(/FireLens provides information, not decisions/)).toBeInTheDocument();
     expect(screen.queryByText("Start with an example")).not.toBeInTheDocument();
     expect(screen.queryByText("0 of 6 turns in context")).not.toBeInTheDocument();
     expect(screen.queryByText("No earlier turns in context")).not.toBeInTheDocument();
@@ -465,6 +469,10 @@ describe("FireLens Source Lens", () => {
     expect(
       await screen.findByLabelText("Question and answer"),
     ).toHaveTextContent("Keep water and food in a grab-and-go bag.");
+    const answerText = screen.getByLabelText("Question and answer").querySelector(".assistant-message")!;
+    const composer = screen.getByLabelText("Ask FireLens a question");
+    expect(answerText.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.querySelector(".pc-composer-stack--follow-up")).toBeInTheDocument();
     expect(scrollIntoView).toHaveBeenCalled();
   });
 
@@ -500,7 +508,9 @@ describe("FireLens Source Lens", () => {
     expect(await screen.findByText("FireLens topics")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "How should I prepare a household emergency plan?" })).toBeInTheDocument();
     expect(screen.queryByText("Retrieved passage")).not.toBeInTheDocument();
-    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+    expect(screen.queryByRole("complementary", { name: "Map" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("complementary", { name: "Sources" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("complementary", { name: "Source for this statement" })).not.toBeInTheDocument();
   });
 
   it("renders optional authority-labelled answer sections", async () => {
@@ -646,11 +656,8 @@ describe("FireLens Source Lens", () => {
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByText("General knowledge")).toBeInTheDocument();
-    expect(screen.getByText("General model knowledge. Not a safety assessment.")).toBeInTheDocument();
+    expect(screen.getByText(/General knowledge — not checked against FireLens sources|General model knowledge/)).toBeInTheDocument();
     expect(screen.queryByText("Official records. Not a safety assessment.")).not.toBeInTheDocument();
-    expect(screen.getByText(
-      "General model knowledge · not checked against FireLens sources",
-    )).toBeInTheDocument();
     expect(screen.queryByText("Each statement and its source")).not.toBeInTheDocument();
     expect(screen.queryByText("Important limits")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: backgroundClaim })).not.toBeInTheDocument();
@@ -1476,7 +1483,7 @@ describe("FireLens Source Lens", () => {
     for (const question of ["Question one", "Question two", "Question three", "Question four"]) {
       await user.type(screen.getByLabelText("Ask FireLens a question"), question);
       await user.click(screen.getByLabelText("Send question"));
-      await screen.findByText(question);
+      await screen.findAllByText(question);
       await waitFor(() => expect(screen.getByLabelText("Ask FireLens a question")).not.toBeDisabled());
     }
 

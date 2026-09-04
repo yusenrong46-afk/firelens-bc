@@ -11,14 +11,22 @@ import { StatusBanner } from "./StatusBanner";
 
 export function AnswerBody({
   onSelectLiveResult,
+  onOpenMap,
+  placeName,
+  radiusKm,
   response,
   assistantText,
   analytical = false,
+  selectedLiveResultId,
 }: {
   onSelectLiveResult?: ((resultId: string) => void) | undefined;
+  onOpenMap?: (() => void) | undefined;
+  placeName?: string | undefined;
+  radiusKm?: number | undefined;
   response: AskResponse | undefined;
   assistantText: string;
   analytical?: boolean;
+  selectedLiveResultId?: string | undefined;
 }) {
   const answerSections = getAnswerSections(response);
   const { material, boilerplate } = splitLimitations(
@@ -87,6 +95,10 @@ export function AnswerBody({
         <LiveAnswerSummary
           response={response}
           onSelectResult={onSelectLiveResult}
+          onOpenMap={onOpenMap}
+          placeName={placeName}
+          radiusKm={radiusKm}
+          selectedResultId={selectedLiveResultId}
         />
       )}
       {!backgroundMode && <SourceProof response={response} showExcerpts={!quoteOnlyAnswer} />}
@@ -98,7 +110,7 @@ export function AnswerBody({
         && <StatusBanner banner={banner} compact={compactBanner && !freshnessWarning} />}
       {backgroundMode && (
         <p className="answer-provenance" role="note">
-          General model knowledge · not checked against FireLens sources
+          General knowledge — not checked against FireLens sources
         </p>
       )}
       {analytical && banner && <StatusBanner banner={banner} compact />}

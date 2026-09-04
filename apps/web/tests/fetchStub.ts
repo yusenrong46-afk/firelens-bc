@@ -10,7 +10,7 @@ export function wrapAppFetch(
   return vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
     const path = String(input);
     if (path.startsWith("/api/v1/health/ready")) {
-      return Promise.resolve(jsonResponse({ release_version: "1.6.4" }));
+      return Promise.resolve(jsonResponse({ status: "ready", release_version: "1.6.4" }));
     }
     if (path.startsWith("/api/v1/live/summary")) {
       return Promise.resolve(jsonResponse({

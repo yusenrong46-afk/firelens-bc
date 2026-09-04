@@ -1,0 +1,32 @@
+{
+  "captured_at": "2026-09-03T21:45:00Z",
+  "environment": "local-vite-build",
+  "candidate_branch": "cursor/firelens-pacific-clarity",
+  "bundles": {
+    "index_js_raw_kb": 545.22,
+    "index_js_gzip_kb": 159.33,
+    "index_css_raw_kb": 77.87,
+    "index_css_gzip_kb": 14.32,
+    "LiveMap_js_gzip_kb": 56.00,
+    "LiveMap_css_gzip_kb": 6.46,
+    "AnalysisCharts_js_gzip_kb": 113.43
+  },
+  "css_source_lines": {
+    "styles.css": 1937,
+    "shell.css": 480,
+    "tokens.css": 80,
+    "answer.css": 308,
+    "analysisWorkspace.css": 333,
+    "conversationAccessibility.css": 31,
+    "total_approx": 3169
+  },
+  "delta_vs_before": {
+    "index_js_gzip_pct": 2.55,
+    "index_css_gzip_pct": 14.1,
+    "note": "JS gzip within 5% hard stop. CSS grew with shell/answer tokens; further deletion remains desirable."
+  },
+  "v1_6_performance": {
+    "status": "deferred",
+    "note": "make v1-6-performance blocked earlier on worktree sandbox; offline hard probe rc2.2 and ClaimBench passed"
+  }
+}

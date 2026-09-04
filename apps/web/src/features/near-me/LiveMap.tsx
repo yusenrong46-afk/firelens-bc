@@ -74,6 +74,7 @@ export function LiveMap({
   onAskAboutResult,
   contextLayersEnabled = false,
   onContextLayersChange,
+  variant = "full",
 }: {
   results: LiveResult[];
   matchingResults?: LiveResult[] | undefined;
@@ -87,6 +88,7 @@ export function LiveMap({
   onAskAboutResult?: ((resultId: string, question: string) => void) | undefined;
   contextLayersEnabled?: boolean | undefined;
   onContextLayersChange?: ((enabled: boolean) => void) | undefined;
+  variant?: "compact" | "full";
 }) {
   const [hiddenKinds, setHiddenKinds] = useState<Set<LiveResult["kind"]>>(new Set());
   const [statusMode, setStatusMode] = useState<IncidentStatusMode>("all");
@@ -143,8 +145,15 @@ export function LiveMap({
   );
   const hasMatchingResults = answerMatchingResults.length > 0;
   const [tilesFailed, setTilesFailed] = useState(false);
+  const compact = variant === "compact";
   return (
-    <section className="live-map" id="official-map" aria-label="Official wildfire records map" tabIndex={-1}>
+    <section
+      className={compact ? "live-map live-map--compact" : "live-map"}
+      id="official-map"
+      aria-label="Official wildfire records map"
+      tabIndex={-1}
+    >
+      {!compact && (
       <div className="live-map__heading">
         <div>
           <span>
@@ -170,7 +179,8 @@ export function LiveMap({
           Open the BC Wildfire Service map
         </a>
       </div>
-      {onContextLayersChange && (
+      )}
+      {!compact && onContextLayersChange && (
         <MapContextLayers enabled={contextLayersEnabled} onChange={onContextLayersChange} />
       )}
       {freshnessState === "stale" && (
@@ -190,6 +200,7 @@ export function LiveMap({
         </p>
       )}
       <TileFailureWarning failed={tilesFailed} />
+      {!compact && (
       <MapLayerFilters
         hiddenKinds={hiddenKinds}
         availableStatuses={availableStatuses}
@@ -218,12 +229,15 @@ export function LiveMap({
         }}
         statusMode={statusMode}
       />
+      )}
+      {!compact && (
       <MapScope
         displayedCount={filteredResults.length}
         displayedMatchingCount={displayedMatchingResults.length}
         matchingCount={answerMatchingResults.length}
         resultCount={results.length}
       />
+      )}
       <div role="region" aria-label="Interactive map of official wildfire records">
         <MapContainer
           bounds={BC_BOUNDS}
@@ -258,6 +272,15 @@ export function LiveMap({
         />
         </MapContainer>
       </div>
+      {compact ? (
+        <div className="live-map__compact-actions">
+          <a href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
+            Open official BCWS map
+          </a>
+          <span>OSM · Open Government Licence – BC</span>
+        </div>
+      ) : (
+        <>
       <MatchingRecordList
         results={displayedMatchingResults}
         selectedResultId={selectedResultId}
@@ -293,6 +316,8 @@ export function LiveMap({
         onSelectResult={onSelectResult}
       />
       <p className="live-map__note">Follow instructions from the issuing authority. The map is not a safety determination.</p>
+        </>
+      )}
     </section>
   );
 }

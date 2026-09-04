@@ -73,27 +73,57 @@ export function reviewedSources(response: AskResponse | undefined): SourceProofI
   return items;
 }
 
-export function SourceProof({ response, showExcerpts = true }: { response: AskResponse | undefined; showExcerpts?: boolean }) {
+export function SourceProof({
+  response,
+  showExcerpts = true,
+  onInspectEvidence,
+}: {
+  response: AskResponse | undefined;
+  showExcerpts?: boolean;
+  onInspectEvidence?: (() => void) | undefined;
+}) {
   const items = reviewedSources(response);
   if (items.length === 0) return null;
+  const [primary, ...rest] = items;
+  if (!primary) return null;
   return (
-    <section className="source-proof" aria-label="Where this answer comes from">
-      <h2>Where this comes from</h2>
-      <ol>
-        {items.map((item) => (
-          <li key={item.key}>
-            <p className="source-proof__origin">
-              <strong>{item.publisher}</strong>
-              <span aria-hidden="true"> · </span>
-              <a href={item.url} target="_blank" rel="noreferrer">
-                {item.title} <ArrowSquareOut size={14} aria-hidden="true" />
-              </a>
-            </p>
-            {showExcerpts && <blockquote>{item.excerpt}</blockquote>}
-            <p className="source-proof__freshness">{item.freshness}</p>
-          </li>
-        ))}
-      </ol>
+    <section className="source-proof" aria-label="Source of this information">
+      <h2>Source of this information</h2>
+      <article className="source-proof__primary">
+        <p className="source-proof__publisher">{primary.publisher}</p>
+        <p className="source-proof__title">{primary.title}</p>
+        <span className="source-proof__badge">Official source</span>
+        {showExcerpts && <blockquote>{primary.excerpt}</blockquote>}
+        <p className="source-proof__freshness">{primary.freshness}</p>
+        <a href={primary.url} target="_blank" rel="noreferrer">
+          Open official source <ArrowSquareOut size={14} aria-hidden="true" />
+        </a>
+      </article>
+      {rest.length > 0 && (
+        <details className="source-proof__more">
+          <summary>{rest.length} more source{rest.length === 1 ? "" : "s"}</summary>
+          <ol>
+            {rest.map((item) => (
+              <li key={item.key}>
+                <p className="source-proof__origin">
+                  <strong>{item.publisher}</strong>
+                  <span aria-hidden="true"> · </span>
+                  <a href={item.url} target="_blank" rel="noreferrer">
+                    {item.title} <ArrowSquareOut size={14} aria-hidden="true" />
+                  </a>
+                </p>
+                {showExcerpts && <blockquote>{item.excerpt}</blockquote>}
+                <p className="source-proof__freshness">{item.freshness}</p>
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
+      {onInspectEvidence && (
+        <button type="button" className="source-proof__inspect" onClick={onInspectEvidence}>
+          Inspect evidence
+        </button>
+      )}
     </section>
   );
 }

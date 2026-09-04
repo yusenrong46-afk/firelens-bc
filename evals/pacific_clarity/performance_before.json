@@ -1,0 +1,25 @@
+{
+  "captured_at": "2026-09-03T21:30:00Z",
+  "environment": "local-vite-build",
+  "starting_sha": "58eb80153358c82a5be1da095245e627b5c0ed05",
+  "bundles": {
+    "index_js_raw_kb": 529.14,
+    "index_js_gzip_kb": 155.37,
+    "index_css_raw_kb": 68.57,
+    "index_css_gzip_kb": 12.55,
+    "LiveMap_js_gzip_kb": 55.91,
+    "LiveMap_css_gzip_kb": 6.46,
+    "AnalysisCharts_js_gzip_kb": 113.43
+  },
+  "css_source_lines": {
+    "styles.css": 2130,
+    "analysisWorkspace.css": 333,
+    "conversationAccessibility.css": 31,
+    "total": 2494
+  },
+  "v1_6_performance": {
+    "status": "blocked_sandbox_worktree",
+    "note": "make v1-6-performance failed creating v1_5 baseline worktree under sandbox; retry with elevated permissions during PC-120"
+  },
+  "route_latency": null
+}

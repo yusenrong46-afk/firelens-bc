@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e7f0f2"/>
+      <stop offset="100%" stop-color="#ddeae7"/>
+    </linearGradient>
+    <linearGradient id="lake" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c5d9de"/>
+      <stop offset="100%" stop-color="#9eb8c0"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="220" fill="url(#sky)"/>
+  <path d="M0 118 L48 78 L92 108 L138 62 L186 98 L230 54 L280 92 L320 70 L320 220 L0 220 Z" fill="#9aa7a3" opacity=".55"/>
+  <path d="M0 132 L60 96 L110 124 L160 84 L210 118 L265 78 L320 104 L320 220 L0 220 Z" fill="#6d7f7c" opacity=".5"/>
+  <path d="M0 148 L40 128 L90 150 L140 120 L200 146 L260 122 L320 140 L320 220 L0 220 Z" fill="#4a5f5c" opacity=".45"/>
+  <ellipse cx="160" cy="178" rx="150" ry="36" fill="url(#lake)" opacity=".9"/>
+  <path d="M28 168 L40 120 L52 168 Z" fill="#013366" opacity=".35"/>
+  <path d="M52 170 L66 112 L80 170 Z" fill="#0e5566" opacity=".4"/>
+  <path d="M78 172 L94 126 L110 172 Z" fill="#013366" opacity=".3"/>
+  <path d="M236 170 L250 118 L264 170 Z" fill="#0e5566" opacity=".38"/>
+  <path d="M258 172 L274 128 L290 172 Z" fill="#013366" opacity=".32"/>
+  <path d="M0 188 Q160 168 320 188 L320 220 L0 220 Z" fill="#e9e4da" opacity=".55"/>
+</svg>

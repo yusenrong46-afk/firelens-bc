@@ -1,0 +1,34 @@
+{
+  "campaign": "firelens-pacific-clarity",
+  "captured_at": "2026-09-03T21:28:00Z",
+  "starting_sha": "58eb80153358c82a5be1da095245e627b5c0ed05",
+  "starting_tree": "bff218c162b0c5329040e4533b56ef5ab393024a",
+  "branch": "cursor/firelens-pacific-clarity",
+  "production": {
+    "url": "https://firelens-bc.vercel.app/",
+    "ready": {
+      "status": "ready",
+      "release_version": "1.6.4",
+      "build_commit": "b8e07ebffc730fab654207e643155b1d78e74816",
+      "deployment_id": "dpl_GYhPvwts3LkZoAqNQmpixLPeprwX",
+      "candidate_id": "firelens-v1-6-2:b8e07ebffc730fab654207e643155b1d78e74816",
+      "provider_state": "available",
+      "generation_model": "openai/gpt-5.6-luna",
+      "embedding_model": "openai/text-embedding-3-small",
+      "rerank_model": "cohere/rerank-4-pro",
+      "retrieval_text_strategy": "metadata_context_v1",
+      "corpus_version": "firelens_static_corpus.v1",
+      "chunk_count": 179
+    }
+  },
+  "css_source_lines": {
+    "styles.css": 2130,
+    "analysisWorkspace.css": 333,
+    "conversationAccessibility.css": 31,
+    "total": 2494
+  },
+  "notes": [
+    "Visual editing must not begin until performance_before.json, screenshots/before, and build bundle sizes are recorded.",
+    "Unrelated untracked reality_gate_production.json preserved outside this campaign commit unless already on main."
+  ]
+}
