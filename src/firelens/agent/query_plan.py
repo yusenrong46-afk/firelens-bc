@@ -57,8 +57,8 @@ from firelens.live import LiveDataErrorKind, LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
 from firelens.live_support import (
     official_fire_centre_from_question,
-    official_fire_centres_from_question,
     official_fire_centre_label,
+    official_fire_centres_from_question,
 )
 from firelens.understanding.place import PlaceKind
 from firelens.understanding.reference import ordinal_label, ordinal_reference
