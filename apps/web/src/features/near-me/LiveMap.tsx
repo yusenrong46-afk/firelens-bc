@@ -1,5 +1,5 @@
-import { memo, useMemo, useState } from "react";
-import { GeoJSON, MapContainer, Popup } from "react-leaflet";
+import { useMemo, useState } from "react";
+import { MapContainer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import type { LiveResult } from "../../shared/api/api";
 import { ClusteredPointMarkers } from "./ClusteredPointMarkers";
@@ -12,54 +12,16 @@ import {
   type IncidentStatusMode,
   MapLayerFilters,
 } from "./MapLayerFilters";
-import { MapRecordPopup } from "./MapRecordPopup";
 import { excludeQuestionMatches, isQuestionMatch } from "./mapClustering";
 import { BC_BOUNDS, FitResults, type MapFocus } from "./MapViewport";
 import { OfficialBasemap, TileFailureWarning } from "./OfficialBasemap";
+import { StaticGeometry } from "./StaticGeometry";
 import {
   isRenderableGeometry,
   MAP_GEOMETRY_LEGEND,
-  resultColour,
 } from "./liveResultPresentation";
 
 const EMPTY_RESULTS: LiveResult[] = [];
-
-const StaticGeometry = memo(function StaticGeometry({
-  result,
-  matching,
-  selected,
-  onAskAboutResult,
-  onSelectResult,
-}: {
-  result: LiveResult;
-  matching: boolean;
-  selected: boolean;
-  onAskAboutResult?: ((resultId: string, question: string) => void) | undefined;
-  onSelectResult?: ((resultId: string) => void) | undefined;
-}) {
-  const data = useMemo(
-    () => ({ type: "Feature", properties: {}, geometry: result.geometry } as unknown as GeoJSON.Feature),
-    [result.geometry],
-  );
-  const style = useMemo(() => ({
-    className: "live-map__record-geometry",
-    color: resultColour(result.kind),
-    weight: selected ? 4 : 2,
-    opacity: matching ? 1 : 0.32,
-    fillOpacity: selected ? 0.38 : matching ? 0.22 : 0.07,
-  }), [matching, result.kind, selected]);
-  return (
-    <GeoJSON
-      data={data}
-      style={style}
-      eventHandlers={{ click: () => onSelectResult?.(result.result_id) }}
-    >
-      <Popup autoPan={false}>
-        <MapRecordPopup result={result} onAskAboutResult={onAskAboutResult} />
-      </Popup>
-    </GeoJSON>
-  );
-});
 
 export function LiveMap({
   results,
