@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://firelens.local/schemas/eval-lab/failure-record.v1.json",
+  "title": "FireLens EvalLab failure record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "failure_id",
+    "run_id",
+    "suite",
+    "adapter_id",
+    "case_id",
+    "family",
+    "status",
+    "run_status",
+    "fixed_in_sha",
+    "failure_class",
+    "severity",
+    "oracle",
+    "summary",
+    "input",
+    "expected",
+    "observed",
+    "pipeline",
+    "judge_model",
+    "judge_prompt",
+    "judge_prompt_sha256",
+    "sampling_settings",
+    "rubric_version",
+    "application_sha",
+    "evidence",
+    "first_divergent_layer",
+    "first_divergence",
+    "reproduction",
+    "identity",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {"const": "firelens.eval_lab.failure.v1"},
+    "failure_id": {"type": "string", "pattern": "^ELF-[0-9a-f]{16}$"},
+    "run_id": {"type": "string", "minLength": 1},
+    "suite": {
+      "enum": ["core", "rag", "metamorphic", "trajectory", "fault", "ui", "performance"]
+    },
+    "adapter_id": {"type": "string", "minLength": 1},
+    "case_id": {"type": ["string", "null"]},
+    "family": {"type": "string", "minLength": 1},
+    "status": {
+      "enum": ["confirmed_fail", "review", "fixed", "cannot_reproduce"]
+    },
+    "run_status": {"enum": ["FAIL", "BLOCKED", "NOT_RUN"]},
+    "fixed_in_sha": {
+      "type": ["string", "null"],
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+    },
+    "failure_class": {"type": "string", "minLength": 1},
+    "severity": {"enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]},
+    "oracle": {
+      "enum": [
+        "deterministic_executable",
+        "source_reference",
+        "browser_functional",
+        "human_reviewed",
+        "calibrated_ai_shadow"
+      ]
+    },
+    "summary": {"type": "string", "minLength": 1},
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["question", "history", "location_context"],
+      "properties": {
+        "question": {},
+        "history": {},
+        "location_context": {}
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invariants"],
+      "properties": {"invariants": {}}
+    },
+    "observed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["structured_state"],
+      "properties": {"structured_state": {}}
+    },
+    "pipeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "understanding",
+        "binding",
+        "authority",
+        "planning",
+        "retrieval",
+        "reranking",
+        "evidence",
+        "generation",
+        "validation",
+        "composition",
+        "frontend"
+      ],
+      "properties": {
+        "understanding": {},
+        "binding": {},
+        "authority": {},
+        "planning": {},
+        "retrieval": {},
+        "reranking": {},
+        "evidence": {},
+        "generation": {},
+        "validation": {},
+        "composition": {},
+        "frontend": {}
+      }
+    },
+    "judge_model": {"type": ["string", "null"]},
+    "judge_prompt": {"type": ["string", "null"]},
+    "judge_prompt_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "sampling_settings": {"type": "object"},
+    "rubric_version": {"type": ["string", "null"]},
+    "application_sha": {
+      "type": ["string", "null"],
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+    },
+    "evidence": {"type": "array", "items": {"type": "string"}},
+    "first_divergent_layer": {"type": ["string", "null"]},
+    "first_divergence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["layer", "owner", "confidence"],
+      "properties": {
+        "layer": {"type": ["string", "null"]},
+        "owner": {"type": ["string", "null"]},
+        "confidence": {"enum": ["confirmed", "suspected", "unknown"]}
+      }
+    },
+    "reproduction": {"type": "array", "items": {"type": "string"}},
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commit",
+        "tree",
+        "dirty",
+        "application_sha",
+        "dataset_sha",
+        "evaluator_sha",
+        "provider_model",
+        "embedding_model",
+        "rerank_model",
+        "judge_model",
+        "judge_prompt_sha"
+      ],
+      "properties": {
+        "commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+        "tree": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+        "dirty": {"type": "boolean"},
+        "application_sha": {
+          "type": ["string", "null"],
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+        },
+        "dataset_sha": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "evaluator_sha": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "provider_model": {"type": ["string", "null"]},
+        "embedding_model": {"type": ["string", "null"]},
+        "rerank_model": {"type": ["string", "null"]},
+        "judge_model": {"type": ["string", "null"]},
+        "judge_prompt_sha": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "created_at": {"type": "string", "format": "date-time"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"status": {"const": "fixed"}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "fixed_in_sha": {
+            "type": "string",
+            "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+          }
+        }
+      }
+    }
+  ]
+}

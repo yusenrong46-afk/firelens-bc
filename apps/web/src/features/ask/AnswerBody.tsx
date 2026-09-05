@@ -1,32 +1,25 @@
-import { WarningCircle } from "@phosphor-icons/react";
+import { Info, WarningCircle } from "@phosphor-icons/react";
+import type { ReactNode } from "react";
 import type { AskResponse } from "../../shared/api/api";
 import { analyticalAnswerSummary } from "../near-me/liveAnalysis";
 import { AnswerMarkdown } from "./AnswerMarkdown";
 import { answerSectionAuthority, getAnswerSections } from "./answerSections";
 import { splitLimitations } from "./limitationsPresentation";
-import { LiveAnswerSummary } from "./LiveAnswerSummary";
+import { LiveSourceLine } from "./LiveAnswerSummary";
 import { getStatusBanner } from "./proofPresentation";
 import { SourceProof } from "./SourceProof";
 import { StatusBanner } from "./StatusBanner";
 
 export function AnswerBody({
-  onSelectLiveResult,
-  onOpenMap,
-  placeName,
-  radiusKm,
   response,
   assistantText,
   analytical = false,
-  selectedLiveResultId,
+  footer,
 }: {
-  onSelectLiveResult?: ((resultId: string) => void) | undefined;
-  onOpenMap?: (() => void) | undefined;
-  placeName?: string | undefined;
-  radiusKm?: number | undefined;
   response: AskResponse | undefined;
   assistantText: string;
   analytical?: boolean;
-  selectedLiveResultId?: string | undefined;
+  footer?: ReactNode;
 }) {
   const answerSections = getAnswerSections(response);
   const { material, boilerplate } = splitLimitations(
@@ -78,7 +71,7 @@ export function AnswerBody({
       {!hasAnswerSections && quoteOnlyAnswer && response ? (
         <QuoteOnlyAnswer response={response} fallback={lead} />
       ) : !hasAnswerSections && lead ? (
-        <AnswerMarkdown className="answer-lead">{lead}</AnswerMarkdown>
+        <AnswerMarkdown className="answer-lead" emphasizeOpening={!analytical}>{lead}</AnswerMarkdown>
       ) : null}
       {hasAnswerSections && (
         <div className="answer-sections" aria-label="Authority-labelled answer">
@@ -91,16 +84,7 @@ export function AnswerBody({
           ))}
         </div>
       )}
-      {liveSummary && response && (
-        <LiveAnswerSummary
-          response={response}
-          onSelectResult={onSelectLiveResult}
-          onOpenMap={onOpenMap}
-          placeName={placeName}
-          radiusKm={radiusKm}
-          selectedResultId={selectedLiveResultId}
-        />
-      )}
+      {liveSummary && response && <LiveSourceLine results={response.live_results ?? []} />}
       {!backgroundMode && <SourceProof response={response} showExcerpts={!quoteOnlyAnswer} />}
       {!analytical
         && !backgroundMode
@@ -114,12 +98,13 @@ export function AnswerBody({
         </p>
       )}
       {analytical && banner && <StatusBanner banner={banner} compact />}
+      <div className="answer-notes">
       {!analytical
         && !compactOfficialHandoff
         && (material.length > 0 || (!backgroundMode && boilerplate.length > 0))
         && (
-        <aside className="answer-limitations" aria-label="Answer limitations">
-          <WarningCircle size={19} aria-hidden="true" />
+        <aside className={`answer-limitations${material.length === 0 ? " answer-limitations--routine" : ""}`} aria-label="Answer limitations">
+          {material.length > 0 ? <WarningCircle size={18} aria-hidden="true" /> : <Info size={18} aria-hidden="true" />}
           <div>
             {material.length > 0 ? (
               <>
@@ -128,9 +113,7 @@ export function AnswerBody({
                   {material.map((item) => <li key={item}>{item}</li>)}
                 </ul>
               </>
-            ) : (
-              <strong>About this answer</strong>
-            )}
+            ) : null}
             {boilerplate.length > 0 && (
               <details className="answer-limitations__more">
                 <summary>Why does FireLens say this?</summary>
@@ -142,6 +125,8 @@ export function AnswerBody({
           </div>
         </aside>
       )}
+      {footer}
+      </div>
     </>
   );
 }

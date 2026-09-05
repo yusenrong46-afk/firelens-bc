@@ -33,10 +33,18 @@ _NONLITERAL_FIRE_METAPHOR = re.compile(
     re.IGNORECASE,
 )
 _EXPLICIT_SOURCE_ATTRIBUTION = re.compile(
-    r"\baccording\s+to\b|\b(?:what\s+(?:does|do)|does)\b.{0,80}\b(?:say|says|"
-    r"recommend|require|follow)\b|\b(?:source|document|guide|checklist)\b.{0,80}\b(?:say|says|"
+    r"\baccording\s+to\b(?:\s+(?P<according_source>[^,;?.:]{1,120}?)(?=[,;?.:]|$|"
+    r"\s+(?:what|why|how|when|where|explain|describe|list|name)\b))?|"
+    r"\b(?:what\s+(?:does|do)|does)\s+(?P<spoken_source>.{1,80}?)\s+"
+    r"(?:say|says|recommend|require|follow)\b|"
+    r"\b(?:source|document|guide|checklist)\b.{0,80}\b(?:say|says|"
     r"recommend|require|follow)\b|\b(?:say|says|recommend|require|follow)\b.{0,80}"
     r"\b(?:source|document|guide|checklist)\b",
+    re.IGNORECASE,
+)
+_PERSONAL_DOCUMENT_ITEMS = re.compile(
+    r"\bdocuments?\b.{0,60}\b(?:should|can|do|must)\s+(?:i|we)\s+"
+    r"(?:pack|bring|carry|take|prepare|have|keep)\b",
     re.IGNORECASE,
 )
 _NAMED_INDIVIDUAL_FIRE = re.compile(
@@ -102,6 +110,14 @@ def is_true_deictic_followup(question: str) -> bool:
     """Expose the narrow follow-up test without treating relative ``that`` as deixis."""
 
     return _is_elliptical_followup(question)
+
+
+def is_significance_followup(question: str) -> bool:
+    """A deictic why request keeps its explanatory intent when its topic resolves."""
+
+    return bool(
+        re.match(r"^why\b", question.strip(), re.IGNORECASE)
+    ) and is_true_deictic_followup(question)
 
 
 def prior_anchor_user_question(request: QueryRequest) -> str | None:
@@ -197,14 +213,45 @@ def reviewed_guidance_intent(question: str) -> bool:
     )
 
 
+def named_corpus_attribution(question: str) -> str | None:
+    """Return a named span captured by the shared attribution grammar."""
+    match = _EXPLICIT_SOURCE_ATTRIBUTION.search(question)
+    if match and match.group("spoken_source") and question[: match.start()].strip():
+        return None  # An embedded actor is not an explicit document/publisher request.
+    source = (
+        (match.group("according_source") or match.group("spoken_source")) if match else None
+    )
+    if not source:
+        return None
+    source = source.strip()
+    if re.fullmatch(
+        r"(?:(?:the|a|an)\s+)?(?:(?:official|reviewed|approved|local)\s+)*"
+        r"(?:sources?|documents?|guides?|checklists?|corpus|guidance)",
+        source,
+        re.IGNORECASE,
+    ):
+        return None
+    if source.casefold().startswith("the "):
+        source = re.sub(
+            r"\s+(?:guide|document|checklist)$", "", source[4:], flags=re.IGNORECASE
+        )
+    return source
+
+
 def explicit_corpus_attribution(question: str) -> bool:
     """Keep a reader's named-source request in the reviewed-evidence lane."""
 
     return bool(
         corpus_identifiers(question)
         or _EXPLICIT_SOURCE_ATTRIBUTION.search(question)
-        or any(
-            re.search(pattern, question.casefold()) for pattern in _CORPUS_REFERENCE_PATTERNS
+        or (
+            # Papers to pack are requested belongings, not a source identity.
+            # Explicit attribution above still wins (e.g. "according to...").
+            not _PERSONAL_DOCUMENT_ITEMS.search(question)
+            and any(
+                re.search(pattern, question.casefold())
+                for pattern in _CORPUS_REFERENCE_PATTERNS
+            )
         )
     )
 

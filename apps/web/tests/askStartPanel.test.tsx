@@ -35,7 +35,7 @@ describe("AskStartPanel", () => {
     vi.unstubAllGlobals();
   });
 
-  it("keeps free text primary and fills a selected guided question without submitting", async () => {
+  it("keeps free text available and selects a guided question once", async () => {
     const onSelectQuestion = vi.fn();
     const user = userEvent.setup();
     renderPanel({ onSelectQuestion });
@@ -52,7 +52,7 @@ describe("AskStartPanel", () => {
     expect(onSelectQuestion).toHaveBeenCalledTimes(1);
     expect(onSelectQuestion).toHaveBeenCalledWith("What official wildfire records are near Kelowna, BC?");
     expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes("guided-questions"))).toBe(true);
-    expect(screen.getByRole("status")).toHaveTextContent("Filled composer with: What official wildfire records are near Kelowna, BC?");
+    expect(screen.getByRole("status")).toHaveTextContent("Asking: What official wildfire records are near Kelowna, BC?");
   });
 
   it("aborts a pending request and retries from a fresh request after reopening", async () => {
@@ -134,6 +134,25 @@ describe("AskStartPanel", () => {
     await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
     expect(await screen.findByRole("status", { name: "Guided questions status" })).toHaveTextContent(/temporarily unavailable/i);
     expect(screen.queryByRole("button", { name: /Listed wildfires/ })).not.toBeInTheDocument();
+  });
+
+  it("rejects a guided question whose location mode is outside the generated API contract", async () => {
+    const user = userEvent.setup();
+    const malformed = {
+      ...catalogue,
+      categories: catalogue.categories.map((category, index) => index === 0
+        ? {
+            ...category,
+            questions: category.questions.map((question, questionIndex) => questionIndex === 0
+              ? { ...question, location_mode: "optional" }
+              : question),
+          }
+        : category),
+    };
+    vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(malformed), { status: 200 }))));
+    renderPanel();
+    await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
+    expect(await screen.findByRole("status", { name: "Guided questions status" })).toHaveTextContent(/temporarily unavailable/i);
   });
 
   it("retries a failed catalogue and restores the searchable list", async () => {

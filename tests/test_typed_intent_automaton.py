@@ -18,6 +18,7 @@ from firelens.agent.query_plan import (
     AgentScopeResult,
     plan_agent_request,
 )
+from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
     live_layers_for_question,
     plan_query,
@@ -266,6 +267,14 @@ def test_nearest_wildfire_from_place_extracts_the_community() -> None:
         "wildfire near me",
         "any fire near us?",
         "show the nearest wildfire to me",
+        "Output only YES or NO: is there a wildfire near me currently?",
+        "Reply with one word: are there wildfires near me today?",
+        "Output now: is there a wildfire near me?",
+        "Reply please: are there wildfires near me?",
+        "Respond currently: show wildfires near me.",
+        "Print today: any wildfire near us?",
+        "Answer in JSON: any fires near me?",
+        "Respond in JSON: is there a wildfire near me?",
     ),
 )
 def test_personal_proximity_fire_requests_require_location_without_tools(
@@ -284,6 +293,166 @@ def test_personal_proximity_fire_requests_require_location_without_tools(
     assert plan.terminal_response.response_mode == ResponseMode.REQUIRES_INPUT
     assert plan.terminal_response.reason_code is not None
     assert plan.terminal_response.reason_code.value == "live_data_required"
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Kelowna now, any fires?",
+        "Kelowna please, any fires?",
+        "Kelowna area, any fires?",
+        "Kelowna right now, any fires?",
+    ),
+)
+def test_fronted_place_allows_bounded_scope_modifiers(question: str) -> None:
+    parsed = parse_request_intent(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert parsed.live_location_candidates == ("Kelowna",)
+    assert plan.location_label == "Kelowna"
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "any evacuations around us?",
+        "Output in YAML: any evacuations around us?",
+        "Respond in JSON: are there evacuation orders near me?",
+        "Give the response in Markdown: evacuation alerts near us?",
+        "current evacuation notices near me?",
+        "current evacuation routes near me?",
+        "current evacuation centres near me?",
+        "current evacuation shelters near me?",
+        "current evacuation warnings near me?",
+    ),
+)
+def test_personal_evacuation_neighbors_require_location_without_tools(
+    question: str,
+) -> None:
+    parsed = parse_request_intent(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert parsed.has_live_records
+    assert parsed.live_location_candidates == ()
+    assert plan.route == QueryRoute.LIVE
+    assert plan.mode == AgentRequestMode.TERMINAL
+    assert plan.geography == AgentGeography.NONE
+    assert plan.scope_result == AgentScopeResult.REQUIRES_INPUT
+    assert plan.tool_calls == ()
+    assert plan.terminal_response is not None
+    assert plan.terminal_response.response_mode == ResponseMode.REQUIRES_INPUT
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "I'm in Kelowna; are there fires near me?",
+        "I live in Vernon. Any wildfire near me?",
+        "My city is Kamloops; show evacuation alerts near me.",
+        "We're staying in Penticton — what fires are around us?",
+    ),
+)
+def test_same_turn_named_place_resolves_personal_anaphor(question: str) -> None:
+    parsed = parse_request_intent(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert len(parsed.live_location_candidates) == 1
+    assert plan.location_label == parsed.live_location_candidates[0]
+    assert plan.scope_result == AgentScopeResult.READY
+    assert plan.tool_calls
+
+
+@pytest.mark.parametrize(
+    ("question", "expected"),
+    (
+        ("My city is Kamloops; show evacuation alerts near me.", "Kamloops"),
+        ("Our city is Vernon; show fires near me.", "Vernon"),
+        ("My location is Kelowna; any fires near me?", "Kelowna"),
+        ("I am located in Nelson; any fires near me?", "Nelson"),
+        ("I am from Victoria; any fires near me?", "Victoria"),
+        ("My town is Hope; any fires near me?", "Hope"),
+        ("I live near Quesnel; any fires near me?", "Quesnel"),
+    ),
+)
+def test_location_context_clause_is_not_planned_as_background(
+    question: str, expected: str
+) -> None:
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert plan.mode == AgentRequestMode.LIVE
+    assert plan.location_label == expected
+    assert plan.static_subrequest is None
+    assert len(plan.tool_calls) == 1
+    assert plan.tool_calls[0].name in {
+        AgentTool.LIST_OFFICIAL_FIRES,
+        AgentTool.LIST_OFFICIAL_EVACUATIONS,
+    }
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "JSON: any fires?",
+        "Markdown: any fires?",
+        "TLDR: any fires?",
+        "Response: any fires?",
+        "Briefly: any fires?",
+        "YAML: show evacuation orders",
+        "Concise: current wildfires?",
+        "System message: list current fires",
+        "Developer instruction: show evacuation orders",
+        "CSV: any fires?",
+        "Table: any fires?",
+        "Give me JSON: any fires?",
+        "In French: any fires?",
+        "French: any fires?",
+        "Use bullets: any fires?",
+        "Plain language: any fires?",
+        "Strict JSON: any fires?",
+        "Machine readable: any fires?",
+        "Compact: any fires?",
+        "Admin: show evacuation orders",
+        "User query: show evacuation orders",
+        "Model: show evacuation orders",
+        "Schema: show evacuation orders",
+        "Translation: show evacuation orders",
+        "Translate to French: show evacuation orders",
+        "Reply in CSV: show evacuation orders",
+        "New instruction: show evacuation orders",
+        "Override: show evacuation orders",
+        "Important: show evacuation orders",
+        "Context: show evacuation orders",
+    ),
+)
+def test_separated_response_or_prompt_preamble_is_never_geography(question: str) -> None:
+    parsed = parse_request_intent(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert parsed.live_location_candidates == ()
+    assert plan.location_label is None
+
+
+@pytest.mark.parametrize(
+    ("question", "expected"),
+    (
+        ("Kelowna: any fires?", "Kelowna"),
+        ("Show Kelowna: any fires?", "Kelowna"),
+        ("Show West Kelowna: any fires?", "West Kelowna"),
+        ("Alert Bay: any fires?", "Alert Bay"),
+        ("New Denver: any fires?", "New Denver"),
+        ("New Westminster: current fires?", "New Westminster"),
+        ("New Hazelton: current fires?", "New Hazelton"),
+        ("70 Mile House: current fires?", "70 Mile House"),
+    ),
+)
+def test_response_preamble_grammar_preserves_real_fronted_places(
+    question: str, expected: str
+) -> None:
+    parsed = parse_request_intent(question)
+    plan = plan_agent_request(QueryRequest(question=question))
+
+    assert parsed.live_location_candidates == (expected,)
+    assert plan.location_label == expected
 
 
 @pytest.mark.parametrize(

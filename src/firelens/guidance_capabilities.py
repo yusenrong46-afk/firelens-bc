@@ -70,7 +70,9 @@ class CapabilityBinding(FrozenStrictModel):
     source_mode: SourceMode
     coverage_state: Literal["structured_ready", "quote_ready", "handoff_only"]
     match_kind: Literal[
-        "exact_normalized_whitespace_case", "conservative_immediate_danger_contact"
+        "exact_normalized_whitespace_case",
+        "conservative_immediate_danger_contact",
+        "conservative_document_preparation",
     ]
     canonical_questions: tuple[str, ...] = Field(min_length=1, max_length=3)
     retrieval_queries: tuple[str, ...] = Field(min_length=1, max_length=3)
@@ -269,6 +271,23 @@ _CONTACT_ACTION = re.compile(
     r"call|contact|9[ -]?1[ -]?1|emergency\s+(?:number|contact))\b",
     re.IGNORECASE,
 )
+# A conditional contact question selects existing source wording; it never
+# establishes that the speaker meets the source's emergency conditions.
+_DANGER_CONTACT_QUESTION = re.compile(
+    r"^\s*(?:please\s+)?who\s+(?:should|do|can)\s+(?:i|we)\s+(?:call|contact)\s+"
+    r"(?:if|when)\s+(?:i\s+am|we\s+are)\s+in\s+danger\s+"
+    r"(?:during|from)\s+(?:a\s+)?(?:wildfire|wild\s+fire|fire)\s*[?.!]?\s*$",
+    re.IGNORECASE,
+)
+_DOCUMENT_PREPARATION = re.compile(
+    r"^\s*(?:what|which)\s+(?:(?:important|personal)\s+)?"
+    r"(?:documents?|paperwork|papers)(?:\s+and\s+(?:medicines?|medications?))?\s+"
+    r"(?:should|must|can|do)\s+(?:i|we)\s+(?:have|pack|put|bring|take|carry|keep|prepare)\s+"
+    r"(?:ready\s+)?(?:for|to|when|during|in)\s+(?:(?:an?|my|our)\s+)?"
+    r"(?:(?:wildfire\s+)?evacuat(?:e|ing|ion)|wildfire|emergency\s+bag|grab-and-go\s+bag)"
+    r"\s*[?.!]?\s*$",
+    re.IGNORECASE,
+)
 
 
 def capability_for_guided_question(
@@ -290,7 +309,7 @@ def resolve_capability(
     place_label: str | None = None,
     root: str | None = None,
 ) -> CapabilityBinding | None:
-    """Resolve only exact guided questions or one conservative safety capability."""
+    """Resolve exact entries or bounded existing contact/document capabilities."""
 
     guided = exact_guided_question(question, place_label=place_label, root=root)
     if guided is not None:
@@ -304,6 +323,17 @@ def resolve_capability(
         }
         if normalized in accepted:
             return binding
+    if _DOCUMENT_PREPARATION.fullmatch(question):
+        document_binding = capabilities.get("documents_medications")
+        return (
+            document_binding.model_copy(
+                update={"match_kind": "conservative_document_preparation"}
+            )
+            if document_binding is not None
+            else None
+        )
+    if _DANGER_CONTACT_QUESTION.fullmatch(question):
+        return capabilities.get("immediate_danger_contact")
     if _CONTACT_ACTION.search(question) and (
         (_FIRE_CONTEXT.search(question) and _IMMEDIATE_EMERGENCY_CONDITION.search(question))
         or _STRUCTURE_FIRE_EMERGENCY.search(question)

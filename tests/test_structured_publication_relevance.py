@@ -755,3 +755,147 @@ def test_quote_only_rejects_fake_gov_hash_that_is_not_an_admitted_chunk() -> Non
         claim.publication is not None and claim.publication.kind.value == "official_quote_only"
         for claim in response.claims
     )
+
+
+def _rank_definition_with_tactics(question: str) -> EvidencePacket:
+    """Rebuild the real C3 rerank selection from the admitted corpus, offline."""
+    root = Path(__file__).resolve().parents[1]
+    chunks = load_chunk_records(root / "data/processed/firelens_static_corpus.chunks.jsonl")
+    selected = [
+        "wildfire-rank",
+        "examples-of-firefighting-tactics",
+        "examples-of-firefighting-tactics-5",
+        "examples-of-firefighting-tactics-2",
+        "fire-suppression-strategy",
+    ]
+    by_id = {chunk.chunk_id: chunk for chunk in chunks}
+    hits = [
+        retrieval_hit_from_chunk(
+            by_id[f"bcws_wildfire_rank:section:{section}:chunk:1"], rerank_rank=index
+        )
+        for index, section in enumerate(selected, start=1)
+    ]
+    return build_evidence_packet(
+        question,
+        hits,
+        chunks,
+        corpus_version="c3-retained-selection",
+        config=FireLensConfig(
+            project_root=root,
+            corpus_path=root / "data/processed/firelens_static_corpus.chunks.jsonl",
+            corpus_manifest_path=root / "data/processed/firelens_static_corpus.manifest.json",
+            vector_matrix_path=root / "data/index/firelens_vectors.npy",
+            vector_manifest_path=root / "data/index/firelens_vectors.manifest.json",
+            embedding_cache_path=root / "data/index/embedding_cache.jsonl",
+            document_context_path=root / "data/index/document_context_v2.jsonl",
+            trace_dir=root / "data/traces",
+        ),
+    )
+
+
+def test_informational_exact_quote_is_not_displaced_by_unrequested_tactics() -> None:
+    for question in (
+        "What does wildfire rank describe?",
+        "Explain what wildfire rank means.",
+    ):
+        packet = _rank_definition_with_tactics(question)
+        outcome = asyncio.run(
+            GroundedAnswerEngine(FakeProvider(dimensions=8)).answer(
+                question,
+                packet,
+                trace_id="rank-definition",
+                supported_aspects=(
+                    "Definition of wildfire rank",
+                    "Examples of firefighting tactics associated with fire behaviour ranks",
+                ),
+            )
+        )
+        response = outcome.response
+        assert "describe fire behaviour based on a set of visual indicators" in response.answer
+        assert "pull resources back" not in response.answer
+        assert response.reason_code is None
+        assert response.response_mode == ResponseMode.GROUNDED
+        assert response.validation is not None and response.validation.accepted
+        assert all(claim.publication.kind == "official_quote_only" for claim in response.claims)
+        assert all(claim.publication.risk_tier == "C" for claim in response.claims)
+        assert all(claim.text == claim.supports[0].quote for claim in response.claims)
+        assert not any(
+            "requested high-risk guidance" in limit for limit in response.limitations
+        )
+        assert outcome.attempts == 0
+
+
+def test_actual_suppression_question_keeps_exact_high_risk_publication() -> None:
+    question = "Should personnel pull resources back to safe areas during fire suppression?"
+    packet = _rank_definition_with_tactics(question)
+    outcome = asyncio.run(
+        GroundedAnswerEngine(FakeProvider(dimensions=8)).answer(
+            question, packet, trace_id="suppression-control"
+        )
+    )
+    assert outcome.attempts == 0
+    assert outcome.response.reason_code == ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED
+    assert outcome.response.response_mode == ResponseMode.PARTIAL
+    assert "pull resources back" in outcome.response.answer
+    assert all(
+        claim.publication.kind == "official_quote_only" for claim in outcome.response.claims
+    )
+    assert all(claim.publication.risk_tier == "A" for claim in outcome.response.claims)
+
+
+def test_informational_quote_still_requires_admission_and_atomic_boundaries() -> None:
+    packet = _rank_definition_with_tactics("What does wildfire rank describe?")
+    wrong_source = packet.model_copy(
+        update={
+            "items": [
+                packet.items[0].model_copy(update={"document_sha256": "0" * 64}),
+                *packet.items[1:],
+            ]
+        }
+    )
+    cut_sentence = packet.model_copy(
+        update={
+            "quote_candidates": [
+                packet.quote_candidates[0].model_copy(
+                    update={"text": packet.quote_candidates[0].text[4:]}
+                ),
+                *packet.quote_candidates[1:],
+            ]
+        }
+    )
+    for malformed in (wrong_source, cut_sentence):
+        response = compile_high_risk_answer(
+            malformed.question, malformed, trace_id="informational-source-control"
+        )
+        assert response.claims == []
+
+
+def test_contents_target_does_not_accept_an_earlier_pet_inventory() -> None:
+    from firelens.publication.compiler import _quote_candidate_covers_target
+
+    general = "What belongs in a grab-and-go bag?"
+    pet = "What belongs in a pet grab-and-go bag?"
+    pet_quote = "Pet grab-and-go bags include food, water, leashes, and carriers."
+    assert not _quote_candidate_covers_target(pet_quote, general)
+    assert _quote_candidate_covers_target(pet_quote, pet)
+    assert _quote_candidate_covers_target(_ADMITTED_GRAB_AND_GO_LIST, general)
+
+
+def test_admitted_general_inventory_survives_an_earlier_pet_checklist() -> None:
+    pet_quote = admitted_corpus_index()["preparedbc_wildfire_guide:page:6:chunk:3"][
+        "text"
+    ].strip()
+    for question, expected in (
+        ("What belongs in a grab-and-go bag?", _ADMITTED_GRAB_AND_GO_LIST),
+        ("What belongs in a pet grab-and-go bag?", pet_quote),
+    ):
+        packet = _with_quote_sources(
+            _bound_packet(question, "TC-FIRESMART-021-01"),
+            pet_quote,
+            _ADMITTED_GRAB_AND_GO_LIST,
+        )
+        response = compile_high_risk_answer(question, packet, trace_id="contents-subject")
+        assert response.validation is not None and response.validation.accepted
+        assert any(
+            support.quote == expected for claim in response.claims for support in claim.supports
+        )

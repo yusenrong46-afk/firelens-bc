@@ -152,7 +152,11 @@ def _quote_occurs_in_admitted_text(quote: str, corpus_text: str) -> bool:
 
 
 def quote_only_claim(
-    candidate: EvidenceQuoteCandidate, *, public_claim_id: str, packet: EvidencePacket
+    candidate: EvidenceQuoteCandidate,
+    *,
+    public_claim_id: str,
+    packet: EvidencePacket,
+    risk_tier: RiskTier = RiskTier.A,
 ) -> tuple[PublicClaim, PublicEvidence, ProofCard]:
     text = candidate.text
     evidence_id = candidate.evidence_id
@@ -173,7 +177,7 @@ def quote_only_claim(
         review_status="extraction_only",
         renderer_id=QUOTE_RENDERER_ID,
         support_provenance="exact_official_quote",
-        risk_tier=RiskTier.A.value,
+        risk_tier=risk_tier.value,
     )
     claim = PublicClaim(
         claim_id=public_claim_id,

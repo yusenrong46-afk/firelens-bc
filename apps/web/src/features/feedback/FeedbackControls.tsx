@@ -38,7 +38,7 @@ export function FeedbackControls({ traceId }: { traceId: string }) {
 
   if (status === "sent") {
     return (
-      <div className="feedback-controls" aria-label="Response feedback">
+      <div className="feedback-controls" role="group" aria-label="Response feedback">
         <p className="feedback-status" role="status"><Check size={15} /> Feedback received</p>
         <p className="feedback-disclosure">Sent: category and response ID. No written message.</p>
       </div>
@@ -46,7 +46,7 @@ export function FeedbackControls({ traceId }: { traceId: string }) {
   }
 
   return (
-    <div className="feedback-controls" aria-label="Response feedback" aria-busy={status === "sending"}>
+    <div className="feedback-controls" role="group" aria-label="Response feedback" aria-busy={status === "sending"}>
       <span
         id={feedbackHelpId}
         className="response-announcement"

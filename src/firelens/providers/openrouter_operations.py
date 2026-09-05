@@ -16,6 +16,7 @@ from firelens.contracts import (
     PlanningResponse,
 )
 from firelens.errors import ProviderError, ProviderErrorKind
+from firelens.providers.openrouter_generation import completion_parameters
 from firelens.providers.openrouter_support import (
     ProviderStage,
     locally_type_draft,
@@ -40,7 +41,7 @@ async def chat_json(
             "model": provider.config.generation_model,
             "messages": list(messages),
             "stream": False,
-            "max_tokens": max_tokens,
+            **completion_parameters(provider.config, max_tokens),
             **provider._generation_sampling_parameters(),
             "provider": provider._provider_preferences(stage),
             "response_format": {

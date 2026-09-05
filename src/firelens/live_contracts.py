@@ -52,7 +52,7 @@ class LocationInput(FrozenStrictModel):
         )
         # A small explicit set preserves genuine numeric BC community names
         # without weakening the default rejection of civic addresses.
-        numeric_bc_communities = frozenset({"100 mile house"})
+        numeric_bc_communities = frozenset({"70 mile house", "100 mile house"})
         digit_label_is_allowed = lowered in numeric_bc_communities
         if (
             any(character.isdigit() for character in normalized) and not digit_label_is_allowed

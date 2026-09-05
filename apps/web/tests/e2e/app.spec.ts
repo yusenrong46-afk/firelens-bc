@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import catalogue from "../../../../data/capabilities/guided_questions.v1.json" with { type: "json" };
 
 const answer = {
   status: "answer",
@@ -294,10 +295,10 @@ test("submits a question and inspects exact evidence", async ({ page }) => {
     const desktopChat = await page.evaluate(() => {
       const viewportWidth = document.documentElement.clientWidth;
       const panel = document.querySelector(".conversation-panel")!.getBoundingClientRect();
-      const answer = document.querySelector(".assistant-message")!.getBoundingClientRect();
+      const answer = document.querySelector(".answer-lead")!.getBoundingClientRect();
       return { panelRatio: panel.width / viewportWidth, answerWidth: answer.width };
     });
-    // Pacific Clarity keeps the answer in a readable ~720px column beside the sidebar.
+    // The answer panel can span the dashboard track; prose keeps its 760px measure.
     expect(desktopChat.panelRatio).toBeGreaterThanOrEqual(0.45);
     expect(desktopChat.answerWidth).toBeLessThanOrEqual(760);
   }
@@ -454,8 +455,11 @@ test("uses neutral live-summary copy and exposes category-only feedback", async 
   await page.getByLabel("Send question").click();
 
   const conversation = page.getByLabel("Question and answer");
-  await expect(conversation.getByText(/\d+ official records? found/)).toBeVisible();
-  await expect(conversation.getByText(/BC Wildfire Service · Updated/)).toBeVisible();
+  await expect(conversation.getByText("1 official record found", { exact: true })).toBeVisible();
+  const sourceLine = conversation.getByLabel("Answer sources and update time");
+  await expect(sourceLine).toBeVisible();
+  await expect(sourceLine).toContainText("BC Wildfire Service");
+  await expect(sourceLine).toContainText("Latest source update");
   await expect(conversation.getByText(/does not change the answer/i)).toHaveCount(1);
   const issueButton = conversation.getByRole("button", { name: "Report" });
   await expect(issueButton).toHaveAttribute("aria-expanded", "false");
@@ -534,6 +538,23 @@ test("keeps the workspace usable at a 320px viewport", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto("/");
   await expect(page.getByLabel("Ask FireLens a question")).toBeVisible();
+  const startHeading = page.getByRole("heading", {
+    name: "What do you want to know about wildfires in B.C.?",
+  });
+  const readinessStatus = page.locator(".pc-main__status");
+  const [headingBox, statusBox] = await Promise.all([
+    startHeading.boundingBox(),
+    readinessStatus.boundingBox(),
+  ]);
+  // Pacific Operations puts the real search and service status above the home content.
+  expect(headingBox?.y).toBeGreaterThan(statusBox?.y ?? 0);
+
+  const mobileHeaderActions = page.locator(".pc-mobile-header__actions > *");
+  await expect(mobileHeaderActions).toHaveCount(3);
+  const actionBoxes = await mobileHeaderActions.evaluateAll((elements) => (
+    elements.map((element) => element.getBoundingClientRect().top)
+  ));
+  expect(Math.max(...actionBoxes) - Math.min(...actionBoxes)).toBeLessThanOrEqual(1);
   const employerControl = page.getByRole("button", { name: /How (?:it|FireLens) works/ }).first();
   await expect(employerControl).toBeVisible();
   const employerControlBox = await employerControl.boundingBox();
@@ -691,14 +712,14 @@ test("opens analytical answers on Summary and resets the selected surface for a 
       return {
         panelBottom: panel.bottom,
         canvasBottom: canvas.bottom,
+        canvasTop: canvas.top,
         composerBottom: composer.bottom,
       };
     });
-    // Analysis stays in the conversation column; the follow-up composer is at the
-    // bottom of that panel, not stacked above the answer.
+    // Analysis stays in the conversation column; the composer is docked below it.
     expect(desktopColumns.canvasBottom).toBeGreaterThan(0);
-    expect(desktopColumns.composerBottom).toBeGreaterThan(desktopColumns.canvasBottom - 1);
-    expect(desktopColumns.composerBottom).toBeLessThanOrEqual(desktopColumns.panelBottom + 1);
+    expect(desktopColumns.composerBottom).toBeGreaterThan(page.viewportSize()!.height - 100);
+    expect(desktopColumns.composerBottom).toBeLessThanOrEqual(page.viewportSize()!.height);
   }
 
   await map.click();
@@ -734,4 +755,44 @@ test("respects reduced motion without hiding the answer", async ({ page }) => {
   );
   const transition = await page.locator("#conversation").evaluate((node) => getComputedStyle(node).transitionDuration);
   expect(transition === "0s" || transition === "").toBeTruthy();
+});
+
+
+test("bottom composer stays visible and never reuses a submitted question as its prompt", async ({ page }) => {
+  await page.goto("/");
+  const input = page.getByLabel("Ask FireLens a question");
+  const bounds = await input.boundingBox();
+  expect(bounds!.y).toBeGreaterThan(page.viewportSize()!.height - 150);
+  await input.fill("What belongs in a grab-and-go bag?");
+  await input.press("Enter");
+  await expect(page.locator(".answer-lead")).toContainText("Prepare water");
+  await input.click();
+  await expect(input).toHaveValue("");
+  await expect(input).toHaveAttribute("placeholder", "Ask about B.C. wildfires…");
+  await input.fill("My unfinished follow-up");
+  await input.blur();
+  await input.click();
+  await expect(input).toHaveValue("My unfinished follow-up");
+  await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
+  const afterScroll = await input.boundingBox();
+  expect(afterScroll!.y).toBeGreaterThan(page.viewportSize()!.height - 150);
+  expect(afterScroll!.y + afterScroll!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+});
+
+test("guided questions submit once on click and follow-ups keep the conversation", async ({ page }) => {
+  await page.route("**/api/v1/guided-questions", route => route.fulfill({
+    json: { ...catalogue, catalogue_sha256: "0".repeat(64) },
+  }));
+  await page.goto("/");
+  await page.getByLabel("BC community for a nearby lookup").fill("Kelowna, BC");
+  await page.getByRole("button", { name: /Browse guided questions/ }).click();
+  await page.getByRole("button", { name: /Nearby wildfire records/ }).click();
+  await expect(page.locator(".answer-lead")).toContainText("Prepare water");
+  expect(seenRequests).toHaveLength(1);
+  expect(seenRequests[0]!.question).toBe("What official wildfire records are near Kelowna, BC?");
+  await expect(page.getByLabel("Ask FireLens a question")).toHaveValue("");
+  await page.getByRole("button", { name: "How often should I update my emergency kit?" }).click();
+  await expect.poll(() => seenRequests.length).toBe(2);
+  expect(seenRequests[1]!.question).toBe("How often should I update my emergency kit?");
+  expect(seenRequests[1]!.history.some(turn => turn.content.includes("What official wildfire records"))).toBe(true);
 });

@@ -14,6 +14,7 @@ from firelens.answering.context import (
 )
 from firelens.answering.request_facets import requests_contents
 from firelens.answering.risk_policy import RiskTier
+from firelens.answering.static_guidance_subject import static_guidance_subject
 from firelens.answering.typed_records import load_inventory, match_quote
 from firelens.answering.typed_snapshot import classify_text
 from firelens.claim_trust import corpus_claim_trust
@@ -228,6 +229,21 @@ def compile_high_risk_answer(
                 policy_valid=False,
             ),
         )
+    informational_quotes = {
+        candidate.quote_id
+        for candidate in packet.quote_candidates
+        if classify_text(question) == RiskTier.C
+        and static_guidance_subject(question) is None
+        and not is_terse_quote_only_request(question)
+        and classify_text(candidate.text) == RiskTier.C
+        and _quote_candidate_covers_target(candidate.text, question)
+    }
+    # Governed guidance subjects keep their existing coverage and applicability
+    # handling; Tier C alone does not distinguish advice from a concept question.
+    # For other direct informational quotes, planner-expanded aspects cannot
+    # displace the user's task with adjacent instructions from the same source.
+    if informational_quotes:
+        supported_aspects = ()
     targets = _publication_targets(question, supported_aspects)
     selected = select_typed_claim_ids(
         packet,
@@ -256,7 +272,12 @@ def compile_high_risk_answer(
         bound_quote = allowed_quote_set is not None and candidate.text in allowed_quote_set
         if allowed_quote_set is not None and not bound_quote:
             continue
-        if not bound_quote and classify_text(candidate.text) not in {RiskTier.A, RiskTier.B}:
+        informative = candidate.quote_id in informational_quotes
+        if (
+            not bound_quote
+            and not informative
+            and classify_text(candidate.text) not in {RiskTier.A, RiskTier.B}
+        ):
             continue
         evidence_item = next(
             (item for item in packet.items if item.evidence_id == candidate.evidence_id),
@@ -293,7 +314,10 @@ def compile_high_risk_answer(
             continue
         quote_index += 1
         claim, item, card = quote_only_claim(
-            candidate, public_claim_id=f"C{quote_index}", packet=packet
+            candidate,
+            public_claim_id=f"C{quote_index}",
+            packet=packet,
+            risk_tier=RiskTier.C if informative else RiskTier.A,
         )
         claims.append(claim)
         evidence.append(item)
@@ -311,9 +335,16 @@ def compile_high_risk_answer(
         claim.publication and claim.publication.kind == PublicationKind.OFFICIAL_QUOTE_ONLY
         for claim in claims
     )
+    has_high_risk_quote = any(
+        claim.publication
+        and claim.publication.kind == PublicationKind.OFFICIAL_QUOTE_ONLY
+        and claim.publication.risk_tier != RiskTier.C.value
+        for claim in claims
+    )
     uncovered_atomic = [t for t in uncovered_targets if t in ALERT_ORDER_ATOMIC_TARGET_SET]
     if has_quote_only:
         limitations.append(QUOTE_ONLY_LIMITATION)
+    if has_high_risk_quote:
         limitations.append(UNCOVERED_LIMITATION)
         reason = ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED
     if uncovered_atomic:
@@ -341,7 +372,7 @@ def compile_high_risk_answer(
         reason=reason,
         response_mode=(
             ResponseMode.PARTIAL
-            if has_quote_only or uncovered_atomic
+            if has_high_risk_quote or uncovered_atomic
             else ResponseMode.GROUNDED
         ),
         validation=validation,
@@ -402,13 +433,13 @@ def select_typed_claim_ids(
 
 
 def _quote_candidate_covers_target(text: str, target: str) -> bool:
-    # "Evacuation" by itself is not enough to answer a question about
-    # sprinklers.  The source packet may contain several adjacent high-risk
-    # passages, so require this user-supplied, concrete subject to occur in
-    # the exact candidate before its other overlapping terms can authorize
-    # quote-only publication.  This does not interpret a sprinkler claim or
-    # alter its review state; it only prevents a different topic in the same
-    # general preparedness domain from being substituted as support.
+    # Concrete subjects constrain support; adjacent preparedness text cannot
+    # substitute for the requested contents or sprinkler guidance.
+    if requests_contents(target):
+        source_subject = static_guidance_subject(text)
+        target_subject = static_guidance_subject(target)
+        if source_subject and target_subject and source_subject != target_subject:
+            return False
     if _SPRINKLER_TERM.search(target) and _SPRINKLER_TERM.search(text) is None:
         return False
     if support_token_overlap(text, target) < SUPPORT_TOKEN_OVERLAP_FLOOR:
@@ -484,15 +515,9 @@ def _structured_covers_publication_target(
 def packet_requires_structured(packet: EvidencePacket, question: str = "") -> bool:
     """Whether this answer must be compiled from exact wording, not generated.
 
-    True when the question itself asks for an action, quantity, or status
-    (Tier A/B), when the retrieved guidance tells people what to do (Tier A
-    passages: actions, evacuation terms), or when the question is about official
-    status vocabulary (stages of control, alert/order).  A passage that merely contains a
-    number or names an organisation (Tier B) does not force compilation:
-    nearly every real source passage does, and judging on that pushed almost
-    every explanatory question into garbled exact-quote fragments.  Generated
-    sentences that carry a quantity or status are still dropped claim by claim
-    in ``GroundedAnswerEngine.answer``.
+    Compile Tier A/B questions, official-status questions, and packets with
+    Tier A guidance. Incidental Tier B source content does not force compilation;
+    ``GroundedAnswerEngine.answer`` still filters generated quantities and statuses.
     """
 
     if question and (

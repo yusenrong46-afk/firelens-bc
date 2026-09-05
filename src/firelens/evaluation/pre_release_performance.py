@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,22 @@ def build_pre_release_report(
     regressed_routes = [
         route_id for route_id, row in compared_routes.items() if row.get("regressed_over_10pct")
     ]
+    comparable = bool(compared_routes) and set(compared_routes) == set(current["routes"])
+    for route_id, row in compared_routes.items():
+        baseline, candidate = row.get("v1_5_p95_ms"), row.get("round2_p95_ms")
+        if not all(
+            isinstance(value, int | float)
+            and not isinstance(value, bool)
+            and math.isfinite(value)
+            and value > 0
+            for value in (baseline, candidate)
+        ):
+            comparable = False
+            continue
+        if row.get("regressed_over_10pct") is not (
+            (candidate - baseline) / baseline > 0.10
+        ) or candidate != current["routes"].get(route_id, {}).get("p95_ms"):
+            comparable = False
 
     def git_value(*args: str) -> str:
         return subprocess.check_output(["git", *args], cwd=root, text=True).strip()
@@ -49,6 +66,8 @@ def build_pre_release_report(
                 "NEEDS_HUMAN_TRADEOFF_ACCEPTANCE"
                 if regressed_routes
                 else "MEASURED_NO_ROUTE_REGRESSION"
+                if comparable
+                else "NOT_COMPARABLE"
             ),
         },
         "current_routes": {

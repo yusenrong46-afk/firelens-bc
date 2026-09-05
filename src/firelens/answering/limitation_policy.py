@@ -36,7 +36,12 @@ def select_public_limitations(items: list[str], *, max_material: int = 1) -> lis
             continue
         seen.add(text)
         unique.append(text)
-    required = [item for item in unique if item == BACKGROUND_LIMITATION]
+    required = [
+        item
+        for item in unique
+        if item == BACKGROUND_LIMITATION
+        or item.startswith("Not supported by selected evidence:")
+    ]
     safety = [
         item
         for item in unique

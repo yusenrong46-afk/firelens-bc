@@ -1347,6 +1347,8 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                         ],
                     },
                 )
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 1})
             return httpx.Response(
                 200,
                 json={

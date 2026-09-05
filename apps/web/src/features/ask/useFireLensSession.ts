@@ -88,6 +88,13 @@ export function useFireLensSession(): FireLensSession {
   const [selectedLiveResultId, setSelectedLiveResultId] = useState<string>();
   const [roster, setRoster] = useState<Roster>(EMPTY_ROSTER);
   const activeRequest = useRef<AbortController | null>(null);
+  const locationGeneration = useRef(0);
+
+  useEffect(() => () => {
+    locationGeneration.current += 1;
+    activeRequest.current?.abort();
+    activeRequest.current = null;
+  }, []);
 
   const response = view.kind === "answer" || view.kind === "abstention" ? view.response : undefined;
   const mode = response ? getResponseMode(response) : undefined;
@@ -148,6 +155,7 @@ export function useFireLensSession(): FireLensSession {
   ) {
     const normalized = question.trim();
     if (!normalized) return;
+    locationGeneration.current += 1;
     const requestHistory = history.slice(-6);
     activeRequest.current?.abort();
     const controller = new AbortController();
@@ -179,6 +187,7 @@ export function useFireLensSession(): FireLensSession {
         controller.signal,
         context,
       );
+      if (controller.signal.aborted || activeRequest.current !== controller) return;
       const nextHistory: ConversationTurn[] = [
         ...requestHistory,
         { role: "user", content: normalized },
@@ -192,6 +201,7 @@ export function useFireLensSession(): FireLensSession {
         response: nextResponse,
       });
     } catch (error) {
+      if (controller.signal.aborted || activeRequest.current !== controller) return;
       if (error instanceof DOMException && error.name === "AbortError") return;
       if (error instanceof FireLensApiError) {
         const message = error.detail.retryable
@@ -235,8 +245,11 @@ export function useFireLensSession(): FireLensSession {
   }
 
   function clearHistory() {
+    locationGeneration.current += 1;
     activeRequest.current?.abort();
     activeRequest.current = null;
+    setQuery("");
+    setContextLayersEnabled(false);
     setHistory([]);
     setSelected(0);
     setLocationLabel("");
@@ -248,6 +261,7 @@ export function useFireLensSession(): FireLensSession {
   }
 
   function useApproximateLocation() {
+    const generation = ++locationGeneration.current;
     if (!navigator.geolocation) {
       setLocationMessage("Location is not available in this browser.");
       return;
@@ -255,6 +269,7 @@ export function useFireLensSession(): FireLensSession {
     setLocationMessage("Requesting permission…");
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
+        if (generation !== locationGeneration.current) return;
         const location: LocationInput = {
           latitude: Math.round(coords.latitude * 100) / 100,
           longitude: Math.round(coords.longitude * 100) / 100,
@@ -267,7 +282,11 @@ export function useFireLensSession(): FireLensSession {
           ?? "What official fires are near this location?";
         void submitQuestionWithContext(continuation, location);
       },
-      () => setLocationMessage("Location was not shared. You can enter a BC community name instead."),
+      () => {
+        if (generation === locationGeneration.current) {
+          setLocationMessage("Location was not shared. You can enter a BC community name instead.");
+        }
+      },
       { enableHighAccuracy: false, maximumAge: 300_000, timeout: 8_000 },
     );
   }

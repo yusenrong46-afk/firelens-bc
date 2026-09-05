@@ -26,7 +26,7 @@ _WILDFIRE_VOCABULARY = re.compile(
     r"forests?|trees?|brush|grass|fuels?|slopes?|uphill|downhill|"
     r"lightning|drought|heat\s?wave|wind\w*|weather|"
     r"perimeters?|hectares?|containment|contained|held|"
-    r"air\s?quality|aqhi|respirator|n95|"
+    r"air\s?quality|aqhi|aqi|respirator|n95|"
     r"bcws|bc\s?wildfire|british\s+columbia|b\.?c\.?|"
     r"kelowna|kamloops|vernon|penticton|prince\s+george|vancouver|victoria|"
     r"nelson|cranbrook|nanaimo|fort\s+st\.?\s+john|williams\s+lake|quesnel|"

@@ -14,28 +14,10 @@ export type NearMeRequest = components["schemas"]["NearMeRequest"];
 export type NearMeResponse = components["schemas"]["NearMeResponse"];
 export type FeedbackCategory = components["schemas"]["FeedbackRequest"]["category"];
 
-/** The guided-question catalogue is served by the V1.6.4 backend endpoint.
- * Keep this narrow client type local until the public generated schema is
- * intentionally regenerated; the endpoint contract itself is frozen. */
-export type GuidedQuestion = {
-  id: string;
-  label: string;
-  question: string;
-  location_mode: "none" | "optional" | "required";
-  source_lane: "official_live" | "reviewed_guidance" | "official_quote";
-};
-
-export type GuidedQuestionCategory = {
-  id: string;
-  label: string;
-  questions: GuidedQuestion[];
-};
-
-export type GuidedQuestionsResponse = {
-  schema_version: string;
-  catalogue_sha256: string;
-  categories: GuidedQuestionCategory[];
-};
+/** Public guided-question types remain generated from the backend OpenAPI contract. */
+export type GuidedQuestion = components["schemas"]["GuidedQuestionItem"];
+export type GuidedQuestionCategory = components["schemas"]["GuidedQuestionCategory"];
+export type GuidedQuestionsResponse = components["schemas"]["GuidedQuestionsResponse"];
 
 type ResponseMetadata = {
   responseStatus?: number | undefined;
@@ -193,25 +175,9 @@ export async function askFireLens(
   });
 }
 
-export type LiveCurrentSummary = {
-  incident_record_count: number | null;
-  evacuation_record_count: number | null;
-  source_status: string;
-  retrieved_at: string | null;
-  freshness: string | null;
-  limitation: string;
-};
+export type LiveCurrentSummary = components["schemas"]["LiveCurrentSummary"];
 
-export type ProductEventName =
-  | "guided_catalog_opened"
-  | "guided_question_selected"
-  | "live_summary_loaded"
-  | "map_opened"
-  | "evidence_opened"
-  | "authority_handoff_opened"
-  | "analysis_exported"
-  | "saved_scope_added"
-  | "feedback_submitted";
+export type ProductEventName = components["schemas"]["ProductEventRequest"]["event"];
 
 export async function fetchReadyHealth(signal?: AbortSignal): Promise<{
   release_version?: string;

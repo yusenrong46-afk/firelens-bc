@@ -616,3 +616,17 @@ def test_conversational_mixed_noun_phrases_create_two_bounded_execution_lanes(
     )
     assert plan.static_subrequest == static_subrequest
     assert len(plan.tool_calls) == 2
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "What belongs in a grab-and-go bag?",
+        "What should I put in an emergency kit?",
+    ),
+)
+def test_contents_question_reaches_publication_without_retrieval_rewrite(question: str) -> None:
+    static = RecordingStatic(_background())
+    agent = FireLensAgent(cast(Any, static), LiveAnswerCoordinator(cast(Any, object())))
+    asyncio.run(agent.answer(QueryRequest(question=question)))
+    assert static.questions == [question]

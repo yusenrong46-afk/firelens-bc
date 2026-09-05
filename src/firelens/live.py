@@ -45,6 +45,8 @@ from firelens.live_support import (
     LiveDataUnavailable,
     _BBox,
     _CacheKey,
+    _official_record_updated_at,
+    _official_size_hectares,
     authority,
     bc_region_entry,
     geojson_crs_is_wgs84,
@@ -250,8 +252,8 @@ class LiveDataService:
             raise LiveDataUnavailable(f"{kind.value} source returned malformed features")
         return features, bool(payload.get("exceededTransferLimit"))
 
-    async def _published_count(self, kind: LiveResultKind, *, bbox: _BBox | None) -> int | None:
-        """How many records the publisher says this query has, or None if it does not say."""
+    async def _published_count(self, kind: LiveResultKind, *, bbox: _BBox | None) -> int:
+        """Return the authoritative record count or fail closed."""
 
         params = {
             "where": "1=1",
@@ -263,10 +265,18 @@ class LiveDataService:
             response = await self._get(f"{self._layer(kind).url}/query", params=params)
             response.raise_for_status()
             payload = response.json()
-        except (httpx.HTTPError, ValueError):
-            return None
+        except (httpx.HTTPError, ValueError) as exc:
+            raise LiveDataUnavailable(
+                f"{kind.value} source count was unavailable",
+                kind=LiveDataErrorKind.INVALID_RESPONSE,
+            ) from exc
         count = payload.get("count") if isinstance(payload, dict) else None
-        return count if isinstance(count, int) and count >= 0 else None
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            raise LiveDataUnavailable(
+                f"{kind.value} source returned an invalid published count",
+                kind=LiveDataErrorKind.INVALID_RESPONSE,
+            )
+        return count
 
     async def _source_metadata(self, kind: LiveResultKind) -> datetime:
         definition = self._layer(kind)
@@ -298,11 +308,11 @@ class LiveDataService:
         kind: LiveResultKind,
         *,
         bbox: tuple[float, float, float, float] | None,
-        previous: CacheEntry | None = None,
     ) -> CacheEntry:
-        source_updated_at, (page, exceeded) = await asyncio.gather(
+        source_updated_at, (page, exceeded), published = await asyncio.gather(
             self._source_metadata(kind),
             self._fetch_page(kind, offset=0, bbox=bbox),
+            self._published_count(kind, bbox=bbox),
         )
         features: list[dict[str, Any]] = []
         seen_feature_ids: set[str] = set()
@@ -361,20 +371,12 @@ class LiveDataService:
                 f"{kind.value} source exceeded the pagination limit",
                 kind=LiveDataErrorKind.BOUNDED_LIMIT,
             )
-        # While BC Wildfire Service republishes a view, a page can come back
-        # empty although the publisher still counts its records (observed:
-        # offset 0 empty, offset 1000 full). A fetch that shrinks or empties is
-        # checked against the publisher's own count before it can mean "fewer
-        # fires": fewer rows than counted is an incomplete answer, never zero.
-        shrank = previous is not None and len(features) < len(previous.features)
-        if not features or shrank:
-            published = await self._published_count(kind, bbox=bbox)
-            if published is not None and len(features) < published:
-                raise LiveDataUnavailable(
-                    f"{kind.value} source returned {len(features)} of {published} "
-                    "published records",
-                    kind=LiveDataErrorKind.INVALID_RESPONSE,
-                )
+        if len(features) != published:
+            raise LiveDataUnavailable(
+                f"{kind.value} source returned {len(features)} of {published} "
+                "published records",
+                kind=LiveDataErrorKind.INVALID_RESPONSE,
+            )
         entry = CacheEntry(
             fetched_monotonic=time.monotonic(),
             retrieved_at=datetime.now(UTC),
@@ -405,7 +407,7 @@ class LiveDataService:
             ):
                 return cached, Freshness.FRESH
             try:
-                refreshed = await self._refresh(kind, bbox=normalized_bbox, previous=cached)
+                refreshed = await self._refresh(kind, bbox=normalized_bbox)
                 self._cache_put(cache_key, refreshed)
                 return refreshed, Freshness.FRESH
             except (
@@ -447,8 +449,7 @@ class LiveDataService:
                 longitude=longitude,
                 radius_km=radius_km,
             )
-        record_updated = timestamp(property_value(properties, "DATE_MODIFIED"))
-        updated = record_updated or source_updated_at
+        updated = _official_record_updated_at(properties, source_updated_at)
         size = property_value(properties, "FIRE_SIZE_HECTARES", "CURRENT_SIZE", "SIZE_HA")
         observed_freshness = freshness_for_observation(
             freshness, source_updated_at=updated, retrieved_at=retrieved_at
@@ -491,7 +492,7 @@ class LiveDataService:
                 is not None
                 else None
             ),
-            size_hectares=float(size) if isinstance(size, (int, float)) else None,
+            size_hectares=_official_size_hectares(size),
             fire_centre=(
                 str(value)
                 if (value := property_value(properties, "FIRE_CENTRE", "FIRE_CENTER"))
@@ -524,7 +525,7 @@ class LiveDataService:
         *,
         bbox: _BBox | None,
         bounds: BaseGeometry | None,
-    ) -> tuple[list[LiveResult], LiveLayerStatus, str | None, bool]:
+    ) -> tuple[list[LiveResult], LiveLayerStatus, str | None]:
         try:
             entry, freshness = await self._features(kind, bbox=bbox)
         except LiveDataUnavailable as exc:
@@ -541,26 +542,26 @@ class LiveDataService:
                     matching_result_count=0,
                 ),
                 str(exc),
-                False,
             )
         results: list[LiveResult] = []
-        skipped_invalid = False
-        # Identity is assigned over the whole fetch so duplicate official keys
-        # are numbered consistently, whichever rows are shown.
         for feature, result_id in zip(
             entry.features, record_ids(kind, entry.features), strict=True
         ):
             properties = feature["properties"]
-            status = str(
-                property_value(
-                    properties,
-                    "FIRE_STATUS",
-                    "ORDER_ALERT_STATUS",
-                    "STATUS",
-                    "EVENT_STATUS",
+            status = (
+                str(
+                    property_value(
+                        properties,
+                        "FIRE_STATUS",
+                        "ORDER_ALERT_STATUS",
+                        "STATUS",
+                        "EVENT_STATUS",
+                    )
+                    or ""
                 )
-                or ""
-            ).casefold()
+                .strip()
+                .casefold()
+            )
             if status in {
                 "out",
                 "inactive",
@@ -575,9 +576,18 @@ class LiveDataService:
                 if event_type and "fire" not in event_type:
                     continue
             state = map_geometry_state(feature.get("geometry"), bounds)
-            if state != "ok":
-                skipped_invalid = skipped_invalid or state == "invalid"
+            if state == "outside":
                 continue
+            if state == "invalid":
+                unavailable = LiveLayerStatus(
+                    kind=kind,
+                    authority=authority(kind),
+                    source_url=HttpUrl(self._layer(kind).url),
+                    available=False,
+                    matching_result_count=0,
+                )
+                limitation = f"{kind.value} source returned spatially invalid geometry"
+                return [], unavailable, limitation
             try:
                 result = self._to_result(
                     kind,
@@ -588,7 +598,15 @@ class LiveDataService:
                     source_updated_at=entry.source_updated_at,
                 )
             except (TypeError, ValueError):
-                continue
+                unavailable = LiveLayerStatus(
+                    kind=kind,
+                    authority=authority(kind),
+                    source_url=HttpUrl(self._layer(kind).url),
+                    available=False,
+                    matching_result_count=0,
+                )
+                limitation = f"{kind.value} source returned a record that did not match the live result contract"
+                return [], unavailable, limitation
             results.append(result)
         return (
             results,
@@ -607,7 +625,6 @@ class LiveDataService:
                 matching_result_count=len(results),
             ),
             None,
-            skipped_invalid,
         )
 
     async def map_results(
@@ -624,11 +641,9 @@ class LiveDataService:
         layer_outcomes = await asyncio.gather(
             *(self._map_layer_results(kind, bbox=bbox, bounds=bounds) for kind in layers)
         )
-        skipped_invalid = False
-        for kind, (layer_results, layer_status, unavailable_reason, layer_skipped) in zip(
+        for kind, (layer_results, layer_status, unavailable_reason) in zip(
             layers, layer_outcomes, strict=True
         ):
-            skipped_invalid = skipped_invalid or layer_skipped
             layer_statuses.append(layer_status)
             if unavailable_reason is not None:
                 unavailable.append(kind)
@@ -645,10 +660,6 @@ class LiveDataService:
                 + "; ".join(unavailable_reasons)
             )
         limitations.extend(stale_observation_limitations(layer_statuses, results))
-        if skipped_invalid:
-            limitations.append(
-                "Some official records could not be located spatially; check them directly with the issuing authority."
-            )
         return LiveMapResponse(
             generated_at=datetime.now(UTC),
             results=sorted(results, key=lambda result: (result.kind.value, result.result_id)),

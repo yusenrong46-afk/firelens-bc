@@ -89,3 +89,46 @@ def requests_contents(question: str) -> bool:
     return contents_request_facet(normalized) is not None or any(
         pattern.search(normalized) for pattern in _CONTENTS_REQUEST_WITHOUT_CONTAINER
     )
+
+
+def significance_subject(question: str) -> str | None:
+    """Keep an explicit subject inside a why question, including dummy ``it``.
+
+    Only grammatical significance scaffolding is removed. No domain or source
+    is inferred: a bare deictic question has no current subject and may resolve
+    its antecedent; any remaining subject must constrain retrieval and support.
+    """
+
+    scaffolding = {
+        "why",
+        "do",
+        "does",
+        "did",
+        "is",
+        "are",
+        "was",
+        "were",
+        "it",
+        "this",
+        "that",
+        "these",
+        "those",
+        "they",
+        "them",
+        "matter",
+        "matters",
+        "important",
+        "importance",
+        "significant",
+        "significance",
+        "so",
+        "a",
+        "an",
+        "the",
+        "to",
+        "for",
+        "of",
+    }
+    words = re.findall(r"[a-z0-9]+(?:['’-][a-z0-9]+)*", question.casefold())
+    subject = " ".join(word for word in words if word not in scaffolding)
+    return subject or None

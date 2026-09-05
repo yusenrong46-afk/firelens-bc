@@ -10,7 +10,11 @@ from __future__ import annotations
 import re
 from functools import lru_cache
 
-from firelens.answering.intent_conversation import is_true_deictic_followup
+from firelens.answering.intent_conversation import (
+    is_significance_followup,
+    is_true_deictic_followup,
+)
+from firelens.answering.request_facets import contents_request_facet, significance_subject
 from firelens.contracts import (
     EvidencePacket,
     QueryPlan,
@@ -433,7 +437,66 @@ def _authority_support_decision(
     return None
 
 
+def significance_topics(plan: QueryPlan, packet: EvidencePacket) -> list[str]:
+    """Resolve the antecedent topic without repeating its earlier contents task."""
+
+    explicit_subject = significance_subject(plan.original_question)
+    if explicit_subject is not None:
+        return [explicit_subject]
+    topics = []
+    for request in plan.retrieval_requests:
+        facet = contents_request_facet(request.query)
+        topic = facet.container if facet is not None else request.query
+        if _aspect_supported(topic, packet):
+            topics.append(topic)
+    return list(dict.fromkeys(topics))
+
+
+def significance_quote_ids(plan: QueryPlan, packet: EvidencePacket) -> set[str]:
+    """Identify explicit rationale candidates, not permission to publish them.
+
+    Both the topic and rationale must occur in the same exact candidate.
+    Source admission, safe quote boundaries and risk policy remain compiler-owned.
+    """
+
+    topics = significance_topics(plan, packet)
+    return {
+        candidate.quote_id
+        for candidate in packet.quote_candidates
+        if re.search(
+            r"\b(?:because|so\s+(?:that|you)|in order to|helps? you|allows? you)\b",
+            candidate.text,
+            re.IGNORECASE,
+        )
+        and any(
+            support_token_overlap(candidate.text, topic, minimum_overlap=2) >= 0.5
+            for topic in topics
+        )
+    }
+
+
 def _aspect_support_decision(plan: QueryPlan, packet: EvidencePacket) -> SupportDecision | None:
+    if is_significance_followup(plan.original_question):
+        topics = significance_topics(plan, packet)
+        if topics:
+            if significance_quote_ids(plan, packet):
+                return SupportDecision(
+                    status=SupportStatus.ANSWERABLE,
+                    reason_code=ReasonCode.APPROVED_STATIC_EVIDENCE,
+                    explanation="An exact topic-matched source passage states a rationale; publication checks still apply.",
+                    supported_aspects=topics,
+                )
+            return SupportDecision(
+                status=SupportStatus.PARTIAL,
+                reason_code=ReasonCode.NO_APPROVED_EVIDENCE,
+                explanation="The supported portion addresses the topic, not its significance.",
+                supported_aspects=topics,
+                missing_aspects=[
+                    f"The selected evidence does not explain the significance of {topics[0]}."
+                    if significance_subject(plan.original_question)
+                    else "The supported portion does not explain why this matters."
+                ],
+            )
     if plan.required_aspects:
         supported_aspects = [
             aspect for aspect in plan.required_aspects if _aspect_supported(aspect, packet)

@@ -1,0 +1,83 @@
+{
+  "compare": null,
+  "current_average_generate_calls": 0.0,
+  "current_routes": {
+    "capability": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 4.564625007333234,
+      "p95_ms": 5.552374990656972
+    },
+    "deterministic_fallback": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 1.4357500185724348,
+      "p95_ms": 1.5509999939240515
+    },
+    "missing_location": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 0.6880409782752395,
+      "p95_ms": 0.7579999801237136
+    },
+    "mixed_live_and_static": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 10.763208993012086,
+      "p95_ms": 11.798291001468897
+    },
+    "output_rail_rewrite": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 1.4765840023756027,
+      "p95_ms": 1.5640830097254366
+    },
+    "prohibited_personalized_safety": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 0.5877500225324184,
+      "p95_ms": 0.6658329803030938
+    },
+    "pure_static_guidance": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 9.846791974268854,
+      "p95_ms": 10.844333010027185
+    },
+    "ready_live": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 1.6243749996647239,
+      "p95_ms": 1.7241669993381947
+    },
+    "unresolved_tool_loop": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 0.8413750038016587,
+      "p95_ms": 0.9054580004885793
+    },
+    "unsupported_tangent": {
+      "failures": 0,
+      "mean_generate_calls": 0.0,
+      "p50_ms": 5.245999986073002,
+      "p95_ms": 7.572000002255663
+    }
+  },
+  "evidence_class": "EXECUTED",
+  "h8_review": {
+    "regressed_routes_over_10pct": [],
+    "requires_accepted_evidence": false,
+    "status": "MEASURED_NO_ROUTE_REGRESSION"
+  },
+  "identity": {
+    "branch": "codex/firelens-eval-driven-upgrade",
+    "commit": "ae975132c5d65800c1e960c7b6e0c46844959dfe",
+    "tree": "c7952d897b09c2640cd0a2cc4313c925c32cd6ac"
+  },
+  "label": "representative_workload_average",
+  "measured_per_route": 100,
+  "not_fleet_average": true,
+  "pure_static_generate_calls": 0.0,
+  "v1_5_status": "SKIPPED",
+  "warmup_per_route": 10
+}

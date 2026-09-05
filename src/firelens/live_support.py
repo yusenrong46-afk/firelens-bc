@@ -254,9 +254,14 @@ def official_fire_centre_from_question(question: str) -> str | None:
 
 
 def timestamp(value: Any) -> datetime | None:
+    if isinstance(value, bool):
+        return None
     if isinstance(value, (int, float)):
-        seconds = float(value) / 1000 if value > 10_000_000_000 else float(value)
         try:
+            numeric = float(value)
+            if not math.isfinite(numeric) or numeric < 0:
+                return None
+            seconds = numeric / 1000 if numeric > 10_000_000_000 else numeric
             return datetime.fromtimestamp(seconds, UTC)
         except (OverflowError, OSError, ValueError):
             return None
@@ -271,14 +276,48 @@ def timestamp(value: Any) -> datetime | None:
     return None
 
 
+def _official_record_updated_at(
+    properties: dict[str, Any], source_updated_at: datetime
+) -> datetime:
+    value = property_value(properties, "DATE_MODIFIED")
+    parsed = timestamp(value)
+    if value is not None and parsed is None:
+        raise ValueError("official record update time was invalid")
+    return parsed or source_updated_at
+
+
+def _official_size_hectares(value: Any) -> float | None:
+    """Normalize official area without letting JSON booleans pose as numbers."""
+
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("official fire size was not numeric")
+    try:
+        normalized = float(value)
+    except OverflowError as exc:
+        raise ValueError("official fire size exceeded the numeric range") from exc
+    if not math.isfinite(normalized) or normalized < 0:
+        raise ValueError("official fire size was not a finite non-negative number")
+    return normalized
+
+
 def _positions(coords: Any) -> list[tuple[float, float]]:
     if not isinstance(coords, (list, tuple)) or not coords:
         return []
-    first = coords[0]
-    if isinstance(first, (int, float)):
+    nested = [isinstance(item, (list, tuple)) for item in coords]
+    if not any(nested):
         if len(coords) < 2:
-            return []
+            raise ValueError("coordinate position has fewer than two values")
+        if any(
+            isinstance(value, bool) or not isinstance(value, (int, float)) for value in coords
+        ):
+            raise ValueError("coordinate position contains a non-numeric value")
+        if any(not math.isfinite(float(value)) for value in coords):
+            raise OverflowError("coordinate position contains a non-finite value")
         return [(float(coords[0]), float(coords[1]))]
+    if not all(nested):
+        raise ValueError("coordinate nesting mixes positions and scalar values")
     positions: list[tuple[float, float]] = []
     for item in coords:
         positions.extend(_positions(item))
@@ -290,10 +329,26 @@ def geometry_integrity_errors(geometry: dict[str, Any] | None) -> list[str]:
 
     if not isinstance(geometry, dict):
         return ["null_geometry"]
-    if geometry.get("coordinates") is None and geometry.get("type") != "GeometryCollection":
+    geometry_type = geometry.get("type")
+    if geometry.get("coordinates") is None and geometry_type != "GeometryCollection":
         return ["null_geometry"]
     errors: list[str] = []
-    for longitude, latitude in _positions(geometry.get("coordinates")):
+    positions: list[tuple[float, float]] = []
+    if geometry_type == "GeometryCollection":
+        members = geometry.get("geometries")
+        if not isinstance(members, (list, tuple)):
+            errors.append("malformed_geometry")
+        else:
+            for member in members:
+                errors.extend(geometry_integrity_errors(member))
+    else:
+        try:
+            positions = _positions(geometry.get("coordinates"))
+        except OverflowError:
+            errors.append("non_finite_coordinate")
+        except (TypeError, ValueError):
+            errors.append("malformed_coordinate")
+    for longitude, latitude in positions:
         if not math.isfinite(longitude) or not math.isfinite(latitude):
             errors.append("non_finite_coordinate")
             break
@@ -303,9 +358,13 @@ def geometry_integrity_errors(geometry: dict[str, Any] | None) -> list[str]:
         if abs(latitude) > 90.0 or abs(longitude) > 180.0:
             errors.append("out_of_range_coordinate")
             break
+    # Shapely is not a validator for arbitrary JSON numeric magnitudes. Avoid
+    # handing it coordinates that our deterministic checks have already rejected.
+    if errors:
+        return list(dict.fromkeys(errors))
     try:
         target = shape(geometry)
-    except (TypeError, ValueError, AttributeError):
+    except (TypeError, ValueError, AttributeError, OverflowError):
         errors.append("malformed_geometry")
         return list(dict.fromkeys(errors))
     if target.is_empty:

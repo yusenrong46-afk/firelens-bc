@@ -24,8 +24,8 @@ _REVIEWED_GUIDANCE_HINT = re.compile(
     re.IGNORECASE,
 )
 _EXPLICIT_REVIEWED_SOURCE = re.compile(
-    r"\b(?:official|according\s+to\s+(?:official\s+)?guidance|reviewed|source|"
-    r"document|guide)\b",
+    r"\b(?:official|according\s+to\s+(?:official\s+)?guidance|reviewed|sources?|"
+    r"documents?|guides?|checklists?)\b",
     re.IGNORECASE,
 )
 

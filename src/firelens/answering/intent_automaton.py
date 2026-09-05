@@ -18,6 +18,7 @@ from firelens.answering.intent_guidance import is_evac_definition, is_guidance
 from firelens.answering.intent_refresh import is_refresh_snapshot_tokens
 from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.contracts import LiveResultKind
+from firelens.understanding.place_vocabulary import is_response_preamble
 
 __all__ = [
     "ClauseIntentKind",
@@ -27,6 +28,18 @@ __all__ = [
     "TemporalScope",
     "parse_request_intent",
 ]
+
+_RESPONSE_DIRECTIVE = re.compile(
+    r"^\s*(?P<prefix>[^:—–]{1,100})\s*[:—–]\s*(?P<body>\S.*)$", re.IGNORECASE
+)
+
+
+def _without_response_directive(question: str) -> str:
+    if (match := _RESPONSE_DIRECTIVE.match(question)) is None:
+        return question
+    if is_response_preamble(lex.tokenize(match.group("prefix"))):
+        return match.group("body")
+    return question
 
 
 def _temporal_scope(tokens: tuple[str, ...], text: str) -> TemporalScope:
@@ -556,7 +569,7 @@ def _parse_clause(text: str) -> ParsedClauseIntent:
 def parse_request_intent(question: str) -> ParsedRequestIntent:
     """Parse one question once into immutable typed request intent."""
 
-    normalized = lex.normalize_text(question)
+    normalized = _without_response_directive(lex.normalize_text(question))
     split_texts = _split_clauses(normalized)
     implicit_location = spans.implicit_nearby_location(normalized)
     if implicit_location is not None and len(split_texts) == 1:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from datetime import UTC, datetime
 from typing import Any
@@ -10,9 +11,14 @@ from uuid import uuid4
 
 from firelens.agent.budget import tool_fingerprint
 from firelens.agent.packet import AgentPacket, live_record_fact
+from firelens.agent.query_plan import AgentScopeResult
 from firelens.agent.tools import AgentTool
 from firelens.answering.intent import (
     live_layers_for_question,
+)
+from firelens.answering.intent_conversation import (
+    is_significance_followup,
+    named_corpus_attribution,
 )
 from firelens.answering.live_analysis import (
     annotate_live_results,
@@ -28,6 +34,7 @@ from firelens.answering.location_intent import (
     is_out_of_province_label,
     is_province_wide_label,
 )
+from firelens.answering.request_facets import requests_contents
 from firelens.answering.static_guidance_subject import static_guidance_retrieval_query
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
@@ -50,6 +57,8 @@ _EXPLICIT_PROVINCE_SCOPE = re.compile(
     r"|\b(?:province|b\s*\.?\s*c\s*\.?)\s*[- ]wide\b",
     re.IGNORECASE,
 )
+_NAMED_LOOKUP_PAGE_SIZE = 100
+_NAMED_LOOKUP_MAX_PAGES = 200
 
 
 async def execute_tool(
@@ -97,7 +106,7 @@ async def execute_tool(
         if resolved is not None:
             packet.resolved_location = resolved
         if roster_total is not None:
-            packet.roster_total = max(packet.roster_total or 0, roster_total)
+            _record_roster_total(packet, fire_layers, roster_total)
         packet.tool_names.append(name)
         return json.dumps({"records": [live_record_fact(item) for item in results]})
     if name == AgentTool.GET_OFFICIAL_FIRE.value:
@@ -133,7 +142,7 @@ async def execute_tool(
         if resolved is not None:
             packet.resolved_location = resolved
         if roster_total is not None:
-            packet.roster_total = max(packet.roster_total or 0, roster_total)
+            _record_roster_total(packet, (LiveResultKind.EVACUATION,), roster_total)
         packet.tool_names.append(name)
         return json.dumps({"records": [live_record_fact(item) for item in results]})
     if name == AgentTool.SEARCH_REVIEWED_GUIDANCE.value:
@@ -153,7 +162,18 @@ async def execute_tool(
             or query
         )
         static_request = QueryRequest(
-            question=static_question,
+            question=request.question
+            if is_significance_followup(request.question)
+            or (
+                (
+                    requests_contents(request.question)
+                    or named_corpus_attribution(request.question)
+                )
+                and not (
+                    plan and (plan.live_layers or plan.scope_result != AgentScopeResult.READY)
+                )
+            )
+            else static_question,
             history=request.history,
             context=request.context,
         )
@@ -220,6 +240,20 @@ def _extend_unique(packet: AgentPacket, results: list[Any]) -> None:
     # Fix the order here so the model's facts, the prose, the cards and the
     # roster a person counts through all agree.
     packet.live_results[:] = display_order(packet.live_results)
+
+
+def _record_roster_total(
+    packet: AgentPacket,
+    layers: tuple[LiveResultKind, ...],
+    total: int,
+) -> None:
+    """Retain one authoritative total per disjoint requested layer scope."""
+
+    scope = "+".join(sorted(layer.value for layer in layers))
+    packet.roster_totals_by_scope[scope] = max(
+        packet.roster_totals_by_scope.get(scope, 0), total
+    )
+    packet.roster_total = sum(packet.roster_totals_by_scope.values())
 
 
 async def _fetch_selected(
@@ -332,7 +366,10 @@ async def _fetch_layers(
     try:
         if location is not None and fire_centre is None:
             page = await live_service.nearby_page(
-                location, layers=layers, page=1, page_size=100
+                location,
+                layers=layers,
+                page=1,
+                page_size=_NAMED_LOOKUP_PAGE_SIZE,
             )
             resolved = getattr(page, "resolved_location", None)
             if resolved is None:
@@ -340,18 +377,51 @@ async def _fetch_layers(
             roster_total = getattr(getattr(page, "pagination", None), "total_results", None)
             if roster_total is None:
                 roster_total = len(page.results)
-            annotated = annotate_live_results(list(page.results), resolved)
+            named_fire = extracted_located_fire_name(request.question)
+            raw_results = list(page.results)
+            _record_successful_live_response(packet, page)
+            if named_fire is not None and roster_total > len(raw_results):
+                total_pages = math.ceil(roster_total / _NAMED_LOOKUP_PAGE_SIZE)
+                if total_pages > _NAMED_LOOKUP_MAX_PAGES:
+                    packet.mark_unavailable(layers)
+                    packet.add_live_limitation(
+                        "The named-record lookup exceeded its bounded official roster limit."
+                    )
+                    return [], resolved, None
+                seen = {item.result_id for item in raw_results}
+                for page_number in range(2, total_pages + 1):
+                    next_page = await live_service.nearby_page(
+                        location,
+                        layers=layers,
+                        page=page_number,
+                        page_size=_NAMED_LOOKUP_PAGE_SIZE,
+                    )
+                    _record_successful_live_response(packet, next_page)
+                    for item in next_page.results:
+                        if item.result_id not in seen:
+                            raw_results.append(item)
+                            seen.add(item.result_id)
+                if len(raw_results) != roster_total:
+                    packet.mark_unavailable(layers)
+                    packet.add_live_limitation(
+                        "The complete official roster could not be inspected for the named record."
+                    )
+                    return [], resolved, None
+            annotated = annotate_live_results(raw_results, resolved)
             filtered = ranked_live_results_for_request(
                 request.question,
                 filter_requested_named_fire_results(request, annotated),
             )
-            if extracted_located_fire_name(request.question) is not None and not filtered:
+            if (
+                named_fire is not None
+                and not filtered
+                and not any(layer in packet.unavailable_layers for layer in layers)
+            ):
                 _note_topic(packet, "named_fire_not_found")
-            _record_successful_live_response(packet, page)
             return (
                 filtered,
                 resolved,
-                roster_total,
+                len(filtered) if named_fire is not None else roster_total,
             )
         mapped = await live_service.map_results(layers=layers)
         # A BCWS fire-centre label is an administrative source field, not a
@@ -386,13 +456,16 @@ async def _fetch_layers(
             request.question,
             filter_requested_named_fire_results(request, centre_filtered),
         )
-        if extracted_located_fire_name(request.question) is not None and not filtered:
+        named_fire = extracted_located_fire_name(request.question)
+        if named_fire is not None and not filtered:
             _note_topic(packet, "named_fire_not_found")
         _record_successful_live_response(packet, mapped)
         return (
             filtered,
             resolved,
-            len(filtered) if fire_centre is not None else len(mapped.results),
+            len(filtered)
+            if fire_centre is not None or named_fire is not None
+            else len(mapped.results),
         )
     except LiveDataUnavailable as exc:
         _remember_retrieval(packet, datetime.now(UTC))

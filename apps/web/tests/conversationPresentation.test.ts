@@ -16,9 +16,9 @@ describe("revealAssistantMessage", () => {
     scrollIntoView.mockReset();
   });
 
-  it("keeps the analytical answer and canvas at their first-viewport position", () => {
+  it("reveals the page header for analytical answers without nested scrolling", () => {
     const panel = document.createElement("section");
-    panel.className = "conversation-panel conversation-panel--analytical";
+    panel.className = "pc-main";
     const scroller = document.createElement("div");
     scroller.className = "conversation-scroll";
     const assistant = document.createElement("div");
@@ -29,12 +29,13 @@ describe("revealAssistantMessage", () => {
 
     revealAssistantMessage(assistant, true);
 
-    expect(scroller.scrollTop).toBe(0);
-    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(scroller.scrollTop).toBe(180);
+    expect(scrollIntoView.mock.instances[0]).toBe(panel);
   });
 
-  it("retains auto-follow for ordinary conversational answers", () => {
+  it("reveals the same header for ordinary answers without scroll compensation", () => {
     const panel = document.createElement("section");
+    panel.className = "pc-main";
     const scroller = document.createElement("div");
     scroller.className = "conversation-scroll";
     const question = document.createElement("div");
@@ -51,7 +52,7 @@ describe("revealAssistantMessage", () => {
     revealAssistantMessage(assistant, true);
 
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", inline: "nearest" });
-    expect(scrollIntoView.mock.instances[0]).toBe(question);
-    expect(scroller.scrollTop).toBe(13);
+    expect(scrollIntoView.mock.instances[0]).toBe(panel);
+    expect(scroller.scrollTop).toBe(20);
   });
 });

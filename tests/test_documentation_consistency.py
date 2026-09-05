@@ -9,7 +9,7 @@ def _read(path: str) -> str:
     return " ".join((ROOT / path).read_text(encoding="utf-8").split())
 
 
-def test_current_documentation_preserves_v1_6_rc2_authority_boundaries() -> None:
+def test_current_documentation_preserves_authority_and_evaluation_boundaries() -> None:
     readme = _read("README.md")
     architecture = _read("docs/ARCHITECTURE_V1_6.md")
     handbook = _read("docs/TECHNICAL_HANDBOOK.md")
@@ -17,30 +17,26 @@ def test_current_documentation_preserves_v1_6_rc2_authority_boundaries() -> None
     changelog = _read("CHANGELOG.md")
 
     assert "Python 3.12–3.14" in readme
-    assert "26-record, hash-bound typed-claim inventory" in readme
-    assert "deterministic high-risk publication" in readme
-    assert "Eligible lower-risk packets may use one bounded generation" in readme
-    assert "Exact quote only" in readme
-    assert "## What FireLens does" in readme
-    assert "## Why this is not “just a chatbot”" in readme
-    assert "## What V1.6.4 demonstrates" in readme
+    assert "Evidence-bound wildfire intelligence for British Columbia" in readme
+    assert "Deterministic code owns official counts" in readme
+    assert "## Three information lanes" in readme
+    assert "## From question to evidence" in readme
+    assert "**EvalLab** harness records application, evaluator, dataset and configuration" in readme
+    assert "## What the evidence establishes" in readme
+    assert "## Run locally" in readme
+    assert "## Limits and authority" in readme
     assert "https://firelens-bc.vercel.app" in readme
-    assert "## How an answer becomes publishable" in readme
-    assert "## Adaptive views" in readme
-    assert "## Quick start" in readme
-    assert "## Verification and evidence" in readme
-    assert "A public V1.6.4 demo is available" in readme
-    assert "Runtime identity" in readme
-    assert "qualification evidence remain commit-bound" in readme
-    assert "does not confer emergency authority" in readme
-    assert "general conversational assistant with specialized, evidence-bound B.C." in readme
-    assert "Broad interpretation, narrow authority" in readme
-    assert "Safety-sensitive is not out of scope" in readme
-    assert "Product Constitution" in readme
-    assert "V1.6.2 evaluation framework" in readme
-    assert "not a current wildfire or evacuation report" in readme
-    assert "The request plan owns retrieval scope" in readme
-    assert "Preview and production configuration reject" in readme
+    assert "Synthetic demonstration data" in readme
+    assert "not a production capture or current wildfire information" in readme
+    assert "Core remains **FAIL 565/574**" in readme
+    assert "Official records" in readme
+    assert "Reviewed guidance" in readme
+    assert "General background" in readme
+    assert "Stale, partial, empty and unavailable results remain distinct" in readme
+    assert "cannot decide whether you are safe" in readme
+    assert "do not, by themselves, prove every interpretation correct" in readme
+    assert "Independent AI examination is not human certification" in readme
+    assert "sealed generalization, sustained availability and latency SLOs remain unestablished" in readme
     assert "production-ready" not in readme.casefold()
     assert "current architecture authority" in architecture
     assert "V1.6.4 branch candidate is committed" in architecture
@@ -167,7 +163,10 @@ def test_readme_documented_verification_commands_exist() -> None:
         "scripts/run_hard_probe.py",
         "scripts/run_productbench.py",
     ):
-        assert script in readme
         assert (ROOT / script).is_file()
+    assert "python -m firelens_eval inventory" in readme
+    assert "python -m firelens_eval run --suite core" in readme
+    assert "python -m firelens_eval diagnose CASE_ID" in readme
+    assert "make docs-check" in readme
     assert "make verify" in readme
     assert "productbench-provider:" in makefile

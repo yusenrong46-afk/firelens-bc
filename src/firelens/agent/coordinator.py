@@ -8,6 +8,7 @@ from typing import Protocol
 from uuid import uuid4
 
 from firelens.agent.budget import RequestExecutionPolicy
+from firelens.agent.compose_boundaries import with_boundary_sections
 from firelens.agent.loop import run_agent_loop
 from firelens.agent.query_plan import AgentRequestMode, AgentScopeResult, build_agent_query_plan
 from firelens.agent.rails import input_seatbelt
@@ -25,6 +26,7 @@ from firelens.answering.intent import (
     reviewed_guidance_intent,
 )
 from firelens.answering.intent_automaton import parse_request_intent
+from firelens.answering.intent_conversation import explicit_corpus_attribution
 from firelens.answering.intent_patterns import is_personalized_route_request
 from firelens.answering.live_handoffs import official_safety_links
 from firelens.answering.live_request_intent import (
@@ -35,6 +37,7 @@ from firelens.answering.location_intent import (
     coarse_location_from_question,
 )
 from firelens.answering.responses import safe_abstention
+from firelens.answering.static_guidance_subject import static_guidance_retrieval_query
 from firelens.answering.unsupported_live import has_independent_supported_live_clause
 from firelens.contracts import (
     AnswerSectionKind,
@@ -296,22 +299,55 @@ def _useful_safety_boundary(
 
 
 def _declines_only_one_clause(request: QueryRequest) -> bool:
-    """A personal decision beside a located records clause is answered clause by clause.
+    """A personal decision beside a records clause is answered clause by clause.
 
     "What fires are near Kelowna, and should I evacuate?" gets the official
     records for Kelowna and, as its own section, the decision FireLens will not
-    make. The decision alone, or with no place to look up, keeps the whole-turn
-    safety response.
+    make. A missing place keeps the records task as a clarification alongside
+    its safety boundary; a lone decision keeps the whole-turn safety response.
     """
 
     if not has_independent_supported_live_clause(request.question):
-        return False
-    if request.location is None and coarse_location_from_question(request.question) is None:
         return False
     return any(
         section.kind == AnswerSectionKind.SAFETY_BOUNDARY
         for section in clause_boundaries(request.question)
     )
+
+
+def _bounded_guidance_clause(request: QueryRequest) -> QueryRequest | None:
+    """Keep one validated guidance clause beside one declined safety clause."""
+    clauses = parse_request_intent(request.question).clauses
+    if len(clauses) != 2 or not clause_boundaries(request.question):
+        return None
+
+    # Splitting removes terminal punctuation; restore it for exact catalogue
+    # binding, without broadening the registry's source or matching authority.
+    def guidance_question(text: str) -> str | None:
+        for candidate in (text, text + "?"):
+            binding = resolve_capability(candidate)
+            if binding is not None and binding.source_mode == "corpus":
+                return candidate
+        if (
+            reviewed_guidance_intent(text)
+            and plan_query(QueryRequest(question=text)).route == QueryRoute.RELATED
+        ):
+            # Reuse the existing typed subject used by the reviewed tool. An
+            # explicit source requirement must remain attached to its clause.
+            return (
+                text
+                if explicit_corpus_attribution(text)
+                else (static_guidance_retrieval_query(text) or text)
+            )
+        return None
+
+    supported = [clause for clause in clauses if guidance_question(clause.text) is not None]
+    if len(supported) != 1:
+        return None
+    other = next(clause for clause in clauses if clause != supported[0])
+    if plan_query(QueryRequest(question=other.text)).route != QueryRoute.PROHIBITED:
+        return None
+    return request.model_copy(update={"question": guidance_question(supported[0].text)})
 
 
 class FireLensAgent:
@@ -327,7 +363,12 @@ class FireLensAgent:
 
     async def answer(self, request: QueryRequest) -> AgentExecution:
         seatbelt = input_seatbelt(request)
-        if seatbelt is not None and not _declines_only_one_clause(request):
+        guidance_clause = _bounded_guidance_clause(request) if seatbelt is not None else None
+        if (
+            seatbelt is not None
+            and guidance_clause is None
+            and not _declines_only_one_clause(request)
+        ):
             reason, answer = seatbelt
             policy = RequestExecutionPolicy(route="prohibited")
             return AgentExecution(
@@ -355,19 +396,23 @@ class FireLensAgent:
                 policy=RequestExecutionPolicy(route="missing_source_antecedent"),
             )
         place_label = request.location.label if request.location is not None else None
-        capability = resolve_capability(request.question, place_label=place_label)
-        if capability is not None and capability.source_mode == "corpus":
-            # A registry-validated corpus capability carries its own exact
-            # source bindings.  Keep the original request and avoid the outer
-            # agent loop, whose model prose and tool selection cannot add
-            # publication authority.
+        capability_request = guidance_clause or request
+        capability = resolve_capability(capability_request.question, place_label=place_label)
+        if guidance_clause is not None or (
+            capability is not None and capability.source_mode == "corpus"
+        ):
+            # Registry capabilities retain their exact source bindings. Other
+            # typed guidance clauses must pass the ordinary reviewed pipeline;
+            # extracting a clause grants no new publication authority.
             response = await self.static_service.ask(
-                request,
+                capability_request,
                 allow_live=False,
                 prefer_reviewed_quotes=True,
             )
             return AgentExecution(
-                response=response,
+                response=with_boundary_sections(response, clause_boundaries(request.question))
+                if guidance_clause is not None
+                else response,
                 route=QueryRoute.RELATED,
                 tools=(_static_tool(response),),
                 policy=RequestExecutionPolicy(route="validated_capability"),
@@ -398,9 +443,16 @@ class FireLensAgent:
                 else "deterministic_redirect"
             )
             return AgentExecution(
-                response=agent_plan.terminal_response,
+                response=with_boundary_sections(
+                    agent_plan.terminal_response, agent_plan.boundaries
+                ),
                 route=agent_plan.route,
-                tools=(),
+                # Retain the selected operation as diagnostic intent; a
+                # terminal plan dispatches no tool and performs no fetch.
+                tools=(AgentTool.GET_OFFICIAL_FIRE,)
+                if agent_plan.scope_result == AgentScopeResult.REQUIRES_INPUT
+                and agent_plan.terminal_response.selected_live_result_id
+                else (),
                 policy=RequestExecutionPolicy(route=terminal_route),
             )
         if agent_plan.route == QueryRoute.CAPABILITY:

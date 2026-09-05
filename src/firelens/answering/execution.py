@@ -29,6 +29,7 @@ class SearchExecution:
     public_response: SearchResponse
     evidence_packet: EvidencePacket | None
     observation: ExecutionObservation
+    untrusted_discovery: tuple[dict[str, str], ...] = ()
 
 
 @dataclass

@@ -222,16 +222,16 @@ exceptions only to the 650-line target: the hard 800-line cap still applies.
 
 | Module | Baseline | Current | Bounded repair and deferred split |
 | --- | ---: | ---: | --- |
-| `src/firelens/agent/compose.py` | 612 | 686 | Added packet identity fields, selected-record follow-up binding, and public limitation/suggestion binding. The one-turn compose owner stays intact so live, mixed, and clarification routes keep a single result-set writer. |
-| `src/firelens/agent/query_plan.py` | 633 | 684 | Added mixed-clause tool planning and selected-record follow-up LIST recovery. The immutable planner stays one owner so live, mixed, and selected routes cannot diverge. |
-| `src/firelens/answering/live_analysis.py` | 640 | 662 | Added deterministic sample ranking and honest unnamed-record labels. Distance, roster, and official-prose rendering remain one owner so the ranked sample cannot diverge from the authorized set. |
-| `src/firelens/evaluation/capture.py` | 734 | 754 | Added paired private-attestation and preview-raw-evidence capture guards. The immutable before/after artifact roster remains one owner; splitting it during this repair would add serializer and evidence-schema churn. |
+| `src/firelens/agent/compose.py` | 612 | 768 | Added packet identity fields, selected-record follow-up binding, and public limitation/suggestion binding. The one-turn compose owner stays intact so live, mixed, and clarification routes keep a single result-set writer. |
+| `src/firelens/agent/query_plan.py` | 633 | 762 | Mixed-clause planning, selected-record recovery, terminal safety-boundary retention, explicit province scope, and selected-distance input requirements. The immutable planner remains the authorization owner. |
+| `src/firelens/answering/live_analysis.py` | 640 | 636 | Added deterministic sample ranking and honest unnamed-record labels. Distance, roster, and official-prose rendering remain one owner so the ranked sample cannot diverge from the authorized set. |
+| `src/firelens/evaluation/capture.py` | 734 | 800 | Added paired private-attestation and preview-raw-evidence capture guards. The immutable before/after artifact roster remains one owner; splitting it during this repair would add serializer and evidence-schema churn. |
 | `src/firelens/evaluation/release_surfaces.py` | 778 | 797 | Extracted raw preview-response validation to `preview_raw_evidence.py`. The remaining preview/deployment qualification surface is deferred because a wider split would change governed report validation during an active qualification campaign. |
-| `src/firelens/live.py` | 739 | 739 | Corrected paginated aggregate freshness in place. A full adapter split is deferred because the one-line safety fix does not justify moving the fail-closed fetch and normalization boundary. |
-| `src/firelens/live_support.py` | 650 | 673 | Added multi–Fire Centre extraction so “Kamloops or Cariboo” asks which official scope to use. Geometry helpers and official-layer policy stay one owner; a wider adapter split is deferred. |
+| `src/firelens/live.py` | 739 | 800 | Corrected paginated aggregate freshness and made strict row-contract failure quarantine the affected layer. A full adapter split is deferred because the bounded safety fix does not justify moving the fail-closed fetch and normalization boundary. |
+| `src/firelens/live_support.py` | 650 | 732 | Added multi–Fire Centre extraction so “Kamloops or Cariboo” asks which official scope to use. Geometry helpers and official-layer policy stay one owner; a wider adapter split is deferred. |
 | `src/firelens/review_workspace/cli.py` | 746 | 748 | Plumbed the required development-registry path through the existing semantic-holdout command. Parser/recipe decomposition is deferred rather than broadening a two-line CLI contract repair. |
-| `src/firelens/review_workspace/inputs.py` | 792 | 762 | Extracted private semantic-payload validation to `input_semantic.py`. The stable importer facade and commitment assembly remain together so this repair does not migrate the blinded review contract. |
-| `src/firelens/runtime_artifact.py` | 780 | 756 | Extracted candidate identity and active-artifact hash binding to `runtime_artifact_candidate.py`. Inventory sequencing and its CLI remain together to avoid changing the staged-artifact verification boundary. |
+| `src/firelens/review_workspace/inputs.py` | 792 | 635 | Extracted private semantic-payload validation to `input_semantic.py`. The stable importer facade and commitment assembly remain together so this repair does not migrate the blinded review contract. |
+| `src/firelens/runtime_artifact.py` | 780 | 800 | Extracted candidate identity and active-artifact hash binding to `runtime_artifact_candidate.py`. Inventory sequencing and its CLI remain together to avoid changing the staged-artifact verification boundary. |
 
 ## Golden traces
 

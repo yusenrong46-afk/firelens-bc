@@ -1,8 +1,9 @@
-import { Crosshair, UserCircle, WarningCircle } from "@phosphor-icons/react";
-import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { Crosshair, MapTrifold, Sparkle, WarningCircle } from "@phosphor-icons/react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { FeedbackControls } from "../feedback/FeedbackControls";
 import { resultDisplayName } from "../near-me/liveResultPresentation";
 import { AnswerBody } from "./AnswerBody";
+import { LiveAnswerSummary } from "./LiveAnswerSummary";
 import { AuthorityHandoffCards } from "./AuthorityHandoffCards";
 import { abstentionPresentation } from "./abstentionPresentation";
 import { AskStartPanel } from "./AskStartPanel";
@@ -14,7 +15,6 @@ import {
   SuggestedQuestions,
 } from "./ConversationPresentation";
 import { ConversationEvidenceDetails } from "./ConversationEvidenceDetails";
-import { QuestionComposer } from "./QuestionComposer";
 import { ResponseModeBadge } from "./responseModeBadge";
 import { announcementForState, type ConversationState } from "./conversationAnnouncements";
 import type { FireLensSession } from "./useFireLensSession";
@@ -38,7 +38,6 @@ export function ConversationPanel({
   contextOpen?: boolean;
   contextSurface?: "evidence" | "map";
   contextChips?: ReactNode;
-  composerFocusRef?: RefObject<HTMLInputElement | null>;
 }) {
   const {
     assistantText,
@@ -50,13 +49,11 @@ export function ConversationPanel({
     locationLabel,
     locationMessage,
     mode,
-    query,
     response,
     requiresLocation,
     setLocationLabel,
     setQuery,
     setSelected,
-    submit,
     submitLocation,
     submitQuestion,
     suggestions,
@@ -69,6 +66,8 @@ export function ConversationPanel({
     activeLocation,
   } = session;
   const answerSections = getAnswerSections(response);
+  const hasLiveResults = !analytical && view.kind === "answer"
+    && (mode === "live" || mode === "mixed") && (response?.live_results?.length ?? 0) > 0;
   const visibleLimitations = Array.from(
     new Set((response?.limitations ?? []).map((item) => item.trim()).filter(Boolean)),
   );
@@ -78,18 +77,22 @@ export function ConversationPanel({
     (item) => item.result_id === selectedLiveResultId,
   );
   const previousState = useRef<ConversationState>(view.kind);
-  const composerRef = useRef<HTMLInputElement>(null);
   const [announcement, setAnnouncement] = useState("");
   const [selectionAnnouncement, setSelectionAnnouncement] = useState("");
+  const assistantRef = useRef<HTMLDivElement>(null);
 
-  const fillComposer = useCallback((question: string) => {
+  useEffect(() => {
+    revealAssistantMessage(assistantRef.current, view.kind !== "idle");
+  }, [response, view.kind]);
+
+  const askSuggestedQuestion = useCallback((question: string) => {
     const place = locationLabel.trim();
     const normalized = (place ? question.replaceAll("{place}", place) : question).trim();
     if (!normalized) return;
-    setQuery(normalized);
-    setSelectionAnnouncement(`Question added to the composer: ${normalized}`);
-    requestAnimationFrame(() => composerRef.current?.focus());
-  }, [locationLabel, setQuery]);
+    setQuery("");
+    setSelectionAnnouncement(`Asking: ${normalized}`);
+    void submitQuestion(normalized);
+  }, [locationLabel, setQuery, submitQuestion]);
 
   useEffect(() => {
     const priorState = previousState.current;
@@ -101,23 +104,11 @@ export function ConversationPanel({
   const followUpComposer = view.kind !== "idle" ? (
     <div className="pc-composer-stack pc-composer-stack--follow-up">
       {contextChips}
-      <QuestionComposer
-        continuationPending={requiresLocation}
-        idle={false}
-        loading={view.kind === "loading"}
-        query={query}
-        onQueryChange={setQuery}
-        onSubmit={submit}
-        inputRef={composerRef}
-      />
     </div>
   ) : null;
 
   return (
     <section className={`conversation-panel ${analytical ? "conversation-panel--analytical" : ""} ${view.kind === "idle" ? "conversation-panel--idle" : ""}`} id="conversation" aria-label="Question and answer" tabIndex={-1}>
-      {view.kind !== "idle" && (
-        <ConversationToolbar priorTurnCount={earlierTurns.length} onClear={clearHistory} />
-      )}
       <div className="conversation-scroll">
         <span
           className="response-announcement"
@@ -130,24 +121,15 @@ export function ConversationPanel({
         </span>
         <span className="response-announcement" role="status" aria-live="polite" aria-atomic="true">{selectionAnnouncement}</span>
         {earlierTurns.length > 0 && (
-          <div className="history-group" aria-label="Earlier conversation">
-            <span className="panel-label">Earlier conversation</span>
+          <details className="history-group" aria-label="Earlier conversation">
+            <summary>Earlier conversation</summary>
             {earlierTurns.map((turn, index) => (
               <div className={`history-turn history-turn--${turn.role}`} key={`${turn.role}-${index}-${turn.content}`}>
                 <strong>{turn.role === "user" ? "You" : "FireLens"}</strong>
                 <p>{turn.content}</p>
               </div>
             ))}
-          </div>
-        )}
-        {visibleQuestion && (
-          <div className="question-block">
-            <span className="panel-label">Your question</span>
-            <div className="question-line">
-              <div className="question-bubble"><p>{visibleQuestion}</p><small>Current request</small></div>
-              <UserCircle size={38} weight="fill" />
-            </div>
-          </div>
+          </details>
         )}
 
         {view.kind === "idle" && (
@@ -157,21 +139,20 @@ export function ConversationPanel({
               currentState={liveSummary ? assistantText : undefined}
               composer={(
                 <div className="pc-composer-stack">
-                  <QuestionComposer idle loading={false} query={query} onQueryChange={setQuery} onSubmit={submit} inputRef={composerRef} />
                   {contextChips}
                 </div>
               )}
               onLocationChange={(value) => { setLocationLabel(value); clearManualLocation(); }}
               onUseApproximateLocation={useApproximateLocation}
-              onSelectQuestion={fillComposer}
+              onSelectQuestion={askSuggestedQuestion}
             />
           </>
         )}
 
-        {view.kind !== "idle" && <div className={`assistant-message assistant-message--${view.kind}`} ref={(node) => revealAssistantMessage(node, true)}>
-          <img src="/assets/firelens-mark.png" alt="" />
-          <div>
-            <span className="assistant-name">FireLens</span>
+        {view.kind !== "idle" && <div className={`assistant-message assistant-message--${view.kind}`} ref={assistantRef}>
+          <div className="answer-panel">
+            <div className="answer-panel__header">
+            <span className="assistant-name"><Sparkle size={20} weight="fill" aria-hidden="true" /> Answer</span>
             {mode && (
               <ResponseModeBadge
                 mode={mode}
@@ -181,24 +162,13 @@ export function ConversationPanel({
                 response={response}
               />
             )}
-            {selectedRecord && (
-              <div className="selected-fire-chip" aria-label="Selected official record">
-                <span>Selected: {resultDisplayName(selectedRecord)}</span>
-                <button type="button" onClick={() => setSelectedLiveResultId(undefined)}>
-                  Clear selection
-                </button>
-              </div>
-            )}
+            </div>
             {view.kind === "answer" ? (
               <AnswerBody
                 response={response}
                 assistantText={assistantText}
                 analytical={analytical}
-                onSelectLiveResult={setSelectedLiveResultId}
-                onOpenMap={onOpenMap}
-                placeName={activeLocation?.label ?? locationLabel}
-                radiusKm={activeLocation?.radius_km}
-                selectedLiveResultId={selectedLiveResultId}
+                footer={!analytical && response?.trace_id ? <FeedbackControls traceId={response.trace_id} /> : undefined}
               />
             ) : view.kind === "unavailable" || view.kind === "error" ? (
               <ServiceFailureState
@@ -209,20 +179,8 @@ export function ConversationPanel({
             ) : (
               <p>{assistantText}</p>
             )}
-            {!analytical && (mode === "live" || mode === "mixed") && onOpenMap && (
-              <div className="answer-context-actions">
-                <button
-                  type="button"
-                  aria-controls="answer-context"
-                  aria-expanded={contextOpen && contextSurface === "map"}
-                  onClick={onOpenMap}
-                >
-                  Show these on the map
-                </button>
-              </div>
-            )}
             <AuthorityHandoffCards links={response?.related_links ?? []} />
-            {!analytical && response?.trace_id && <FeedbackControls traceId={response.trace_id} />}
+            {view.kind !== "answer" && !analytical && response?.trace_id && <FeedbackControls traceId={response.trace_id} />}
           </div>
         </div>}
 
@@ -282,19 +240,39 @@ export function ConversationPanel({
           </div>
         )}
 
-        {view.kind !== "idle" && (
+        {view.kind !== "idle" && <div className="answer-results-panel">
+          {hasLiveResults && response && <LiveAnswerSummary
+            response={response}
+            onSelectResult={setSelectedLiveResultId}
+            onOpenMap={onOpenMap}
+            placeName={activeLocation?.label ?? locationLabel}
+            radiusKm={activeLocation?.radius_km}
+            selectedResultId={selectedLiveResultId}
+          />}
+          {selectedRecord && (
+            <div className="selected-fire-chip" aria-label="Selected official record">
+              <span>Selected: {resultDisplayName(selectedRecord)}</span>
+              <button type="button" onClick={() => setSelectedLiveResultId(undefined)}>Clear selection</button>
+            </div>
+          )}
           <SuggestedQuestions
             disabled={view.kind === "loading"}
-            onSelect={fillComposer}
+            onSelect={askSuggestedQuestion}
             suggestions={suggestions}
+            mapAction={!analytical && (mode === "live" || mode === "mixed") && onOpenMap ? (
+              <button type="button" aria-controls="answer-context" aria-expanded={contextOpen && contextSurface === "map"} onClick={onOpenMap}>
+                <MapTrifold size={18} aria-hidden="true" /> Show these on the map
+              </button>
+            ) : undefined}
           />
-        )}
+        </div>}
       </div>
 
       {analytical && analysisSlot && (
         <div className="analysis-surface-slot">{analysisSlot}</div>
       )}
       {followUpComposer}
+      {view.kind !== "idle" && <ConversationToolbar priorTurnCount={earlierTurns.length} onClear={clearHistory} />}
     </section>
   );
 }

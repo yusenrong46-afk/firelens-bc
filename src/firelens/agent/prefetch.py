@@ -16,7 +16,6 @@ from firelens.agent.packet import AgentPacket
 from firelens.agent.query_plan import AgentQueryPlan
 from firelens.agent.runtime_tools import execute_tool
 from firelens.agent.tools import AgentTool
-from firelens.answering.intent import live_query_requires_location
 from firelens.answering.intent_refresh import is_live_refresh_request
 from firelens.answering.live_request_intent import (
     is_distance_request,
@@ -30,14 +29,6 @@ from firelens.answering.location_intent import (
 from firelens.contracts import CoarseResolvedLocation, QueryRequest
 from firelens.live import LiveDataUnavailable
 from firelens.live_answering import LiveAnswerCoordinator
-
-
-def needs_location(request: QueryRequest) -> bool:
-    if request.location is not None:
-        return False
-    if coarse_location_from_question(request.question) is not None:
-        return False
-    return live_query_requires_location(request.question)
 
 
 async def prefetch_selected(
@@ -219,7 +210,15 @@ def _merge_isolated_packet(packet: AgentPacket, isolated: AgentPacket) -> None:
     for link in isolated.related_links:
         if link not in packet.related_links:
             packet.related_links.append(link)
-    if isolated.roster_total is not None:
+    for scope, total in isolated.roster_totals_by_scope.items():
+        packet.roster_totals_by_scope[scope] = max(
+            packet.roster_totals_by_scope.get(scope, 0), total
+        )
+    if packet.roster_totals_by_scope:
+        packet.roster_total = sum(packet.roster_totals_by_scope.values())
+    elif isolated.roster_total is not None:
+        # Preserve compatibility with packets produced by callers that have
+        # not gone through the official layer tools.
         packet.roster_total = max(packet.roster_total or 0, isolated.roster_total)
     packet.mark_unavailable(isolated.unavailable_layers)
     if isolated.retrieved_at is not None and (

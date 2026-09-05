@@ -1715,6 +1715,49 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("shows 100 of them", answer)
         self.assertNotRegex(answer, r"contains 100 incident records and 0 perimeter")
 
+    async def test_mixed_fire_and_evacuation_totals_sum_disjoint_pages(self) -> None:
+        fire = _fire(result_id="incident:1", name="Ridge Fire")
+        evacuation = _fire(
+            result_id="evacuation:1",
+            name="Kelowna alert",
+            kind=LiveResultKind.EVACUATION,
+            status="Alert",
+        )
+
+        class LayerTotals(FixedLiveService):
+            async def nearby_page(self, location: Any, *args: Any, **kwargs: Any) -> Any:
+                layers = tuple(kwargs.get("layers") or ())
+                is_evacuation = layers == (LiveResultKind.EVACUATION,)
+                results = [evacuation] if is_evacuation else [fire]
+                total = 100 if is_evacuation else 150
+                return type(
+                    "Nearby",
+                    (),
+                    {
+                        "results": results,
+                        "limitations": [],
+                        "unavailable_layers": [],
+                        "resolved_location": CoarseResolvedLocation(
+                            latitude=49.88, longitude=-119.49
+                        ),
+                        "pagination": type("Pagination", (), {"total_results": total})(),
+                    },
+                )()
+
+        agent = FireLensAgent(
+            cast(Any, SilentStatic()),
+            LiveAnswerCoordinator(cast(Any, LayerTotals([fire, evacuation]))),
+        )
+        execution = await agent.answer(
+            QueryRequest(question="Are there fires and evacuation orders near Kelowna?")
+        )
+
+        self.assertEqual(execution.response.roster_total, 250)
+        self.assertEqual(
+            {item.result_id for item in execution.response.live_results},
+            {"incident:1", "evacuation:1"},
+        )
+
     async def test_evac_yes_no_answers_the_asked_place(self) -> None:
         agent = _agent(
             [
@@ -2034,6 +2077,7 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
             [item.name for item in execution.response.live_results],
             ["Bald Range"],
         )
+        self.assertEqual(execution.response.roster_total, 1)
         self.assertNotIn("Unrelated Ridge Fire", execution.response.answer or "")
 
     async def test_explicit_named_fire_status_filters_the_roster(self) -> None:
@@ -2055,6 +2099,52 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIn("Bald Range", execution.response.answer or "")
         self.assertNotIn("Unrelated Ridge Fire", execution.response.answer or "")
+
+    async def test_named_fire_lookup_inspects_every_bounded_nearby_page(self) -> None:
+        fillers = [
+            _fire(result_id=f"incident:{index}", name=f"Unrelated Fire {index}")
+            for index in range(100)
+        ]
+        target = _fire(result_id="incident:target", name="Mountain Fire")
+
+        class PaginatedNamedFire(FixedLiveService):
+            def __init__(self) -> None:
+                super().__init__([*fillers, target])
+                self.pages: list[int] = []
+
+            async def nearby_page(self, location: Any, *args: Any, **kwargs: Any) -> Any:
+                page_number = int(kwargs.get("page") or 1)
+                self.pages.append(page_number)
+                rows = fillers if page_number == 1 else [target]
+                return type(
+                    "Nearby",
+                    (),
+                    {
+                        "results": rows,
+                        "limitations": [],
+                        "unavailable_layers": [],
+                        "resolved_location": CoarseResolvedLocation(
+                            latitude=49.88, longitude=-119.49
+                        ),
+                        "pagination": type("Pagination", (), {"total_results": 101})(),
+                    },
+                )()
+
+        service = PaginatedNamedFire()
+        agent = FireLensAgent(
+            cast(Any, SilentStatic()), LiveAnswerCoordinator(cast(Any, service))
+        )
+        execution = await agent.answer(
+            QueryRequest(question="Where is Mountain Fire in Kelowna?")
+        )
+
+        self.assertEqual(service.pages, [1, 2])
+        self.assertEqual(execution.response.roster_total, 1)
+        self.assertEqual(
+            [item.result_id for item in execution.response.live_results],
+            ["incident:target"],
+        )
+        self.assertNotIn("named_fire_not_found", execution.response.unknown_items)
 
     async def test_closest_follow_up_after_a_place_list_uses_fetched_distances(self) -> None:
         agent = _agent(
@@ -2928,7 +3018,9 @@ class LunaBrainCharacterizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(execution.tools, (AgentTool.SEARCH_REVIEWED_GUIDANCE,))
         self.assertEqual(len(static.calls), 1)
         static_request, kwargs = static.calls[0]
-        self.assertEqual(static_request.question, "emergency bag contents checklist")
+        self.assertEqual(static_request.question, request.question)
+        self.assertIn("emergency bag", static_request.question)
+        self.assertNotIn("pet", static_request.question.casefold())
         self.assertFalse(kwargs["allow_live"])
         self.assertTrue(kwargs["prefer_reviewed_quotes"])
 

@@ -370,7 +370,7 @@ class HardProbeDatasetTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             parse_args(["--expectation-profile", "./custom.yaml"])
 
-    def test_rc2_run_emits_v2_identity_and_applied_invariants(self) -> None:
+    def test_rc2_run_preserves_legacy_j01_failure_and_v2_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "report.json"
             args = parse_args(
@@ -385,7 +385,9 @@ class HardProbeDatasetTests(unittest.TestCase):
                     str(output),
                 ]
             )
-            self.assertEqual(asyncio.run(run_probe(args)), 0)
+            # Current contract v1 permits admitted rationale; frozen rc2 must
+            # still report its old handoff expectation as FAIL, never green.
+            self.assertEqual(asyncio.run(run_probe(args)), 1)
             report = json.loads(output.read_text(encoding="utf-8"))
 
         self.assertEqual(report["schema_version"], "firelens_hard_probe_report.v2")
@@ -398,13 +400,27 @@ class HardProbeDatasetTests(unittest.TestCase):
         row = report["results"][0]
         self.assertEqual(row["id"], "J01")
         self.assertEqual(row["applied_migration"]["id"], "J01")
-        self.assertTrue(row["passed"])
-        self.assertEqual(row["semantic_checks"]["base_issues"], [])
-        self.assertTrue(
-            all(
-                invariant["passed"]
-                for invariant in row["semantic_checks"]["migration_invariants"]
-            )
+        self.assertFalse(row["passed"])
+        self.assertEqual(
+            row["semantic_checks"]["base_issues"], ["mode 'partial' is not allowed"]
+        )
+        invariants = {
+            item["name"]: item for item in row["semantic_checks"]["migration_invariants"]
+        }
+        self.assertEqual(
+            {name for name, item in invariants.items() if not item["passed"]},
+            {"zero_claims", "zero_evidence", "official_handoff"},
+        )
+        self.assertEqual(invariants["zero_claims"]["actual"], 1)
+        self.assertEqual(invariants["zero_evidence"]["actual"], 1)
+        for name in (
+            "zero_generation_attempts",
+            "zero_generation_cost_usd",
+            "required_reason_code",
+        ):
+            self.assertTrue(invariants[name]["passed"])
+        self.assertEqual(
+            invariants["required_reason_code"]["actual"], "high_risk_claim_not_structured"
         )
 
     def test_a01_remains_failed_under_rc2_and_passes_strongly_under_rc2_1(self) -> None:

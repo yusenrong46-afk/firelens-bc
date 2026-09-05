@@ -1,0 +1,163 @@
+schema_version: firelens.eval_lab.registry.v1
+registry_id: firelens_eval_lab_v1
+policy_path: data/evaluation/eval_lab_policy.v1.yaml
+suites:
+  core:
+    availability: executable
+    classification: ACTIVE
+    qualification_role: zero_cost_engineering_evidence
+    description: Deterministic product, semantic-preservation, permanent-probe, and source-aware contracts.
+    adapters:
+      - id: productbench_offline
+        status: executable
+        classification: ACTIVE
+        oracle: deterministic_executable
+        command: python scripts/run_productbench.py --mode offline --output OUTPUT
+        materials:
+          - data/evaluation/productbench_journeys_50.json
+          - data/evaluation/productbench_v2.manifest.json
+      - id: claimbench_v2
+        status: executable
+        classification: ACTIVE
+        oracle: deterministic_executable
+        command: python scripts/claimbench_v2.py evaluate
+        materials:
+          - data/evaluation/claimbench_v1_6_2.yaml
+          - data/evaluation/claimbench_v1_6_2.manifest.json
+      - id: hard_probe_rc2_2
+        status: executable
+        classification: ACTIVE
+        oracle: deterministic_executable
+        command: >-
+          python scripts/run_hard_probe.py --mode offline --expectation-profile rc2.2 --output
+          OUTPUT
+        materials:
+          - data/evaluation/hard_probe.v1.yaml
+          - data/evaluation/hard_probe.v1.manifest.json
+          - data/evaluation/hard_probe_rc2_2_expectations.v1.yaml
+          - data/evaluation/hard_probe_rc2_2_expectations.v1.manifest.json
+      - id: source_aware_conversation
+        status: executable
+        classification: ACTIVE
+        oracle: deterministic_executable
+        command: python scripts/run_source_aware_conversation.py --output OUTPUT
+        materials:
+          - data/evaluation/source_aware_conversation.v1.yaml
+          - data/evaluation/source_aware_conversation.v1.manifest.json
+  rag:
+    availability: executable_local
+    classification: ACTIVE
+    qualification_role: unsealed_local_diagnostics
+    description: Versioned local diagnostic assertions; external and human qualification are not inferred.
+    adapters:
+      - id: rag_local_v1
+        status: executable
+        classification: ACTIVE
+        oracle: deterministic_executable
+        command: local-diagnostics-v1 rag_local_v1
+        materials:
+          - data/evaluation/astra_local_diagnostics.v1.json
+      - id: rag_qualification_inventory
+        status: BLOCKED
+        classification: UNPROVEN
+        oracle: source_reference
+        command: python scripts/run_retrieval_qualification.py --repetitions 3 --max-cost-usd COST
+        reason: >-
+          Sealed retrieval V3 dataset and manifest are not authored; provider execution is forbidden
+          in zero-cost EvalLab.
+        materials:
+          - data/evaluation/benchmark_v1_5_2_sealed_retrieval_v3.protocol.yaml
+          - data/evaluation/benchmark_v1_5_2_sealed_retrieval_v3.yaml
+          - data/evaluation/benchmark_v1_5_2_sealed_retrieval_v3.manifest.json
+  metamorphic:
+    availability: executable_local
+    classification: ACTIVE
+    qualification_role: unsealed_local_diagnostics
+    description: Versioned local diagnostic assertions; external and human qualification are not inferred.
+    adapters:
+      - id: metamorphic_local_v1
+        status: executable
+        classification: ACTIVE
+        oracle: deterministic_executable
+        command: local-diagnostics-v1 metamorphic_local_v1
+        materials:
+          - data/evaluation/astra_local_diagnostics.v1.json
+  trajectory:
+    availability: executable_local
+    classification: ACTIVE
+    qualification_role: unsealed_local_diagnostics
+    description: Versioned local diagnostic assertions; external and human qualification are not inferred.
+    adapters:
+      - id: trajectory_local_v1
+        status: executable
+        classification: ACTIVE
+        oracle: deterministic_executable
+        command: local-diagnostics-v1 trajectory_local_v1
+        materials:
+          - data/evaluation/astra_local_diagnostics.v1.json
+  fault:
+    availability: executable_local
+    classification: ACTIVE
+    qualification_role: unsealed_local_diagnostics
+    description: Versioned local diagnostic assertions; external and human qualification are not inferred.
+    adapters:
+      - id: fault_local_v1
+        status: executable
+        classification: ACTIVE
+        oracle: deterministic_executable
+        command: local-diagnostics-v1 fault_local_v1
+        materials:
+          - data/evaluation/astra_local_diagnostics.v1.json
+  ui:
+    availability: executable_local
+    classification: ACTIVE
+    qualification_role: unsealed_local_diagnostics
+    description: Versioned local diagnostic assertions; external and human qualification are not inferred.
+    adapters:
+      - id: ui_session_local_v1
+        status: executable
+        classification: ACTIVE
+        oracle: deterministic_executable
+        command: local-diagnostics-v1 ui_session_local_v1
+        materials:
+          - data/evaluation/astra_local_diagnostics.v1.json
+      - id: ui_browser_local_v1
+        status: executable
+        classification: ACTIVE
+        oracle: browser_functional
+        command: local-diagnostics-v1 ui_browser_local_v1
+        materials:
+          - data/evaluation/astra_local_diagnostics.v1.json
+      - id: ui_legacy_browser_local_v1
+        status: executable
+        classification: KEEP_AS_ADAPTER
+        oracle: browser_functional
+        command: local-diagnostics-v1 ui_legacy_browser_local_v1
+        materials:
+          - data/evaluation/astra_local_diagnostics.v1.json
+      - id: ui_reality_inventory
+        status: NOT_RUN
+        classification: KEEP_AS_ADAPTER
+        oracle: browser_functional
+        command: >-
+          FIRELENS_REALITY_URL=URL npm --prefix apps/web exec playwright test --
+          --config=playwright.reality.config.ts
+        reason: >-
+          A deployed origin, identity preflight, authorization, and provider cost ceiling are
+          required.
+        materials:
+          - apps/web/playwright.reality.config.ts
+          - apps/web/tests/reality/product-reality.spec.ts
+  performance:
+    availability: executable_local
+    classification: ACTIVE
+    qualification_role: unsealed_local_diagnostics
+    description: Versioned local diagnostic assertions; external and human qualification are not inferred.
+    adapters:
+      - id: performance_local_v1
+        status: executable
+        classification: ACTIVE
+        oracle: deterministic_executable
+        command: local-diagnostics-v1 performance_local_v1
+        materials:
+          - data/evaluation/astra_local_diagnostics.v1.json

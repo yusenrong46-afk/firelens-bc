@@ -6,10 +6,12 @@ import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
+from typing import Any, cast
 from unittest.mock import patch
 
 from rag_helpers import make_chunk, make_runtime
 
+from firelens.agent import FireLensAgent
 from firelens.contracts import (
     PlanningDecision,
     PlanningResponse,
@@ -21,6 +23,7 @@ from firelens.contracts import (
     SupportDecision,
     SupportStatus,
 )
+from firelens.live_answering import LiveAnswerCoordinator
 from firelens.providers.fake import FakeProvider
 
 
@@ -313,3 +316,135 @@ class GeneralBackgroundFallbackTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("could not find", response.answer or "")
         self.assertIn("SRC-01", response.answer or "")
         self.assertNotIn("found the requested reviewed source", response.answer or "")
+
+
+class AdjacentWriterPreferenceTests(unittest.IsolatedAsyncioTestCase):
+    async def test_agent_quote_preference_does_not_upgrade_adjacent_explanation(self) -> None:
+        class AdjacentPlanner(RelatedPlanner):
+            async def plan(self, messages, *, output_schema):  # type: ignore[no-untyped-def]
+                result = await super().plan(messages, output_schema=output_schema)
+                return result.model_copy(
+                    update={
+                        "decision": result.decision.model_copy(
+                            update={"relation": QueryRelation.ADJACENT}
+                        )
+                    }
+                )
+
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, provider, _ = await make_runtime(
+                Path(directory),
+                provider=AdjacentPlanner(),
+                chunks=[
+                    make_chunk(
+                        "slope",
+                        "Fire moves fastest uphill. Fine fuels generate heat and embers.",
+                    )
+                ],
+            )
+            assert runtime.service is not None
+            support = SupportDecision(
+                status=SupportStatus.ANSWERABLE,
+                reason_code=ReasonCode.APPROVED_STATIC_EVIDENCE,
+                explanation="Lexical overlap does not establish the requested causal explanation.",
+            )
+            for question in (
+                "Why do wildfires spread faster uphill?",
+                "Why does a steeper slope make wildfire spread faster?",
+            ):
+                with (
+                    self.subTest(question=question),
+                    patch("firelens.answering.service.decide_support", return_value=support),
+                ):
+                    response = (
+                        await FireLensAgent(
+                            runtime.service, LiveAnswerCoordinator(cast(Any, object()))
+                        ).answer(QueryRequest(question=question))
+                    ).response
+                self.assertEqual(response.response_mode, ResponseMode.BACKGROUND)
+                self.assertFalse(response.evidence)
+                self.assertTrue(all(not claim.supports for claim in response.claims))
+
+
+class NamedSourceBindingTests(unittest.IsolatedAsyncioTestCase):
+    async def test_named_source_is_required_even_when_topic_support_is_answerable(self) -> None:
+        sources = [
+            replace(
+                make_chunk(
+                    "cedar", "Emergency kits include water, food, and a radio.", parent="cedar"
+                ),
+                source_id="cedar_ridge",
+                title="Cedar Ridge Emergency Guide",
+                publisher="Cedar Ridge",
+                document_sha256="b" * 64,
+            ),
+            replace(
+                make_chunk(
+                    "other", "Emergency kits include batteries, clothing, and a whistle."
+                ),
+                source_id="preparedbc",
+                title="PreparedBC Guide",
+                publisher="PreparedBC",
+            ),
+        ]
+        for present in (False, True):
+            with self.subTest(present=present), tempfile.TemporaryDirectory() as directory:
+                runtime, _, _ = await make_runtime(
+                    Path(directory),
+                    provider=RelatedPlanner(),
+                    chunks=sources if present else sources[1:],
+                )
+                assert runtime.service is not None, runtime.problems
+                support = SupportDecision(
+                    status=SupportStatus.ANSWERABLE,
+                    reason_code=ReasonCode.APPROVED_STATIC_EVIDENCE,
+                    explanation="The neighboring topic has lexical support.",
+                )
+                with patch("firelens.answering.service.decide_support", return_value=support):
+                    response = (
+                        await FireLensAgent(
+                            runtime.service, LiveAnswerCoordinator(cast(Any, object()))
+                        ).answer(
+                            QueryRequest(
+                                question="According to Cedar Ridge, what belongs in an emergency kit?"
+                            )
+                        )
+                    ).response
+                if not present:
+                    self.assertIn(
+                        "could not match the requested reviewed source", response.answer or ""
+                    )
+                    self.assertEqual(response.reason_code, ReasonCode.NO_APPROVED_EVIDENCE)
+                    self.assertFalse(response.claims)
+                    self.assertFalse(response.evidence)
+                    self.assertFalse(response.related_links)
+                else:
+                    self.assertTrue(response.evidence or response.related_links)
+                    self.assertTrue(
+                        all(
+                            item.title == "Cedar Ridge Emergency Guide"
+                            for item in response.evidence
+                        )
+                    )
+                    self.assertNotIn("whistle", response.answer or "")
+
+    async def test_known_identifier_cannot_override_a_different_requested_source(self) -> None:
+        chunk = replace(
+            make_chunk("SRC-01", "Emergency kits include water, food, and a radio."),
+            title="Other Agency Guide",
+            publisher="Other Agency",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            runtime, _, _ = await make_runtime(
+                Path(directory), provider=RelatedPlanner(), chunks=[chunk]
+            )
+            assert runtime.service is not None
+            response = await runtime.service.ask(
+                QueryRequest(
+                    question="According to Cedar Ridge, what does SRC-01 say about emergency kits?"
+                )
+            )
+            self.assertEqual(response.reason_code, ReasonCode.NO_APPROVED_EVIDENCE)
+            self.assertFalse(response.claims)
+            self.assertFalse(response.evidence)
+            self.assertFalse(response.related_links)

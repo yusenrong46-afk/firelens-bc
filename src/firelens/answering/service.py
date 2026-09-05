@@ -17,6 +17,7 @@ from firelens.answering.context import (
     build_evidence_packet,
     decide_support,
 )
+from firelens.answering.context_support import significance_quote_ids, significance_topics
 from firelens.answering.execution import (
     AskExecution as AskExecution,
 )
@@ -39,9 +40,15 @@ from firelens.answering.intent import (
     reviewed_guidance_plan,
     skips_provider_planning,
 )
+from firelens.answering.intent_conversation import (
+    is_significance_followup,
+    named_corpus_attribution,
+    prior_anchor_user_question,
+)
 from firelens.answering.live_request_intent import uses_selected_live_binding
 from firelens.answering.planner import planning_messages, planning_schema
 from firelens.answering.product_scope import SCOPE_NOTE, is_outside_wildfire_scope
+from firelens.answering.request_facets import significance_subject
 from firelens.answering.responses import (
     conflict_response as _conflict_response,
 )
@@ -189,6 +196,7 @@ class StaticRAGService(StaticRAGSupport):
         active_trace_id = trace_id or uuid4().hex
         plan = plan_query(request, allow_live=allow_live)
         planning: PlanningResponse | None = None
+        planning_candidates: list[dict[str, str]] = []
         packet: EvidencePacket | None = None
         place_label = request.location.label if request.location is not None else None
         capability = resolve_capability(request.question, place_label=place_label)
@@ -207,7 +215,17 @@ class StaticRAGService(StaticRAGSupport):
                 capability=capability,
             )
         elif plan.route == QueryRoute.RELATED and skips_provider_planning(request):
-            resolved = resolved_user_question(request)
+            # Resolve only the retrieval subject. The current why request remains
+            # original_question and must still pass its own support decision.
+            resolved = (
+                (
+                    resolved_user_question(request)
+                    if significance_subject(request.question)
+                    else prior_anchor_user_question(request)
+                )
+                if is_significance_followup(request.question)
+                else None
+            ) or resolved_user_question(request)
             if resolved != plan.normalized_question:
                 plan = plan.model_copy(update={"normalized_question": resolved})
             plan = reviewed_guidance_plan(plan)
@@ -352,6 +370,7 @@ class StaticRAGService(StaticRAGSupport):
             public_response=response,
             evidence_packet=packet,
             observation=ExecutionObservation(planning=planning, retrieval=bundle),
+            untrusted_discovery=tuple(planning_candidates),
         )
 
     async def execute_ask(self, request: QueryRequest) -> AskExecution:
@@ -453,6 +472,22 @@ class StaticRAGService(StaticRAGSupport):
         publication_packet = _with_support_limitations(
             execution.evidence_packet, search.support
         )
+        named_source = named_corpus_attribution(question)
+        if named_source and publication_packet is not None:
+            matched_packet = self._source_matched_packet(
+                question, publication_packet, named_source=named_source
+            )
+            if not matched_packet.items:
+                response = self._unsupported_source_request_response(
+                    question=question,
+                    named_source=named_source,
+                    trace_id=trace_id,
+                    packet=publication_packet,
+                    support=search.support,
+                    limitations=search.plan.limitations,
+                )
+                return await self._record_ask(request, response, route=route.value)
+            publication_packet = matched_packet
         place_label = request.location.label if request.location is not None else None
         capability = resolve_capability(request.question, place_label=place_label)
         allowed_typed_claim_ids = (
@@ -465,6 +500,45 @@ class StaticRAGService(StaticRAGSupport):
             if capability is not None and capability.source_mode == "corpus"
             else None
         )
+
+        if is_significance_followup(request.question) and publication_packet is not None:
+            rationale_ids = significance_quote_ids(search.plan, publication_packet)
+            if rationale_ids:
+                publication_packet = publication_packet.model_copy(
+                    update={
+                        "quote_candidates": [
+                            c
+                            for c in publication_packet.quote_candidates
+                            if c.quote_id in rationale_ids
+                        ],
+                    }
+                )
+                # Do not substitute an action-only typed claim for the requested
+                # rationale. Exact quotes still pass every ordinary compiler gate.
+                allowed_typed_claim_ids = ()
+            elif (
+                route == QueryRoute.RELATED
+                and search.support.reason_code == ReasonCode.NO_APPROVED_EVIDENCE
+                and (rationale_topics := significance_topics(search.plan, publication_packet))
+            ):
+                # Inventory or action wording cannot answer significance. Keep
+                # the specific evidence gap instead of generating an explanation
+                # or publishing a merely overlapping source passage.
+                limitation = (
+                    f"The selected evidence does not explain why {rationale_topics[0]} matters."
+                    if significance_subject(request.question)
+                    else "The selected evidence does not explain why this matters."
+                )
+                return await self._record_ask(
+                    request,
+                    _safe_abstention(
+                        trace_id,
+                        answer=limitation,
+                        reason_code=ReasonCode.NO_APPROVED_EVIDENCE,
+                        limitations=[*publication_packet.limitations, limitation],
+                    ),
+                    route=route.value,
+                )
 
         if route == QueryRoute.CAPABILITY:
             topics = ", ".join(topic for topic, _example in TOPIC_CATALOGUE)
@@ -507,6 +581,7 @@ class StaticRAGService(StaticRAGSupport):
                 route=route.value,
                 limitations=search.plan.limitations,
                 observer=observer,
+                untrusted_discovery=execution.untrusted_discovery,
             )
 
         if route in {QueryRoute.LIVE, QueryRoute.PROHIBITED}:
@@ -547,16 +622,17 @@ class StaticRAGService(StaticRAGSupport):
         explicit_corpus_request = self._explicit_corpus_request(question) or bool(
             capability is not None and capability.source_mode == "corpus"
         )
+        conflict_packet = publication_packet if named_source else execution.evidence_packet
         # Only an actual conflicting EvidencePacket may take precedence over
         # an ordinary Tier-C explanation.  ``SupportDecision`` is separately
         # testable and may be injected as CONFLICT without source conflicts;
         # that metadata alone cannot manufacture a conflict response.
         if (
             search.support.status == SupportStatus.CONFLICT
-            and execution.evidence_packet is not None
-            and execution.evidence_packet.conflicts
+            and conflict_packet is not None
+            and conflict_packet.conflicts
         ):
-            response = _conflict_response(trace_id, execution.evidence_packet)
+            response = _conflict_response(trace_id, conflict_packet)
             return await self._record_ask(request, response, route=route.value)
         if self._allows_general_background_fallback(
             request,
@@ -575,17 +651,12 @@ class StaticRAGService(StaticRAGSupport):
         # Until direct-support calibration is complete, an adjacent classification
         # is intentionally background-only. Dense retrieval always returns nearby
         # chunks, so packet presence by itself is not proof of semantic support.
-        # An explicit reviewed-guidance tool call may keep quote-ready support.
         if (
             search.plan.relation == QueryRelation.ADJACENT
             and not explicit_corpus_request
             and not current_request
             and not selected_live_request
             and not personalized_conditional_request
-            and not (
-                prefer_reviewed_quotes
-                and search.support.status in {SupportStatus.ANSWERABLE, SupportStatus.PARTIAL}
-            )
         ):
             compiled = compile_without_generation(
                 publication_question(request),
@@ -606,7 +677,7 @@ class StaticRAGService(StaticRAGSupport):
             )
 
         if search.support.status == SupportStatus.CONFLICT:
-            if execution.evidence_packet is None or not execution.evidence_packet.conflicts:
+            if conflict_packet is None or not conflict_packet.conflicts:
                 response = _safe_abstention(
                     trace_id,
                     answer=(
@@ -616,12 +687,13 @@ class StaticRAGService(StaticRAGSupport):
                     limitations=search.plan.limitations,
                 )
             else:
-                response = _conflict_response(trace_id, execution.evidence_packet)
+                response = _conflict_response(trace_id, conflict_packet)
             return await self._record_ask(request, response, route=route.value)
 
         if search.support.status not in {SupportStatus.ANSWERABLE, SupportStatus.PARTIAL}:
             if explicit_corpus_request:
                 response = self._unsupported_source_request_response(
+                    question=publication_question(request),
                     trace_id=trace_id,
                     packet=publication_packet,
                     support=search.support,

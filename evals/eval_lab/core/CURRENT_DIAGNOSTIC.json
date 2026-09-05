@@ -1,0 +1,63 @@
+{
+  "schema_version": "firelens.eval_lab.diagnostic_pointer.v1",
+  "historical": true,
+  "superseded": true,
+  "run_id": "core-7eab485e9f2ee5a1",
+  "status": "FAIL",
+  "qualification_role": "diagnostic_only",
+  "not_a_baseline": true,
+  "reason": "This pointer preserves the earlier dirty-run evidence and is not the final candidate result. Final clean-candidate envelopes are retained outside Git so evidence does not dirty or self-reference the candidate. Ten CRITICAL rc2.2 evaluation-contract mismatches made this historical run fail without by themselves proving product defects.",
+  "started_at": "2026-09-04T13:57:47.671759+00:00",
+  "finished_at": "2026-09-04T13:57:51.598566+00:00",
+  "identity": {
+    "commit": "ae975132c5d65800c1e960c7b6e0c46844959dfe",
+    "tree": "c7952d897b09c2640cd0a2cc4313c925c32cd6ac",
+    "dirty": true,
+    "working_tree_status_sha256": "26c8c273334423cc876bf2a0ee7b730d084121dbb10a5a487c1773cfeaa78532",
+    "changed_during_run": false
+  },
+  "bindings": {
+    "eval_lab_runner_sha256": "b1609b44116bee7e41c8041dbc3bd4de1a7e1410d1df30031bd1940c14c8da49",
+    "failure_record_schema_sha256": "46d1b9d6ae4fafc0ec85e58ba830a1f07f547c976364627dcace68a80cac1eb3",
+    "registry_sha256": "f4c2f413d4dbed2380b21ac1af891b76a4c561a5050e0a6f87ef304eafd95b8c",
+    "policy_sha256": "b7589b38bc2811e7150c5ce5e42bdf5d27f395f70e58a591bf12f7490253a1b3",
+    "hard_probe_evaluator_sha256": "3bec958bc350457b70cba1638320a6c8af8086495bab3bf0186a85529f040e48",
+    "hard_probe_wrapper_sha256": "342b7e3cd87ba4cf1bb5f222c8a6d3d4051fb85d54a40ffbca93c07cce865f35"
+  },
+  "summary": {
+    "executed_cases": 574,
+    "passed_cases": 562,
+    "failed_cases": 12,
+    "adapters": {
+      "productbench_offline": "PASS 31/31",
+      "claimbench_v2": "PASS 332/332",
+      "hard_probe_rc2_2": "FAIL 93/105",
+      "source_aware_conversation": "PASS 106/106"
+    },
+    "critical_mismatch_case_ids": [
+      "F06",
+      "F07",
+      "F09",
+      "F10",
+      "H01",
+      "H02",
+      "H03",
+      "I04",
+      "K03",
+      "K09"
+    ],
+    "other_mismatch_case_ids": ["I08", "L05"]
+  },
+  "historical_ephemeral_artifact": {
+    "path_at_run_time": "/private/tmp/firelens-eval-lab-final-v4.e6xA56/core",
+    "envelope_sha256": "4a4b8582e4f0bbadab70a1c5c2ecef052be8a123bad5e936f09e116eb9800a96",
+    "failure_records_sha256": "8fe2a0db1b224cd6d61e2086cd8a0cd695288415306c0e1344a23cb33b966a9b",
+    "report_sha256": "ebedd4bd39fc913e6c57e1cdd39d28d6ee8065019684b8a085cd5b0966a043b8",
+    "raw_artifacts": {
+      "productbench_offline.json": "adc8a73dca894ab4c3f5d289122a4a233677ee75836981749bc94008d6087870",
+      "claimbench_v2.json": "cf24274f070fff4e488d8f6bd12ac4abfa30f3271f03c26d4cf22af12f243a23",
+      "hard_probe_rc2_2.json": "f059176e8c1cb99b82cfe4d40ecc8e68a43cb7ebe2129b9ab1938f6c7a963d89",
+      "source_aware_conversation.json": "d553d52019f5d2b0e8cec13ef527a1383740f7f6f036e4be6ff8c36f1e144e8e"
+    }
+  }
+}

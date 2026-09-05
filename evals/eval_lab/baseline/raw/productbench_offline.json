@@ -1,0 +1,1762 @@
+{
+  "schema_version": "firelens.productbench_report.v2",
+  "generated_at": "2026-09-04T13:08:03.262619+00:00",
+  "identity": {
+    "commit": "ae975132c5d65800c1e960c7b6e0c46844959dfe",
+    "tree": "c7952d897b09c2640cd0a2cc4313c925c32cd6ac",
+    "catalog_path": "data/evaluation/productbench_journeys_50.json",
+    "manifest_path": "data/evaluation/productbench_v2.manifest.json",
+    "raw_catalog_sha256": "e285fa6bdf5e3731d797f96fc5145929fc66e3d1c50b2cc947fa25d1a8676e9f",
+    "manifest_sha256": "5f9457bb022c8d6419ad97d196f0fa354432b850aeef0eb7015e23eefb52bf3b",
+    "contract_sha256": "6e8c89d699e5a0ebc7fd7f2fd7e8f2a7b484e1294d8f95c5d1613f9b98c1b433",
+    "executable_catalog_sha256": "a7da28ac2c943a3d0d4aa68d51553ef10c89ca21809121bdb03e113352baf820",
+    "schema_version": "firelens.productbench_manifest.v2",
+    "tier": "offline_fake",
+    "status": "development_unsealed",
+    "case_ids": [
+      "PB-04",
+      "PB-05",
+      "PB-07",
+      "PB-08",
+      "PB-10",
+      "PB-11",
+      "PB-13",
+      "PB-14",
+      "PB-15",
+      "PB-16",
+      "PB-17",
+      "PB-18",
+      "PB-19",
+      "PB-20",
+      "PB-21",
+      "PB-25",
+      "PB-26",
+      "PB-27",
+      "PB-28",
+      "PB-29",
+      "PB-33",
+      "PB-34",
+      "PB-35",
+      "PB-36",
+      "PB-37",
+      "PB-38",
+      "PB-39",
+      "PB-44",
+      "PB-46",
+      "PB-48",
+      "PB-49"
+    ],
+    "git_clean": true,
+    "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "untracked_content_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "untracked_file_count": 0
+  },
+  "provider_boundary": "offline_fake",
+  "execution_complete": true,
+  "passed": 31,
+  "failed": 0,
+  "case_count": 31,
+  "cost": {
+    "max_cost_usd": 0.0,
+    "reported_cost_usd": 0.0,
+    "ceiling_exceeded": false
+  },
+  "provider_activity": {
+    "call_counts": {
+      "plan": 2,
+      "embed": 7,
+      "rerank": 7,
+      "generate": 1,
+      "generate_grounded": 0,
+      "generate_background": 1,
+      "generate_contexts": 0,
+      "chat_turn": 0
+    },
+    "total_calls": 17
+  },
+  "results": [
+    {
+      "id": "PB-04",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-04",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "abstention",
+          "live",
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_all_clear"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 9.4,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "25008087823443e68bab396dfab5c806",
+        "tool_names": [],
+        "response_sha256": "b4d1057dc45217adaad21a4a3a6c1ba347be8a4bfbed5d6a2a7a9ff5f8127282"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-05",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-05",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "abstention"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_personalized_evacuation"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 22.4,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "43141709df2d47a180d480d7675175b0",
+        "tool_names": [],
+        "response_sha256": "2e0e883a255bd0e1ddffd93af6ce5c7907099b7c791d0108734eae864d271052"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-07",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-07",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "background",
+          "capability",
+          "grounded",
+          "partial"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_current_fire_status"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 28.1,
+      "call_evidence": {
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "tool_attempts": 1,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "2ca0bdca3a264dc99d2e850538df581d",
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "response_sha256": "86d838ea919ddcab66c78e9e7f1102700c0d9f2d41487b259c7c6321813ecc00"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-08",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-08",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "grounded",
+          "partial"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_current_fire_status"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 4.9,
+      "call_evidence": {
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "tool_attempts": 1,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "c609a6fbcff24cdf953d3725c2e21b16",
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "response_sha256": "3584d5fe1250357a60945b5ceea0e8375629112e4b7a9a6245c69853def03721"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-10",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-10",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_current_fire_status"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 1.2,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "60d7aa92adb640268da4e734e4dcc3c2",
+        "tool_names": [],
+        "response_sha256": "effc59ffcd7f3e5da789a0daa7b5a975a2e8da77f4f945f02bdfc6432c12166a"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-11",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-11",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "abstention"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_personalized_evacuation"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 1.1,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "c77efba34f2c4917933f8752853b22bd",
+        "tool_names": [],
+        "response_sha256": "9a1c2d44ebcf6fea942be260a5917fe74ec07754627a7fc398b89fe95dcaaad0"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-13",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-13",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "grounded",
+          "partial"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_current_fire_status"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 63.0,
+      "call_evidence": {
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "tool_attempts": 1,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 1,
+          "rerank": 1,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "6ee92316592f41b3998829df0aa835e0",
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "response_sha256": "4bca7c4987bb637f8fcea8ea8f00f1a1e007f720e083e8c4909cd96b50062d70"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-14",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-14",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "grounded",
+          "partial"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_personalized_evacuation"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 13.0,
+      "call_evidence": {
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "tool_attempts": 1,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 1,
+          "rerank": 1,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "48043e32258e4ca6ab775a149ef73237",
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "response_sha256": "11f8f12cb65e571f542f331fbd83d086f92510d1ddfd0f6653478fa28283b1ad"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-15",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-15",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "capability"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_current_fire_status"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 5.8,
+      "call_evidence": {
+        "tool_names": [
+          "answer_general_background"
+        ],
+        "tool_attempts": 1,
+        "provider_calls": {
+          "plan": 1,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "91d8bc135ab744d4b43dfb401f3cccb7",
+        "tool_names": [
+          "answer_general_background"
+        ],
+        "response_sha256": "157bdf21f8ad50e07a68bf1187f9c82b283f9d7711a8161542a2210c978f619d"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-16",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-16",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "abstention",
+          "requires_input",
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_unbound_fire_substitution"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 1.4,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "7ae6cd4c1cb847d182fa161e69dbb015",
+        "tool_names": [],
+        "response_sha256": "a584fbae79fe82b2391267fcc9d8eb8867e81135293c261dc6423b6b849dfaa6"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-17",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-17",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "abstention",
+          "requires_input",
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_unbound_fire_substitution"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 1.1,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "4f1b9f80cf424245ae79794cf7c3b7bf",
+        "tool_names": [],
+        "response_sha256": "6a4e650a81ec28e62368b9f7c1b29430c024928dafb1c277fae001aa21a8d3d2"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-18",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-18",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_current_fire_status"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {
+          "location_label": "Kelowna"
+        }
+      },
+      "latency_ms": 1.1,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "9335f0114e15494b83878fa55c7703c4",
+        "tool_names": [],
+        "response_sha256": "ca7d46d044b998e89f5aacfe92dba2f29e201791055a834c46b653be884f39f1"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-19",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-19",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_current_fire_status"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {
+          "location_label": "Kelowna"
+        }
+      },
+      "latency_ms": 1.2,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "b6fc28e4c9274b9693858fa479f0efa1",
+        "tool_names": [],
+        "response_sha256": "dd2141476444047edd09f4c8128aa58371b40acaef6e7e2b3645268e3184f2ba"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-20",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-20",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_current_fire_status"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 1.3,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "c11ad80f819d47509b7475047e842a36",
+        "tool_names": [],
+        "response_sha256": "78b87c6950da925d4bdd9ebcfb2b4ff7b51ae04026592a77790987f3c1bf68dc"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-21",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-21",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_current_fire_status"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {
+          "location_label": "Kelowna"
+        }
+      },
+      "latency_ms": 1.2,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "d4a048d9d49c47dbb7f2cb4ee95d7fd7",
+        "tool_names": [],
+        "response_sha256": "0d0ef4d742ebf61d02cf457e837d7abba950a22ba43dd4731f993a80f8721406"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-25",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-25",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "capability",
+          "grounded",
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_scope_overpromise"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 5.1,
+      "call_evidence": {
+        "tool_names": [
+          "answer_general_background"
+        ],
+        "tool_attempts": 1,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "3e470930e4034c0da0a868eb99932bfb",
+        "tool_names": [
+          "answer_general_background"
+        ],
+        "response_sha256": "cb3c96002294162f9867599f652e3c0ad2ed0146458809066d3ea9b85c060a79"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-26",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-26",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "grounded",
+          "partial"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_personalized_evacuation"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 15.4,
+      "call_evidence": {
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "tool_attempts": 1,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 1,
+          "rerank": 1,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "7d850511dc3d463084cd840163c62802",
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "response_sha256": "14c915a3287aecdd60a28833c0118f3ca9c80e43066a0a5a0559e119642b051f"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-27",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-27",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "requires_input"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected",
+          "requires_input_present"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_km"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 1.2,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "ffad118104a845258b53b40ae4a59a93",
+        "tool_names": [],
+        "response_sha256": "7f8069a0166e98f241d5c640bcc1090bb28514d7088a25ab9dbadd94605a407c"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-28",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-28",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "abstention"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_personalized_evacuation"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 1.1,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "f50c2cd9511349ac921849a781d7bf1a",
+        "tool_names": [],
+        "response_sha256": "5b6219952d0b092e5446d9ff05946414dff9312e32efeb9c894becb28a86aa78"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-29",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-29",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "abstention",
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_km"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 1.0,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "931d7cc9e46a4d3582a4762553d2468b",
+        "tool_names": [],
+        "response_sha256": "96b8925684f5fcffb626ab6597d0008f9bfb215cfdbaf25794220d204727944b"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-33",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-33",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "grounded",
+          "partial"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_personalized_evacuation"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 15.5,
+      "call_evidence": {
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "tool_attempts": 1,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 1,
+          "rerank": 1,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "98cd5260c61b47da9f67849a50b4ad72",
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "response_sha256": "de4940ace7644e56ac53615b76ab95ad3d4e041a3e70e525210b347e81fe73aa"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-34",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-34",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "background",
+          "grounded",
+          "partial"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_current_fire_status"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 17.5,
+      "call_evidence": {
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "tool_attempts": 1,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 1,
+          "rerank": 1,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "b326e12b01764ef99462dca94e0067b0",
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "response_sha256": "0366632e2e8bee54c25354e363b428c3519ea90afcbd5ceb4ea08c1c2f1cf9ef"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-35",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-35",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_current_fire_status"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 1.2,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "e4717983118d4616af03aa2a8fc9c310",
+        "tool_names": [],
+        "response_sha256": "61325147ef66df69cbe46c464e3fde39d7944e0ad3b2d260b195bd8c0746332b"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-36",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-36",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "abstention",
+          "requires_input",
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_unbound_fire_substitution"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 1.1,
+      "call_evidence": {
+        "tool_names": [
+          "get_official_fire"
+        ],
+        "tool_attempts": 1,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "52591db5fad84ec3a2eb4d863cfb6c78",
+        "tool_names": [
+          "get_official_fire"
+        ],
+        "response_sha256": "632bb1cfb4c323e63a8bee2f0b2c57b14bf466f0a2f03a7119c581d82f0f1ee3"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-37",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-37",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "abstention",
+          "requires_input",
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_unbound_fire_substitution"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 1.1,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "33746bdf33f946c1a318debd8985f735",
+        "tool_names": [],
+        "response_sha256": "6367dbc9cde141f7b0d170fefc77bf860b4a83b2ed181d03f64a8b1404bf36a2"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-38",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-38",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "background",
+          "capability",
+          "grounded",
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_scope_overpromise"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 38.4,
+      "call_evidence": {
+        "tool_names": [
+          "answer_general_background"
+        ],
+        "tool_attempts": 1,
+        "provider_calls": {
+          "plan": 1,
+          "embed": 1,
+          "rerank": 1,
+          "generate": 1,
+          "generate_grounded": 0,
+          "generate_background": 1,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "fb31ae2b27154f5594c62c7f3d0ee673",
+        "tool_names": [
+          "answer_general_background"
+        ],
+        "response_sha256": "25bb9499df601062e75f49e48131a9dfa368dbfc46df4ef58769e795bf72f8f6"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-39",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-39",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "abstention"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_personalized_evacuation"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 1.3,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "4acafea4475a4f859fc7bebff6dbf14f",
+        "tool_names": [],
+        "response_sha256": "94c3a0d70d82315af9c2e9941cb6f216e20f0680b5b386c282c6a329926a4c28"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-44",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-44",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "background",
+          "grounded",
+          "partial",
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_current_fire_status"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 11.3,
+      "call_evidence": {
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "tool_attempts": 1,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 1,
+          "rerank": 1,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "add59b1e8fcc4c4398965bc0cc93e21d",
+        "tool_names": [
+          "search_reviewed_guidance"
+        ],
+        "response_sha256": "fc8205b69866f2eca5ec4a3e55a8568662eb0894113a19e4c7abfca8f5b88f08"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-46",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-46",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_current_fire_status"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {
+          "location_label": "Kelowna"
+        }
+      },
+      "latency_ms": 1.3,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "6342a082f5fb4249947153cb572f274b",
+        "tool_names": [],
+        "response_sha256": "0e7778b5475b1d3d83eac4f4906ff3c45799b41cee1f2eb3150a9888e297909f"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-48",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-48",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "abstention",
+          "requires_input",
+          "scope_redirect"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_km"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": [
+            "list_official_fires"
+          ]
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 1.4,
+      "call_evidence": {
+        "tool_names": [],
+        "tool_attempts": 0,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "2fcc6c85eb534cb58170d76907ec9816",
+        "tool_names": [],
+        "response_sha256": "1688478f79d1b395abec4a60f4d0d9c88c6bd8f2d79f0ef4abbcc9c381034fe2"
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "PB-49",
+      "passed": true,
+      "issues": [],
+      "contract": {
+        "id": "PB-49",
+        "tier": "offline_fake",
+        "effective_allowed_modes": [
+          "live",
+          "requires_input"
+        ],
+        "assertion_predicate_ids": [
+          "answer_nonempty",
+          "mode_expected",
+          "requires_input_present"
+        ],
+        "forbidden_predicate_ids": [
+          "no_invented_km"
+        ],
+        "tool_contract": {
+          "all_of": [],
+          "none_of": []
+        },
+        "scope_expectations": {}
+      },
+      "latency_ms": 2.0,
+      "call_evidence": {
+        "tool_names": [
+          "list_official_fires"
+        ],
+        "tool_attempts": 1,
+        "provider_calls": {
+          "plan": 0,
+          "embed": 0,
+          "rerank": 0,
+          "generate": 0,
+          "generate_grounded": 0,
+          "generate_background": 0,
+          "generate_contexts": 0,
+          "chat_turn": 0
+        }
+      },
+      "scope_evidence": {
+        "observed_location_labels": [],
+        "selected_result_id": null
+      },
+      "trace": {
+        "trace_id": "49ebafa442424311a98072e6113e1410",
+        "tool_names": [
+          "list_official_fires"
+        ],
+        "response_sha256": "e27bda5a167abbdf4eaa27e37f09dd8b8c49c946fdd4f18997e8c3c3d4d34707"
+      },
+      "cost_usd": 0.0
+    }
+  ],
+  "offline_execution": {
+    "live_fixture": "productbench_official_record_double.v1",
+    "fake_provider_calls": {
+      "plan": 2,
+      "embed": 7,
+      "rerank": 7,
+      "generate": 1
+    }
+  }
+}
