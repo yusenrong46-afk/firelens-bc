@@ -11,6 +11,12 @@ and general background distinct, including when a conversation moves between the
 [System Card](docs/system-card/FIRELENS_SYSTEM_CARD.md) ·
 [Evaluation guide](docs/eval/README.md)
 
+**Production verification is incomplete.** The linked PreparedBC wildfire guide
+has changed since the admitted corpus was reviewed. Grab-and-go quotations in
+FireLens do not exactly match the current PDF; the current checklist also adds
+insurance/important papers. Read the [release findings](docs/releases/firelens-final-ship.md)
+and consult the current official guide for that guidance.
+
 ![Pacific Operations interface showing a synthetic nearby-fire answer, selectable records, source details and bottom question composer](docs/product/screenshots/pacific-operations-final-demo.png)
 
 _Synthetic demonstration data in the Pacific Operations interface. Names,
@@ -75,10 +81,11 @@ establish benchmark leadership or universal answer quality.
 | Evidence | Result and scope |
 | --- | --- |
 | Qualified backend | 12 fresh and nine retained external observations, independently accepted within a fixed scope; see the [System Card](docs/system-card/FIRELENS_SYSTEM_CARD.md) |
-| Local verification | Runtime `37de779`: 2,581 backend tests, 13 skips, 709 subtests and 198 frontend tests passed; predecessor evidence retained with its identity |
-| Latest UI follow-up | `2a9ecb6`: 45 mocked browser passes, one skip, and fixture preview checks at 1536px, 390px and 320px; see the [release record](docs/releases/firelens-final-ship.md) |
+| Final local verification | Reviewed candidate `fc5731e`: 2,581 backend tests, 13 skips, 709 subtests and 198 frontend tests passed; runtime remains equivalent to `37de779` |
+| Final browser checks | 45 mocked passes, one skip and 22 built-stack passes; fixture checks at 1536px, 390px, 320px and native 200% zoom remain distinct from production |
 | Historical evaluation | Core remains **FAIL 565/574**, with frozen failures and dispositions preserved in the [evaluation guide](docs/eval/README.md) |
-| Final release and production | The [release record](docs/releases/firelens-final-ship.md) separates final checks, independent review and actual deployment outcomes |
+| Current CI | Main build `c06474d` failed source-aware conversation verification; local reproduction passed 105/106. Candidate evidence was refused at the legacy J01 invariant |
+| Actual production | Eight public Ask requests exercised live records, state, guidance and generation. Browser/assets/provider checks passed; current-source passage verification failed. See the [release record](docs/releases/firelens-final-ship.md) |
 
 Captured official feeds are dated evidence, not today's incident count. Fixture
 browser checks establish controlled behavior; production integration requires
