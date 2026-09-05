@@ -2407,7 +2407,7 @@
     },
     {
       "branch_score": 12,
-      "loc": 172,
+      "loc": 178,
       "path": "tests/test_documentation_consistency.py"
     },
     {
@@ -3052,7 +3052,7 @@
     }
   ],
   "schema_version": "firelens.complexity.v1",
-  "source_digest": "9aa28d967f53827d4f5a55d02a286e1d9517d44be0c6f0206ca5e29c5a9cac3c",
+  "source_digest": "f1eeeb6a00ca3b484de0192db5b7291eeff1956f96887b1756d8b29865972d74",
   "symbols": [
     {
       "branch_score": 0,
@@ -17966,27 +17966,27 @@
     },
     {
       "branch_score": 0,
-      "id": "tests/test_documentation_consistency.py::test_portfolio_and_offline_examination_documents_preserve_limits:95",
+      "id": "tests/test_documentation_consistency.py::test_portfolio_and_offline_examination_documents_preserve_limits:101",
       "module_path": "tests/test_documentation_consistency.py"
     },
     {
       "branch_score": 5,
-      "id": "tests/test_documentation_consistency.py::test_quality_document_relative_links_exist:141",
+      "id": "tests/test_documentation_consistency.py::test_quality_document_relative_links_exist:147",
       "module_path": "tests/test_documentation_consistency.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_documentation_consistency.py::test_readme_documented_verification_commands_exist:157",
+      "id": "tests/test_documentation_consistency.py::test_readme_documented_verification_commands_exist:163",
       "module_path": "tests/test_documentation_consistency.py"
     },
     {
       "branch_score": 4,
-      "id": "tests/test_documentation_consistency.py::test_readme_relative_links_and_image_exist:80",
+      "id": "tests/test_documentation_consistency.py::test_readme_relative_links_and_image_exist:86",
       "module_path": "tests/test_documentation_consistency.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_documentation_consistency.py::test_v1_6_2_quality_documents_preserve_constitution_and_evidence_boundaries:112",
+      "id": "tests/test_documentation_consistency.py::test_v1_6_2_quality_documents_preserve_constitution_and_evidence_boundaries:118",
       "module_path": "tests/test_documentation_consistency.py"
     },
     {

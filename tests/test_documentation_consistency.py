@@ -21,7 +21,10 @@ def test_current_documentation_preserves_authority_and_evaluation_boundaries() -
     assert "Deterministic code owns official counts" in readme
     assert "## Three information lanes" in readme
     assert "## From question to evidence" in readme
-    assert "**EvalLab** harness records application, evaluator, dataset and configuration" in readme
+    assert (
+        "**EvalLab** harness records application, evaluator, dataset and configuration"
+        in readme
+    )
     assert "## What the evidence establishes" in readme
     assert "## Run locally" in readme
     assert "## Limits and authority" in readme
@@ -36,7 +39,10 @@ def test_current_documentation_preserves_authority_and_evaluation_boundaries() -
     assert "cannot decide whether you are safe" in readme
     assert "do not, by themselves, prove every interpretation correct" in readme
     assert "Independent AI examination is not human certification" in readme
-    assert "sealed generalization, sustained availability and latency SLOs remain unestablished" in readme
+    assert (
+        "sealed generalization, sustained availability and latency SLOs remain unestablished"
+        in readme
+    )
     assert "production-ready" not in readme.casefold()
     assert "current architecture authority" in architecture
     assert "V1.6.4 branch candidate is committed" in architecture

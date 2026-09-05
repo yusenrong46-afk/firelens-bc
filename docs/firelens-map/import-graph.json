@@ -17605,7 +17605,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "9aa28d967f53827d4f5a55d02a286e1d9517d44be0c6f0206ca5e29c5a9cac3c",
+  "source_digest": "f1eeeb6a00ca3b484de0192db5b7291eeff1956f96887b1756d8b29865972d74",
   "unresolved_relative_imports": [
     {
       "line": 32,

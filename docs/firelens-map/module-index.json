@@ -21396,7 +21396,7 @@
       "imports": [],
       "kind": "test",
       "language": "python",
-      "loc": 172,
+      "loc": 178,
       "major_symbols": [
         "test_current_documentation_preserves_authority_and_evaluation_boundaries",
         "test_readme_relative_links_and_image_exist",
@@ -29615,5 +29615,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "9aa28d967f53827d4f5a55d02a286e1d9517d44be0c6f0206ca5e29c5a9cac3c"
+  "source_digest": "f1eeeb6a00ca3b484de0192db5b7291eeff1956f96887b1756d8b29865972d74"
 }
