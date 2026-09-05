@@ -31,6 +31,7 @@ from firelens.answering.scope import (
 )
 from firelens.answering.scope import (
     corpus_identifiers,
+    source_metadata_matches,
 )
 from firelens.answering.typed_snapshot import classify_text, extract_snapshot
 from firelens.answering.validate import validate_background_draft
@@ -60,23 +61,6 @@ from firelens.retrieval.bm25 import BM25Index
 from firelens.source_requirements import SourceRequirement, source_requirement_for_question
 from firelens.traces import TraceRecorder, project_ask_trace_details
 
-_SOURCE_IDENTITY_STOPWORDS = frozenset(
-    {
-        "british",
-        "columbia",
-        "document",
-        "emergency",
-        "fire",
-        "fires",
-        "government",
-        "guide",
-        "guidance",
-        "preparedness",
-        "source",
-        "wildfire",
-        "wildfires",
-    }
-)
 _PERSONALIZED_CONDITIONAL_DECISION = re.compile(
     r"\b(?:what|how)\s+(?:should|can|could|may)\s+(?:i|we)\s+"
     r"(?:do|handle|respond)\b.{0,80}\b(?:if|when)\b",
@@ -189,15 +173,9 @@ class StaticRAGSupport:
             )
         ):
             return True
-        if not explicit_corpus_attribution(question):
-            return False
-        tokens = set(re.findall(r"[a-z0-9]+", question.casefold()))
-        return any(
-            token in tokens and token not in _SOURCE_IDENTITY_STOPWORDS and len(token) >= 5
-            for candidate in candidates
-            for field in ("source_id", "title", "publisher")
-            for token in re.findall(r"[a-z0-9]+", candidate.get(field, "").casefold())
-        ) or bool(re.search(r"\b(?:source|document|guide|checklist)\b", question, re.I))
+        # A requested source does not stop being required when it is absent
+        # from this corpus. The shared attribution grammar owns that decision.
+        return explicit_corpus_attribution(question)
 
     def _allows_general_background_fallback(
         self,
@@ -220,13 +198,65 @@ class StaticRAGSupport:
             and not explicit_corpus_request
         )
 
+    @staticmethod
+    def _source_matched_packet(
+        question: str, packet: EvidencePacket, *, named_source: str | None = None
+    ) -> EvidencePacket:
+        """Apply the same requested-source binding to publication and handoff."""
+        identifiers = corpus_identifiers(question)
+        matched = []
+        for item in packet.items:
+            item_ids = {
+                item.source_id.casefold(),
+                *(value.casefold() for value in item.chunk_ids),
+            }
+            if identifiers and not identifiers.intersection(item_ids):
+                continue
+            metadata = {
+                "source_id": item.source_id,
+                "title": item.title,
+                "publisher": item.publisher,
+            }
+            if named_source:
+                if not (
+                    source_metadata_matches(named_source, metadata)
+                    or named_source.casefold() in item_ids
+                ):
+                    continue
+            elif not identifiers and not _candidate_source_reference_present(
+                question,
+                [metadata],
+                minimum_distinctive_tokens=1,
+            ):
+                continue
+            matched.append(item)
+        matched_ids = {
+            value.casefold() for item in matched for value in (item.source_id, *item.chunk_ids)
+        }
+        if identifiers and not identifiers.issubset(matched_ids):
+            matched = []
+        evidence_ids = {item.evidence_id for item in matched}
+        quotes = [q for q in packet.quote_candidates if q.evidence_id in evidence_ids]
+        quote_ids = {q.quote_id for q in quotes}
+        return packet.model_copy(
+            update={
+                "items": matched,
+                "quote_candidates": quotes,
+                "conflicts": [
+                    c for c in packet.conflicts if set(c.quote_ids).issubset(quote_ids)
+                ],
+            }
+        )
+
     def _unsupported_source_request_response(
         self,
         *,
+        question: str,
         trace_id: str,
         packet: EvidencePacket | None,
         support: SupportDecision,
         limitations: Sequence[str],
+        named_source: str | None = None,
     ) -> AskResponse:
         if packet is None:
             return _safe_abstention(
@@ -235,9 +265,27 @@ class StaticRAGSupport:
                 reason_code=support.reason_code,
                 limitations=limitations,
             )
+        identifiers = corpus_identifiers(question)
+        matched = self._source_matched_packet(question, packet, named_source=named_source).items
+        matched_ids = {
+            value.casefold() for item in matched for value in (item.source_id, *item.chunk_ids)
+        }
+        if not matched or (identifiers and not identifiers.issubset(matched_ids)):
+            return _safe_abstention(
+                trace_id,
+                answer="FireLens could not match the requested reviewed source in the retrieved evidence, so it cannot resolve this source-specific question.",
+                reason_code=ReasonCode.NO_APPROVED_EVIDENCE,
+                limitations=[
+                    *limitations,
+                    "Unrelated retrieved documents were not presented as the requested source.",
+                ],
+            )
+        matched_packet = packet.model_copy(
+            update={"items": matched, "quote_candidates": [], "conflicts": []}
+        )
         return self.grounded_answers.source_handoff(
             trace_id,
-            packet,
+            matched_packet,
             answer=(
                 "FireLens found the requested reviewed source, but its selected wording does "
                 "not directly support this question. Open the source below rather than relying "
@@ -329,11 +377,13 @@ class StaticRAGSupport:
         limitations: Sequence[str],
         observer: ExecutionObserver | None,
         evidence_packet: EvidencePacket | None = None,
+        untrusted_discovery: Sequence[dict[str, str]] = (),
     ) -> AskResponse:
         started = perf_counter()
         try:
             generated = await self.provider.generate_background(
-                background_messages(request), output_schema=background_schema()
+                background_messages(request, untrusted_discovery=untrusted_discovery),
+                output_schema=background_schema(),
             )
         except ProviderError as exc:
             if observer is not None:

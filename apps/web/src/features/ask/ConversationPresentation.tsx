@@ -1,43 +1,15 @@
 import { ArrowSquareOut, ChatsCircle, Info, Trash, WarningCircle } from "@phosphor-icons/react";
 import type { SupportState } from "./proofPresentation";
 import type { Claim, Evidence } from "./responseModel";
+import type { ReactNode } from "react";
 
 const OFFICIAL_BCWS_MAP_URL = "https://wildfiresituation.nrs.gov.bc.ca/map";
 
 export function revealAssistantMessage(node: HTMLElement | null, active: boolean) {
   if (!node || !active) return;
-  const scroller = node.closest(".conversation-scroll");
-  if (!(scroller instanceof HTMLElement)) return;
-
-  // The analytical workspace is a two-column grid inside this scroller. The
-  // normal chat behavior intentionally follows the newest assistant message,
-  // but doing that here moves both the answer rail and the analysis canvas so
-  // their question/KPI content starts below the first viewport. A new
-  // analytical answer already has its own Summary default, so keep its shared
-  // scroller at the top and let ordinary conversations retain auto-follow.
-  if (node.closest(".conversation-panel--analytical")) {
-    scroller.scrollTop = 0;
-    // The desktop analytical shell is a viewport-filling workspace. A browser
-    // can still retain the document offset created while the composer was
-    // focused, which clips the fixed header when the answer replaces loading.
-    // Reset only this app-owned layout at desktop widths; mobile keeps the
-    // answer-follow behaviour used by the compact conversation surface.
-    if (
-      typeof window !== "undefined"
-      && typeof window.matchMedia === "function"
-      && window.matchMedia("(min-width: 1120px)").matches
-    ) {
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    }
-    return;
-  }
-
-  const previous = node.previousElementSibling;
-  const target = previous instanceof HTMLElement && previous.classList.contains("question-block")
-    ? previous
-    : node;
-  target.scrollIntoView?.({ block: "start", inline: "nearest" });
-  scroller.scrollTop += target.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+  // The page is the only scroll owner. Keep the question and the real header
+  // composer reachable; no nested-scroll compensation is needed.
+  node.closest(".pc-main")?.scrollIntoView?.({ block: "start", inline: "nearest" });
 }
 
 export function conversationContextLabel(priorTurnCount: number): string {
@@ -71,17 +43,19 @@ export function SuggestedQuestions({
   disabled,
   onSelect,
   suggestions,
+  mapAction,
 }: {
   disabled: boolean;
   onSelect: (question: string) => void;
   suggestions: string[];
+  mapAction?: ReactNode;
 }) {
-  if (suggestions.length === 0) return null;
+  if (suggestions.length === 0 && !mapAction) return null;
   return (
-    <div className="suggestion-group" aria-label="Suggested questions">
-      <span className="panel-label">More questions to explore</span>
-      <p className="suggestion-group__hint">Select one to fill the composer.</p>
+    <div className="suggestion-group" role="group" aria-label="Suggested questions">
+      <h2><ChatsCircle size={21} aria-hidden="true" /> Ask a follow-up</h2>
       <div>
+        {mapAction}
         {suggestions.map((suggestion) => (
           <button type="button" key={suggestion} onClick={() => onSelect(suggestion)} disabled={disabled}>
             {suggestion}

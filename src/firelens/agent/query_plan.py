@@ -25,6 +25,7 @@ from firelens.answering.intent_conversation import is_selected_record_followup
 from firelens.answering.intent_patterns import is_unresolved_smoke_observation
 from firelens.answering.intent_refresh import is_live_refresh_request
 from firelens.answering.intent_safety import is_empty_map_safety_inference
+from firelens.answering.live_distance import location_request
 from firelens.answering.live_named_fire import (
     extracted_located_fire_name,
     requested_fire_identity,
@@ -311,10 +312,10 @@ def plan_agent_request(request: QueryRequest) -> AgentQueryPlan:
     """
 
     plan = _plan_request_body(request)
-    if plan.mode == AgentRequestMode.TERMINAL:
-        return plan
-    plan = replace(plan, asked_fire_name=requested_fire_identity(request))
     boundaries = clause_boundaries(conversation_planning_question(request))
+    if plan.mode == AgentRequestMode.TERMINAL:
+        return replace(plan, boundaries=boundaries)
+    plan = replace(plan, asked_fire_name=requested_fire_identity(request))
     if not boundaries:
         return plan
     layers = plan.live_layers
@@ -421,6 +422,15 @@ def _plan_request_body(request: QueryRequest) -> AgentQueryPlan:
     if ordinal_plan is not None:
         return ordinal_plan
     if selected and uses_selected_live_binding(request):
+        if (
+            live_query_requires_location(question)
+            and request.location is None
+            and coarse_location_from_question(question) is None
+        ):
+            return replace(
+                _terminal_plan(location_request(request)),
+                scope_result=AgentScopeResult.REQUIRES_INPUT,
+            )
         return _selected_record_plan(selected)
     if selected is None and is_selected_record_followup(request.question):
         prior = prior_anchor_user_question(request)
@@ -663,7 +673,11 @@ def _plan_request_body(request: QueryRequest) -> AgentQueryPlan:
             ),
         )
 
-    if location is None and live_query_requires_location(request.question):
+    if (
+        location is None
+        and not is_province_wide_question(request.question)
+        and live_query_requires_location(request.question)
+    ):
         return AgentQueryPlan(
             route=QueryRoute.LIVE,
             mode=AgentRequestMode.TERMINAL,

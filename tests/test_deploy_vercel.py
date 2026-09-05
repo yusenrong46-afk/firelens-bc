@@ -83,7 +83,11 @@ def test_dry_run_prints_command_and_does_not_invoke_vercel(
 ) -> None:
     monkeypatch.setattr(
         "scripts.deploy_vercel.prepare_deploy_command",
-        lambda root, production: build_vercel_command(commit=COMMIT, production=production),
+        lambda root, production, generation_provider_only=None: build_vercel_command(
+            commit=COMMIT,
+            production=production,
+            generation_provider_only=generation_provider_only,
+        ),
     )
     invoked: list[list[str]] = []
 
@@ -100,3 +104,41 @@ def test_dry_run_prints_command_and_does_not_invoke_vercel(
     assert "FIRELENS_RELEASE_VERSION=1.6.4" in rendered
     assert "FIRELENS_BENCHMARK_ID=firelens_v1_6_2" in rendered
     assert "--prod" not in rendered.split()
+
+
+def test_optional_generation_subset_binds_build_and_runtime() -> None:
+    value = "vendor/region-a,vendor/region-b"
+    command = build_vercel_command(
+        commit=COMMIT, production=False, generation_provider_only=value
+    )
+    assert command == build_vercel_command(commit=COMMIT, production=False) + [
+        "--build-env",
+        f"FIRELENS_GENERATION_PROVIDER_ONLY={value}",
+        "--env",
+        f"FIRELENS_GENERATION_PROVIDER_ONLY={value}",
+    ]
+
+
+def test_optional_subset_cli_is_forwarded_without_deployment(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(
+        "scripts.deploy_vercel._git", lambda args, root: "" if args[0] == "status" else COMMIT
+    )
+    monkeypatch.setattr(
+        "scripts.deploy_vercel.subprocess.run",
+        lambda *args, **kwargs: pytest.fail("dry-run dispatched deployment"),
+    )
+    assert (
+        main(
+            [
+                "--root",
+                str(tmp_path),
+                "--dry-run",
+                "--generation-provider-only",
+                "vendor/region-a",
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert output.count("FIRELENS_GENERATION_PROVIDER_ONLY=vendor/region-a") == 2
+    assert "--prod" not in output.split()

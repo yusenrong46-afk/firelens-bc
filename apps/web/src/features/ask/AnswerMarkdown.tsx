@@ -131,6 +131,23 @@ const leadComponents: Components = {
   h6: LeadMarkdownHeading,
 };
 
+// Typography only: preserve the server's exact text and order. Do not extract
+// incident facts from prose. Structured/linked Markdown keeps its own layout.
+const overviewComponents: Components = {
+  ...leadComponents,
+  p: ({ node, children }) => {
+    if (node?.position?.start.offset === 0 && typeof children === "string") {
+      const opening = new Intl.Segmenter("en-CA", { granularity: "sentence" })
+        .segment(children)[Symbol.iterator]().next().value?.segment;
+      if (opening && opening.trim().length <= 200) {
+        const rest = children.slice(opening.length);
+        return <><h2 className="answer-opening">{opening}</h2>{rest && <p>{rest}</p>}</>;
+      }
+    }
+    return <p>{children}</p>;
+  },
+};
+
 const sectionComponents: Components = {
   ...sharedComponents,
   h1: SectionMarkdownHeading,
@@ -150,16 +167,18 @@ export function AnswerMarkdown({
   children,
   className,
   headingContext = "lead",
+  emphasizeOpening = false,
 }: {
   children: string;
   className?: string;
   headingContext?: HeadingContext;
+  emphasizeOpening?: boolean;
 }) {
   return (
     <div className={["answer-markdown", className].filter(Boolean).join(" ")}>
       <ReactMarkdown
         allowedElements={[...MARKDOWN_ELEMENTS]}
-        components={componentsForContext[headingContext]}
+        components={emphasizeOpening && headingContext === "lead" ? overviewComponents : componentsForContext[headingContext]}
         remarkPlugins={[remarkGfm]}
         skipHtml
         urlTransform={strictAnswerUrlTransform}

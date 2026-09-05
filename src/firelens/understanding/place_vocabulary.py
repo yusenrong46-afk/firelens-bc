@@ -1,4 +1,4 @@
-"""Closed-class vocabulary for the structural place extractor.
+"""Closed-class vocabulary and pure span helpers for the structural place extractor.
 
 These are finite grammatical or geographic inventories (function words,
 wildfire-domain nouns, province labels, out-of-province places). They are not
@@ -8,6 +8,95 @@ span must never be geocoded as.
 """
 
 from __future__ import annotations
+
+# Imperative/discourse verbs that introduce response-format instructions rather
+# than geography. This is a grammatical class used only at a separated request
+# preamble boundary; it is not a general content-word denylist.
+DISCOURSE_DIRECTIVE_VERBS = frozenset(
+    """
+    answer describe display emit explain format give list output print provide
+    reply respond return say show state summarize summarise tell translate use write
+    """.split()
+)
+
+# Closed grammatical vocabulary for a separated response-style or prompt-role
+# preamble (``JSON: ...``, ``Answer briefly: ...``, ``System message: ...``).
+# A prefix must be composed entirely from this vocabulary before it can be
+# discarded; a real target such as ``Show West Kelowna: ...`` therefore keeps
+# the name-bearing words and is not mistaken for a pure directive.
+RESPONSE_PREAMBLE_WORDS = frozenset(
+    """
+    a admin all an and as assistant brief briefly bullet bullets compact concise
+    context csv currently developer format french important in instruction
+    instructions json language lowercase machine markdown me message model new no
+    now one only or override plain please previous prior prompt query readable
+    response right schema sentence sentences short strict system table text the
+    tldr to today translation uppercase user using with word words xml yaml yes
+    """.split()
+)
+RESPONSE_PREAMBLE_MARKERS = frozenset(
+    """
+    admin assistant brief briefly bullet bullets compact concise context csv
+    developer format french important instruction instructions json language
+    lowercase machine markdown message model override plain prompt query readable
+    response schema sentence sentences short strict system table text tldr
+    translation uppercase user word words xml yaml
+    """.split()
+)
+
+
+def is_response_preamble(tokens: list[str] | tuple[str, ...]) -> bool:
+    """Return whether a separated prefix is wholly response-control language."""
+
+    normalized = tuple(token.casefold().strip(".'") for token in tokens if token)
+    if not normalized:
+        return False
+    remaining = tuple(token for token in normalized if token not in DISCOURSE_DIRECTIVE_VERBS)
+    if normalized[0] in DISCOURSE_DIRECTIVE_VERBS:
+        return all(token in RESPONSE_PREAMBLE_WORDS for token in remaining)
+    return bool(set(normalized) & RESPONSE_PREAMBLE_MARKERS) and all(
+        token in RESPONSE_PREAMBLE_WORDS for token in normalized
+    )
+
+
+# Spatial anchors are closed grammatical categories shared by span readers.
+STRONG_ANCHORS = frozenset(
+    {"near", "around", "round", "nearby", "outside", "beside", "toward", "towards",
+     "across", "throughout", "arnd", "nr"}
+)  # fmt: skip
+WEAK_ANCHORS = frozenset({"in", "at", "by", "from", "on", "into", "through", "along", "past"})
+CAPITALIZED_ONLY_ANCHORS = frozenset({"to", "of", "for", "nearest", "closest"})
+FOR_PREVIOUS = frozenset(
+    {"records", "record", "report", "reports", "summary", "overview", "picture", "update",
+     "updates", "map", "status", "situation", "conditions", "outlook", "roster", "news",
+     "information", "info", "forecast", "data", "fire", "fires", "wildfire", "wildfires",
+     "incident", "incidents", "perimeter", "perimeters", "evacuation", "evacuations",
+     "alert", "alerts", "order", "orders", "issued", "declared", "lifted", "rescinded",
+     "effect"}
+)  # fmt: skip
+VERB_ANCHORS = frozenset(
+    {"leave", "leaving", "evacuate", "evacuating", "flee", "fleeing", "exit", "visit",
+     "visiting", "reach", "reaching", "enter", "entering", "approach", "approaching",
+     "threaten", "threatening", "hit", "hitting", "affect", "affecting", "meant", "mean"}
+)  # fmt: skip
+SENTENCE_MARKERS = frozenset(
+    {"did", "does", "do", "is", "are", "was", "were", "will", "would", "can", "could",
+     "should", "has", "have", "had"}
+)  # fmt: skip
+STRENGTHENING_PREVIOUS = frozenset(
+    {"close", "closest", "nearest", "next", "north", "south", "east", "west", "outside", "out",
+     "heading", "going", "driving", "travelling", "traveling", "flying", "moving", "relocating",
+     "evacuating", "up", "over", "down", "back", "here", "live", "living", "based", "staying",
+     "located", "visiting", "stuck", "camping", "vacationing", "centre", "center", "focus",
+     "zoom", "map", "records", "record", "report", "reports", "summary", "overview", "picture",
+     "update", "updates", "status", "situation", "conditions", "outlook", "roster", "news",
+     "fire", "fires", "wildfire", "wildfires", "incident", "incidents", "perimeter",
+     "perimeters", "evacuation", "evacuations", "alert", "alerts", "order", "orders", "distance"}
+)  # fmt: skip
+FRONTED_TRAILING_MODIFIERS = frozenset(
+    {"area", "currently", "now", "please", "right", "rn", "today", "tonight"}
+)
+
 
 # Function words end a name span. This is a finite grammatical inventory, not
 # a content blocklist.
@@ -136,4 +225,47 @@ WHOLE_COUNTRY_LABELS = frozenset(
      "the country"}
 )  # fmt: skip
 
-PLACE_ALIASES = {"west k": "West Kelowna"}
+PLACE_ALIASES = {
+    "70 mile house": "70 Mile House",
+    "alert bay": "Alert Bay",
+    "new denver": "New Denver",
+    "new hazelton": "New Hazelton",
+    "new westminster": "New Westminster",
+    "west k": "West Kelowna",
+}
+
+
+def normalize_question(text: str) -> str:
+    """Normalize punctuation and whitespace while preserving place-span offsets."""
+
+    text = text.replace("’", "'").replace("—", " — ").replace("–", " – ")
+    return " ".join(text.split())
+
+
+def stop_key(token: str) -> str:
+    """Reduce possessive and dotted tokens to their closed-vocabulary key."""
+
+    return token.casefold().strip(".'").split("'")[0]
+
+
+def is_stop(token: str) -> bool:
+    """Return whether a token terminates a place-name span."""
+
+    lowered = stop_key(token)
+    return lowered in FUNCTION_WORDS or lowered in DOMAIN_NOUNS or lowered in VERB_ANCHORS
+
+
+def merge_overlapping(
+    communities: list[tuple[str, int, int]],
+) -> list[tuple[str, int, int]]:
+    """Collapse overlapping captures, retaining the longer place span."""
+
+    ordered = sorted(communities, key=lambda item: (item[1], -(item[2] - item[1])))
+    merged: list[tuple[str, int, int]] = []
+    for label, begin, end in ordered:
+        if merged and begin < merged[-1][2]:
+            if end - begin > merged[-1][2] - merged[-1][1]:
+                merged[-1] = (label, begin, end)
+            continue
+        merged.append((label, begin, end))
+    return merged

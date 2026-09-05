@@ -131,6 +131,8 @@ def build_status_banner(response: Any) -> AnswerStatusBanner:
         headline = official_records_headline(response.aggregate_freshness)
     elif mode == "scope_redirect" and reason_value == "live_data_required":
         headline = "Select an official record to continue"
+    elif mode == "scope_redirect" and reason_value == "no_approved_evidence":
+        headline = "Reviewed support not established"
     else:
         headline = _HEADLINES.get(mode, "FireLens response")
     title, url = _escalation(response)
@@ -204,7 +206,7 @@ def _claim_card(response: Any, claim: Any, evidence_by_id: dict[str, Any]) -> Pr
         claim_text=claim.text,
         support_state=state,
         support_label=_SUPPORT_LABELS[state],
-        authority=_authority(trust, evidence, response),
+        authority=_authority(trust, evidence, state),
         exact_passage=support.quote if support is not None else None,
         source_title=evidence.title if evidence is not None else None,
         source_revision=(
@@ -431,6 +433,8 @@ def _banner_detail(response: Any, mode: str) -> str:
             return (
                 "Click a fire on the map or name a British Columbia community, then ask again."
             )
+        if reason_value == "no_approved_evidence":
+            return "FireLens could not establish reviewed source support for this request."
         return "Use the related official service for information FireLens does not ingest live."
     if response.answer:
         return _clip(str(response.answer), 500)
@@ -458,7 +462,13 @@ def _availability_label(response: Any) -> str:
         return f"Unavailable layers: {names}. That is not an all-clear."
     if response.status == "error" or _mode(response) == "abstention":
         return "This request did not complete with established sources."
-    return "Sources required for this request were available."
+    if _mode(response) == "background":
+        return "Reviewed source support not established; general model knowledge only."
+    if response.evidence or response.live_results:
+        return "Sources for the displayed evidence or official records were available."
+    if response.requested_layers and _mode(response) in {"live", "mixed"}:
+        return "Official sources returned no matching records; this is not an all-clear."
+    return "Source availability was not established for this request."
 
 
 def _escalation(response: Any) -> tuple[str | None, HttpUrl | None]:
@@ -487,14 +497,14 @@ def _support_state(response: Any, claim: Any) -> SupportState:
     return _publication_support_state(claim)
 
 
-def _authority(trust: Any, evidence: Any, response: Any) -> str:
+def _authority(trust: Any, evidence: Any, state: SupportState) -> str:
+    if state == "background":
+        return "General model knowledge"
     if trust is not None and trust.source_authority:
         return str(trust.source_authority)
     if evidence is not None:
         return str(evidence.publisher)
-    if response.live_results:
-        return str(response.live_results[0].authority)
-    return "FireLens reviewed sources"
+    return "Source authority not established"
 
 
 def _review_state(trust: Any, evidence: Any) -> str:

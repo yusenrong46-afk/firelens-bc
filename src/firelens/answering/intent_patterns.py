@@ -5,6 +5,10 @@ from __future__ import annotations
 import re
 
 _PROHIBITED_PATTERNS = (
+    r"\b(?:threaten(?:s|ed|ing)?|endanger(?:s|ed|ing)?|pose\s+a\s+threat\s+to)\s+"
+    r"(?:my|our)\s+(?:house|home|property|family|household|children|parents)\b",
+    r"\b(?:my|our)\s+(?:house|home|property|family|household)\b.{0,50}"
+    r"\b(?:at\s+risk|in\s+danger|threatened)\b",
     r"\b(safest|best)\s+(?:(?:evacuation|escape)\s+)?(road|route|way|highway)\b",
     r"\bwhich\s+(road|route)\s+should\s+(?:i|we)\s+take\b",
     r"\bwhat\s+(?:road|route|way|highway)\s+should\s+"

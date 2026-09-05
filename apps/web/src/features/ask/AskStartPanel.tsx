@@ -35,7 +35,7 @@ function isGuidedQuestionCatalogue(value: unknown): value is { categories: Guide
           && entry.label.trim().length > 0
           && typeof entry.question === "string"
           && entry.question.trim().length > 0
-          && ["none", "optional", "required"].includes(entry.location_mode as string)
+            && ["none", "required"].includes(entry.location_mode as string)
           && ["official_live", "reviewed_guidance", "official_quote"].includes(entry.source_lane as string);
         if (questionValid) questionIds.push(entry.id as string);
         return questionValid;
@@ -46,10 +46,10 @@ function isGuidedQuestionCatalogue(value: unknown): value is { categories: Guide
 }
 
 const STARTER_QUESTIONS = [
-  "Where is the wildfire near Kelowna?",
-  "Are there evacuation orders near Kamloops?",
-  "How many fires are burning in B.C. right now?",
-  "What should I pack in an evacuation kit?",
+  { label: "Fires near Kelowna", question: "Where is the wildfire near Kelowna?" },
+  { label: "Evacuation orders near Kamloops", question: "Are there evacuation orders near Kamloops?" },
+  { label: "Fires across B.C.", question: "How many fires are burning in B.C. right now?" },
+  { label: "What to pack", question: "What should I pack in an evacuation kit?" },
 ];
 
 export function AskStartPanel({
@@ -148,7 +148,7 @@ export function AskStartPanel({
     emitProductEvent("guided_question_selected");
     const expandedQuestion = expandPlace(question, locationLabel);
     onSelectQuestion(expandedQuestion);
-    setAnnouncement(`Filled composer with: ${expandedQuestion}`);
+    setAnnouncement(`Asking: ${expandedQuestion}`);
     setOpen(false);
     setSearch("");
     setCategoryId("all");
@@ -169,9 +169,9 @@ export function AskStartPanel({
         <p>Ask in your own words. FireLens answers from official BC Wildfire Service and EmergencyInfoBC records and reviewed guidance, and shows where each answer comes from.</p>
         {composer}
         <ul className="ask-start-panel__starters" aria-label="Example questions">
-          {STARTER_QUESTIONS.map((question) => (
-            <li key={question}>
-              <button type="button" onClick={() => onSelectQuestion(question)}>{question}</button>
+          {STARTER_QUESTIONS.map((starter) => (
+            <li key={starter.question}>
+              <button type="button" onClick={() => onSelectQuestion(starter.question)}>{starter.label}</button>
             </li>
           ))}
         </ul>

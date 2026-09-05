@@ -92,6 +92,11 @@ def _origin(request: QueryRequest, reference_place: str | None) -> str:
 
 def _distance_sentence(record: LiveResult, name: str, origin: str) -> str:
     if record.distance_km is None:
+        if record.geometry:
+            return (
+                f"The official record for {name} has a mapped position, but a distance "
+                "has not been calculated for this request."
+            )
         return (
             f"The official record for {name} has no mappable position, so FireLens cannot "
             "measure a distance to it."

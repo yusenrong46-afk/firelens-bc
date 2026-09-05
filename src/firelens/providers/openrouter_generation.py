@@ -12,6 +12,11 @@ def model_id(config: FireLensConfig) -> str:
     return config.generation_model.split(":", maxsplit=1)[0]
 
 
+def completion_parameters(config: FireLensConfig, ceiling: int) -> dict[str, int]:
+    key = "max_completion_tokens" if model_id(config) == "openai/gpt-5.6-luna" else "max_tokens"
+    return {key: ceiling}
+
+
 def sampling_parameters(config: FireLensConfig) -> dict[str, float]:
     if model_id(config) == "openai/gpt-5.6-luna":
         return {}

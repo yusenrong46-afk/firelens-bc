@@ -1117,7 +1117,7 @@ describe("FireLens Source Lens", () => {
 
     expect(await screen.findByText("One detail needed")).toBeInTheDocument();
     expect(screen.getByLabelText("BC community for this question")).toHaveFocus();
-    expect(screen.getByText("Use the community field above to continue this task. Type here only to start a new question.")).toBeInTheDocument();
+    expect(screen.getByText("Use the community field in the answer to continue this task. Type here only to start a new question.")).toBeInTheDocument();
     await user.type(screen.getByLabelText("BC community for this question"), "Vancouver");
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect((await screen.findAllByText(/approximately 42.3 km/)).length).toBeGreaterThan(0);

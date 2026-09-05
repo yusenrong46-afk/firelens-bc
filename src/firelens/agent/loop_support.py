@@ -12,8 +12,8 @@ from firelens.agent.query_plan import AgentQueryPlan, AgentRequestMode
 from firelens.agent.rails import execution_allowed
 from firelens.agent.runtime_tools import execute_tool
 from firelens.agent.tools import AgentTool
-from firelens.answering.live_distance import location_request
-from firelens.contracts import AskResponse, QueryRequest, QueryRoute
+from firelens.answering.intent_conversation import is_significance_followup
+from firelens.contracts import AskResponse, QueryRequest, QueryRoute, ReasonCode, ResponseMode
 from firelens.live_answering import LiveAnswerCoordinator
 
 
@@ -40,6 +40,21 @@ def skip_owned_model_write(query_plan: AgentQueryPlan, packet: AgentPacket) -> b
     return skip
 
 
+def terminal_significance_gap(request: QueryRequest, packet: AgentPacket) -> AskResponse | None:
+    """A reviewed rationale gap is terminal; a model cannot supply its explanation."""
+
+    static = packet.static_response
+    if (
+        is_significance_followup(request.question)
+        and not packet.live_results
+        and static is not None
+        and static.response_mode == ResponseMode.ABSTENTION
+        and static.reason_code == ReasonCode.NO_APPROVED_EVIDENCE
+    ):
+        return static
+    return None
+
+
 def accepted_reviewed_publication(packet: AgentPacket) -> bool:
     """Return whether the packet can render reviewed guidance without model prose."""
 
@@ -52,18 +67,6 @@ def accepted_reviewed_publication(packet: AgentPacket) -> bool:
         and static.validation is not None
         and static.validation.accepted
     )
-
-
-def missing_location_result(
-    request: QueryRequest, packet: AgentPacket
-) -> tuple[AskResponse, QueryRoute, tuple[AgentTool, ...], AgentPacket]:
-    packet.policy.route = "missing_location"
-    tool = (
-        AgentTool.GET_OFFICIAL_FIRE
-        if request.context.selected_live_result_id
-        else AgentTool.LIST_OFFICIAL_FIRES
-    )
-    return location_request(request), QueryRoute.LIVE, (tool,), packet
 
 
 def pure_static_ready(packet: AgentPacket) -> bool:

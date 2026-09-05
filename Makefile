@@ -2,7 +2,7 @@ PYTHON := .venv/bin/python
 FIRELENS := .venv/bin/firelens
 FRONTEND := apps/web
 
-.PHONY: setup check verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review retrieval-review-packet retrieval-review-template qualify-retrieval-review qualify-retrieval-v1-5 qualify-live-v1-5 capture-live-slo verify-live-slo prepare-firewall model-bakeoff canary live-smoke openapi secret-scan productbench-deterministic productbench-offline productbench-provider source-aware-conversation v1-6-baseline v1-6-gate v1-6-report v1-6-package-verify v1-6-round2-baseline claimbench-v2 v1-6-hard-probe v1-6-performance v1-6-pre-release-performance v1-6-retrieval-dry-run v1-6-round2-gate v1-6-round2-report v1-6-round3-eval v1-6-round3-report typed-claim-review-export v1-6-structured-publication-eval vercel-preview vercel-production
+.PHONY: setup check docs-check verify run benchmark benchmark-v1-red-team benchmark-live benchmark-retrieval benchmark-retrieval-v1-5 benchmark-contextual benchmark-v1-1-zero-cost benchmark-v1-1-paid owner-review-template qualify-owner-review retrieval-review-packet retrieval-review-template qualify-retrieval-review qualify-retrieval-v1-5 qualify-live-v1-5 capture-live-slo verify-live-slo prepare-firewall model-bakeoff canary live-smoke openapi secret-scan productbench-deterministic productbench-offline productbench-provider source-aware-conversation v1-6-baseline v1-6-gate v1-6-report v1-6-package-verify v1-6-round2-baseline claimbench-v2 v1-6-hard-probe v1-6-performance v1-6-pre-release-performance v1-6-retrieval-dry-run v1-6-round2-gate v1-6-round2-report v1-6-round3-eval v1-6-round3-report typed-claim-review-export v1-6-structured-publication-eval vercel-preview vercel-production
 
 setup:
 	@test -d .venv || python3 -m venv .venv
@@ -18,7 +18,14 @@ openapi:
 secret-scan:
 	$(PYTHON) scripts/secret_scan.py
 
-check: secret-scan openapi
+docs-check:
+	$(PYTHON) scripts/firelens_agent/docs_drift.py
+	PYTHONPATH=src:tests $(PYTHON) -m pytest -q \
+		tests/test_documentation_consistency.py \
+		tests/test_docs_integrity.py \
+		tests/test_firelens_map.py
+
+check: secret-scan openapi docs-check
 	$(PYTHON) -m ruff check src tests scripts
 	$(PYTHON) -m ruff format --check src tests scripts
 	$(PYTHON) -m mypy
@@ -149,7 +156,8 @@ claimbench-v2:
 	$(PYTHON) scripts/claimbench_v2.py evaluate
 
 v1-6-hard-probe:
-	$(PYTHON) scripts/run_hard_probe.py --mode offline --output output/benchmark/v1_6_round2/hard_probe.json
+	$(PYTHON) scripts/run_hard_probe.py --mode offline --expectation-profile rc2.2 \
+		--output output/benchmark/v1_6_round2/hard_probe.json
 
 v1-6-performance:
 	$(PYTHON) scripts/v1_6_round2_performance.py
@@ -186,3 +194,9 @@ vercel-preview:
 
 vercel-production:
 	$(PYTHON) scripts/deploy_vercel.py --prod
+
+# Mandatory additional local candidate lane for the bounded repair handoff.
+# Draft interaction contracts await owner approval; frozen fullstack.spec.ts stays separate.
+.PHONY: verify-candidate-browser
+verify-candidate-browser:
+	cd apps/web && npm exec -- playwright test --config=playwright.real.config.ts astra.spec.ts review-v2.spec.ts

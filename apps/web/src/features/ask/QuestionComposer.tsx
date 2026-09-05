@@ -1,4 +1,4 @@
-import { Info, PaperPlaneTilt } from "@phosphor-icons/react";
+import { ArrowRight, Info, MagnifyingGlass } from "@phosphor-icons/react";
 import type { FormEvent, RefObject } from "react";
 
 export function QuestionComposer({
@@ -21,6 +21,7 @@ export function QuestionComposer({
   return (
     <form className={`composer ${idle ? "composer--idle" : ""}`} onSubmit={onSubmit}>
       <div className="composer-input">
+        <MagnifyingGlass size={22} aria-hidden="true" />
         <input
           ref={inputRef}
           aria-label="Ask FireLens a question"
@@ -28,16 +29,16 @@ export function QuestionComposer({
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder={continuationPending
             ? "Ask a new question…"
-            : "Ask about a fire, a B.C. place, or preparedness…"}
+            : "Ask about B.C. wildfires…"}
           maxLength={2000}
           disabled={loading}
         />
         <button type="submit" disabled={!query.trim() || loading} aria-label="Send question">
-          <PaperPlaneTilt size={20} weight="fill" />
+          <ArrowRight size={22} />
         </button>
       </div>
       {continuationPending && (
-        <p><Info size={16} /> Use the community field above to continue this task. Type here only to start a new question.</p>
+        <p><Info size={16} /> Use the community field in the answer to continue this task. Type here only to start a new question.</p>
       )}
     </form>
   );

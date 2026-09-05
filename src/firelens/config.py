@@ -66,6 +66,7 @@ class FireLensConfig(BaseModel):
     retrieval_text_strategy: RetrievalTextStrategy = RetrievalTextStrategy.METADATA_CONTEXT_V1
     rerank_model: str = "cohere/rerank-4-pro"
     generation_model: str = "openai/gpt-5.6-luna"
+    generation_provider_only: tuple[str, ...] = ()
     generation_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
     bm25_top_k: int = Field(default=30, gt=0)
     vector_top_k: int = Field(default=30, gt=0)
@@ -180,6 +181,11 @@ class FireLensConfig(BaseModel):
             ),
             rerank_model=(setting("FIRELENS_RERANK_MODEL") or "cohere/rerank-4-pro"),
             generation_model=(setting("FIRELENS_GENERATION_MODEL") or "openai/gpt-5.6-luna"),
+            generation_provider_only=tuple(
+                endpoint.strip()
+                for endpoint in (setting("FIRELENS_GENERATION_PROVIDER_ONLY") or "").split(",")
+                if endpoint.strip()
+            ),
             retrieval_text_strategy=RetrievalTextStrategy(
                 setting("FIRELENS_RETRIEVAL_TEXT_STRATEGY")
                 or RetrievalTextStrategy.METADATA_CONTEXT_V1

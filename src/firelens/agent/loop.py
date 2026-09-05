@@ -25,15 +25,15 @@ from firelens.agent.fallback_brain import (
 from firelens.agent.loop_support import (
     assign_route,
     assistant_tool_request,
-    missing_location_result,
     pure_static_ready,
     route_for,
     safe_execute,
     skip_owned_model_write,
+    terminal_significance_gap,
     tools_used,
 )
 from firelens.agent.packet import AgentPacket
-from firelens.agent.prefetch import needs_location, prefetch_evidence, resolve_place
+from firelens.agent.prefetch import prefetch_evidence, resolve_place
 from firelens.agent.prompts import OPENROUTER_TOOLS, SYSTEM_PROMPT
 from firelens.agent.query_plan import AgentQueryPlan
 from firelens.agent.rails import execution_allowed, output_rail_errors
@@ -123,8 +123,7 @@ async def run_agent_loop(
             (),
             packet,
         )
-    if needs_location(request):
-        return missing_location_result(request, packet)
+    # The server-built plan already resolves location or returns a terminal prompt.
     if is_unbound_distance_request(request):
         packet.policy.route = "deterministic_redirect"
         return (
@@ -134,6 +133,9 @@ async def run_agent_loop(
             packet,
         )
     await prefetch_evidence(request, live_coordinator, static_service, packet, query_plan)
+    if (gap := terminal_significance_gap(request, packet)) is not None:
+        packet.policy.route = "deterministic_redirect"
+        return gap, QueryRoute.RELATED, tools_used(packet), packet
     request = request_with_selected(request, packet)
     skip_provider = skip_owned_model_write(query_plan, packet)
     if provider is None or skip_provider:

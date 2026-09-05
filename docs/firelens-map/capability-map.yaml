@@ -1,0 +1,34 @@
+authority_note: "These are engineering navigation contracts, not qualification or release evidence."
+capabilities:
+  -
+    endpoint: "POST /api/v1/ask"
+    fallback: "labelled Tier-C background, exact quote, handoff, or abstention"
+    id: "reviewed_guidance"
+    owner: "static_rag"
+  -
+    endpoint: "POST /api/v1/ask"
+    fallback: "typed unavailable or official handoff"
+    id: "current_official_records"
+    owner: "official_live"
+  -
+    endpoint: "POST /api/v1/live/nearby"
+    fallback: "typed location or upstream failure"
+    id: "nearby_official_records"
+    owner: "location_resolution"
+  -
+    endpoint: "GET /api/v1/live/map"
+    fallback: "record list remains usable when tiles fail"
+    id: "official_map"
+    owner: "official_live"
+  -
+    endpoint: "POST /api/v1/ask"
+    fallback: "fail closed to unknown support"
+    id: "proof_cards"
+    owner: "proof_presentation"
+  -
+    endpoint: "GET /api/v1/guided-questions"
+    fallback: "client retry without inferred capability"
+    id: "guided_questions"
+    owner: "http_api"
+schema_version: "firelens.capability_map.v1"
+source_digest: "f1eeeb6a00ca3b484de0192db5b7291eeff1956f96887b1756d8b29865972d74"

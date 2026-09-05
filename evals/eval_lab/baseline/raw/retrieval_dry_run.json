@@ -1,0 +1,34 @@
+{
+  "adaptive_default": false,
+  "approved_ceiling_usd": 0.0,
+  "cost_estimate": {
+    "development_cases": 50,
+    "embed_usd_per_million_tokens": 0.02,
+    "estimated_maximum_usd": 14.4072,
+    "max_embedding_calls": 600,
+    "max_queries_per_strategy": 6,
+    "max_rerank_calls": 600,
+    "rerank_usd_per_call": 0.02,
+    "strategies": 2
+  },
+  "default_strategy": "baseline",
+  "development_case_count": 50,
+  "evidence_class": "BLOCKED",
+  "h4_decision": "keep_experimental_disabled",
+  "metric_self_check": {
+    "ranking_metrics": "import_ok"
+  },
+  "mode": "dry_run",
+  "note": "FakeProvider ranking is not H4 evidence. Promote adaptive_v1 only after paired development thresholds, H8, and sealed 46/47 x3 on an unchanged candidate.",
+  "paid_authorized": false,
+  "paid_command": "FIRELENS_PAID_RETRIEVAL_BENCHMARK_AUTHORIZED=1 FIRELENS_MAX_RETRIEVAL_BENCHMARK_USD=14.4072 .venv/bin/python scripts/v1_6_round2_retrieval.py --paid",
+  "pairing": {
+    "baseline": "baseline",
+    "candidate": "adaptive_v1",
+    "same_corpus": true
+  },
+  "provider_metrics": "BLOCKED",
+  "schema_version": "firelens_v1_6_round2_retrieval.v1",
+  "sealed_labels_inspected": false,
+  "would_exceed_ceiling": false
+}

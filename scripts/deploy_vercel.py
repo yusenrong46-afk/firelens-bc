@@ -60,7 +60,9 @@ def resolve_local_commit(root: Path) -> str:
     return stripped
 
 
-def build_vercel_command(*, commit: str, production: bool) -> list[str]:
+def build_vercel_command(
+    *, commit: str, production: bool, generation_provider_only: str | None = None
+) -> list[str]:
     commit_env = f"FIRELENS_BUILD_COMMIT={commit}"
     release_env = f"FIRELENS_RELEASE_VERSION={DEFAULT_RELEASE_VERSION}"
     benchmark_env = f"FIRELENS_BENCHMARK_ID={CURRENT_BENCHMARK_ID}"
@@ -82,14 +84,23 @@ def build_vercel_command(*, commit: str, production: bool) -> list[str]:
         "--env",
         benchmark_env,
     ]
+    if generation_provider_only is not None:
+        routing_env = f"FIRELENS_GENERATION_PROVIDER_ONLY={generation_provider_only}"
+        command.extend(["--build-env", routing_env, "--env", routing_env])
     if production:
         command.append("--prod")
     return command
 
 
-def prepare_deploy_command(root: Path, *, production: bool) -> list[str]:
+def prepare_deploy_command(
+    root: Path, *, production: bool, generation_provider_only: str | None = None
+) -> list[str]:
     require_clean_tree(root)
-    return build_vercel_command(commit=resolve_local_commit(root), production=production)
+    return build_vercel_command(
+        commit=resolve_local_commit(root),
+        production=production,
+        generation_provider_only=generation_provider_only,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -104,10 +115,19 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="print the pinned command without invoking Vercel",
     )
+    parser.add_argument(
+        "--generation-provider-only",
+        default=None,
+        help="optional generation endpoint allowlist for this deployment",
+    )
     parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args(argv)
     try:
-        command = prepare_deploy_command(args.root, production=args.prod)
+        command = prepare_deploy_command(
+            args.root,
+            production=args.prod,
+            generation_provider_only=args.generation_provider_only,
+        )
     except DeployIdentityError as exc:
         print(str(exc), file=sys.stderr)
         return 2

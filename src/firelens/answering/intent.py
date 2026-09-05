@@ -25,6 +25,7 @@ from firelens.answering.intent_conversation import (
     explicit_corpus_attribution,
     focused_question,
     is_packing_exclusion_question,
+    is_significance_followup,
     is_true_deictic_followup,
     prefers_general_background,
     prior_anchor_user_question,
@@ -52,7 +53,7 @@ from firelens.answering.location_intent import (
     coarse_location_from_question,
     is_province_wide_question,
 )
-from firelens.answering.request_facets import contents_request_facet
+from firelens.answering.request_facets import contents_request_facet, significance_subject
 from firelens.answering.request_grammar import parse_request_facets
 from firelens.answering.return_intent import reviewed_return_condition_intent
 from firelens.answering.static_guidance_subject import static_guidance_retrieval_query
@@ -169,8 +170,8 @@ def _requires_personal_live_location(question: str) -> bool:
         return False
     return bool(
         re.search(
-            r"\b(?:fires?|wildfires?|burning|map|perimeter|evacuation|alert|order|"
-            r"closest|nearest)\b",
+            r"\b(?:fires?|wildfires?|burning|map|perimeter|evacuations?|alerts?|orders?|"
+            r"closest|nearest|distance|far|close)\b",
             lowered,
         )
     )
@@ -259,6 +260,22 @@ def plan_query(request: QueryRequest, *, allow_live: bool = True) -> QueryPlan:
 
     question = request.question
     processing_question = focused_question(question)
+    if (
+        is_significance_followup(processing_question)
+        and significance_subject(processing_question) is None
+    ):
+        prior = prior_anchor_user_question(request)
+        if prior is not None:
+            # Reuse the existing boundary owner on the prior user request,
+            # without treating assistant prose as instructions or evidence.
+            prior_plan = plan_query(QueryRequest(question=prior), allow_live=False)
+            if prior_plan.route == QueryRoute.PROHIBITED:
+                return prior_plan.model_copy(
+                    update={
+                        "original_question": question,
+                        "normalized_question": processing_question,
+                    }
+                )
     parsed_intent = parse_request_intent(processing_question)
     lowered = processing_question.lower()
     routing_texts = _routing_texts(request)

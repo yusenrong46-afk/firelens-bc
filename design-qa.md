@@ -1,50 +1,71 @@
-# FireLens V1.6.2 launch-fidelity design QA
+# Pacific Operations central-page design QA
 
-## Target and implementation
+Source visual truth: `private retained evidence: firelens-external-qualification-7c43d17/ui-reference-pacific-operations/REFERENCE.png`.
+Implementation: same campaign `ui-central-redesign/final-reference.png`.
+Both are 1672x941 pixels, CSS viewport 1672x941, deviceScaleFactor 1, light theme,
+nearby-answer state. The source is illustrative; implementation uses two synthetic
+records, exact backend prose and real OSM tiles. Values and incident images are not
+copied from the mock. There is no density rescaling in the full comparison.
 
-- Target: `/var/folders/4_/8z1gcr8s12q1hmbll3g4j70r0000gn/T/codex-clipboard-9a15cffd-7f8f-4ce3-8014-226b06125bf7.png`
-- Implementation: `output/ui-qa/launch-fidelity/03-local-redesign.png`
-- Same-viewport comparison: `output/ui-qa/launch-fidelity/04-reference-vs-local.png`
-- Density-redesign comparison: `output/ui-qa/density-redesign/analysis-side-by-side.png`
-- Redesigned start, desktop: `output/ui-qa/density-redesign/start-desktop-1488x1058.png`
-- Redesigned analysis, desktop: `output/ui-qa/density-redesign/analysis-desktop-1488x1058.png`
-- Redesigned start, mobile: `output/ui-qa/density-redesign/start-mobile-390x844.png`
-- Redesigned analysis, mobile: `output/ui-qa/density-redesign/analysis-mobile-390x844.png`
-- Comparison viewport: `1488 x 1058`
+## Findings and comparison history
 
-## Review
+1. Reopened baseline `ui-rebuild/reference-dbe924d-ready.png` after the owner rejected
+   the first UI. P1: a whole serif paragraph, one giant conversation card, uneven
+   tall record blocks and oversized source panel changed the intended hierarchy.
+2. `iteration-1.png`: separate panels and shared rows corrected that structure.
+   P2: answer feedback/routine notes and repeated source metadata still consumed
+   too much vertical space. Answer 401px; source panel 426px.
+3. `iteration-2.png`: moved feedback into the routine-note footer and map action
+   into the record heading. P2: additional-source actions still extended the source
+   card below the fold. Consolidated these into one footer row.
+4. `iteration-3.png` and `final-reference.png`: answer 341px, source panel 330px;
+   central x234/width851 and map x1109/width539 match the reference's major tracks.
+   Full source and candidate were opened together in each comparison. Focused
+   `reference-center.png` / `final-center.png` crops were also opened together:
+   both 850x800 at original density, extracted from x234/y104. These confirm
+   headline/body contrast, row consistency, source labels and follow-up spacing.
+5. Independent review identified hidden partial coverage, numeric rounding and an
+   accessible-label mismatch. All corrected. The partial warning stays visible,
+   exact numeric sizes remain unchanged, and the accessible map name starts with
+   the visible label. The separate mobile navigation issue is documented in
+   `MOBILE_MAP_FAILURE.md`; explicit navigation now brings the map into view.
 
-- Preserved the reference's dark civic-intelligence shell, warm analytical canvas, compact answer rail, mono data labels, tabbed analysis, paired charts, ranked table, and bottom evidence rail.
-- Removed the large redundant analysis heading, KPI strip, and summary filters from the first viewport.
-- Added a deterministic key takeaway using only returned official records.
-- Kept filters and sorting in the Records view, where they remain available without crowding the overview.
-- Replaced repeated analysis disclosures with compact Limits, Sources, and Method controls.
-- Retained an honest current-snapshot contract. Historical deltas in the target were not copied because V1.6.2 does not have a bound historical incident store.
-- Desktop and mobile browser suites cover tabs, map, records, narrow viewports, keyboard flow, reduced motion, and real-stack rendering.
+## Required fidelity surfaces
 
-## Density redesign rounds
+- Typography: bundled Newsreader is limited to the opening headline per the
+  written contract; Inter owns body, rows, metadata and controls. The old entire
+  serif paragraph is removed. Backend text, linked Markdown and quotes remain intact.
+- Layout/rhythm: distinct answer/results surfaces, 20-24px gaps, 16px panel corners,
+  shared compact record rows and matched desktop tracks. Mobile uses document flow,
+  a visible current-question label, reachable source/map and full-width controls.
+- Tokens: Pacific navy, teal, off-white page and white panels; restrained borders.
+  Status colors follow existing status mappings. No invented green live state.
+- Assets: existing mark/landscape retained; library icons replace photo slots as
+  the written truth contract permits. No fabricated incident photo or drawn map.
+  Actual OSM tiles/attribution replace the mock's illustrated terrain.
+- Copy: source-backed record fields and unmodified answer text. No fake weather,
+  profile, account, notification or unsupported navigation. Routine notes collapse;
+  material limits, unavailability and partial coverage remain visible.
 
-### Round 1
+The answer retains a full safety qualification and feedback, making it ~70px taller
+than the illustrative answer. Two returned fixture rows replace three illustrative rows.
+Fetch timestamps and scoped freshness add source detail. These are explicit content
+constraints, not hidden visual defects. The design is closer in hierarchy and
+proportion; this report does not claim pixel identity or owner acceptance.
 
-- Finding: the idle screen was a large generic white card with an oversized headline, loose empty space, pill-like starters, and no relationship to the selected Civic Intelligence Desk direction.
-- Finding: the analytical answer rail consumed too much width, while the right canvas compressed the charts, legend, ranked table, and controls.
-- Finding: the chart/table switch visually collided with the Summary/Map/Records tabs at 390px.
-- Repair: rebuilt the idle state as a dark field brief plus warm query console, using the existing brand, Phosphor icons, square controls, one-pixel rules, and shorter copy.
-- Repair: narrowed the desktop answer rail to 340–380px, increased canvas padding and chart/table separation, and stacked paired charts at 1320px rather than squeezing them.
-- Repair: moved the mobile chart/table switch onto its own row and preserved explicit accessible names for starter actions.
+Responsive source: `ui-central-redesign/browser-verified`, covering 1536/1440/1366/
+1024/768/390/320px plus active empty/partial states. Built browser tests check selected
+record coherence, source actions, keyboard navigation, Home and local lazy assets.
+Inspected selected-answer axe checks: zero violations at 1536 and 390px. Browser
+page exceptions and failed local asset responses: zero in the viewport matrix.
+External tiles are deliberately blocked in that matrix, visibly reported as failed.
+The separate final-reference capture records no page exceptions with OSM permitted.
 
-### Round 2
+## Follow-up polish and limits
 
-- Desktop comparison at 1488 × 1058 confirms the reference hierarchy: dark evidence rail, warm analytical canvas, mono data controls, paired charts, ranked table, and restrained ember/olive accents.
-- Mobile checks at 390 × 844 show zero page overflow and no collisions between the two tab groups. The wide ranked table remains intentionally horizontally scrollable as its keyboard-accessible data equivalent.
-- The start screen now fits its content instead of filling the viewport with an empty card. The composer remains separate and visible.
-- Historical change charts remain absent because the current response contract contains one bounded snapshot only.
-- Component, tooling, Sites, production-build, desktop Playwright, and mobile Playwright checks pass. The only Playwright skip is the expected desktop-only map-popup lifecycle case on mobile.
-
-## Residual differences
-
-- The target's historical-change panel and history-derived wording are intentionally absent.
-- Counts and labels depend on the returned official-record fixture or live response rather than the static target image.
-- The existing FireLens brand asset is preserved instead of replacing it with an untracked decorative approximation.
+Native 200% browser zoom and human screen-reader assessment are unverified; the
+existing 640px zoom proxy is not native zoom. Local synthetic data is not external
+qualification, live latency or deployed-preview evidence. No further actionable
+P0/P1/P2 visual findings remain in the compared, written-contract scope.
 
 final result: passed

@@ -122,15 +122,15 @@ class OpenRouterProvider:
     def _provider_preferences(self, stage: ProviderStage) -> dict[str, Any]:
         """Return stage privacy prefs, omitting Luna chat `require_parameters`.
 
-        OpenRouter ZDR chat endpoints for `openai/gpt-5.6-luna` return HTTP 404
-        "no endpoints matching your data policy" when `provider.zdr=true` is
-        combined with `require_parameters=true`. Embedding still sends it.
-        `data_collection=deny` and generation ZDR stay required.
+        Luna ZDR chat returns HTTP 404 with `require_parameters=true`;
+        embedding still sends it. Data collection deny and generation ZDR remain.
         """
 
         preferences = dict(self.config.privacy.provider_preferences(stage))
         if stage in CHAT_STAGES and self._generation_model_id() == "openai/gpt-5.6-luna":
             preferences.pop("require_parameters", None)
+        if stage in CHAT_STAGES and self.config.generation_provider_only:
+            preferences["only"] = list(self.config.generation_provider_only)
         return preferences
 
     def _generation_sampling_parameters(self) -> dict[str, float]:
@@ -629,7 +629,7 @@ class OpenRouterProvider:
             "model": self.config.generation_model,
             "messages": list(messages),
             "stream": False,
-            "max_tokens": 1_200,
+            **openrouter_generation.completion_parameters(self.config, 1_200),
             **self._generation_sampling_parameters(),
             "provider": self._provider_preferences("grounded_generation"),
         }

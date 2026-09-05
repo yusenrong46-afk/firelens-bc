@@ -7,6 +7,22 @@ import type { AskResponse } from "../src/shared/api/api";
 afterEach(cleanup);
 
 describe("answer Markdown", () => {
+  it("uses the original opening sentence as the headline without changing numbers or the remaining text", () => {
+    const answer = "BC Wildfire Service lists 2 fires near Kelowna. The closest is 5.5 km away. This is not a safety assessment.";
+    const { container } = render(<AnswerMarkdown emphasizeOpening>{answer}</AnswerMarkdown>);
+    expect(screen.getByRole("heading", { name: "BC Wildfire Service lists 2 fires near Kelowna." })).toBeInTheDocument();
+    expect(container.textContent).toBe(answer);
+    expect(container.querySelector("p")?.textContent).toBe("The closest is 5.5 km away. This is not a safety assessment.");
+  });
+
+  it("keeps source links and exact quote Markdown intact instead of splitting their content", () => {
+    const answer = 'See [BC Wildfire Service](https://example.test/source). Read its latest updates.\n\n> Exact official source wording.';
+    const { container } = render(<AnswerMarkdown emphasizeOpening>{answer}</AnswerMarkdown>);
+    expect(screen.getByRole("link", { name: "BC Wildfire Service" })).toHaveAttribute("href", "https://example.test/source");
+    expect(container.querySelector(".answer-opening")).toBeNull();
+    expect(container.querySelector("blockquote")?.textContent).toBe("\nExact official source wording.\n");
+  });
+
   it("renders the API answer through the Markdown surface", () => {
     const response = {
       status: "answer",

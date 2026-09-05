@@ -334,6 +334,12 @@ def test_synthetic_geospatial_corpus() -> None:
     assert "latitude_longitude_reversal" in geometry_integrity_errors(reversed_point)
     assert distance_to_geometry_km(reversed_point, latitude=49.9, longitude=-119.5) is None
     assert "out_of_range_coordinate" in geometry_integrity_errors(out_of_range)
+    assert "malformed_coordinate" in geometry_integrity_errors(
+        {"type": "Point", "coordinates": [-123.0, "bad"]}
+    )
+    assert "malformed_coordinate" in geometry_integrity_errors(
+        {"type": "Point", "coordinates": [True, 49.0]}
+    )
 
 
 @given(
@@ -462,6 +468,11 @@ def test_naive_and_missing_timezone_observation_timestamps_are_dropped() -> None
     aware = timestamp("2026-08-25T12:00:00+00:00")
     assert aware is not None
     assert aware.tzinfo is not None
+    assert timestamp(True) is None
+    assert timestamp(False) is None
+    assert timestamp(float("inf")) is None
+    assert timestamp(10**1000) is None
+    assert timestamp(-1) is None
     with pytest.raises(ValidationError, match="timezone-aware"):
         LiveResult(
             result_id="incident:naive",
@@ -1139,6 +1150,8 @@ def test_same_name_different_ids_are_not_merged() -> None:
             kind = _kind_from_url(request)
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(kind))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 2})
             return httpx.Response(
                 200,
                 json={
@@ -1188,6 +1201,8 @@ def test_stable_source_identifier_survives_rename() -> None:
             kind = _kind_from_url(request)
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(kind))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 1})
             return httpx.Response(
                 200,
                 json={
@@ -1719,6 +1734,8 @@ def test_live_service_quarantines_future_feature_time_without_calling_it_fresh()
             kind = _kind_from_url(request)
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(kind, updated=1_760_000_000_000))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 1})
             return httpx.Response(
                 200,
                 json={

@@ -22,7 +22,7 @@ from firelens.answering.live_analysis import (
     official_display_name,
 )
 from firelens.answering.live_composition import supported_static_when_live_missing
-from firelens.answering.live_distance import distance_answer
+from firelens.answering.live_distance import distance_answer, location_request
 from firelens.answering.live_listing import listing_place
 from firelens.answering.live_named_fire import (
     extracted_located_fire_name,
@@ -39,6 +39,7 @@ from firelens.answering.live_response_support import (
     official_sources_checked,
     records_section_heading,
 )
+from firelens.answering.location_intent import coarse_location_from_question
 from firelens.answering.registered_suggestions import registered_suggestions
 from firelens.contract_composition import canonical_live_or_mixed_answer
 from firelens.contracts import (
@@ -443,6 +444,21 @@ def _build_ask_response(
         )
     if _missing_selected(request, packet):
         return no_substitute_response(request, packet)
+    if is_distance_request(request) and request.location is None:
+        selected = next(
+            (
+                item
+                for item in live
+                if item.result_id == request.context.selected_live_result_id
+            ),
+            None,
+        )
+        if (
+            selected is not None
+            and selected.distance_km is None
+            and coarse_location_from_question(request.question) is None
+        ):
+            return location_request(request)
     if not live and static is None and not links:
         if "unresolved_place" in packet.unknown_topics:
             return _unresolved_place_response(request)

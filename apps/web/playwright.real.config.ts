@@ -10,6 +10,7 @@ export default defineConfig({
     ...devices["Desktop Chrome"],
     baseURL: "http://127.0.0.1:8766",
     trace: "retain-on-failure",
+    screenshot: "only-on-failure",
   },
   webServer: {
     command: "npm run build && FIRELENS_RATE_LIMIT=1000 PYTHONPATH=../../src ../../.venv/bin/python -m uvicorn e2e_fixture_app:app --app-dir ../../tests --host 127.0.0.1 --port 8766 --log-level critical --no-access-log",

@@ -6,22 +6,23 @@
   color: var(--ink);
   background: var(--warm-mist);
 
-  --bc-navy: #013366;
-  --pacific-blue: #17556d;
-  --deep-ocean: #0e5566;
-  --coastal-teal: #2e716f;
-  --rainforest: #346b5c;
+  --bc-navy: #103b59;
+  --pacific-blue: #225f70;
+  --deep-ocean: #225f70;
+  --coastal-teal: #327a78;
+  --rainforest: #356858;
 
-  --sea-glass: #ddeae7;
+  --sea-glass: #e5efec;
   --water-blue: #e7f0f2;
-  --warm-mist: #f7f6f1;
+  --warm-mist: #f4f6f4;
   --warm-stone: #e9e4da;
   --snow: #fbfcfa;
 
-  --ink: #102a3a;
-  --slate: #526675;
-  --muted-slate: #72818c;
-  --divider: #d8dedc;
+  --ink: #0d2b40;
+  --slate: #526879;
+  /* Passes WCAG AA for normal text on the lightest and sea-glass surfaces. */
+  --muted-slate: #586a76;
+  --divider: #dce4e1;
 
   --cedar: #9c6849;
   --wildfire-orange: #d84a1b;
@@ -58,7 +59,7 @@
 
   --radius-control: 12px;
   --radius-card: 16px;
-  --radius-map: 20px;
+  --radius-map: 18px;
   --radius-panel: 16px;
   --radius-field: 12px;
 
@@ -70,7 +71,7 @@
   --space-6: 32px;
   --space-7: 48px;
 
-  --shadow-elevated: 0 1px 2px rgba(16, 42, 58, 0.04), 0 18px 48px rgba(16, 42, 58, 0.08);
+  --shadow-elevated: 0 8px 28px rgba(13, 43, 64, 0.055);
   --shadow-panel: var(--shadow-elevated);
   --shadow-card: none;
   --shadow-map: var(--shadow-elevated);

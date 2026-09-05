@@ -46,6 +46,7 @@ def _delta(before: dict[str, int], after: dict[str, int]) -> dict[str, int]:
 async def _measure(args: argparse.Namespace) -> dict[str, Any]:
     from firelens.api import create_app
     from firelens.config import FireLensConfig
+    from firelens.contracts import AskResponse
     from firelens.evaluation.hard_probe_cli import OfflineLiveDataService
     from firelens.providers.fake import FakeProvider
     from firelens.runtime import load_runtime
@@ -78,6 +79,7 @@ async def _measure(args: argparse.Namespace) -> dict[str, Any]:
                 rerank: list[int] = []
                 failures = 0
                 modes: dict[str, int] = {}
+                samples: list[dict[str, Any]] = []
                 for _ in range(args.measured):
                     before = _snapshot(provider)
                     started = time.perf_counter()
@@ -91,10 +93,26 @@ async def _measure(args: argparse.Namespace) -> dict[str, Any]:
                     generate.append(delta["generate_calls"])
                     embed.append(delta["embed_calls"])
                     rerank.append(delta["rerank_calls"])
-                    if response.status_code >= 500:
+                    valid = response.status_code == 200
+                    try:
+                        payload = AskResponse.model_validate(response.json())
+                        valid = valid and payload.status.value != "error"
+                        mode = payload.response_mode.value
+                    except (ValueError, TypeError):
+                        valid = False
+                        mode = "invalid_response"
+                    if not valid:
                         failures += 1
-                    mode = str((response.json() or {}).get("response_mode") or "unknown")
                     modes[mode] = modes.get(mode, 0) + 1
+                    samples.append(
+                        {
+                            "latency_ms": latency,
+                            "http_status": response.status_code,
+                            "contract_valid": valid,
+                            "response_mode": mode,
+                            **delta,
+                        }
+                    )
                 route_rows[route["id"]] = {
                     "weight": route["weight"],
                     "measured": args.measured,
@@ -106,6 +124,7 @@ async def _measure(args: argparse.Namespace) -> dict[str, Any]:
                     "mean_rerank_calls": sum(rerank) / len(rerank) if rerank else 0.0,
                     "failures": failures,
                     "modes": modes,
+                    "samples": samples,
                 }
     finally:
         await runtime.aclose()
@@ -238,14 +257,7 @@ def main() -> int:
         payload["label_id"] = args.label
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
-        print(
-            json.dumps(
-                {
-                    "label": args.label,
-                    "generate": payload["representative_average_generate_calls"],
-                }
-            )
-        )
+        print(f"{args.label}: saved {args.output}")
         return 0
     from firelens.evaluation.pre_release_performance import build_pre_release_report
 

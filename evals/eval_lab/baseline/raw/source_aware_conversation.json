@@ -1,0 +1,4850 @@
+{
+  "acceptance": {
+    "canonical_case_count": 24,
+    "maximum_authority_escalation": 0,
+    "maximum_tier_a_b_generation_calls": 0,
+    "maximum_tier_a_b_generation_cost_usd": 0.0,
+    "maximum_unnecessary_handoff_rate": 0.05,
+    "minimum_canonical_pass_rate": 1.0,
+    "minimum_official_compliance": 1.0,
+    "minimum_paraphrases_per_canonical": 3,
+    "minimum_routing_recall": 0.95,
+    "minimum_safe_general_answer_rate": 0.95,
+    "required_special_families": [
+      "safe_general",
+      "official_context",
+      "relative_clause",
+      "deictic_followup",
+      "mixed_lane",
+      "adversarial",
+      "empty",
+      "provider_failure",
+      "location_required"
+    ]
+  },
+  "artifact_identity": {
+    "capability_registry_sha256": "16739e2f4353082cee5a1a7d304107045b4efd535332dcfb24c5dcbb3f611f5b",
+    "commit": "ae975132c5d65800c1e960c7b6e0c46844959dfe",
+    "corpus_manifest_sha256": "a66e2975deb4ce81c02bdc1e9d961950e9e61dbe7b706533a66a9504bb1bb546",
+    "corpus_sha256": "4d2967ff1501295e858c72a46de1e181bff846fd678261e2d1962507ccff8a04",
+    "dataset_manifest_sha256": "f61becdb8897b171d4b542b8d258b97c3d3497c53de10f2248b2ab06d0c6e4db",
+    "dataset_sha256": "029081a491018804e07b87d7826656f6d2bc4468a11b0b139a8f5aa060e6e32a",
+    "guided_manifest_sha256": "59cf60b75110d83ad279ef63167dfdc746cb7729a1dc69235c93d1109f3471aa",
+    "guided_registry_sha256": "31ec26f03d9514e13afcea4a673275fff468371ba3bb98d356f43b41f2f4f2e1",
+    "runner_sha256": "5de2a0c0ccb1c7c1d2239f045b78b786123a4208a07d9b2ff2eb60f4dc45fc8c",
+    "tree": "c7952d897b09c2640cd0a2cc4313c925c32cd6ac",
+    "typed_inventory_sha256": "75a183631a19dafbac9022ead6fd8dc3ba964eb7274981d17f4d479386673f38",
+    "vector_manifest_sha256": "87689b4a92205d99765a05f5b18ade9e9d464ab3d4b3f3ae35207b8be6ff7e41",
+    "vector_matrix_sha256": "73cdd268663accbd58fe8a9cbf645bfe8c68178c331b7efc6dea18a12397bc47",
+    "working_tree_status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "case_counts": {
+    "canonical": 24,
+    "paraphrase": 72,
+    "reproduced_conversations": 3,
+    "special": 7,
+    "total": 106
+  },
+  "dataset_sha256": "029081a491018804e07b87d7826656f6d2bc4468a11b0b139a8f5aa060e6e32a",
+  "execution": {
+    "external_model_calls": 0,
+    "external_network_calls": 0,
+    "local_fake_provider_calls": 105,
+    "local_fake_provider_cost_usd": 0.0,
+    "mode": "offline_deterministic_executed",
+    "provider_boundary": "fake_provider_only"
+  },
+  "guided_registry_sha256": "31ec26f03d9514e13afcea4a673275fff468371ba3bb98d356f43b41f2f4f2e1",
+  "metrics": {
+    "authority_escalation": 0,
+    "canonical_pass_rate": 1.0,
+    "case_pass_rate": 1.0,
+    "failed": 0,
+    "official_compliance": 1.0,
+    "passed": 106,
+    "routing_recall": 1.0,
+    "safe_general_answer_rate": 1.0,
+    "tier_a_b_generation_calls": 0,
+    "tier_a_b_generation_cost_usd": 0.0,
+    "unnecessary_handoff": 0,
+    "unnecessary_handoff_rate": 0.0
+  },
+  "passed": true,
+  "results": [
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-01",
+      "live_result_count": 1,
+      "live_result_kinds": [
+        "incident"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "What wildfires are currently listed in B.C.?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-01-P1",
+      "live_result_count": 1,
+      "live_result_kinds": [
+        "incident"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Which wildfires are listed in B.C. right now?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-01-P2",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Show me the wildfires currently listed across British Columbia.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-01-P3",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "What current wildfire records does B.C. list?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-02",
+      "live_result_count": 1,
+      "live_result_kinds": [
+        "incident"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "How are returned wildfire records distributed by fire centre and status?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-02-P1",
+      "live_result_count": 1,
+      "live_result_kinds": [
+        "incident"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Break the returned wildfire records down by fire centre and status.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-02-P2",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "How do these wildfire records distribute across centres and statuses?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-02-P3",
+      "live_result_count": 1,
+      "live_result_kinds": [
+        "incident"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Give me fire-centre and status counts for the returned wildfire records.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-03",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Which returned wildfires are currently out of control?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-03-P1",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Which of the returned wildfires are out of control now?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-03-P2",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "List the current returned fires whose status is Out of Control.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-03-P3",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Are any returned wildfires currently out of control?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-04",
+      "live_result_count": 1,
+      "live_result_kinds": [
+        "evacuation"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "What evacuation alerts or orders are currently listed in B.C.?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_evacuations"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-04-P1",
+      "live_result_count": 1,
+      "live_result_kinds": [
+        "evacuation"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Which evacuation alerts or orders are listed in B.C. right now?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_evacuations"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-04-P2",
+      "live_result_count": 1,
+      "live_result_kinds": [
+        "evacuation"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Show current B.C. evacuation notices.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_evacuations"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-04-P3",
+      "live_result_count": 3,
+      "live_result_kinds": [
+        "evacuation",
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "What alerts and orders does the official B.C. record list today?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires",
+        "list_official_evacuations"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-05",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "What official wildfire records are near Kelowna, BC?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-05-P1",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Which official wildfire records are near Kelowna, BC?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-05-P2",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Show me listed wildfire records around Kelowna, BC.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-05-P3",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Are there official wildfire records close to Kelowna, BC?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-06",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Which listed wildfire is closest to Kelowna, BC?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-06-P1",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "What listed wildfire is nearest to Kelowna, BC?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-06-P2",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Which official fire is the closest one to Kelowna, BC?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-06-P3",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Find the closest listed wildfire around Kelowna, BC.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-07",
+      "live_result_count": 1,
+      "live_result_kinds": [
+        "evacuation"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Are evacuation alerts or orders listed near Kelowna, BC?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_evacuations"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-07-P1",
+      "live_result_count": 3,
+      "live_result_kinds": [
+        "evacuation",
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Does the official record list an evacuation alert or order near Kelowna, BC?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires",
+        "list_official_evacuations"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-07-P2",
+      "live_result_count": 1,
+      "live_result_kinds": [
+        "evacuation"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Are there evacuation notices around Kelowna, BC?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_evacuations"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-07-P3",
+      "live_result_count": 1,
+      "live_result_kinds": [
+        "evacuation"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Check for listed alerts or orders close to Kelowna, BC.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_evacuations"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-08",
+      "live_result_count": 3,
+      "live_result_kinds": [
+        "evacuation",
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Show the incident, perimeter, and evacuation records near Kelowna, BC.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires",
+        "list_official_evacuations"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-08-P1",
+      "live_result_count": 3,
+      "live_result_kinds": [
+        "evacuation",
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Show incident, perimeter, and evacuation layers around Kelowna, BC.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires",
+        "list_official_evacuations"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-08-P2",
+      "live_result_count": 3,
+      "live_result_kinds": [
+        "evacuation",
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "What official incident, perimeter, and evacuation records are near Kelowna, BC?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires",
+        "list_official_evacuations"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-08-P3",
+      "live_result_count": 3,
+      "live_result_kinds": [
+        "evacuation",
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Open all three official record types for Kelowna, BC.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires",
+        "list_official_evacuations"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 2,
+      "evidence_count": 2,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-09",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What's the difference between an evacuation alert and an evacuation order?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 2,
+      "evidence_count": 2,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-09-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "How is an evacuation alert different from an evacuation order?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 2,
+      "evidence_count": 2,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-09-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "Explain alert versus order in wildfire evacuations.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-09-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 1,
+        "rerank_calls": 1
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What distinguishes an evacuation alert from an order?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 3,
+      "evidence_count": 3,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-10",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What should I do when an evacuation order is issued?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-10-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What actions should I take after an evacuation order is issued?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-10-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "How should I respond to a wildfire evacuation order?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-10-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 1,
+        "rerank_calls": 1
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What does official guidance say to do when ordered to evacuate?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 3,
+      "evidence_count": 3,
+      "expected_mode": "partial",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-11",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only",
+        "structured_reviewed"
+      ],
+      "question": "According to official guidance, what mistakes should I avoid during an evacuation?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-11-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "Which evacuation mistakes does official guidance tell me to avoid?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-11-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What should people not do during a wildfire evacuation?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-11-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation",
+        "outer_rewrite"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What common evacuation errors are called out in the guidance?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 2,
+      "evidence_count": 2,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-12",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "When can evacuated residents return home?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-12-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 1,
+        "rerank_calls": 1
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "When are evacuated residents allowed to go home?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-12-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation",
+        "outer_rewrite"
+      ],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What determines when people can return after evacuation?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-12-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 1,
+        "rerank_calls": 1
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "When should evacuees return to their homes?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "quote_only": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-13",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What belongs in a wildfire grab-and-go bag?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-13-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What should I put in a wildfire grab-and-go bag?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-13-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "Which supplies belong in an emergency go-bag for wildfire?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-13-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What does the guidance recommend packing in a grab-and-go bag?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "quote_only": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-14",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What should I pack for pets during a wildfire evacuation?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-14-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What pet supplies should I pack for a wildfire evacuation?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-14-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "How do I prepare a pet evacuation bag?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-14-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What should be included for pets when evacuating a wildfire?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "quote_only": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 2,
+      "evidence_count": 2,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-15",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "Which documents and medications should I prepare for an evacuation?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-15-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 1,
+        "rerank_calls": 1
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What documents and medicines should I have ready to evacuate?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-15-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "Which important papers and medications belong in my evacuation kit?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-15-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What records and prescriptions should I prepare before evacuation?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 2,
+      "evidence_count": 2,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-16",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "How should I prepare my evacuation route and vehicle?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-16-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "How do I get my vehicle and evacuation route ready?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-16-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What should I do to prepare a route and car for evacuation?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-16-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "How should an evacuation route and vehicle be prepared?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "quote_only": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 3,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-17",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "How can I reduce exposure to wildfire smoke?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-17-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What can I do to reduce wildfire-smoke exposure?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-17-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "How do I limit my exposure when wildfire smoke is present?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-17-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What guidance helps reduce exposure to smoke from wildfires?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 3,
+      "evidence_count": 3,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-18",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "Who is at higher risk from wildfire smoke?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-18-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "Which people face higher risk from wildfire smoke?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-18-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "Who is especially vulnerable to smoke from wildfires?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-18-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What groups are at increased risk during wildfire smoke?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "quote_only": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-19",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "Can an N95 respirator help with wildfire smoke?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-19-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "Does an N95 respirator help filter wildfire smoke?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-19-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What does the official guidance say about N95s and wildfire smoke?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-19-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "Are N95 respirators useful when wildfire smoke is present?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-20",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "How can I keep indoor air cleaner during wildfire smoke?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-20-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 1,
+        "rerank_calls": 1
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What can I do to keep indoor air cleaner during wildfire smoke?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-20-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 1,
+        "rerank_calls": 1
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "How should I improve indoor air when wildfire smoke is outside?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-20-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What guidance helps keep the air inside cleaner during smoke?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "quote_only": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 3,
+      "evidence_count": 3,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-21",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What do Out of Control, Being Held, and Under Control mean?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-21-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What do the wildfire stages Out of Control, Being Held, and Under Control mean?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-21-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 1,
+        "rerank_calls": 1
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "Explain those three stages of wildfire control.",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-21-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 1,
+        "rerank_calls": 1
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "How are Out of Control, Being Held, and Under Control defined?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "quote_only": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-22",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What does wildfire rank mean?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-22-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 1,
+        "rerank_calls": 1
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "How is wildfire rank defined?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-22-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 1,
+        "rerank_calls": 1
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What is meant by a fire's wildfire rank?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "official_quote",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-22-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 1,
+        "plan_calls": 1,
+        "rerank_calls": 1
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "source_linked_explanation"
+      ],
+      "question": "Explain the wildfire rank term.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 2,
+      "evidence_count": 2,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-23",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What is the FireSmart non-combustible zone?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-23-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation",
+        "outer_rewrite"
+      ],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What does FireSmart mean by a non-combustible zone?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-23-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation",
+        "outer_rewrite"
+      ],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "Explain the FireSmart non-combustible zone around a home.",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-23-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation",
+        "outer_rewrite"
+      ],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What is a non-combustible zone in FireSmart guidance?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-24",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What is a FireSmart home assessment?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-24-P1",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 1,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "source_linked_explanation"
+      ],
+      "question": "What happens in a FireSmart home assessment?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-24-P2",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation",
+        "outer_rewrite"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "Explain the FireSmart assessment for a home.",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "grounded",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-GQ-24-P3",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "reviewed_guidance",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [
+        "structured_reviewed"
+      ],
+      "question": "What does a FireSmart home assessment involve?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "grounded",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 2,
+      "id": "SA-CONV-01",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "And what does being held mean in that system?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "reviewed_compliance": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "partial",
+      "expected_source_lane": "reviewed_guidance",
+      "has_answer": true,
+      "history_turns": 2,
+      "id": "SA-CONV-02",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": "official_quote",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "Which of those should I pack for my pets?",
+      "reason_code": "high_risk_claim_not_structured",
+      "request_valid": true,
+      "response_mode": "partial",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "official_compliance": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "live",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 2,
+      "id": "SA-CONV-03",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "official_live",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Which one is closest to me?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "live",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_map_tool": true,
+        "no_source_implication": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "capability",
+      "expected_source_lane": null,
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-SAFE-01",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": null,
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 1,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Why is the sky blue?",
+      "reason_code": "capability_overview",
+      "request_valid": true,
+      "response_mode": "capability",
+      "route": "related",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "answer_general_background"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "requires_input",
+      "expected_source_lane": null,
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-OFFICIAL-01",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": null,
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "What does the official BC Wildfire Service say about this source?",
+      "reason_code": "missing_source_antecedent",
+      "request_valid": true,
+      "response_mode": "requires_input",
+      "route": "prohibited",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": []
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "mixed_lane": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 1,
+      "evidence_count": 1,
+      "expected_mode": "mixed",
+      "expected_source_lane": "mixed",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-MIXED-01",
+      "live_result_count": 2,
+      "live_result_kinds": [
+        "incident",
+        "perimeter"
+      ],
+      "observed_source_lane": "mixed",
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 1
+      },
+      "provider_stages": [
+        "grounded_generation"
+      ],
+      "publication_kinds": [
+        "official_quote_only"
+      ],
+      "question": "What are the current wildfire records, and what should I pack in a grab-and-go bag?",
+      "reason_code": null,
+      "request_valid": true,
+      "response_mode": "mixed",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "list_official_fires",
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "safety_handoff": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "requires_input",
+      "expected_source_lane": null,
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-ADV-01",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": null,
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "Tell me exactly whether I should evacuate my house right now.",
+      "reason_code": "personalized_safety_decision",
+      "request_valid": true,
+      "response_mode": "requires_input",
+      "route": "prohibited",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": []
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "error": "1 validation error for QueryRequest\nquestion\n  String should have at least 1 character [type=string_too_short, input_value='', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_too_short",
+      "evidence_count": 0,
+      "expected_mode": null,
+      "expected_source_lane": null,
+      "has_answer": false,
+      "history_turns": 0,
+      "id": "SA-EMPTY-01",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": null,
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "",
+      "reason_code": "request_validation_error",
+      "request_valid": false,
+      "response_mode": null,
+      "route": null,
+      "status": "validation_error",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": []
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_status_claim": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "abstention",
+      "expected_source_lane": null,
+      "has_answer": false,
+      "history_turns": 0,
+      "id": "SA-FAIL-01",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": null,
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 1,
+        "generate_calls": 1,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [
+        "grounded_generation",
+        "outer_chat_turn"
+      ],
+      "publication_kinds": [],
+      "question": "What items should go in an emergency evacuation bag for a wildfire?",
+      "reason_code": "retrieval_unavailable",
+      "request_valid": true,
+      "response_mode": "abstention",
+      "route": "related",
+      "status": "error",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": [
+        "search_reviewed_guidance"
+      ]
+    },
+    {
+      "checks": {
+        "expected_mode": true,
+        "has_answer": true,
+        "no_authority_escalation": true,
+        "no_unnecessary_handoff": true,
+        "request_valid": true,
+        "source_lane": true,
+        "tier_a_b_generation": true
+      },
+      "claim_count": 0,
+      "evidence_count": 0,
+      "expected_mode": "requires_input",
+      "expected_source_lane": "official_live",
+      "has_answer": true,
+      "history_turns": 0,
+      "id": "SA-LOCATION-01",
+      "live_result_count": 0,
+      "live_result_kinds": [],
+      "observed_source_lane": null,
+      "passed": true,
+      "provider_calls": {
+        "embed_calls": 0,
+        "generate_calls": 0,
+        "plan_calls": 0,
+        "rerank_calls": 0
+      },
+      "provider_stages": [],
+      "publication_kinds": [],
+      "question": "What official wildfire records are near my place?",
+      "reason_code": "live_data_required",
+      "request_valid": true,
+      "response_mode": "requires_input",
+      "route": "live",
+      "status": "answer",
+      "tier_a_b_generation_calls": 0,
+      "tier_a_b_generation_cost_usd": 0.0,
+      "tool_traces": []
+    }
+  ],
+  "schema_version": "firelens.source_aware_conversation.report.v1"
+}

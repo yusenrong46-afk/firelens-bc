@@ -25,17 +25,31 @@ from functools import lru_cache
 from firelens.live_support import official_fire_centre_from_question
 from firelens.understanding.fire_name import extract_fire_name
 from firelens.understanding.place_vocabulary import (
+    CAPITALIZED_ONLY_ANCHORS,
     CIVIC_PREFIXES,
     DIRECTION_WORDS,
+    DISCOURSE_DIRECTIVE_VERBS,
     DOMAIN_NOUNS,
+    FOR_PREVIOUS,
+    FRONTED_TRAILING_MODIFIERS,
     FUNCTION_WORDS,
     OUT_OF_PROVINCE_PLACES,
     PERSONAL_PLACE_NOUNS,
     PLACE_ALIASES,
     PROVINCE_LABELS,
     SCOPE_ADJECTIVES,
+    SENTENCE_MARKERS,
     SKIPPABLE_LEAD,
+    STRENGTHENING_PREVIOUS,
+    STRONG_ANCHORS,
+    VERB_ANCHORS,
+    WEAK_ANCHORS,
     WHOLE_COUNTRY_LABELS,
+    is_response_preamble,
+    is_stop,
+    merge_overlapping,
+    normalize_question,
+    stop_key,
 )
 
 
@@ -68,53 +82,10 @@ class PlaceMention:
 # --- anchors and patterns -------------------------------------------------
 
 _TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9'’.\-]*")
-_STRONG_ANCHORS = frozenset(
-    {"near", "around", "round", "nearby", "outside", "beside", "toward", "towards",
-     "across", "throughout", "arnd", "nr"}
-)  # fmt: skip
-# Locative prepositions: a lowercase span after them counts inside a
-# current-records clause ("fires in kelowna", "fire by kelowna"). Analysis
-# axes ("by size", "by geography") are domain nouns and end the span at once.
-_WEAK_ANCHORS = frozenset({"in", "at", "by", "from", "on", "into", "through", "along", "past"})
-# "to", "of" and "for" are mostly infinitives, partitives and purposes
-# ("to worry", "list of fires", "for students"); "nearest"/"closest" usually
-# modify a noun ("nearest mapped perimeter"). They name a place only when the
-# span is capitalized ("nearest Kelowna") or the previous word makes them locative.
-_CAPITALIZED_ONLY_ANCHORS = frozenset({"to", "of", "for", "nearest", "closest"})
-_FOR_PREVIOUS = frozenset(
-    {"records", "record", "report", "reports", "summary", "overview", "picture", "update",
-     "updates", "map", "status", "situation", "conditions", "outlook", "roster", "news",
-     "information", "info", "forecast", "data", "fire", "fires", "wildfire", "wildfires",
-     "incident", "incidents", "perimeter", "perimeters", "evacuation", "evacuations",
-     "alert", "alerts", "order", "orders", "issued", "declared", "lifted", "rescinded",
-     "effect"}
-)  # fmt: skip
-# Verbs whose object is a place ("leave Kelowna", "evacuate Vernon", "I meant Vernon").
-_VERB_ANCHORS = frozenset(
-    {"leave", "leaving", "evacuate", "evacuating", "flee", "fleeing", "exit", "visit",
-     "visiting", "reach", "reaching", "enter", "entering", "approach", "approaching",
-     "threaten", "threatening", "hit", "hitting", "affect", "affecting", "meant", "mean"}
-)  # fmt: skip
-# Auxiliaries: a clause with one has a predicate, so a lowercase word after a
-# fire noun is that predicate, not a terse place ("when did this fire start",
-# but "fires kelowna" and "how big closest fire kamloops").
-_SENTENCE_MARKERS = frozenset(
-    {"did", "does", "do", "is", "are", "was", "were", "will", "would", "can", "could",
-     "should", "has", "have", "had"}
-)  # fmt: skip
-# A weak anchor becomes strong when the previous word makes it locative.
-_STRENGTHENING_PREVIOUS = frozenset(
-    {"close", "closest", "nearest", "next", "north", "south", "east", "west", "outside", "out",
-     "heading", "going", "driving", "travelling", "traveling", "flying", "moving", "relocating",
-     "evacuating", "up", "over", "down", "back", "here", "live", "living", "based", "staying",
-     "located", "visiting", "stuck", "camping", "vacationing", "centre", "center", "focus",
-     "zoom", "map", "records", "record", "report", "reports", "summary", "overview", "picture",
-     "update", "updates", "status", "situation", "conditions", "outlook", "roster", "news",
-     "fire", "fires", "wildfire", "wildfires", "incident", "incidents", "perimeter",
-     "perimeters", "evacuation", "evacuations", "alert", "alerts", "order", "orders", "distance"}
-)  # fmt: skip
 _DECLARATION_PREFIX = re.compile(
     r"\b(?:i(?:'|’)?m|i am|we(?:'|’)?re|we are|i(?:'|’)?ll be|we(?:'|’)?ll be|"
+    r"(?:i(?:'|’)?m|i am|we(?:'|’)?re|we are) (?:based|camping|located|living|"
+    r"staying|travelling|traveling|vacationing|visiting)|"
     r"i live|we live|my (?:parents?|family|kids|children|partner|wife|husband|friends?|"
     r"relatives?|son|daughter|mom|mum|dad|grandparents?) (?:are|is|live|lives|stay|stays)|"
     r"currently|right now)\s+(?:(?:up|out|over|down|back)\s+)?$",
@@ -216,13 +187,6 @@ _PROVINCE_TAIL = re.compile(
 _POSSESSIVE = re.compile(r"(?:'|’)s$", re.IGNORECASE)
 
 
-def normalize_question(text: str) -> str:
-    """The text form whose offsets `PlaceMention.span` refers to."""
-
-    text = text.replace("’", "'").replace("—", " — ").replace("–", " – ")
-    return " ".join(text.split())
-
-
 _normalize = normalize_question
 
 
@@ -232,6 +196,8 @@ def _clean_label(raw: str) -> str | None:
     label = _normalize(raw).strip(" ,.;:?!'\"")
     label = _PROVINCE_TAIL.sub("", label).strip(" ,.;:?!'\"")
     lowered = label.casefold()
+    if lowered in PLACE_ALIASES:
+        return PLACE_ALIASES[lowered]
     for prefix in CIVIC_PREFIXES:
         if lowered.startswith(prefix + " "):
             label = label[len(prefix) + 1 :]
@@ -273,8 +239,8 @@ def _read_span(text: str, start: int) -> tuple[str, int, int, str | None] | None
         if match is None:
             break
         token = match.group(0)
-        lowered = _stop_key(token)
-        if _is_stop(token):
+        lowered = stop_key(token)
+        if is_stop(token):
             if begin is None and lowered in SKIPPABLE_LEAD:
                 position = match.end()
                 while position < len(text) and text[position] == " ":
@@ -312,17 +278,17 @@ def _names_a_fire(text: str, end: int) -> bool:
 def _anchor_strength(text: str, match: re.Match[str]) -> str | None:
     word = match.group(0).casefold().strip(".'")
     prefix = text[: match.start()]
-    if word in _STRONG_ANCHORS or word in _VERB_ANCHORS:
+    if word in STRONG_ANCHORS or word in VERB_ANCHORS:
         return "strong"
     previous = _TOKEN.findall(prefix)
     previous_word = previous[-1].casefold().strip(".'") if previous else ""
     if word == "for":
         # "records for Kelowna" may name a place; "for students" is an audience.
-        return "capitalized_only" if previous_word in _FOR_PREVIOUS else None
-    if word in _WEAK_ANCHORS or word in _CAPITALIZED_ONLY_ANCHORS:
-        if previous_word in _STRENGTHENING_PREVIOUS or _DECLARATION_PREFIX.search(prefix):
+        return "capitalized_only" if previous_word in FOR_PREVIOUS else None
+    if word in WEAK_ANCHORS or word in CAPITALIZED_ONLY_ANCHORS:
+        if previous_word in STRENGTHENING_PREVIOUS or _DECLARATION_PREFIX.search(prefix):
             return "strong"
-        return "weak" if word in _WEAK_ANCHORS else "capitalized_only"
+        return "weak" if word in WEAK_ANCHORS else "capitalized_only"
     if word == "is" and _DECLARATION_IS.search(text[: match.end()]):
         return "strong"
     return None
@@ -379,12 +345,36 @@ def _fronted_candidates(text: str, *, anchored: bool) -> list[tuple[str, int, in
         # When the request names its own place ("Easier: fires near Kelowna")
         # the fronted word is a discourse prefix, not a second place.
         head = fronted.group("head").casefold().split("'")[0]
-        if head in FUNCTION_WORDS or head in DOMAIN_NOUNS:
+        prefix_words = [
+            stop_key(token)
+            for token in _TOKEN.findall(text[fronted.start("place") : fronted.end("place")])
+        ]
+        directive_preamble = is_response_preamble(prefix_words)
+        if (head in FUNCTION_WORDS or head in DOMAIN_NOUNS) and not directive_preamble:
             # "For Kelowna, any fires?" names a place; "For students, explain..."
             # names an audience: after trimming a function word the tail must be
             # capitalized.
+            tail_begin = fronted.start("place")
+            raw_fronted = text[tail_begin : fronted.end("place")].strip()
+            if raw_fronted.casefold() in PLACE_ALIASES:
+                found.append((raw_fronted, tail_begin, fronted.end("place")))
+                return found
+            prefix_tokens = list(
+                _TOKEN.finditer(text, fronted.start("place"), fronted.end("place"))
+            )
+            if (
+                prefix_tokens
+                and stop_key(prefix_tokens[0].group(0)) in DISCOURSE_DIRECTIVE_VERBS
+            ):
+                # ``Show Kelowna: any fires?`` is an imperative with a real
+                # object, not a pure formatting preamble. Parse that object.
+                tail_begin = prefix_tokens[0].end()
             tail = _name_tail(
-                text, fronted.start("place"), fronted.end("place"), trimmed_needs_case=True
+                text,
+                tail_begin,
+                fronted.end("place"),
+                trimmed_needs_case=True,
+                allowed_trailing_stops=FRONTED_TRAILING_MODIFIERS,
             )
             if tail is not None:
                 found.append(tail)
@@ -395,13 +385,13 @@ def _fronted_candidates(text: str, *, anchored: bool) -> list[tuple[str, int, in
         # a sentence ("when did this fire start", "why are wildfires dangerous")
         # or a longer topic ("... wildfire policies") is not one.
         lowered = {token.casefold() for token in tokens}
-        if len(tokens) > 5 or lowered & _SENTENCE_MARKERS:
+        if len(tokens) > 5 or lowered & SENTENCE_MARKERS:
             fires_place = None
     # "Please: is there a Kamloops order?": the sentence patterns read the
     # request after a fronted discourse word.
     offset = 0
     prefix = _DISCOURSE_PREFIX.match(text)
-    if prefix is not None and _is_stop(prefix.group("word")):
+    if prefix is not None and is_stop(prefix.group("word")):
         offset = prefix.end()
     body = text[offset:]
     # "What caused Mountain Fire?" is not "<place> fire": once a leading
@@ -461,6 +451,7 @@ def _name_tail(
     trimmed_needs_case: bool = False,
     allow_trim: bool = True,
     adjacent: bool = False,
+    allowed_trailing_stops: frozenset[str] | None = None,
 ) -> tuple[str, int, int] | None:
     """Keep only the run of name-like tokens inside a pattern capture.
 
@@ -470,15 +461,20 @@ def _name_tail(
     """
 
     tokens = list(_TOKEN.finditer(text, begin, end))
-    while tokens and _is_stop(tokens[0].group(0)):
+    while tokens and is_stop(tokens[0].group(0)):
         tokens.pop(0)
-    if adjacent and tokens and _is_stop(tokens[-1].group(0)):
+    if adjacent and tokens and is_stop(tokens[-1].group(0)):
         return None
-    while tokens and _is_stop(tokens[-1].group(0)):
+    while tokens and is_stop(tokens[-1].group(0)):
+        if (
+            allowed_trailing_stops is not None
+            and stop_key(tokens[-1].group(0)) not in allowed_trailing_stops
+        ):
+            return None
         tokens.pop()
     if not tokens:
         return None
-    if any(_is_stop(match.group(0)) for match in tokens):
+    if any(is_stop(match.group(0)) for match in tokens):
         return None  # "in Glacier National Park" is fine; "fires and Kelowna" is not one name
     trimmed = tokens[0].start() > begin
     if trimmed and not allow_trim:
@@ -490,32 +486,6 @@ def _name_tail(
     return text[tokens[0].start() : tokens[-1].end()], tokens[0].start(), tokens[-1].end()
 
 
-def _stop_key(token: str) -> str:
-    # "I'm", "Kelowna's" and "St." compare by their head word.
-    return token.casefold().strip(".'").split("'")[0]
-
-
-def _is_stop(token: str) -> bool:
-    lowered = _stop_key(token)
-    return lowered in FUNCTION_WORDS or lowered in DOMAIN_NOUNS or lowered in _VERB_ANCHORS
-
-
-def _merge_overlapping(
-    communities: list[tuple[str, int, int]],
-) -> list[tuple[str, int, int]]:
-    """Two captures of the same text region are one place; keep the longer one."""
-
-    ordered = sorted(communities, key=lambda item: (item[1], -(item[2] - item[1])))
-    merged: list[tuple[str, int, int]] = []
-    for label, begin, end in ordered:
-        if merged and begin < merged[-1][2]:
-            if end - begin > merged[-1][2] - merged[-1][1]:
-                merged[-1] = (label, begin, end)
-            continue
-        merged.append((label, begin, end))
-    return merged
-
-
 def _radius(text: str, before: int) -> float | None:
     window = text[max(0, before - 40) : before]
     matches = list(_RADIUS.finditer(window))
@@ -523,6 +493,23 @@ def _radius(text: str, before: int) -> float | None:
         return None
     value = float(matches[-1].group("radius"))
     return value if 1 <= value <= 500 else None
+
+
+def _is_declared_community(text: str, begin: int) -> bool:
+    """Return whether the span follows an explicit first-person place declaration."""
+
+    preceding = [match for match in _TOKEN.finditer(text, 0, begin)]
+    if not preceding:
+        return False
+    anchor = preceding[-1]
+    if text[anchor.end() : begin].strip():
+        return False
+    word = stop_key(anchor.group(0))
+    if word == "is" and _DECLARATION_IS.search(text[: anchor.end()]):
+        return True
+    return word in (STRONG_ANCHORS | WEAK_ANCHORS) and bool(
+        _DECLARATION_PREFIX.search(text[: anchor.start()])
+    )
 
 
 @lru_cache(maxsize=4_096)
@@ -543,6 +530,7 @@ def extract_place(question: str, *, live: bool = False) -> PlaceMention | None:
     anchored = _anchored_candidates(text, live=live)
     raw_candidates = anchored + _fronted_candidates(text, anchored=bool(anchored))
     communities: list[tuple[str, int, int]] = []
+    anchored_spans = {(begin, end) for _, begin, end in anchored}
     seen: set[str] = set()
     out_of_province: str | None = None
     province_named = False
@@ -567,9 +555,25 @@ def extract_place(question: str, *, live: bool = False) -> PlaceMention | None:
             continue
         seen.add(key)
         communities.append((label, begin, end))
+    personal = _PERSONAL.search(text)
+    if personal is not None:
+        declared = [
+            item
+            for item in communities
+            if (item[1], item[2]) in anchored_spans and _is_declared_community(text, item[1])
+        ]
+        if len(communities) == 1 and declared:
+            label, begin, end = declared[0]
+            return PlaceMention(
+                kind=PlaceKind.COMMUNITY,
+                label=label,
+                radius_km=_radius(text, begin),
+                span=(begin, end),
+            )
+        return PlaceMention(kind=PlaceKind.PERSONAL)
     if out_of_province is not None and not communities:
         return PlaceMention(kind=PlaceKind.OUT_OF_PROVINCE, label=out_of_province)
-    communities = _merge_overlapping(communities)
+    communities = merge_overlapping(communities)
     if len(communities) > 1:
         return PlaceMention(
             kind=PlaceKind.MULTIPLE, labels=tuple(label for label, *_ in communities)
@@ -588,17 +592,19 @@ def extract_place(question: str, *, live: bool = False) -> PlaceMention | None:
             kind=PlaceKind.DIRECTIONAL_REGION,
             label="northern B.C." if direction.startswith("north") else "southern B.C.",
         )
-    if _PERSONAL.search(text):
-        return PlaceMention(kind=PlaceKind.PERSONAL)
     if province_named or _PROVINCE_SCOPE.search(text):
         return PlaceMention(kind=PlaceKind.PROVINCE, label="British Columbia")
     return None
 
 
 def is_personal_location(question: str) -> bool:
-    """True when the user refers to their own unstated location."""
+    """True when the user refers to their own location without stating a community."""
 
-    return bool(_PERSONAL.search(_normalize(question)))
+    text = _normalize(question)
+    if _PERSONAL.search(text) is None:
+        return False
+    mention = extract_place(text, live=True)
+    return mention is None or mention.kind == PlaceKind.PERSONAL
 
 
 def is_province_scope(question: str) -> bool:

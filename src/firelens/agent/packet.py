@@ -54,6 +54,10 @@ class AgentPacket:
     resolved_location: CoarseResolvedLocation | None = None
     related_links: list[RelatedLink] = field(default_factory=list)
     roster_total: int | None = None
+    # Totals from disjoint official layer queries are retained separately so a
+    # concurrent fire + evacuation request can publish their union, while a
+    # repeated query for the same layer scope cannot double count it.
+    roster_totals_by_scope: dict[str, int] = field(default_factory=dict)
     unavailable_layers: list[LiveResultKind] = field(default_factory=list)
     live_limitations: list[str] = field(default_factory=list)
     retrieved_at: datetime | None = None

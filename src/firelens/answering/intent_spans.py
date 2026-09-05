@@ -14,8 +14,8 @@ from firelens.understanding.place import (
     PlaceKind,
     PlaceMention,
     extract_place,
-    normalize_question,
 )
+from firelens.understanding.place_vocabulary import normalize_question
 
 _LIVE_PLACE_KINDS = frozenset({PlaceKind.COMMUNITY, PlaceKind.PERSONAL, PlaceKind.FIRE_CENTRE})
 _PLACE_STATE_WORDS = frozenset(
@@ -38,10 +38,51 @@ _NON_REQUEST_MARKERS = frozenset(
      "metaphor", "means", "meaning"}
 )  # fmt: skip
 _SINGULAR_FIRE_NOUNS = frozenset({"fire", "wildfire", "blaze"})
+_CONTEXT_LOCATION_WORDS = frozenset(
+    {
+        "am",
+        "are",
+        "at",
+        "based",
+        "camping",
+        "city",
+        "community",
+        "currently",
+        "family",
+        "friends",
+        "from",
+        "home",
+        "i",
+        "in",
+        "is",
+        "kids",
+        "live",
+        "lives",
+        "living",
+        "located",
+        "location",
+        "my",
+        "near",
+        "our",
+        "parents",
+        "place",
+        "relatives",
+        "right",
+        "stay",
+        "staying",
+        "stays",
+        "town",
+        "travelling",
+        "traveling",
+        "vacationing",
+        "visiting",
+        "we",
+    }
+)
 _WORD = re.compile(r"[A-Za-z0-9][A-Za-z0-9'’.\-]*")
 _FRONTED_PLACE = re.compile(
     r"^\s*(?P<place>[A-Za-z][A-Za-z0-9'’.\-]*(?:\s+[A-Za-z][A-Za-z0-9'’.\-]*){0,3})\s*"
-    r"(?P<separator>[—–:,]|\s-\s|\.\s|\s+plus\s+)",
+    r"(?P<separator>[—–:,;]|\s-\s|\.\s|\s+plus\s+)",
     re.IGNORECASE,
 )
 
@@ -144,9 +185,20 @@ def is_context_location_declaration(text: str) -> bool:
     """Return whether a clause only supplies a place for a nearby follow-up."""
 
     normalized = text.strip(" ,.?;+")
-    return bool(
+    if bool(
         lex.FIRST_PERSON_PLACE.fullmatch(normalized)
         or lex.THIRD_PARTY_PLACE.fullmatch(normalized)
+    ):
+        return True
+    mention = extract_place(normalized, live=False)
+    if mention is None or not mention.is_community or mention.span is None:
+        return False
+    remainder = f"{normalize_question(normalized)[: mention.span[0]]} {normalize_question(normalized)[mention.span[1] :]}"
+    tokens = lex.tokenize(remainder)
+    return (
+        bool(tokens)
+        and tokens[0] in {"i", "my", "our", "we"}
+        and set(tokens) <= _CONTEXT_LOCATION_WORDS
     )
 
 

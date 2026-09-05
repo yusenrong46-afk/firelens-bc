@@ -177,7 +177,7 @@ export function EvidencePanel({
         {mapMessage && <p className="live-map__warning" role="status">{mapMessage} Ask a question or use the official BCWS map while this layer recovers.</p>}
           </>
         ) : (
-        <div className="context-lens" aria-label="Answer evidence and context">
+        <div className="context-lens" role="region" aria-label="Answer evidence and context">
         {view.kind === "answer" && selectedClaim && selectedState ? (
           <>
             <span className="selected-kicker">Selected claim {selected + 1}</span>

@@ -34,6 +34,7 @@ from firelens.live_support import (
     FIRE_CENTRE_CODE_NAMES,
     fire_centre_label,
     geojson_crs_is_wgs84,
+    geometry_integrity_errors,
 )
 
 
@@ -220,6 +221,8 @@ class OfficialFieldMappingTests(unittest.IsolatedAsyncioTestCase):
         def handler(request: httpx.Request) -> httpx.Response:
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 1})
             return httpx.Response(
                 200,
                 json={
@@ -607,6 +610,8 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
         def handler(request: httpx.Request) -> httpx.Response:
             if not request.url.path.endswith("/query"):
                 return gzip_json(metadata)
+            if request.url.params.get("returnCountOnly") == "true":
+                return gzip_json({"count": 1})
             return gzip_json(collection)
 
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
@@ -689,6 +694,8 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(request.url.params.get("geometryType"), "esriGeometryEnvelope")
             self.assertEqual(request.url.params.get("spatialRel"), "esriSpatialRelIntersects")
             self.assertEqual(request.url.params.get("inSR"), "4326")
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 2})
             return httpx.Response(
                 200,
                 json={
@@ -723,6 +730,8 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
         def handler(request: httpx.Request) -> httpx.Response:
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 1})
             query_geometries.append(request.url.params.get("geometry"))
             return httpx.Response(
                 200,
@@ -786,6 +795,8 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             nonlocal query_calls
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 2})
             query_calls += 1
             features = [
                 {
@@ -849,6 +860,8 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             active -= 1
             kind = _kind_from_url(request)
             if request.url.path.endswith("/query"):
+                if request.url.params.get("returnCountOnly") == "true":
+                    return httpx.Response(200, json={"count": 0})
                 return httpx.Response(
                     200,
                     json={"type": "FeatureCollection", "features": []},
@@ -875,6 +888,8 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(0.01)
             active -= 1
             if request.url.path.endswith("/query"):
+                if request.url.params.get("returnCountOnly") == "true":
+                    return httpx.Response(200, json={"count": 0})
                 return httpx.Response(
                     200,
                     json={"type": "FeatureCollection", "features": []},
@@ -906,6 +921,8 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
                 payload = _metadata(LiveResultKind.INCIDENT)
                 payload["name"] = "Custom Incidents"
                 return httpx.Response(200, json=payload)
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 0})
             return httpx.Response(200, json={"type": "FeatureCollection", "features": []})
 
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
@@ -916,10 +933,12 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(set(requested_hosts), {"official.example.test"})
 
-    async def test_nearby_results_exclude_records_with_unknown_geometry(self) -> None:
+    async def test_nearby_results_quarantine_layer_with_unknown_geometry(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(LiveResultKind.EVACUATION))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 1})
             return httpx.Response(
                 200,
                 json={
@@ -946,12 +965,18 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(response.results, [])
-        self.assertTrue(any("could not be located" in item for item in response.limitations))
+        self.assertEqual(response.unavailable_layers, [LiveResultKind.EVACUATION])
+        self.assertFalse(response.layer_statuses[0].available)
+        self.assertTrue(
+            any("spatially invalid geometry" in item for item in response.limitations)
+        )
 
-    async def test_map_results_exclude_invalid_geometry(self) -> None:
+    async def test_map_results_quarantine_layer_with_invalid_geometry(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 2})
             return httpx.Response(
                 200,
                 json={
@@ -977,8 +1002,345 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             bounded = await service.map_results(layers=(LiveResultKind.INCIDENT,), bbox=bbox)
             unbounded = await service.map_results(layers=(LiveResultKind.INCIDENT,))
 
-        self.assertEqual([item.result_id for item in bounded.results], ["incident:2"])
-        self.assertEqual([item.result_id for item in unbounded.results], ["incident:2"])
+        for response in (bounded, unbounded):
+            self.assertEqual(response.results, [])
+            self.assertEqual(response.unavailable_layers, [LiveResultKind.INCIDENT])
+            self.assertFalse(response.layer_statuses[0].available)
+            self.assertEqual(response.layer_statuses[0].matching_result_count, 0)
+            self.assertTrue(
+                any("spatially invalid geometry" in item for item in response.limitations)
+            )
+
+    async def test_map_results_quarantine_malformed_coordinates_at_every_depth(self) -> None:
+        geometries = (
+            {"type": "Point", "coordinates": [-123.5, "bad"]},
+            {"type": "Point", "coordinates": [True, 49.5]},
+            {"type": "Point", "coordinates": [-123.5, 49.5, True]},
+            {"type": "Point", "coordinates": [-123.5, 49.5, float("nan")]},
+            {"type": "Point", "coordinates": [-123.5, 49.5, float("inf")]},
+            {"type": "Point", "coordinates": [-123.5, 49.5, "3"]},
+            {
+                "type": "LineString",
+                "coordinates": [[-123.5, 49.5, 0], [-123.4, 49.6, False]],
+            },
+            {
+                "type": "Polygon",
+                "coordinates": [[[-123.5, 49.5, 0], [-123.4, 49.6, True]]],
+            },
+            {
+                "type": "GeometryCollection",
+                "geometries": [
+                    {"type": "Point", "coordinates": [-123.5, True]},
+                ],
+            },
+            {"type": "Point", "coordinates": [10**1000, 49.5]},
+            {"type": "Point", "coordinates": [-123.5, 49.5, 10**1000]},
+            {
+                "type": "GeometryCollection",
+                "geometries": [
+                    {"type": "Point", "coordinates": [10**1000, 49.5]},
+                ],
+            },
+        )
+        for geometry in geometries:
+            with self.subTest(geometry=geometry):
+
+                def handler(
+                    request: httpx.Request,
+                    bound_geometry: dict = geometry,
+                ) -> httpx.Response:
+                    if not request.url.path.endswith("/query"):
+                        return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+                    if request.url.params.get("returnCountOnly") == "true":
+                        return httpx.Response(200, json={"count": 1})
+                    return httpx.Response(
+                        200,
+                        json={
+                            "type": "FeatureCollection",
+                            "features": [
+                                {
+                                    "type": "Feature",
+                                    "properties": {
+                                        "OBJECTID": 1,
+                                        "FIRE_STATUS": "Out of Control",
+                                    },
+                                    "geometry": bound_geometry,
+                                }
+                            ],
+                        },
+                    )
+
+                async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                    response = await LiveDataService(client=client).map_results(
+                        layers=(LiveResultKind.INCIDENT,)
+                    )
+
+                self.assertEqual(response.results, [])
+                self.assertEqual(response.unavailable_layers, [LiveResultKind.INCIDENT])
+                self.assertFalse(response.layer_statuses[0].available)
+                self.assertTrue(response.limitations)
+
+    def test_geometry_collection_recursively_validates_member_coordinates(self) -> None:
+        invalid = {
+            "type": "GeometryCollection",
+            "geometries": [
+                {"type": "Point", "coordinates": [-123.5, 49.5]},
+                {"type": "Point", "coordinates": [-123.4, 49.6, "bad-z"]},
+            ],
+        }
+
+        self.assertIn("malformed_coordinate", geometry_integrity_errors(invalid))
+
+    async def test_invalid_boolean_published_count_is_unavailable_not_zero(self) -> None:
+        for count in (False, True):
+            with self.subTest(count=count):
+
+                def handler(
+                    request: httpx.Request,
+                    bound_count: bool = count,
+                ) -> httpx.Response:
+                    if not request.url.path.endswith("/query"):
+                        return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+                    if request.url.params.get("returnCountOnly") == "true":
+                        return httpx.Response(200, json={"count": bound_count})
+                    return httpx.Response(
+                        200,
+                        json={"type": "FeatureCollection", "features": []},
+                    )
+
+                async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                    response = await LiveDataService(client=client).map_results(
+                        layers=(LiveResultKind.INCIDENT,)
+                    )
+
+                self.assertEqual(response.results, [])
+                self.assertEqual(response.unavailable_layers, [LiveResultKind.INCIDENT])
+                self.assertFalse(response.layer_statuses[0].available)
+
+    async def test_live_result_contract_failure_marks_only_affected_layer_unavailable(
+        self,
+    ) -> None:
+        valid_polygon = {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-123.6, 49.4],
+                    [-123.4, 49.4],
+                    [-123.4, 49.6],
+                    [-123.6, 49.6],
+                    [-123.6, 49.4],
+                ]
+            ],
+        }
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            kind = _kind_from_url(request)
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(kind))
+            if kind == LiveResultKind.INCIDENT:
+                features = [
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "OBJECTID": 1,
+                            "FIRE_STATUS": "Out of Control",
+                        },
+                        "geometry": {"type": "Point", "coordinates": [-123.5, 49.5]},
+                    }
+                ]
+            else:
+                features = [
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "OBJECTID": 2,
+                            "FIRE_STATUS": "Out of Control",
+                            "FIRE_SIZE_HECTARES": 25,
+                        },
+                        "geometry": valid_polygon,
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "OBJECTID": 3,
+                            "FIRE_STATUS": "Out of Control",
+                            # Valid source geometry, but this cannot satisfy the
+                            # non-negative LiveResult size contract.
+                            "FIRE_SIZE_HECTARES": -1,
+                        },
+                        "geometry": valid_polygon,
+                    },
+                ]
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": len(features)})
+            return httpx.Response(
+                200,
+                json={"type": "FeatureCollection", "features": features},
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client).map_results(
+                layers=(LiveResultKind.INCIDENT, LiveResultKind.PERIMETER)
+            )
+
+        self.assertEqual([item.result_id for item in response.results], ["incident:1"])
+        self.assertEqual(response.unavailable_layers, [LiveResultKind.PERIMETER])
+        self.assertEqual(
+            [status.available for status in response.layer_statuses],
+            [True, False],
+        )
+        self.assertEqual(
+            [status.matching_result_count for status in response.layer_statuses],
+            [1, 0],
+        )
+        self.assertTrue(
+            any(
+                "did not match the live result contract" in item
+                for item in response.limitations
+            )
+        )
+
+    async def test_malformed_official_size_quarantines_the_affected_layer(self) -> None:
+        malformed_sizes = (True, False, float("inf"), float("nan"), 10**1000, -1, "25")
+        for malformed_size in malformed_sizes:
+            with self.subTest(malformed_size=malformed_size):
+
+                def handler(
+                    request: httpx.Request,
+                    bound_size: object = malformed_size,
+                ) -> httpx.Response:
+                    if not request.url.path.endswith("/query"):
+                        return httpx.Response(200, json=_metadata(LiveResultKind.PERIMETER))
+                    if request.url.params.get("returnCountOnly") == "true":
+                        return httpx.Response(200, json={"count": 1})
+                    payload = {
+                        "type": "FeatureCollection",
+                        "features": [
+                            {
+                                "type": "Feature",
+                                "properties": {
+                                    "OBJECTID": 1,
+                                    "FIRE_STATUS": "Out of Control",
+                                    "FIRE_SIZE_HECTARES": bound_size,
+                                },
+                                "geometry": {
+                                    "type": "Polygon",
+                                    "coordinates": [
+                                        [
+                                            [-123.6, 49.4],
+                                            [-123.4, 49.4],
+                                            [-123.4, 49.6],
+                                            [-123.6, 49.4],
+                                        ]
+                                    ],
+                                },
+                            }
+                        ],
+                    }
+                    return httpx.Response(
+                        200,
+                        headers={"Content-Type": "application/json"},
+                        content=json.dumps(payload).encode("utf-8"),
+                    )
+
+                async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                    response = await LiveDataService(client=client).map_results(
+                        layers=(LiveResultKind.PERIMETER,)
+                    )
+
+                self.assertEqual(response.results, [])
+                self.assertEqual(response.unavailable_layers, [LiveResultKind.PERIMETER])
+                self.assertTrue(
+                    any(
+                        "did not match the live result contract" in limitation
+                        for limitation in response.limitations
+                    )
+                )
+
+    async def test_malformed_official_update_time_quarantines_the_layer(self) -> None:
+        malformed_times = (
+            True,
+            False,
+            float("inf"),
+            float("nan"),
+            10**1000,
+            -1,
+            "2026-09-04T12:00:00",
+        )
+        for malformed_time in malformed_times:
+            with self.subTest(malformed_time=malformed_time):
+
+                def handler(
+                    request: httpx.Request,
+                    bound_time: object = malformed_time,
+                ) -> httpx.Response:
+                    if not request.url.path.endswith("/query"):
+                        return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+                    if request.url.params.get("returnCountOnly") == "true":
+                        return httpx.Response(200, json={"count": 1})
+                    payload = {
+                        "type": "FeatureCollection",
+                        "features": [
+                            {
+                                "type": "Feature",
+                                "properties": {
+                                    "OBJECTID": 1,
+                                    "FIRE_STATUS": "Out of Control",
+                                    "DATE_MODIFIED": bound_time,
+                                },
+                                "geometry": {
+                                    "type": "Point",
+                                    "coordinates": [-123.5, 49.5],
+                                },
+                            }
+                        ],
+                    }
+                    return httpx.Response(
+                        200,
+                        headers={"Content-Type": "application/json"},
+                        content=json.dumps(payload).encode("utf-8"),
+                    )
+
+                async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                    response = await LiveDataService(client=client).map_results(
+                        layers=(LiveResultKind.INCIDENT,)
+                    )
+
+                self.assertEqual(response.results, [])
+                self.assertEqual(response.unavailable_layers, [LiveResultKind.INCIDENT])
+                self.assertTrue(
+                    any(
+                        "did not match the live result contract" in limitation
+                        for limitation in response.limitations
+                    )
+                )
+
+    async def test_legitimate_empty_live_layer_remains_available_zero(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 0})
+            return httpx.Response(
+                200,
+                json={"type": "FeatureCollection", "features": []},
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client).map_results(
+                layers=(LiveResultKind.INCIDENT,)
+            )
+
+        self.assertEqual(response.results, [])
+        self.assertEqual(response.unavailable_layers, [])
+        self.assertTrue(response.layer_statuses[0].available)
+        self.assertEqual(response.layer_statuses[0].matching_result_count, 0)
+        self.assertFalse(
+            any(
+                "did not match the live result contract" in item
+                for item in response.limitations
+            )
+        )
 
     async def test_nearby_page_is_bounded_explicit_and_roster_complete(self) -> None:
         features = [
@@ -1000,6 +1362,8 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             nonlocal query_calls
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": len(features)})
             query_calls += 1
             return httpx.Response(
                 200,
@@ -1061,6 +1425,8 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             nonlocal calls
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": len(features)})
             calls += 1
             self.assertEqual(request.url.params.get("orderByFields"), "OBJECTID ASC")
             return httpx.Response(
@@ -1087,10 +1453,12 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
         def handler(request: httpx.Request) -> httpx.Response:
             nonlocal calls
             calls += 1
-            if calls > 2:
+            if calls > 3:
                 raise httpx.ReadTimeout("offline")
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 1})
             return httpx.Response(
                 200,
                 json={
@@ -1133,10 +1501,12 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
         def handler(request: httpx.Request) -> httpx.Response:
             nonlocal calls
             calls += 1
-            if calls > 2:
+            if calls > 3:
                 raise httpx.ReadTimeout("offline")
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 1})
             return httpx.Response(
                 200,
                 json={
@@ -1168,6 +1538,8 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
                 return httpx.Response(200, json={"unexpected": []})
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(kind))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 2})
             offset = int(request.url.params.get("resultOffset", "0"))
             return httpx.Response(
                 200,
@@ -1258,11 +1630,64 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(during_republish.unavailable_layers, [])
         self.assertEqual(during_republish.results[0].freshness, Freshness.STALE)
 
+    async def test_nonempty_short_page_must_exactly_match_published_count(self) -> None:
+        for published_count in (0, 2):
+            with self.subTest(published_count=published_count):
+                count_calls = 0
+
+                def handler(
+                    request: httpx.Request,
+                    bound_count: int = published_count,
+                ) -> httpx.Response:
+                    nonlocal count_calls
+                    if not request.url.path.endswith("/query"):
+                        return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+                    if request.url.params.get("returnCountOnly") == "true":
+                        count_calls += 1
+                        return httpx.Response(200, json={"count": bound_count})
+                    return httpx.Response(
+                        200,
+                        json={
+                            "type": "FeatureCollection",
+                            "exceededTransferLimit": False,
+                            "features": [
+                                {
+                                    "type": "Feature",
+                                    "properties": {
+                                        "OBJECTID": 1,
+                                        "FIRE_STATUS": "Out of Control",
+                                    },
+                                    "geometry": {
+                                        "type": "Point",
+                                        "coordinates": [-123.5, 49.5],
+                                    },
+                                }
+                            ],
+                        },
+                    )
+
+                async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+                    response = await LiveDataService(client=client).map_results(
+                        layers=(LiveResultKind.INCIDENT,)
+                    )
+
+                self.assertEqual(count_calls, 1)
+                self.assertEqual(response.results, [])
+                self.assertEqual(response.unavailable_layers, [LiveResultKind.INCIDENT])
+                self.assertTrue(
+                    any(
+                        f"1 of {published_count} published records" in limitation
+                        for limitation in response.limitations
+                    )
+                )
+
     async def test_inactive_and_non_wildfire_records_are_not_displayed(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             kind = _kind_from_url(request)
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(kind))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 1})
             is_evacuation = kind == LiveResultKind.EVACUATION
             if is_evacuation:
                 properties = {
@@ -1296,6 +1721,45 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
                 layers=(LiveResultKind.INCIDENT, LiveResultKind.EVACUATION)
             )
         self.assertEqual(response.results, [])
+        self.assertEqual(response.unavailable_layers, [])
+
+    async def test_closed_status_matching_ignores_edge_whitespace_and_case(self) -> None:
+        closed_statuses = ("Out ", " OUT", "rescinded ", " INACTIVE ", "Expired")
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if not request.url.path.endswith("/query"):
+                return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": len(closed_statuses) + 1})
+            features = [
+                {
+                    "type": "Feature",
+                    "properties": {"OBJECTID": index, "FIRE_STATUS": status},
+                    "geometry": {"type": "Point", "coordinates": [-123.5, 49.5]},
+                }
+                for index, status in enumerate(closed_statuses, start=1)
+            ]
+            features.append(
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "OBJECTID": len(closed_statuses) + 1,
+                        "FIRE_STATUS": " Out of Control ",
+                    },
+                    "geometry": {"type": "Point", "coordinates": [-123.5, 49.5]},
+                }
+            )
+            return httpx.Response(
+                200,
+                json={"type": "FeatureCollection", "features": features},
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            response = await LiveDataService(client=client).map_results(
+                layers=(LiveResultKind.INCIDENT,)
+            )
+
+        self.assertEqual([item.status for item in response.results], [" Out of Control "])
         self.assertEqual(response.unavailable_layers, [])
 
     async def test_invalid_schema_fails_closed_per_layer(self) -> None:
@@ -1406,6 +1870,8 @@ class EmittedWgs84CrsTests(unittest.IsolatedAsyncioTestCase):
             nonlocal requested_out_sr
             if not request.url.path.endswith("/query"):
                 return httpx.Response(200, json=_metadata(LiveResultKind.INCIDENT))
+            if request.url.params.get("returnCountOnly") == "true":
+                return httpx.Response(200, json={"count": 1})
             requested_out_sr = request.url.params.get("outSR")
             return httpx.Response(
                 200,

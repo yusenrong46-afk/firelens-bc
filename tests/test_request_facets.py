@@ -155,3 +155,68 @@ def test_atomic_aspect_reservation_does_not_invent_unretrieved_alert() -> None:
     )
 
     assert {hit.chunk_id for hit in selected} == {_ORDER_CHUNK}
+
+
+def test_named_attribution_preserves_names_without_turning_generic_guides_into_names() -> None:
+    from firelens.answering.intent_conversation import named_corpus_attribution
+
+    assert (
+        named_corpus_attribution("According to Cedar Ridge, what belongs in a kit?")
+        == "Cedar Ridge"
+    )
+    assert (
+        named_corpus_attribution("What does PreparedBC say about emergency kits?")
+        == "PreparedBC"
+    )
+    assert (
+        named_corpus_attribution("According to the official guide, what belongs in a kit?")
+        is None
+    )
+    assert named_corpus_attribution("What does wildfire rank mean?") is None
+    assert named_corpus_attribution("What should I put in a kit?") is None
+
+
+def test_named_source_uses_complete_metadata_identity_not_discovery_overlap() -> None:
+    from firelens.answering.intent_conversation import named_corpus_attribution
+    from firelens.answering.scope import source_metadata_matches
+
+    for name in ("PreparedBC", "BC Wildfire Service", "Cedar Ridge"):
+        assert named_corpus_attribution(f"According to {name}, what does this mean?") == name
+        assert source_metadata_matches(name, {"publisher": name})
+        assert not source_metadata_matches(name + " Regional Office", {"publisher": name})
+        assert not source_metadata_matches(name, {"publisher": name + " Regional Office"})
+    assert source_metadata_matches(
+        "preparedbc wildfire guide", {"source_id": "preparedbc_wildfire_guide"}
+    )
+    assert (
+        named_corpus_attribution("According to the PreparedBC guide, explain fire ecology.")
+        == "PreparedBC"
+    )
+
+
+def test_named_source_document_descriptors_do_not_accept_other_organizations() -> None:
+    from firelens.answering.scope import source_metadata_matches
+
+    assert source_metadata_matches("Cedar Ridge", {"title": "Cedar Ridge Household Kit"})
+    assert source_metadata_matches("PreparedBC", {"source_id": "preparedbc_wildfire_guide"})
+    for field in ("publisher", "title", "source_id"):
+        assert not source_metadata_matches(
+            "Cedar Ridge", {field: "Cedar Ridge Regional Office"}
+        )
+        assert not source_metadata_matches(
+            "Cedar Ridge Regional Office", {field: "Cedar Ridge"}
+        )
+        assert not source_metadata_matches("Cedar Ridge", {field: "North Cedar Ridge"})
+
+
+def test_embedded_actor_is_not_a_hard_named_source_attribution() -> None:
+    from firelens.answering.intent_conversation import (
+        explicit_corpus_attribution,
+        named_corpus_attribution,
+    )
+
+    question = "What colour readiness tag does North Bend require on the bag?"
+    assert explicit_corpus_attribution(question)
+    assert named_corpus_attribution(question) is None
+    assert named_corpus_attribution("Does North Bend require a readiness tag?") == "North Bend"
+    assert named_corpus_attribution("What does North Bend require?") == "North Bend"

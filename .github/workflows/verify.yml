@@ -54,11 +54,51 @@ jobs:
         run: |
           .venv/bin/python scripts/check_lockfiles.py
           .venv/bin/python scripts/check_actions_pinned.py
+      - name: Validate documentation and repository map
+        run: make docs-check
       - name: Run complete zero-cost verification
         run: make verify
       - name: Run ProductBench v2 deterministic offline contract
         run: make productbench-deterministic
       - name: Run source-aware conversation deterministic contract
         run: make source-aware-conversation
+      - name: Run zero-cost EvalLab core engineering gate (not release qualification)
+        env:
+          EVAL_LAB_CI_DIR: ${{ runner.temp }}/firelens-eval-lab-core
+        run: |
+          PYTHONPATH=src:tests .venv/bin/python -m firelens_eval run \
+            --suite core --output-dir "$EVAL_LAB_CI_DIR"
+          .venv/bin/python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          envelope = json.loads(
+              (Path(os.environ["EVAL_LAB_CI_DIR"]) / "envelope.json").read_text()
+          )
+          identity = envelope.get("identity") or {}
+          execution = envelope.get("execution") or {}
+          adapters = envelope.get("adapters") or []
+          required = {
+              "claimbench_v2",
+              "hard_probe_rc2_2",
+              "productbench_offline",
+              "source_aware_conversation",
+          }
+          observed = {item.get("adapter_id") for item in adapters}
+          valid = (
+              envelope.get("status") == "PASS"
+              and envelope.get("qualification_role") == "zero_cost_engineering_evidence"
+              and identity.get("dirty") is False
+              and identity.get("changed_during_run") is False
+              and execution.get("network_allowed") is False
+              and execution.get("provider_calls_allowed") is False
+              and execution.get("cost_ceiling_usd") == 0.0
+              and observed == required
+              and all(item.get("status") == "PASS" for item in adapters)
+          )
+          if not valid:
+              raise SystemExit("EvalLab CI gate requires a clean, unchanged PASS envelope")
+          PY
       - name: Reject generated-file drift
         run: git diff --exit-code

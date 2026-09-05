@@ -77,10 +77,13 @@ def place_mention_for_question(question: str) -> PlaceMention | None:
             if mention is not None:
                 return mention
         return None
+    unresolved_personal: PlaceMention | None = None
     for clause in live_clauses:
         mention = extract_place(clause.text, live=True)
-        if mention is not None:
+        if mention is not None and mention.kind != PlaceKind.PERSONAL:
             return mention
+        if mention is not None:
+            unresolved_personal = mention
     # "I'm in Kelowna. Are there any fires nearby?": a place stated in a context
     # clause applies to the live request. A guidance clause's place does not.
     for clause in parsed.clauses:
@@ -89,8 +92,8 @@ def place_mention_for_question(question: str) -> PlaceMention | None:
         mention = extract_place(clause.text, live=False)
         if mention is not None:
             return mention
-    if len(parsed.clauses) == 1:
-        return extract_place(question, live=False)
+    if unresolved_personal is not None:
+        return unresolved_personal
     return None
 
 

@@ -71,7 +71,10 @@ def candidate_contains_identifier(
 
 
 def candidate_source_reference_present(
-    question: str, candidates: Sequence[Mapping[str, str]]
+    question: str,
+    candidates: Sequence[Mapping[str, str]],
+    *,
+    minimum_distinctive_tokens: int = 2,
 ) -> bool:
     """Recognize explicit source names without treating snippets as evidence."""
 
@@ -86,7 +89,9 @@ def candidate_source_reference_present(
                 if token not in _GENERIC_SOURCE_WORDS
             ]
             distinctive = list(dict.fromkeys(tokens))
-            if len(distinctive) >= 2 and set(distinctive).issubset(question_tokens):
+            if len(distinctive) >= minimum_distinctive_tokens and set(distinctive).issubset(
+                question_tokens
+            ):
                 return True
     return False
 
@@ -124,3 +129,35 @@ def mixed_scope_request(question: str, candidates: Sequence[Mapping[str, str]]) 
         overlap <= 1 and substantive >= 2
         for overlap, substantive in zip(overlap_counts, substantive_counts, strict=True)
     )
+
+
+def source_metadata_matches(source: str, metadata: Mapping[str, str]) -> bool:
+    """Bind a complete source name, allowing only trailing document descriptors."""
+    requested = tuple(_REFERENCE_TOKEN.findall(source.casefold()))
+    if not requested:
+        return False
+    descriptors = {
+        "guide",
+        "guides",
+        "document",
+        "documents",
+        "checklist",
+        "checklists",
+        "kit",
+        "kits",
+        "wildfire",
+        "emergency",
+        "preparedness",
+        "household",
+    }
+    for field in ("source_id", "title", "publisher"):
+        identity = tuple(_REFERENCE_TOKEN.findall(metadata.get(field, "").casefold()))
+        if identity == requested:
+            return True
+        # Publisher names never permit prefix/descriptor matching. Titles and
+        # source IDs may append a document description to the complete name.
+        if field != "publisher" and identity[: len(requested)] == requested:
+            suffix = identity[len(requested) :]
+            if suffix and all(token in descriptors for token in suffix):
+                return True
+    return False

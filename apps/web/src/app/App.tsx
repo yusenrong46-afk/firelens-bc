@@ -1,4 +1,4 @@
-import { Clock, House, Info, MapTrifold } from "@phosphor-icons/react";
+import { House, Info, MapTrifold } from "@phosphor-icons/react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
@@ -7,6 +7,7 @@ import "@fontsource/newsreader/latin-500.css";
 import "@fontsource/newsreader/latin-600.css";
 import { ConnectionStatus } from "../features/ask/ConnectionStatus";
 import { ConversationPanel } from "../features/ask/ConversationPanel";
+import { QuestionComposer } from "../features/ask/QuestionComposer";
 import { useFireLensSession } from "../features/ask/useFireLensSession";
 import { EvidencePanel } from "../features/evidence/EvidencePanel";
 import {
@@ -27,9 +28,9 @@ import {
   workspaceLayout,
 } from "./workspacePresentation";
 import "./tokens.css";
-import "./shell.css";
 import "./styles.css";
 import "./answer.css";
+import "./shell.css";
 
 const CompactLiveMap = lazy(() =>
   import("../features/near-me/LiveMap").then((module) => ({ default: module.LiveMap })),
@@ -41,7 +42,6 @@ export function App() {
   const [idleMapOpen, setIdleMapOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [mapDismissed, setMapDismissed] = useState(false);
   const contextRef = useRef<HTMLElement>(null);
   const mapRailRef = useRef<HTMLElement>(null);
@@ -49,6 +49,8 @@ export function App() {
   const mapTriggerRef = useRef<HTMLButtonElement>(null);
   const restoreContextFocusRef = useRef(false);
   const composerFocusRef = useRef<HTMLInputElement | null>(null);
+  const selectedSourceRecord = [...session.mapResults, ...(session.response?.live_results ?? [])]
+    .find((record) => record.result_id === session.selectedLiveResultId);
   const closeProject = useCallback(() => setProjectOpen(false), []);
 
   const mapAvailable = shouldOfferContextMap({
@@ -154,15 +156,19 @@ export function App() {
   }
 
   function showOfficialMap() {
-    if (!showCompactMapRail) {
-      contextTriggerRef.current = document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
-    }
+    contextTriggerRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
     if (session.view.kind === "idle") setIdleMapOpen(true);
     setMapDismissed(false);
     setContextSurface("map");
     setContextOpen(true);
+    // An explicit map action navigates to it even when spatial answers have
+    // already opened the rail below the fold. Automatic opening stays in place.
+    requestAnimationFrame(() => {
+      mapRailRef.current?.scrollIntoView?.({ block: "start" });
+      mapRailRef.current?.focus({ preventScroll: true });
+    });
     emitProductEvent("map_opened");
   }
 
@@ -178,13 +184,14 @@ export function App() {
     setIdleMapOpen(false);
     setContextOpen(false);
     setProjectOpen(false);
-    setMobileNavOpen(false);
     window.scrollTo({ top: 0 });
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLInputElement>('input[aria-label="Ask FireLens a question"]')?.focus();
+    });
   }
 
   function fillFromRecent(question: string) {
     session.setQuery(question);
-    setMobileNavOpen(false);
     requestAnimationFrame(() => {
       const input = document.querySelector<HTMLInputElement>('input[aria-label="Ask FireLens a question"]');
       input?.focus();
@@ -225,49 +232,23 @@ export function App() {
             <a href={BCWS_MAP_URL} target="_blank" rel="noreferrer" aria-label="Official BCWS map">
               <MapTrifold size={18} />
             </a>
-            <button
-              type="button"
-              aria-label="Recent questions"
-              aria-expanded={mobileNavOpen}
-              aria-controls="mobile-recent"
-              onClick={() => setMobileNavOpen((open) => !open)}
-            >
-              <Clock size={18} />
-            </button>
           </div>
         </header>
-        {mobileNavOpen && recentQuestions.length > 0 && (
-          <div id="mobile-recent" className="product-sidebar__recent" style={{ marginBottom: 16 }}>
-            <h2 className="product-sidebar__recent-heading">Recent questions</h2>
-            <ul>
-              {recentQuestions.map((item) => (
-                <li key={item.text}>
-                  <button
-                    type="button"
-                    className={item.current ? "recent-question recent-question--current" : "recent-question"}
-                    onClick={() => fillFromRecent(item.text)}
-                  >
-                    {item.text}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         <div className={layoutClass}>
           <ProductSidebar
             homeActive={session.view.kind === "idle"}
             onHome={goHome}
             onHowItWorks={() => setProjectOpen((open) => !open)}
-            onClear={() => { session.clearHistory(); goHome(); }}
+            onClear={goHome}
             onSelectQuestion={fillFromRecent}
             howItWorksOpen={projectOpen}
             recentQuestions={recentQuestions}
           />
 
           <div className="pc-main">
-            {!showCompactMapRail && (
+            {session.visibleQuestion && <h1 className="pc-current-question response-announcement">{session.visibleQuestion}</h1>}
+            {!showCompactMapRail && (session.view.kind === "idle" || session.mode === "live" || session.mode === "mixed") && (
               <div className="pc-main__status">
                 <LiveDataStatus liveSummary={session.liveSummary} readiness={session.readiness} />
                 {session.view.kind === "idle" && (
@@ -305,7 +286,6 @@ export function App() {
                 contextOpen={showCompactMapRail || showEvidencePanel}
                 contextSurface={showCompactMapRail ? "map" : contextSurface}
                 contextChips={<ContextChips chips={contextChips} />}
-                composerFocusRef={composerFocusRef}
               />
               {showEvidencePanel && (
                 <EvidencePanel
@@ -321,11 +301,11 @@ export function App() {
                 />
               )}
             </main>
-            <p className="pc-disclaimer">
+            <footer className="pc-disclaimer">
               FireLens provides information, not decisions. For emergencies call 9-1-1 and follow local authorities.
-            </p>
+            </footer>
             {!showCompactMapRail && (session.mode === "live" || session.mode === "mixed") && (
-              <OfficialSourcesCard />
+              <OfficialSourcesCard response={session.response} selectedResultId={session.selectedLiveResultId} selectedRecord={selectedSourceRecord} />
             )}
           </div>
 
@@ -367,10 +347,21 @@ export function App() {
                   onContextLayersChange={session.setContextLayersEnabled}
                 />
               </Suspense>
-              <OfficialSourcesCard />
+              <OfficialSourcesCard response={session.response} selectedResultId={session.selectedLiveResultId} selectedRecord={selectedSourceRecord} />
             </aside>
           )}
         </div>
+      </div>
+      <div className="pc-composer-dock" role="search" aria-label="Ask FireLens">
+        <QuestionComposer
+          idle={session.view.kind === "idle"}
+          loading={session.view.kind === "loading"}
+          continuationPending={session.requiresLocation}
+          query={session.query}
+          onQueryChange={session.setQuery}
+          onSubmit={session.submit}
+          inputRef={composerFocusRef}
+        />
       </div>
     </div>
   );

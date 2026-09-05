@@ -1,0 +1,58 @@
+authority_note: "These are engineering navigation contracts, not qualification or release evidence."
+invariants:
+  -
+    id: "PLAN-001"
+    owner: "query_authority"
+    severity: "critical"
+    statement: "Only AgentQueryPlan may authorize tools, layers, geography, and scope."
+    tests:
+      - "tests/test_agent_query_plan.py"
+      - "tests/test_agent_query_plan_boundary.py"
+  -
+    id: "PUB-001"
+    owner: "publication"
+    severity: "critical"
+    statement: "Tier A/B facts require structured or exact-source publication."
+    tests:
+      - "tests/test_structured_publication_architecture.py"
+  -
+    id: "PROOF-001"
+    owner: "proof_presentation"
+    severity: "critical"
+    statement: "Proof presentation never strengthens missing or rejected authority."
+    tests:
+      - "tests/test_proof_presentation.py"
+      - "tests/test_public_contract_publication.py"
+  -
+    id: "LIVE-001"
+    owner: "official_live"
+    severity: "critical"
+    statement: "Empty, stale, partial, or unavailable records never imply all-clear."
+    tests:
+      - "tests/test_empty_live_safety.py"
+      - "tests/test_live_prose_binding.py"
+  -
+    id: "RET-001"
+    owner: "static_rag"
+    severity: "high"
+    statement: "Incomplete retrieval is never represented as complete support."
+    tests:
+      - "tests/test_static_rag.py"
+      - "tests/test_source_requirement_precedence.py"
+  -
+    id: "PRIV-001"
+    owner: "provider_boundary"
+    severity: "critical"
+    statement: "Production uses OpenRouter deny-collection with fallback disabled."
+    tests:
+      - "tests/test_api_privacy_boundary.py"
+      - "tests/test_stage_privacy_policy.py"
+  -
+    id: "SAFETY-001"
+    owner: "query_authority"
+    severity: "critical"
+    statement: "Personalized safety decisions require authority or explicit refusal."
+    tests:
+      - "tests/test_productbench_scope_safety.py"
+schema_version: "firelens.invariants.v1"
+source_digest: "f1eeeb6a00ca3b484de0192db5b7291eeff1956f96887b1756d8b29865972d74"

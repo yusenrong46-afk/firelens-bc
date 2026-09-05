@@ -24,7 +24,6 @@ from firelens.contracts import (
     ResponseMode,
     ResponseStatus,
 )
-from firelens.evaluation.hard_probe_expectations import OFFICIAL_HANDOFF_ANSWER
 from firelens.live_contracts import CoarseResolvedLocation, LocationInput
 from firelens.live_support import LiveResultKind, resolve_bc_location
 from firelens.providers.fake import FakeProvider
@@ -33,6 +32,7 @@ from firelens.publication.compiler import (
     compile_structured_claim,
     select_typed_claim_ids,
 )
+from firelens.publication.fallback import admitted_official_quote_source
 from firelens.publication.records import admitted_corpus_index, get_versioned
 from firelens.runtime import load_runtime
 
@@ -142,13 +142,32 @@ def test_high_risk_history_followup_does_not_consult_a_generating_planner() -> N
             await runtime.aclose()
 
         response = execution.response
+        # j01_preparedness_significance_current.v1: the former fallback is
+        # replaced only by already-admitted, same-topic exact rationale.
         assert provider.plan_calls == 0
+        assert provider.generate_calls == 0
         assert all(item.stage != "background_generation" for item in execution.generations)
-        assert response.response_mode == ResponseMode.SCOPE_REDIRECT
-        assert response.answer == OFFICIAL_HANDOFF_ANSWER
+        assert execution.generations == ()
+        assert response.response_mode == ResponseMode.PARTIAL
         assert response.reason_code == ReasonCode.HIGH_RISK_CLAIM_NOT_STRUCTURED
-        assert response.claims == []
-        assert response.evidence == []
+        assert response.validation is not None and response.validation.accepted
+        assert len(response.claims) == len(response.evidence) == 1
+        claim = response.claims[0]
+        evidence = response.evidence[0]
+        assert claim.publication.kind.value == "official_quote_only"
+        assert claim.text == claim.supports[0].quote == evidence.primary_text
+        assert claim.supports[0].evidence_id == evidence.evidence_id
+        assert evidence.publisher == "PreparedBC"
+        assert "BUILD YOUR GRAB-AND-GO BAGS" in claim.text
+        assert "you may need to leave home quickly" in claim.text
+        assert "not caught off guard" in claim.text
+        assert execution.search.evidence_packet is not None
+        source = next(
+            item
+            for item in execution.search.evidence_packet.items
+            if item.evidence_id == evidence.evidence_id
+        )
+        assert admitted_official_quote_source(source, claim.text)
 
     asyncio.run(run())
 

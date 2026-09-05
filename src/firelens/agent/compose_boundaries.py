@@ -40,20 +40,51 @@ def _opening_section(response: AskResponse, answer: str) -> AnswerSection:
 
 
 def with_boundaries(response: AskResponse, packet: AgentPacket) -> AskResponse:
-    """Append the turn's boundary sections to an answered live or mixed response.
+    """Compose executed records and guidance with their declined clauses."""
+
+    return with_boundary_sections(response, packet.boundaries)
+
+
+def with_boundary_sections(
+    response: AskResponse, sections_to_add: tuple[AnswerSection, ...]
+) -> AskResponse:
+    """Retain declined clauses on both executed answers and terminal prompts.
 
     The records (or their absence) open the answer; each boundary follows under
-    its own label. Only ANSWER-status responses carry them: a clarification or a
-    scope redirect already speaks for the whole turn.
+    its own label. A location prompt must not erase an accompanying safety
+    request; it has the same boundary contract without authorizing a lookup.
     """
 
     present = {section.kind for section in response.answer_sections}
-    boundaries = [section for section in packet.boundaries if section.kind not in present]
+    boundaries = [section for section in sections_to_add if section.kind not in present]
     if not boundaries or response.status != ResponseStatus.ANSWER or not response.answer:
         return response
-    if response.response_mode not in {ResponseMode.LIVE, ResponseMode.MIXED}:
+    if response.response_mode not in {
+        ResponseMode.GROUNDED,
+        ResponseMode.LIVE,
+        ResponseMode.MIXED,
+        ResponseMode.PARTIAL,
+        ResponseMode.REQUIRES_INPUT,
+        ResponseMode.SCOPE_REDIRECT,
+    }:
         return response
     sections = list(response.answer_sections) or [_opening_section(response, response.answer)]
+    if (
+        response.response_mode in {ResponseMode.GROUNDED, ResponseMode.PARTIAL}
+        and not response.answer_sections
+    ):
+        sections = [
+            AnswerSection(
+                kind=AnswerSectionKind.UNCERTAINTY,
+                heading="Publication limits",
+                text=" ".join(response.limitations),
+            ),
+            AnswerSection(
+                kind=AnswerSectionKind.REVIEWED_GUIDANCE,
+                heading="Official source wording",
+                text=response.answer,
+            ),
+        ]
     sections.extend(boundaries)
     answer = canonical_live_or_mixed_answer(
         [(section.kind.value, section.text) for section in sections]
@@ -62,11 +93,20 @@ def with_boundaries(response: AskResponse, packet: AgentPacket) -> AskResponse:
         return response
     limitations = list(response.limitations)
     links = list(response.related_links)
-    mode = response.response_mode
+    mode = (
+        ResponseMode.PARTIAL
+        if response.response_mode == ResponseMode.GROUNDED
+        else response.response_mode
+    )
     for section in boundaries:
         if section.kind == AnswerSectionKind.SAFETY_BOUNDARY:
             limitations.append(SAFETY_BOUNDARY_LIMITATION)
-            links.extend(link for link in official_safety_links() if link not in links)
+            # The public envelope permits four links. Keep the safety handoff
+            # first; every quoted source remains linked through its proof card.
+            candidates = [*official_safety_links(), *links]
+            links = list({str(link.url): link for link in reversed(candidates)}.values())[::-1][
+                :4
+            ]
             if response.live_results:
                 mode = ResponseMode.MIXED
         elif section.kind == AnswerSectionKind.UNAVAILABLE:

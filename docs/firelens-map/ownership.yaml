@@ -1,0 +1,102 @@
+authority_note: "These are engineering navigation contracts, not qualification or release evidence."
+domains:
+  -
+    duplicates: []
+    id: "request_understanding"
+    primary:
+      - "src/firelens/answering/intent_automaton.py"
+    projections:
+      - "src/firelens/answering/request_grammar.py"
+  -
+    duplicates: []
+    id: "place_recognition"
+    primary:
+      - "src/firelens/understanding/place.py"
+    projections:
+      - "src/firelens/understanding/place_vocabulary.py"
+      - "src/firelens/answering/location_intent.py"
+  -
+    duplicates: []
+    id: "location_resolution"
+    primary:
+      - "src/firelens/live_support.py"
+    projections:
+      - "src/firelens/live.py"
+  -
+    duplicates:
+      - "src/firelens/agent/fallback_brain.py"
+    id: "query_authority"
+    note: "AgentQueryPlan alone authorizes tools, layers, geography, and static scope."
+    primary:
+      - "src/firelens/agent/query_plan.py"
+    projections:
+      - "src/firelens/agent/runtime_tools.py"
+  -
+    duplicates:
+      - "src/firelens/live_answering.py"
+    id: "ask_orchestration"
+    note: "Public Ask uses FireLensAgent; LiveAnswerCoordinator.answer is legacy."
+    primary:
+      - "src/firelens/agent/coordinator.py"
+    projections:
+      - "src/firelens/agent/loop.py"
+      - "src/firelens/agent/compose.py"
+  -
+    duplicates: []
+    id: "static_rag"
+    primary:
+      - "src/firelens/answering/service.py"
+    projections:
+      - "src/firelens/retrieval/pipeline.py"
+  -
+    duplicates: []
+    id: "official_live"
+    primary:
+      - "src/firelens/live.py"
+    projections:
+      - "src/firelens/live_contracts.py"
+      - "src/firelens/live_identity.py"
+  -
+    duplicates:
+      - "src/firelens/publication/risk.py"
+    id: "publication"
+    primary:
+      - "src/firelens/publication/compiler.py"
+    projections:
+      - "src/firelens/publication/compiled_validation.py"
+  -
+    duplicates:
+      - "apps/web/src/features/ask/proofPresentation.ts"
+    id: "proof_presentation"
+    primary:
+      - "src/firelens/proof_presentation.py"
+    projections:
+      - "apps/web/src/features/ask/proofPresentation.ts"
+  -
+    duplicates:
+      - "apps/web/src/shared/api/api.ts"
+    id: "api_contract"
+    note: "Backend models own wire shapes; generated OpenAPI/types are projections."
+    primary:
+      - "src/firelens/contracts.py"
+      - "src/firelens/api_contracts.py"
+    projections:
+      - "docs/openapi.v1.json"
+      - "apps/web/src/shared/api/api-schema.d.ts"
+  -
+    duplicates: []
+    id: "provider_boundary"
+    primary:
+      - "src/firelens/providers/openrouter.py"
+    projections:
+      - "src/firelens/privacy_policy.py"
+  -
+    duplicates: []
+    id: "http_api"
+    primary:
+      - "src/firelens/api/factory.py"
+    projections:
+      - "src/firelens/api/answer_routes.py"
+      - "src/firelens/api/live_routes.py"
+schema_version: "firelens.ownership.v1"
+source_digest: "f1eeeb6a00ca3b484de0192db5b7291eeff1956f96887b1756d8b29865972d74"
