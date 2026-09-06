@@ -33,7 +33,8 @@ _CONTAINER_AFTER_LIST_REQUEST = re.compile(
 _CONTENTS_REQUEST_WITHOUT_CONTAINER = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
-        r"\bwhat\b.{0,100}\b(?:contain|include)(?:s|d|ing)?\b",
+        r"\b(?:what|which)\b.{0,100}\b(?:contain(?:s|ed|ing)?|"
+        r"includ(?:e|es|ed|ing)|be\s+packed)\b",
         r"\b(?:list|name)\b.{0,100}\b(?:contents?|items?|supplies|equipment)\b",
     )
 )

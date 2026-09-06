@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "f1eeeb6a00ca3b484de0192db5b7291eeff1956f96887b1756d8b29865972d74",
+  "source_digest": "dbadc7c6a25985ff5d3013688cc01f2a7fc8a87d5cc9a580c5fdfebfaca76108",
   "tests": [
     {
       "cases": [
@@ -2619,6 +2619,25 @@
       "evaluation_families": [],
       "language": "python",
       "path": "tests/test_pdf_ingestion.py"
+    },
+    {
+      "cases": [
+        "test_pet_contents_inflections_use_exact_source_without_generation",
+        "test_positive_pet_checklist_cannot_establish_omissions_or_medicines"
+      ],
+      "direct_targets": [
+        "src/firelens/contracts.py"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "conversation",
+        "intent",
+        "provider",
+        "publication",
+        "source_aware"
+      ],
+      "language": "python",
+      "path": "tests/test_pet_contents_support.py"
     },
     {
       "cases": [

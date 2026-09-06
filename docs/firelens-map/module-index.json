@@ -7018,7 +7018,7 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 89,
+      "branch_score": 90,
       "fan_in": 4,
       "fan_out": 4,
       "generated": false,
@@ -7040,7 +7040,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 545,
+      "loc": 548,
       "major_symbols": [
         "support_token_overlap",
         "decide_support",
@@ -8728,7 +8728,7 @@
       "imports": [],
       "kind": "production",
       "language": "python",
-      "loc": 134,
+      "loc": 135,
       "major_symbols": [
         "ContentsRequestFacet",
         "contents_request_facet",
@@ -10455,7 +10455,7 @@
     },
     {
       "branch_score": 120,
-      "fan_in": 180,
+      "fan_in": 181,
       "fan_out": 12,
       "generated": false,
       "id": "src/firelens/contracts.py",
@@ -10604,7 +10604,7 @@
         "AskResponse._validate_requires_input",
         "AskResponse._validate_abstention"
       ],
-      "test_fan_in": 76
+      "test_fan_in": 77
     },
     {
       "branch_score": 26,
@@ -13819,7 +13819,7 @@
     },
     {
       "branch_score": 28,
-      "fan_in": 7,
+      "fan_in": 8,
       "fan_out": 11,
       "generated": false,
       "id": "src/firelens/evaluation/source_aware_conversation_runtime.py",
@@ -13876,7 +13876,7 @@
         "execute_one",
         "_failure_observation"
       ],
-      "test_fan_in": 5
+      "test_fan_in": 6
     },
     {
       "branch_score": 48,
@@ -23577,6 +23577,42 @@
     {
       "branch_score": 3,
       "fan_in": 0,
+      "fan_out": 2,
+      "generated": false,
+      "id": "tests/test_pet_contents_support.py",
+      "import_specifiers": [
+        "asyncio",
+        "firelens.contracts",
+        "firelens.evaluation.source_aware_conversation_runtime",
+        "pathlib",
+        "pytest"
+      ],
+      "imports": [
+        "src/firelens/contracts.py",
+        "src/firelens/evaluation/source_aware_conversation_runtime.py"
+      ],
+      "kind": "test",
+      "language": "python",
+      "loc": 58,
+      "major_symbols": [
+        "test_pet_contents_inflections_use_exact_source_without_generation",
+        "test_positive_pet_checklist_cannot_establish_omissions_or_medicines"
+      ],
+      "module": "tests.test_pet_contents_support",
+      "path": "tests/test_pet_contents_support.py",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "test_pet_contents_inflections_use_exact_source_without_generation",
+        "test_pet_contents_inflections_use_exact_source_without_generation.run",
+        "test_positive_pet_checklist_cannot_establish_omissions_or_medicines",
+        "test_positive_pet_checklist_cannot_establish_omissions_or_medicines.run"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 3,
+      "fan_in": 0,
       "fan_out": 5,
       "generated": false,
       "id": "tests/test_preview_falsification_boundaries.py",
@@ -29615,5 +29651,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "f1eeeb6a00ca3b484de0192db5b7291eeff1956f96887b1756d8b29865972d74"
+  "source_digest": "dbadc7c6a25985ff5d3013688cc01f2a7fc8a87d5cc9a580c5fdfebfaca76108"
 }
