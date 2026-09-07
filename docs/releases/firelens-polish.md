@@ -1,4 +1,121 @@
-# FireLens release continuation — current CI migration
+# FireLens polish release — 2026-09-07
+
+**FIRELENS_POLISH_RELEASE_DEPLOYED_AND_VERIFIED**
+
+[Open FireLens](https://firelens-bc.vercel.app/). [PR #78](https://github.com/yusenrong46-afk/firelens-bc/pull/78)
+merged as `8688c000017e4f1f54ef8b3e957de101c74c69b3`. Its complete tree,
+`3dfefc0b67921ea8881c20a53ef62d210a7d227b`, is byte-identical to independently
+reviewed candidate `20bbafd2c44e4bb298a861b656d33224ec5b4966`.
+
+The canonical deployment wrapper published production deployment
+`dpl_DXBrUYroDBzLdEMoXasv1q48sUzq`, with the actual merge SHA as its build identity.
+The production alias, runtime candidate hash, 178-chunk corpus/index identity,
+models and approved privacy policy match the merged candidate. All 20 deployed
+client files match the reviewed build. No second deployment is needed for this
+release-record update; documentation changes do not alter production inputs.
+
+## Acceptance and independent review
+
+Maintained remote [Verify](https://github.com/yusenrong46-afk/firelens-bc/actions/runs/34147436838)
+and [candidate evidence](https://github.com/yusenrong46-afk/firelens-bc/actions/runs/34148023105)
+passed on the exact PR revision. The downloaded candidate bundle passes the
+repository's integrity verifier; all 12 recorded command exits are zero,
+including dependency audits and candidate-artifact checks. Normal main workflows
+also run on the merge revision; their outcomes remain separate from PR evidence.
+
+Current EvalLab acceptance is PASS under the independently reviewed v2 policy.
+Raw historical results remain **565/574 with nine failure records**, rc2.2
+**96/105**, and rc2.3 **97/105**, against the unchanged 86/105 floor. The raw
+hard-probe runners exit zero because the floor is met; the former EvalLab
+critical-veto gate exits one. No historical FAIL has been rewritten as PASS.
+Current J01 remains accepted while the same answer fails frozen rc2.2.
+
+All nine dispositions are bounded class A semantic-contract disagreements,
+not ID-only exemptions: F06/F07/K03 preserve official-source handoffs;
+F09/I04/K09 require missing location; I08 preserves the actual two-turn clarification
+trajectory; L05 binds a real two-concept background response; J01 binds the
+approved current source rationale. The [disposition table and executable checks](firelens-polish-ci-policy.md)
+preserve the exact questions, evidence and reasons. New failures, changed meaning,
+missing evidence, runtime-policy changes and modified frozen inputs are rejected.
+
+Independent read-only High review accepted the policy after one bounded
+applicability repair, then accepted the dependency/documentation delta with no
+remaining actionable finding. Final review SHA-256:
+`287932db8b45295cf79f7f9f6aeae57de04e5b6134a2c5eea99b9107d174ea9d`.
+
+The release adds the approved source/index/UI work, the narrow mixed-contents
+coordinator repair, versioned CI acceptance in existing evaluation owners, and
+targeted pypdf/Browserslist security updates. It introduces no runtime parser,
+safety layer, retrieval architecture, model or provider. Dependency equivalence
+checks preserve the adopted PDF properties and byte-identical client assets.
+
+Fresh frozen checks include two backend passes of 2,648 tests, 12 skips and 709
+subtests; 203 frontend tests; 45 mocked browser passes and one skip; source-aware
+conversation 106/106; offline ProductBench 31/31; zero structural-publication
+violations; docs, generated-file, full `make verify`, audits and candidate bundle
+build/verify. The earlier 51/51 built-stack/accessibility matrix and accepted
+implementation/provider evidence are retained through demonstrated runtime
+identity; they are not relabelled as new production runs.
+
+## Actual production observations
+
+Two browser Ask requests ran against the production alias with empty history and
+no interception or synthetic upstreams:
+
+- Mixed contents and evacuation question: HTTP 200, adopted page-5 contents,
+  separately identified reviewed claim, and an explicit personal evacuation
+  boundary. Trace `7e92a8875c0346a9b8726e8b67c221bd`.
+- Pet-packing question: HTTP 200, exact page-6 pet passage, partial/extraction-only
+  publication rather than a complete interpreted checklist. Trace
+  `2e886bd8d8644e1ca9a350b59d899c33`.
+
+Both semantic payloads match their retained qualified responses; supporting
+passages match the adopted corpus with line-wrap whitespace normalization.
+Production logs show a successful embedding request and rerank request for each,
+with zero generation. No rate-limit failure was observed in these production
+requests. The source link opens the canonical PreparedBC PDF; a fresh fetch
+matches adopted SHA-256
+`9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2`.
+Browser PDF rendering is not claimed.
+
+At `2026-09-07T17:52:54Z`, the live-map response contained 131 incident records.
+Selecting returned ID `incident:C10467` showed Swede Creek, Under Control,
+1,815 hectares and its matching official source/freshness details. Home cleared
+conversation and selection; reopening the map retained no selection. These are
+dated observations, not current wildfire information.
+
+Perimeter and evacuation layers were unavailable because source geometry failed
+validation. The UI displayed partial coverage and unavailable-layer wording,
+including that missing evacuation data is neither a zero count nor an all-clear.
+Geometry validation was not weakened. Desktop and mobile production views were
+inspected; the 320px view had no horizontal overflow.
+
+## Accounting, rollback and limits
+
+The unchanged US$1 ceiling contains **US$0.01434842 settled** and
+**US$0.9326656 reserved**, total **US$0.94701402**. Unreserved headroom is
+US$0.05298598. This includes the full US$0.48 production request reservations:
+operational logs are not complete billing receipts, and null cost is not zero.
+All prior unsettled reservations, including the original US$0.05 embedding
+attempt, remain held. Six of eight extension Ask requests are used; two remain,
+but the remaining cash headroom does not fund another conservatively reserved
+production Ask without settlement evidence. No further calls are planned.
+
+No rollback was needed. The recorded preceding production deployment is
+`dpl_FeF5mba9xBMUWAPZqVTHtprhDXin`, build
+`c06474d34ff92433357be443d7c44eeffe28f0fe`. Provider availability can vary;
+L05's earlier upstream rate limits remain evidence. FireLens does not decide
+personal evacuation, certify complete live coverage, or turn static guidance
+into current conditions. The retained grouped mixed-answer heading is a known
+presentation limitation; source proof distinguishes the reviewed paraphrase
+from exact quoted contents.
+
+The checkpoints below retain earlier failures and intermediate states. They do
+not supersede this release result.
+
+---
+
+# Historical CI migration checkpoint — 2026-09-07
 
 Draft [PR78](https://github.com/yusenrong46-afk/firelens-bc/pull/78) carries the
 reviewed source/UI changes and [versioned CI policy](firelens-polish-ci-policy.md).
