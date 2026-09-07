@@ -62,7 +62,7 @@
     "data/typed_claims/high_risk_v1.yaml": "5fcda128c37bd366227a8d5f0c7637de83a14be0d67a3637c0c4b74d462a6cb3",
     "data/typed_claims/prepared_candidates_v2.yaml": "d1e085fd7c495e18ee8f9cf6602832e128ec9a3d4a1de4ed6caa62ab9a410dfd",
     "data/typed_claims/source_repair_scope_template_v1.yaml": "59330bda03ecec0090b1731820f1a2dd6ed06225f77c57cff51e34093b92f61d",
-    "pyproject.toml": "f33329000228e3963158c6b73bb695a4e6758f54eb46f495579bf2466d105e51",
+    "pyproject.toml": "71e3d5e0a7135ef827859f2aca6b569162bf47096fb4e2dfde9cb19c58afb483",
     "src/firelens/__init__.py": "0158f565f7f1275cec94ab73ef5dc5a24e5439c23e36b18fb87176596cae1602",
     "src/firelens/_publication_authority.py": "93830a1002ff21e1163ba18c8baed086f744cca7094a3596b266dc985dae76ae",
     "src/firelens/agent/__init__.py": "c7768f81d3005afc9623e8ab18f1c4d47a32b6cd875a2b8f3c68fee914d2936a",
@@ -277,7 +277,7 @@
     "src/firelens/understanding/place.py": "97828eb184616195a0897ec500cde6679a23dcc3dbefcaf1a69eb6e625ec27c5",
     "src/firelens/understanding/place_vocabulary.py": "001de8edb0308a67fd619a709b0ee0c12244c4161d2f8e3c8b25d43b1dd19d1b",
     "src/firelens/understanding/reference.py": "11593f14e8e61e7760f080bb600914166bb7780457fdce3358be982e409731b9",
-    "requirements.lock": "faac4831770304652f31e56e93d13d4cad5501955ede2755fade24860730627f",
+    "requirements.lock": "0104a88ad3e8a734dd071edaef5d12c85375ceb89826c330883e0a212ff50487",
     "app.py": "c3f3ef2e85a403426a23398ccb5b10817f43099d54117f7898ad1710424a82ec",
     "config/firelens.v1_6_2_patch_promotion.v1.json": "c579bb38a1f97e52a65a69d40ffc262eec1154e5b52b3df29d1440a40c36ae25",
     "config/firelens.v1_6_3_patch_promotion.v1.json": "25bf032d39d00cbb17da42e5b5b928a0511cd42961e1ec16ccc098a1e09f1f41",
@@ -783,5 +783,20 @@
     "embedding_zdr": "required",
     "reranking_zdr": "optional",
     "generation_zdr": "required"
+  },
+  "dependency_maintenance": {
+    "pypdf": "6.15.0 -> 6.16.1",
+    "applicability": "Ingestion validation only; same admitted PDF hash, page count and encryption state; unchanged pdfplumber extraction and existing corpus/index. No online provider request input changes. Four ingestion tests pass.",
+    "changed_bindings": {
+      "pyproject.toml": {
+        "before": "f33329000228e3963158c6b73bb695a4e6758f54eb46f495579bf2466d105e51",
+        "after": "71e3d5e0a7135ef827859f2aca6b569162bf47096fb4e2dfde9cb19c58afb483"
+      },
+      "requirements.lock": {
+        "before": "faac4831770304652f31e56e93d13d4cad5501955ede2755fade24860730627f",
+        "after": "0104a88ad3e8a734dd071edaef5d12c85375ceb89826c330883e0a212ff50487"
+      }
+    },
+    "browserslist": "4.28.5 -> 4.28.9 and its compatible transitive browser-data dependencies; 20 client assets byte-identical."
   }
 }

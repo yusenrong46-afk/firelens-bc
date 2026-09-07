@@ -1,18 +1,23 @@
 # FireLens release continuation — current CI migration
 
-GitHub authentication now has the required repo/workflow scopes. The maintained
-CI discrepancy is being resolved through the [reviewed v2 policy](firelens-polish-ci-policy.md),
-with frozen raw outcomes preserved. Independent frozen-delta review and current
-CI remain pending; no release or production verification is claimed yet.
+Draft [PR78](https://github.com/yusenrong46-afk/firelens-bc/pull/78) carries the
+reviewed source/UI changes and [versioned CI policy](firelens-polish-ci-policy.md).
+Independent High review accepted the semantic policy after one bounded
+applicability repair. Exact1ec7445 passed full local verification and maintained
+EvalLab, with historical565/574 and nine raw failure records preserved.
 
-One further exact L05 Ask completed both requested concepts as general background.
-Four of eight extension Ask requests have now been used. Accounting is
-US$0.01434842 settled plus US$0.7026656 reserved, including US$0.25 explicitly
-protected for production smoke. All failed-provider reservations remain retained.
-No runtime, source, index, model or privacy change accompanies this CI correction.
+The remaining candidate security commands correctly failed on pypdf and
+Browserslist advisories. Targeted dependency upgrades now have clean audits;
+PDF validation properties and all20 client assets remain identical. Revised
+full checks and dependency/documentation review are pending. No merge or production
+deployment is claimed by this checkpoint.
 
-The earlier checkpoint below is historical; its authentication and L05 gaps have
-since been resolved. Its raw failures and qualification evidence remain intact.
+Four of eight extension Ask requests are used. Accounting remains
+US$0.01434842 settled plus US$0.7026656 reserved, including US$0.25 protected for
+production smoke. No failed-provider reservation has been released. Production
+remains on its recorded rollback deployment until all preproduction gates pass.
+
+The checkpoints below retain the earlier observations and failures.
 
 ---
 

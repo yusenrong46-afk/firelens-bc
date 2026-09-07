@@ -71,3 +71,22 @@ model change and missing entrypoint/deployment file bindings. The bounded repair
 adds those safe effective settings and startup files to the existing binding;
 changed-model, routing and entrypoint controls protect the same exposed finding.
 The initial full verification was interrupted for this repair (not called PASS).
+
+
+## Dependency-security maintenance after policy acceptance
+
+Independent policy review closed its sole applicability finding at cycle2 on
+`1ec7445`. The subsequent maintained candidate bundle correctly rejected three
+pypdf advisories and one high-severity npm package. No security rule was waived.
+Pypdf6.15.0 is updated to6.16.1; Browserslist4.28.5 to4.28.9 with its compatible
+browser-data dependencies. Fresh audits report no known findings. See the
+[pypdf advisory](https://github.com/py-pdf/pypdf/security/advisories/GHSA-763m-79hh-57f2)
+and [Browserslist advisory](https://github.com/advisories/GHSA-c83g-rgw3-j3cx).
+
+The admitted PDF bytes/page count/encryption state match, and ingestion tests4/4
+pass. Actual text extraction uses unchanged pdfplumber; current corpus/index are
+untouched. All20 rebuilt client assets are byte-identical. The applicability
+record updates only the two changed Python manifest hashes, preserving the
+previous hashes and explicit reasoning. This maintenance does not change online
+provider inputs or require another paid qualification campaign. The revised
+candidate still requires complete maintained checks and independent delta review.

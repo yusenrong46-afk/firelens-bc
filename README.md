@@ -11,18 +11,10 @@ and general background distinct, including when a conversation moves between the
 [System Card](docs/system-card/FIRELENS_SYSTEM_CARD.md) ·
 [Evaluation guide](docs/eval/README.md)
 
-**Production verification is incomplete.** The linked PreparedBC wildfire guide
-has changed since the admitted corpus was reviewed. Grab-and-go quotations in
-FireLens do not exactly match the current PDF; the current checklist also adds
-insurance/important papers. Read the [release findings](docs/releases/firelens-final-ship.md)
-and consult the current official guide for that guidance.
-
-**Local mixed and pet qualification completed; release remains blocked.** The
-successor admits the revised source and uses the real 178-chunk index. Three
-additional Ask attempts qualified both missing journeys after one reviewed
-contents-intent repair. `make verify` and the current rc2.3 matrix pass, but the
-maintained Verify workflow's frozen rc2.2 EvalLab core gate still fails. No polish
-release has been deployed. See the [polish release evidence](docs/releases/firelens-polish.md).
+This revision uses the adopted current PreparedBC guide and a real178-chunk index.
+Exact source quotations, reviewed paraphrases and partial guidance are labelled
+separately. See the [dated release evidence](docs/releases/firelens-polish.md) for
+qualification, deployment status and retained limitations.
 
 ![Reviewed local FireLens candidate answering grab-and-go guidance with inspectable source proof](docs/product/screenshots/polish-current-guidance-2026-09-07.png)
 

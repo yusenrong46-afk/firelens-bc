@@ -3,7 +3,23 @@
 Status: measured candidate evidence with historical results retained separately.
 Assessment date: 2026-09-05. Final release execution is authorized subject to current gates.
 
-## Final qualification continuation — 2026-09-07
+## Current CI policy and security maintenance — 2026-09-07
+
+The independently accepted v2 CI policy preserves raw rc2.2 outcomes96/105 and
+rc2.3 outcomes97/105 while requiring current source-bound semantics for the nine
+reviewed discrepancies. Current real L05 evidence confirms distinct two-concept
+background guidance, with observed upstream rate limits retained. The gate rejects
+changed model/routing, source/startup files, harmful same-mode content and missing
+evidence. [Policy rationale](../releases/firelens-polish-ci-policy.md).
+
+Dependency audits exposed pypdf and Browserslist advisories after the earlier
+matrix. Targeted upgrades clear them; unchanged PDF validation properties and
+byte-identical client assets support retention of the existing online provider
+and UI evidence. The [release record](../releases/firelens-polish.md) tracks the
+current candidate, maintained CI and separate production gate. Earlier sections
+below are historical checkpoints, not current deployment claims.
+
+## Historical final qualification continuation — 2026-09-07
 
 Mixed and pet real-provider journeys have now qualified using three additional
 Ask attempts. One independently reviewed coordinator repair preserves contents
