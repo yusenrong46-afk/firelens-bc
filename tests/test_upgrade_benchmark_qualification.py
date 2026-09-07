@@ -4,6 +4,25 @@ from __future__ import annotations
 from upgrade_benchmark_support import *
 
 
+@pytest.fixture(autouse=True)
+def historical_sealed_corpus(monkeypatch):
+    # The sealed v1.5 protocol predates the admitted PreparedBC successor.
+    from firelens.evaluation import retrieval
+
+    original = upgrade_benchmark.FireLensConfig.from_env
+
+    def bound_config(project_root=None):
+        return original(project_root).model_copy(
+            update={
+                "corpus_path": ROOT
+                / "data/history/preparedbc-f82166e0/data/processed/firelens_static_corpus.chunks.jsonl"
+            }
+        )
+
+    monkeypatch.setattr(upgrade_benchmark.FireLensConfig, "from_env", bound_config)
+    assert retrieval.FireLensConfig is upgrade_benchmark.FireLensConfig
+
+
 def test_hard_probe_parser_accepts_the_complete_qualified_protocol() -> None:
     parsed = _hard_probe(_hard_probe_report(), expected_mode="qualified")
 

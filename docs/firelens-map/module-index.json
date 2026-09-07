@@ -2780,7 +2780,7 @@
       "imports": [],
       "kind": "test",
       "language": "typescript",
-      "loc": 456,
+      "loc": 453,
       "major_symbols": [
         "LOCAL_ORIGIN",
         "AskWireRequest",
@@ -11040,7 +11040,7 @@
       "imports": [],
       "kind": "evaluation",
       "language": "python",
-      "loc": 525,
+      "loc": 526,
       "major_symbols": [
         "sha256_bytes",
         "canonical_bytes",
@@ -11165,7 +11165,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 104,
+      "branch_score": 106,
       "fan_in": 4,
       "fan_out": 4,
       "generated": false,
@@ -11191,7 +11191,7 @@
       ],
       "kind": "evaluation",
       "language": "python",
-      "loc": 653,
+      "loc": 637,
       "major_symbols": [
         "validate_timestamp",
         "exact_object",
@@ -12142,9 +12142,9 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 134,
-      "fan_in": 6,
-      "fan_out": 15,
+      "branch_score": 77,
+      "fan_in": 5,
+      "fan_out": 16,
       "generated": false,
       "id": "src/firelens/evaluation/hard_probe_cli.py",
       "import_specifiers": [
@@ -12160,6 +12160,7 @@
         "firelens.config",
         "firelens.contracts",
         "firelens.evaluation.hard_probe_expectations",
+        "firelens.evaluation.hard_probe_semantics",
         "firelens.evaluation.j01_current_acceptance",
         "firelens.live",
         "firelens.live_contracts",
@@ -12185,6 +12186,7 @@
         "src/firelens/config.py",
         "src/firelens/contracts.py",
         "src/firelens/evaluation/hard_probe_expectations.py",
+        "src/firelens/evaluation/hard_probe_semantics.py",
         "src/firelens/evaluation/j01_current_acceptance.py",
         "src/firelens/live.py",
         "src/firelens/live_contracts.py",
@@ -12196,7 +12198,7 @@
       ],
       "kind": "evaluation",
       "language": "python",
-      "loc": 654,
+      "loc": 554,
       "major_symbols": [
         "OfflineLiveDataService",
         "run",
@@ -12217,11 +12219,6 @@
         "OfflineLiveDataService.nearby_page",
         "_git_commit",
         "_git_tree",
-        "_semantic_checks",
-        "_a02_comparison_coverage_issues",
-        "_grounded_semantic_issues",
-        "_live_semantic_issues",
-        "_unsafe_assertion_issues",
         "_execution_details",
         "_trace_details",
         "_run_case",
@@ -12240,7 +12237,7 @@
       "import_specifiers": [
         "__future__",
         "firelens.contracts",
-        "firelens.evaluation.j01_current_acceptance",
+        "firelens.evaluation.hard_probe_semantics",
         "hashlib",
         "json",
         "pathlib",
@@ -12250,7 +12247,7 @@
       ],
       "imports": [
         "src/firelens/contracts.py",
-        "src/firelens/evaluation/j01_current_acceptance.py"
+        "src/firelens/evaluation/hard_probe_semantics.py"
       ],
       "kind": "evaluation",
       "language": "python",
@@ -12303,32 +12300,64 @@
       "test_fan_in": 4
     },
     {
-      "branch_score": 34,
-      "fan_in": 5,
-      "fan_out": 4,
+      "branch_score": 81,
+      "fan_in": 4,
+      "fan_out": 1,
       "generated": false,
-      "id": "src/firelens/evaluation/j01_current_acceptance.py",
+      "id": "src/firelens/evaluation/hard_probe_semantics.py",
       "import_specifiers": [
         "__future__",
         "firelens.contracts",
-        "firelens.evaluation.candidate_evidence_common",
-        "firelens.evaluation.hard_probe_cli",
-        "firelens.evaluation.hard_probe_expectations",
         "json",
         "pathlib",
         "typing"
       ],
       "imports": [
-        "src/firelens/contracts.py",
-        "src/firelens/evaluation/candidate_evidence_common.py",
-        "src/firelens/evaluation/hard_probe_cli.py",
-        "src/firelens/evaluation/hard_probe_expectations.py"
+        "src/firelens/contracts.py"
       ],
       "kind": "evaluation",
       "language": "python",
-      "loc": 125,
+      "loc": 175,
       "major_symbols": [
+        "current_source_explanation_supported"
+      ],
+      "module": "firelens.evaluation.hard_probe_semantics",
+      "path": "src/firelens/evaluation/hard_probe_semantics.py",
+      "production_fan_in": 0,
+      "statically_unreferenced": false,
+      "symbols": [
         "current_source_explanation_supported",
+        "_semantic_checks",
+        "_a02_comparison_coverage_issues",
+        "_grounded_semantic_issues",
+        "_live_semantic_issues",
+        "_unsafe_assertion_issues"
+      ],
+      "test_fan_in": 1
+    },
+    {
+      "branch_score": 10,
+      "fan_in": 4,
+      "fan_out": 3,
+      "generated": false,
+      "id": "src/firelens/evaluation/j01_current_acceptance.py",
+      "import_specifiers": [
+        "__future__",
+        "firelens.evaluation.candidate_evidence_common",
+        "firelens.evaluation.hard_probe_expectations",
+        "firelens.evaluation.hard_probe_semantics",
+        "pathlib",
+        "typing"
+      ],
+      "imports": [
+        "src/firelens/evaluation/candidate_evidence_common.py",
+        "src/firelens/evaluation/hard_probe_expectations.py",
+        "src/firelens/evaluation/hard_probe_semantics.py"
+      ],
+      "kind": "evaluation",
+      "language": "python",
+      "loc": 60,
+      "major_symbols": [
         "legacy_j01_result",
         "validate_current_j01"
       ],
@@ -12337,7 +12366,6 @@
       "production_fan_in": 0,
       "statically_unreferenced": false,
       "symbols": [
-        "current_source_explanation_supported",
         "legacy_j01_result",
         "validate_current_j01"
       ],
@@ -13394,7 +13422,7 @@
     },
     {
       "branch_score": 92,
-      "fan_in": 2,
+      "fan_in": 3,
       "fan_out": 7,
       "generated": false,
       "id": "src/firelens/evaluation/retrieval.py",
@@ -13437,7 +13465,7 @@
         "_development_retrieval",
         "_retrieval_qualification"
       ],
-      "test_fan_in": 0
+      "test_fan_in": 1
     },
     {
       "branch_score": 5,
@@ -16430,7 +16458,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 652,
+      "loc": 650,
       "major_symbols": [
         "CompiledClaim",
         "compile_structured_claim",
@@ -22376,7 +22404,7 @@
     {
       "branch_score": 17,
       "fan_in": 0,
-      "fan_out": 4,
+      "fan_out": 5,
       "generated": false,
       "id": "tests/test_j01_current_acceptance.py",
       "import_specifiers": [
@@ -22385,6 +22413,7 @@
         "copy",
         "firelens.evaluation.hard_probe_cli",
         "firelens.evaluation.hard_probe_expectations",
+        "firelens.evaluation.hard_probe_semantics",
         "firelens.evaluation.j01_current_acceptance",
         "firelens.evaluation.source_aware_conversation_runtime",
         "httpx",
@@ -22396,6 +22425,7 @@
       "imports": [
         "src/firelens/evaluation/hard_probe_cli.py",
         "src/firelens/evaluation/hard_probe_expectations.py",
+        "src/firelens/evaluation/hard_probe_semantics.py",
         "src/firelens/evaluation/j01_current_acceptance.py",
         "src/firelens/evaluation/source_aware_conversation_runtime.py"
       ],
@@ -25606,7 +25636,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 164,
+      "loc": 165,
       "major_symbols": [
         "test_pending_retrieval_review_is_not_qualified",
         "test_complete_retrieval_review_qualifies",
@@ -25812,7 +25842,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 174,
+      "loc": 179,
       "major_symbols": [
         "test_retrieval_import_uses_all_reviewable_cases_and_only_blind_fields",
         "test_retrieval_import_refuses_a_ranking_report_disguised_as_labels",
@@ -27859,7 +27889,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 152,
+      "loc": 153,
       "major_symbols": [
         "test_recorded_human_approvals_bind_every_prepared_candidate",
         "test_sprinkler_final_approval_preserves_the_complete_bound_source",
@@ -28406,18 +28436,22 @@
     {
       "branch_score": 33,
       "fan_in": 0,
-      "fan_out": 0,
+      "fan_out": 1,
       "generated": false,
       "id": "tests/test_upgrade_benchmark_qualification.py",
       "import_specifiers": [
         "__future__",
+        "firelens.evaluation",
         "upgrade_benchmark_support"
       ],
-      "imports": [],
+      "imports": [
+        "src/firelens/evaluation/retrieval.py"
+      ],
       "kind": "test",
       "language": "python",
-      "loc": 774,
+      "loc": 793,
       "major_symbols": [
+        "historical_sealed_corpus",
         "test_hard_probe_parser_accepts_the_complete_qualified_protocol",
         "test_hard_probe_parser_rejects_an_unknown_case_id",
         "test_hard_probe_parser_rejects_tampered_dataset_priority",
@@ -28473,6 +28507,8 @@
       "production_fan_in": 0,
       "statically_unreferenced": true,
       "symbols": [
+        "historical_sealed_corpus",
+        "historical_sealed_corpus.bound_config",
         "test_hard_probe_parser_accepts_the_complete_qualified_protocol",
         "test_hard_probe_parser_rejects_an_unknown_case_id",
         "test_hard_probe_parser_rejects_tampered_dataset_priority",
@@ -29834,5 +29870,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "c5e3ae3a2abed609beda5e7c6b1b1b3e8643ca7345840d970cf52d631dc59762"
+  "source_digest": "f26e7f74eca1ce891abe45b7e186dc44362cd8380d05078bd99cf73aa385711a"
 }

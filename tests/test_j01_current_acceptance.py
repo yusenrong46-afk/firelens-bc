@@ -18,8 +18,8 @@ from firelens.evaluation.hard_probe_expectations import (
     load_dataset,
     load_expectation_profile,
 )
+from firelens.evaluation.hard_probe_semantics import ROOT
 from firelens.evaluation.j01_current_acceptance import (
-    ROOT,
     current_source_explanation_supported,
     legacy_j01_result,
     validate_current_j01,

@@ -6772,7 +6772,7 @@
     {
       "kind": "static",
       "lines": [
-        336
+        332
       ],
       "source": "src/firelens/evaluation/candidate_evidence_validation.py",
       "target": "src/firelens/evaluation/hard_probe_expectations.py"
@@ -6780,7 +6780,7 @@
     {
       "kind": "static",
       "lines": [
-        629
+        613
       ],
       "source": "src/firelens/evaluation/candidate_evidence_validation.py",
       "target": "src/firelens/evaluation/j01_current_acceptance.py"
@@ -7319,7 +7319,7 @@
     {
       "kind": "static",
       "lines": [
-        39
+        38
       ],
       "source": "src/firelens/evaluation/hard_probe_cli.py",
       "target": "src/firelens/evaluation/hard_probe_expectations.py"
@@ -7327,7 +7327,15 @@
     {
       "kind": "static",
       "lines": [
-        476
+        58
+      ],
+      "source": "src/firelens/evaluation/hard_probe_cli.py",
+      "target": "src/firelens/evaluation/hard_probe_semantics.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        376
       ],
       "source": "src/firelens/evaluation/hard_probe_cli.py",
       "target": "src/firelens/evaluation/j01_current_acceptance.py"
@@ -7402,20 +7410,20 @@
         527
       ],
       "source": "src/firelens/evaluation/hard_probe_expectations.py",
-      "target": "src/firelens/evaluation/j01_current_acceptance.py"
+      "target": "src/firelens/evaluation/hard_probe_semantics.py"
     },
     {
       "kind": "static",
       "lines": [
         9
       ],
-      "source": "src/firelens/evaluation/j01_current_acceptance.py",
+      "source": "src/firelens/evaluation/hard_probe_semantics.py",
       "target": "src/firelens/contracts.py"
     },
     {
       "kind": "static",
       "lines": [
-        111
+        46
       ],
       "source": "src/firelens/evaluation/j01_current_acceptance.py",
       "target": "src/firelens/evaluation/candidate_evidence_common.py"
@@ -7423,18 +7431,19 @@
     {
       "kind": "static",
       "lines": [
-        80
+        15
       ],
       "source": "src/firelens/evaluation/j01_current_acceptance.py",
-      "target": "src/firelens/evaluation/hard_probe_cli.py"
+      "target": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
       "kind": "static",
       "lines": [
-        81
+        8,
+        23
       ],
       "source": "src/firelens/evaluation/j01_current_acceptance.py",
-      "target": "src/firelens/evaluation/hard_probe_expectations.py"
+      "target": "src/firelens/evaluation/hard_probe_semantics.py"
     },
     {
       "kind": "static",
@@ -12775,6 +12784,14 @@
         21
       ],
       "source": "tests/test_j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/hard_probe_semantics.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        22
+      ],
+      "source": "tests/test_j01_current_acceptance.py",
       "target": "src/firelens/evaluation/j01_current_acceptance.py"
     },
     {
@@ -16341,6 +16358,14 @@
     {
       "kind": "static",
       "lines": [
+        10
+      ],
+      "source": "tests/test_upgrade_benchmark_qualification.py",
+      "target": "src/firelens/evaluation/retrieval.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         12
       ],
       "source": "tests/test_v1_1_invariants.py",
@@ -17460,6 +17485,7 @@
     "src/firelens/evaluation/golden_traces.py",
     "src/firelens/evaluation/hard_probe_cli.py",
     "src/firelens/evaluation/hard_probe_expectations.py",
+    "src/firelens/evaluation/hard_probe_semantics.py",
     "src/firelens/evaluation/j01_current_acceptance.py",
     "src/firelens/evaluation/limitation_cases.py",
     "src/firelens/evaluation/limitation_cli.py",
@@ -17779,7 +17805,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "c5e3ae3a2abed609beda5e7c6b1b1b3e8643ca7345840d970cf52d631dc59762",
+  "source_digest": "f26e7f74eca1ce891abe45b7e186dc44362cd8380d05078bd99cf73aa385711a",
   "unresolved_relative_imports": [
     {
       "line": 32,

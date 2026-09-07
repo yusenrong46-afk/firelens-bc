@@ -77,6 +77,7 @@ MATERIAL_PATHS = (
     "data/evaluation/hard_probe_rc2_2_expectations.v1.manifest.json",
     "docs/reports/POLISH_EXECUTION_AUTHORIZATION.json",
     "src/firelens/evaluation/j01_current_acceptance.py",
+    "src/firelens/evaluation/hard_probe_semantics.py",
     HARD_PROBE_PROFILE_PATH,
     HARD_PROBE_PROFILE_MANIFEST_PATH,
     "data/evaluation/v1_6_user_end_questions_50.json",

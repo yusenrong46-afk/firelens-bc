@@ -517,11 +517,9 @@ def _structured_covers_publication_target(
 
 
 def packet_requires_structured(packet: EvidencePacket, question: str = "") -> bool:
-    """Whether this answer must be compiled from exact wording, not generated.
+    """Compile Tier A/B questions, official status, and packets with Tier A guidance.
 
-    Compile Tier A/B questions, official-status questions, and packets with
-    Tier A guidance. Incidental Tier B source content does not force compilation;
-    ``GroundedAnswerEngine.answer`` still filters generated quantities and statuses.
+    Incidental Tier B content remains filtered by GroundedAnswerEngine.answer.
     """
 
     if question and (
@@ -636,7 +634,7 @@ def _grounded_response(
     )
     if not executed_validation.accepted:
         raise ValueError(
-            "compiled publication validation failed: " + "; ".join(executed_validation.errors)
+            f"compiled publication validation failed: {'; '.join(executed_validation.errors)}"
         )
     return AskResponse(
         status=ResponseStatus.ANSWER,

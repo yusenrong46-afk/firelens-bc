@@ -13,11 +13,12 @@ from firelens.answering.candidate_preparation import (
 from firelens.answering.typed_compare import typed_preservation_errors
 
 ROOT = Path(__file__).resolve().parents[1]
-PREPARED = ROOT / "data/typed_claims/prepared_candidates_v2.yaml"
+HISTORICAL_ROOT = ROOT / "data/history/preparedbc-f82166e0"
+PREPARED = HISTORICAL_ROOT / "data/typed_claims/prepared_candidates_v2.yaml"
 
 
 def test_recorded_human_approvals_bind_every_prepared_candidate() -> None:
-    artifact = build_prepared_candidates(ROOT)
+    artifact = build_prepared_candidates(HISTORICAL_ROOT)
     candidates = {row.candidate_id: row for row in artifact.prepared_candidates}
     prepared_sha256 = sha256(PREPARED.read_bytes()).hexdigest()
 

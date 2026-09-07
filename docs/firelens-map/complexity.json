@@ -367,7 +367,7 @@
     },
     {
       "branch_score": 41,
-      "loc": 456,
+      "loc": 453,
       "path": "apps/web/tests/e2e-real/fullstack.spec.ts"
     },
     {
@@ -1362,7 +1362,7 @@
     },
     {
       "branch_score": 97,
-      "loc": 525,
+      "loc": 526,
       "path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
@@ -1376,8 +1376,8 @@
       "path": "src/firelens/evaluation/candidate_evidence_productbench.py"
     },
     {
-      "branch_score": 104,
-      "loc": 653,
+      "branch_score": 106,
+      "loc": 637,
       "path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
@@ -1486,8 +1486,8 @@
       "path": "src/firelens/evaluation/golden_traces.py"
     },
     {
-      "branch_score": 134,
-      "loc": 654,
+      "branch_score": 77,
+      "loc": 554,
       "path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
@@ -1496,8 +1496,13 @@
       "path": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
-      "branch_score": 34,
-      "loc": 125,
+      "branch_score": 81,
+      "loc": 175,
+      "path": "src/firelens/evaluation/hard_probe_semantics.py"
+    },
+    {
+      "branch_score": 10,
+      "loc": 60,
       "path": "src/firelens/evaluation/j01_current_acceptance.py"
     },
     {
@@ -1912,7 +1917,7 @@
     },
     {
       "branch_score": 121,
-      "loc": 652,
+      "loc": 650,
       "path": "src/firelens/publication/compiler.py"
     },
     {
@@ -2747,7 +2752,7 @@
     },
     {
       "branch_score": 1,
-      "loc": 164,
+      "loc": 165,
       "path": "tests/test_retrieval_review.py"
     },
     {
@@ -2767,7 +2772,7 @@
     },
     {
       "branch_score": 4,
-      "loc": 174,
+      "loc": 179,
       "path": "tests/test_review_workspace_inputs.py"
     },
     {
@@ -2922,7 +2927,7 @@
     },
     {
       "branch_score": 14,
-      "loc": 152,
+      "loc": 153,
       "path": "tests/test_typed_claim_review_decisions.py"
     },
     {
@@ -2957,7 +2962,7 @@
     },
     {
       "branch_score": 33,
-      "loc": 774,
+      "loc": 793,
       "path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
@@ -3077,7 +3082,7 @@
     }
   ],
   "schema_version": "firelens.complexity.v1",
-  "source_digest": "c5e3ae3a2abed609beda5e7c6b1b1b3e8643ca7345840d970cf52d631dc59762",
+  "source_digest": "f26e7f74eca1ce891abe45b7e186dc44362cd8380d05078bd99cf73aa385711a",
   "symbols": [
     {
       "branch_score": 0,
@@ -8961,67 +8966,67 @@
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::_exact_fields:203",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::_exact_fields:204",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::canonical_bytes:147",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::canonical_bytes:148",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::file_record:162",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::file_record:163",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::load_json:194",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::load_json:195",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::sha256_bytes:143",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::sha256_bytes:144",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 5,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::strict_file:151",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::strict_file:152",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::tree_record:167",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::tree_record:168",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 4,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_handoff_migration:437",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_handoff_migration:438",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 16,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_mixed_migration:295",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_mixed_migration:296",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 18,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_quote_only_migration:231",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_quote_only_migration:232",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 12,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_report_semantic_checks:454",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_report_semantic_checks:455",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 18,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_structured_two_sided_migration:356",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_structured_two_sided_migration:357",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 13,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_zero_generation:209",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_zero_generation:210",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
@@ -9091,87 +9096,87 @@
     },
     {
       "branch_score": 11,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_hard_probe_passed_ids:515",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_hard_probe_passed_ids:499",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
-      "branch_score": 9,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_load_hard_probe_profile:435",
+      "branch_score": 11,
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_load_hard_probe_profile:431",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 7,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_load_named_profile:382",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_load_named_profile:378",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 12,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_profile_case_inputs:254",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_profile_case_inputs:250",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 9,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_validate_migration:299",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_validate_migration:295",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::exact_object:49",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::exact_object:45",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::nonempty_string:55",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::nonempty_string:51",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_build_environment:76",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_build_environment:72",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 5,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_checkout_state:61",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_checkout_state:57",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 9,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_command_outcomes:89",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_command_outcomes:85",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 9,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_credential_absence:172",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_credential_absence:168",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 14,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_hard_probe:548",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_hard_probe:532",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_limitations:650",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_limitations:634",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_productbench_deterministic:121",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_productbench_deterministic:117",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_structured_eval:219",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_structured_eval:215",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_timestamp:39",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_timestamp:35",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 8,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_workflow_identity:139",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_workflow_identity:135",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
@@ -9845,18 +9850,13 @@
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
-      "branch_score": 16,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::_a02_comparison_coverage_issues:239",
-      "module_path": "src/firelens/evaluation/hard_probe_cli.py"
-    },
-    {
       "branch_score": 1,
       "id": "src/firelens/evaluation/hard_probe_cli.py::_cost_limit_reached:81",
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
       "branch_score": 7,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::_execution_details:306",
+      "id": "src/firelens/evaluation/hard_probe_cli.py::_execution_details:206",
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
@@ -9870,48 +9870,28 @@
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
-      "branch_score": 11,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::_grounded_semantic_issues:264",
-      "module_path": "src/firelens/evaluation/hard_probe_cli.py"
-    },
-    {
-      "branch_score": 5,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::_live_semantic_issues:279",
+      "branch_score": 15,
+      "id": "src/firelens/evaluation/hard_probe_cli.py::_run_case:302",
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
       "branch_score": 15,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::_run_case:402",
-      "module_path": "src/firelens/evaluation/hard_probe_cli.py"
-    },
-    {
-      "branch_score": 22,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::_semantic_checks:206",
-      "module_path": "src/firelens/evaluation/hard_probe_cli.py"
-    },
-    {
-      "branch_score": 15,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::_trace_details:350",
-      "module_path": "src/firelens/evaluation/hard_probe_cli.py"
-    },
-    {
-      "branch_score": 3,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::_unsafe_assertion_issues:297",
+      "id": "src/firelens/evaluation/hard_probe_cli.py::_trace_details:250",
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::main:649",
+      "id": "src/firelens/evaluation/hard_probe_cli.py::main:549",
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::parse_args:632",
+      "id": "src/firelens/evaluation/hard_probe_cli.py::parse_args:532",
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
       "branch_score": 31,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::run:483",
+      "id": "src/firelens/evaluation/hard_probe_cli.py::run:383",
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
@@ -9990,18 +9970,43 @@
       "module_path": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
+      "branch_score": 16,
+      "id": "src/firelens/evaluation/hard_probe_semantics.py::_a02_comparison_coverage_issues:111",
+      "module_path": "src/firelens/evaluation/hard_probe_semantics.py"
+    },
+    {
+      "branch_score": 11,
+      "id": "src/firelens/evaluation/hard_probe_semantics.py::_grounded_semantic_issues:136",
+      "module_path": "src/firelens/evaluation/hard_probe_semantics.py"
+    },
+    {
+      "branch_score": 5,
+      "id": "src/firelens/evaluation/hard_probe_semantics.py::_live_semantic_issues:151",
+      "module_path": "src/firelens/evaluation/hard_probe_semantics.py"
+    },
+    {
+      "branch_score": 22,
+      "id": "src/firelens/evaluation/hard_probe_semantics.py::_semantic_checks:78",
+      "module_path": "src/firelens/evaluation/hard_probe_semantics.py"
+    },
+    {
+      "branch_score": 3,
+      "id": "src/firelens/evaluation/hard_probe_semantics.py::_unsafe_assertion_issues:169",
+      "module_path": "src/firelens/evaluation/hard_probe_semantics.py"
+    },
+    {
       "branch_score": 24,
-      "id": "src/firelens/evaluation/j01_current_acceptance.py::current_source_explanation_supported:21",
-      "module_path": "src/firelens/evaluation/j01_current_acceptance.py"
+      "id": "src/firelens/evaluation/hard_probe_semantics.py::current_source_explanation_supported:21",
+      "module_path": "src/firelens/evaluation/hard_probe_semantics.py"
     },
     {
       "branch_score": 4,
-      "id": "src/firelens/evaluation/j01_current_acceptance.py::legacy_j01_result:78",
+      "id": "src/firelens/evaluation/j01_current_acceptance.py::legacy_j01_result:13",
       "module_path": "src/firelens/evaluation/j01_current_acceptance.py"
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/evaluation/j01_current_acceptance.py::validate_current_j01:110",
+      "id": "src/firelens/evaluation/j01_current_acceptance.py::validate_current_j01:45",
       "module_path": "src/firelens/evaluation/j01_current_acceptance.py"
     },
     {
@@ -13531,22 +13536,22 @@
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/publication/compiler.py::_card_from_claim:585",
+      "id": "src/firelens/publication/compiler.py::_card_from_claim:583",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/publication/compiler.py::_compact_live_statuses:568",
+      "id": "src/firelens/publication/compiler.py::_compact_live_statuses:566",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/publication/compiler.py::_grounded_response:617",
+      "id": "src/firelens/publication/compiler.py::_grounded_response:615",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/publication/compiler.py::_live_connective_safe:563",
+      "id": "src/firelens/publication/compiler.py::_live_connective_safe:561",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
@@ -13586,7 +13591,7 @@
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/publication/compiler.py::compiled_static_text:576",
+      "id": "src/firelens/publication/compiler.py::compiled_static_text:574",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
@@ -13596,7 +13601,7 @@
     },
     {
       "branch_score": 8,
-      "id": "src/firelens/publication/compiler.py::public_mixed_answer:548",
+      "id": "src/firelens/publication/compiler.py::public_mixed_answer:546",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
@@ -23071,22 +23076,22 @@
     },
     {
       "branch_score": 0,
-      "id": "tests/test_review_workspace_inputs.py::test_retrieval_import_refuses_a_ranking_report_disguised_as_labels:54",
+      "id": "tests/test_review_workspace_inputs.py::test_retrieval_import_refuses_a_ranking_report_disguised_as_labels:59",
       "module_path": "tests/test_review_workspace_inputs.py"
     },
     {
       "branch_score": 3,
-      "id": "tests/test_review_workspace_inputs.py::test_retrieval_import_uses_all_reviewable_cases_and_only_blind_fields:25",
+      "id": "tests/test_review_workspace_inputs.py::test_retrieval_import_uses_all_reviewable_cases_and_only_blind_fields:30",
       "module_path": "tests/test_review_workspace_inputs.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_review_workspace_inputs.py::test_retrieval_import_validates_current_admission_manifest_fields:85",
+      "id": "tests/test_review_workspace_inputs.py::test_retrieval_import_validates_current_admission_manifest_fields:90",
       "module_path": "tests/test_review_workspace_inputs.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_review_workspace_inputs.py::test_semantic_holdout_import_recomputes_overlap_from_the_bound_registry:97",
+      "id": "tests/test_review_workspace_inputs.py::test_semantic_holdout_import_recomputes_overlap_from_the_bound_registry:102",
       "module_path": "tests/test_review_workspace_inputs.py"
     },
     {
@@ -25231,27 +25236,27 @@
     },
     {
       "branch_score": 3,
-      "id": "tests/test_typed_claim_review_decisions.py::test_all_source_repairs_have_explicit_v1_6_deferrals:76",
+      "id": "tests/test_typed_claim_review_decisions.py::test_all_source_repairs_have_explicit_v1_6_deferrals:77",
       "module_path": "tests/test_typed_claim_review_decisions.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_typed_claim_review_decisions.py::test_h8_acceptance_is_bound_to_the_measured_report:104",
+      "id": "tests/test_typed_claim_review_decisions.py::test_h8_acceptance_is_bound_to_the_measured_report:105",
       "module_path": "tests/test_typed_claim_review_decisions.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_typed_claim_review_decisions.py::test_rc1_h8_acceptance_is_bound_to_the_exact_candidate_report:127",
+      "id": "tests/test_typed_claim_review_decisions.py::test_rc1_h8_acceptance_is_bound_to_the_exact_candidate_report:128",
       "module_path": "tests/test_typed_claim_review_decisions.py"
     },
     {
       "branch_score": 5,
-      "id": "tests/test_typed_claim_review_decisions.py::test_recorded_human_approvals_bind_every_prepared_candidate:19",
+      "id": "tests/test_typed_claim_review_decisions.py::test_recorded_human_approvals_bind_every_prepared_candidate:20",
       "module_path": "tests/test_typed_claim_review_decisions.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_typed_claim_review_decisions.py::test_sprinkler_final_approval_preserves_the_complete_bound_source:49",
+      "id": "tests/test_typed_claim_review_decisions.py::test_sprinkler_final_approval_preserves_the_complete_bound_source:50",
       "module_path": "tests/test_typed_claim_review_decisions.py"
     },
     {
@@ -26041,247 +26046,252 @@
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_accepts_cross_region_rate_limit_and_rollback_proof:649",
+      "id": "tests/test_upgrade_benchmark_qualification.py::historical_sealed_corpus:8",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_rejects_an_earlier_observed_rejection:682",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_accepts_cross_region_rate_limit_and_rollback_proof:668",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_rejects_first_rejection_ordinal_that_was_not_rejected:667",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_rejects_an_earlier_observed_rejection:701",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_rejects_same_deployment_rollback:704",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_rejects_first_rejection_ordinal_that_was_not_rejected:686",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_rejects_single_client_rate_limit_attestation:732",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_rejects_same_deployment_rollback:723",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_rejects_tampered_or_unbound_raw_artifacts:752",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_rejects_single_client_rate_limit_attestation:751",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_requires_raw_artifacts_for_positive_proof:747",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_rejects_tampered_or_unbound_raw_artifacts:771",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_requires_rollback_environment_snapshots:717",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_requires_raw_artifacts_for_positive_proof:766",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_development_retrieval_recomputes_aggregates_from_ranking_ids:134",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_deployment_parser_requires_rollback_environment_snapshots:736",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_hard_probe_parser_accepts_the_complete_qualified_protocol:7",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_development_retrieval_recomputes_aggregates_from_ranking_ids:153",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_hard_probe_parser_rejects_an_unknown_case_id:17",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_hard_probe_parser_accepts_the_complete_qualified_protocol:26",
+      "module_path": "tests/test_upgrade_benchmark_qualification.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_hard_probe_parser_rejects_an_unknown_case_id:36",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_hard_probe_parser_rejects_tampered_dataset_priority:25",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_hard_probe_parser_rejects_tampered_dataset_priority:44",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_hard_probe_parser_rejects_wrong_boundary_and_incomplete_protocol:34",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_hard_probe_parser_rejects_wrong_boundary_and_incomplete_protocol:53",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_live_parser_accepts_the_frozen_protocol:47",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_live_parser_accepts_the_frozen_protocol:66",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_live_parser_recomputes_roster_latency_metadata_and_digests:76",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_live_parser_recomputes_roster_latency_metadata_and_digests:95",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_live_parser_rejects_incomplete_or_inconsistent_reports:64",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_live_parser_rejects_incomplete_or_inconsistent_reports:83",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_live_parser_rejects_raw_check_and_cost_mutations:108",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_live_parser_rejects_raw_check_and_cost_mutations:127",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_live_parser_requires_the_exact_canonical_checks:56",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_live_parser_requires_the_exact_canonical_checks:75",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_accepts_exact_canonical_evidence:476",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_accepts_exact_canonical_evidence:495",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 4,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_recomputes_roster_status_identity_and_p95:514",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_recomputes_roster_status_identity_and_p95:533",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_extra_checks_or_missing_deployment_identity:490",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_extra_checks_or_missing_deployment_identity:509",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_incident_status_mismatch_between_chat_and_map:591",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_incident_status_mismatch_between_chat_and_map:610",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_missing_perimeter_from_map:606",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_missing_perimeter_from_map:625",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_non_incident_map_records:576",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_non_incident_map_records:595",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_perimeter_status_mismatch_between_chat_and_map:617",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_perimeter_status_mismatch_between_chat_and_map:636",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 3,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_response_count_hash_and_support_mutations:542",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_response_count_hash_and_support_mutations:561",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_summary_flag_and_cost_mutations:632",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_summary_flag_and_cost_mutations:651",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_unsafe_scope_redirect_payload:567",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_rejects_unsafe_scope_redirect_payload:586",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_requires_https_and_all_eight_requests:502",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_preview_parser_requires_https_and_all_eight_requests:521",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_sealed_parser_accepts_a_complete_required_after_only_report:125",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_sealed_parser_accepts_a_complete_required_after_only_report:144",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_sealed_parser_rejects_protocol_or_budget_violations:175",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_sealed_parser_rejects_protocol_or_budget_violations:194",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_sealed_parser_rejects_tampered_case_level_ranking_aggregate:145",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_sealed_parser_rejects_tampered_case_level_ranking_aggregate:164",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_sealed_parser_rejects_unknown_or_duplicate_ranking_ids:153",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_sealed_parser_rejects_unknown_or_duplicate_ranking_ids:172",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_recomputes_canonical_double_review:183",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_recomputes_canonical_double_review:202",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_recomputes_dangerous_omission_failure:445",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_recomputes_dangerous_omission_failure:464",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_recomputes_failed_claim_findings:432",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_recomputes_failed_claim_findings:451",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_recomputes_source_and_family_disjointness:265",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_recomputes_source_and_family_disjointness:284",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_broken_presentation_hash_chain:341",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_broken_presentation_hash_chain:360",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_candidate_identity_as_blinded_label:368",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_candidate_identity_as_blinded_label:387",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_candidate_report_tampered_after_review:232",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_candidate_report_tampered_after_review:251",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 6,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_falsely_asserted_disjointness:280",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_falsely_asserted_disjointness:299",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_incomplete_presentation_exposure_roster:359",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_incomplete_presentation_exposure_roster:378",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_manifest_roster_tampering:251",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_manifest_roster_tampering:270",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_noncanonical_extra_fields:468",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_noncanonical_extra_fields:487",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 10,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_protocol_and_adjudication_mutations:392",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_protocol_and_adjudication_mutations:411",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_review_without_matching_presentation:351",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_review_without_matching_presentation:370",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_rewritten_development_registry:325",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_rewritten_development_registry:344",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_summary_that_differs_from_recomputation:458",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_rejects_summary_that_differs_from_recomputation:477",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_validates_actual_artifact_hash_chain_and_optional_summary:204",
+      "id": "tests/test_upgrade_benchmark_qualification.py::test_semantic_holdout_validates_actual_artifact_hash_chain_and_optional_summary:223",
       "module_path": "tests/test_upgrade_benchmark_qualification.py"
     },
     {
@@ -27738,7 +27748,7 @@
     },
     {
       "branch_score": 121,
-      "loc": 652,
+      "loc": 650,
       "path": "src/firelens/publication/compiler.py"
     },
     {
@@ -27879,14 +27889,14 @@
       "path": "src/firelens/contextual_retrieval_experiment.py"
     },
     {
-      "branch_score": 121,
-      "loc": 652,
-      "path": "src/firelens/publication/compiler.py"
-    },
-    {
       "branch_score": 81,
       "loc": 650,
       "path": "src/firelens/providers/openrouter.py"
+    },
+    {
+      "branch_score": 121,
+      "loc": 650,
+      "path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 175,

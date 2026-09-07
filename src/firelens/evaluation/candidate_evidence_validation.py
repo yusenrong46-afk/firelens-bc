@@ -13,10 +13,6 @@ import yaml
 from firelens.evaluation import candidate_evidence_productbench
 from firelens.evaluation.candidate_evidence_common import (
     HARD_PROBE_ACTIVE_QUOTE_ONLY_IDS,
-    HARD_PROBE_FROZEN_RC2_1_PROFILE_MANIFEST_PATH,
-    HARD_PROBE_FROZEN_RC2_1_PROFILE_PATH,
-    HARD_PROBE_FROZEN_RC2_PROFILE_MANIFEST_PATH,
-    HARD_PROBE_FROZEN_RC2_PROFILE_PATH,
     HARD_PROBE_MIGRATED_IDS,
     HARD_PROBE_MIXED_MIGRATED_IDS,
     HARD_PROBE_PROFILE,
@@ -435,30 +431,18 @@ def _load_named_profile(
 def _load_hard_probe_profile(root: Path) -> dict[str, Any]:
     cases, base_identity = _profile_case_inputs(root)
     base_hash = base_identity["dataset_sha256"]
-    _load_named_profile(
-        root,
-        base_hash=base_hash,
-        profile_name="rc2",
-        profile_relative_path=HARD_PROBE_FROZEN_RC2_PROFILE_PATH,
-        manifest_relative_path=HARD_PROBE_FROZEN_RC2_PROFILE_MANIFEST_PATH,
-        expected_migration_ids=HARD_PROBE_RC2_MIGRATED_IDS,
-    )
-    _load_named_profile(
-        root,
-        base_hash=base_hash,
-        profile_name="rc2.1",
-        profile_relative_path=HARD_PROBE_FROZEN_RC2_1_PROFILE_PATH,
-        manifest_relative_path=HARD_PROBE_FROZEN_RC2_1_PROFILE_MANIFEST_PATH,
-        expected_migration_ids=HARD_PROBE_MIGRATED_IDS,
-    )
-    _load_named_profile(
-        root,
-        base_hash=base_hash,
-        profile_name="rc2.2",
-        profile_relative_path="data/evaluation/hard_probe_rc2_2_expectations.v1.yaml",
-        manifest_relative_path="data/evaluation/hard_probe_rc2_2_expectations.v1.manifest.json",
-        expected_migration_ids=HARD_PROBE_MIGRATED_IDS,
-    )
+    for name in ("rc2", "rc2.1", "rc2.2"):
+        stem = f"data/evaluation/hard_probe_{name.replace('.', '_')}_expectations.v1"
+        _load_named_profile(
+            root,
+            base_hash=base_hash,
+            profile_name=name,
+            profile_relative_path=f"{stem}.yaml",
+            manifest_relative_path=f"{stem}.manifest.json",
+            expected_migration_ids=HARD_PROBE_RC2_MIGRATED_IDS
+            if name == "rc2"
+            else HARD_PROBE_MIGRATED_IDS,
+        )
     migrations, profile_hash = _load_named_profile(
         root,
         base_hash=base_hash,

@@ -524,7 +524,7 @@ def _migration_invariant_checks(
             )
         )
     if migration.id == "J01" and not migration.require_official_handoff:
-        from firelens.evaluation.j01_current_acceptance import (
+        from firelens.evaluation.hard_probe_semantics import (
             current_source_explanation_supported,
         )
 
