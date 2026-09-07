@@ -13,10 +13,6 @@ import yaml
 from firelens.evaluation import candidate_evidence_productbench
 from firelens.evaluation.candidate_evidence_common import (
     HARD_PROBE_ACTIVE_QUOTE_ONLY_IDS,
-    HARD_PROBE_FROZEN_RC2_1_PROFILE_MANIFEST_PATH,
-    HARD_PROBE_FROZEN_RC2_1_PROFILE_PATH,
-    HARD_PROBE_FROZEN_RC2_PROFILE_MANIFEST_PATH,
-    HARD_PROBE_FROZEN_RC2_PROFILE_PATH,
     HARD_PROBE_MIGRATED_IDS,
     HARD_PROBE_MIXED_MIGRATED_IDS,
     HARD_PROBE_PROFILE,
@@ -29,7 +25,6 @@ from firelens.evaluation.candidate_evidence_common import (
     file_record,
     load_json,
     strict_file,
-    validate_handoff_migration,
     validate_mixed_migration,
     validate_quote_only_migration,
     validate_report_semantic_checks,
@@ -301,7 +296,7 @@ def _validate_migration(value: Any, *, profile_name: str) -> dict[str, Any]:
     migration = exact_object(value, _MIGRATION_FIELDS, "hard-probe profile migration")
     case_id = nonempty_string(migration["id"], "hard-probe profile migration id")
     nonempty_string(migration["rationale"], f"hard-probe profile migration {case_id} rationale")
-    if profile_name == "rc2.2" and case_id in HARD_PROBE_STRUCTURED_TWO_SIDED_IDS:
+    if profile_name in {"rc2.2", "rc2.3"} and case_id in HARD_PROBE_STRUCTURED_TWO_SIDED_IDS:
         expected = {
             "add_allowed_modes": ["partial"],
             "required_publication_kinds": ["structured_reviewed"],
@@ -333,6 +328,11 @@ def _validate_migration(value: Any, *, profile_name: str) -> dict[str, Any]:
                 "structured publication."
             ),
         }
+    elif case_id == "J01" and profile_name == "rc2.3":
+        from firelens.evaluation.hard_probe_expectations import _expected_profile_migration
+
+        expected = _expected_profile_migration("rc2.3", "J01")
+        expected.pop("id")
     elif case_id == "J01":
         expected = {
             "add_allowed_modes": ["scope_redirect"],
@@ -431,22 +431,18 @@ def _load_named_profile(
 def _load_hard_probe_profile(root: Path) -> dict[str, Any]:
     cases, base_identity = _profile_case_inputs(root)
     base_hash = base_identity["dataset_sha256"]
-    _load_named_profile(
-        root,
-        base_hash=base_hash,
-        profile_name="rc2",
-        profile_relative_path=HARD_PROBE_FROZEN_RC2_PROFILE_PATH,
-        manifest_relative_path=HARD_PROBE_FROZEN_RC2_PROFILE_MANIFEST_PATH,
-        expected_migration_ids=HARD_PROBE_RC2_MIGRATED_IDS,
-    )
-    _load_named_profile(
-        root,
-        base_hash=base_hash,
-        profile_name="rc2.1",
-        profile_relative_path=HARD_PROBE_FROZEN_RC2_1_PROFILE_PATH,
-        manifest_relative_path=HARD_PROBE_FROZEN_RC2_1_PROFILE_MANIFEST_PATH,
-        expected_migration_ids=HARD_PROBE_MIGRATED_IDS,
-    )
+    for name in ("rc2", "rc2.1", "rc2.2"):
+        stem = f"data/evaluation/hard_probe_{name.replace('.', '_')}_expectations.v1"
+        _load_named_profile(
+            root,
+            base_hash=base_hash,
+            profile_name=name,
+            profile_relative_path=f"{stem}.yaml",
+            manifest_relative_path=f"{stem}.manifest.json",
+            expected_migration_ids=HARD_PROBE_RC2_MIGRATED_IDS
+            if name == "rc2"
+            else HARD_PROBE_MIGRATED_IDS,
+        )
     migrations, profile_hash = _load_named_profile(
         root,
         base_hash=base_hash,
@@ -614,7 +610,9 @@ def validate_hard_probe(
         validate_mixed_migration(rows[case_id], case_id=case_id)
     for case_id in sorted(HARD_PROBE_STRUCTURED_TWO_SIDED_IDS):
         validate_structured_two_sided_migration(rows[case_id], case_id=case_id)
-    validate_handoff_migration(rows["J01"])
+    from firelens.evaluation.j01_current_acceptance import validate_current_j01
+
+    validate_current_j01(rows["J01"], root=root)
 
     regressions = sorted(baseline_passed - passed - set(HARD_PROBE_MIGRATED_IDS))
     if regressions:

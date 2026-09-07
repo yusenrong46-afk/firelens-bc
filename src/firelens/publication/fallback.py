@@ -167,6 +167,7 @@ def quote_only_claim(
         publisher=item.publisher if item is not None else "Official source",
         canonical_url=HttpUrl(item.canonical_url if item is not None else OFFICIAL_SOURCE_URL),
         locator=item.locator if item is not None else None,
+        document_sha256=item.document_sha256 if item is not None else None,
         temporal_class=TemporalClass.STABLE_GUIDANCE,
         review_provenance=item.review_provenance if item is not None else "native_text",
         primary_text=item.primary_text if item is not None else text,

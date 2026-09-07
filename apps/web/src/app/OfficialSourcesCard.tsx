@@ -26,7 +26,7 @@ export function OfficialSourcesCard({ response, selectedResultId, selectedRecord
         <dl>
           <div><dt>Published by</dt><dd><a href={record.source_url} target="_blank" rel="noreferrer">{record.authority} <ArrowSquareOut size={14} aria-hidden="true" /></a></dd></div>
           <div><dt>Source updated</dt><dd>{record.source_updated_at ? formatTimestamp(record.source_updated_at) : "Not published"}</dd></div>
-          <div><dt>FireLens fetched</dt><dd>{formatTimestamp(record.retrieved_at)}</dd></div>
+          <div><dt>Checked by FireLens</dt><dd>{formatTimestamp(record.retrieved_at)}</dd></div>
         </dl>
       </>}
       {unavailable.length > 0 && <p className="official-sources-card__warning">Unavailable layers: {unavailable.join(", ")}. Returned records do not cover those layers.</p>}

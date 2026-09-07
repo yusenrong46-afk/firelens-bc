@@ -2131,6 +2131,18 @@
             "title": "Context Text",
             "type": "string"
           },
+          "document_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Sha256"
+          },
           "evidence_id": {
             "title": "Evidence Id",
             "type": "string"

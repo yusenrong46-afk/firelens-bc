@@ -1,0 +1,136 @@
+{
+  "status": "answer",
+  "trace_id": "f31acb342cdd44fa8f185b6636a521f9",
+  "response_mode": "partial",
+  "answer": "BUILD YOUR GRAB-AND-GO BAGS\nIn the event of a wildfire, you may need to leave home quickly. Take time\nnow to build grab-and-go bags for everyone in your home so you\u2019re not\ncaught off guard.\nStart with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs.",
+  "answer_sections": [],
+  "history_text": "Authority: Reviewed guidance + uncertainty. Answer: BUILD YOUR GRAB-AND-GO BAGS In the event of a wildfire, you may need to leave home quickly. Take time now to build grab-and-go bags for everyone in your home so you\u2019re not caught off guard. Start with our basic list then consider the additional needs of your household. Do you have pets? Do you have young children? Are you a foster parent? Are you caring for older adults or people with disabilities? If yes, prepare and customize bags specific to everyone's needs. Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions.",
+  "claims": [
+    {
+      "claim_id": "C1",
+      "text": "BUILD YOUR GRAB-AND-GO BAGS\nIn the event of a wildfire, you may need to leave home quickly. Take time\nnow to build grab-and-go bags for everyone in your home so you\u2019re not\ncaught off guard.\nStart with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs.",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E2",
+          "quote": "BUILD YOUR GRAB-AND-GO BAGS\nIn the event of a wildfire, you may need to leave home quickly. Take time\nnow to build grab-and-go bags for everyone in your home so you\u2019re not\ncaught off guard.\nStart with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs."
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "PreparedBC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "E2",
+      "title": "Wildfire Preparedness Guide",
+      "publisher": "PreparedBC",
+      "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+      "locator": "page:4",
+      "document_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+      "temporal_class": "stable_guidance",
+      "review_provenance": "native_text",
+      "primary_text": "BUILD YOUR GRAB-AND-GO BAGS\nIn the event of a wildfire, you may need to leave home quickly. Take time\nnow to build grab-and-go bags for everyone in your home so you\u2019re not\ncaught off guard.\nStart with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs.",
+      "context_text": "TIP: Not being able to communicate with loved ones during an emergency\ncan be extremely stressful and affect your ability to respond\nand help others. Follow these guidelines for staying connected:\n\u2022 Keep your phone fully charged. Preserve battery life by dimming\nyour screen and avoiding power-hungry apps and videos\n\u2022 Create family and emergency contact lists and program them\ninto your phone for quick access\n\u2022 Texts, emails and social media are best during disasters. Data-\nbased services are less likely to experience major interruptions\n\u2022 Consider a virtual meeting place. Create a closed Facebook or\nWhatsApp group to check in during an emergency\n\nBUILD YOUR GRAB-AND-GO BAGS\nIn the event of a wildfire, you may need to leave home quickly. Take time\nnow to build grab-and-go bags for everyone in your home so you\u2019re not\ncaught off guard.\nStart with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs."
+    }
+  ],
+  "limitations": [
+    "The evidence contains stable official guidance and does not establish current wildfire conditions."
+  ],
+  "suggested_questions": [
+    "What belongs in an emergency kit?",
+    "How should I build and review a household emergency plan?",
+    "How can I reduce combustible material around my home?"
+  ],
+  "related_links": [],
+  "reason_code": "high_risk_claim_not_structured",
+  "validation": {
+    "accepted": true,
+    "schema_valid": true,
+    "citation_ids_valid": true,
+    "quotes_exact": true,
+    "claim_support_valid": true,
+    "policy_valid": true,
+    "errors": []
+  },
+  "error_kind": null,
+  "live_results": [],
+  "aggregate_freshness": null,
+  "unavailable_layers": [],
+  "requested_layers": [],
+  "roster_total": null,
+  "sample_record_ids": [],
+  "presentation_shell": "chat",
+  "provenance_class": "reviewed_guidance",
+  "suggestion_omission_reason": "none_registered",
+  "required_input": null,
+  "selected_live_result_id": null,
+  "resolved_location": null,
+  "status_banner": {
+    "headline": "Official wording from a source",
+    "detail": "FireLens is showing an exact source quotation. It has not been approved as a structured FireLens claim.",
+    "freshness_label": "Stable source wording",
+    "availability_label": "Sources for the displayed evidence or official records were available.",
+    "retrieval_completed_at": null,
+    "source_updated_at": null,
+    "official_escalation_title": "Open official source",
+    "official_escalation_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf"
+  },
+  "supported_items": [],
+  "unknown_items": [
+    "The evidence contains stable official guidance and does not establish current wildfire conditions.",
+    "Exact source wording \u2014 not a structured FireLens claim.",
+    "Some requested high-risk guidance has no reviewed structured claim. FireLens is showing official wording or a handoff, not an interpreted claim."
+  ],
+  "proof_cards": [
+    {
+      "claim_id": "C1",
+      "claim_text": "BUILD YOUR GRAB-AND-GO BAGS\nIn the event of a wildfire, you may need to leave home quickly. Take time\nnow to build grab-and-go bags for everyone in your home so you\u2019re not\ncaught off guard.\nStart with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs.",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "PreparedBC",
+      "exact_passage": "BUILD YOUR GRAB-AND-GO BAGS\nIn the event of a wildfire, you may need to leave home quickly. Take time\nnow to build grab-and-go bags for everyone in your home so you\u2019re not\ncaught off guard.\nStart with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs.",
+      "source_title": "Wildfire Preparedness Guide",
+      "source_revision": "page:4",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    }
+  ]
+}

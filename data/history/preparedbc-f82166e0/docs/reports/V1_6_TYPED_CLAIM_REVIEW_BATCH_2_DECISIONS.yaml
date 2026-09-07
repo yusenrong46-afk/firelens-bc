@@ -1,0 +1,124 @@
+schema_version: firelens.typed_claim_review_decisions.v1
+batch: 2
+branch: review/v1-6-typed-claims-batch-2
+starting_commit: 782c597e51f3e216ce5bc7976a005ca930565929
+starting_tree: dcf43085215b5d1ed2a53ee649e5ba32f2947328
+prepared_candidate_artifact_sha256: d1e085fd7c495e18ee8f9cf6602832e128ec9a3d4a1de4ed6caa62ab9a410dfd
+reviewer: Thomas
+reviewer_identity_provided_at: "2026-08-23T11:28:14-03:00"
+note: >
+  Append-only human review journal. Thomas approved every Batch 2 proposal as
+  proposed in the live review. This journal does not itself integrate a claim
+  into the production inventory.
+
+decisions:
+  - candidate_id: PC2-EVAC-003-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:15"
+    source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_span_sha256: dbd2e831b7e761029bbd02c7be30fd52a9879d9b1952db537c668daa906fde53
+    approved_surface_sha256: 1c1831d41caee980e4da9d754c4af1f2e5a60b52da857eca32815d7073a64c5d
+    approved_surface: If you are evacuated, only return home when officials say it is safe.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-SMOKE-012-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:2"
+    source_document_sha256: 6e6d30e2170848695dc1b7e98198ee133aae5abe7d8903c606750db96096c4bf
+    source_span_sha256: c15538089d54ee45d1e436d1eb83da99e1e666adbc68b99da86f4d93c1524b30
+    approved_surface_sha256: acf03e496845c161c3711d803fcb0137d4d06593837b9cf02ed07dddb0897422
+    approved_surface: People with respiratory conditions such as asthma or COPD are at highest risk of health effects caused by wildfire smoke.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-SMOKE-013-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:2"
+    source_document_sha256: 6e6d30e2170848695dc1b7e98198ee133aae5abe7d8903c606750db96096c4bf
+    source_span_sha256: 39362bca7effbeadf88faa06aa0691b1bd4e606c6f6a615d398b24a926f3814e
+    approved_surface_sha256: 8843692f7e8688a0fc2bbbcaffcae598793814763d850387f4ca91eb48331956
+    approved_surface: Young children may need to decrease their activities during smoky periods, especially when outdoors.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-SMOKE-014-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:2"
+    source_document_sha256: 6e6d30e2170848695dc1b7e98198ee133aae5abe7d8903c606750db96096c4bf
+    source_span_sha256: 1c867bfb5ee732ff22e0de1dc45e17e11601d5b6c271b50320874dbc729c5999
+    approved_surface_sha256: 1c867bfb5ee732ff22e0de1dc45e17e11601d5b6c271b50320874dbc729c5999
+    approved_surface: Managing indoor air quality at home is the best way to reduce your smoke exposure.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-UTIL-016-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:15"
+    source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_span_sha256: 37851b8d69405f78ff74556cf3eca2f9b582a7c498e60240b3e67e559a3787c1
+    approved_surface_sha256: ed2eb821d888d2fc6d7b8dfdabc4b4b64cabf856785bc677ff5e17282ba40eb2
+    approved_surface: Only use generators outdoors; do not connect them to a household circuit.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-UTIL-016-02
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:15"
+    source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_span_sha256: f620f9f6d23fef4db39452192cc23d8a660d645ad42a69478687c7655041c1f5
+    approved_surface_sha256: 19150a03f4722436e37ef2ef3494e5ced99fad74282122bfd403e2e299f5e2ce
+    approved_surface: Enter with caution and check that the main power breaker is off.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-UTIL-016-03
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:15"
+    source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_span_sha256: 9eb94b6869b85451aa6e398f89d5f227aecf3ab6de984b64702beccc7041fb58
+    approved_surface_sha256: 691222f46d876d9f6254491e97dd52cacb0429481a382ee54547ed2e4f75e883
+    approved_surface: Walk around the perimeter and check for electrical wires, a gas smell, or debris that could fall.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-FIRESMART-017-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:11"
+    source_document_sha256: c808a14bb873eb8b70930470976b0f2e091eed9cfdc1fe4b63d6325b4ae3c2ca
+    source_span_sha256: 08befd76b71f74ab8963f8a2b2cacd79cb5930d7e2a4e5bdc5a690cd2dfe77d9
+    approved_surface_sha256: dec5265791604ab2ef23ad5b279f06cf00501915ab1c7210af9d2df4f6a41d40
+    approved_surface: Maintain a 1.5 metre non-combustible zone around your entire home and any attachments.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-FIRESMART-021-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:4"
+    source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_span_sha256: b8d8192a19e585de574a8f395ef308debb4a3e633a585c82858802f5cafc36ca
+    approved_surface_sha256: a8363a07f35af80b9a9f3b75e0bb9cf1360437371eb2110b4d7c9486c72742db
+    approved_surface: Build grab-and-go bags now for each member of your household.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.
+  - candidate_id: PC2-FIRESMART-022-01
+    decision: approve
+    production_supported: false
+    reviewer: Thomas
+    decision_time: "2026-08-23T11:28:14-03:00"
+    source_revision: "page:9"
+    source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+    source_span_sha256: 3ea9355b33ff5783d9740389e920f02ac4eb01692d3cdb341e1b024b3a80f7f5
+    approved_surface_sha256: 9dd1241f029a4253fc6f0f043c6a41d501d89cee6dbf820c6c9ee6e4103439a8
+    approved_surface: In Priority Zone 1, 1.5 to 10 metres from a structure or home, avoid planting flammable trees and plants such as cedar, spruce, juniper, pine, and tall grasses.
+    notes: Approved as proposed; inventory integration remains a separate freeze step.

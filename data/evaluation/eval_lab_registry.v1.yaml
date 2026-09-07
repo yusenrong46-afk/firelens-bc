@@ -1,6 +1,6 @@
 schema_version: firelens.eval_lab.registry.v1
 registry_id: firelens_eval_lab_v1
-policy_path: data/evaluation/eval_lab_policy.v1.yaml
+policy_path: data/evaluation/eval_lab_policy.v2.yaml
 suites:
   core:
     availability: executable

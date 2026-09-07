@@ -1531,6 +1531,22 @@
     {
       "kind": "static",
       "lines": [
+        3
+      ],
+      "source": "apps/web/tests/sourceRevision.test.tsx",
+      "target": "apps/web/src/features/ask/SourceProof.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/sourceRevision.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
         2
       ],
       "source": "apps/web/tests/workspacePresentation.test.ts",
@@ -2632,7 +2648,7 @@
         39
       ],
       "source": "src/firelens/agent/coordinator.py",
-      "target": "src/firelens/answering/responses.py"
+      "target": "src/firelens/answering/request_facets.py"
     },
     {
       "kind": "static",
@@ -2640,7 +2656,7 @@
         40
       ],
       "source": "src/firelens/agent/coordinator.py",
-      "target": "src/firelens/answering/static_guidance_subject.py"
+      "target": "src/firelens/answering/responses.py"
     },
     {
       "kind": "static",
@@ -2648,7 +2664,7 @@
         41
       ],
       "source": "src/firelens/agent/coordinator.py",
-      "target": "src/firelens/answering/unsupported_live.py"
+      "target": "src/firelens/answering/static_guidance_subject.py"
     },
     {
       "kind": "static",
@@ -2656,12 +2672,20 @@
         42
       ],
       "source": "src/firelens/agent/coordinator.py",
+      "target": "src/firelens/answering/unsupported_live.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        43
+      ],
+      "source": "src/firelens/agent/coordinator.py",
       "target": "src/firelens/contracts.py"
     },
     {
       "kind": "static",
       "lines": [
-        56
+        57
       ],
       "source": "src/firelens/agent/coordinator.py",
       "target": "src/firelens/guidance_capabilities.py"
@@ -2669,7 +2693,7 @@
     {
       "kind": "static",
       "lines": [
-        57
+        58
       ],
       "source": "src/firelens/agent/coordinator.py",
       "target": "src/firelens/live_answering.py"
@@ -6756,6 +6780,22 @@
     {
       "kind": "static",
       "lines": [
+        332
+      ],
+      "source": "src/firelens/evaluation/candidate_evidence_validation.py",
+      "target": "src/firelens/evaluation/hard_probe_expectations.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        613
+      ],
+      "source": "src/firelens/evaluation/candidate_evidence_validation.py",
+      "target": "src/firelens/evaluation/j01_current_acceptance.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         20
       ],
       "source": "src/firelens/evaluation/capture.py",
@@ -7287,10 +7327,26 @@
     {
       "kind": "static",
       "lines": [
-        39
+        38
       ],
       "source": "src/firelens/evaluation/hard_probe_cli.py",
       "target": "src/firelens/evaluation/hard_probe_expectations.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        58
+      ],
+      "source": "src/firelens/evaluation/hard_probe_cli.py",
+      "target": "src/firelens/evaluation/hard_probe_semantics.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        376
+      ],
+      "source": "src/firelens/evaluation/hard_probe_cli.py",
+      "target": "src/firelens/evaluation/j01_current_acceptance.py"
     },
     {
       "kind": "static",
@@ -7355,6 +7411,47 @@
       ],
       "source": "src/firelens/evaluation/hard_probe_expectations.py",
       "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        527
+      ],
+      "source": "src/firelens/evaluation/hard_probe_expectations.py",
+      "target": "src/firelens/evaluation/hard_probe_semantics.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        9
+      ],
+      "source": "src/firelens/evaluation/hard_probe_semantics.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        46
+      ],
+      "source": "src/firelens/evaluation/j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/candidate_evidence_common.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        15
+      ],
+      "source": "src/firelens/evaluation/j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/hard_probe_expectations.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        8,
+        23
+      ],
+      "source": "src/firelens/evaluation/j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/hard_probe_semantics.py"
     },
     {
       "kind": "static",
@@ -9548,7 +9645,7 @@
         15
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/answering/request_facets.py"
+      "target": "src/firelens/answering/context_support.py"
     },
     {
       "kind": "static",
@@ -9556,7 +9653,7 @@
         16
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/answering/risk_policy.py"
+      "target": "src/firelens/answering/request_facets.py"
     },
     {
       "kind": "static",
@@ -9564,7 +9661,7 @@
         17
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/answering/static_guidance_subject.py"
+      "target": "src/firelens/answering/risk_policy.py"
     },
     {
       "kind": "static",
@@ -9572,7 +9669,7 @@
         18
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/answering/typed_records.py"
+      "target": "src/firelens/answering/static_guidance_subject.py"
     },
     {
       "kind": "static",
@@ -9580,7 +9677,7 @@
         19
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/answering/typed_snapshot.py"
+      "target": "src/firelens/answering/typed_records.py"
     },
     {
       "kind": "static",
@@ -9588,7 +9685,7 @@
         20
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/claim_trust.py"
+      "target": "src/firelens/answering/typed_snapshot.py"
     },
     {
       "kind": "static",
@@ -9596,15 +9693,15 @@
         21
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/contracts.py"
+      "target": "src/firelens/claim_trust.py"
     },
     {
       "kind": "static",
       "lines": [
-        36
+        22
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/live_claim_renderer.py"
+      "target": "src/firelens/contracts.py"
     },
     {
       "kind": "static",
@@ -9612,7 +9709,7 @@
         37
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/live_contracts.py"
+      "target": "src/firelens/live_claim_renderer.py"
     },
     {
       "kind": "static",
@@ -9620,13 +9717,21 @@
         38
       ],
       "source": "src/firelens/publication/compiler.py",
+      "target": "src/firelens/live_contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        39
+      ],
+      "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/proof_presentation.py"
     },
     {
       "kind": "static",
       "lines": [
-        39,
-        45
+        40,
+        46
       ],
       "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/publication/comparison_targets.py"
@@ -9634,12 +9739,12 @@
     {
       "kind": "static",
       "lines": [
-        48,
-        51,
-        54,
-        57,
-        60,
-        63
+        49,
+        52,
+        55,
+        58,
+        61,
+        64
       ],
       "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/publication/compiled_validation.py"
@@ -9647,7 +9752,7 @@
     {
       "kind": "static",
       "lines": [
-        66
+        67
       ],
       "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/publication/fallback.py"
@@ -9655,7 +9760,7 @@
     {
       "kind": "static",
       "lines": [
-        74
+        75
       ],
       "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/publication/records.py"
@@ -9663,7 +9768,7 @@
     {
       "kind": "static",
       "lines": [
-        75
+        76
       ],
       "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/publication/relevance.py"
@@ -9671,7 +9776,7 @@
     {
       "kind": "static",
       "lines": [
-        80
+        81
       ],
       "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/publication_contracts.py"
@@ -11137,6 +11242,14 @@
     {
       "kind": "static",
       "lines": [
+        931
+      ],
+      "source": "src/firelens_eval/lab.py",
+      "target": "src/firelens_eval/semantic_oracles.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         23
       ],
       "source": "src/firelens_eval/public_v2.py",
@@ -11213,6 +11326,63 @@
       ],
       "source": "src/firelens_eval/public_v2.py",
       "target": "src/firelens_eval/semantic_oracles.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        132
+      ],
+      "source": "src/firelens_eval/semantic_oracles.py",
+      "target": "src/firelens/benchmark.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        133
+      ],
+      "source": "src/firelens_eval/semantic_oracles.py",
+      "target": "src/firelens/config.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        92,
+        134
+      ],
+      "source": "src/firelens_eval/semantic_oracles.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        135
+      ],
+      "source": "src/firelens_eval/semantic_oracles.py",
+      "target": "src/firelens/evaluation/hard_probe_cli.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        136
+      ],
+      "source": "src/firelens_eval/semantic_oracles.py",
+      "target": "src/firelens/evaluation/j01_current_acceptance.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        93
+      ],
+      "source": "src/firelens_eval/semantic_oracles.py",
+      "target": "src/firelens/evaluation/source_aware_conversation_runtime.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        137
+      ],
+      "source": "src/firelens_eval/semantic_oracles.py",
+      "target": "src/firelens/privacy_policy.py"
     },
     {
       "kind": "static",
@@ -11793,7 +11963,7 @@
     {
       "kind": "static",
       "lines": [
-        23
+        24
       ],
       "source": "tests/test_candidate_evidence.py",
       "target": "scripts/candidate_evidence.py"
@@ -11833,6 +12003,23 @@
     {
       "kind": "static",
       "lines": [
+        84,
+        400
+      ],
+      "source": "tests/test_candidate_evidence.py",
+      "target": "src/firelens/evaluation/hard_probe_expectations.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        14
+      ],
+      "source": "tests/test_candidate_evidence.py",
+      "target": "src/firelens/evaluation/j01_current_acceptance.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         10
       ],
       "source": "tests/test_candidate_evidence.py",
@@ -11841,7 +12028,7 @@
     {
       "kind": "static",
       "lines": [
-        14
+        15
       ],
       "source": "tests/test_candidate_evidence.py",
       "target": "src/firelens/evaluation/release_promotion.py"
@@ -11849,7 +12036,7 @@
     {
       "kind": "static",
       "lines": [
-        19
+        20
       ],
       "source": "tests/test_candidate_evidence.py",
       "target": "src/firelens/evaluation/v1_6_2_patch_promotion.py"
@@ -11857,7 +12044,7 @@
     {
       "kind": "static",
       "lines": [
-        22
+        23
       ],
       "source": "tests/test_candidate_evidence.py",
       "target": "src/firelens/evaluation/v1_6_standard.py"
@@ -12377,6 +12564,14 @@
     {
       "kind": "static",
       "lines": [
+        1249
+      ],
+      "source": "tests/test_firelens_eval.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         13
       ],
       "source": "tests/test_firelens_eval.py",
@@ -12414,6 +12609,15 @@
       ],
       "source": "tests/test_firelens_eval.py",
       "target": "src/firelens_eval/lab.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        1305,
+        1349
+      ],
+      "source": "tests/test_firelens_eval.py",
+      "target": "src/firelens_eval/semantic_oracles.py"
     },
     {
       "kind": "static",
@@ -12647,6 +12851,46 @@
       ],
       "source": "tests/test_intent_capability_bypass.py",
       "target": "src/firelens/live_answering.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        14
+      ],
+      "source": "tests/test_j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/hard_probe_cli.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        15
+      ],
+      "source": "tests/test_j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/hard_probe_expectations.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        21
+      ],
+      "source": "tests/test_j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/hard_probe_semantics.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        22
+      ],
+      "source": "tests/test_j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/j01_current_acceptance.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        27
+      ],
+      "source": "tests/test_j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/source_aware_conversation_runtime.py"
     },
     {
       "kind": "static",
@@ -13309,6 +13553,38 @@
     {
       "kind": "static",
       "lines": [
+        8
+      ],
+      "source": "tests/test_pet_contents_support.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        9
+      ],
+      "source": "tests/test_pet_contents_support.py",
+      "target": "src/firelens/evaluation/source_aware_conversation_runtime.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        9
+      ],
+      "source": "tests/test_preparedbc_revision.py",
+      "target": "src/firelens/publication/compiler.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        10
+      ],
+      "source": "tests/test_preparedbc_revision.py",
+      "target": "src/firelens/publication/records.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         16
       ],
       "source": "tests/test_preview_falsification_boundaries.py",
@@ -13381,7 +13657,7 @@
     {
       "kind": "static",
       "lines": [
-        165
+        167
       ],
       "source": "tests/test_product_completion.py",
       "target": "src/firelens/answering/context_support.py"
@@ -13389,7 +13665,7 @@
     {
       "kind": "static",
       "lines": [
-        198
+        200
       ],
       "source": "tests/test_product_completion.py",
       "target": "src/firelens/answering/live_focus.py"
@@ -13398,7 +13674,7 @@
       "kind": "static",
       "lines": [
         11,
-        166
+        168
       ],
       "source": "tests/test_product_completion.py",
       "target": "src/firelens/contracts.py"
@@ -13953,7 +14229,7 @@
     {
       "kind": "static",
       "lines": [
-        5
+        7
       ],
       "source": "tests/test_quote_only_atomicity.py",
       "target": "src/firelens/answering/context_packet.py"
@@ -13961,7 +14237,7 @@
     {
       "kind": "static",
       "lines": [
-        6
+        8
       ],
       "source": "tests/test_quote_only_atomicity.py",
       "target": "src/firelens/contracts.py"
@@ -13969,7 +14245,7 @@
     {
       "kind": "static",
       "lines": [
-        14
+        16
       ],
       "source": "tests/test_quote_only_atomicity.py",
       "target": "src/firelens/publication/compiler.py"
@@ -13977,7 +14253,7 @@
     {
       "kind": "static",
       "lines": [
-        15
+        17
       ],
       "source": "tests/test_quote_only_atomicity.py",
       "target": "src/firelens/publication/fallback.py"
@@ -13985,7 +14261,7 @@
     {
       "kind": "static",
       "lines": [
-        16
+        18
       ],
       "source": "tests/test_quote_only_atomicity.py",
       "target": "src/firelens/publication/records.py"
@@ -15754,7 +16030,7 @@
       "kind": "static",
       "lines": [
         23,
-        874
+        876
       ],
       "source": "tests/test_structured_publication_relevance.py",
       "target": "src/firelens/publication/compiler.py"
@@ -16168,6 +16444,14 @@
       ],
       "source": "tests/test_upgrade_benchmark_capture.py",
       "target": "src/firelens/evaluation/capture.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        10
+      ],
+      "source": "tests/test_upgrade_benchmark_qualification.py",
+      "target": "src/firelens/evaluation/retrieval.py"
     },
     {
       "kind": "static",
@@ -17088,6 +17372,7 @@
     "apps/web/tests/sessionMap.test.ts",
     "apps/web/tests/setup.ts",
     "apps/web/tests/sites-worker.test.mjs",
+    "apps/web/tests/sourceRevision.test.tsx",
     "apps/web/tests/tooling-config.test.mjs",
     "apps/web/tests/workspacePresentation.test.ts",
     "apps/web/vite.config.mjs",
@@ -17290,6 +17575,8 @@
     "src/firelens/evaluation/golden_traces.py",
     "src/firelens/evaluation/hard_probe_cli.py",
     "src/firelens/evaluation/hard_probe_expectations.py",
+    "src/firelens/evaluation/hard_probe_semantics.py",
+    "src/firelens/evaluation/j01_current_acceptance.py",
     "src/firelens/evaluation/limitation_cases.py",
     "src/firelens/evaluation/limitation_cli.py",
     "src/firelens/evaluation/limitation_runtime.py",
@@ -17491,6 +17778,7 @@
     "tests/test_html_ingestion.py",
     "tests/test_human_review_workspace_cli.py",
     "tests/test_intent_capability_bypass.py",
+    "tests/test_j01_current_acceptance.py",
     "tests/test_limitation_probe.py",
     "tests/test_live.py",
     "tests/test_live_answering.py",
@@ -17508,6 +17796,8 @@
     "tests/test_owner_review.py",
     "tests/test_paid_floor_rails.py",
     "tests/test_pdf_ingestion.py",
+    "tests/test_pet_contents_support.py",
+    "tests/test_preparedbc_revision.py",
     "tests/test_preview_falsification_boundaries.py",
     "tests/test_preview_raw_evidence.py",
     "tests/test_product_completion.py",
@@ -17605,7 +17895,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "f1eeeb6a00ca3b484de0192db5b7291eeff1956f96887b1756d8b29865972d74",
+  "source_digest": "7c9f92e7e98033000f819e03069000ef6bdc6dc324afa7f77e62e7fc4208e3d8",
   "unresolved_relative_imports": [
     {
       "line": 32,

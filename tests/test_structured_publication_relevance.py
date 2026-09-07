@@ -227,10 +227,12 @@ def test_gas_order_does_not_select_adjacent_suspected_leak_record() -> None:
 
 
 def test_explicitly_supported_record_condition_permits_structured_selection() -> None:
-    question = "What should I do if I suspect a gas leak?"
-    packet = _bound_packet(question, "TC-GENERAL-036-01")
+    # Current revision withdraws the former gas-leak claim; retain this
+    # condition-matching control on the admitted evacuation-order gas claim.
+    question = "What should I do with natural gas when I receive an evacuation order?"
+    packet = _bound_packet(question, "TC-GAS-001")
 
-    assert select_typed_claim_ids(packet, question=question) == ["TC-GENERAL-036-01"]
+    assert select_typed_claim_ids(packet, question=question) == ["TC-GAS-001"]
 
 
 def test_pb037_sprinkler_action_selects_the_reviewed_claim_without_generation() -> None:

@@ -1,0 +1,175 @@
+schema_version: firelens.typed_claim_preparation_seed.v2
+note: >
+  Coding-agent preparation only. Dispositions account for every raw v1 candidate.
+  Proposed surfaces remain pending until a named human reviews them.
+dispositions:
+  - {parent_candidate_id: PC-EVAC-001, disposition: needs_source_repair, reason: PDF extraction is truncated and contains the artifact "Final cut".}
+  - {parent_candidate_id: PC-EVAC-002, disposition: duplicate_existing, reason: "Alert, order, and rescind meanings are already represented in the reviewed inventory."}
+  - {parent_candidate_id: PC-EVAC-003, disposition: review_ready, reason: Clean returning-home instruction with an explicit official-safety condition.}
+  - {parent_candidate_id: PC-EVAC-004, disposition: not_claim_bearing, reason: Insurance referral material is outside the intended high-risk structured slice.}
+  - {parent_candidate_id: PC-EVAC-005, disposition: not_claim_bearing, reason: Publisher liability disclaimer is not public preparedness guidance.}
+  - {parent_candidate_id: PC-EVAC-006, disposition: not_claim_bearing, reason: FireSmart mascot and communications copy contains no atomic safety instruction.}
+  - {parent_candidate_id: PC-EVAC-007, disposition: not_claim_bearing, reason: Case-study narrative is not an atomic official instruction.}
+  - {parent_candidate_id: PC-EVAC-008, disposition: not_claim_bearing, reason: Community-video description is not an atomic official instruction.}
+  - {parent_candidate_id: PC-SMOKE-009, disposition: needs_source_repair, reason: Multi-column extraction interleaves the exposure and HEPA sentences.}
+  - {parent_candidate_id: PC-SMOKE-010, disposition: needs_source_repair, reason: Multi-column PDF extraction interleaves unrelated sentences.}
+  - {parent_candidate_id: PC-SMOKE-011, disposition: needs_source_repair, reason: Driving and symptom sentences are interleaved by multi-column extraction.}
+  - {parent_candidate_id: PC-SMOKE-012, disposition: review_ready, reason: A complete sentence identifies a higher-risk respiratory group.}
+  - {parent_candidate_id: PC-SMOKE-013, disposition: review_ready, reason: A complete sentence provides an activity condition for young children.}
+  - {parent_candidate_id: PC-SMOKE-014, disposition: review_ready, reason: A complete sentence states an indoor-air exposure action.}
+  - {parent_candidate_id: PC-UTILITIE-015, disposition: needs_source_repair, reason: Power-line and landscaping columns are interleaved.}
+  - {parent_candidate_id: PC-UTILITIE-016, disposition: review_ready, reason: Complete post-fire utility-safety bullets support atomic actions.}
+  - {parent_candidate_id: PC-FIRESMAR-017, disposition: review_ready, reason: Complete sentence includes a measurable non-combustible-zone boundary.}
+  - {parent_candidate_id: PC-FIRESMAR-018, disposition: needs_source_repair, reason: Plant labels and ember guidance are interleaved.}
+  - {parent_candidate_id: PC-FIRESMAR-019, disposition: needs_source_repair, reason: Two tree-list columns are interleaved and unsafe to canonicalize automatically.}
+  - {parent_candidate_id: PC-FIRESMAR-020, disposition: not_claim_bearing, reason: Program marketing copy does not contain an atomic preparedness action.}
+  - {parent_candidate_id: PC-FIRESMAR-021, disposition: review_ready, reason: Complete household grab-and-go preparation instruction.}
+  - {parent_candidate_id: PC-FIRESMAR-022, disposition: review_ready, reason: Complete Priority Zone 1 instruction preserves its numeric boundary.}
+  - {parent_candidate_id: PC-VULNERAB-023, disposition: review_ready, reason: Clean official web extraction lists a specific higher-risk population.}
+  - {parent_candidate_id: PC-VULNERAB-024, disposition: review_ready, reason: Clean official web extraction contains two conditional health-preparation actions.}
+  - {parent_candidate_id: PC-VULNERAB-025, disposition: needs_source_repair, reason: The candidate begins mid-contact list and lacks stable atomic context.}
+  - {parent_candidate_id: PC-VULNERAB-026, disposition: review_ready, reason: Complete duration condition and official escalation instruction.}
+  - {parent_candidate_id: PC-CONDITIO-027, disposition: needs_source_repair, reason: The admitted chunk ends mid-sentence after the clearance instruction.}
+  - {parent_candidate_id: PC-GENERAL-028, disposition: not_claim_bearing, reason: High-level FireSmart framing is not a specific atomic preparedness instruction.}
+  - {parent_candidate_id: PC-GENERAL-029, disposition: review_ready, reason: Complete non-combustible-zone action with numeric boundary.}
+  - {parent_candidate_id: PC-GENERAL-030, disposition: review_ready, reason: Complete official home-assessment instruction.}
+  - {parent_candidate_id: PC-GENERAL-031, disposition: not_claim_bearing, reason: Section heading and preparedness introduction contain no atomic action beyond covered stages.}
+  - {parent_candidate_id: PC-GENERAL-032, disposition: duplicate_existing, reason: Same source span as reviewed TC-EVAC-ALERT-001.}
+  - {parent_candidate_id: PC-GENERAL-033, disposition: review_ready, reason: Same chunk contains an uncovered official-route instruction distinct from the reviewed order meaning.}
+  - {parent_candidate_id: PC-GENERAL-034, disposition: duplicate_existing, reason: Same rescind and return fact as reviewed TC-EVAC-RESCIND-001.}
+  - {parent_candidate_id: PC-GENERAL-035, disposition: review_ready, reason: Complete vehicle-fuel preparation instruction.}
+  - {parent_candidate_id: PC-GENERAL-036, disposition: review_ready, reason: Complete local-authority and suspected-gas-leak actions are available in the admitted chunk.}
+proposals:
+  - candidate_id: PC2-EVAC-003-01
+    parent_candidate_id: PC-EVAC-003
+    exact_source_quote: >-
+      If you are evacuated, you’ll be anxious to return home, but only do so when officials say it’s safe.
+    proposed_surface: >-
+      If you are evacuated, only return home when officials say it is safe.
+    typed_fields: {subject: returning after evacuation, action: return, action_polarity: conditional, object: home, modality: may, urgency: after_official_clearance, conditions: [if evacuated, when officials say it is safe], applies_to: [evacuated residents]}
+    preparation_notes: Preserves the official-clearance condition; wording remains agent-proposed.
+  - candidate_id: PC2-SMOKE-012-01
+    parent_candidate_id: PC-SMOKE-012
+    exact_source_quote: >-
+      P eople with respiratory conditions such as asthma or chronic obstructive pulmonary disease (COPD) are at highest risk of experiencing health effects caused by wildfire smoke.
+    proposed_surface: >-
+      People with respiratory conditions such as asthma or COPD are at highest risk of health effects caused by wildfire smoke.
+    typed_fields: {subject: respiratory conditions and wildfire smoke, status_stage: highest_risk, conditions: [during wildfire smoke], applies_to: [people with asthma or COPD]}
+    preparation_notes: Medical-risk classification remains pending named-human review.
+    quality_flags: [source_spacing_artifact]
+  - candidate_id: PC2-SMOKE-013-01
+    parent_candidate_id: PC-SMOKE-013
+    exact_source_quote: Young children have sensitive lungs and may need to decrease their activities during smoky periods, especially when outdoors.
+    proposed_surface: Young children may need to decrease their activities during smoky periods, especially when outdoors.
+    typed_fields: {subject: young children during smoky periods, action: decrease, action_polarity: conditional, object: activities, modality: may, urgency: during_smoky_periods, conditions: [especially when outdoors], applies_to: [young children]}
+    preparation_notes: Keeps population, modality, smoke condition, and outdoor qualifier.
+  - candidate_id: PC2-SMOKE-014-01
+    parent_candidate_id: PC-SMOKE-014
+    exact_source_quote: Managing indoor air quality at home is the best way to reduce your smoke exposure.
+    proposed_surface: Managing indoor air quality at home is the best way to reduce your smoke exposure.
+    typed_fields: {subject: indoor air quality during smoke, action: manage, action_polarity: perform, object: indoor air quality at home, modality: should, urgency: during_smoke, applies_to: [people exposed to wildfire smoke]}
+    preparation_notes: Exact official sentence; no health outcome is added.
+  - candidate_id: PC2-UTIL-016-01
+    parent_candidate_id: PC-UTILITIE-016
+    exact_source_quote: Only use generators outdoors; do not connect to a household circuit
+    proposed_surface: Only use generators outdoors; do not connect them to a household circuit.
+    typed_fields: {subject: generator use after wildfire, action: use, action_polarity: restricted, object: generators, modality: must, conditions: [outdoors only], exceptions: [do not connect to a household circuit], applies_to: [people returning after a wildfire]}
+    preparation_notes: One generator-safety relationship with two inseparable constraints.
+  - candidate_id: PC2-UTIL-016-02
+    parent_candidate_id: PC-UTILITIE-016
+    exact_source_quote: Enter with caution and check that the main power breaker is off
+    proposed_surface: Enter with caution and check that the main power breaker is off.
+    typed_fields: {subject: re-entering after wildfire, action: check, action_polarity: perform, object: main power breaker, modality: should, urgency: before_entry, conditions: [when re-entering], applies_to: [people returning after a wildfire]}
+    preparation_notes: Exact official bullet with punctuation normalized.
+  - candidate_id: PC2-UTIL-016-03
+    parent_candidate_id: PC-UTILITIE-016
+    exact_source_quote: Walk around the perimeter, checking for electrical wires, a gas smell or debris that could fall
+    proposed_surface: Walk around the perimeter and check for electrical wires, a gas smell, or debris that could fall.
+    typed_fields: {subject: property perimeter after wildfire, action: check, action_polarity: perform, object: electrical wires gas smell or falling debris, modality: should, urgency: before_entry, conditions: [when returning after wildfire], applies_to: [people returning after a wildfire]}
+    preparation_notes: Keeps the perimeter scope and complete hazard list.
+  - candidate_id: PC2-FIRESMART-017-01
+    parent_candidate_id: PC-FIRESMAR-017
+    exact_source_quote: Make sure that you maintain a 1.5 metre non- combustible zone around your entire home and any attachments.
+    proposed_surface: Maintain a 1.5 metre non-combustible zone around your entire home and any attachments.
+    typed_fields: {subject: non-combustible zone, action: maintain, action_polarity: perform, object: zone around home and attachments, modality: should, quantities: ["1.5"], canonical_units: [metre], comparator: exact_boundary, applies_to: [homes and attachments]}
+    preparation_notes: Preserves the measured boundary and full spatial scope.
+    quality_flags: [source_linebreak_hyphenation]
+  - candidate_id: PC2-FIRESMART-021-01
+    parent_candidate_id: PC-FIRESMAR-021
+    exact_source_quote: Take time now to build grab-and-go bags for each member of your household so you’re not caught off guard.
+    proposed_surface: Build grab-and-go bags now for each member of your household.
+    typed_fields: {subject: household wildfire preparation, action: build, action_polarity: perform, object: grab-and-go bags, modality: should, urgency: before_wildfire, applies_to: [each household member]}
+    preparation_notes: Retains the per-household-member scope and preparation timing.
+  - candidate_id: PC2-FIRESMART-022-01
+    parent_candidate_id: PC-FIRESMAR-022
+    exact_source_quote: >-
+      Priority Zone 1 (1.5 to 10 metres from a structure or home) ¢ Avoid planting flammable trees and plants, such as cedar, spruce, juniper, pine and tall grasses
+    proposed_surface: >-
+      In Priority Zone 1, 1.5 to 10 metres from a structure or home, avoid planting flammable trees and plants such as cedar, spruce, juniper, pine, and tall grasses.
+    typed_fields: {subject: Priority Zone 1 planting, action: plant, action_polarity: avoid, object: flammable trees and plants, modality: should_not, quantities: ["1.5", "10"], canonical_units: [metre], ranges: [1.5-10], conditions: [within Priority Zone 1], applies_to: [structures and homes]}
+    preparation_notes: Preserves zone identity, range, examples, and avoidance polarity.
+  - candidate_id: PC2-VULNERABLE-023-01
+    parent_candidate_id: PC-VULNERAB-023
+    exact_source_quote: >-
+      People at higher risk People with pre-existing chronic conditions such as asthma, chronic ​obstructive pulmonary disease (COPD), heart disease, and diabetes
+    proposed_surface: >-
+      People with pre-existing chronic conditions such as asthma, COPD, heart disease, and diabetes are at higher risk from wildfire smoke.
+    typed_fields: {subject: chronic conditions and wildfire smoke, status_stage: higher_risk, conditions: [during wildfire smoke], applies_to: [people with asthma, people with COPD, people with heart disease, people with diabetes]}
+    preparation_notes: Converts a heading-plus-list item into a pending canonical proposal.
+  - candidate_id: PC2-VULNERABLE-024-01
+    parent_candidate_id: PC-VULNERAB-024
+    exact_source_quote: If you have a chronic health condition, work with your health care providers to create a management plan for smoky conditions.
+    proposed_surface: If you have a chronic health condition, work with your health care providers to create a management plan for smoky conditions.
+    typed_fields: {subject: chronic health condition preparation, action: create, action_polarity: perform, object: management plan for smoky conditions, modality: should, conditions: [if you have a chronic health condition], applies_to: [people with chronic health conditions]}
+    preparation_notes: Exact conditional official instruction.
+  - candidate_id: PC2-VULNERABLE-024-02
+    parent_candidate_id: PC-VULNERAB-024
+    exact_source_quote: If you use rescue medications, make sure that you have an ample supply at home and always carry them with you during the wildfire season.
+    proposed_surface: If you use rescue medications, keep an ample supply at home and carry them with you during wildfire season.
+    typed_fields: {subject: rescue medication preparation, action: carry, action_polarity: perform, object: rescue medications, modality: should, urgency: wildfire_season, conditions: [if you use rescue medications], applies_to: [people who use rescue medications]}
+    preparation_notes: Keeps both supply and carry requirements under the medication condition.
+  - candidate_id: PC2-VULNERABLE-026-01
+    parent_candidate_id: PC-VULNERAB-026
+    exact_source_quote: >-
+      Watch for warning signs of extended anxiety and contact a medical professional or trusted community leader if they last more than two to four weeks
+    proposed_surface: >-
+      Contact a medical professional or trusted community leader if warning signs of extended anxiety last more than two to four weeks.
+    typed_fields: {subject: extended anxiety after wildfire, action: contact, action_polarity: perform, object: medical professional or trusted community leader, modality: should, urgency: after_two_to_four_weeks, quantities: ["2", "4"], canonical_units: [week], ranges: [2-4], conditions: [warning signs last more than two to four weeks], applies_to: [people experiencing extended anxiety]}
+    preparation_notes: Preserves duration, condition, and both official contact options.
+  - candidate_id: PC2-GENERAL-029-01
+    parent_candidate_id: PC-GENERAL-029
+    exact_source_quote: Non-Combustible Zone (0 to 1.5 metres from a structure or home) ¢ Remove combustible material (woody shrubs, dry grasses, etc.) down to mineral soil
+    proposed_surface: In the non-combustible zone, 0 to 1.5 metres from a structure or home, remove combustible material down to mineral soil.
+    typed_fields: {subject: non-combustible zone material, action: remove, action_polarity: perform, object: combustible material, modality: should, quantities: ["0", "1.5"], canonical_units: [metre], ranges: [0-1.5], conditions: [within the non-combustible zone], applies_to: [structures and homes]}
+    preparation_notes: Preserves range, location, material, and removal endpoint.
+  - candidate_id: PC2-GENERAL-030-01
+    parent_candidate_id: PC-GENERAL-030
+    exact_source_quote: Complete the FireSmart home assessment to see what changes will make the greatest difference in reducing your home’s risk.
+    proposed_surface: Complete the FireSmart home assessment to identify changes that can reduce your home’s risk.
+    typed_fields: {subject: FireSmart home assessment, action: complete, action_polarity: perform, object: FireSmart home assessment, modality: should, applies_to: [homeowners]}
+    preparation_notes: Conservative pending surface; does not quantify the risk reduction.
+  - candidate_id: PC2-GENERAL-033-01
+    parent_candidate_id: PC-GENERAL-033
+    exact_source_quote: Follow all directions from officials and evacuate using the route(s) they've identified.
+    proposed_surface: Follow officials’ directions and evacuate using the routes they identify.
+    typed_fields: {subject: evacuation route, action: evacuate, action_polarity: perform, object: official identified routes, modality: must, urgency: during_evacuation_order, conditions: [when officials identify evacuation routes], applies_to: [people evacuating]}
+    preparation_notes: Keeps official authority, action, and route constraint.
+  - candidate_id: PC2-GENERAL-033-02
+    parent_candidate_id: PC-GENERAL-033
+    exact_source_quote: On your way out close doors and windows and turn on both interior and exterior lights so your home is visible to firefighters in heavy smoke.
+    proposed_surface: On your way out, close doors and windows and turn on interior and exterior lights so your home is visible to firefighters in heavy smoke.
+    typed_fields: {subject: home visibility while evacuating, action: close, action_polarity: perform, object: doors and windows, modality: should, urgency: while_evacuating, conditions: [on the way out], applies_to: [people evacuating their homes]}
+    preparation_notes: One departure-preparation block; human review must decide whether to split its two actions.
+    quality_flags: [human_atomicity_check]
+  - candidate_id: PC2-GENERAL-035-01
+    parent_candidate_id: PC-GENERAL-035
+    exact_source_quote: Always keep your vehicle’s gas tank half full in case you need to evacuate on short notice.
+    proposed_surface: Keep your vehicle’s gas tank half full in case you need to evacuate on short notice.
+    typed_fields: {subject: vehicle fuel for evacuation, action: keep, action_polarity: perform, object: vehicle gas tank, modality: should, urgency: before_short_notice_evacuation, quantities: [half full], conditions: [in case evacuation is needed on short notice], applies_to: [vehicle owners]}
+    preparation_notes: Preserves quantity and short-notice evacuation condition.
+  - candidate_id: PC2-GENERAL-036-01
+    parent_candidate_id: PC-GENERAL-036
+    exact_source_quote: However, if you suspect a gas leak, turn off the gas valve and leave immediately.
+    proposed_surface: If you suspect a gas leak, turn off the gas valve and leave immediately.
+    typed_fields: {subject: suspected gas leak, action: leave, action_polarity: perform, object: area with suspected gas leak, modality: must, urgency: immediate, conditions: [if you suspect a gas leak], applies_to: [people who suspect a gas leak]}
+    preparation_notes: Preserves the condition, gas-valve action, and immediate departure.

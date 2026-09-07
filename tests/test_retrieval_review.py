@@ -157,7 +157,8 @@ def test_sealed_release_packet_references_only_governed_corpus_chunks(
 
     write_retrieval_review_packet(
         root / "data/evaluation/benchmark_v1_5_sealed_retrieval.yaml",
-        root / "data/processed/firelens_static_corpus.chunks.jsonl",
+        root
+        / "data/history/preparedbc-f82166e0/data/processed/firelens_static_corpus.chunks.jsonl",
         tmp_path / "sealed-review.md",
     )
 

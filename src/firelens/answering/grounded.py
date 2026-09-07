@@ -543,6 +543,7 @@ class GroundedAnswerEngine:
                 publisher=item.publisher,
                 canonical_url=HttpUrl(item.canonical_url),
                 locator=item.locator,
+                document_sha256=item.document_sha256,
                 temporal_class=TemporalClass.STABLE_GUIDANCE,
                 review_provenance=item.review_provenance,
                 primary_text=item.primary_text,

@@ -107,6 +107,7 @@ _EXCLUSION_REQUEST = re.compile(
     r"(?:not|isn['’]t|aren['’]t)\s+(?:really\s+)?"
     r"(?:needed|necessary|essential|required)|"
     r"(?:do\s+(?:(?:i|we|you)\s+)?not|don['’]t)\s+need|"
+    r"(?:should\s+not|shouldn['’]t)\s+be\s+(?:included|packed)|"
     r"unnecessary|"
     r"(?:should|can)\s+be\s+(?:omitted|excluded|removed|skipped)|"
     r"(?:omit|exclude|remove|skip|leave\s+out)"
@@ -174,6 +175,8 @@ def _support_tokens(text: str) -> frozenset[str]:
     for token in tokenize(text):
         if token == "meaning":
             normalized.add("mean")
+        elif token in {"include", "includes", "included", "including"}:
+            normalized.add("include")
         elif token.startswith("prepar"):
             normalized.add("prepare")
         elif token.startswith("evacuat") or token in {"leave", "leaving"}:
@@ -271,6 +274,14 @@ def _has_exclusion_evidence(question: str, packet: EvidencePacket) -> bool:
         ):
             return True
     return False
+
+
+def supports_requested_polarity(text: str, question: str) -> bool:
+    """Keep a quote fallback from answering an omission with an inclusion list."""
+
+    return not _requires_exclusion_evidence(question) or _direct_exclusion_evidence(
+        text, _exclusion_topic(question)
+    )
 
 
 def decide_support(

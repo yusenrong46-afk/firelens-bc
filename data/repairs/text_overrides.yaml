@@ -1,74 +1,275 @@
-repair_registry_version: "r1.0"
-reviewed_on: "2026-07-25"
-
+repair_registry_version: r1.0
+reviewed_on: '2026-07-25'
 repairs:
-  - source_id: preparedbc_wildfire_guide
-    page_number: 5
-    document_sha256: "f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3"
-    review_status: human_verified
-    reason: >
-      The visible infographic is legible, but the PDF heading uses an unmapped
-      font encoding. The replacement below was transcribed and visually checked
-      against rendered page 5; it does not add guidance absent from the page.
-    replacement_text: |
-      Wildfire Preparedness Guide
-      Grab-and-Go Bag
-      • Pen & notepad
-      • Phone charger & battery bank
-      • Flashlight
-      • Radio
-      • First aid kit
-      • Personal toiletries
-      • Seasonal clothing
-      • Food & water
-      • Batteries
-      • Whistle
-      • Emergency plan
-  - source_id: firesmart_begins_at_home
-    page_number: 10
-    document_sha256: "c808a14bb873eb8b70930470976b0f2e091eed9cfdc1fe4b63d6325b4ae3c2ca"
-    review_status: pending_owner_review
-    reason: >
-      The rendered spread is legible, but the PDF text layer interleaves several
-      visual columns. The replacement preserves the visible wording and orders
-      it by the page's headings. It was checked against the rendered page on
-      2026-07-26 and remains pending owner review.
-    replacement_text: |
-      Immediate Zone - 0 m to 1.5 m
-      The Immediate Zone is a non-combustible area that starts at the house and extends to a 1.5 metre perimeter around the home and attached structures, including decks. Reduce the chance of wind-blown embers igniting your home by starting with proactive measures outlined in this guide.
+- source_id: firesmart_begins_at_home
+  page_number: 10
+  document_sha256: c808a14bb873eb8b70930470976b0f2e091eed9cfdc1fe4b63d6325b4ae3c2ca
+  review_status: pending_owner_review
+  reason: 'The rendered spread is legible, but the PDF text layer interleaves several
+    visual columns. The replacement preserves the visible wording and orders it by
+    the page''s headings. It was checked against the rendered page on 2026-07-26 and
+    remains pending owner review.
 
-      Doors
-      All doors into your home should be fire-rated and have a good seal. This is true for your garage doors, as well as entry doors.
+    '
+  replacement_text: 'Immediate Zone - 0 m to 1.5 m
 
-      Windows
-      Tempered or thermal (multi-paned) windows are recommended. Single-pane windows provide little resistance to heat from an advancing wildland fire.
+    The Immediate Zone is a non-combustible area that starts at the house and extends
+    to a 1.5 metre perimeter around the home and attached structures, including decks.
+    Reduce the chance of wind-blown embers igniting your home by starting with proactive
+    measures outlined in this guide.
 
-      Roof - Material
-      A Class-A fire-rated roof assembly offers the best protection. Metal, asphalt, clay, and composite rubber tiles are all options. Untreated wood shakes create a dangerous combination of combustible material and crevices for embers or sparks to enter. Refer to manufacturers' guidelines to maintain the fire resistance of your roof.
 
-      Roof - Maintenance
-      Every inside-corner of your roof is a place where debris and embers can collect. Regularly clean your roof of combustible materials.
+    Doors
 
-      Siding
-      Stucco, metal, brick, concrete, and fiber cement siding offer superior fire resistance. Logs and heavy timbers are also reasonably effective. Untreated wood and vinyl siding offer very little protection against wildland fire.
+    All doors into your home should be fire-rated and have a good seal. This is true
+    for your garage doors, as well as entry doors.
 
-      Gutters
-      Regularly remove debris from your gutters, as sparks and embers can easily ignite these dry materials. Consider screening your gutters with metal mesh to reduce debris that can accumulate.
 
-      Decks
-      It is important to sheathe-in the base of decks, balconies, and houses, as embers and sparks can collect under these spaces. Use fire-resistant material to reduce the risk of sparks and embers from igniting your home.
+    Windows
 
-      Chimney
-      A spark arrestor on your chimney will reduce the chance of sparks and embers from escaping and starting fires.
+    Tempered or thermal (multi-paned) windows are recommended. Single-pane windows
+    provide little resistance to heat from an advancing wildland fire.
 
-      Ground-to-Siding Clearance
-      Siding is vulnerable when it ignites and when flames or embers get into the cavity behind it. With inadequate ground-to-siding clearance, accumulated embers can ignite combustible siding directly. 15 centimetres of ground-to-siding non-combustible clearance is recommended.
 
-      Eaves and Vents
-      While vents play an important role in removing moisture from attics, they create an opening for sparks and embers. Install vents made of non-combustible material with 3 millimetre screening, or ASTM fire-rated vents. Open eaves also create a surface for embers and direct heat. Properly fitted soffits and fascia help to reduce the risk of embers and heat from reaching the wooden rafters of your home.
+    Roof - Material
 
-      Other - Attachments to Your Home
-      Wooden fences or boardwalks create a direct path from the fire to your home. Separating your house from a wooden fence with a metal gate can slow the advance of fire. Remember to cut the grass along your fence line, as long, dry grass easily ignites.
+    A Class-A fire-rated roof assembly offers the best protection. Metal, asphalt,
+    clay, and composite rubber tiles are all options. Untreated wood shakes create
+    a dangerous combination of combustible material and crevices for embers or sparks
+    to enter. Refer to manufacturers'' guidelines to maintain the fire resistance
+    of your roof.
 
-      Other - Sheds and Outbuildings
-      Give sheds and outbuildings the same FireSmart considerations as you do for your home.
+
+    Roof - Maintenance
+
+    Every inside-corner of your roof is a place where debris and embers can collect.
+    Regularly clean your roof of combustible materials.
+
+
+    Siding
+
+    Stucco, metal, brick, concrete, and fiber cement siding offer superior fire resistance.
+    Logs and heavy timbers are also reasonably effective. Untreated wood and vinyl
+    siding offer very little protection against wildland fire.
+
+
+    Gutters
+
+    Regularly remove debris from your gutters, as sparks and embers can easily ignite
+    these dry materials. Consider screening your gutters with metal mesh to reduce
+    debris that can accumulate.
+
+
+    Decks
+
+    It is important to sheathe-in the base of decks, balconies, and houses, as embers
+    and sparks can collect under these spaces. Use fire-resistant material to reduce
+    the risk of sparks and embers from igniting your home.
+
+
+    Chimney
+
+    A spark arrestor on your chimney will reduce the chance of sparks and embers from
+    escaping and starting fires.
+
+
+    Ground-to-Siding Clearance
+
+    Siding is vulnerable when it ignites and when flames or embers get into the cavity
+    behind it. With inadequate ground-to-siding clearance, accumulated embers can
+    ignite combustible siding directly. 15 centimetres of ground-to-siding non-combustible
+    clearance is recommended.
+
+
+    Eaves and Vents
+
+    While vents play an important role in removing moisture from attics, they create
+    an opening for sparks and embers. Install vents made of non-combustible material
+    with 3 millimetre screening, or ASTM fire-rated vents. Open eaves also create
+    a surface for embers and direct heat. Properly fitted soffits and fascia help
+    to reduce the risk of embers and heat from reaching the wooden rafters of your
+    home.
+
+
+    Other - Attachments to Your Home
+
+    Wooden fences or boardwalks create a direct path from the fire to your home. Separating
+    your house from a wooden fence with a metal gate can slow the advance of fire.
+    Remember to cut the grass along your fence line, as long, dry grass easily ignites.
+
+
+    Other - Sheds and Outbuildings
+
+    Give sheds and outbuildings the same FireSmart considerations as you do for your
+    home.
+
+    '
+- source_id: preparedbc_wildfire_guide
+  page_number: 5
+  document_sha256: 9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2
+  replacement_text: 'Wildfire Preparedness Guide
+
+    Grab-and-Go Bag
+
+    • Pen & notepad
+
+    • Phone charger & battery bank
+
+    • Flashlight
+
+    • Radio
+
+    • First aid kit
+
+    • Personal toiletries
+
+    • Seasonal clothing
+
+    • Food & water
+
+    • Batteries
+
+    • Whistle
+
+    • Emergency plan and insurance/important papers'
+  reason: Transcribe the diagram labels, including the revised final label. Bullet
+    order linearizes the diagram; it is not a priority ranking. The page image remains
+    authoritative.
+  review_status: human_verified
+  reviewer: Thomas
+  reviewed_at: '2026-09-07T13:46:27.527867+00:00'
+  decision_basis: Owner adopted the named AI-assisted review package; no independent
+    emergency-domain certification claimed.
+- source_id: preparedbc_wildfire_guide
+  page_number: 11
+  document_sha256: 9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2
+  replacement_text: 'Wildfire Preparedness Guide
+
+    ¢ Take down flammable curtains and window treatments
+
+    ¢ Connect garden hoses and fill large containers with water, such as
+
+    pools, hot tubs and garbage cans. This can assist firefighters and
+
+    help slow advancing flames
+
+    ¢ Ensure your house number is visible. This will help firefighters
+
+    locate your home quickly
+
+    ¢ Disconnect automatic garage door openers so doors can be
+
+    opened by hand if you lose power
+
+    Evacuation Order
+
+    This means you are at risk and must leave IMMEDIATELY. On your way
+
+    out, close doors and windows and turn on both interior and exterior
+
+    lights so your home is visible to firefighters in heavy smoke.
+
+    Follow all directions from officials and evacuate using the route(s)
+
+    they''ve identified.
+
+    An Emergency Support Services (ESS) reception centre may be opened
+
+    for evacuated residents who are without access to other supports, such
+
+    as insurance coverage or friends and family who can help. Services may
+
+    include: food, lodging, clothing, emotional support, information about
+
+    the crisis and family reunification.
+
+    Evacuation Rescind
+
+    Once officials determine the threat to life and safety has passed, the
+
+    Evacuation Order will be rescinded. Continue to stay tuned for other
+
+    possible Evacuation Alerts or Orders.
+
+    TIP: Always keep your vehicle’s gas tank half-full
+
+    or battery half-charged in case you need to
+
+    evacuate on short notice.
+
+    11'
+  reason: Separate the E/F fuel-gauge labels from the adjacent sentence. All other
+    native page text remains unchanged. The native crop (58,526,251,567) confirms
+    the sentence without the diagram labels.
+  review_status: human_verified
+  reviewer: Thomas
+  reviewed_at: '2026-09-07T13:46:27.527867+00:00'
+  decision_basis: Owner adopted the named AI-assisted review package; no independent
+    emergency-domain certification claimed.
+- source_id: preparedbc_wildfire_guide
+  page_number: 16
+  document_sha256: 9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2
+  replacement_text: 'PreparedBC
+
+    Wildfire Preparedness Guide
+
+    ¢ Frozen food: Discard food that’s thawed. If your freezer has been
+
+    exposed to fire, or has been without power for more than three
+
+    days, toss the contents
+
+    ¢ Canned food: Tinned goods should be safe, unless the can has
+
+    bulged, rusted or is badly dented. All undamaged canned goods
+
+    should be washed and disinfected if they’ve been exposed
+
+    to smoke. Food stored in glass jars exposed to heat should be
+
+    thrown out as seals may have broken
+
+    Psychological care:
+
+    Fear and anxiety are natural reactions to stressful events and can stir
+
+    up past traumas. To help yourself and your loved ones:
+
+    ¢ Accept offers of help. Seek counselling or spiritual guidance
+
+    ¢ Focus on positive memories and the skills you’ve used to get
+
+    through other hard times
+
+    ¢ Be aware of how children are reacting. Reassure them and
+
+    encourage them to express themselves
+
+    ¢ Give yourself and your loved ones permission to grieve
+
+    ¢ Practice cultural or spiritual customs that bring you comfort
+
+    People recover from trauma and stress at different times. Watch for
+
+    warning signs of extended anxiety and contact a medical professional or
+
+    trusted community leader if the following symptoms last more than two to four
+    weeks:
+
+    ¢ Trouble with eating and sleeping
+
+    ¢ Feeling depressed or hopeless; showing low energy or crying often
+
+    ¢ Being anxious and fearful
+
+    ¢ Trouble focusing on daily activities
+
+    16'
+  reason: Replace one newline between 'two' and 'to four weeks:' with a space. The
+    words and punctuation are identical. This prevents the wrapped continuation being
+    mistaken for a new heading and preserves the symptom list with its condition.
+  review_status: human_verified
+  reviewer: Thomas
+  reviewed_at: '2026-09-07T13:46:27.527867+00:00'
+  decision_basis: Owner adopted the named AI-assisted review package; no independent
+    emergency-domain certification claimed.

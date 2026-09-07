@@ -36,6 +36,7 @@ from firelens.answering.location_intent import (
     asks_for_personal_location,
     coarse_location_from_question,
 )
+from firelens.answering.request_facets import requests_contents
 from firelens.answering.responses import safe_abstention
 from firelens.answering.static_guidance_subject import static_guidance_retrieval_query
 from firelens.answering.unsupported_live import has_independent_supported_live_clause
@@ -336,7 +337,7 @@ def _bounded_guidance_clause(request: QueryRequest) -> QueryRequest | None:
             # explicit source requirement must remain attached to its clause.
             return (
                 text
-                if explicit_corpus_attribution(text)
+                if explicit_corpus_attribution(text) or requests_contents(text)
                 else (static_guidance_retrieval_query(text) or text)
             )
         return None

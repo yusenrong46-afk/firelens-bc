@@ -3,6 +3,79 @@
 Status: measured candidate evidence with historical results retained separately.
 Assessment date: 2026-09-05. Final release execution is authorized subject to current gates.
 
+## Current CI policy and security maintenance — 2026-09-07
+
+The independently accepted v2 CI policy preserves raw rc2.2 outcomes96/105 and
+rc2.3 outcomes97/105 while requiring current source-bound semantics for the nine
+reviewed discrepancies. Current real L05 evidence confirms distinct two-concept
+background guidance, with observed upstream rate limits retained. The gate rejects
+changed model/routing, source/startup files, harmful same-mode content and missing
+evidence. [Policy rationale](../releases/firelens-polish-ci-policy.md).
+
+Dependency audits exposed pypdf and Browserslist advisories after the earlier
+matrix. Targeted upgrades clear them; unchanged PDF validation properties and
+byte-identical client assets support retention of the existing online provider
+and UI evidence. The [release record](../releases/firelens-polish.md) tracks the
+current candidate, maintained CI and separate production gate. Earlier sections
+below are historical checkpoints, not current deployment claims.
+
+## Historical final qualification continuation — 2026-09-07
+
+Mixed and pet real-provider journeys have now qualified using three additional
+Ask attempts. One independently reviewed coordinator repair preserves contents
+intent beside a personal safety boundary; the exact mixed confirmation now
+includes the admitted checklist and declines to decide evacuation. Pet output
+is an exact, partial source quotation. Repair implementation `287772bbf2f07c53456d4171a53e58fca69ad0fc`
+retains the source/index/model/privacy identities and passes `make verify`,
+106/106 source-aware, 31/31 offline ProductBench, 97/105 rc2.3 hard probe and
+51/51 built-stack checks. These checks do not replace maintained CI acceptance.
+
+**Release remains NO-GO pending final review and CI.** The maintained Verify
+EvalLab core command still fails 565/574 because its frozen rc2.2 validator
+rejects six retained CRITICAL-labelled outcomes. That gate has not been bypassed.
+Two additional provider 429s remain recorded despite successful retries. Settled
+receipts total US$0.01392722 and retained reservations US$0.425 under US$1.
+No further calls followed qualification, and no push, merge or deployment occurred.
+The [release record](../releases/firelens-polish.md) separates exact response and
+candidate identities, carried-forward pet evidence, and the historical checkpoint below.
+
+## Source and UI polish — 2026-09-07
+
+Independent High review accepted implementation `11613679c7910c0c15962ee16da49ba7bc530ff2`
+(tree `37a6cca440ddeae3687482fcb0999ec77d24e9bf`) for documentation finalization.
+**Release remains NO-GO:** mixed/pet real-provider checks failed during upstream
+rate limiting, and the eight-Ask allowance is exhausted. Nearby, selected-record,
+current guidance and the final J01 retry succeeded; that does not qualify the
+unsuccessful journeys. [Review](../reports/FIRELENS_POLISH_INDEPENDENT_REVIEW.md)
+and [release evidence](../releases/firelens-polish.md) retain the separate outcomes.
+
+Thomas adopted the named AI-assisted PreparedBC review: three extraction repairs,
+sixteen replacement claim bindings and withdrawal of `TC-GENERAL-036-01`.
+The [decision record](../reports/PREPAREDBC_REVISION_DECISIONS.json) identifies its
+limited basis, without claiming personal technical inspection or emergency-domain
+certification. The adopted PDF hash remains
+`9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2`.
+
+The successor has a real 178-chunk index: 144 complete embedding inputs verified
+reusable and 34 newly embedded through the existing provider/cache writer. Retired
+PreparedBC material is absent from current retrieval; the historical archive remains.
+The approved rc2.3 J01 gate preserves the same response's frozen rc2.2 failure.
+Source-aware conversation passes 106/106, offline ProductBench 31/31, current hard
+probe 97/105 against floor 86, built-stack journeys 51/51, and `make verify` passes.
+These remain distinct from the incomplete real-provider and release gates.
+
+Source proof distinguishes revision identities and exact support from reviewed
+wording. Check time, publisher time and unavailable coverage remain separate;
+one bounded session timer refreshes the summary. An accessibility finding was
+repaired without changing navigation. The canonical source link/click and HTTP-200
+source hash were verified; browser PDF rendering remains unverified.
+
+Production was rechecked on 2026-09-07 and still serves build `c06474d`, release
+1.6.4, with 179 chunks. No polish push, merge, deployment or secret change occurred.
+Reported settled cost is US$0.00642678, plus US$0.275 retained reservations under
+the US$1 aggregate ceiling. The existing credential is usable and stored only in
+an ignored local environment file.
+
 ## Final release successor — 2026-09-05
 
 The release starts from accepted documentation candidate `6d41a4c` and includes

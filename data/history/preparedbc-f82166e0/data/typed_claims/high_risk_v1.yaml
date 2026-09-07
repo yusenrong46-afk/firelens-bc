@@ -1,0 +1,1050 @@
+schema_version: firelens.typed_claim_inventory.v2
+policy_version: firelens.claim_risk_policy.v1
+note: Reviewed high-risk subset only. Thomas approved the Batch 2/3 proposals and
+  the edited SPRINKLER surface. Nine extraction defects are deferred outside V1.6.
+  Visible development tests are not independent proof.
+records:
+- claim_id: TC-EVAC-ALERT-001
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: evacuation alert meaning
+  action: leave
+  action_polarity: prepare
+  object: area under alert
+  modality: should
+  urgency: short_notice
+  status_stage: evacuation_alert
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  conditions:
+  - if under an evacuation alert
+  exceptions: []
+  applies_to:
+  - people under an evacuation alert
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:10:chunk:4
+  source_revision: page:10
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 9d619f59eefc03e3eed151d6d92099495016f2f6a1d0e8fb963809e44f449fc4
+  approved_surface_sha256: 915424b4caceb903339e45e206b2fa1796c0488d7d87041c6f19955fd15dc667
+  human_review_state: approved_static
+  canonical_text: If you are under an evacuation alert, be ready to leave on short
+    notice.
+  source_span_text: 'Evacuation Alert This means be ready to leave on short notice.
+    If you’re under alert, take
+
+    '
+- claim_id: TC-EVAC-ORDER-001
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: evacuation order meaning
+  action: leave
+  action_polarity: perform
+  object: area under order
+  modality: must
+  urgency: immediate
+  status_stage: evacuation_order
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  conditions:
+  - if an evacuation order is in effect
+  exceptions: []
+  applies_to:
+  - people under an evacuation order
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:11:chunk:2
+  source_revision: page:11
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 960fd700f5de4bd844b68e450209e9552ca808a0721d8827e00680b4aa1edc30
+  approved_surface_sha256: d226f6eb531ab592ab75dfbe7a7df0638b78b4374ec61279951af3c6a2c839b1
+  human_review_state: approved_static
+  canonical_text: An evacuation order means you are at risk and must leave immediately.
+  source_span_text: 'Evacuation Order This means you are at risk and must leave IMMEDIATELY.
+
+    '
+- claim_id: TC-EVAC-RESCIND-001
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: evacuation rescind and return
+  action: return
+  action_polarity: conditional
+  object: home
+  modality: may
+  urgency: after_officials
+  status_stage: evacuation_rescind
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  conditions:
+  - after officials determine the situation is safe
+  - after the evacuation order is rescinded
+  exceptions: []
+  applies_to:
+  - evacuated residents
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:11:chunk:3
+  source_revision: page:11
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 379a1aad1fc1400c490aef8480703d289b99423225bf0ddf6ff9c392d7d617aa
+  approved_surface_sha256: 7c4e3b2403ddb9c4069f2502350437aa252fd2e3335f3c411cee0880b1e739fe
+  human_review_state: approved_static
+  canonical_text: 'Once officials determine the situation is safe, the evacuation
+    order will be rescinded and you can return home.
+
+    '
+  source_span_text: 'Evacuation Rescind Once officials determine the situation is
+    safe, the evacuation order will be rescinded and you can return home.
+
+    '
+- claim_id: TC-GAS-001
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: natural gas during evacuation order
+  action: shut
+  action_polarity: avoid
+  object: natural gas
+  modality: must_not
+  urgency: during_order
+  status_stage: evacuation_order
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  conditions:
+  - when you receive an evacuation order
+  exceptions:
+  - FortisBC may shut service if requested by emergency officials
+  applies_to:
+  - residents with natural gas service
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:12:chunk:1
+  source_revision: page:12
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 42a7c1e6a8f7a161552ac32a5a8cd38af270edd4e398e135469b12cacb417875
+  approved_surface_sha256: 1c9ad8dffba03fc7946b6bdeb4f99d1672191d7521f3726367d4d4ff38a9ecf5
+  human_review_state: approved_static
+  canonical_text: Do not shut off your natural gas when you receive an evacuation
+    order.
+  source_span_text: 'Do NOT shut off your natural gas when you receive an evacuation
+    order. If requested by emergency officials, FortisBC will turn off natural gas
+    service as a precautionary measure
+
+    '
+- claim_id: TC-SPRINKLER-001
+  risk_tier: A
+  authority: FireSmart BC
+  jurisdiction: british_columbia
+  subject: sprinkler activation while evacuating
+  action: activate
+  action_polarity: avoid
+  object: structure protection sprinkler system
+  modality: must_not
+  urgency: while_evacuating
+  status_stage: evacuation
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  conditions:
+  - if a structure protection sprinkler system is installed
+  - while evacuating
+  exceptions: []
+  applies_to:
+  - property owners with structure protection sprinklers
+  source_span_ids:
+  - firesmart_sprinkler_water_use:page:3:chunk:1
+  source_revision: page:3
+  binding_kind: corpus_chunk
+  source_document_sha256: 0ff63733942c4af1febc8145dfc5493556d33c9444668bc74d20679d6e3899a1
+  source_span_sha256: 1072546a85ff0d78b698526008f186b9eb9b267ebdf4a94ae6f9a83ddee18394
+  approved_surface_sha256: 1072546a85ff0d78b698526008f186b9eb9b267ebdf4a94ae6f9a83ddee18394
+  human_review_state: approved_static
+  canonical_text: If you have installed a structure protection sprinkler system on
+    your property DO NOT activate your system as you are evacuating. Structure Protection
+    Specialists will activate sprinkler systems when the time is right.
+  source_span_text: 'If you have installed a structure protection sprinkler system
+    on your property DO NOT activate your system as you are evacuating. Structure
+    Protection Specialists will activate sprinkler systems when the time is right.
+
+    '
+- claim_id: TC-FRESHNESS-001
+  risk_tier: B
+  authority: FireLens
+  jurisdiction: british_columbia
+  subject: stale cached official records
+  action: null
+  action_polarity: null
+  object: official records
+  modality: null
+  urgency: null
+  status_stage: stale
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: distinct_from_retrieval
+  firelens_retrieved_at: distinct_from_source_update
+  freshness: stale
+  conditions: []
+  exceptions: []
+  applies_to:
+  - live official records after a failed refresh
+  source_span_ids:
+  - firelens.freshness_language.stale
+  source_revision: freshness_language.v1
+  binding_kind: internal_static
+  source_document_sha256: null
+  source_span_sha256: ca2053b3e07381ce1152e6a566f6b9da153959f64a02b4e00b8b824c0a10a348
+  approved_surface_sha256: 1535f34a70bef01024b5302148f344a165f9ad7dd19f10ffaa09bd78c4447d1d
+  human_review_state: approved_static
+  canonical_text: Official cached records. A live refresh failed; cached records may
+    be outdated.
+  source_span_text: Official cached records
+- claim_id: TC-EVAC-003-01
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: returning after evacuation
+  action: return
+  action_polarity: conditional
+  object: home
+  modality: may
+  urgency: after_official_clearance
+  status_stage: null
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions:
+  - if evacuated
+  - when officials say it is safe
+  exceptions: []
+  applies_to:
+  - evacuated residents
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:15:chunk:1
+  source_revision: page:15
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: dbd2e831b7e761029bbd02c7be30fd52a9879d9b1952db537c668daa906fde53
+  approved_surface_sha256: 1c1831d41caee980e4da9d754c4af1f2e5a60b52da857eca32815d7073a64c5d
+  human_review_state: approved_static
+  canonical_text: If you are evacuated, only return home when officials say it is
+    safe.
+  source_span_text: If you are evacuated, you’ll be anxious to return home, but only
+    do so when officials say it’s safe.
+- claim_id: TC-SMOKE-012-01
+  risk_tier: A
+  authority: BC Centre for Disease Control
+  jurisdiction: british_columbia
+  subject: respiratory conditions and wildfire smoke
+  action: null
+  action_polarity: null
+  object: null
+  modality: null
+  urgency: null
+  status_stage: highest_risk
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions:
+  - during wildfire smoke
+  exceptions: []
+  applies_to:
+  - people with asthma or COPD
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - bccdc_smoke_health_factsheet:page:2:chunk:1
+  source_revision: page:2
+  binding_kind: corpus_chunk
+  source_document_sha256: 6e6d30e2170848695dc1b7e98198ee133aae5abe7d8903c606750db96096c4bf
+  source_span_sha256: c15538089d54ee45d1e436d1eb83da99e1e666adbc68b99da86f4d93c1524b30
+  approved_surface_sha256: acf03e496845c161c3711d803fcb0137d4d06593837b9cf02ed07dddb0897422
+  human_review_state: approved_static
+  canonical_text: People with respiratory conditions such as asthma or COPD are at
+    highest risk of health effects caused by wildfire smoke.
+  source_span_text: P eople with respiratory conditions such as asthma or chronic
+    obstructive pulmonary disease (COPD) are at highest risk of experiencing health
+    effects caused by wildfire smoke.
+- claim_id: TC-SMOKE-013-01
+  risk_tier: A
+  authority: BC Centre for Disease Control
+  jurisdiction: british_columbia
+  subject: young children during smoky periods
+  action: decrease
+  action_polarity: conditional
+  object: activities
+  modality: may
+  urgency: during_smoky_periods
+  status_stage: null
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions:
+  - especially when outdoors
+  exceptions: []
+  applies_to:
+  - young children
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - bccdc_smoke_health_factsheet:page:2:chunk:2
+  source_revision: page:2
+  binding_kind: corpus_chunk
+  source_document_sha256: 6e6d30e2170848695dc1b7e98198ee133aae5abe7d8903c606750db96096c4bf
+  source_span_sha256: 39362bca7effbeadf88faa06aa0691b1bd4e606c6f6a615d398b24a926f3814e
+  approved_surface_sha256: 8843692f7e8688a0fc2bbbcaffcae598793814763d850387f4ca91eb48331956
+  human_review_state: approved_static
+  canonical_text: Young children may need to decrease their activities during smoky
+    periods, especially when outdoors.
+  source_span_text: Young children have sensitive lungs and may need to decrease their
+    activities during smoky periods, especially when outdoors.
+- claim_id: TC-SMOKE-014-01
+  risk_tier: A
+  authority: BC Centre for Disease Control
+  jurisdiction: british_columbia
+  subject: indoor air quality during smoke
+  action: manage
+  action_polarity: perform
+  object: indoor air quality at home
+  modality: should
+  urgency: during_smoke
+  status_stage: null
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions: []
+  exceptions: []
+  applies_to:
+  - people exposed to wildfire smoke
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - bccdc_smoke_health_factsheet:page:2:chunk:3
+  source_revision: page:2
+  binding_kind: corpus_chunk
+  source_document_sha256: 6e6d30e2170848695dc1b7e98198ee133aae5abe7d8903c606750db96096c4bf
+  source_span_sha256: 1c867bfb5ee732ff22e0de1dc45e17e11601d5b6c271b50320874dbc729c5999
+  approved_surface_sha256: 1c867bfb5ee732ff22e0de1dc45e17e11601d5b6c271b50320874dbc729c5999
+  human_review_state: approved_static
+  canonical_text: Managing indoor air quality at home is the best way to reduce your
+    smoke exposure.
+  source_span_text: Managing indoor air quality at home is the best way to reduce
+    your smoke exposure.
+- claim_id: TC-UTIL-016-01
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: generator use after wildfire
+  action: use
+  action_polarity: restricted
+  object: generators
+  modality: must
+  urgency: null
+  status_stage: null
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions:
+  - outdoors only
+  exceptions:
+  - do not connect to a household circuit
+  applies_to:
+  - people returning after a wildfire
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:15:chunk:3
+  source_revision: page:15
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 37851b8d69405f78ff74556cf3eca2f9b582a7c498e60240b3e67e559a3787c1
+  approved_surface_sha256: ed2eb821d888d2fc6d7b8dfdabc4b4b64cabf856785bc677ff5e17282ba40eb2
+  human_review_state: approved_static
+  canonical_text: Only use generators outdoors; do not connect them to a household
+    circuit.
+  source_span_text: Only use generators outdoors; do not connect to a household circuit
+- claim_id: TC-UTIL-016-02
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: re-entering after wildfire
+  action: check
+  action_polarity: perform
+  object: main power breaker
+  modality: should
+  urgency: before_entry
+  status_stage: null
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions:
+  - when re-entering
+  exceptions: []
+  applies_to:
+  - people returning after a wildfire
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:15:chunk:3
+  source_revision: page:15
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: f620f9f6d23fef4db39452192cc23d8a660d645ad42a69478687c7655041c1f5
+  approved_surface_sha256: 19150a03f4722436e37ef2ef3494e5ced99fad74282122bfd403e2e299f5e2ce
+  human_review_state: approved_static
+  canonical_text: Enter with caution and check that the main power breaker is off.
+  source_span_text: Enter with caution and check that the main power breaker is off
+- claim_id: TC-UTIL-016-03
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: property perimeter after wildfire
+  action: check
+  action_polarity: perform
+  object: electrical wires gas smell or falling debris
+  modality: should
+  urgency: before_entry
+  status_stage: null
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions:
+  - when returning after wildfire
+  exceptions: []
+  applies_to:
+  - people returning after a wildfire
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:15:chunk:3
+  source_revision: page:15
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 9eb94b6869b85451aa6e398f89d5f227aecf3ab6de984b64702beccc7041fb58
+  approved_surface_sha256: 691222f46d876d9f6254491e97dd52cacb0429481a382ee54547ed2e4f75e883
+  human_review_state: approved_static
+  canonical_text: Walk around the perimeter and check for electrical wires, a gas
+    smell, or debris that could fall.
+  source_span_text: Walk around the perimeter, checking for electrical wires, a gas
+    smell or debris that could fall
+- claim_id: TC-FIRESMART-017-01
+  risk_tier: A
+  authority: FireSmart BC
+  jurisdiction: british_columbia
+  subject: non-combustible zone
+  action: maintain
+  action_polarity: perform
+  object: zone around home and attachments
+  modality: should
+  urgency: null
+  status_stage: null
+  quantities:
+  - '1.5'
+  canonical_units:
+  - metre
+  ranges: []
+  comparator: exact_boundary
+  conditions: []
+  exceptions: []
+  applies_to:
+  - homes and attachments
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - firesmart_begins_at_home:page:11:chunk:1
+  source_revision: page:11
+  binding_kind: corpus_chunk
+  source_document_sha256: c808a14bb873eb8b70930470976b0f2e091eed9cfdc1fe4b63d6325b4ae3c2ca
+  source_span_sha256: 08befd76b71f74ab8963f8a2b2cacd79cb5930d7e2a4e5bdc5a690cd2dfe77d9
+  approved_surface_sha256: dec5265791604ab2ef23ad5b279f06cf00501915ab1c7210af9d2df4f6a41d40
+  human_review_state: approved_static
+  canonical_text: Maintain a 1.5 metre non-combustible zone around your entire home
+    and any attachments.
+  source_span_text: Make sure that you maintain a 1.5 metre non- combustible zone
+    around your entire home and any attachments.
+- claim_id: TC-FIRESMART-021-01
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: household wildfire preparation
+  action: build
+  action_polarity: perform
+  object: grab-and-go bags
+  modality: should
+  urgency: before_wildfire
+  status_stage: null
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions: []
+  exceptions: []
+  applies_to:
+  - each household member
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:4:chunk:3
+  source_revision: page:4
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: b8d8192a19e585de574a8f395ef308debb4a3e633a585c82858802f5cafc36ca
+  approved_surface_sha256: a8363a07f35af80b9a9f3b75e0bb9cf1360437371eb2110b4d7c9486c72742db
+  human_review_state: approved_static
+  canonical_text: Build grab-and-go bags now for each member of your household.
+  source_span_text: Take time now to build grab-and-go bags for each member of your
+    household so you’re not caught off guard.
+- claim_id: TC-FIRESMART-022-01
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: Priority Zone 1 planting
+  action: plant
+  action_polarity: avoid
+  object: flammable trees and plants
+  modality: should_not
+  urgency: null
+  status_stage: null
+  quantities:
+  - '1.5'
+  - '10'
+  canonical_units:
+  - metre
+  ranges:
+  - 1.5-10
+  comparator: null
+  conditions:
+  - within Priority Zone 1
+  exceptions: []
+  applies_to:
+  - structures and homes
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:9:chunk:1
+  source_revision: page:9
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 3ea9355b33ff5783d9740389e920f02ac4eb01692d3cdb341e1b024b3a80f7f5
+  approved_surface_sha256: 9dd1241f029a4253fc6f0f043c6a41d501d89cee6dbf820c6c9ee6e4103439a8
+  human_review_state: approved_static
+  canonical_text: In Priority Zone 1, 1.5 to 10 metres from a structure or home, avoid
+    planting flammable trees and plants such as cedar, spruce, juniper, pine, and
+    tall grasses.
+  source_span_text: Priority Zone 1 (1.5 to 10 metres from a structure or home) ¢
+    Avoid planting flammable trees and plants, such as cedar, spruce, juniper, pine
+    and tall grasses
+- claim_id: TC-VULNERABLE-023-01
+  risk_tier: A
+  authority: BC Centre for Disease Control
+  jurisdiction: british_columbia
+  subject: chronic conditions and wildfire smoke
+  action: null
+  action_polarity: null
+  object: null
+  modality: null
+  urgency: null
+  status_stage: higher_risk
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions:
+  - during wildfire smoke
+  exceptions: []
+  applies_to:
+  - people with asthma
+  - people with COPD
+  - people with heart disease
+  - people with diabetes
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - bccdc_wildfire_smoke:section:people-at-higher-risk:chunk:1
+  source_revision: section:people-at-higher-risk
+  binding_kind: corpus_chunk
+  source_document_sha256: 450b42fe63adfdf8baf17d5c79da78f586da6ec65205ae72fb292a57c383dcb0
+  source_span_sha256: a7a451009c504b948571fec955bd096320167fdffa8140737c41cf6446818b94
+  approved_surface_sha256: af4a20405fe068bae9360cda02bf68d7691111c44ba8e14331dcf01e964d05f0
+  human_review_state: approved_static
+  canonical_text: People with pre-existing chronic conditions such as asthma, COPD,
+    heart disease, and diabetes are at higher risk from wildfire smoke.
+  source_span_text: People at higher risk People with pre-existing chronic conditions
+    such as asthma, chronic ​obstructive pulmonary disease (COPD), heart disease,
+    and diabetes
+- claim_id: TC-VULNERABLE-024-01
+  risk_tier: A
+  authority: BC Centre for Disease Control
+  jurisdiction: british_columbia
+  subject: chronic health condition preparation
+  action: create
+  action_polarity: perform
+  object: management plan for smoky conditions
+  modality: should
+  urgency: null
+  status_stage: null
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions:
+  - if you have a chronic health condition
+  exceptions: []
+  applies_to:
+  - people with chronic health conditions
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - bccdc_wildfire_smoke:section:protect-yourself-from-wildfire-smoke:chunk:2
+  source_revision: section:protect-yourself-from-wildfire-smoke
+  binding_kind: corpus_chunk
+  source_document_sha256: 450b42fe63adfdf8baf17d5c79da78f586da6ec65205ae72fb292a57c383dcb0
+  source_span_sha256: 6b0cc48260a4e6eb84b10f8bca4ae10090392530471e6818937b31584cef9984
+  approved_surface_sha256: 6b0cc48260a4e6eb84b10f8bca4ae10090392530471e6818937b31584cef9984
+  human_review_state: approved_static
+  canonical_text: If you have a chronic health condition, work with your health care
+    providers to create a management plan for smoky conditions.
+  source_span_text: If you have a chronic health condition, work with your health
+    care providers to create a management plan for smoky conditions.
+- claim_id: TC-VULNERABLE-024-02
+  risk_tier: A
+  authority: BC Centre for Disease Control
+  jurisdiction: british_columbia
+  subject: rescue medication preparation
+  action: carry
+  action_polarity: perform
+  object: rescue medications
+  modality: should
+  urgency: wildfire_season
+  status_stage: null
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions:
+  - if you use rescue medications
+  exceptions: []
+  applies_to:
+  - people who use rescue medications
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - bccdc_wildfire_smoke:section:protect-yourself-from-wildfire-smoke:chunk:2
+  source_revision: section:protect-yourself-from-wildfire-smoke
+  binding_kind: corpus_chunk
+  source_document_sha256: 450b42fe63adfdf8baf17d5c79da78f586da6ec65205ae72fb292a57c383dcb0
+  source_span_sha256: 942fed3d6d0f2da6f8a228cc8fcd8ad014e606a7a2ceb24946f1466aefd972ee
+  approved_surface_sha256: da9d78416fec47df4bb1ebc4f3c1d94487d7deb9f58eef71bafe4ddc73909c57
+  human_review_state: approved_static
+  canonical_text: If you use rescue medications, keep an ample supply at home and
+    carry them with you during wildfire season.
+  source_span_text: If you use rescue medications, make sure that you have an ample
+    supply at home and always carry them with you during the wildfire season.
+- claim_id: TC-VULNERABLE-026-01
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: extended anxiety after wildfire
+  action: contact
+  action_polarity: perform
+  object: medical professional or trusted community leader
+  modality: should
+  urgency: after_two_to_four_weeks
+  status_stage: null
+  quantities:
+  - '2'
+  - '4'
+  canonical_units:
+  - week
+  ranges:
+  - 2-4
+  comparator: null
+  conditions:
+  - warning signs last more than two to four weeks
+  exceptions: []
+  applies_to:
+  - people experiencing extended anxiety
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:16:chunk:2
+  source_revision: page:16
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 165cac697fb94522a67c17226a2eb53dde8cc829c95baf55ae4cf1cc94b56a54
+  approved_surface_sha256: 22d397cd12d3a930a84702a1c7749daf2cc6d23e7702445276e15ebe7252a3f0
+  human_review_state: approved_static
+  canonical_text: Contact a medical professional or trusted community leader if warning
+    signs of extended anxiety last more than two to four weeks.
+  source_span_text: Watch for warning signs of extended anxiety and contact a medical
+    professional or trusted community leader if they last more than two to four weeks
+- claim_id: TC-GENERAL-029-01
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: non-combustible zone material
+  action: remove
+  action_polarity: perform
+  object: combustible material
+  modality: should
+  urgency: null
+  status_stage: null
+  quantities:
+  - '0'
+  - '1.5'
+  canonical_units:
+  - metre
+  ranges:
+  - 0-1.5
+  comparator: null
+  conditions:
+  - within the non-combustible zone
+  exceptions: []
+  applies_to:
+  - structures and homes
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:8:chunk:2
+  source_revision: page:8
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 514e90ba50affd0e99fce4225403639aebd1a62b712951d56cd517df0e5a0578
+  approved_surface_sha256: c075bef418d1c610ae64092fda3a11c13c46480a6c55b5890789811e639c9686
+  human_review_state: approved_static
+  canonical_text: In the non-combustible zone, 0 to 1.5 metres from a structure or
+    home, remove combustible material down to mineral soil.
+  source_span_text: Non-Combustible Zone (0 to 1.5 metres from a structure or home)
+    ¢ Remove combustible material (woody shrubs, dry grasses, etc.) down to mineral
+    soil
+- claim_id: TC-GENERAL-030-01
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: FireSmart home assessment
+  action: complete
+  action_polarity: perform
+  object: FireSmart home assessment
+  modality: should
+  urgency: null
+  status_stage: null
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions: []
+  exceptions: []
+  applies_to:
+  - homeowners
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:9:chunk:3
+  source_revision: page:9
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 53b2c0a353159c1c1662763eb5f8dc7df4cf78a9c4d6e84a2049ddd27d6e85a9
+  approved_surface_sha256: 92c4d6a985ff8d145ffd4c3932f5dbd6e0b81bd19aa063d249613cd448609287
+  human_review_state: approved_static
+  canonical_text: Complete the FireSmart home assessment to identify changes that
+    can reduce your home’s risk.
+  source_span_text: Complete the FireSmart home assessment to see what changes will
+    make the greatest difference in reducing your home’s risk.
+- claim_id: TC-GENERAL-033-01
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: evacuation route
+  action: evacuate
+  action_polarity: perform
+  object: official identified routes
+  modality: must
+  urgency: during_evacuation_order
+  status_stage: null
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions:
+  - when officials identify evacuation routes
+  exceptions: []
+  applies_to:
+  - people evacuating
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:11:chunk:2
+  source_revision: page:11
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: e240b4341d5152e1a8b5f6122d13863ecc8f741f7255127a64a99ec5f3d0e9c5
+  approved_surface_sha256: fe4cc005d29286598c8b4375b4632ccbcb39962727768ba2175c74007166678c
+  human_review_state: approved_static
+  canonical_text: Follow officials’ directions and evacuate using the routes they
+    identify.
+  source_span_text: Follow all directions from officials and evacuate using the route(s)
+    they've identified.
+- claim_id: TC-GENERAL-033-02
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: home visibility while evacuating
+  action: close
+  action_polarity: perform
+  object: doors and windows
+  modality: should
+  urgency: while_evacuating
+  status_stage: null
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions:
+  - on the way out
+  exceptions: []
+  applies_to:
+  - people evacuating their homes
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:11:chunk:2
+  source_revision: page:11
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: dc1b26a14733d64f6025bb9daefbd321668c2b03b381abe8603f8307df5a7903
+  approved_surface_sha256: ef6f80cc7d2702b216f338785262a5ebc013a220024338766122826e27196d6a
+  human_review_state: approved_static
+  canonical_text: On your way out, close doors and windows and turn on interior and
+    exterior lights so your home is visible to firefighters in heavy smoke.
+  source_span_text: On your way out close doors and windows and turn on both interior
+    and exterior lights so your home is visible to firefighters in heavy smoke.
+- claim_id: TC-GENERAL-035-01
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: vehicle fuel for evacuation
+  action: keep
+  action_polarity: perform
+  object: vehicle gas tank
+  modality: should
+  urgency: before_short_notice_evacuation
+  status_stage: null
+  quantities:
+  - half full
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions:
+  - in case evacuation is needed on short notice
+  exceptions: []
+  applies_to:
+  - vehicle owners
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:11:chunk:4
+  source_revision: page:11
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 7884d920cf40db756ae31b4a0eefef904f5047045b307c2f958c69ed478c03dd
+  approved_surface_sha256: 00ba8c0605cf502f3c423a9719f021d5bce4bb2eaf9699c4875054d3dcd42c13
+  human_review_state: approved_static
+  canonical_text: Keep your vehicle’s gas tank half full in case you need to evacuate
+    on short notice.
+  source_span_text: Always keep your vehicle’s gas tank half full in case you need
+    to evacuate on short notice.
+- claim_id: TC-GENERAL-036-01
+  risk_tier: A
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  subject: suspected gas leak
+  action: leave
+  action_polarity: perform
+  object: area with suspected gas leak
+  modality: must
+  urgency: immediate
+  status_stage: null
+  quantities: []
+  canonical_units: []
+  ranges: []
+  comparator: null
+  conditions:
+  - if you suspect a gas leak
+  exceptions: []
+  applies_to:
+  - people who suspect a gas leak
+  inclusive_exclusive: null
+  locations: []
+  valid_from: null
+  valid_to: null
+  official_source_updated_at: null
+  firelens_retrieved_at: '2026-07-26T22:27:40.295011+00:00'
+  freshness: stable_guidance
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:12:chunk:1
+  source_revision: page:12
+  binding_kind: corpus_chunk
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 04dfc40015bae972b0e8f01dd8a1f66ba781b059e4a412b9d56b041cff86812b
+  approved_surface_sha256: 15505cd2b852ee1ae36e8926df4d315233c4403a0fa35ba1302e78c60236f81e
+  human_review_state: approved_static
+  canonical_text: If you suspect a gas leak, turn off the gas valve and leave immediately.
+  source_span_text: However, if you suspect a gas leak, turn off the gas valve and
+    leave immediately.

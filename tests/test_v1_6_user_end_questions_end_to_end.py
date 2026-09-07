@@ -323,7 +323,7 @@ def test_static_packet_fixtures_preserve_quote_only_conditions_and_supported_bou
         ),
         "UQ-M10": (
             ("preparedbc_wildfire_guide:page:12:chunk:1",),
-            ("follow instructions", "local authority"),
+            ("follow instructions", "local government"),
             {ResponseMode.PARTIAL},
             {"official_quote_only"},
         ),
@@ -365,7 +365,7 @@ def test_static_packet_fixtures_preserve_quote_only_conditions_and_supported_bou
             response = (
                 await engine.answer(_question(case_id), packet, trace_id=f"fixture-{case_id}")
             ).response
-            answer = (response.answer or "").casefold()
+            answer = " ".join((response.answer or "").casefold().split())
             assert response.response_mode in modes, case_id
             assert all(fragment in answer for fragment in required_text), case_id
             assert "prescrib" not in answer
@@ -611,7 +611,7 @@ def test_population_specific_smoke_question_never_substitutes_another_group() ->
         finally:
             await runtime.aclose()
 
-        answer = (response.answer or "").casefold()
+        answer = " ".join((response.answer or "").casefold().split())
         assert "asthma" not in answer
         assert "copd" not in answer
         assert all(

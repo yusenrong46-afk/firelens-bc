@@ -93,10 +93,10 @@ test("answers the named Mountain Fire question first and leaves map context clos
   await ask(page, "Where is Mountain Fire near Kelowna?");
   const answer = page.locator("#conversation .assistant-message .answer-lead");
   await expect(answer).toContainText("Mountain Fire");
-  await expect(answer).toContainText("Out of Control");
+  await expect(answer).toContainText("straight-line");
   await expect(page.getByRole("region", { name: "Official wildfire records map" })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Analysis view" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "View official map context" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /View map/ })).toBeVisible();
   expect(attemptedExternal).toEqual([]);
 });
 
@@ -107,14 +107,13 @@ test("uses the real API response to render an Okanagan distribution analysis", a
   const attemptedExternal = await localOnly(context, page);
   await page.goto("/");
   await ask(page, "Show the current wildfire distribution by status across the Okanagan.");
-  const analysis = page.getByRole("region", { name: "Analysis view" });
-  await expect(analysis).toBeVisible();
-  await expect(analysis.getByRole("heading", { name: "Analysis view" })).toHaveAttribute("data-surface-visually-hidden", "true");
-  await expect(analysis.getByLabel("Incident records by status")).toContainText("Out of Control");
-  await expect(analysis.getByLabel("Incident records by status")).toContainText("Being Held");
-  await expect(analysis.getByLabel("Incident records by status")).toContainText("Under Control");
-  await expect(page.getByRole("region", { name: "Official wildfire records map" })).toHaveCount(0);
-  expect(attemptedExternal).toEqual([]);
+  const roster = page.getByRole("region", { name: "Live answer summary" });
+  await expect(roster).toBeVisible();
+  await expect(roster).toContainText("Out of Control");
+  await expect(roster).toContainText("Being Held");
+  await expect(roster).toContainText("Under Control");
+  await expect(page.getByRole("region", { name: "Official wildfire records map" })).toBeVisible();
+  expect(nonLocalExceptBlockedBasemap(attemptedExternal)).toEqual([]);
 });
 
 test("keeps current records and reviewed evacuation-alert meaning in separate trust lanes", async ({
@@ -144,7 +143,8 @@ test("keeps current records and reviewed evacuation-alert meaning in separate tr
     "If you are under an evacuation alert, be ready to leave on short notice.",
     { exact: true },
   ).first()).toBeVisible();
-  await expect(page.getByText("Reviewed structured claim", { exact: true }).first()).toBeVisible();
+  await page.getByText("More detail on each statement", { exact: true }).click();
+  await expect(page.getByText("Reviewed official guidance", { exact: true }).first()).toBeVisible();
   expect(attemptedExternal).toEqual([]);
 });
 
@@ -156,7 +156,7 @@ test("an empty official result is explicit and never rendered as an all-clear", 
   await page.goto("/");
   await ask(page, "Are there current wildfires near Emptytown?");
   const conversation = page.getByLabel("Question and answer");
-  await expect(conversation).toContainText("No matching official");
+  await expect(conversation).toContainText("No fires are listed near Emptytown");
   await expect(conversation).toContainText(/not (?:an )?all-clear|does not mean the area is safe/i);
   await expect(conversation.getByText(/safe to return|safe here|all clear/i)).toHaveCount(0);
   expect(attemptedExternal).toEqual([]);
@@ -173,11 +173,9 @@ test("names an unavailable evacuation layer while preserving an available incide
     "Show the current wildfire distribution by status and evacuation orders near Outage Ridge.",
   );
   const conversation = page.getByLabel("Question and answer");
-  const analysis = page.getByRole("region", { name: "Analysis view" });
-  await expect(analysis).toBeVisible();
-  await analysis.getByRole("tab", { name: "Records", exact: true }).click();
-  await expect(analysis.getByText("Mountain Fire", { exact: true })).toBeVisible();
-  await expect(page.getByText(/Some official layers are unavailable: evacuation/)).toBeVisible();
+  const roster = page.getByRole("region", { name: "Live answer summary" });
+  await expect(roster).toContainText("Mountain Fire");
+  await expect(conversation).toContainText(/evacuation.*unavailable/i);
   await expect(conversation).toContainText(/not an all-clear/i);
   expect(attemptedExternal).toEqual([]);
 });
@@ -189,6 +187,7 @@ test("preserves exact structured-claim authority on the proof card", async ({
   const attemptedExternal = await localOnly(context, page);
   await page.goto("/");
   await ask(page, "What does an evacuation alert mean?");
+  await page.getByText("More detail on each statement", { exact: true }).click();
   await page.getByRole("button", {
     name: /Review technical evidence for If you are under an evacuation alert/,
   }).click();
@@ -196,9 +195,9 @@ test("preserves exact structured-claim authority on the proof card", async ({
     name: "Proof card for If you are under an evacuation alert, be ready to leave on short notice.",
   });
   await expect(proof).toBeVisible();
-  await expect(proof).toContainText("Reviewed structured claim");
-  await expect(proof.getByText("Technical binding details")).toBeVisible();
-  await proof.getByText("Technical binding details").click();
+  await expect(proof).toContainText("Reviewed official guidance");
+  await expect(proof.getByText("How FireLens checked this")).toBeVisible();
+  await proof.getByText("How FireLens checked this").click();
   await expect(proof).toContainText("structured reviewed");
   await expect(proof).toContainText("approved_static");
   expect(attemptedExternal).toEqual([]);
@@ -223,7 +222,7 @@ test("does not mislabel unrelated or smoke questions as reviewed evacuation guid
   await expect(conversation.getByText(/be ready to leave on short notice/i)).toHaveCount(0);
 
   await ask(page, "What should I know about wildfire smoke?");
-  await expect(conversation.getByText("Reviewed sources", { exact: true }).last()).toBeVisible();
+  await expect(conversation.getByRole("region", { name: "Source of this information" }).last()).toBeVisible();
   await expect(conversation).toContainText(
     "Managing indoor air quality at home is the best way to reduce your smoke exposure.",
   );
@@ -327,7 +326,7 @@ test("resolves the misspelled Mountain Fire question to the named Kelowna record
   const answer = page.locator("#conversation .assistant-message .answer-lead");
   await expect(answer).toContainText("Mountain Fire");
   await expect(page.getByRole("region", { name: "Analysis view" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "View official map context" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /View map/ })).toBeVisible();
   expect(attemptedExternal).toEqual([]);
 });
 
@@ -370,8 +369,8 @@ test("keeps a named-fire follow-up bound to the same official record", async ({
   await expect(page.locator("#conversation .assistant-message .answer-lead")).toContainText(
     "Mountain Fire",
   );
-  await page.getByRole("button", { name: "View official map context" }).click();
-  await page.getByRole("button", { name: /Mountain Fire/ }).click();
+  await page.getByRole("button", { name: /View map/ }).click();
+  await page.getByRole("region", { name: "Live answer summary" }).getByRole("button", { name: /Mountain Fire/ }).click();
   const followUpExchange = await askWithExchange(page, "What is the current status of this fire?");
   expect(followUpExchange.request.context?.selected_live_result_id).toBe("incident:mountain");
   expect(followUpExchange.response.selected_live_result_id).toBe("incident:mountain");
@@ -393,9 +392,7 @@ test("binds an explicit map selection and asks for selection when a singular fol
   );
   expect(initial.response.selected_live_result_id ?? null).toBeNull();
 
-  const analysis = page.getByRole("region", { name: "Analysis view" });
-  await analysis.getByRole("tab", { name: "Map", exact: true }).click();
-  await analysis.getByRole("button", { name: /Mountain Fire/ }).click();
+  await page.getByRole("region", { name: "Live answer summary" }).getByRole("button", { name: /Mountain Fire/ }).click();
   const selected = await askWithExchange(page, "What is the current status of this fire?");
   expect(selected.request.context?.selected_live_result_id).toBe("incident:mountain");
   expect(selected.response.selected_live_result_id).toBe("incident:mountain");
@@ -413,7 +410,7 @@ test("binds an explicit map selection and asks for selection when a singular fol
     "Select an official record to continue",
   );
   await expect(page.getByLabel("Question and answer")).toContainText(
-    /select a mapped official record/i,
+    /select a fire on the map or in the list first/i,
   );
   expect(nonLocalExceptBlockedBasemap(attemptedExternal)).toEqual([]);
 });

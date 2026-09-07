@@ -65,7 +65,7 @@ for (const [width, height] of viewports) {
     const source = page.getByRole("complementary", { name: "Official sources" });
     await expect(source).toContainText("For Bear Creek Fire");
     await expect(source).toContainText("Source updated");
-    await expect(source).toContainText("FireLens fetched");
+    await expect(source).toContainText("Checked by FireLens");
     await expect(source.getByRole("link", { name: "BC Wildfire Service", exact: true })).toHaveAttribute("href", answer.live_results[1].source_url);
     await page.evaluate(() => window.scrollTo(0, 0));
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

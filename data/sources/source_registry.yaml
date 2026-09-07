@@ -23,8 +23,9 @@ sources:
     review_status: approved_static
     corpus_action: include
     local_file: data/raw/preparedbc_wildfire_guide.pdf
-    expected_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
-    source_reviewed_on: "2026-07-25"
+    expected_sha256: 9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2
+    source_reviewed_on: "2026-09-07"
+    source_checked_at: "2026-09-07T13:45:18.920610+00:00"
     intended_use:
       - emergency planning
       - grab-and-go bags

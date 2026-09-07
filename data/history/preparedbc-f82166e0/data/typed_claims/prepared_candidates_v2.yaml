@@ -1,0 +1,1307 @@
+schema_version: firelens.typed_claim_candidates.v2
+raw_queue_sha256: 008274a5cda237473697b5ddd9c8c04d3a42a8738c560d594ea682ed74344f9c
+corpus_sha256: d5fcd794f9ec0486a256ae511366fde982254342b7d07b9c83a21ea8ead291eb
+note: Coding-agent proposals only. Every prepared claim remains pending_review; only
+  a named human may approve, edit, reject, or defer it.
+dispositions:
+- parent_candidate_id: PC-EVAC-001
+  disposition: needs_source_repair
+  reason: PDF extraction is truncated and contains the artifact "Final cut".
+- parent_candidate_id: PC-EVAC-002
+  disposition: duplicate_existing
+  reason: Alert, order, and rescind meanings are already represented in the reviewed
+    inventory.
+- parent_candidate_id: PC-EVAC-003
+  disposition: review_ready
+  reason: Clean returning-home instruction with an explicit official-safety condition.
+- parent_candidate_id: PC-EVAC-004
+  disposition: not_claim_bearing
+  reason: Insurance referral material is outside the intended high-risk structured
+    slice.
+- parent_candidate_id: PC-EVAC-005
+  disposition: not_claim_bearing
+  reason: Publisher liability disclaimer is not public preparedness guidance.
+- parent_candidate_id: PC-EVAC-006
+  disposition: not_claim_bearing
+  reason: FireSmart mascot and communications copy contains no atomic safety instruction.
+- parent_candidate_id: PC-EVAC-007
+  disposition: not_claim_bearing
+  reason: Case-study narrative is not an atomic official instruction.
+- parent_candidate_id: PC-EVAC-008
+  disposition: not_claim_bearing
+  reason: Community-video description is not an atomic official instruction.
+- parent_candidate_id: PC-SMOKE-009
+  disposition: needs_source_repair
+  reason: Multi-column extraction interleaves the exposure and HEPA sentences.
+- parent_candidate_id: PC-SMOKE-010
+  disposition: needs_source_repair
+  reason: Multi-column PDF extraction interleaves unrelated sentences.
+- parent_candidate_id: PC-SMOKE-011
+  disposition: needs_source_repair
+  reason: Driving and symptom sentences are interleaved by multi-column extraction.
+- parent_candidate_id: PC-SMOKE-012
+  disposition: review_ready
+  reason: A complete sentence identifies a higher-risk respiratory group.
+- parent_candidate_id: PC-SMOKE-013
+  disposition: review_ready
+  reason: A complete sentence provides an activity condition for young children.
+- parent_candidate_id: PC-SMOKE-014
+  disposition: review_ready
+  reason: A complete sentence states an indoor-air exposure action.
+- parent_candidate_id: PC-UTILITIE-015
+  disposition: needs_source_repair
+  reason: Power-line and landscaping columns are interleaved.
+- parent_candidate_id: PC-UTILITIE-016
+  disposition: review_ready
+  reason: Complete post-fire utility-safety bullets support atomic actions.
+- parent_candidate_id: PC-FIRESMAR-017
+  disposition: review_ready
+  reason: Complete sentence includes a measurable non-combustible-zone boundary.
+- parent_candidate_id: PC-FIRESMAR-018
+  disposition: needs_source_repair
+  reason: Plant labels and ember guidance are interleaved.
+- parent_candidate_id: PC-FIRESMAR-019
+  disposition: needs_source_repair
+  reason: Two tree-list columns are interleaved and unsafe to canonicalize automatically.
+- parent_candidate_id: PC-FIRESMAR-020
+  disposition: not_claim_bearing
+  reason: Program marketing copy does not contain an atomic preparedness action.
+- parent_candidate_id: PC-FIRESMAR-021
+  disposition: review_ready
+  reason: Complete household grab-and-go preparation instruction.
+- parent_candidate_id: PC-FIRESMAR-022
+  disposition: review_ready
+  reason: Complete Priority Zone 1 instruction preserves its numeric boundary.
+- parent_candidate_id: PC-VULNERAB-023
+  disposition: review_ready
+  reason: Clean official web extraction lists a specific higher-risk population.
+- parent_candidate_id: PC-VULNERAB-024
+  disposition: review_ready
+  reason: Clean official web extraction contains two conditional health-preparation
+    actions.
+- parent_candidate_id: PC-VULNERAB-025
+  disposition: needs_source_repair
+  reason: The candidate begins mid-contact list and lacks stable atomic context.
+- parent_candidate_id: PC-VULNERAB-026
+  disposition: review_ready
+  reason: Complete duration condition and official escalation instruction.
+- parent_candidate_id: PC-CONDITIO-027
+  disposition: needs_source_repair
+  reason: The admitted chunk ends mid-sentence after the clearance instruction.
+- parent_candidate_id: PC-GENERAL-028
+  disposition: not_claim_bearing
+  reason: High-level FireSmart framing is not a specific atomic preparedness instruction.
+- parent_candidate_id: PC-GENERAL-029
+  disposition: review_ready
+  reason: Complete non-combustible-zone action with numeric boundary.
+- parent_candidate_id: PC-GENERAL-030
+  disposition: review_ready
+  reason: Complete official home-assessment instruction.
+- parent_candidate_id: PC-GENERAL-031
+  disposition: not_claim_bearing
+  reason: Section heading and preparedness introduction contain no atomic action beyond
+    covered stages.
+- parent_candidate_id: PC-GENERAL-032
+  disposition: duplicate_existing
+  reason: Same source span as reviewed TC-EVAC-ALERT-001.
+- parent_candidate_id: PC-GENERAL-033
+  disposition: review_ready
+  reason: Same chunk contains an uncovered official-route instruction distinct from
+    the reviewed order meaning.
+- parent_candidate_id: PC-GENERAL-034
+  disposition: duplicate_existing
+  reason: Same rescind and return fact as reviewed TC-EVAC-RESCIND-001.
+- parent_candidate_id: PC-GENERAL-035
+  disposition: review_ready
+  reason: Complete vehicle-fuel preparation instruction.
+- parent_candidate_id: PC-GENERAL-036
+  disposition: review_ready
+  reason: Complete local-authority and suspected-gas-leak actions are available in
+    the admitted chunk.
+prepared_candidates:
+- candidate_id: PC2-EVAC-003-01
+  parent_candidate_id: PC-EVAC-003
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: evac
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  source_id: preparedbc_wildfire_guide
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:15:chunk:1
+  source_revision: page:15
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: dbd2e831b7e761029bbd02c7be30fd52a9879d9b1952db537c668daa906fde53
+  proposed_surface_sha256: 1c1831d41caee980e4da9d754c4af1f2e5a60b52da857eca32815d7073a64c5d
+  exact_source_quote: If you are evacuated, you’ll be anxious to return home, but
+    only do so when officials say it’s safe.
+  surrounding_context: 'After a Wildfire
+
+    RETURNING HOME
+
+    Getting there:
+
+    If you are evacuated, you’ll be anxious to return home, but only do so
+
+    when officials say it’s safe. They may identify a specific route or routes.
+
+    Follow all directions and avoid taking shortcuts.'
+  proposed_surface: If you are evacuated, only return home when officials say it is
+    safe.
+  typed_fields:
+    subject: returning after evacuation
+    action: return
+    action_polarity: conditional
+    object: home
+    modality: may
+    urgency: after_official_clearance
+    status_stage: null
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions:
+    - if evacuated
+    - when officials say it is safe
+    exceptions: []
+    applies_to:
+    - evacuated residents
+  preparation_notes: Preserves the official-clearance condition; wording remains agent-proposed.
+  quality_flags: []
+- candidate_id: PC2-SMOKE-012-01
+  parent_candidate_id: PC-SMOKE-012
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: smoke
+  authority: BC Centre for Disease Control
+  jurisdiction: british_columbia
+  source_id: bccdc_smoke_health_factsheet
+  source_span_ids:
+  - bccdc_smoke_health_factsheet:page:2:chunk:1
+  source_revision: page:2
+  source_document_sha256: 6e6d30e2170848695dc1b7e98198ee133aae5abe7d8903c606750db96096c4bf
+  source_span_sha256: c15538089d54ee45d1e436d1eb83da99e1e666adbc68b99da86f4d93c1524b30
+  proposed_surface_sha256: acf03e496845c161c3711d803fcb0137d4d06593837b9cf02ed07dddb0897422
+  exact_source_quote: P eople with respiratory conditions such as asthma or chronic
+    obstructive pulmonary disease (COPD) are at highest risk of experiencing health
+    effects caused by wildfire smoke.
+  surrounding_context: "Different people It is especially important for the following\
+    \ groups to\nrespond differently reduce their exposure.\nto wildfire smoke,\n\
+    and some people \x83 People whose health is compromised by an illness\nare at\
+    \ higher risk of or chronic condition. Smoky air makes daily\nexperiencing health\
+    \ activities harder, both physically and mentally.\neffects.\n\x83 P eople with\
+    \ respiratory conditions such as asthma\nor chronic obstructive pulmonary disease\
+    \ (COPD)\nare at highest risk of experiencing health effects\ncaused by wildfire\
+    \ smoke. People with conditions"
+  proposed_surface: People with respiratory conditions such as asthma or COPD are
+    at highest risk of health effects caused by wildfire smoke.
+  typed_fields:
+    subject: respiratory conditions and wildfire smoke
+    action: null
+    action_polarity: null
+    object: null
+    modality: null
+    urgency: null
+    status_stage: highest_risk
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions:
+    - during wildfire smoke
+    exceptions: []
+    applies_to:
+    - people with asthma or COPD
+  preparation_notes: Medical-risk classification remains pending named-human review.
+  quality_flags:
+  - source_spacing_artifact
+- candidate_id: PC2-SMOKE-013-01
+  parent_candidate_id: PC-SMOKE-013
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: smoke
+  authority: BC Centre for Disease Control
+  jurisdiction: british_columbia
+  source_id: bccdc_smoke_health_factsheet
+  source_span_ids:
+  - bccdc_smoke_health_factsheet:page:2:chunk:2
+  source_revision: page:2
+  source_document_sha256: 6e6d30e2170848695dc1b7e98198ee133aae5abe7d8903c606750db96096c4bf
+  source_span_sha256: 39362bca7effbeadf88faa06aa0691b1bd4e606c6f6a615d398b24a926f3814e
+  proposed_surface_sha256: 8843692f7e8688a0fc2bbbcaffcae598793814763d850387f4ca91eb48331956
+  exact_source_quote: Young children have sensitive lungs and may need to decrease
+    their activities during smoky periods, especially when outdoors.
+  surrounding_context: "THOSE MOST AFFECTED\nsuch as heart disease, diabetes, cancer,\
+    \ or mental\nillness are also at increased risk.\n\x83 Unborn children and infants\
+    \ may be vulnerable.\nPregnant people and people caring for infants\nshould consider\
+    \ using portable air cleaners.\npeople with chronic older\nlung/heart disease\
+    \ adults\n\x83 Young children have sensitive lungs and may need\nto decrease their\
+    \ activities during smoky periods,\nespecially when outdoors.\n\x83 Not everybody\
+    \ will experience noticeable effects\nfrom wildfire smoke. Even if you are not\
+    \ affected,\npregnant infants,\npeople young children remember to look out for\
+    \ others around you.\nMost health effects There is very little research on whether\
+    \ there are\nof wildfire smoke are longer-lasting health effects from seasonal\
+    \ wildfire\ntransient, meaning smoke, and caution is recommended in the absence\
+    \ of\nthat they will scientific evidence."
+  proposed_surface: Young children may need to decrease their activities during smoky
+    periods, especially when outdoors.
+  typed_fields:
+    subject: young children during smoky periods
+    action: decrease
+    action_polarity: conditional
+    object: activities
+    modality: may
+    urgency: during_smoky_periods
+    status_stage: null
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions:
+    - especially when outdoors
+    exceptions: []
+    applies_to:
+    - young children
+  preparation_notes: Keeps population, modality, smoke condition, and outdoor qualifier.
+  quality_flags: []
+- candidate_id: PC2-SMOKE-014-01
+  parent_candidate_id: PC-SMOKE-014
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: smoke
+  authority: BC Centre for Disease Control
+  jurisdiction: british_columbia
+  source_id: bccdc_smoke_health_factsheet
+  source_span_ids:
+  - bccdc_smoke_health_factsheet:page:2:chunk:3
+  source_revision: page:2
+  source_document_sha256: 6e6d30e2170848695dc1b7e98198ee133aae5abe7d8903c606750db96096c4bf
+  source_span_sha256: 1c867bfb5ee732ff22e0de1dc45e17e11601d5b6c271b50320874dbc729c5999
+  proposed_surface_sha256: 1c867bfb5ee732ff22e0de1dc45e17e11601d5b6c271b50320874dbc729c5999
+  exact_source_quote: Managing indoor air quality at home is the best way to reduce
+    your smoke exposure.
+  surrounding_context: "disappear as the air\n\x83 Remember that reducing exposure\
+    \ is the best way\nquality improves.\nto protect against any health effects from\
+    \ wildfire\nsmoke. Managing indoor air quality at home is the\nbest way to reduce\
+    \ your smoke exposure.\n\x83 Infants, unborn children, and those with obstructive\n\
+    lung conditions such as asthma and COPD are most\nlikely to experience longer-term\
+    \ health effects.\n\x83 Wildfires are becoming more extreme and intense\nin British\
+    \ Columbia and elsewhere. Local and\ninternational scientists are working hard\
+    \ to\nunderstand how these changes affect health in\npopulations exposed to wildfire\
+    \ smoke.\nLAST UPDATED: MAY 2024\nfor more information bccdc.ca/wildfiresmoke"
+  proposed_surface: Managing indoor air quality at home is the best way to reduce
+    your smoke exposure.
+  typed_fields:
+    subject: indoor air quality during smoke
+    action: manage
+    action_polarity: perform
+    object: indoor air quality at home
+    modality: should
+    urgency: during_smoke
+    status_stage: null
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions: []
+    exceptions: []
+    applies_to:
+    - people exposed to wildfire smoke
+  preparation_notes: Exact official sentence; no health outcome is added.
+  quality_flags: []
+- candidate_id: PC2-UTIL-016-01
+  parent_candidate_id: PC-UTILITIE-016
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: utilities
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  source_id: preparedbc_wildfire_guide
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:15:chunk:3
+  source_revision: page:15
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 37851b8d69405f78ff74556cf3eca2f9b582a7c498e60240b3e67e559a3787c1
+  proposed_surface_sha256: ed2eb821d888d2fc6d7b8dfdabc4b4b64cabf856785bc677ff5e17282ba40eb2
+  exact_source_quote: Only use generators outdoors; do not connect to a household
+    circuit
+  surrounding_context: 'following considerations:
+
+    ¢ Wear thick gloves and thick-soled shoes to protect your hands
+
+    and feet
+
+    ¢ Walk around the perimeter, checking for electrical wires, a gas
+
+    smell or debris that could fall
+
+    ¢ Enter with caution and check that the main power breaker is off
+
+    ¢ Only use generators outdoors; do not connect to a household
+
+    circuit
+
+    ¢ Do not use your sewage disposal system unless you know it’s
+
+    capable of handling waste'
+  proposed_surface: Only use generators outdoors; do not connect them to a household
+    circuit.
+  typed_fields:
+    subject: generator use after wildfire
+    action: use
+    action_polarity: restricted
+    object: generators
+    modality: must
+    urgency: null
+    status_stage: null
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions:
+    - outdoors only
+    exceptions:
+    - do not connect to a household circuit
+    applies_to:
+    - people returning after a wildfire
+  preparation_notes: One generator-safety relationship with two inseparable constraints.
+  quality_flags: []
+- candidate_id: PC2-UTIL-016-02
+  parent_candidate_id: PC-UTILITIE-016
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: utilities
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  source_id: preparedbc_wildfire_guide
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:15:chunk:3
+  source_revision: page:15
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: f620f9f6d23fef4db39452192cc23d8a660d645ad42a69478687c7655041c1f5
+  proposed_surface_sha256: 19150a03f4722436e37ef2ef3494e5ced99fad74282122bfd403e2e299f5e2ce
+  exact_source_quote: Enter with caution and check that the main power breaker is
+    off
+  surrounding_context: 'following considerations:
+
+    ¢ Wear thick gloves and thick-soled shoes to protect your hands
+
+    and feet
+
+    ¢ Walk around the perimeter, checking for electrical wires, a gas
+
+    smell or debris that could fall
+
+    ¢ Enter with caution and check that the main power breaker is off
+
+    ¢ Only use generators outdoors; do not connect to a household
+
+    circuit
+
+    ¢ Do not use your sewage disposal system unless you know it’s
+
+    capable of handling waste'
+  proposed_surface: Enter with caution and check that the main power breaker is off.
+  typed_fields:
+    subject: re-entering after wildfire
+    action: check
+    action_polarity: perform
+    object: main power breaker
+    modality: should
+    urgency: before_entry
+    status_stage: null
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions:
+    - when re-entering
+    exceptions: []
+    applies_to:
+    - people returning after a wildfire
+  preparation_notes: Exact official bullet with punctuation normalized.
+  quality_flags: []
+- candidate_id: PC2-UTIL-016-03
+  parent_candidate_id: PC-UTILITIE-016
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: utilities
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  source_id: preparedbc_wildfire_guide
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:15:chunk:3
+  source_revision: page:15
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 9eb94b6869b85451aa6e398f89d5f227aecf3ab6de984b64702beccc7041fb58
+  proposed_surface_sha256: 691222f46d876d9f6254491e97dd52cacb0429481a382ee54547ed2e4f75e883
+  exact_source_quote: Walk around the perimeter, checking for electrical wires, a
+    gas smell or debris that could fall
+  surrounding_context: 'following considerations:
+
+    ¢ Wear thick gloves and thick-soled shoes to protect your hands
+
+    and feet
+
+    ¢ Walk around the perimeter, checking for electrical wires, a gas
+
+    smell or debris that could fall
+
+    ¢ Enter with caution and check that the main power breaker is off
+
+    ¢ Only use generators outdoors; do not connect to a household
+
+    circuit
+
+    ¢ Do not use your sewage disposal system unless you know it’s
+
+    capable of handling waste'
+  proposed_surface: Walk around the perimeter and check for electrical wires, a gas
+    smell, or debris that could fall.
+  typed_fields:
+    subject: property perimeter after wildfire
+    action: check
+    action_polarity: perform
+    object: electrical wires gas smell or falling debris
+    modality: should
+    urgency: before_entry
+    status_stage: null
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions:
+    - when returning after wildfire
+    exceptions: []
+    applies_to:
+    - people returning after a wildfire
+  preparation_notes: Keeps the perimeter scope and complete hazard list.
+  quality_flags: []
+- candidate_id: PC2-FIRESMART-017-01
+  parent_candidate_id: PC-FIRESMAR-017
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: firesmart
+  authority: FireSmart BC
+  jurisdiction: british_columbia
+  source_id: firesmart_begins_at_home
+  source_span_ids:
+  - firesmart_begins_at_home:page:11:chunk:1
+  source_revision: page:11
+  source_document_sha256: c808a14bb873eb8b70930470976b0f2e091eed9cfdc1fe4b63d6325b4ae3c2ca
+  source_span_sha256: 08befd76b71f74ab8963f8a2b2cacd79cb5930d7e2a4e5bdc5a690cd2dfe77d9
+  proposed_surface_sha256: dec5265791604ab2ef23ad5b279f06cf00501915ab1c7210af9d2df4f6a41d40
+  exact_source_quote: Make sure that you maintain a 1.5 metre non- combustible zone
+    around your entire home and any attachments.
+  surrounding_context: 'INTERMEDIATE ZONE
+
+    LANDSCAPING WITHIN 10 METRES
+
+    1.5m to 10m
+
+    A FireSmart yard includes making smart choices for your plants,
+
+    shrubs, grass, and mulch. Selecting fire-resistant plants and
+
+    Elements in the Intermediate Zone are managed materials can increase the likelihood
+    of your home surviving a
+
+    so they don’t transmit fire to your home. There are wildland fire.
+
+    many actions you can take to reduce your home’s Plant low-density, fire-resistant
+    plants and shrubs. Avoid having
+
+    any woody debris, including mulch, as it provides potential places
+
+    vulnerability in the Intermediate Zone.
+
+    for fires to start. Make sure that you maintain a 1.5 metre non-
+
+    combustible zone around your entire home and any attachments.'
+  proposed_surface: Maintain a 1.5 metre non-combustible zone around your entire home
+    and any attachments.
+  typed_fields:
+    subject: non-combustible zone
+    action: maintain
+    action_polarity: perform
+    object: zone around home and attachments
+    modality: should
+    urgency: null
+    status_stage: null
+    quantities:
+    - '1.5'
+    canonical_units:
+    - metre
+    ranges: []
+    comparator: exact_boundary
+    conditions: []
+    exceptions: []
+    applies_to:
+    - homes and attachments
+  preparation_notes: Preserves the measured boundary and full spatial scope.
+  quality_flags:
+  - source_linebreak_hyphenation
+- candidate_id: PC2-FIRESMART-021-01
+  parent_candidate_id: PC-FIRESMAR-021
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: firesmart
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  source_id: preparedbc_wildfire_guide
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:4:chunk:3
+  source_revision: page:4
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: b8d8192a19e585de574a8f395ef308debb4a3e633a585c82858802f5cafc36ca
+  proposed_surface_sha256: a8363a07f35af80b9a9f3b75e0bb9cf1360437371eb2110b4d7c9486c72742db
+  exact_source_quote: Take time now to build grab-and-go bags for each member of your
+    household so you’re not caught off guard.
+  surrounding_context: 'BUILD YOUR GRAB-AND-GO BAGS
+
+    In the event of a wildfire, you may need to leave home quickly. Take time
+
+    now to build grab-and-go bags for each member of your household so
+
+    you’re not caught off guard.
+
+    Start with our basic list then consider the additional needs of your
+
+    household. Do you have pets? Do you have young children? Are you a
+
+    foster parent? Are you caring for seniors or people with disabilities?
+
+    If yes, prepare and customize bags specific to their needs.'
+  proposed_surface: Build grab-and-go bags now for each member of your household.
+  typed_fields:
+    subject: household wildfire preparation
+    action: build
+    action_polarity: perform
+    object: grab-and-go bags
+    modality: should
+    urgency: before_wildfire
+    status_stage: null
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions: []
+    exceptions: []
+    applies_to:
+    - each household member
+  preparation_notes: Retains the per-household-member scope and preparation timing.
+  quality_flags: []
+- candidate_id: PC2-FIRESMART-022-01
+  parent_candidate_id: PC-FIRESMAR-022
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: firesmart
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  source_id: preparedbc_wildfire_guide
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:9:chunk:1
+  source_revision: page:9
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 3ea9355b33ff5783d9740389e920f02ac4eb01692d3cdb341e1b024b3a80f7f5
+  proposed_surface_sha256: 9dd1241f029a4253fc6f0f043c6a41d501d89cee6dbf820c6c9ee6e4103439a8
+  exact_source_quote: Priority Zone 1 (1.5 to 10 metres from a structure or home)
+    ¢ Avoid planting flammable trees and plants, such as cedar, spruce, juniper, pine
+    and tall grasses
+  surrounding_context: 'Priority Zone 1 (1.5 to 10 metres from a structure or home)
+
+    ¢ Avoid planting flammable trees and plants, such as cedar, spruce,
+
+    juniper, pine and tall grasses
+
+    ¢ Keep lawns well-watered and mowed
+
+    ¢ Move firewood piles, construction materials, storage sheds and
+
+    other potentially combustible structures into Priority Zone 2
+
+    Priority Zone 2 (10 to 30 metres from a structure or home)
+
+    ¢ Measure the distance between the outermost branches of trees
+
+    to ensure a minimum of three metres between them
+
+    ¢ Remove small coniferous or evergreen trees that can act as a
+
+    “ladder” for fire to reach treetops
+
+    ¢ Remove branches within two metres of the ground to help stop
+
+    surface fires from moving into treetops
+
+    ¢ Clean up fallen branches, dry grasses and needles to eliminate
+
+    potential surface fuels
+
+    Priority Zone 3 (30 to 100 metres from a structure or home)'
+  proposed_surface: In Priority Zone 1, 1.5 to 10 metres from a structure or home,
+    avoid planting flammable trees and plants such as cedar, spruce, juniper, pine,
+    and tall grasses.
+  typed_fields:
+    subject: Priority Zone 1 planting
+    action: plant
+    action_polarity: avoid
+    object: flammable trees and plants
+    modality: should_not
+    urgency: null
+    status_stage: null
+    quantities:
+    - '1.5'
+    - '10'
+    canonical_units:
+    - metre
+    ranges:
+    - 1.5-10
+    comparator: null
+    conditions:
+    - within Priority Zone 1
+    exceptions: []
+    applies_to:
+    - structures and homes
+  preparation_notes: Preserves zone identity, range, examples, and avoidance polarity.
+  quality_flags: []
+- candidate_id: PC2-VULNERABLE-023-01
+  parent_candidate_id: PC-VULNERAB-023
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: vulnerable
+  authority: BC Centre for Disease Control
+  jurisdiction: british_columbia
+  source_id: bccdc_wildfire_smoke
+  source_span_ids:
+  - bccdc_wildfire_smoke:section:people-at-higher-risk:chunk:1
+  source_revision: section:people-at-higher-risk
+  source_document_sha256: 450b42fe63adfdf8baf17d5c79da78f586da6ec65205ae72fb292a57c383dcb0
+  source_span_sha256: a7a451009c504b948571fec955bd096320167fdffa8140737c41cf6446818b94
+  proposed_surface_sha256: af4a20405fe068bae9360cda02bf68d7691111c44ba8e14331dcf01e964d05f0
+  exact_source_quote: People at higher risk People with pre-existing chronic conditions
+    such as asthma, chronic ​obstructive pulmonary disease (COPD), heart disease,
+    and diabetes
+  surrounding_context: 'People at higher risk
+
+    People with pre-existing chronic conditions such as asthma, chronic ​obstructive
+    pulmonary disease (COPD), heart disease, and diabetes
+
+    People who are pregnant
+
+    Infants and small children
+
+    Elderly'
+  proposed_surface: People with pre-existing chronic conditions such as asthma, COPD,
+    heart disease, and diabetes are at higher risk from wildfire smoke.
+  typed_fields:
+    subject: chronic conditions and wildfire smoke
+    action: null
+    action_polarity: null
+    object: null
+    modality: null
+    urgency: null
+    status_stage: higher_risk
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions:
+    - during wildfire smoke
+    exceptions: []
+    applies_to:
+    - people with asthma
+    - people with COPD
+    - people with heart disease
+    - people with diabetes
+  preparation_notes: Converts a heading-plus-list item into a pending canonical proposal.
+  quality_flags: []
+- candidate_id: PC2-VULNERABLE-024-01
+  parent_candidate_id: PC-VULNERAB-024
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: vulnerable
+  authority: BC Centre for Disease Control
+  jurisdiction: british_columbia
+  source_id: bccdc_wildfire_smoke
+  source_span_ids:
+  - bccdc_wildfire_smoke:section:protect-yourself-from-wildfire-smoke:chunk:2
+  source_revision: section:protect-yourself-from-wildfire-smoke
+  source_document_sha256: 450b42fe63adfdf8baf17d5c79da78f586da6ec65205ae72fb292a57c383dcb0
+  source_span_sha256: 6b0cc48260a4e6eb84b10f8bca4ae10090392530471e6818937b31584cef9984
+  proposed_surface_sha256: 6b0cc48260a4e6eb84b10f8bca4ae10090392530471e6818937b31584cef9984
+  exact_source_quote: If you have a chronic health condition, work with your health
+    care providers to create a management plan for smoky conditions.
+  surrounding_context: 'If you have a chronic health condition, work with your health
+    care providers to create a management plan for smoky conditions. If you use rescue
+    medications, make sure that you have an ample supply at home and always carry
+    them with you during the wildfire season.
+
+    Use the Air Quality Health Index (AQHI) or AQMap to evaluate local and regional
+    air quality conditions.'
+  proposed_surface: If you have a chronic health condition, work with your health
+    care providers to create a management plan for smoky conditions.
+  typed_fields:
+    subject: chronic health condition preparation
+    action: create
+    action_polarity: perform
+    object: management plan for smoky conditions
+    modality: should
+    urgency: null
+    status_stage: null
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions:
+    - if you have a chronic health condition
+    exceptions: []
+    applies_to:
+    - people with chronic health conditions
+  preparation_notes: Exact conditional official instruction.
+  quality_flags: []
+- candidate_id: PC2-VULNERABLE-024-02
+  parent_candidate_id: PC-VULNERAB-024
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: vulnerable
+  authority: BC Centre for Disease Control
+  jurisdiction: british_columbia
+  source_id: bccdc_wildfire_smoke
+  source_span_ids:
+  - bccdc_wildfire_smoke:section:protect-yourself-from-wildfire-smoke:chunk:2
+  source_revision: section:protect-yourself-from-wildfire-smoke
+  source_document_sha256: 450b42fe63adfdf8baf17d5c79da78f586da6ec65205ae72fb292a57c383dcb0
+  source_span_sha256: 942fed3d6d0f2da6f8a228cc8fcd8ad014e606a7a2ceb24946f1466aefd972ee
+  proposed_surface_sha256: da9d78416fec47df4bb1ebc4f3c1d94487d7deb9f58eef71bafe4ddc73909c57
+  exact_source_quote: If you use rescue medications, make sure that you have an ample
+    supply at home and always carry them with you during the wildfire season.
+  surrounding_context: 'If you have a chronic health condition, work with your health
+    care providers to create a management plan for smoky conditions. If you use rescue
+    medications, make sure that you have an ample supply at home and always carry
+    them with you during the wildfire season.
+
+    Use the Air Quality Health Index (AQHI) or AQMap to evaluate local and regional
+    air quality conditions.'
+  proposed_surface: If you use rescue medications, keep an ample supply at home and
+    carry them with you during wildfire season.
+  typed_fields:
+    subject: rescue medication preparation
+    action: carry
+    action_polarity: perform
+    object: rescue medications
+    modality: should
+    urgency: wildfire_season
+    status_stage: null
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions:
+    - if you use rescue medications
+    exceptions: []
+    applies_to:
+    - people who use rescue medications
+  preparation_notes: Keeps both supply and carry requirements under the medication
+    condition.
+  quality_flags: []
+- candidate_id: PC2-VULNERABLE-026-01
+  parent_candidate_id: PC-VULNERAB-026
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: vulnerable
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  source_id: preparedbc_wildfire_guide
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:16:chunk:2
+  source_revision: page:16
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 165cac697fb94522a67c17226a2eb53dde8cc829c95baf55ae4cf1cc94b56a54
+  proposed_surface_sha256: 22d397cd12d3a930a84702a1c7749daf2cc6d23e7702445276e15ebe7252a3f0
+  exact_source_quote: Watch for warning signs of extended anxiety and contact a medical
+    professional or trusted community leader if they last more than two to four weeks
+  surrounding_context: 'Psychological care:
+
+    Fear and anxiety are natural reactions to stressful events and can stir
+
+    up past traumas. To help yourself and your loved ones:
+
+    ¢ Accept offers of help. Seek counselling or spiritual guidance
+
+    ¢ Focus on positive memories and the skills you’ve used to get
+
+    through other hard times
+
+    ¢ Be aware of how children are reacting. Reassure them and
+
+    encourage them to express themselves
+
+    ¢ Give yourself and your loved ones permission to grieve
+
+    ¢ Practice cultural or spiritual customs that bring you comfort
+
+    With support, most people recover within a few weeks; however,
+
+    some will need more time and help to heal. Watch for warning signs
+
+    of extended anxiety and contact a medical professional or trusted
+
+    community leader if they last more than two to four weeks:
+
+    ¢ Trouble with eating and sleeping
+
+    ¢ Feeling depressed or hopeless; showing low energy or crying often
+
+    ¢ Being anxious and fearful
+
+    ¢ Trouble focusing on daily activities'
+  proposed_surface: Contact a medical professional or trusted community leader if
+    warning signs of extended anxiety last more than two to four weeks.
+  typed_fields:
+    subject: extended anxiety after wildfire
+    action: contact
+    action_polarity: perform
+    object: medical professional or trusted community leader
+    modality: should
+    urgency: after_two_to_four_weeks
+    status_stage: null
+    quantities:
+    - '2'
+    - '4'
+    canonical_units:
+    - week
+    ranges:
+    - 2-4
+    comparator: null
+    conditions:
+    - warning signs last more than two to four weeks
+    exceptions: []
+    applies_to:
+    - people experiencing extended anxiety
+  preparation_notes: Preserves duration, condition, and both official contact options.
+  quality_flags: []
+- candidate_id: PC2-GENERAL-029-01
+  parent_candidate_id: PC-GENERAL-029
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: general_high_risk
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  source_id: preparedbc_wildfire_guide
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:8:chunk:2
+  source_revision: page:8
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 514e90ba50affd0e99fce4225403639aebd1a62b712951d56cd517df0e5a0578
+  proposed_surface_sha256: c075bef418d1c610ae64092fda3a11c13c46480a6c55b5890789811e639c9686
+  exact_source_quote: Non-Combustible Zone (0 to 1.5 metres from a structure or home)
+    ¢ Remove combustible material (woody shrubs, dry grasses, etc.) down to mineral
+    soil
+  surrounding_context: 'Zone 3
+
+    30-100 metres
+
+    Zone 2
+
+    10-30 metres
+
+    Zone 1
+
+    1.5-10 metres
+
+    Non-combustible Zone
+
+    0-1.5 metres
+
+    21
+
+    Non-Combustible Zone (0 to 1.5 metres from a structure or home)
+
+    ¢ Remove combustible material (woody shrubs, dry grasses, etc.)
+
+    down to mineral soil
+
+    ¢ Use non-combustible materials, such as gravel, brick or concrete,
+
+    in areas adjacent to your home
+
+    ¢ Clear leaves and evergreen needles from gutters'
+  proposed_surface: In the non-combustible zone, 0 to 1.5 metres from a structure
+    or home, remove combustible material down to mineral soil.
+  typed_fields:
+    subject: non-combustible zone material
+    action: remove
+    action_polarity: perform
+    object: combustible material
+    modality: should
+    urgency: null
+    status_stage: null
+    quantities:
+    - '0'
+    - '1.5'
+    canonical_units:
+    - metre
+    ranges:
+    - 0-1.5
+    comparator: null
+    conditions:
+    - within the non-combustible zone
+    exceptions: []
+    applies_to:
+    - structures and homes
+  preparation_notes: Preserves range, location, material, and removal endpoint.
+  quality_flags: []
+- candidate_id: PC2-GENERAL-030-01
+  parent_candidate_id: PC-GENERAL-030
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: general_high_risk
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  source_id: preparedbc_wildfire_guide
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:9:chunk:3
+  source_revision: page:9
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 53b2c0a353159c1c1662763eb5f8dc7df4cf78a9c4d6e84a2049ddd27d6e85a9
+  proposed_surface_sha256: 92c4d6a985ff8d145ffd4c3932f5dbd6e0b81bd19aa063d249613cd448609287
+  exact_source_quote: Complete the FireSmart home assessment to see what changes will
+    make the greatest difference in reducing your home’s risk.
+  surrounding_context: 'TIP: Complete the FireSmart home assessment to see what changes
+    will
+
+    make the greatest difference in reducing your home’s risk. You can
+
+    download the assessment and other FireSmart resources at
+
+    https://firesmartbc.ca'
+  proposed_surface: Complete the FireSmart home assessment to identify changes that
+    can reduce your home’s risk.
+  typed_fields:
+    subject: FireSmart home assessment
+    action: complete
+    action_polarity: perform
+    object: FireSmart home assessment
+    modality: should
+    urgency: null
+    status_stage: null
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions: []
+    exceptions: []
+    applies_to:
+    - homeowners
+  preparation_notes: Conservative pending surface; does not quantify the risk reduction.
+  quality_flags: []
+- candidate_id: PC2-GENERAL-033-01
+  parent_candidate_id: PC-GENERAL-033
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: general_high_risk
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  source_id: preparedbc_wildfire_guide
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:11:chunk:2
+  source_revision: page:11
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: e240b4341d5152e1a8b5f6122d13863ecc8f741f7255127a64a99ec5f3d0e9c5
+  proposed_surface_sha256: fe4cc005d29286598c8b4375b4632ccbcb39962727768ba2175c74007166678c
+  exact_source_quote: Follow all directions from officials and evacuate using the
+    route(s) they've identified.
+  surrounding_context: 'Evacuation Order
+
+    This means you are at risk and must leave IMMEDIATELY. On your way
+
+    out close doors and windows and turn on both interior and exterior
+
+    lights so your home is visible to firefighters in heavy smoke.
+
+    Follow all directions from officials and evacuate using the route(s)
+
+    they''ve identified.
+
+    An Emergency Support Services (ESS) reception centre may be opened
+
+    for evacuated residents who are without access to other supports, such
+
+    as insurance coverage or friends and family who can help. Services may
+
+    include: food, lodging, clothing, emotional support, information about
+
+    the crisis and family reunification.'
+  proposed_surface: Follow officials’ directions and evacuate using the routes they
+    identify.
+  typed_fields:
+    subject: evacuation route
+    action: evacuate
+    action_polarity: perform
+    object: official identified routes
+    modality: must
+    urgency: during_evacuation_order
+    status_stage: null
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions:
+    - when officials identify evacuation routes
+    exceptions: []
+    applies_to:
+    - people evacuating
+  preparation_notes: Keeps official authority, action, and route constraint.
+  quality_flags: []
+- candidate_id: PC2-GENERAL-033-02
+  parent_candidate_id: PC-GENERAL-033
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: general_high_risk
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  source_id: preparedbc_wildfire_guide
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:11:chunk:2
+  source_revision: page:11
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: dc1b26a14733d64f6025bb9daefbd321668c2b03b381abe8603f8307df5a7903
+  proposed_surface_sha256: ef6f80cc7d2702b216f338785262a5ebc013a220024338766122826e27196d6a
+  exact_source_quote: On your way out close doors and windows and turn on both interior
+    and exterior lights so your home is visible to firefighters in heavy smoke.
+  surrounding_context: 'Evacuation Order
+
+    This means you are at risk and must leave IMMEDIATELY. On your way
+
+    out close doors and windows and turn on both interior and exterior
+
+    lights so your home is visible to firefighters in heavy smoke.
+
+    Follow all directions from officials and evacuate using the route(s)
+
+    they''ve identified.
+
+    An Emergency Support Services (ESS) reception centre may be opened
+
+    for evacuated residents who are without access to other supports, such
+
+    as insurance coverage or friends and family who can help. Services may
+
+    include: food, lodging, clothing, emotional support, information about
+
+    the crisis and family reunification.'
+  proposed_surface: On your way out, close doors and windows and turn on interior
+    and exterior lights so your home is visible to firefighters in heavy smoke.
+  typed_fields:
+    subject: home visibility while evacuating
+    action: close
+    action_polarity: perform
+    object: doors and windows
+    modality: should
+    urgency: while_evacuating
+    status_stage: null
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions:
+    - on the way out
+    exceptions: []
+    applies_to:
+    - people evacuating their homes
+  preparation_notes: One departure-preparation block; human review must decide whether
+    to split its two actions.
+  quality_flags:
+  - human_atomicity_check
+- candidate_id: PC2-GENERAL-035-01
+  parent_candidate_id: PC-GENERAL-035
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: general_high_risk
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  source_id: preparedbc_wildfire_guide
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:11:chunk:4
+  source_revision: page:11
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 7884d920cf40db756ae31b4a0eefef904f5047045b307c2f958c69ed478c03dd
+  proposed_surface_sha256: 00ba8c0605cf502f3c423a9719f021d5bce4bb2eaf9699c4875054d3dcd42c13
+  exact_source_quote: Always keep your vehicle’s gas tank half full in case you need
+    to evacuate on short notice.
+  surrounding_context: 'TIP: Always keep your vehicle’s gas tank half full
+
+    in case you need to evacuate on short notice. E F'
+  proposed_surface: Keep your vehicle’s gas tank half full in case you need to evacuate
+    on short notice.
+  typed_fields:
+    subject: vehicle fuel for evacuation
+    action: keep
+    action_polarity: perform
+    object: vehicle gas tank
+    modality: should
+    urgency: before_short_notice_evacuation
+    status_stage: null
+    quantities:
+    - half full
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions:
+    - in case evacuation is needed on short notice
+    exceptions: []
+    applies_to:
+    - vehicle owners
+  preparation_notes: Preserves quantity and short-notice evacuation condition.
+  quality_flags: []
+- candidate_id: PC2-GENERAL-036-01
+  parent_candidate_id: PC-GENERAL-036
+  preparation_status: review_ready
+  review_status: pending_review
+  reviewer: null
+  reviewed_at: null
+  risk_tier: A
+  coverage_domain: general_high_risk
+  authority: PreparedBC
+  jurisdiction: british_columbia
+  source_id: preparedbc_wildfire_guide
+  source_span_ids:
+  - preparedbc_wildfire_guide:page:12:chunk:1
+  source_revision: page:12
+  source_document_sha256: f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3
+  source_span_sha256: 04dfc40015bae972b0e8f01dd8a1f66ba781b059e4a412b9d56b041cff86812b
+  proposed_surface_sha256: 15505cd2b852ee1ae36e8926df4d315233c4403a0fa35ba1302e78c60236f81e
+  exact_source_quote: However, if you suspect a gas leak, turn off the gas valve and
+    leave immediately.
+  surrounding_context: 'During a Wildfire
+
+    FOLLOW INSTRUCTIONS
+
+    The most important thing you can do is heed all evacuation alerts
+
+    and orders and follow instructions from your band office, municipality,
+
+    regional district or local authority. Trust in your preparedness and work
+
+    your emergency plan.
+
+    Natural gas safety
+
+    Do NOT shut off your natural gas when you receive an evacuation order.
+
+    If requested by emergency officials, FortisBC will turn off natural gas
+
+    service as a precautionary measure, or if there is an immediate threat to
+
+    infrastructure.
+
+    However, if you suspect a gas leak,
+
+    turn off the gas valve and leave
+
+    immediately. Once the gas is shut
+
+    off at the meter, do NOT try to turn'
+  proposed_surface: If you suspect a gas leak, turn off the gas valve and leave immediately.
+  typed_fields:
+    subject: suspected gas leak
+    action: leave
+    action_polarity: perform
+    object: area with suspected gas leak
+    modality: must
+    urgency: immediate
+    status_stage: null
+    quantities: []
+    canonical_units: []
+    ranges: []
+    comparator: null
+    conditions:
+    - if you suspect a gas leak
+    exceptions: []
+    applies_to:
+    - people who suspect a gas leak
+  preparation_notes: Preserves the condition, gas-valve action, and immediate departure.
+  quality_flags: []
+batches:
+- batch: 2
+  candidate_ids:
+  - PC2-EVAC-003-01
+  - PC2-SMOKE-012-01
+  - PC2-SMOKE-013-01
+  - PC2-SMOKE-014-01
+  - PC2-UTIL-016-01
+  - PC2-UTIL-016-02
+  - PC2-UTIL-016-03
+  - PC2-FIRESMART-017-01
+  - PC2-FIRESMART-021-01
+  - PC2-FIRESMART-022-01
+- batch: 3
+  candidate_ids:
+  - PC2-VULNERABLE-023-01
+  - PC2-VULNERABLE-024-01
+  - PC2-VULNERABLE-024-02
+  - PC2-VULNERABLE-026-01
+  - PC2-GENERAL-029-01
+  - PC2-GENERAL-030-01
+  - PC2-GENERAL-033-01
+  - PC2-GENERAL-033-02
+  - PC2-GENERAL-035-01
+  - PC2-GENERAL-036-01

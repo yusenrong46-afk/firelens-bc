@@ -1,0 +1,27 @@
+schema_version: firelens.v1_6_h8_tradeoff_decision.v1
+reviewer: Thomas
+decision: accept_measured_tradeoff
+decision_time: "2026-08-23T11:34:55-03:00"
+performance_report_sha256: 76e2335ac290daaae0175483ba5cc2b9e5e5119f35e75b1508745ab8dddfa330
+evaluated_identity:
+  branch: upgrade/v1-6-structured-publication-harden-1
+  commit: 7ef8a0e4fc2add7ffc22e87d3d91908692dad232
+  tree: 369be0de7937dbac2a78d9be29db983b0b121d20
+accepted_routes:
+  - route_id: mixed_live_and_static
+    p95_ms: 24.25483299884945
+    failures: 0
+  - route_id: output_rail_rewrite
+    p95_ms: 1.5938750002533197
+    failures: 0
+  - route_id: pure_static_guidance
+    p95_ms: 12.809249994461425
+    failures: 0
+representative_generation_call_reduction: 0.5833333333333334
+pure_static_generation_calls: 0.0
+note: >
+  Thomas accepted the measured route latency tradeoff given the additional
+  deterministic structured-publication work, zero measured failures, absolute
+  p95 below 25 ms, reduced generation calls, and zero pure-static generation.
+  This decision applies only to the bound report and does not waive measurement
+  on a later changed candidate.

@@ -247,10 +247,10 @@ export function App() {
           />
 
           <div className="pc-main">
-            {session.visibleQuestion && <h1 className="pc-current-question response-announcement">{session.visibleQuestion}</h1>}
+            {session.visibleQuestion && <section aria-label="Current question"><h1 className="pc-current-question response-announcement">{session.visibleQuestion}</h1></section>}
             {!showCompactMapRail && (session.view.kind === "idle" || session.mode === "live" || session.mode === "mixed") && (
               <div className="pc-main__status">
-                <LiveDataStatus liveSummary={session.liveSummary} readiness={session.readiness} />
+                <LiveDataStatus liveSummary={session.liveSummary} readiness={session.readiness} now={session.statusNow} />
                 {session.view.kind === "idle" && (
                   <button
                     ref={mapTriggerRef}
@@ -318,7 +318,7 @@ export function App() {
               tabIndex={-1}
             >
               <div className="pc-map-rail__toolbar">
-                <LiveDataStatus liveSummary={session.liveSummary} readiness={session.readiness} />
+                <LiveDataStatus liveSummary={session.liveSummary} readiness={session.readiness} now={session.statusNow} />
                 {(idleMapOpen || contextOpen || spatialShell) && (
                   <button
                     type="button"

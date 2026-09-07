@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "f1eeeb6a00ca3b484de0192db5b7291eeff1956f96887b1756d8b29865972d74",
+  "source_digest": "7c9f92e7e98033000f819e03069000ef6bdc6dc324afa7f77e62e7fc4208e3d8",
   "tests": [
     {
       "cases": [
@@ -552,7 +552,9 @@
         "test_call_2",
         "test_call_3",
         "test_call_4",
-        "test_call_5"
+        "test_call_5",
+        "test_call_6",
+        "test_call_7"
       ],
       "direct_targets": [
         "apps/web/src/app/LiveDataStatus.tsx",
@@ -560,7 +562,8 @@
       ],
       "endpoints": [],
       "evaluation_families": [
-        "live"
+        "live",
+        "rag"
       ],
       "language": "typescript",
       "path": "apps/web/tests/liveDataStatus.test.tsx"
@@ -708,7 +711,8 @@
     {
       "cases": [
         "test_call_1",
-        "test_call_2"
+        "test_call_2",
+        "test_call_3"
       ],
       "direct_targets": [
         "apps/web/src/features/ask/useFireLensSession.ts",
@@ -761,6 +765,20 @@
       "evaluation_families": [],
       "language": "javascript",
       "path": "apps/web/tests/sites-worker.test.mjs"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2"
+      ],
+      "direct_targets": [
+        "apps/web/src/features/ask/SourceProof.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [],
+      "language": "typescript",
+      "path": "apps/web/tests/sourceRevision.test.tsx"
     },
     {
       "cases": [
@@ -1025,6 +1043,7 @@
         "test_exposed_report_and_occurrence_requests_keep_two_bounded_lanes",
         "test_guidance_surface_variants_keep_mixed_agent_lanes",
         "test_mixed_answer_keeps_reviewed_claim_out_of_current_record_section",
+        "test_mixed_contents_clause_reaches_publication_without_retrieval_rewrite",
         "test_mixed_paraphrases_keep_a_live_owned_plan",
         "test_plural_closest_question_is_a_location_bound_live_plan",
         "test_positive_live_grammar_families_authorize_bounded_fire_tools",
@@ -1282,7 +1301,7 @@
     {
       "cases": [
         "test_candidate_workflow_is_exact_head_zero_cost_v2_artifact",
-        "test_current_report_requires_v2_rc2_2_tree_hashes_and_floor",
+        "test_current_report_requires_v2_rc2_3_tree_hashes_and_floor",
         "test_frozen_rc2_1_profile_pair_remains_required_and_validated",
         "test_frozen_rc2_profile_pair_remains_required_and_validated",
         "test_identity_extra_missing_and_stale_report_paths_are_rejected",
@@ -1758,6 +1777,12 @@
         "test_compare_rejects_malformed_envelope_instead_of_passing",
         "test_compare_rejects_nonexistent_commit_selectors",
         "test_compare_validates_each_clean_run_against_its_own_commit",
+        "test_current_policy_preserves_historical_failure",
+        "test_current_policy_rejects_changed_bound_file",
+        "test_current_policy_rejects_changed_effective_provider_configuration",
+        "test_current_policy_rejects_changed_report",
+        "test_current_policy_rejects_missing_or_changed_evidence",
+        "test_current_policy_rejects_same_mode_personal_action",
         "test_diagnose_reads_actual_raw_case_evidence",
         "test_diagnose_rejects_raw_artifact_tampering",
         "test_dirty_evidence_is_comparison_ineligible",
@@ -1787,7 +1812,9 @@
         "test_source_identity_binds_dirty_file_content_not_only_status_shape",
         "test_unavailable_suite_writes_blocked_evidence_not_a_pass"
       ],
-      "direct_targets": [],
+      "direct_targets": [
+        "src/firelens/contracts.py"
+      ],
       "endpoints": [],
       "evaluation_families": [
         "claimbench",
@@ -1797,11 +1824,13 @@
         "hard_probe",
         "judge",
         "live",
+        "mutation",
         "productbench",
         "provider",
         "rag",
         "retrieval",
-        "source_aware"
+        "source_aware",
+        "trajectory"
       ],
       "language": "python",
       "path": "tests/test_firelens_eval.py"
@@ -2034,6 +2063,28 @@
       ],
       "language": "python",
       "path": "tests/test_intent_capability_bypass.py"
+    },
+    {
+      "cases": [
+        "test_checklist_requires_explicit_missing_explanation",
+        "test_only_j01_changes_and_floor_is_frozen",
+        "test_package_rejects_antecedent_or_generation_drift",
+        "test_real_fixture_execution_emits_both_results",
+        "test_rejects_unsupported_response"
+      ],
+      "direct_targets": [],
+      "endpoints": [],
+      "evaluation_families": [
+        "conversation",
+        "fault",
+        "hard_probe",
+        "mutation",
+        "provider",
+        "safety",
+        "source_aware"
+      ],
+      "language": "python",
+      "path": "tests/test_j01_current_acceptance.py"
     },
     {
       "cases": [
@@ -2619,6 +2670,42 @@
       "evaluation_families": [],
       "language": "python",
       "path": "tests/test_pdf_ingestion.py"
+    },
+    {
+      "cases": [
+        "test_pet_contents_inflections_use_exact_source_without_generation",
+        "test_positive_pet_checklist_cannot_establish_omissions_or_medicines"
+      ],
+      "direct_targets": [
+        "src/firelens/contracts.py"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "conversation",
+        "intent",
+        "provider",
+        "publication",
+        "source_aware"
+      ],
+      "language": "python",
+      "path": "tests/test_pet_contents_support.py"
+    },
+    {
+      "cases": [
+        "test_adopted_claim_has_current_technical_binding_and_public_revision",
+        "test_historical_snapshot_bytes_remain_verifiable_and_unaffected_chunks_identical",
+        "test_retired_document_and_withdrawn_claim_are_not_current_evidence"
+      ],
+      "direct_targets": [
+        "src/firelens/publication/compiler.py",
+        "src/firelens/publication/records.py"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "publication"
+      ],
+      "language": "python",
+      "path": "tests/test_preparedbc_revision.py"
     },
     {
       "cases": [

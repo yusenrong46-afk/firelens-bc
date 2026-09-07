@@ -56,7 +56,7 @@ DivergenceConfidence = Literal["confirmed", "suspected", "unknown"]
 
 SUITES = ("core", "rag", "metamorphic", "trajectory", "fault", "ui", "performance")
 REGISTRY_RELATIVE = Path("data/evaluation/eval_lab_registry.v1.yaml")
-POLICY_RELATIVE = Path("data/evaluation/eval_lab_policy.v1.yaml")
+POLICY_RELATIVE = Path("data/evaluation/eval_lab_policy.v2.yaml")
 DEFAULT_ARTIFACT_ROOT = ROOT / "output/eval_lab"
 RUN_SCHEMA_VERSION = "firelens.eval_lab.run.v1"
 FAILURE_SCHEMA_VERSION = "firelens.eval_lab.failure.v1"
@@ -924,6 +924,30 @@ def validate_hard_probe_report(
     return issues
 
 
+def validate_current_hard_probe_report(
+    report: dict[str, Any], *, repository_root: Path = ROOT
+) -> list[str]:
+    """Current v2 policy; the frozen rc2.2 validator remains independently callable."""
+    from firelens_eval.semantic_oracles import CURRENT_DISPOSITIONS, current_disposition_issues
+
+    historical = validate_hard_probe_report(report, repository_root=repository_root)
+    policy = load_policy(repository_root)
+    binding = policy.get("current_hard_probe_dispositions") or {}
+    if (
+        binding.get("path") != str(CURRENT_DISPOSITIONS)
+        or not (repository_root / CURRENT_DISPOSITIONS).is_file()
+        or binding.get("sha256") != file_sha256(repository_root / CURRENT_DISPOSITIONS)
+    ):
+        return historical + ["current disposition evidence hash mismatch or missing"]
+    current = current_disposition_issues(report, root=repository_root)
+    if current:
+        return historical + current
+    # Only this exact representation veto is replaced after all nine complete
+    # semantic payloads and obligation evidence validate. All other checks stay.
+    explained = "hard-probe contains failed CRITICAL cases: F06, F07, F09, I04, K03, K09"
+    return [issue for issue in historical if issue != explained]
+
+
 def validate_source_aware_report(
     report: dict[str, Any], *, repository_root: Path = ROOT
 ) -> list[str]:
@@ -1150,7 +1174,9 @@ def _core_report_evidence(
         materials = _core_report_materials(adapter_id, report)
         failure_class = "claim_preservation_failure"
     elif adapter_id == "hard_probe_rc2_2":
-        validation_issues = validate_hard_probe_report(report, repository_root=repository_root)
+        validation_issues = validate_current_hard_probe_report(
+            report, repository_root=repository_root
+        )
         rows_value = report.get("results")
         rows = (
             [cast(dict[str, Any], row) for row in rows_value if isinstance(row, dict)]
@@ -1165,6 +1191,8 @@ def _core_report_evidence(
             "minimum_passed": raw_summary.get("minimum_passed"),
             "minimum_passed_met": raw_summary.get("minimum_passed_met"),
             "cost_usd": raw_summary.get("cost_usd"),
+            "current_acceptance_policy": "firelens_eval_lab_zero_cost_v2",
+            "historical_runner_native_exit": 0,
         }
         materials = _core_report_materials(adapter_id, report)
         failure_class = "hard_probe_case_failure_within_profile"
@@ -1682,7 +1710,7 @@ def _run_hard_probe(context: RunContext) -> tuple[dict[str, Any], list[dict[str,
             console.getvalue(), encoding="utf-8"
         )
         report = _load_mapping(raw)
-        issues = validate_hard_probe_report(report, repository_root=context.root)
+        issues = validate_current_hard_probe_report(report, repository_root=context.root)
         if exit_code != 0 and not issues:
             issues.append(f"runner exited {exit_code} without a reported contract failure")
         failures = _validation_failures(
@@ -1757,11 +1785,13 @@ def _run_hard_probe(context: RunContext) -> tuple[dict[str, Any], list[dict[str,
                 "minimum_passed": summary.get("minimum_passed"),
                 "minimum_passed_met": summary.get("minimum_passed_met"),
                 "cost_usd": summary.get("cost_usd"),
+                "current_acceptance_policy": "firelens_eval_lab_zero_cost_v2",
+                "historical_runner_native_exit": exit_code,
             },
             materials=cast(dict[str, Any], report.get("manifest") or {}),
             failures=failures,
             limitations=[
-                "Profile pass uses its declared 86/105 floor; individual failures remain explicit.",
+                "Historical rc2.2 raw FAIL rows and native floor exit remain explicit; current v2 acceptance requires reviewed exact semantics and source-bound evidence.",
                 "Referenced browser and fixture cases are not executed by this runner.",
             ],
             started_at=started,

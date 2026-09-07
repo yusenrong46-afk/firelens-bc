@@ -160,7 +160,7 @@ def test_high_risk_history_followup_does_not_consult_a_generating_planner() -> N
         assert evidence.publisher == "PreparedBC"
         assert "BUILD YOUR GRAB-AND-GO BAGS" in claim.text
         assert "you may need to leave home quickly" in claim.text
-        assert "not caught off guard" in claim.text
+        assert "not caught off guard" in " ".join(claim.text.split())
         assert execution.search.evidence_packet is not None
         source = next(
             item

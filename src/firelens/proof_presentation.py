@@ -451,7 +451,7 @@ def _freshness_label(response: Any) -> str:
     if value == "fresh":
         return "Current official records"
     if response.evidence:
-        return "Reviewed guidance; does not change day to day"
+        return "Reviewed preparedness guidance; publisher may revise the source"
     return "Freshness not applicable"
 
 
@@ -537,7 +537,7 @@ def _critical_fields(trust: Any) -> str:
 def _card_freshness(response: Any, trust: Any) -> str:
     if trust is not None:
         mapping = {
-            "stable_guidance": "Reviewed guidance; does not change day to day",
+            "stable_guidance": "Reviewed preparedness guidance; publisher may revise the source",
             "fresh": "Current official records",
             "stale": "Cached official records; the live refresh failed",
             "mixed": "Some records are out of date",

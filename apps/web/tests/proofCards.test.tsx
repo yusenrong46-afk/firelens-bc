@@ -178,7 +178,7 @@ describe("proof-carrying answer surface", () => {
     expect(screen.getByText(
       "FireLens is showing the source's own words rather than a summary.",
     )).toBeInTheDocument();
-    expect(screen.getByText("Exact official source wording")).toBeInTheDocument();
+    expect(screen.getByText("Exact wording from the cited source revision")).toBeInTheDocument();
     expect(document.querySelector(".answer-lead--source-quote")).toBeInTheDocument();
     expect(screen.getAllByText("Exact wording from the source").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Keep water and food in a grab-and-go bag.")).toHaveLength(1);

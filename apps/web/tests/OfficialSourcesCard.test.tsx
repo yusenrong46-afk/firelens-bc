@@ -30,6 +30,6 @@ describe("selected record source binding", () => {
     render(<OfficialSourcesCard response={{ ...response, unavailable_layers: ["evacuation"] }} />);
     expect(screen.getByText(/Unavailable layers: evacuation/)).toBeInTheDocument();
     expect(screen.getByText("Source updated")).toBeInTheDocument();
-    expect(screen.getByText("FireLens fetched")).toBeInTheDocument();
+    expect(screen.getByText("Checked by FireLens")).toBeInTheDocument();
   });
 });

@@ -18,8 +18,13 @@ from firelens.review_workspace.inputs import (
 
 ROOT = Path(__file__).resolve().parents[1]
 DATASET = ROOT / "data/evaluation/benchmark_v1_5_sealed_retrieval.yaml"
-CORPUS = ROOT / "data/processed/firelens_static_corpus.chunks.jsonl"
-MANIFEST = ROOT / "data/processed/firelens_static_corpus.manifest.json"
+CORPUS = (
+    ROOT / "data/history/preparedbc-f82166e0/data/processed/firelens_static_corpus.chunks.jsonl"
+)
+MANIFEST = (
+    ROOT
+    / "data/history/preparedbc-f82166e0/data/processed/firelens_static_corpus.manifest.json"
+)
 
 
 def test_retrieval_import_uses_all_reviewable_cases_and_only_blind_fields() -> None:

@@ -146,7 +146,7 @@
           "source_lane": "reviewed_guidance",
           "required_aspects": [
             "return only when officials say it is safe",
-            "return after the evacuation order is rescinded"
+            "official determination before an evacuation order is rescinded"
           ]
         }
       ]
@@ -196,7 +196,7 @@
           "source_lane": "reviewed_guidance",
           "required_aspects": [
             "use routes identified by officials",
-            "keep the vehicle fuel tank at least half full"
+            "keep the vehicle gas tank half-full or battery half-charged"
           ]
         }
       ]

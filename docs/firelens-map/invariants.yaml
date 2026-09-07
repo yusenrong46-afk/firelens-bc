@@ -55,4 +55,4 @@ invariants:
     tests:
       - "tests/test_productbench_scope_safety.py"
 schema_version: "firelens.invariants.v1"
-source_digest: "f1eeeb6a00ca3b484de0192db5b7291eeff1956f96887b1756d8b29865972d74"
+source_digest: "7c9f92e7e98033000f819e03069000ef6bdc6dc324afa7f77e62e7fc4208e3d8"

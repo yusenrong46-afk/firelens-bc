@@ -66,7 +66,7 @@ export function AnswerBody({
     <>
       {analytical && <span className="panel-label analytical-short-answer">FireLens answer</span>}
       {!analytical && quoteOnlyAnswer && (
-        <span className="panel-label answer-source-kicker">Exact official source wording</span>
+        <span className="panel-label answer-source-kicker">Exact wording from the cited source revision</span>
       )}
       {!hasAnswerSections && quoteOnlyAnswer && response ? (
         <QuoteOnlyAnswer response={response} fallback={lead} />

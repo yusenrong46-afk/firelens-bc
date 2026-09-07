@@ -113,6 +113,7 @@ def conflict_response(trace_id: str, packet: EvidencePacket) -> AskResponse:
                 publisher=span.publisher,
                 canonical_url=HttpUrl(span.canonical_url),
                 locator=span.locator,
+                document_sha256=span.document_sha256,
                 temporal_class=TemporalClass.STABLE_GUIDANCE,
                 review_provenance=span.review_provenance,
                 primary_text=span.primary_text,
