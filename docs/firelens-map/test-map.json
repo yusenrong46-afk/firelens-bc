@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "119660041925338764f52e32128080ad3c7beaca2e3486a72172083b560b2d70",
+  "source_digest": "7e0809969a11455e0c5fc70cec21c35e6c166fa47d58da4f5e49f9768ce3f89f",
   "tests": [
     {
       "cases": [
@@ -360,7 +360,8 @@
         "test_call_23",
         "test_call_24",
         "test_call_25",
-        "test_call_26"
+        "test_call_26",
+        "test_call_27"
       ],
       "direct_targets": [],
       "endpoints": [
@@ -733,7 +734,8 @@
         "test_call_2",
         "test_call_3",
         "test_call_4",
-        "test_call_5"
+        "test_call_5",
+        "test_call_6"
       ],
       "direct_targets": [
         "apps/web/src/features/ask/roster.ts",
@@ -742,7 +744,8 @@
       ],
       "endpoints": [],
       "evaluation_families": [
-        "live"
+        "live",
+        "rag"
       ],
       "language": "typescript",
       "path": "apps/web/tests/sessionMap.test.ts"
@@ -1117,6 +1120,23 @@
       ],
       "language": "python",
       "path": "tests/test_api_privacy_boundary.py"
+    },
+    {
+      "cases": [
+        "NativeRingTests.test_hole_preceding_shell_keeps_exact_coordinates",
+        "NativeRingTests.test_invalid_source_rings_are_not_repaired",
+        "NativeRingTests.test_island_in_hole_remains_a_separate_polygon",
+        "NativeRingTests.test_no_coordinate_crs_or_curve_guessing"
+      ],
+      "direct_targets": [
+        "src/firelens/arcgis_geometry.py"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "spatial"
+      ],
+      "language": "python",
+      "path": "tests/test_arcgis_geometry.py"
     },
     {
       "cases": [
@@ -2231,6 +2251,26 @@
       ],
       "language": "python",
       "path": "tests/test_live_evacuation.py"
+    },
+    {
+      "cases": [
+        "GeometryQuarantineTests.test_all_invalid_is_unavailable_and_empty_is_available",
+        "GeometryQuarantineTests.test_native_crs_and_published_count_are_not_bypassed",
+        "GeometryQuarantineTests.test_native_source_capture_preserves_holes_and_quarantines_real_defects"
+      ],
+      "direct_targets": [
+        "src/firelens/contracts.py",
+        "src/firelens/live.py",
+        "src/firelens/live_support.py"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "fault",
+        "live",
+        "spatial"
+      ],
+      "language": "python",
+      "path": "tests/test_live_geometry_quarantine.py"
     },
     {
       "cases": [

@@ -16,6 +16,7 @@ from pydantic import HttpUrl
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
+from firelens.arcgis_geometry import decode_features
 from firelens.contracts import (
     CoarseResolvedLocation,
     Freshness,
@@ -49,7 +50,6 @@ from firelens.live_support import (
     _official_size_hectares,
     authority,
     bc_region_entry,
-    geojson_crs_is_wgs84,
     geometry_relation,
     map_geometry_state,
     property_value,
@@ -226,7 +226,7 @@ class LiveDataService:
             "outFields": "*",
             "returnGeometry": "true",
             "outSR": "4326",
-            "f": "geojson",
+            "f": "geojson" if kind is LiveResultKind.INCIDENT else "json",
             "resultOffset": offset,
             "resultRecordCount": 1000,
             "orderByFields": "OBJECTID ASC",
@@ -238,19 +238,7 @@ class LiveDataService:
         )
         response.raise_for_status()
         payload = response.json()
-        if not isinstance(payload, dict) or not isinstance(payload.get("features"), list):
-            raise LiveDataUnavailable(f"{kind.value} source returned an invalid schema")
-        if not geojson_crs_is_wgs84(payload):
-            raise LiveDataUnavailable(f"{kind.value} source declared an unsupported output CRS")
-        features = payload["features"]
-        if any(
-            not isinstance(feature, dict)
-            or not isinstance(feature.get("properties"), dict)
-            or not isinstance(feature.get("geometry"), dict)
-            for feature in features
-        ):
-            raise LiveDataUnavailable(f"{kind.value} source returned malformed features")
-        return features, bool(payload.get("exceededTransferLimit"))
+        return decode_features(payload, kind, self.max_feature_geometry_bytes)
 
     async def _published_count(self, kind: LiveResultKind, *, bbox: _BBox | None) -> int:
         """Return the authoritative record count or fail closed."""
@@ -519,31 +507,30 @@ class LiveDataService:
             geometry=geometry,
         )
 
+    def _unavailable_status(self, kind: LiveResultKind) -> LiveLayerStatus:
+        definition = self.layer_definitions.get(kind, DEFAULT_LAYER_DEFINITIONS[kind])
+        return LiveLayerStatus(
+            kind=kind,
+            authority=authority(kind),
+            source_url=HttpUrl(definition.url),
+            available=False,
+            matching_result_count=0,
+        )
+
     async def _map_layer_results(
         self,
         kind: LiveResultKind,
         *,
         bbox: _BBox | None,
         bounds: BaseGeometry | None,
+        allow_partial_geometry: bool = False,
     ) -> tuple[list[LiveResult], LiveLayerStatus, str | None]:
         try:
             entry, freshness = await self._features(kind, bbox=bbox)
         except LiveDataUnavailable as exc:
-            source_definition = self.layer_definitions.get(
-                kind, DEFAULT_LAYER_DEFINITIONS[kind]
-            )
-            return (
-                [],
-                LiveLayerStatus(
-                    kind=kind,
-                    authority=authority(kind),
-                    source_url=HttpUrl(source_definition.url),
-                    available=False,
-                    matching_result_count=0,
-                ),
-                str(exc),
-            )
+            return [], self._unavailable_status(kind), str(exc)
         results: list[LiveResult] = []
+        omitted_geometry_count = 0
         for feature, result_id in zip(
             entry.features, record_ids(kind, entry.features), strict=True
         ):
@@ -579,15 +566,11 @@ class LiveDataService:
             if state == "outside":
                 continue
             if state == "invalid":
-                unavailable = LiveLayerStatus(
-                    kind=kind,
-                    authority=authority(kind),
-                    source_url=HttpUrl(self._layer(kind).url),
-                    available=False,
-                    matching_result_count=0,
-                )
+                if allow_partial_geometry:
+                    omitted_geometry_count += 1
+                    continue
                 limitation = f"{kind.value} source returned spatially invalid geometry"
-                return [], unavailable, limitation
+                return [], self._unavailable_status(kind), limitation
             try:
                 result = self._to_result(
                     kind,
@@ -598,16 +581,15 @@ class LiveDataService:
                     source_updated_at=entry.source_updated_at,
                 )
             except (TypeError, ValueError):
-                unavailable = LiveLayerStatus(
-                    kind=kind,
-                    authority=authority(kind),
-                    source_url=HttpUrl(self._layer(kind).url),
-                    available=False,
-                    matching_result_count=0,
-                )
                 limitation = f"{kind.value} source returned a record that did not match the live result contract"
-                return [], unavailable, limitation
+                return [], self._unavailable_status(kind), limitation
             results.append(result)
+        if omitted_geometry_count and not results:
+            return (
+                [],
+                self._unavailable_status(kind),
+                f"{kind.value} source returned spatially invalid geometry",
+            )
         return (
             results,
             LiveLayerStatus(
@@ -623,6 +605,7 @@ class LiveDataService:
                     retrieved_at=entry.retrieved_at,
                 ),
                 matching_result_count=len(results),
+                omitted_geometry_count=omitted_geometry_count,
             ),
             None,
         )
@@ -632,6 +615,7 @@ class LiveDataService:
         *,
         layers: tuple[LiveResultKind, ...],
         bbox: tuple[float, float, float, float] | None = None,
+        allow_partial_geometry: bool = False,
     ) -> LiveMapResponse:
         results: list[LiveResult] = []
         unavailable: list[LiveResultKind] = []
@@ -639,7 +623,15 @@ class LiveDataService:
         unavailable_reasons: list[str] = []
         bounds = box(*bbox) if bbox is not None else None
         layer_outcomes = await asyncio.gather(
-            *(self._map_layer_results(kind, bbox=bbox, bounds=bounds) for kind in layers)
+            *(
+                self._map_layer_results(
+                    kind,
+                    bbox=bbox,
+                    bounds=bounds,
+                    allow_partial_geometry=allow_partial_geometry,
+                )
+                for kind in layers
+            )
         )
         for kind, (layer_results, layer_status, unavailable_reason) in zip(
             layers, layer_outcomes, strict=True
@@ -659,12 +651,20 @@ class LiveDataService:
                 "Some official layers were unavailable or exceeded bounded retrieval limits: "
                 + "; ".join(unavailable_reasons)
             )
+        partial = [status.kind for status in layer_statuses if status.omitted_geometry_count]
+        for status in layer_statuses:
+            if status.omitted_geometry_count:
+                limitations.append(
+                    f"{status.kind.value}: {status.omitted_geometry_count} official records omitted because their geometry is invalid. "
+                    "Displayed records are incomplete; absence is not an all-clear."
+                )
         limitations.extend(stale_observation_limitations(layer_statuses, results))
         return LiveMapResponse(
             generated_at=datetime.now(UTC),
             results=sorted(results, key=lambda result: (result.kind.value, result.result_id)),
             aggregate_freshness=aggregate_live_freshness(results),
             unavailable_layers=unavailable,
+            partial_layers=partial,
             layer_statuses=layer_statuses,
             limitations=limitations,
         )

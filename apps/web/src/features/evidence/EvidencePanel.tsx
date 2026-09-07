@@ -164,6 +164,7 @@ export function EvidencePanel({
             provinceResults={mapProvinceResults}
             aggregateFreshness={mapAggregateFreshness}
             unavailableLayers={mapUnavailableLayers}
+            geometryOmissions={session.mapGeometryOmissions}
             focus={mapFocus}
             focusResults={mapFocusResults}
             selectedResultId={selectedLiveResultId}

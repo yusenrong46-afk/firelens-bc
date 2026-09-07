@@ -588,6 +588,11 @@ export interface components {
             kind: components["schemas"]["LiveResultKind"];
             /** Matching Result Count */
             matching_result_count: number;
+            /**
+             * Omitted Geometry Count
+             * @default 0
+             */
+            omitted_geometry_count: number;
             /** Retrieved At */
             retrieved_at?: string | null;
             /** Source Updated At */
@@ -610,6 +615,8 @@ export interface components {
             layer_statuses?: components["schemas"]["LiveLayerStatus"][];
             /** Limitations */
             limitations?: string[];
+            /** Partial Layers */
+            partial_layers?: components["schemas"]["LiveResultKind"][];
             /** Results */
             results: components["schemas"]["LiveResult"][];
             /** Unavailable Layers */

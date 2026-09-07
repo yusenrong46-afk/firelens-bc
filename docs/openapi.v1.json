@@ -1239,6 +1239,12 @@
             "title": "Matching Result Count",
             "type": "integer"
           },
+          "omitted_geometry_count": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Omitted Geometry Count",
+            "type": "integer"
+          },
           "retrieved_at": {
             "anyOf": [
               {
@@ -1312,6 +1318,13 @@
               "type": "string"
             },
             "title": "Limitations",
+            "type": "array"
+          },
+          "partial_layers": {
+            "items": {
+              "$ref": "#/components/schemas/LiveResultKind"
+            },
+            "title": "Partial Layers",
             "type": "array"
           },
           "results": {

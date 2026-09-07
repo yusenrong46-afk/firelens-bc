@@ -51,6 +51,7 @@ export type FireLensSession = {
   mapMessage: string | undefined;
   mapAggregateFreshness: MapAggregateFreshness;
   mapUnavailableLayers: string[];
+  mapGeometryOmissions?: { kind: string; count: number }[];
   setMapVisible: (visible: boolean) => void;
   mapFocus: { latitude: number; longitude: number } | undefined;
   mapFocusResults: LiveResult[];
@@ -119,8 +120,9 @@ export function useFireLensSession(): FireLensSession {
         provinceMap.data?.results,
         provinceMap.data?.unavailable_layers,
         contextLayersEnabled,
+        provinceMap.data?.layer_statuses,
       ),
-    [contextLayersEnabled, provinceMap.data?.results, provinceMap.data?.unavailable_layers, roster, view.kind],
+    [contextLayersEnabled, provinceMap.data?.layer_statuses, provinceMap.data?.results, provinceMap.data?.unavailable_layers, roster, view.kind],
   );
 
   useEffect(() => {
@@ -377,6 +379,7 @@ export function useFireLensSession(): FireLensSession {
     mapMessage: provinceMap.message,
     mapAggregateFreshness: mapView.mapAggregateFreshness,
     mapUnavailableLayers: mapView.mapUnavailableLayers,
+    mapGeometryOmissions: mapView.mapGeometryOmissions,
     setMapVisible,
     mapFocus: mapView.mapFocus,
     mapFocusResults: mapView.mapFocusResults,

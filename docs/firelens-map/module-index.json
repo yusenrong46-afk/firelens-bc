@@ -388,7 +388,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 368,
+      "loc": 369,
       "major_symbols": [
         "CompactLiveMap",
         "App"
@@ -1447,7 +1447,7 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 13,
+      "branch_score": 16,
       "fan_in": 2,
       "fan_out": 2,
       "generated": false,
@@ -1462,7 +1462,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 69,
+      "loc": 77,
       "major_symbols": [
         "MapAggregateFreshness",
         "displayedAggregateFreshness",
@@ -1482,7 +1482,7 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 83,
+      "branch_score": 84,
       "fan_in": 7,
       "fan_out": 7,
       "generated": false,
@@ -1508,7 +1508,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 412,
+      "loc": 415,
       "major_symbols": [
         "FireLensSession",
         "useFireLensSession"
@@ -1554,7 +1554,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 267,
+      "loc": 268,
       "major_symbols": [
         "LiveMap",
         "EvidencePanel"
@@ -1753,7 +1753,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 255,
+      "loc": 256,
       "major_symbols": [
         "LiveMap",
         "preloadAnalysisCharts",
@@ -1777,7 +1777,7 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 47,
+      "branch_score": 52,
       "fan_in": 3,
       "fan_out": 11,
       "generated": false,
@@ -1813,7 +1813,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 285,
+      "loc": 294,
       "major_symbols": [
         "EMPTY_RESULTS",
         "LiveMap"
@@ -2324,7 +2324,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 237,
+      "branch_score": 238,
       "fan_in": 1,
       "fan_out": 0,
       "generated": true,
@@ -2333,7 +2333,7 @@
       "imports": [],
       "kind": "production",
       "language": "typescript",
-      "loc": 1665,
+      "loc": 1672,
       "major_symbols": [
         "paths",
         "webhooks",
@@ -2852,7 +2852,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 65,
+      "branch_score": 66,
       "fan_in": 0,
       "fan_out": 0,
       "generated": false,
@@ -2864,7 +2864,7 @@
       "imports": [],
       "kind": "test",
       "language": "typescript",
-      "loc": 835,
+      "loc": 873,
       "major_symbols": [
         "AskRequest"
       ],
@@ -3371,7 +3371,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 91,
+      "loc": 114,
       "major_symbols": [],
       "module": "apps/web/tests/sessionMap.test",
       "path": "apps/web/tests/sessionMap.test.ts",
@@ -9705,7 +9705,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 239,
+      "loc": 241,
       "major_symbols": [
         "install_live_routes"
       ],
@@ -9893,6 +9893,40 @@
         "DocumentContextResponse"
       ],
       "test_fan_in": 0
+    },
+    {
+      "branch_score": 32,
+      "fan_in": 2,
+      "fan_out": 2,
+      "generated": false,
+      "id": "src/firelens/arcgis_geometry.py",
+      "import_specifiers": [
+        "firelens.contracts",
+        "firelens.live_support",
+        "json",
+        "shapely.geometry",
+        "typing"
+      ],
+      "imports": [
+        "src/firelens/contracts.py",
+        "src/firelens/live_support.py"
+      ],
+      "kind": "production",
+      "language": "python",
+      "loc": 118,
+      "major_symbols": [
+        "polygon_geojson",
+        "decode_features"
+      ],
+      "module": "firelens.arcgis_geometry",
+      "path": "src/firelens/arcgis_geometry.py",
+      "production_fan_in": 1,
+      "statically_unreferenced": false,
+      "symbols": [
+        "polygon_geojson",
+        "decode_features"
+      ],
+      "test_fan_in": 1
     },
     {
       "branch_score": 8,
@@ -10491,7 +10525,7 @@
     },
     {
       "branch_score": 120,
-      "fan_in": 184,
+      "fan_in": 186,
       "fan_out": 12,
       "generated": false,
       "id": "src/firelens/contracts.py",
@@ -10573,7 +10607,7 @@
       ],
       "module": "firelens.contracts",
       "path": "src/firelens/contracts.py",
-      "production_fan_in": 87,
+      "production_fan_in": 88,
       "statically_unreferenced": false,
       "symbols": [
         "ClaimText",
@@ -10640,7 +10674,7 @@
         "AskResponse._validate_requires_input",
         "AskResponse._validate_abstention"
       ],
-      "test_fan_in": 78
+      "test_fan_in": 79
     },
     {
       "branch_score": 26,
@@ -15063,9 +15097,9 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 110,
-      "fan_in": 24,
-      "fan_out": 5,
+      "branch_score": 111,
+      "fan_in": 25,
+      "fan_out": 6,
       "generated": false,
       "id": "src/firelens/live.py",
       "import_specifiers": [
@@ -15074,6 +15108,7 @@
         "collections",
         "datetime",
         "decimal",
+        "firelens.arcgis_geometry",
         "firelens.contracts",
         "firelens.live_contracts",
         "firelens.live_http",
@@ -15089,6 +15124,7 @@
         "typing"
       ],
       "imports": [
+        "src/firelens/arcgis_geometry.py",
         "src/firelens/contracts.py",
         "src/firelens/live_contracts.py",
         "src/firelens/live_http.py",
@@ -15123,13 +15159,14 @@
         "LiveDataService._refresh",
         "LiveDataService._features",
         "LiveDataService._to_result",
+        "LiveDataService._unavailable_status",
         "LiveDataService._map_layer_results",
         "LiveDataService.map_results",
         "LiveDataService._nearby_full",
         "LiveDataService.nearby_results",
         "LiveDataService.nearby_page"
       ],
-      "test_fan_in": 10
+      "test_fan_in": 11
     },
     {
       "branch_score": 62,
@@ -15216,7 +15253,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 111,
+      "branch_score": 116,
       "fan_in": 23,
       "fan_out": 2,
       "generated": false,
@@ -15239,7 +15276,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 606,
+      "loc": 617,
       "major_symbols": [
         "LocationInput",
         "LiveResultKind",
@@ -15395,7 +15432,7 @@
     },
     {
       "branch_score": 146,
-      "fan_in": 17,
+      "fan_in": 19,
       "fan_out": 2,
       "generated": false,
       "id": "src/firelens/live_support.py",
@@ -15453,7 +15490,7 @@
       ],
       "module": "firelens.live_support",
       "path": "src/firelens/live_support.py",
-      "production_fan_in": 8,
+      "production_fan_in": 9,
       "statically_unreferenced": false,
       "symbols": [
         "geojson_crs_is_wgs84",
@@ -15489,7 +15526,7 @@
         "geometry_relation",
         "map_geometry_state"
       ],
-      "test_fan_in": 7
+      "test_fan_in": 8
     },
     {
       "branch_score": 0,
@@ -19799,7 +19836,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 367,
+      "loc": 368,
       "major_symbols": [
         "DeterministicLiveService",
         "DeterministicStaticService"
@@ -20430,6 +20467,39 @@
         "test_response_validation_is_consumed_without_echoing_rejected_values.malformed_response",
         "test_response_validation_is_consumed_without_echoing_rejected_values._run",
         "test_unexpected_logs_omit_exception_message_and_canary"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 2,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "tests/test_arcgis_geometry.py",
+      "import_specifiers": [
+        "firelens.arcgis_geometry",
+        "shapely.geometry",
+        "unittest"
+      ],
+      "imports": [
+        "src/firelens/arcgis_geometry.py"
+      ],
+      "kind": "test",
+      "language": "python",
+      "loc": 53,
+      "major_symbols": [
+        "NativeRingTests"
+      ],
+      "module": "tests.test_arcgis_geometry",
+      "path": "tests/test_arcgis_geometry.py",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "NativeRingTests",
+        "NativeRingTests.test_hole_preceding_shell_keeps_exact_coordinates",
+        "NativeRingTests.test_island_in_hole_remains_a_separate_polygon",
+        "NativeRingTests.test_invalid_source_rings_are_not_repaired",
+        "NativeRingTests.test_no_coordinate_crs_or_curve_guessing"
       ],
       "test_fan_in": 0
     },
@@ -22805,6 +22875,46 @@
       "symbols": [
         "_evacuation",
         "test_dotted_bc_scope_uses_province_wide_grouping"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 16,
+      "fan_in": 0,
+      "fan_out": 3,
+      "generated": false,
+      "id": "tests/test_live_geometry_quarantine.py",
+      "import_specifiers": [
+        "copy",
+        "firelens.contracts",
+        "firelens.live",
+        "firelens.live_support",
+        "httpx",
+        "json",
+        "pathlib",
+        "test_live",
+        "unittest"
+      ],
+      "imports": [
+        "src/firelens/contracts.py",
+        "src/firelens/live.py",
+        "src/firelens/live_support.py"
+      ],
+      "kind": "test",
+      "language": "python",
+      "loc": 127,
+      "major_symbols": [
+        "GeometryQuarantineTests"
+      ],
+      "module": "tests.test_live_geometry_quarantine",
+      "path": "tests/test_live_geometry_quarantine.py",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "GeometryQuarantineTests",
+        "GeometryQuarantineTests.test_native_source_capture_preserves_holes_and_quarantines_real_defects",
+        "GeometryQuarantineTests.test_all_invalid_is_unavailable_and_empty_is_available",
+        "GeometryQuarantineTests.test_native_crs_and_published_count_are_not_bypassed"
       ],
       "test_fan_in": 0
     },
@@ -29926,5 +30036,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "119660041925338764f52e32128080ad3c7beaca2e3486a72172083b560b2d70"
+  "source_digest": "7e0809969a11455e0c5fc70cec21c35e6c166fa47d58da4f5e49f9768ce3f89f"
 }
