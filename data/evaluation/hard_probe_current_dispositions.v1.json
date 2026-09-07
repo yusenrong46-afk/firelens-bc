@@ -1,7 +1,7 @@
 {
   "schema_version": "firelens.hard_probe.current_dispositions.v1",
   "policy_id": "firelens_eval_lab_zero_cost_v2",
-  "reviewed_candidate": "89e7f20f69d8bffa3e4103fa8762eab8ced4f5a0",
+  "reviewed_candidate": "a2099e9b19651ffd06176ea30a13af7ab76f445e",
   "frozen_materials": {
     "data/evaluation/hard_probe.v1.manifest.json": "7f051c79169b7a31fae8c6d6e71dd064cbd501280794d62467e114e6635404d5",
     "data/evaluation/hard_probe.v1.yaml": "ac1cd4980a9f3caff7c9ff3612a9d696c1f2bf5ee83d24f9793ae2d555975035",
@@ -15,6 +15,12 @@
     "data/evaluation/hard_probe_rc2_expectations.v1.yaml": "780bad373528270b3b79ed1efb92c0539b9e4eea5467ff206b89611afb684adb"
   },
   "runtime_materials": {
+    "app.py": "c3f3ef2e85a403426a23398ccb5b10817f43099d54117f7898ad1710424a82ec",
+    "config/firelens.v1_6_2_patch_promotion.v1.json": "c579bb38a1f97e52a65a69d40ffc262eec1154e5b52b3df29d1440a40c36ae25",
+    "config/firelens.v1_6_3_patch_promotion.v1.json": "25bf032d39d00cbb17da42e5b5b928a0511cd42961e1ec16ccc098a1e09f1f41",
+    "config/firelens.v1_6_release_promotion.v1.json": "f90259567010edc1d31167f0ccb0e9284616b3550c9012c07dbc1955ee6292db",
+    "config/runtime_artifact_allowlist.v1.json": "1f0d82a853b8a44d4695c32c769352f97c75c808a3cb325ac5ee4680ce115020",
+    "config/vercel_firewall.v1.json": "4194bedb10828b2d411019ce58c6d825d5dbb47825123b345b84ee52ecdaa516",
     "data/capabilities/firelens.guidance_capabilities.v1.json": "fef451130ca6034ea65142105ad918e6d86e1dbea9c77444086942372d81a0ac",
     "data/capabilities/guided_questions.v1.json": "422fe5cb40268abb873309fa792f59d9724c7321b3eafbe854446582d2f88f80",
     "data/capabilities/guided_questions.v1.manifest.json": "803d15d5c294d0372c488159bb9cd0d352d102cb85e33df1ad9560b5d9066951",
@@ -63,6 +69,9 @@
     "data/typed_claims/prepared_candidates_v2.yaml": "d1e085fd7c495e18ee8f9cf6602832e128ec9a3d4a1de4ed6caa62ab9a410dfd",
     "data/typed_claims/source_repair_scope_template_v1.yaml": "59330bda03ecec0090b1731820f1a2dd6ed06225f77c57cff51e34093b92f61d",
     "pyproject.toml": "71e3d5e0a7135ef827859f2aca6b569162bf47096fb4e2dfde9cb19c58afb483",
+    "requirements.lock": "0104a88ad3e8a734dd071edaef5d12c85375ceb89826c330883e0a212ff50487",
+    "scripts/deploy_vercel.py": "c0f7ef2bc45ef3aae54b3e79017a2f03692d973e97e4feadc410be64a09d995c",
+    "scripts/write_runtime_candidate.py": "774ebe185a90fbd02aa0920ecd2e83bd52cf76150d326a4ac6d8c1e638b986ab",
     "src/firelens/__init__.py": "0158f565f7f1275cec94ab73ef5dc5a24e5439c23e36b18fb87176596cae1602",
     "src/firelens/_publication_authority.py": "93830a1002ff21e1163ba18c8baed086f744cca7094a3596b266dc985dae76ae",
     "src/firelens/agent/__init__.py": "c7768f81d3005afc9623e8ab18f1c4d47a32b6cd875a2b8f3c68fee914d2936a",
@@ -153,10 +162,11 @@
     "src/firelens/api/factory.py": "bb725c7a09952f0074ba6bb3bb04061235c1c8f40c6f461aec6f7e88e5727495",
     "src/firelens/api/frontend.py": "8d1bdc6bc8fda6b5af02c54bfe40cd26494364b55caf50be7f08f23a438b76f9",
     "src/firelens/api/health_feedback.py": "811c8d62a1bda9a559d0e1a2dca0184f76a86c4d87b8aa8b70e8362bd5eb6c90",
-    "src/firelens/api/live_routes.py": "82cec543455c57da85bcffdaf24ef80092eefb4bf816d37dfb545ea55b603677",
+    "src/firelens/api/live_routes.py": "45ecca79ef2875ed96d3908e81a7c988a3298b6ec3835109984af10ddcdabaa0",
     "src/firelens/api/middleware.py": "e2819126ec3541dec8bbb5d24c092faa7ef6a02f7375f753633b74efe0b81434",
     "src/firelens/api/responses.py": "1dbdf659d64bc6a18ccf6029ab27b39671614e19c92e3b6ed8577cfb153cc5a8",
     "src/firelens/api_contracts.py": "bdb4a93016758ce5f39fdfa6e145b1a50dbd6c00c0bdf7c902ff4186ad3bf4b1",
+    "src/firelens/arcgis_geometry.py": "1a717af5fcb64dd779e1bc0a5d41ceb3280adc2388413ee9ec3047daaeef210e",
     "src/firelens/assistant_history.py": "e1de11ec75c3bf6073f5de5cfcddaf6bd775f5109d3bf769d57a97941d6e0200",
     "src/firelens/benchmark.py": "051c7b650ace8c557118fa1433ba9a047aea21ffe160225435dec3ccb8499c6a",
     "src/firelens/benchmark_contracts.py": "2daad43afa3b6eeacb8323198fbee9a6d334b7c4fe98b6123347392fe05e4b46",
@@ -188,10 +198,10 @@
     "src/firelens/ingestion/html.py": "98310d04ab0a6746c9d5fc522f28fb7c238343f95663c7102fdf8b253570845b",
     "src/firelens/ingestion/pdf.py": "70a5c866e36c1c536a22d17017028ad98b8955010591dbe144d6b1f86e0cb2a6",
     "src/firelens/ingestion/repairs.py": "79e68f88a9aa2178b1f1e9a26c0069c4fa4a9f13f4e181c48886d5df63e66a0c",
-    "src/firelens/live.py": "9fe0d03cfa05d610144faeef75b7191f521bbe04283bdd77b19719948612b5cd",
+    "src/firelens/live.py": "a5fa261874db720cca33d8c7b89f9ccfdfbced789995dee4ff1a7add42bcc0a7",
     "src/firelens/live_answering.py": "b1e65af9200491cecd37923b6955de7f85502eabefba4409c0158ba4c1d97a52",
     "src/firelens/live_claim_renderer.py": "7c4ec09d004c938c5231fb340b66a011dd43a7a22c1611619e19158a31244a2d",
-    "src/firelens/live_contracts.py": "ef0e893f86ac47378b99606b41e3b5994e4371ffe5df3d812d281ed30958e675",
+    "src/firelens/live_contracts.py": "249f53044021dfb4a46fe44718ea1981b34d634e5cc35f6663e486fbd554dafa",
     "src/firelens/live_http.py": "a7a751ef8dd0f23c3594b4d3ed4b3517d8684e043b8da8aed58d3e3f5ac35f7e",
     "src/firelens/live_identity.py": "be881363a9e4346480641553079f3b561227074e14dfa6c4923555572fa6061e",
     "src/firelens/live_support.py": "263632cf11eca9065d690878a829baf18999fab7244c38a0e7ffe68f4efbd95e",
@@ -277,15 +287,6 @@
     "src/firelens/understanding/place.py": "97828eb184616195a0897ec500cde6679a23dcc3dbefcaf1a69eb6e625ec27c5",
     "src/firelens/understanding/place_vocabulary.py": "001de8edb0308a67fd619a709b0ee0c12244c4161d2f8e3c8b25d43b1dd19d1b",
     "src/firelens/understanding/reference.py": "11593f14e8e61e7760f080bb600914166bb7780457fdce3358be982e409731b9",
-    "requirements.lock": "0104a88ad3e8a734dd071edaef5d12c85375ceb89826c330883e0a212ff50487",
-    "app.py": "c3f3ef2e85a403426a23398ccb5b10817f43099d54117f7898ad1710424a82ec",
-    "config/firelens.v1_6_2_patch_promotion.v1.json": "c579bb38a1f97e52a65a69d40ffc262eec1154e5b52b3df29d1440a40c36ae25",
-    "config/firelens.v1_6_3_patch_promotion.v1.json": "25bf032d39d00cbb17da42e5b5b928a0511cd42961e1ec16ccc098a1e09f1f41",
-    "config/firelens.v1_6_release_promotion.v1.json": "f90259567010edc1d31167f0ccb0e9284616b3550c9012c07dbc1955ee6292db",
-    "config/runtime_artifact_allowlist.v1.json": "1f0d82a853b8a44d4695c32c769352f97c75c808a3cb325ac5ee4680ce115020",
-    "config/vercel_firewall.v1.json": "4194bedb10828b2d411019ce58c6d825d5dbb47825123b345b84ee52ecdaa516",
-    "scripts/deploy_vercel.py": "c0f7ef2bc45ef3aae54b3e79017a2f03692d973e97e4feadc410be64a09d995c",
-    "scripts/write_runtime_candidate.py": "774ebe185a90fbd02aa0920ecd2e83bd52cf76150d326a4ac6d8c1e638b986ab",
     "vercel.json": "64a0cd4ca5d07c04e8d7f3caf1351b23c645294eff98e1d6bee31dab4b81ad77"
   },
   "dispositions": {
@@ -427,7 +428,7 @@
         "response_mode": "partial",
         "answer": "During a wildfire\nFOLLOW INSTRUCTIONS\nThe most important thing you can do is follow all Evacuation Alerts\nand Orders and follow instructions from your Band Office, municipality,\nregional district or local government. Trust in your preparedness and\nfollow your emergency plan.\nNatural gas safety\nDo NOT shut off your natural gas when you receive an Evacuation\nOrder.",
         "answer_sections": [],
-        "history_text": "Authority: Reviewed guidance + uncertainty. Answer: During a wildfire FOLLOW INSTRUCTIONS The most important thing you can do is follow all Evacuation Alerts and Orders and follow instructions from your Band Office, municipality, regional district or local government. Trust in your preparedness and follow your emergency plan. Natural gas safety Do NOT shut off your natural gas when you receive an Evacuation Order. Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions. | Exact source wording — not a structured FireLens claim. | Some requested high-risk guidance has no reviewed structured claim. FireLens is showing official wording or a handoff, not an interpreted claim.",
+        "history_text": "Authority: Reviewed guidance + uncertainty. Answer: During a wildfire FOLLOW INSTRUCTIONS The most important thing you can do is follow all Evacuation Alerts and Orders and follow instructions from your Band Office, municipality, regional district or local government. Trust in your preparedness and follow your emergency plan. Natural gas safety Do NOT shut off your natural gas when you receive an Evacuation Order. Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions. | Exact source wording \u2014 not a structured FireLens claim. | Some requested high-risk guidance has no reviewed structured claim. FireLens is showing official wording or a handoff, not an interpreted claim.",
         "claims": [
           {
             "claim_id": "C1",
@@ -479,7 +480,7 @@
         ],
         "limitations": [
           "The evidence contains stable official guidance and does not establish current wildfire conditions.",
-          "Exact source wording — not a structured FireLens claim.",
+          "Exact source wording \u2014 not a structured FireLens claim.",
           "Some requested high-risk guidance has no reviewed structured claim. FireLens is showing official wording or a handoff, not an interpreted claim."
         ],
         "suggested_questions": [
@@ -524,7 +525,7 @@
         "supported_items": [],
         "unknown_items": [
           "The evidence contains stable official guidance and does not establish current wildfire conditions.",
-          "Exact source wording — not a structured FireLens claim.",
+          "Exact source wording \u2014 not a structured FireLens claim.",
           "Some requested high-risk guidance has no reviewed structured claim. FireLens is showing official wording or a handoff, not an interpreted claim."
         ],
         "proof_cards": [
@@ -532,7 +533,7 @@
             "claim_id": "C1",
             "claim_text": "During a wildfire\nFOLLOW INSTRUCTIONS\nThe most important thing you can do is follow all Evacuation Alerts\nand Orders and follow instructions from your Band Office, municipality,\nregional district or local government. Trust in your preparedness and\nfollow your emergency plan.\nNatural gas safety\nDo NOT shut off your natural gas when you receive an Evacuation\nOrder.",
             "support_state": "official_quote_only",
-            "support_label": "Exact source wording — not a structured FireLens claim",
+            "support_label": "Exact source wording \u2014 not a structured FireLens claim",
             "authority": "PreparedBC",
             "exact_passage": "During a wildfire\nFOLLOW INSTRUCTIONS\nThe most important thing you can do is follow all Evacuation Alerts\nand Orders and follow instructions from your Band Office, municipality,\nregional district or local government. Trust in your preparedness and\nfollow your emergency plan.\nNatural gas safety\nDo NOT shut off your natural gas when you receive an Evacuation\nOrder.",
             "source_title": "Wildfire Preparedness Guide",
@@ -579,7 +580,7 @@
       "response_mode": "background",
       "answer": "Quantum entanglement is a phenomenon in which two or more particles share a joint quantum state, so measurements of correlated properties are linked even when the particles are far apart. It does not allow usable information to travel faster than light. In British Columbia, wildfire rank generally describes observed fire behaviour, commonly using Rank 1 through Rank 6: from a smouldering or low-intensity fire, through progressively stronger surface fire, to extreme crown-fire behaviour with rapid spread and spotting. The precise rank depends on the classification system and conditions being assessed.",
       "answer_sections": [],
-      "history_text": "Authority: General background. Answer: Quantum entanglement is a phenomenon in which two or more particles share a joint quantum state, so measurements of correlated properties are linked even when the particles are far apart. It does not allow usable information to travel faster than light. In British Columbia, wildfire rank generally describes observed fire behaviour, commonly using Rank 1 through Rank 6: from a smouldering or low-intensity fire, through progressively stronger surface fire, to extreme crown-fire behaviour with rapid spread and spotting. The precise rank depends on the classification system and conditions being assessed. Limitations: General background — not verified against the FireLens corpus. | “Wildfire ranks” can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning.",
+      "history_text": "Authority: General background. Answer: Quantum entanglement is a phenomenon in which two or more particles share a joint quantum state, so measurements of correlated properties are linked even when the particles are far apart. It does not allow usable information to travel faster than light. In British Columbia, wildfire rank generally describes observed fire behaviour, commonly using Rank 1 through Rank 6: from a smouldering or low-intensity fire, through progressively stronger surface fire, to extreme crown-fire behaviour with rapid spread and spotting. The precise rank depends on the classification system and conditions being assessed. Limitations: General background \u2014 not verified against the FireLens corpus. | \u201cWildfire ranks\u201d can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning.",
       "claims": [
         {
           "claim_id": "C1",
@@ -620,8 +621,8 @@
       ],
       "evidence": [],
       "limitations": [
-        "General background — not verified against the FireLens corpus.",
-        "“Wildfire ranks” can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
+        "General background \u2014 not verified against the FireLens corpus.",
+        "\u201cWildfire ranks\u201d can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
       ],
       "suggested_questions": [
         "How should I build and review a household emergency plan?",
@@ -653,7 +654,7 @@
       "selected_live_result_id": null,
       "resolved_location": null,
       "status_banner": {
-        "headline": "General model knowledge — not checked against reviewed sources",
+        "headline": "General model knowledge \u2014 not checked against reviewed sources",
         "detail": "This explanation uses general model knowledge, not reviewed quotations.",
         "freshness_label": "Freshness not applicable",
         "availability_label": "Reviewed source support not established; general model knowledge only.",
@@ -664,15 +665,15 @@
       },
       "supported_items": [],
       "unknown_items": [
-        "General background — not verified against the FireLens corpus.",
-        "“Wildfire ranks” can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
+        "General background \u2014 not verified against the FireLens corpus.",
+        "\u201cWildfire ranks\u201d can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
       ],
       "proof_cards": [
         {
           "claim_id": "C1",
           "claim_text": "Quantum entanglement is a phenomenon in which two or more particles share a joint quantum state, so measurements of correlated properties are linked even when the particles are far apart. It does not allow usable information to travel faster than light.",
           "support_state": "background",
-          "support_label": "General background — not a reviewed quotation",
+          "support_label": "General background \u2014 not a reviewed quotation",
           "authority": "General model knowledge",
           "exact_passage": null,
           "source_title": null,
@@ -681,8 +682,8 @@
           "critical_fields_checked": "Not applicable",
           "freshness": "Freshness not applicable",
           "conflicts_or_unknowns": [
-            "General background — not verified against the FireLens corpus.",
-            "“Wildfire ranks” can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
+            "General background \u2014 not verified against the FireLens corpus.",
+            "\u201cWildfire ranks\u201d can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
           ],
           "official_url": null,
           "truth_class": "model_summary",
@@ -704,7 +705,7 @@
           "claim_id": "C2",
           "claim_text": "In British Columbia, wildfire rank generally describes observed fire behaviour, commonly using Rank 1 through Rank 6: from a smouldering or low-intensity fire, through progressively stronger surface fire, to extreme crown-fire behaviour with rapid spread and spotting. The precise rank depends on the classification system and conditions being assessed.",
           "support_state": "background",
-          "support_label": "General background — not a reviewed quotation",
+          "support_label": "General background \u2014 not a reviewed quotation",
           "authority": "General model knowledge",
           "exact_passage": null,
           "source_title": null,
@@ -713,8 +714,8 @@
           "critical_fields_checked": "Not applicable",
           "freshness": "Freshness not applicable",
           "conflicts_or_unknowns": [
-            "General background — not verified against the FireLens corpus.",
-            "“Wildfire ranks” can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
+            "General background \u2014 not verified against the FireLens corpus.",
+            "\u201cWildfire ranks\u201d can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
           ],
           "official_url": null,
           "truth_class": "model_summary",

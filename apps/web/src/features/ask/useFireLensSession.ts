@@ -409,7 +409,7 @@ function currentSummaryText(summary: LiveCurrentSummary): string {
     ? "The BC Wildfire Service fire list is unavailable right now."
     : `Right now the BC Wildfire Service lists ${summary.incident_record_count} ${summary.incident_record_count === 1 ? "fire" : "fires"} in B.C.`;
   const evacuations = summary.evacuation_record_count == null
-    ? " Evacuation records are unavailable right now."
+    ? " A complete evacuation total is unavailable right now."
     : ` EmergencyInfoBC lists ${summary.evacuation_record_count} evacuation ${summary.evacuation_record_count === 1 ? "order or alert" : "orders and alerts"}.`;
   return `${fires}${evacuations} ${summary.limitation}`;
 }

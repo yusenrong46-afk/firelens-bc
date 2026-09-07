@@ -1,6 +1,6 @@
 # FireLens engineering map
 
-Deterministic, offline navigation index for the current source content. It is not runtime, qualification, deployment, or release evidence. Source digest: `7e0809969a11455e0c5fc70cec21c35e6c166fa47d58da4f5e49f9768ce3f89f`.
+Deterministic, offline navigation index for the current source content. It is not runtime, qualification, deployment, or release evidence. Source digest: `c8a151b1a6f5c0b28b8d7686451f2352167a6368b1ba71f151e7338e04f00345`.
 
 Inventory: 213 production Python modules, 56 production TS/TSX modules,
 202 test modules, and 2136 resolved internal import edges.

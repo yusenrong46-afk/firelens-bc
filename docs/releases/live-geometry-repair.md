@@ -32,8 +32,16 @@ path retained the first two layers and withheld evacuation results. This is a
 dated local live-source observation, not yet a production-release claim.
 
 Focused source/geometry/API/nearby regressions passed (109 tests, 74 subtests).
-Full verification, independent frozen-candidate review, CI and deployment
-verification must complete before production qualification is declared.
+The independent High review checked the native ring conversion against an
+independent even-odd fill oracle and confirmed exact coordinate preservation.
+All nine historical hard-probe semantic projections remain unchanged (96/105
+in frozen rc2.2). Its reviewed runtime binding is refreshed for only the three
+changed backend files and the new decoder; the policy's binding digest follows
+that record. No evaluator semantics, thresholds or frozen answers change.
+The summary wording says a complete evacuation *total* is unavailable, avoiding
+confusion with the usable subset on the map. Frontend unit tests: 204 passed.
+Full verification, CI and deployment verification remain required before
+production qualification is declared.
 
 Private raw source captures and candidate map/strict responses are retained in
 `/Users/thomas/Documents/Codex/2026-09-06/firelens-geometry-investigation`.
