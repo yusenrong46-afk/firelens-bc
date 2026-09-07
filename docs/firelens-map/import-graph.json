@@ -11242,6 +11242,14 @@
     {
       "kind": "static",
       "lines": [
+        931
+      ],
+      "source": "src/firelens_eval/lab.py",
+      "target": "src/firelens_eval/semantic_oracles.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         23
       ],
       "source": "src/firelens_eval/public_v2.py",
@@ -11318,6 +11326,39 @@
       ],
       "source": "src/firelens_eval/public_v2.py",
       "target": "src/firelens_eval/semantic_oracles.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        92,
+        132
+      ],
+      "source": "src/firelens_eval/semantic_oracles.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        133
+      ],
+      "source": "src/firelens_eval/semantic_oracles.py",
+      "target": "src/firelens/evaluation/hard_probe_cli.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        134
+      ],
+      "source": "src/firelens_eval/semantic_oracles.py",
+      "target": "src/firelens/evaluation/j01_current_acceptance.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        93
+      ],
+      "source": "src/firelens_eval/semantic_oracles.py",
+      "target": "src/firelens/evaluation/source_aware_conversation_runtime.py"
     },
     {
       "kind": "static",
@@ -12499,6 +12540,14 @@
     {
       "kind": "static",
       "lines": [
+        1243
+      ],
+      "source": "tests/test_firelens_eval.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         13
       ],
       "source": "tests/test_firelens_eval.py",
@@ -12536,6 +12585,14 @@
       ],
       "source": "tests/test_firelens_eval.py",
       "target": "src/firelens_eval/lab.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        1299
+      ],
+      "source": "tests/test_firelens_eval.py",
+      "target": "src/firelens_eval/semantic_oracles.py"
     },
     {
       "kind": "static",
@@ -17813,7 +17870,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "ffe4aa1d0d085f02468b7ab83ecb63268623f057bba53cf4cecfc7a60c60f926",
+  "source_digest": "73eb899056a579f1a6ccaa223ac7c9eea7b0b4408f22e03b5a3ec02239ef906d",
   "unresolved_relative_imports": [
     {
       "line": 32,

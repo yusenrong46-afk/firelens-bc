@@ -1,0 +1,57 @@
+schema_version: firelens.eval_lab.policy.v1
+policy_id: firelens_eval_lab_zero_cost_v2
+qualification_role: engineering_evidence_only
+network_allowed: false
+provider_calls_allowed: false
+require_clean_tree_for_pass: true
+status_precedence:
+  - FAIL
+  - BLOCKED
+  - NOT_RUN
+  - PASS
+oracle_authority_order:
+  - deterministic_executable
+  - source_reference
+  - browser_functional
+  - human_reviewed
+  - calibrated_ai_shadow
+fail_closed_rules:
+  - A missing or malformed required artifact is BLOCKED, never PASS.
+  - A runner exception before a complete report is BLOCKED, never PASS.
+  - A non-zero runner exit with complete failing evidence is FAIL; frozen raw outcomes remain separate from reviewed current acceptance.
+  - A dirty source tree may be evaluated diagnostically but cannot receive PASS.
+  - NOT_RUN, historical, provider, live, sealed, and human evidence cannot be inferred.
+  - Critical authority or safety failures cannot be averaged away by another suite.
+core:
+  required_adapters:
+    - productbench_offline
+    - claimbench_v2
+    - hard_probe_rc2_2
+    - source_aware_conversation
+  productbench_offline:
+    expected_tier: offline_fake
+    expected_cases: 31
+    maximum_failed: 0
+    maximum_cost_usd: 0.0
+  claimbench_v2:
+    expected_cases: 332
+    expected_faithful: 86
+    expected_mutations: 246
+    maximum_unsafe_false_accept_rate: 0.0
+    maximum_faithful_false_reject_rate: 0.0
+    require_not_always_abstain: true
+  hard_probe_rc2_2:
+    expected_profile: rc2.2
+    expected_cases: 105
+    minimum_passed: 86
+    fail_on_failed_priority: CRITICAL
+    maximum_cost_usd: 0.0
+  source_aware_conversation:
+    expected_cases: 106
+    maximum_external_network_calls: 0
+    maximum_external_model_calls: 0
+    maximum_tier_a_b_generation_calls: 0
+    maximum_tier_a_b_generation_cost_usd: 0.0
+current_hard_probe_dispositions:
+  path: data/evaluation/hard_probe_current_dispositions.v1.json
+  sha256: 5ae7d5ddfe747624cf97d2f6ad9da1ce81426151003766fd4a97fca29ae851ca

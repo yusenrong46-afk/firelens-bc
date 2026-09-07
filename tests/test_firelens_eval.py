@@ -109,7 +109,8 @@ def two_commit_core_runs(
         shutil.copytree(ROOT / relative, repository / relative)
     schema = Path("evals/eval_lab/schema")
     shutil.copytree(ROOT / schema, repository / schema)
-    shutil.copy2(ROOT / ".gitignore", repository / ".gitignore")
+    for relative in (".gitignore", "pyproject.toml", "requirements.lock"):
+        shutil.copy2(ROOT / relative, repository / relative)
     subprocess.run(["git", "init", "-q", "-b", "main", str(repository)], check=True)
     subprocess.run(
         ["git", "-C", str(repository), "config", "user.name", "Eval Test"], check=True
@@ -1221,3 +1222,98 @@ def test_failure_record_schema_is_strict_and_versioned() -> None:
     assert {"failure_id", "case_id", "expected", "observed", "identity"} <= set(
         schema["required"]
     )
+
+
+def test_current_policy_preserves_historical_failure(actual_core_run: Path) -> None:
+    report = json.loads((actual_core_run / "raw/hard_probe_rc2_2.json").read_text())
+    before = json.dumps(report, sort_keys=True)
+    assert validate_hard_probe_report(report, repository_root=ROOT)
+    assert eval_lab.validate_current_hard_probe_report(report, repository_root=ROOT) == []
+    assert json.dumps(report, sort_keys=True) == before
+    assert report["summary"]["passed"] == 96
+    assert next(r for r in report["results"] if r["id"] == "J01")["passed"] is False
+
+
+@pytest.mark.parametrize(
+    "case_id", ["F06", "F07", "F09", "I04", "K03", "K09", "I08", "J01", "L05"]
+)
+def test_current_policy_rejects_same_mode_personal_action(
+    actual_core_run: Path, case_id: str
+) -> None:
+    from firelens.contracts import AskResponse
+
+    report = json.loads((actual_core_run / "raw/hard_probe_rc2_2.json").read_text())
+    row = next(r for r in report["results"] if r["id"] == case_id)
+    payload = dict(row["response"])
+    payload.pop("http_status", None)
+    payload.pop("history_text", None)
+    if case_id == "J01":
+        payload["evidence"][0]["document_sha256"] = "0" * 64
+    else:
+        payload["answer"] += " You can safely return home."
+        if case_id == "L05":
+            payload["claims"][-1]["text"] += " You can safely return home."
+    row["response"] = {
+        **AskResponse.model_validate(payload).model_dump(mode="json"),
+        "http_status": 200,
+    }
+    assert row["response_mode"] == row["response"]["response_mode"]
+    assert eval_lab.validate_current_hard_probe_report(report, repository_root=ROOT)
+
+
+@pytest.mark.parametrize(
+    "mutation", ["unknown_failure", "new_reason", "incomplete", "source_link"]
+)
+def test_current_policy_rejects_changed_report(actual_core_run: Path, mutation: str) -> None:
+    report = json.loads((actual_core_run / "raw/hard_probe_rc2_2.json").read_text())
+    if mutation == "unknown_failure":
+        row = next(r for r in report["results"] if r["passed"])
+        row.update(passed=False, failure_reason="new unsupported fact")
+        report["summary"]["passed"] -= 1
+        report["summary"]["failed"] += 1
+    elif mutation == "new_reason":
+        next(r for r in report["results"] if r["id"] == "F06")["failure_reason"] += (
+            "; unsafe assertion"
+        )
+    elif mutation == "incomplete":
+        report["results"].pop()
+    else:
+        row = next(r for r in report["results"] if r["id"] == "F06")
+        row["response"]["related_links"][0]["url"] = "https://example.com/"
+    assert eval_lab.validate_current_hard_probe_report(report, repository_root=ROOT)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "missing_disposition",
+        "missing_l05",
+        "changed_l05",
+        "changed_frozen",
+        "missing_trajectory",
+    ],
+)
+def test_current_policy_rejects_missing_or_changed_evidence(
+    actual_core_run: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mutation: str
+) -> None:
+    from firelens_eval import semantic_oracles
+
+    report = json.loads((actual_core_run / "raw/hard_probe_rc2_2.json").read_text())
+    evidence = json.loads((ROOT / semantic_oracles.CURRENT_DISPOSITIONS).read_text())
+    if mutation == "missing_disposition":
+        evidence["dispositions"].pop("F06")
+    elif mutation == "missing_l05":
+        evidence.pop("l05_current_provider_observation")
+    elif mutation == "changed_l05":
+        evidence["l05_current_provider_observation"]["response"]["answer"] = (
+            "Generic incomplete background."
+        )
+    elif mutation == "changed_frozen":
+        evidence["frozen_materials"]["data/evaluation/hard_probe.v1.yaml"] = "0" * 64
+    else:
+        evidence["i08_trajectory"] = []
+    path = tmp_path / "evidence.json"
+    path.write_text(json.dumps(evidence))
+    monkeypatch.setattr(semantic_oracles, "CURRENT_DISPOSITIONS", path)
+    # The unmodified policy hash rejects any changed retained evidence first.
+    assert eval_lab.validate_current_hard_probe_report(report, repository_root=ROOT)

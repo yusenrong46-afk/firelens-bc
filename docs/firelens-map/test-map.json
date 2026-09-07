@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "ffe4aa1d0d085f02468b7ab83ecb63268623f057bba53cf4cecfc7a60c60f926",
+  "source_digest": "73eb899056a579f1a6ccaa223ac7c9eea7b0b4408f22e03b5a3ec02239ef906d",
   "tests": [
     {
       "cases": [
@@ -1777,6 +1777,10 @@
         "test_compare_rejects_malformed_envelope_instead_of_passing",
         "test_compare_rejects_nonexistent_commit_selectors",
         "test_compare_validates_each_clean_run_against_its_own_commit",
+        "test_current_policy_preserves_historical_failure",
+        "test_current_policy_rejects_changed_report",
+        "test_current_policy_rejects_missing_or_changed_evidence",
+        "test_current_policy_rejects_same_mode_personal_action",
         "test_diagnose_reads_actual_raw_case_evidence",
         "test_diagnose_rejects_raw_artifact_tampering",
         "test_dirty_evidence_is_comparison_ineligible",
@@ -1806,7 +1810,9 @@
         "test_source_identity_binds_dirty_file_content_not_only_status_shape",
         "test_unavailable_suite_writes_blocked_evidence_not_a_pass"
       ],
-      "direct_targets": [],
+      "direct_targets": [
+        "src/firelens/contracts.py"
+      ],
       "endpoints": [],
       "evaluation_families": [
         "claimbench",
@@ -1816,11 +1822,13 @@
         "hard_probe",
         "judge",
         "live",
+        "mutation",
         "productbench",
         "provider",
         "rag",
         "retrieval",
-        "source_aware"
+        "source_aware",
+        "trajectory"
       ],
       "language": "python",
       "path": "tests/test_firelens_eval.py"

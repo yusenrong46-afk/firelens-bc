@@ -2231,8 +2231,8 @@
       "path": "src/firelens_eval/cli.py"
     },
     {
-      "branch_score": 752,
-      "loc": 3362,
+      "branch_score": 757,
+      "loc": 3392,
       "path": "src/firelens_eval/lab.py"
     },
     {
@@ -2256,8 +2256,8 @@
       "path": "src/firelens_eval/pytest_reporter.py"
     },
     {
-      "branch_score": 22,
-      "loc": 52,
+      "branch_score": 57,
+      "loc": 229,
       "path": "src/firelens_eval/semantic_oracles.py"
     },
     {
@@ -2451,8 +2451,8 @@
       "path": "tests/test_firelens200_grader.py"
     },
     {
-      "branch_score": 57,
-      "loc": 1223,
+      "branch_score": 72,
+      "loc": 1319,
       "path": "tests/test_firelens_eval.py"
     },
     {
@@ -3082,7 +3082,7 @@
     }
   ],
   "schema_version": "firelens.complexity.v1",
-  "source_digest": "ffe4aa1d0d085f02468b7ab83ecb63268623f057bba53cf4cecfc7a60c60f926",
+  "source_digest": "73eb899056a579f1a6ccaa223ac7c9eea7b0b4408f22e03b5a3ec02239ef906d",
   "symbols": [
     {
       "branch_score": 0,
@@ -15976,12 +15976,12 @@
     },
     {
       "branch_score": 8,
-      "id": "src/firelens_eval/lab.py::_artifact_eligibility_issues:2998",
+      "id": "src/firelens_eval/lab.py::_artifact_eligibility_issues:3028",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 11,
-      "id": "src/firelens_eval/lab.py::_blocked_adapter:1426",
+      "id": "src/firelens_eval/lab.py::_blocked_adapter:1454",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
@@ -15991,37 +15991,37 @@
     },
     {
       "branch_score": 11,
-      "id": "src/firelens_eval/lab.py::_command_matches_core_contract:1056",
+      "id": "src/firelens_eval/lab.py::_command_matches_core_contract:1080",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 9,
-      "id": "src/firelens_eval/lab.py::_comparison_bindings:3126",
+      "id": "src/firelens_eval/lab.py::_comparison_bindings:3156",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 22,
-      "id": "src/firelens_eval/lab.py::_core_report_evidence:1092",
+      "id": "src/firelens_eval/lab.py::_core_report_evidence:1116",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens_eval/lab.py::_core_report_materials:1205",
+      "id": "src/firelens_eval/lab.py::_core_report_materials:1233",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens_eval/lab.py::_default_search_roots:2901",
+      "id": "src/firelens_eval/lab.py::_default_search_roots:2931",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 9,
-      "id": "src/firelens_eval/lab.py::_envelopes:2876",
+      "id": "src/firelens_eval/lab.py::_envelopes:2906",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens_eval/lab.py::_failed_case_ids:3166",
+      "id": "src/firelens_eval/lab.py::_failed_case_ids:3196",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
@@ -16056,62 +16056,62 @@
     },
     {
       "branch_score": 3,
-      "id": "src/firelens_eval/lab.py::_registered_core_command_is_canonical:1040",
+      "id": "src/firelens_eval/lab.py::_registered_core_command_is_canonical:1064",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 4,
-      "id": "src/firelens_eval/lab.py::_render_report:2541",
+      "id": "src/firelens_eval/lab.py::_render_report:2571",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 11,
-      "id": "src/firelens_eval/lab.py::_replay_core_report:1261",
+      "id": "src/firelens_eval/lab.py::_replay_core_report:1289",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 8,
-      "id": "src/firelens_eval/lab.py::_run_claimbench:1569",
+      "id": "src/firelens_eval/lab.py::_run_claimbench:1597",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 20,
-      "id": "src/firelens_eval/lab.py::_run_hard_probe:1659",
+      "id": "src/firelens_eval/lab.py::_run_hard_probe:1687",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 5,
-      "id": "src/firelens_eval/lab.py::_run_local:2585",
+      "id": "src/firelens_eval/lab.py::_run_local:2615",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 21,
-      "id": "src/firelens_eval/lab.py::_run_productbench:1479",
+      "id": "src/firelens_eval/lab.py::_run_productbench:1507",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 19,
-      "id": "src/firelens_eval/lab.py::_run_source_aware:1779",
+      "id": "src/firelens_eval/lab.py::_run_source_aware:1809",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 8,
-      "id": "src/firelens_eval/lab.py::_select_sha:3144",
+      "id": "src/firelens_eval/lab.py::_select_sha:3174",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 13,
-      "id": "src/firelens_eval/lab.py::_semantic_report_projection:1226",
+      "id": "src/firelens_eval/lab.py::_semantic_report_projection:1254",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 4,
-      "id": "src/firelens_eval/lab.py::_stable_material:3100",
+      "id": "src/firelens_eval/lab.py::_stable_material:3130",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 7,
-      "id": "src/firelens_eval/lab.py::_status_from:1867",
+      "id": "src/firelens_eval/lab.py::_status_from:1897",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
@@ -16121,12 +16121,12 @@
     },
     {
       "branch_score": 13,
-      "id": "src/firelens_eval/lab.py::_validate_envelope_at_its_source:3018",
+      "id": "src/firelens_eval/lab.py::_validate_envelope_at_its_source:3048",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens_eval/lab.py::_validation_failures:1395",
+      "id": "src/firelens_eval/lab.py::_validation_failures:1423",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
@@ -16141,12 +16141,12 @@
     },
     {
       "branch_score": 38,
-      "id": "src/firelens_eval/lab.py::compare_runs:3174",
+      "id": "src/firelens_eval/lab.py::compare_runs:3204",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 25,
-      "id": "src/firelens_eval/lab.py::diagnose_case:2905",
+      "id": "src/firelens_eval/lab.py::diagnose_case:2935",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
@@ -16161,7 +16161,7 @@
     },
     {
       "branch_score": 2,
-      "id": "src/firelens_eval/lab.py::exit_code_for_status:3357",
+      "id": "src/firelens_eval/lab.py::exit_code_for_status:3387",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
@@ -16181,7 +16181,7 @@
     },
     {
       "branch_score": 23,
-      "id": "src/firelens_eval/lab.py::run_suite:2655",
+      "id": "src/firelens_eval/lab.py::run_suite:2685",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
@@ -16192,6 +16192,11 @@
     {
       "branch_score": 40,
       "id": "src/firelens_eval/lab.py::validate_claimbench_report:737",
+      "module_path": "src/firelens_eval/lab.py"
+    },
+    {
+      "branch_score": 5,
+      "id": "src/firelens_eval/lab.py::validate_current_hard_probe_report:927",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
@@ -16211,12 +16216,12 @@
     },
     {
       "branch_score": 210,
-      "id": "src/firelens_eval/lab.py::validate_run_envelope:1891",
+      "id": "src/firelens_eval/lab.py::validate_run_envelope:1921",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
       "branch_score": 23,
-      "id": "src/firelens_eval/lab.py::validate_source_aware_report:927",
+      "id": "src/firelens_eval/lab.py::validate_source_aware_report:951",
       "module_path": "src/firelens_eval/lab.py"
     },
     {
@@ -16350,13 +16355,38 @@
       "module_path": "src/firelens_eval/pytest_reporter.py"
     },
     {
+      "branch_score": 0,
+      "id": "src/firelens_eval/semantic_oracles.py::_digest:69",
+      "module_path": "src/firelens_eval/semantic_oracles.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "src/firelens_eval/semantic_oracles.py::_public_payload:84",
+      "module_path": "src/firelens_eval/semantic_oracles.py"
+    },
+    {
+      "branch_score": 32,
+      "id": "src/firelens_eval/semantic_oracles.py::current_disposition_issues:125",
+      "module_path": "src/firelens_eval/semantic_oracles.py"
+    },
+    {
+      "branch_score": 2,
+      "id": "src/firelens_eval/semantic_oracles.py::current_i08_trajectory:91",
+      "module_path": "src/firelens_eval/semantic_oracles.py"
+    },
+    {
       "branch_score": 19,
-      "id": "src/firelens_eval/semantic_oracles.py::provenance_issues:12",
+      "id": "src/firelens_eval/semantic_oracles.py::provenance_issues:21",
+      "module_path": "src/firelens_eval/semantic_oracles.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "src/firelens_eval/semantic_oracles.py::reviewed_row_projection:75",
       "module_path": "src/firelens_eval/semantic_oracles.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens_eval/semantic_oracles.py::unsupported_fixture_issues:44",
+      "id": "src/firelens_eval/semantic_oracles.py::unsupported_fixture_issues:53",
       "module_path": "src/firelens_eval/semantic_oracles.py"
     },
     {
@@ -18246,27 +18276,27 @@
     },
     {
       "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::_valid_claimbench_report:373",
+      "id": "tests/test_firelens_eval.py::_valid_claimbench_report:374",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_firelens_eval.py::_valid_hard_probe_report:461",
+      "id": "tests/test_firelens_eval.py::_valid_hard_probe_report:462",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_firelens_eval.py::_valid_productbench_report:392",
+      "id": "tests/test_firelens_eval.py::_valid_productbench_report:393",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_firelens_eval.py::_valid_source_aware_report:422",
+      "id": "tests/test_firelens_eval.py::_valid_source_aware_report:423",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 24,
-      "id": "tests/test_firelens_eval.py::_write_core_envelope:145",
+      "id": "tests/test_firelens_eval.py::_write_core_envelope:146",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
@@ -18276,181 +18306,201 @@
     },
     {
       "branch_score": 4,
-      "id": "tests/test_firelens_eval.py::test_campaign_regressions_are_normalized_unclosed_failure_records:802",
+      "id": "tests/test_firelens_eval.py::test_campaign_regressions_are_normalized_unclosed_failure_records:803",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_claimbench_validation_fails_closed_when_a_raw_row_regresses:540",
+      "id": "tests/test_firelens_eval.py::test_claimbench_validation_fails_closed_when_a_raw_row_regresses:541",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_claimbench_validation_recomputes_complete_raw_rows:534",
+      "id": "tests/test_firelens_eval.py::test_claimbench_validation_recomputes_complete_raw_rows:535",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_claimbench_validation_rejects_summary_only_evidence:552",
+      "id": "tests/test_firelens_eval.py::test_claimbench_validation_rejects_summary_only_evidence:553",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_compare_rejects_malformed_envelope_instead_of_passing:917",
+      "id": "tests/test_firelens_eval.py::test_compare_rejects_malformed_envelope_instead_of_passing:918",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_compare_rejects_nonexistent_commit_selectors:847",
+      "id": "tests/test_firelens_eval.py::test_compare_rejects_nonexistent_commit_selectors:848",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_compare_validates_each_clean_run_against_its_own_commit:857",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_diagnose_reads_actual_raw_case_evidence:837",
+      "id": "tests/test_firelens_eval.py::test_compare_validates_each_clean_run_against_its_own_commit:858",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_firelens_eval.py::test_diagnose_rejects_raw_artifact_tampering:933",
+      "id": "tests/test_firelens_eval.py::test_current_policy_preserves_historical_failure:1227",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_dirty_evidence_is_comparison_ineligible:876",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 1,
-      "id": "tests/test_firelens_eval.py::test_envelope_binds_raw_report_revision_to_run_identity:1168",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 1,
-      "id": "tests/test_firelens_eval.py::test_envelope_blocks_tampered_material_bindings:895",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_envelope_rejects_commit_tree_mismatch:1205",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 2,
-      "id": "tests/test_firelens_eval.py::test_envelope_rejects_critical_priority_downgrade:1062",
+      "branch_score": 6,
+      "id": "tests/test_firelens_eval.py::test_current_policy_rejects_changed_report:1267",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 4,
-      "id": "tests/test_firelens_eval.py::test_envelope_rejects_hash_bound_empty_core_report:948",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 1,
-      "id": "tests/test_firelens_eval.py::test_envelope_rejects_hash_bound_fabricated_row_semantics:997",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_envelope_rejects_nonexistent_commit_identity:1192",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 2,
-      "id": "tests/test_firelens_eval.py::test_envelope_rejects_self_consistent_but_forged_case_counts:966",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_envelope_rejects_tampered_execution_boundary:906",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_failure_record_schema_is_strict_and_versioned:1214",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_failure_schema_requires_campaign_fields:764",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_hard_probe_case_mismatch_fails_gate_but_stays_in_review:608",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 2,
-      "id": "tests/test_firelens_eval.py::test_hard_probe_validation_does_not_average_away_a_critical_failure:587",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_hard_probe_validation_recomputes_case_count_and_floor:574",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_hard_probe_validation_requires_exact_rc2_2_profile:561",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_inventory_declares_every_commanded_suite_without_provider_execution:500",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_makefile_hard_probe_target_pins_rc2_2:697",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_minimal_fabricated_core_reports_are_rejected:1147",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 1,
-      "id": "tests/test_firelens_eval.py::test_not_run_ui_suite_is_never_reported_as_pass:830",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 1,
-      "id": "tests/test_firelens_eval.py::test_productbench_volatile_response_sha_cannot_be_reintroduced:1039",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_rc2_2_profile_manifest_remains_the_bound_authority:689",
-      "module_path": "tests/test_firelens_eval.py"
-    },
-    {
-      "branch_score": 2,
-      "id": "tests/test_firelens_eval.py::test_source_aware_volatile_vector_manifest_is_not_claimed_as_a_material:1017",
+      "id": "tests/test_firelens_eval.py::test_current_policy_rejects_missing_or_changed_evidence:1296",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 3,
-      "id": "tests/test_firelens_eval.py::test_source_change_during_run_persists_blocked_evidence:1083",
+      "id": "tests/test_firelens_eval.py::test_current_policy_rejects_same_mode_personal_action:1240",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_firelens_eval.py::test_source_identity_binds_dirty_file_content_not_only_status_shape:511",
+      "id": "tests/test_firelens_eval.py::test_diagnose_reads_actual_raw_case_evidence:838",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_firelens_eval.py::test_unavailable_suite_writes_blocked_evidence_not_a_pass:704",
+      "id": "tests/test_firelens_eval.py::test_diagnose_rejects_raw_artifact_tampering:934",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_dirty_evidence_is_comparison_ineligible:877",
       "module_path": "tests/test_firelens_eval.py"
     },
     {
       "branch_score": 1,
+      "id": "tests/test_firelens_eval.py::test_envelope_binds_raw_report_revision_to_run_identity:1169",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "tests/test_firelens_eval.py::test_envelope_blocks_tampered_material_bindings:896",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_envelope_rejects_commit_tree_mismatch:1206",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 2,
+      "id": "tests/test_firelens_eval.py::test_envelope_rejects_critical_priority_downgrade:1063",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 4,
+      "id": "tests/test_firelens_eval.py::test_envelope_rejects_hash_bound_empty_core_report:949",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "tests/test_firelens_eval.py::test_envelope_rejects_hash_bound_fabricated_row_semantics:998",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_envelope_rejects_nonexistent_commit_identity:1193",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 2,
+      "id": "tests/test_firelens_eval.py::test_envelope_rejects_self_consistent_but_forged_case_counts:967",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_envelope_rejects_tampered_execution_boundary:907",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_failure_record_schema_is_strict_and_versioned:1215",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_failure_schema_requires_campaign_fields:765",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_hard_probe_case_mismatch_fails_gate_but_stays_in_review:609",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 2,
+      "id": "tests/test_firelens_eval.py::test_hard_probe_validation_does_not_average_away_a_critical_failure:588",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_hard_probe_validation_recomputes_case_count_and_floor:575",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_hard_probe_validation_requires_exact_rc2_2_profile:562",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_inventory_declares_every_commanded_suite_without_provider_execution:501",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_makefile_hard_probe_target_pins_rc2_2:698",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_minimal_fabricated_core_reports_are_rejected:1148",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "tests/test_firelens_eval.py::test_not_run_ui_suite_is_never_reported_as_pass:831",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "tests/test_firelens_eval.py::test_productbench_volatile_response_sha_cannot_be_reintroduced:1040",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_rc2_2_profile_manifest_remains_the_bound_authority:690",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 2,
+      "id": "tests/test_firelens_eval.py::test_source_aware_volatile_vector_manifest_is_not_claimed_as_a_material:1018",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 3,
+      "id": "tests/test_firelens_eval.py::test_source_change_during_run_persists_blocked_evidence:1084",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_firelens_eval.py::test_source_identity_binds_dirty_file_content_not_only_status_shape:512",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "tests/test_firelens_eval.py::test_unavailable_suite_writes_blocked_evidence_not_a_pass:705",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
+      "branch_score": 2,
       "id": "tests/test_firelens_eval.py::two_commit_core_runs:102",
       "module_path": "tests/test_firelens_eval.py"
     },

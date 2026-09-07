@@ -1,3 +1,21 @@
+# FireLens release continuation — current CI migration
+
+GitHub authentication now has the required repo/workflow scopes. The maintained
+CI discrepancy is being resolved through the [reviewed v2 policy](firelens-polish-ci-policy.md),
+with frozen raw outcomes preserved. Independent frozen-delta review and current
+CI remain pending; no release or production verification is claimed yet.
+
+One further exact L05 Ask completed both requested concepts as general background.
+Four of eight extension Ask requests have now been used. Accounting is
+US$0.01434842 settled plus US$0.7026656 reserved, including US$0.25 explicitly
+protected for production smoke. All failed-provider reservations remain retained.
+No runtime, source, index, model or privacy change accompanies this CI correction.
+
+The earlier checkpoint below is historical; its authentication and L05 gaps have
+since been resolved. Its raw failures and qualification evidence remain intact.
+
+---
+
 # FireLens final qualification continuation — 2026-09-07
 
 **Mixed and pet real-provider qualification completed; release remains NO-GO
