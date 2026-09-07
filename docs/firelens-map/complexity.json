@@ -51,8 +51,8 @@
       "path": "apps/web/src/app/HowFireLensWorks.tsx"
     },
     {
-      "branch_score": 25,
-      "loc": 95,
+      "branch_score": 24,
+      "loc": 53,
       "path": "apps/web/src/app/LiveDataStatus.tsx"
     },
     {
@@ -111,8 +111,8 @@
       "path": "apps/web/src/features/ask/ConversationPresentation.tsx"
     },
     {
-      "branch_score": 81,
-      "loc": 262,
+      "branch_score": 78,
+      "loc": 258,
       "path": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
     },
     {
@@ -121,8 +121,8 @@
       "path": "apps/web/src/features/ask/QuestionComposer.tsx"
     },
     {
-      "branch_score": 29,
-      "loc": 129,
+      "branch_score": 35,
+      "loc": 142,
       "path": "apps/web/src/features/ask/SourceProof.tsx"
     },
     {
@@ -181,8 +181,8 @@
       "path": "apps/web/src/features/ask/sessionMap.ts"
     },
     {
-      "branch_score": 77,
-      "loc": 394,
+      "branch_score": 83,
+      "loc": 412,
       "path": "apps/web/src/features/ask/useFireLensSession.ts"
     },
     {
@@ -296,8 +296,8 @@
       "path": "apps/web/src/main.tsx"
     },
     {
-      "branch_score": 236,
-      "loc": 1663,
+      "branch_score": 237,
+      "loc": 1665,
       "path": "apps/web/src/shared/api/api-schema.d.ts"
     },
     {
@@ -427,7 +427,7 @@
     },
     {
       "branch_score": 0,
-      "loc": 59,
+      "loc": 77,
       "path": "apps/web/tests/liveDataStatus.test.tsx"
     },
     {
@@ -462,7 +462,7 @@
     },
     {
       "branch_score": 6,
-      "loc": 66,
+      "loc": 94,
       "path": "apps/web/tests/sessionLifecycle.test.ts"
     },
     {
@@ -479,6 +479,11 @@
       "branch_score": 6,
       "loc": 68,
       "path": "apps/web/tests/sites-worker.test.mjs"
+    },
+    {
+      "branch_score": 1,
+      "loc": 31,
+      "path": "apps/web/tests/sourceRevision.test.tsx"
     },
     {
       "branch_score": 8,
@@ -936,8 +941,8 @@
       "path": "src/firelens/answering/context_packet.py"
     },
     {
-      "branch_score": 90,
-      "loc": 548,
+      "branch_score": 91,
+      "loc": 556,
       "path": "src/firelens/answering/context_support.py"
     },
     {
@@ -957,7 +962,7 @@
     },
     {
       "branch_score": 52,
-      "loc": 633,
+      "loc": 634,
       "path": "src/firelens/answering/grounded.py"
     },
     {
@@ -1137,7 +1142,7 @@
     },
     {
       "branch_score": 5,
-      "loc": 144,
+      "loc": 145,
       "path": "src/firelens/answering/responses.py"
     },
     {
@@ -1307,7 +1312,7 @@
     },
     {
       "branch_score": 120,
-      "loc": 799,
+      "loc": 800,
       "path": "src/firelens/contracts.py"
     },
     {
@@ -1901,13 +1906,13 @@
       "path": "src/firelens/publication/compiled_validation.py"
     },
     {
-      "branch_score": 120,
-      "loc": 648,
+      "branch_score": 121,
+      "loc": 652,
       "path": "src/firelens/publication/compiler.py"
     },
     {
-      "branch_score": 41,
-      "loc": 246,
+      "branch_score": 42,
+      "loc": 247,
       "path": "src/firelens/publication/fallback.py"
     },
     {
@@ -1917,7 +1922,7 @@
     },
     {
       "branch_score": 30,
-      "loc": 167,
+      "loc": 169,
       "path": "src/firelens/publication/relevance.py"
     },
     {
@@ -2407,7 +2412,7 @@
     },
     {
       "branch_score": 12,
-      "loc": 178,
+      "loc": 179,
       "path": "tests/test_documentation_consistency.py"
     },
     {
@@ -2582,8 +2587,13 @@
     },
     {
       "branch_score": 3,
-      "loc": 58,
+      "loc": 59,
       "path": "tests/test_pet_contents_support.py"
+    },
+    {
+      "branch_score": 6,
+      "loc": 69,
+      "path": "tests/test_preparedbc_revision.py"
     },
     {
       "branch_score": 3,
@@ -2597,7 +2607,7 @@
     },
     {
       "branch_score": 20,
-      "loc": 251,
+      "loc": 255,
       "path": "tests/test_product_completion.py"
     },
     {
@@ -2672,7 +2682,7 @@
     },
     {
       "branch_score": 10,
-      "loc": 188,
+      "loc": 197,
       "path": "tests/test_quote_only_atomicity.py"
     },
     {
@@ -2867,7 +2877,7 @@
     },
     {
       "branch_score": 68,
-      "loc": 901,
+      "loc": 903,
       "path": "tests/test_structured_publication_relevance.py"
     },
     {
@@ -3057,7 +3067,7 @@
     }
   ],
   "schema_version": "firelens.complexity.v1",
-  "source_digest": "dbadc7c6a25985ff5d3013688cc01f2a7fc8a87d5cc9a580c5fdfebfaca76108",
+  "source_digest": "38a45545a031f2d2d84d70419c6f0407f60ea20dc00c29de98041108b29b0cf3",
   "symbols": [
     {
       "branch_score": 0,
@@ -3496,17 +3506,17 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/app/LiveDataStatus.tsx::LiveDataStatus:52",
+      "id": "apps/web/src/app/LiveDataStatus.tsx::LiveDataStatus:29",
       "module_path": "apps/web/src/app/LiveDataStatus.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/app/LiveDataStatus.tsx::liveDataTone:18",
+      "id": "apps/web/src/app/LiveDataStatus.tsx::liveDataTone:15",
       "module_path": "apps/web/src/app/LiveDataStatus.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/app/LiveDataStatus.tsx::relativeUpdate:5",
+      "id": "apps/web/src/app/LiveDataStatus.tsx::relativeCheck:5",
       "module_path": "apps/web/src/app/LiveDataStatus.tsx"
     },
     {
@@ -3686,22 +3696,22 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::LiveAnswerSummary:141",
+      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::LiveAnswerSummary:137",
       "module_path": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::LiveSourceLine:256",
+      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::LiveSourceLine:252",
       "module_path": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::RecordRow:225",
+      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::RecordRow:221",
       "module_path": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::StatusPill:46",
+      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::StatusPill:42",
       "module_path": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
     },
     {
@@ -3711,7 +3721,7 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::plural:65",
+      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::plural:61",
       "module_path": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
     },
     {
@@ -3721,7 +3731,7 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::recordSummary:69",
+      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::recordSummary:65",
       "module_path": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
     },
     {
@@ -3731,12 +3741,12 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::sampledResults:56",
+      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::sampledResults:52",
       "module_path": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::statusTone:37",
+      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::statusTone:33",
       "module_path": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
     },
     {
@@ -3746,17 +3756,22 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/SourceProof.tsx::SourceProof:76",
+      "id": "apps/web/src/features/ask/SourceProof.tsx::SourceProof:78",
       "module_path": "apps/web/src/features/ask/SourceProof.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/SourceProof.tsx::reviewedSources:37",
+      "id": "apps/web/src/features/ask/SourceProof.tsx::SourceRevision:135",
       "module_path": "apps/web/src/features/ask/SourceProof.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/SourceProof.tsx::trimExcerpt:25",
+      "id": "apps/web/src/features/ask/SourceProof.tsx::reviewedSources:39",
+      "module_path": "apps/web/src/features/ask/SourceProof.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/ask/SourceProof.tsx::trimExcerpt:27",
       "module_path": "apps/web/src/features/ask/SourceProof.tsx"
     },
     {
@@ -4021,12 +4036,12 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/useFireLensSession.ts::currentSummaryText:386",
+      "id": "apps/web/src/features/ask/useFireLensSession.ts::currentSummaryText:404",
       "module_path": "apps/web/src/features/ask/useFireLensSession.ts"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/useFireLensSession.ts::useFireLensSession:74",
+      "id": "apps/web/src/features/ask/useFireLensSession.ts::useFireLensSession:75",
       "module_path": "apps/web/src/features/ask/useFireLensSession.ts"
     },
     {
@@ -4523,6 +4538,11 @@
       "branch_score": 0,
       "id": "apps/web/tests/sessionMap.test.ts::roster:39",
       "module_path": "apps/web/tests/sessionMap.test.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/sourceRevision.test.tsx::response:14",
+      "module_path": "apps/web/tests/sourceRevision.test.tsx"
     },
     {
       "branch_score": 0,
@@ -6236,7 +6256,7 @@
     },
     {
       "branch_score": 19,
-      "id": "src/firelens/answering/context_support.py::_aspect_support_decision:481",
+      "id": "src/firelens/answering/context_support.py::_aspect_support_decision:489",
       "module_path": "src/firelens/answering/context_support.py"
     },
     {
@@ -6246,7 +6266,7 @@
     },
     {
       "branch_score": 12,
-      "id": "src/firelens/answering/context_support.py::_authority_support_decision:386",
+      "id": "src/firelens/answering/context_support.py::_authority_support_decision:394",
       "module_path": "src/firelens/answering/context_support.py"
     },
     {
@@ -6266,7 +6286,7 @@
     },
     {
       "branch_score": 17,
-      "id": "src/firelens/answering/context_support.py::_immediate_support_decision:302",
+      "id": "src/firelens/answering/context_support.py::_immediate_support_decision:310",
       "module_path": "src/firelens/answering/context_support.py"
     },
     {
@@ -6281,22 +6301,27 @@
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/answering/context_support.py::decide_support:279",
+      "id": "src/firelens/answering/context_support.py::decide_support:287",
       "module_path": "src/firelens/answering/context_support.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/answering/context_support.py::significance_quote_ids:458",
+      "id": "src/firelens/answering/context_support.py::significance_quote_ids:466",
       "module_path": "src/firelens/answering/context_support.py"
     },
     {
       "branch_score": 4,
-      "id": "src/firelens/answering/context_support.py::significance_topics:443",
+      "id": "src/firelens/answering/context_support.py::significance_topics:451",
       "module_path": "src/firelens/answering/context_support.py"
     },
     {
       "branch_score": 4,
       "id": "src/firelens/answering/context_support.py::support_token_overlap:204",
+      "module_path": "src/firelens/answering/context_support.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "src/firelens/answering/context_support.py::supports_requested_polarity:279",
       "module_path": "src/firelens/answering/context_support.py"
     },
     {
@@ -6406,12 +6431,12 @@
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/answering/grounded.py::GroundedAnswerEngine._abstention:591",
+      "id": "src/firelens/answering/grounded.py::GroundedAnswerEngine._abstention:592",
       "module_path": "src/firelens/answering/grounded.py"
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/answering/grounded.py::GroundedAnswerEngine._outcome:608",
+      "id": "src/firelens/answering/grounded.py::GroundedAnswerEngine._outcome:609",
       "module_path": "src/firelens/answering/grounded.py"
     },
     {
@@ -8596,67 +8621,67 @@
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/contracts.py::AskResponse._validate_abstention:795",
+      "id": "src/firelens/contracts.py::AskResponse._validate_abstention:796",
       "module_path": "src/firelens/contracts.py"
     },
     {
       "branch_score": 21,
-      "id": "src/firelens/contracts.py::AskResponse._validate_answer_sections:595",
+      "id": "src/firelens/contracts.py::AskResponse._validate_answer_sections:596",
       "module_path": "src/firelens/contracts.py"
     },
     {
       "branch_score": 9,
-      "id": "src/firelens/contracts.py::AskResponse._validate_background:726",
+      "id": "src/firelens/contracts.py::AskResponse._validate_background:727",
       "module_path": "src/firelens/contracts.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/contracts.py::AskResponse._validate_conflict_rendering:721",
+      "id": "src/firelens/contracts.py::AskResponse._validate_conflict_rendering:722",
       "module_path": "src/firelens/contracts.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/contracts.py::AskResponse._validate_conversational:781",
+      "id": "src/firelens/contracts.py::AskResponse._validate_conversational:782",
       "module_path": "src/firelens/contracts.py"
     },
     {
       "branch_score": 11,
-      "id": "src/firelens/contracts.py::AskResponse._validate_grounded:700",
+      "id": "src/firelens/contracts.py::AskResponse._validate_grounded:701",
       "module_path": "src/firelens/contracts.py"
     },
     {
       "branch_score": 7,
-      "id": "src/firelens/contracts.py::AskResponse._validate_history:668",
+      "id": "src/firelens/contracts.py::AskResponse._validate_history:669",
       "module_path": "src/firelens/contracts.py"
     },
     {
       "branch_score": 7,
-      "id": "src/firelens/contracts.py::AskResponse._validate_live:743",
+      "id": "src/firelens/contracts.py::AskResponse._validate_live:744",
       "module_path": "src/firelens/contracts.py"
     },
     {
       "branch_score": 11,
-      "id": "src/firelens/contracts.py::AskResponse._validate_mixed:753",
+      "id": "src/firelens/contracts.py::AskResponse._validate_mixed:754",
       "module_path": "src/firelens/contracts.py"
     },
     {
       "branch_score": 4,
-      "id": "src/firelens/contracts.py::AskResponse._validate_requires_input:785",
+      "id": "src/firelens/contracts.py::AskResponse._validate_requires_input:786",
       "module_path": "src/firelens/contracts.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/contracts.py::AskResponse._validate_support_ids:772",
+      "id": "src/firelens/contracts.py::AskResponse._validate_support_ids:773",
       "module_path": "src/firelens/contracts.py"
     },
     {
       "branch_score": 4,
-      "id": "src/firelens/contracts.py::AskResponse._validate_unique_public_ids:691",
+      "id": "src/firelens/contracts.py::AskResponse._validate_unique_public_ids:692",
       "module_path": "src/firelens/contracts.py"
     },
     {
       "branch_score": 13,
-      "id": "src/firelens/contracts.py::AskResponse.validate_public_state:553",
+      "id": "src/firelens/contracts.py::AskResponse.validate_public_state:554",
       "module_path": "src/firelens/contracts.py"
     },
     {
@@ -13481,77 +13506,77 @@
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/publication/compiler.py::_card_from_claim:581",
+      "id": "src/firelens/publication/compiler.py::_card_from_claim:585",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/publication/compiler.py::_compact_live_statuses:564",
+      "id": "src/firelens/publication/compiler.py::_compact_live_statuses:568",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/publication/compiler.py::_grounded_response:613",
+      "id": "src/firelens/publication/compiler.py::_grounded_response:617",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/publication/compiler.py::_live_connective_safe:559",
+      "id": "src/firelens/publication/compiler.py::_live_connective_safe:563",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
-      "branch_score": 9,
-      "id": "src/firelens/publication/compiler.py::_quote_candidate_covers_target:435",
+      "branch_score": 10,
+      "id": "src/firelens/publication/compiler.py::_quote_candidate_covers_target:437",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 5,
-      "id": "src/firelens/publication/compiler.py::_structured_covers_publication_target:496",
+      "id": "src/firelens/publication/compiler.py::_structured_covers_publication_target:500",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/publication/compiler.py::_supplies_contents:455",
+      "id": "src/firelens/publication/compiler.py::_supplies_contents:459",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 5,
-      "id": "src/firelens/publication/compiler.py::_uncovered_publication_targets:478",
+      "id": "src/firelens/publication/compiler.py::_uncovered_publication_targets:482",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 44,
-      "id": "src/firelens/publication/compiler.py::compile_high_risk_answer:210",
+      "id": "src/firelens/publication/compiler.py::compile_high_risk_answer:212",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/publication/compiler.py::compile_live_fact:161",
+      "id": "src/firelens/publication/compiler.py::compile_live_fact:163",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 4,
-      "id": "src/firelens/publication/compiler.py::compile_structured_claim:99",
+      "id": "src/firelens/publication/compiler.py::compile_structured_claim:100",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/publication/compiler.py::compiled_static_text:572",
+      "id": "src/firelens/publication/compiler.py::compiled_static_text:576",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/publication/compiler.py::packet_requires_structured:515",
+      "id": "src/firelens/publication/compiler.py::packet_requires_structured:519",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 8,
-      "id": "src/firelens/publication/compiler.py::public_mixed_answer:544",
+      "id": "src/firelens/publication/compiler.py::public_mixed_answer:548",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 16,
-      "id": "src/firelens/publication/compiler.py::select_typed_claim_ids:382",
+      "id": "src/firelens/publication/compiler.py::select_typed_claim_ids:384",
       "module_path": "src/firelens/publication/compiler.py"
     },
     {
@@ -13586,11 +13611,11 @@
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/publication/fallback.py::official_handoff_response:211",
+      "id": "src/firelens/publication/fallback.py::official_handoff_response:212",
       "module_path": "src/firelens/publication/fallback.py"
     },
     {
-      "branch_score": 8,
+      "branch_score": 9,
       "id": "src/firelens/publication/fallback.py::quote_only_claim:154",
       "module_path": "src/firelens/publication/fallback.py"
     },
@@ -13656,7 +13681,7 @@
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/publication/relevance.py::_matches_publication_target:78",
+      "id": "src/firelens/publication/relevance.py::_matches_publication_target:80",
       "module_path": "src/firelens/publication/relevance.py"
     },
     {
@@ -13666,7 +13691,7 @@
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/publication/relevance.py::applicability_qualifiers:151",
+      "id": "src/firelens/publication/relevance.py::applicability_qualifiers:153",
       "module_path": "src/firelens/publication/relevance.py"
     },
     {
@@ -13676,7 +13701,7 @@
     },
     {
       "branch_score": 18,
-      "id": "src/firelens/publication/relevance.py::typed_record_matches_publication_target:85",
+      "id": "src/firelens/publication/relevance.py::typed_record_matches_publication_target:87",
       "module_path": "src/firelens/publication/relevance.py"
     },
     {
@@ -17971,27 +17996,27 @@
     },
     {
       "branch_score": 0,
-      "id": "tests/test_documentation_consistency.py::test_portfolio_and_offline_examination_documents_preserve_limits:101",
+      "id": "tests/test_documentation_consistency.py::test_portfolio_and_offline_examination_documents_preserve_limits:102",
       "module_path": "tests/test_documentation_consistency.py"
     },
     {
       "branch_score": 5,
-      "id": "tests/test_documentation_consistency.py::test_quality_document_relative_links_exist:147",
+      "id": "tests/test_documentation_consistency.py::test_quality_document_relative_links_exist:148",
       "module_path": "tests/test_documentation_consistency.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_documentation_consistency.py::test_readme_documented_verification_commands_exist:163",
+      "id": "tests/test_documentation_consistency.py::test_readme_documented_verification_commands_exist:164",
       "module_path": "tests/test_documentation_consistency.py"
     },
     {
       "branch_score": 4,
-      "id": "tests/test_documentation_consistency.py::test_readme_relative_links_and_image_exist:86",
+      "id": "tests/test_documentation_consistency.py::test_readme_relative_links_and_image_exist:87",
       "module_path": "tests/test_documentation_consistency.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_documentation_consistency.py::test_v1_6_2_quality_documents_preserve_constitution_and_evidence_boundaries:118",
+      "id": "tests/test_documentation_consistency.py::test_v1_6_2_quality_documents_preserve_constitution_and_evidence_boundaries:119",
       "module_path": "tests/test_documentation_consistency.py"
     },
     {
@@ -20836,8 +20861,23 @@
     },
     {
       "branch_score": 0,
-      "id": "tests/test_pet_contents_support.py::test_positive_pet_checklist_cannot_establish_omissions_or_medicines:50",
+      "id": "tests/test_pet_contents_support.py::test_positive_pet_checklist_cannot_establish_omissions_or_medicines:51",
       "module_path": "tests/test_pet_contents_support.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "tests/test_preparedbc_revision.py::test_adopted_claim_has_current_technical_binding_and_public_revision:19",
+      "module_path": "tests/test_preparedbc_revision.py"
+    },
+    {
+      "branch_score": 2,
+      "id": "tests/test_preparedbc_revision.py::test_historical_snapshot_bytes_remain_verifiable_and_unaffected_chunks_identical:55",
+      "module_path": "tests/test_preparedbc_revision.py"
+    },
+    {
+      "branch_score": 3,
+      "id": "tests/test_preparedbc_revision.py::test_retired_document_and_withdrawn_claim_are_not_current_evidence:39",
+      "module_path": "tests/test_preparedbc_revision.py"
     },
     {
       "branch_score": 0,
@@ -20926,12 +20966,12 @@
     },
     {
       "branch_score": 1,
-      "id": "tests/test_product_completion.py::test_inventory_and_unanchored_followup_controls:148",
+      "id": "tests/test_product_completion.py::test_inventory_and_unanchored_followup_controls:150",
       "module_path": "tests/test_product_completion.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_product_completion.py::test_missing_distance_is_not_missing_geometry:195",
+      "id": "tests/test_product_completion.py::test_missing_distance_is_not_missing_geometry:197",
       "module_path": "tests/test_product_completion.py"
     },
     {
@@ -20951,17 +20991,17 @@
     },
     {
       "branch_score": 3,
-      "id": "tests/test_product_completion.py::test_significance_inventory_does_not_supply_a_rationale:164",
+      "id": "tests/test_product_completion.py::test_significance_inventory_does_not_supply_a_rationale:166",
       "module_path": "tests/test_product_completion.py"
     },
     {
       "branch_score": 3,
-      "id": "tests/test_product_completion.py::test_significance_keeps_explicit_current_subject:210",
+      "id": "tests/test_product_completion.py::test_significance_keeps_explicit_current_subject:212",
       "module_path": "tests/test_product_completion.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_product_completion.py::test_significance_retains_restricted_user_antecedent:227",
+      "id": "tests/test_product_completion.py::test_significance_retains_restricted_user_antecedent:231",
       "module_path": "tests/test_product_completion.py"
     },
     {
@@ -22101,47 +22141,47 @@
     },
     {
       "branch_score": 2,
-      "id": "tests/test_quote_only_atomicity.py::_packet_for_admitted_quote:36",
+      "id": "tests/test_quote_only_atomicity.py::_packet_for_admitted_quote:38",
       "module_path": "tests/test_quote_only_atomicity.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_quote_only_atomicity.py::_packet_for_typed_claims:71",
+      "id": "tests/test_quote_only_atomicity.py::_packet_for_typed_claims:80",
       "module_path": "tests/test_quote_only_atomicity.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_quote_only_atomicity.py::test_clean_single_stage_and_conditional_quotes_remain_atomic:125",
+      "id": "tests/test_quote_only_atomicity.py::test_clean_single_stage_and_conditional_quotes_remain_atomic:134",
       "module_path": "tests/test_quote_only_atomicity.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_quote_only_atomicity.py::test_interleaved_evacuation_table_is_not_atomic_quote_only_support:111",
+      "id": "tests/test_quote_only_atomicity.py::test_interleaved_evacuation_table_is_not_atomic_quote_only_support:120",
       "module_path": "tests/test_quote_only_atomicity.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_quote_only_atomicity.py::test_quote_only_rejects_chunk_that_ends_inside_larger_source_sentence:158",
+      "id": "tests/test_quote_only_atomicity.py::test_quote_only_rejects_chunk_that_ends_inside_larger_source_sentence:167",
       "module_path": "tests/test_quote_only_atomicity.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_quote_only_atomicity.py::test_quote_only_rejects_fragment_starting_after_source_negation:150",
+      "id": "tests/test_quote_only_atomicity.py::test_quote_only_rejects_fragment_starting_after_source_negation:159",
       "module_path": "tests/test_quote_only_atomicity.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_quote_only_atomicity.py::test_quote_segmentation_never_starts_after_source_negation:133",
+      "id": "tests/test_quote_only_atomicity.py::test_quote_segmentation_never_starts_after_source_negation:142",
       "module_path": "tests/test_quote_only_atomicity.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_quote_only_atomicity.py::test_quote_segmentation_omits_overlong_atomic_unit:143",
+      "id": "tests/test_quote_only_atomicity.py::test_quote_segmentation_omits_overlong_atomic_unit:152",
       "module_path": "tests/test_quote_only_atomicity.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_quote_only_atomicity.py::test_structured_alert_and_order_comparison_remains_available:175",
+      "id": "tests/test_quote_only_atomicity.py::test_structured_alert_and_order_comparison_remains_available:184",
       "module_path": "tests/test_quote_only_atomicity.py"
     },
     {
@@ -24816,12 +24856,12 @@
     },
     {
       "branch_score": 2,
-      "id": "tests/test_structured_publication_relevance.py::_rank_definition_with_tactics:760",
+      "id": "tests/test_structured_publication_relevance.py::_rank_definition_with_tactics:762",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_structured_publication_relevance.py::_typed_ids:517",
+      "id": "tests/test_structured_publication_relevance.py::_typed_ids:519",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
@@ -24831,67 +24871,67 @@
     },
     {
       "branch_score": 2,
-      "id": "tests/test_structured_publication_relevance.py::test_actual_suppression_question_keeps_exact_high_risk_publication:828",
+      "id": "tests/test_structured_publication_relevance.py::test_actual_suppression_question_keeps_exact_high_risk_publication:830",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 4,
-      "id": "tests/test_structured_publication_relevance.py::test_admitted_general_inventory_survives_an_earlier_pet_checklist:884",
+      "id": "tests/test_structured_publication_relevance.py::test_admitted_general_inventory_survives_an_earlier_pet_checklist:886",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 3,
-      "id": "tests/test_structured_publication_relevance.py::test_alert_order_comparison_does_not_ground_one_sided_packet:527",
+      "id": "tests/test_structured_publication_relevance.py::test_alert_order_comparison_does_not_ground_one_sided_packet:529",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_structured_publication_relevance.py::test_alert_order_comparison_does_not_let_rescind_quote_cover_alert:552",
+      "id": "tests/test_structured_publication_relevance.py::test_alert_order_comparison_does_not_let_rescind_quote_cover_alert:554",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_structured_publication_relevance.py::test_alert_order_comparison_engine_rejects_one_sided_grounded:596",
+      "id": "tests/test_structured_publication_relevance.py::test_alert_order_comparison_engine_rejects_one_sided_grounded:598",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_structured_publication_relevance.py::test_alert_order_comparison_grounds_when_both_packet_definitions_exist:577",
+      "id": "tests/test_structured_publication_relevance.py::test_alert_order_comparison_grounds_when_both_packet_definitions_exist:579",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 4,
-      "id": "tests/test_structured_publication_relevance.py::test_atomic_floor_preserves_every_admitted_inventory_match:500",
+      "id": "tests/test_structured_publication_relevance.py::test_atomic_floor_preserves_every_admitted_inventory_match:502",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_structured_publication_relevance.py::test_build_request_does_not_dump_container_contents:425",
+      "id": "tests/test_structured_publication_relevance.py::test_build_request_does_not_dump_container_contents:427",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 4,
-      "id": "tests/test_structured_publication_relevance.py::test_comparison_paraphrases_ground_when_fused_pool_has_both_atomic_spans:640",
+      "id": "tests/test_structured_publication_relevance.py::test_comparison_paraphrases_ground_when_fused_pool_has_both_atomic_spans:642",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_structured_publication_relevance.py::test_compiler_rechecks_packet_identity_and_fails_closed:466",
+      "id": "tests/test_structured_publication_relevance.py::test_compiler_rechecks_packet_identity_and_fails_closed:468",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 3,
-      "id": "tests/test_structured_publication_relevance.py::test_contents_paraphrase_outside_corpus_is_not_official_wording:442",
+      "id": "tests/test_structured_publication_relevance.py::test_contents_paraphrase_outside_corpus_is_not_official_wording:444",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 4,
-      "id": "tests/test_structured_publication_relevance.py::test_contents_request_keeps_build_claim_and_adds_first_content_bearing_quote:400",
+      "id": "tests/test_structured_publication_relevance.py::test_contents_request_keeps_build_claim_and_adds_first_content_bearing_quote:402",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_structured_publication_relevance.py::test_contents_target_does_not_accept_an_earlier_pet_inventory:873",
+      "id": "tests/test_structured_publication_relevance.py::test_contents_target_does_not_accept_an_earlier_pet_inventory:875",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
@@ -24906,37 +24946,37 @@
     },
     {
       "branch_score": 6,
-      "id": "tests/test_structured_publication_relevance.py::test_informational_exact_quote_is_not_displaced_by_unrequested_tactics:796",
+      "id": "tests/test_structured_publication_relevance.py::test_informational_exact_quote_is_not_displaced_by_unrequested_tactics:798",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_structured_publication_relevance.py::test_informational_quote_still_requires_admission_and_atomic_boundaries:846",
+      "id": "tests/test_structured_publication_relevance.py::test_informational_quote_still_requires_admission_and_atomic_boundaries:848",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_structured_publication_relevance.py::test_match_quote_rejects_sub_atomic_fragments:495",
+      "id": "tests/test_structured_publication_relevance.py::test_match_quote_rejects_sub_atomic_fragments:497",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_structured_publication_relevance.py::test_order_definition_does_not_publish_other_evacuation_stages:260",
+      "id": "tests/test_structured_publication_relevance.py::test_order_definition_does_not_publish_other_evacuation_stages:262",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_structured_publication_relevance.py::test_pb037_sprinkler_action_selects_the_reviewed_claim_without_generation:236",
+      "id": "tests/test_structured_publication_relevance.py::test_pb037_sprinkler_action_selects_the_reviewed_claim_without_generation:238",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_structured_publication_relevance.py::test_population_specific_request_does_not_publish_a_different_group_claim:358",
+      "id": "tests/test_structured_publication_relevance.py::test_population_specific_request_does_not_publish_a_different_group_claim:360",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_structured_publication_relevance.py::test_population_specific_request_keeps_matching_reviewed_scope:388",
+      "id": "tests/test_structured_publication_relevance.py::test_population_specific_request_keeps_matching_reviewed_scope:390",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
@@ -24946,22 +24986,22 @@
     },
     {
       "branch_score": 1,
-      "id": "tests/test_structured_publication_relevance.py::test_quote_only_high_risk_response_is_partial:310",
+      "id": "tests/test_structured_publication_relevance.py::test_quote_only_high_risk_response_is_partial:312",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 4,
-      "id": "tests/test_structured_publication_relevance.py::test_quote_only_rejects_fake_gov_hash_that_is_not_an_admitted_chunk:714",
+      "id": "tests/test_structured_publication_relevance.py::test_quote_only_rejects_fake_gov_hash_that_is_not_an_admitted_chunk:716",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_structured_publication_relevance.py::test_quote_only_rejects_unofficial_private_blog_source:675",
+      "id": "tests/test_structured_publication_relevance.py::test_quote_only_rejects_unofficial_private_blog_source:677",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_structured_publication_relevance.py::test_service_ask_does_not_ground_one_sided_alert_order_comparison:620",
+      "id": "tests/test_structured_publication_relevance.py::test_service_ask_does_not_ground_one_sided_alert_order_comparison:622",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
@@ -24971,12 +25011,12 @@
     },
     {
       "branch_score": 1,
-      "id": "tests/test_structured_publication_relevance.py::test_sprinkler_question_never_substitutes_an_adjacent_evacuation_quote:331",
+      "id": "tests/test_structured_publication_relevance.py::test_sprinkler_question_never_substitutes_an_adjacent_evacuation_quote:333",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_structured_publication_relevance.py::test_supported_aspects_preserve_real_multi_aspect_coverage:281",
+      "id": "tests/test_structured_publication_relevance.py::test_supported_aspects_preserve_real_multi_aspect_coverage:283",
       "module_path": "tests/test_structured_publication_relevance.py"
     },
     {
@@ -27637,19 +27677,19 @@
       "path": "src/firelens/agent/compose.py"
     },
     {
+      "branch_score": 121,
+      "loc": 652,
+      "path": "src/firelens/publication/compiler.py"
+    },
+    {
       "branch_score": 120,
       "loc": 762,
       "path": "src/firelens/agent/query_plan.py"
     },
     {
       "branch_score": 120,
-      "loc": 799,
+      "loc": 800,
       "path": "src/firelens/contracts.py"
-    },
-    {
-      "branch_score": 120,
-      "loc": 648,
-      "path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 117,
@@ -27697,8 +27737,8 @@
       "path": "src/firelens/review_workspace/input_common.py"
     },
     {
-      "branch_score": 90,
-      "loc": 548,
+      "branch_score": 91,
+      "loc": 556,
       "path": "src/firelens/answering/context_support.py"
     },
     {
@@ -27724,6 +27764,11 @@
   ],
   "top_production_by_loc": [
     {
+      "branch_score": 120,
+      "loc": 800,
+      "path": "src/firelens/contracts.py"
+    },
+    {
       "branch_score": 110,
       "loc": 800,
       "path": "src/firelens/live.py"
@@ -27732,11 +27777,6 @@
       "branch_score": 143,
       "loc": 800,
       "path": "src/firelens/runtime_artifact.py"
-    },
-    {
-      "branch_score": 120,
-      "loc": 799,
-      "path": "src/firelens/contracts.py"
     },
     {
       "branch_score": 113,
@@ -27779,6 +27819,11 @@
       "path": "src/firelens/contextual_retrieval_experiment.py"
     },
     {
+      "branch_score": 121,
+      "loc": 652,
+      "path": "src/firelens/publication/compiler.py"
+    },
+    {
       "branch_score": 81,
       "loc": 650,
       "path": "src/firelens/providers/openrouter.py"
@@ -27792,11 +27837,6 @@
       "branch_score": 62,
       "loc": 649,
       "path": "src/firelens/live_answering.py"
-    },
-    {
-      "branch_score": 120,
-      "loc": 648,
-      "path": "src/firelens/publication/compiler.py"
     },
     {
       "branch_score": 92,
@@ -27825,7 +27865,7 @@
     },
     {
       "branch_score": 52,
-      "loc": 633,
+      "loc": 634,
       "path": "src/firelens/answering/grounded.py"
     },
     {

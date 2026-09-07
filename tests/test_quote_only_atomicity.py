@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from firelens.answering.context_packet import _exact_quote_segments
 from firelens.contracts import (
     AuthorityClass,
@@ -38,7 +40,14 @@ def _packet_for_admitted_quote(
 ) -> EvidencePacket:
     chunk_id, row = next(
         (chunk_id, row)
-        for chunk_id, row in admitted_corpus_index().items()
+        for chunk_id, row in (
+            *admitted_corpus_index().items(),
+            *admitted_corpus_index(
+                root=str(
+                    Path(__file__).resolve().parents[1] / "data/history/preparedbc-f82166e0"
+                )
+            ).items(),
+        )
         if row["text"] == quote
     )
     item = EvidenceSpan(

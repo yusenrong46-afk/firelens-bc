@@ -12,6 +12,7 @@ from firelens.answering.context import (
     SUPPORT_TOKEN_OVERLAP_FLOOR,
     support_token_overlap,
 )
+from firelens.answering.context_support import supports_requested_polarity
 from firelens.answering.request_facets import requests_contents
 from firelens.answering.risk_policy import RiskTier
 from firelens.answering.static_guidance_subject import static_guidance_subject
@@ -125,6 +126,7 @@ def compile_structured_claim(
         publisher=record.authority,
         canonical_url=HttpUrl(record.canonical_url),
         locator=record.source_revision,
+        document_sha256=record.record.source_document_sha256,
         temporal_class=TemporalClass.STABLE_GUIDANCE,
         review_provenance="native_text",
         primary_text=record.source_span_text,
@@ -433,6 +435,8 @@ def select_typed_claim_ids(
 
 
 def _quote_candidate_covers_target(text: str, target: str) -> bool:
+    if not supports_requested_polarity(text, target):
+        return False
     # Concrete subjects constrain support; adjacent preparedness text cannot
     # substitute for the requested contents or sprinkler guidance.
     if requests_contents(target):

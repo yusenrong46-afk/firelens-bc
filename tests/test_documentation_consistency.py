@@ -29,8 +29,9 @@ def test_current_documentation_preserves_authority_and_evaluation_boundaries() -
     assert "## Run locally" in readme
     assert "## Limits and authority" in readme
     assert "https://firelens-bc.vercel.app" in readme
-    assert "Synthetic demonstration data" in readme
-    assert "not a production capture or current wildfire information" in readme
+    assert "Production snapshot captured 2026-09-07" in readme
+    assert "before the polish candidate" in readme
+    assert "dated observations, not current wildfire information" in readme
     assert "Core remains **FAIL 565/574**" in readme
     assert "Official records" in readme
     assert "Reviewed guidance" in readme

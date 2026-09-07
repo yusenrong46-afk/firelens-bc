@@ -47,7 +47,7 @@ def test_reviewed_claim_uses_admitted_document_and_surface_hashes() -> None:
     record = get_versioned("TC-EVAC-ORDER-001")
     assert record.available_for_structured_support is True
     assert record.source_revision_sha256 == (
-        "f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3"
+        "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2"
     )
     assert record.source_span_sha256 == record.record.source_span_sha256
     assert record.approved_surface_sha256 == record.record.approved_surface_sha256
@@ -116,7 +116,7 @@ def test_unrelated_quote_from_same_chunk_does_not_select_order_claim() -> None:
                 temporal_class=TemporalClass.STABLE_GUIDANCE,
                 authority_class=AuthorityClass.PROVINCIAL_GOVERNMENT,
                 document_sha256=(
-                    "f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3"
+                    "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2"
                 ),
             )
         ],

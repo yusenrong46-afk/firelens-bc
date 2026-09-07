@@ -867,6 +867,8 @@ export interface components {
             canonical_url: string;
             /** Context Text */
             context_text: string;
+            /** Document Sha256 */
+            document_sha256?: string | null;
             /** Evidence Id */
             evidence_id: string;
             /** Locator */

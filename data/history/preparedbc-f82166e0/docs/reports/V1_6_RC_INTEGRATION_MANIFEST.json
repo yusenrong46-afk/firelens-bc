@@ -1,0 +1,38 @@
+{
+  "approved_sprinkler_count": 1,
+  "candidate_to_claim_id": {
+    "PC2-EVAC-003-01": "TC-EVAC-003-01",
+    "PC2-FIRESMART-017-01": "TC-FIRESMART-017-01",
+    "PC2-FIRESMART-021-01": "TC-FIRESMART-021-01",
+    "PC2-FIRESMART-022-01": "TC-FIRESMART-022-01",
+    "PC2-GENERAL-029-01": "TC-GENERAL-029-01",
+    "PC2-GENERAL-030-01": "TC-GENERAL-030-01",
+    "PC2-GENERAL-033-01": "TC-GENERAL-033-01",
+    "PC2-GENERAL-033-02": "TC-GENERAL-033-02",
+    "PC2-GENERAL-035-01": "TC-GENERAL-035-01",
+    "PC2-GENERAL-036-01": "TC-GENERAL-036-01",
+    "PC2-SMOKE-012-01": "TC-SMOKE-012-01",
+    "PC2-SMOKE-013-01": "TC-SMOKE-013-01",
+    "PC2-SMOKE-014-01": "TC-SMOKE-014-01",
+    "PC2-UTIL-016-01": "TC-UTIL-016-01",
+    "PC2-UTIL-016-02": "TC-UTIL-016-02",
+    "PC2-UTIL-016-03": "TC-UTIL-016-03",
+    "PC2-VULNERABLE-023-01": "TC-VULNERABLE-023-01",
+    "PC2-VULNERABLE-024-01": "TC-VULNERABLE-024-01",
+    "PC2-VULNERABLE-024-02": "TC-VULNERABLE-024-02",
+    "PC2-VULNERABLE-026-01": "TC-VULNERABLE-026-01"
+  },
+  "decision_artifact_sha256": {
+    "docs/reports/V1_6_H8_TRADEOFF_DECISION.yaml": "a95fe56a319d592fde7a9cc2eb26d6d80c14188e19dca2d4af174b5f3cf2acfa",
+    "docs/reports/V1_6_SOURCE_REPAIR_SCOPE_DECISIONS.yaml": "31e8b5ef8d2717bccd94b2a63283c94cade6ab05cb3710b451356e4b4b4c3ff5",
+    "docs/reports/V1_6_TYPED_CLAIM_REVIEW_BATCH_1_DECISIONS.yaml": "fe5ea4ec75569234255b9b5da5aa40f2e3ddb4d9a6e99acb09710e1dca2c20a7",
+    "docs/reports/V1_6_TYPED_CLAIM_REVIEW_BATCH_2_DECISIONS.yaml": "550a6b226a7fc6c2bbbf5baef3c9916f3040a7f5af7ede24986f886ebe8d798b",
+    "docs/reports/V1_6_TYPED_CLAIM_REVIEW_BATCH_3_DECISIONS.yaml": "c3a0e10be4ee0ce85311d4f1b2f000e08543d329e7c0f74487f3ec01d4bdf129"
+  },
+  "deferred_source_repair_count": 9,
+  "integrated_inventory_sha256": "75a183631a19dafbac9022ead6fd8dc3ba964eb7274981d17f4d479386673f38",
+  "integrated_prepared_claim_count": 20,
+  "inventory_record_count": 26,
+  "prepared_artifact_sha256": "d1e085fd7c495e18ee8f9cf6602832e128ec9a3d4a1de4ed6caa62ab9a410dfd",
+  "schema_version": "firelens.typed_claim_rc_integration.v1"
+}

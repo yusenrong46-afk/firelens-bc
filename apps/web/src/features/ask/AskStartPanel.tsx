@@ -46,7 +46,7 @@ function isGuidedQuestionCatalogue(value: unknown): value is { categories: Guide
 }
 
 const STARTER_QUESTIONS = [
-  { label: "Fires near Kelowna", question: "Where is the wildfire near Kelowna?" },
+  { label: "Fires near Kelowna", question: "What official wildfire records are near Kelowna?" },
   { label: "Evacuation orders near Kamloops", question: "Are there evacuation orders near Kamloops?" },
   { label: "Fires across B.C.", question: "How many fires are burning in B.C. right now?" },
   { label: "What to pack", question: "What should I pack in an evacuation kit?" },

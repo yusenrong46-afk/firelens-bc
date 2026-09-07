@@ -1,0 +1,69 @@
+schema_version: firelens.typed_claim_source_repair_scope.v1
+raw_queue_sha256: 008274a5cda237473697b5ddd9c8c04d3a42a8738c560d594ea682ed74344f9c
+note: Blank owner scope template. The coding agent has made no repair or deferral
+  decision.
+decisions:
+- parent_candidate_id: PC-EVAC-001
+  current_disposition: needs_source_repair
+  current_reason: PDF extraction is truncated and contains the artifact "Final cut".
+  owner_scope_decision: null
+  reviewer: null
+  decision_time: null
+  notes: null
+- parent_candidate_id: PC-SMOKE-009
+  current_disposition: needs_source_repair
+  current_reason: Multi-column extraction interleaves the exposure and HEPA sentences.
+  owner_scope_decision: null
+  reviewer: null
+  decision_time: null
+  notes: null
+- parent_candidate_id: PC-SMOKE-010
+  current_disposition: needs_source_repair
+  current_reason: Multi-column PDF extraction interleaves unrelated sentences.
+  owner_scope_decision: null
+  reviewer: null
+  decision_time: null
+  notes: null
+- parent_candidate_id: PC-SMOKE-011
+  current_disposition: needs_source_repair
+  current_reason: Driving and symptom sentences are interleaved by multi-column extraction.
+  owner_scope_decision: null
+  reviewer: null
+  decision_time: null
+  notes: null
+- parent_candidate_id: PC-UTILITIE-015
+  current_disposition: needs_source_repair
+  current_reason: Power-line and landscaping columns are interleaved.
+  owner_scope_decision: null
+  reviewer: null
+  decision_time: null
+  notes: null
+- parent_candidate_id: PC-FIRESMAR-018
+  current_disposition: needs_source_repair
+  current_reason: Plant labels and ember guidance are interleaved.
+  owner_scope_decision: null
+  reviewer: null
+  decision_time: null
+  notes: null
+- parent_candidate_id: PC-FIRESMAR-019
+  current_disposition: needs_source_repair
+  current_reason: Two tree-list columns are interleaved and unsafe to canonicalize
+    automatically.
+  owner_scope_decision: null
+  reviewer: null
+  decision_time: null
+  notes: null
+- parent_candidate_id: PC-VULNERAB-025
+  current_disposition: needs_source_repair
+  current_reason: The candidate begins mid-contact list and lacks stable atomic context.
+  owner_scope_decision: null
+  reviewer: null
+  decision_time: null
+  notes: null
+- parent_candidate_id: PC-CONDITIO-027
+  current_disposition: needs_source_repair
+  current_reason: The admitted chunk ends mid-sentence after the clearance instruction.
+  owner_scope_decision: null
+  reviewer: null
+  decision_time: null
+  notes: null

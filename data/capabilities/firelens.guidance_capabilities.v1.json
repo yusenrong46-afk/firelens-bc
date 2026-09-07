@@ -1,8 +1,8 @@
 {
   "schema_version": "firelens.guidance_capabilities.v1",
-  "corpus_chunks_sha256": "4d2967ff1501295e858c72a46de1e181bff846fd678261e2d1962507ccff8a04",
-  "corpus_manifest_sha256": "a66e2975deb4ce81c02bdc1e9d961950e9e61dbe7b706533a66a9504bb1bb546",
-  "typed_inventory_sha256": "75a183631a19dafbac9022ead6fd8dc3ba964eb7274981d17f4d479386673f38",
+  "corpus_chunks_sha256": "4045d15f475c4987571dc190b2f67053cdd95690eeb02506b45cccb532d1578c",
+  "corpus_manifest_sha256": "ed70fd743b5f3c6d3b44592f0b8ba111453125a38284ba124fc2e1684706080f",
+  "typed_inventory_sha256": "5fcda128c37bd366227a8d5f0c7637de83a14be0d67a3637c0c4b74d462a6cb3",
   "capabilities": [
     {
       "id": "current_bc_listed_wildfires",
@@ -434,9 +434,9 @@
         "TC-SPRINKLER-001"
       ],
       "chunk_ids": [
+        "firesmart_sprinkler_water_use:page:3:chunk:1",
         "preparedbc_wildfire_guide:page:11:chunk:2",
-        "preparedbc_wildfire_guide:page:12:chunk:1",
-        "firesmart_sprinkler_water_use:page:3:chunk:1"
+        "preparedbc_wildfire_guide:page:12:chunk:1"
       ],
       "live_layers": [],
       "guided_question_ids": [
@@ -456,7 +456,7 @@
         "According to official guidance, what mistakes should I avoid during an evacuation?"
       ],
       "exact_quote_texts": [
-        "Do NOT shut off your natural gas when you receive an evacuation order."
+        "Do NOT shut off your natural gas when you receive an Evacuation\nOrder."
       ]
     },
     {
@@ -479,7 +479,7 @@
         },
         {
           "id": "order_rescinded",
-          "text": "return after the evacuation order is rescinded"
+          "text": "official determination before an evacuation order is rescinded"
         }
       ],
       "required_authority_classes": [
@@ -490,8 +490,8 @@
         "TC-EVAC-RESCIND-001"
       ],
       "chunk_ids": [
-        "preparedbc_wildfire_guide:page:15:chunk:1",
-        "preparedbc_wildfire_guide:page:11:chunk:3"
+        "preparedbc_wildfire_guide:page:11:chunk:3",
+        "preparedbc_wildfire_guide:page:15:chunk:1"
       ],
       "live_layers": [],
       "guided_question_ids": [
@@ -538,7 +538,7 @@
       ],
       "guided_eligible": true,
       "exact_quote_texts": [
-        "Grab-and-Go Bag\n• Pen & notepad\n• Phone charger & battery bank\n• Flashlight\n• Radio\n• First aid kit\n• Personal toiletries\n• Seasonal clothing\n• Food & water\n• Batteries\n• Whistle\n• Emergency plan"
+        "Grab-and-Go Bag\n\u2022 Pen & notepad\n\u2022 Phone charger & battery bank\n\u2022 Flashlight\n\u2022 Radio\n\u2022 First aid kit\n\u2022 Personal toiletries\n\u2022 Seasonal clothing\n\u2022 Food & water\n\u2022 Batteries\n\u2022 Whistle\n\u2022 Emergency plan and insurance/important papers"
       ],
       "accepted_paraphrases": [
         "What should I pack in an evacuation kit?",
@@ -592,7 +592,7 @@
       ],
       "guided_eligible": true,
       "exact_quote_texts": [
-        "TIP: Pets are part of the family too. Pack them grab-and-go bags\nwith food, water, leashes and carriers. It’s a good idea to\ninclude a recent picture, along with copies of vaccination\nrecords and health information. Consider talking to your\nmunicipality, regional district or band office about what\norganizations or resources are available for animals during\nemergencies. Plan ahead for where they might stay."
+        "TIP: Pets are part of the family too. Pack them grab-and-go bags\nwith food, water, leashes and carriers. It\u2019s a good idea to\ninclude a recent picture, along with copies of vaccination\nrecords and health information. Consider talking to your\nmunicipality, regional district or band office about what\norganizations or resources are available for animals during\nemergencies. Plan ahead for where they might stay."
       ],
       "accepted_paraphrases": [
         "What should I pack for my pets if we evacuate?",
@@ -631,8 +631,8 @@
       ],
       "typed_claim_ids": [],
       "chunk_ids": [
-        "preparedbc_wildfire_guide:page:6:chunk:1",
-        "preparedbc_wildfire_guide:page:10:chunk:5"
+        "preparedbc_wildfire_guide:page:10:chunk:5",
+        "preparedbc_wildfire_guide:page:6:chunk:1"
       ],
       "live_layers": [],
       "guided_question_ids": [
@@ -640,8 +640,8 @@
       ],
       "guided_eligible": true,
       "exact_quote_texts": [
-        "¢ Gather your grab-and-go bags, emergency plan, copies of\nimportant documents and cherished mementos. Have them\nat the front door or already packed in your vehicle",
-        "¢ Small first aid kit and\npersonal medications"
+        "\u00a2 Gather your grab-and-go bags (see page 4), emergency plan,\ncopies of important documents and cherished mementos. Have\nthem at the front door or already packed in your vehicle",
+        "\u00a2 Small first aid kit and\npersonal medications"
       ],
       "accepted_paraphrases": [
         "What documents should I bring when evacuating?",
@@ -671,7 +671,7 @@
         },
         {
           "id": "vehicle_fuel",
-          "text": "keep the vehicle fuel tank at least half full"
+          "text": "keep the vehicle gas tank half-full or battery half-charged"
         }
       ],
       "required_authority_classes": [
@@ -1030,7 +1030,7 @@
       ],
       "chunk_ids": [
         "firesmart_begins_at_home:page:11:chunk:1",
-        "preparedbc_wildfire_guide:page:8:chunk:2"
+        "preparedbc_wildfire_guide:page:9:chunk:1"
       ],
       "live_layers": [],
       "guided_question_ids": [
@@ -1075,7 +1075,7 @@
         "TC-GENERAL-030-01"
       ],
       "chunk_ids": [
-        "preparedbc_wildfire_guide:page:9:chunk:3"
+        "preparedbc_wildfire_guide:page:8:chunk:4"
       ],
       "live_layers": [],
       "guided_question_ids": [

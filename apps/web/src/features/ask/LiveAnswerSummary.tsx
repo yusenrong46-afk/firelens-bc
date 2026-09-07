@@ -27,11 +27,7 @@ function relativeMinutes(iso: string | undefined): string | undefined {
   if (!iso) return undefined;
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return undefined;
-  const minutes = Math.max(0, Math.round((Date.now() - parsed.getTime()) / 60_000));
-  if (minutes < 1) return "Updated just now";
-  if (minutes === 1) return "Updated 1 minute ago";
-  if (minutes < 60) return `Updated ${minutes} minutes ago`;
-  return `Updated ${formatTimestamp(iso)}`;
+  return `Source updated ${formatTimestamp(iso)}`;
 }
 
 function statusTone(status: string): "ooc" | "held" | "uc" | "out" | "unknown" {

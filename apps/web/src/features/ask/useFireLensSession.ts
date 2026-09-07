@@ -66,6 +66,7 @@ export type FireLensSession = {
   releaseVersion: string | undefined;
   readiness: "ready" | "not_ready" | "unknown";
   liveSummary: LiveCurrentSummary | undefined;
+  statusNow: number;
   activeLocation: LocationInput | undefined;
   contextLayersEnabled: boolean;
   setContextLayersEnabled: (enabled: boolean) => void;
@@ -77,6 +78,7 @@ export function useFireLensSession(): FireLensSession {
   const [releaseVersion, setReleaseVersion] = useState<string>();
   const [readiness, setReadiness] = useState<"ready" | "not_ready" | "unknown">("unknown");
   const [liveSummary, setLiveSummary] = useState<LiveCurrentSummary>();
+  const [statusNow, setStatusNow] = useState(Date.now);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
   const [view, setView] = useState<ViewState>({ kind: "idle" });
@@ -122,24 +124,39 @@ export function useFireLensSession(): FireLensSession {
   );
 
   useEffect(() => {
-    const controller = new AbortController();
-    void fetchReadyHealth(controller.signal)
-      .then((payload) => {
+    let controller: AbortController | undefined;
+    let lastCheck = -Infinity;
+    const refresh = () => {
+      const now = Date.now();
+      setStatusNow(now);
+      if (document.visibilityState === "hidden" || now - lastCheck < 300_000) return;
+      lastCheck = now;
+      controller?.abort();
+      const request = new AbortController();
+      controller = request;
+      void fetchReadyHealth(request.signal).then((payload) => {
+        if (request.signal.aborted) return;
         setReadiness(payload.status === "ready" ? "ready" : "not_ready");
         if (payload.release_version) setReleaseVersion(payload.release_version);
-      })
-      .catch(() => {
-        setReadiness("not_ready");
+      }).catch(() => {
+        if (!request.signal.aborted) setReadiness("not_ready");
       });
-    void fetchLiveSummary(controller.signal)
-      .then((payload) => {
+      void fetchLiveSummary(request.signal).then((payload) => {
+        if (request.signal.aborted) return;
         setLiveSummary(payload);
         emitProductEvent("live_summary_loaded");
-      })
-      .catch(() => {
-        setLiveSummary(undefined);
+      }).catch(() => {
+        if (!request.signal.aborted) setLiveSummary(undefined);
       });
-    return () => controller.abort();
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 60_000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      controller?.abort();
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
   }, []);
   const requiresLocation = response?.required_input?.kind === "location";
 
@@ -377,6 +394,7 @@ export function useFireLensSession(): FireLensSession {
     releaseVersion,
     readiness,
     liveSummary,
+    statusNow,
     activeLocation,
     contextLayersEnabled,
     setContextLayersEnabled,

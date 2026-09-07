@@ -1,7 +1,9 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { LiveDataStatus, liveDataTone } from "../src/app/LiveDataStatus";
 import type { LiveCurrentSummary } from "../src/shared/api/api";
+
+afterEach(cleanup);
 
 const reachable: LiveCurrentSummary = {
   incident_record_count: 12,
@@ -40,8 +42,8 @@ describe("liveDataTone", () => {
     expect(liveDataTone(undefined, "ready")).toBe("unavailable");
   });
 
-  it("marks a partial official fetch as delayed, not live", () => {
-    expect(liveDataTone(oneLayerDown, "ready")).toBe("delayed");
+  it("keeps partial coverage separate from freshness", () => {
+    expect(liveDataTone(oneLayerDown, "ready")).toBe("partial");
   });
 
   it("keeps a complete fresh fetch live", () => {
@@ -56,4 +58,20 @@ describe("LiveDataStatus", () => {
     expect(screen.getByRole("status")).toHaveClass("live-data-status--unavailable");
     expect(screen.queryByText("Updated just now")).not.toBeInTheDocument();
   });
+});
+
+it("names the missing layer even when FireLens checked just now", () => {
+  render(<LiveDataStatus liveSummary={oneLayerDown} readiness="ready" now={Date.parse(oneLayerDown.retrieved_at!)} />);
+  expect(screen.getByRole("status")).toHaveTextContent("Partial official coverage");
+  expect(screen.getByRole("status")).toHaveTextContent("Evacuation records unavailable");
+  expect(screen.getByRole("status")).toHaveTextContent("Checked by FireLens just now");
+  expect(screen.getByRole("status")).not.toHaveTextContent("Last successful update");
+});
+
+it("ages the check label and preserves valid zero records", () => {
+  const summary = { ...reachable, incident_record_count: 0, evacuation_record_count: 0 };
+  const { rerender } = render(<LiveDataStatus liveSummary={summary} readiness="ready" now={Date.parse(summary.retrieved_at!)} />);
+  expect(screen.getByRole("status")).toHaveTextContent("Official records available");
+  rerender(<LiveDataStatus liveSummary={summary} readiness="ready" now={Date.parse(summary.retrieved_at!) + 120_000} />);
+  expect(screen.getByRole("status")).toHaveTextContent("Checked by FireLens 2 min ago");
 });

@@ -491,6 +491,7 @@ class PublicEvidence(FrozenStrictModel):
     publisher: str
     canonical_url: HttpUrl
     locator: str | None
+    document_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     temporal_class: Literal[TemporalClass.STABLE_GUIDANCE]
     review_provenance: Literal["native_text", "human_verified_repair"] = "native_text"
     primary_text: str

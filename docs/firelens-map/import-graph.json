@@ -1531,6 +1531,22 @@
     {
       "kind": "static",
       "lines": [
+        3
+      ],
+      "source": "apps/web/tests/sourceRevision.test.tsx",
+      "target": "apps/web/src/features/ask/SourceProof.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/sourceRevision.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
         2
       ],
       "source": "apps/web/tests/workspacePresentation.test.ts",
@@ -9548,7 +9564,7 @@
         15
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/answering/request_facets.py"
+      "target": "src/firelens/answering/context_support.py"
     },
     {
       "kind": "static",
@@ -9556,7 +9572,7 @@
         16
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/answering/risk_policy.py"
+      "target": "src/firelens/answering/request_facets.py"
     },
     {
       "kind": "static",
@@ -9564,7 +9580,7 @@
         17
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/answering/static_guidance_subject.py"
+      "target": "src/firelens/answering/risk_policy.py"
     },
     {
       "kind": "static",
@@ -9572,7 +9588,7 @@
         18
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/answering/typed_records.py"
+      "target": "src/firelens/answering/static_guidance_subject.py"
     },
     {
       "kind": "static",
@@ -9580,7 +9596,7 @@
         19
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/answering/typed_snapshot.py"
+      "target": "src/firelens/answering/typed_records.py"
     },
     {
       "kind": "static",
@@ -9588,7 +9604,7 @@
         20
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/claim_trust.py"
+      "target": "src/firelens/answering/typed_snapshot.py"
     },
     {
       "kind": "static",
@@ -9596,15 +9612,15 @@
         21
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/contracts.py"
+      "target": "src/firelens/claim_trust.py"
     },
     {
       "kind": "static",
       "lines": [
-        36
+        22
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/live_claim_renderer.py"
+      "target": "src/firelens/contracts.py"
     },
     {
       "kind": "static",
@@ -9612,7 +9628,7 @@
         37
       ],
       "source": "src/firelens/publication/compiler.py",
-      "target": "src/firelens/live_contracts.py"
+      "target": "src/firelens/live_claim_renderer.py"
     },
     {
       "kind": "static",
@@ -9620,13 +9636,21 @@
         38
       ],
       "source": "src/firelens/publication/compiler.py",
+      "target": "src/firelens/live_contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        39
+      ],
+      "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/proof_presentation.py"
     },
     {
       "kind": "static",
       "lines": [
-        39,
-        45
+        40,
+        46
       ],
       "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/publication/comparison_targets.py"
@@ -9634,12 +9658,12 @@
     {
       "kind": "static",
       "lines": [
-        48,
-        51,
-        54,
-        57,
-        60,
-        63
+        49,
+        52,
+        55,
+        58,
+        61,
+        64
       ],
       "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/publication/compiled_validation.py"
@@ -9647,7 +9671,7 @@
     {
       "kind": "static",
       "lines": [
-        66
+        67
       ],
       "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/publication/fallback.py"
@@ -9655,7 +9679,7 @@
     {
       "kind": "static",
       "lines": [
-        74
+        75
       ],
       "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/publication/records.py"
@@ -9663,7 +9687,7 @@
     {
       "kind": "static",
       "lines": [
-        75
+        76
       ],
       "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/publication/relevance.py"
@@ -9671,7 +9695,7 @@
     {
       "kind": "static",
       "lines": [
-        80
+        81
       ],
       "source": "src/firelens/publication/compiler.py",
       "target": "src/firelens/publication_contracts.py"
@@ -13325,6 +13349,22 @@
     {
       "kind": "static",
       "lines": [
+        9
+      ],
+      "source": "tests/test_preparedbc_revision.py",
+      "target": "src/firelens/publication/compiler.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        10
+      ],
+      "source": "tests/test_preparedbc_revision.py",
+      "target": "src/firelens/publication/records.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         16
       ],
       "source": "tests/test_preview_falsification_boundaries.py",
@@ -13397,7 +13437,7 @@
     {
       "kind": "static",
       "lines": [
-        165
+        167
       ],
       "source": "tests/test_product_completion.py",
       "target": "src/firelens/answering/context_support.py"
@@ -13405,7 +13445,7 @@
     {
       "kind": "static",
       "lines": [
-        198
+        200
       ],
       "source": "tests/test_product_completion.py",
       "target": "src/firelens/answering/live_focus.py"
@@ -13414,7 +13454,7 @@
       "kind": "static",
       "lines": [
         11,
-        166
+        168
       ],
       "source": "tests/test_product_completion.py",
       "target": "src/firelens/contracts.py"
@@ -13969,7 +14009,7 @@
     {
       "kind": "static",
       "lines": [
-        5
+        7
       ],
       "source": "tests/test_quote_only_atomicity.py",
       "target": "src/firelens/answering/context_packet.py"
@@ -13977,7 +14017,7 @@
     {
       "kind": "static",
       "lines": [
-        6
+        8
       ],
       "source": "tests/test_quote_only_atomicity.py",
       "target": "src/firelens/contracts.py"
@@ -13985,7 +14025,7 @@
     {
       "kind": "static",
       "lines": [
-        14
+        16
       ],
       "source": "tests/test_quote_only_atomicity.py",
       "target": "src/firelens/publication/compiler.py"
@@ -13993,7 +14033,7 @@
     {
       "kind": "static",
       "lines": [
-        15
+        17
       ],
       "source": "tests/test_quote_only_atomicity.py",
       "target": "src/firelens/publication/fallback.py"
@@ -14001,7 +14041,7 @@
     {
       "kind": "static",
       "lines": [
-        16
+        18
       ],
       "source": "tests/test_quote_only_atomicity.py",
       "target": "src/firelens/publication/records.py"
@@ -15770,7 +15810,7 @@
       "kind": "static",
       "lines": [
         23,
-        874
+        876
       ],
       "source": "tests/test_structured_publication_relevance.py",
       "target": "src/firelens/publication/compiler.py"
@@ -17104,6 +17144,7 @@
     "apps/web/tests/sessionMap.test.ts",
     "apps/web/tests/setup.ts",
     "apps/web/tests/sites-worker.test.mjs",
+    "apps/web/tests/sourceRevision.test.tsx",
     "apps/web/tests/tooling-config.test.mjs",
     "apps/web/tests/workspacePresentation.test.ts",
     "apps/web/vite.config.mjs",
@@ -17525,6 +17566,7 @@
     "tests/test_paid_floor_rails.py",
     "tests/test_pdf_ingestion.py",
     "tests/test_pet_contents_support.py",
+    "tests/test_preparedbc_revision.py",
     "tests/test_preview_falsification_boundaries.py",
     "tests/test_preview_raw_evidence.py",
     "tests/test_product_completion.py",
@@ -17622,7 +17664,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "dbadc7c6a25985ff5d3013688cc01f2a7fc8a87d5cc9a580c5fdfebfaca76108",
+  "source_digest": "38a45545a031f2d2d84d70419c6f0407f60ea20dc00c29de98041108b29b0cf3",
   "unresolved_relative_imports": [
     {
       "line": 32,

@@ -136,7 +136,9 @@ def test_significance_followup_keeps_unsupported_explanation_visible(
         )
         assert result["response_mode"] == "partial"
         assert result["claims"], result["answer"]
-        rationale = any("not caught off guard" in c["text"] for c in result["claims"])
+        rationale = any(
+            "not caught off guard" in " ".join(c["text"].split()) for c in result["claims"]
+        )
         assert rationale or any("explain why" in line.lower() for line in result["limitations"])
         for claim in result["claims"]:
             if claim["publication"]["kind"] == "official_quote_only":
@@ -215,7 +217,9 @@ def test_significance_keeps_explicit_current_subject(tmp_path: Path, question: s
         )
         assert provider.plan_calls == 0
         assert provider.generate_calls == 0
-        assert not any("not caught off guard" in c["text"] for c in result["claims"])
+        assert not any(
+            "not caught off guard" in " ".join(c["text"].split()) for c in result["claims"]
+        )
         assert any(
             "does not explain" in limitation and "radio" in limitation
             for limitation in result["limitations"]

@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "dbadc7c6a25985ff5d3013688cc01f2a7fc8a87d5cc9a580c5fdfebfaca76108",
+  "source_digest": "38a45545a031f2d2d84d70419c6f0407f60ea20dc00c29de98041108b29b0cf3",
   "tests": [
     {
       "cases": [
@@ -552,7 +552,9 @@
         "test_call_2",
         "test_call_3",
         "test_call_4",
-        "test_call_5"
+        "test_call_5",
+        "test_call_6",
+        "test_call_7"
       ],
       "direct_targets": [
         "apps/web/src/app/LiveDataStatus.tsx",
@@ -560,7 +562,8 @@
       ],
       "endpoints": [],
       "evaluation_families": [
-        "live"
+        "live",
+        "rag"
       ],
       "language": "typescript",
       "path": "apps/web/tests/liveDataStatus.test.tsx"
@@ -708,7 +711,8 @@
     {
       "cases": [
         "test_call_1",
-        "test_call_2"
+        "test_call_2",
+        "test_call_3"
       ],
       "direct_targets": [
         "apps/web/src/features/ask/useFireLensSession.ts",
@@ -761,6 +765,20 @@
       "evaluation_families": [],
       "language": "javascript",
       "path": "apps/web/tests/sites-worker.test.mjs"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2"
+      ],
+      "direct_targets": [
+        "apps/web/src/features/ask/SourceProof.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [],
+      "language": "typescript",
+      "path": "apps/web/tests/sourceRevision.test.tsx"
     },
     {
       "cases": [
@@ -2638,6 +2656,23 @@
       ],
       "language": "python",
       "path": "tests/test_pet_contents_support.py"
+    },
+    {
+      "cases": [
+        "test_adopted_claim_has_current_technical_binding_and_public_revision",
+        "test_historical_snapshot_bytes_remain_verifiable_and_unaffected_chunks_identical",
+        "test_retired_document_and_withdrawn_claim_are_not_current_evidence"
+      ],
+      "direct_targets": [
+        "src/firelens/publication/compiler.py",
+        "src/firelens/publication/records.py"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "publication"
+      ],
+      "language": "python",
+      "path": "tests/test_preparedbc_revision.py"
     },
     {
       "cases": [

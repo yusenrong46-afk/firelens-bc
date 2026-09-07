@@ -14,7 +14,7 @@ from firelens.answering.candidate_preparation import (
     validate_prepared_candidate_bindings,
 )
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1] / "data/history/preparedbc-f82166e0"
 PREPARED = ROOT / "data/typed_claims/prepared_candidates_v2.yaml"
 MANIFEST = ROOT / "docs/reports/V1_6_TYPED_CLAIM_PREPARATION_MANIFEST.json"
 REPAIR_SCOPE = ROOT / "data/typed_claims/source_repair_scope_template_v1.yaml"

@@ -461,7 +461,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 25,
+      "branch_score": 24,
       "fan_in": 2,
       "fan_out": 1,
       "generated": false,
@@ -474,7 +474,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 95,
+      "loc": 53,
       "major_symbols": [
         "ReadinessState",
         "liveDataTone",
@@ -486,7 +486,7 @@
       "statically_unreferenced": false,
       "symbols": [
         "ReadinessState",
-        "relativeUpdate",
+        "relativeCheck",
         "liveDataTone",
         "LiveDataStatus"
       ],
@@ -917,7 +917,7 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 81,
+      "branch_score": 78,
       "fan_in": 3,
       "fan_out": 3,
       "generated": false,
@@ -935,7 +935,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 262,
+      "loc": 258,
       "major_symbols": [
         "StatusPill",
         "LiveAnswerSummary",
@@ -988,8 +988,8 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 29,
-      "fan_in": 1,
+      "branch_score": 35,
+      "fan_in": 2,
       "fan_out": 3,
       "generated": false,
       "id": "apps/web/src/features/ask/SourceProof.tsx",
@@ -1006,13 +1006,14 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 129,
+      "loc": 142,
       "major_symbols": [
         "CITABLE_STATES",
         "EXCERPT_LIMIT",
         "SourceProofItem",
         "reviewedSources",
-        "SourceProof"
+        "SourceProof",
+        "SourceRevision"
       ],
       "module": "apps/web/src/features/ask/SourceProof",
       "path": "apps/web/src/features/ask/SourceProof.tsx",
@@ -1024,9 +1025,10 @@
         "SourceProofItem",
         "trimExcerpt",
         "reviewedSources",
-        "SourceProof"
+        "SourceProof",
+        "SourceRevision"
       ],
-      "test_fan_in": 0
+      "test_fan_in": 1
     },
     {
       "branch_score": 24,
@@ -1480,7 +1482,7 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 77,
+      "branch_score": 83,
       "fan_in": 7,
       "fan_out": 7,
       "generated": false,
@@ -1506,7 +1508,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 394,
+      "loc": 412,
       "major_symbols": [
         "FireLensSession",
         "useFireLensSession"
@@ -2322,7 +2324,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 236,
+      "branch_score": 237,
       "fan_in": 1,
       "fan_out": 0,
       "generated": true,
@@ -2331,7 +2333,7 @@
       "imports": [],
       "kind": "production",
       "language": "typescript",
-      "loc": 1663,
+      "loc": 1665,
       "major_symbols": [
         "paths",
         "webhooks",
@@ -2354,7 +2356,7 @@
     },
     {
       "branch_score": 47,
-      "fan_in": 47,
+      "fan_in": 48,
       "fan_out": 1,
       "generated": false,
       "id": "apps/web/src/shared/api/api.ts",
@@ -2443,7 +2445,7 @@
         "submitFeedback",
         "fetchGuidedQuestions"
       ],
-      "test_fan_in": 14
+      "test_fan_in": 15
     },
     {
       "branch_score": 1,
@@ -3128,7 +3130,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 59,
+      "loc": 77,
       "major_symbols": [],
       "module": "apps/web/tests/liveDataStatus.test",
       "path": "apps/web/tests/liveDataStatus.test.tsx",
@@ -3339,7 +3341,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 66,
+      "loc": 94,
       "major_symbols": [],
       "module": "apps/web/tests/sessionLifecycle.test",
       "path": "apps/web/tests/sessionLifecycle.test.ts",
@@ -3427,6 +3429,36 @@
       "production_fan_in": 0,
       "statically_unreferenced": true,
       "symbols": [],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 1,
+      "fan_in": 0,
+      "fan_out": 2,
+      "generated": false,
+      "id": "apps/web/tests/sourceRevision.test.tsx",
+      "import_specifiers": [
+        "../src/features/ask/SourceProof",
+        "../src/shared/api/api",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/features/ask/SourceProof.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 31,
+      "major_symbols": [],
+      "module": "apps/web/tests/sourceRevision.test",
+      "path": "apps/web/tests/sourceRevision.test.tsx",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "evidence",
+        "response"
+      ],
       "test_fan_in": 0
     },
     {
@@ -7018,8 +7050,8 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 90,
-      "fan_in": 4,
+      "branch_score": 91,
+      "fan_in": 5,
       "fan_out": 4,
       "generated": false,
       "id": "src/firelens/answering/context_support.py",
@@ -7040,16 +7072,17 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 548,
+      "loc": 556,
       "major_symbols": [
         "support_token_overlap",
+        "supports_requested_polarity",
         "decide_support",
         "significance_topics",
         "significance_quote_ids"
       ],
       "module": "firelens.answering.context_support",
       "path": "src/firelens/answering/context_support.py",
-      "production_fan_in": 3,
+      "production_fan_in": 4,
       "statically_unreferenced": false,
       "symbols": [
         "_support_tokens",
@@ -7059,6 +7092,7 @@
         "_exclusion_topic",
         "_direct_exclusion_evidence",
         "_has_exclusion_evidence",
+        "supports_requested_polarity",
         "decide_support",
         "_immediate_support_decision",
         "_authority_support_decision",
@@ -7242,7 +7276,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 633,
+      "loc": 634,
       "major_symbols": [
         "GenerationObservation",
         "GenerationObserver",
@@ -8811,7 +8845,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 144,
+      "loc": 145,
       "major_symbols": [
         "provider_abstention",
         "unavailable_response",
@@ -10493,7 +10527,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 799,
+      "loc": 800,
       "major_symbols": [
         "ClaimText",
         "render_claim_texts",
@@ -16295,9 +16329,9 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 120,
-      "fan_in": 15,
-      "fan_out": 17,
+      "branch_score": 121,
+      "fan_in": 16,
+      "fan_out": 18,
       "generated": false,
       "id": "src/firelens/publication/compiler.py",
       "import_specifiers": [
@@ -16305,6 +16339,7 @@
         "collections.abc",
         "dataclasses",
         "firelens.answering.context",
+        "firelens.answering.context_support",
         "firelens.answering.request_facets",
         "firelens.answering.risk_policy",
         "firelens.answering.static_guidance_subject",
@@ -16326,6 +16361,7 @@
       ],
       "imports": [
         "src/firelens/answering/context.py",
+        "src/firelens/answering/context_support.py",
         "src/firelens/answering/request_facets.py",
         "src/firelens/answering/risk_policy.py",
         "src/firelens/answering/static_guidance_subject.py",
@@ -16345,7 +16381,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 648,
+      "loc": 652,
       "major_symbols": [
         "CompiledClaim",
         "compile_structured_claim",
@@ -16378,10 +16414,10 @@
         "_card_from_claim",
         "_grounded_response"
       ],
-      "test_fan_in": 11
+      "test_fan_in": 12
     },
     {
-      "branch_score": 41,
+      "branch_score": 42,
       "fan_in": 27,
       "fan_out": 7,
       "generated": false,
@@ -16410,7 +16446,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 246,
+      "loc": 247,
       "major_symbols": [
         "is_atomic_official_quote_only",
         "explanation_authority",
@@ -16437,7 +16473,7 @@
     },
     {
       "branch_score": 30,
-      "fan_in": 15,
+      "fan_in": 16,
       "fan_out": 5,
       "generated": false,
       "id": "src/firelens/publication/records.py",
@@ -16491,7 +16527,7 @@
         "_load_corpus_chunks",
         "_source_binding"
       ],
-      "test_fan_in": 7
+      "test_fan_in": 8
     },
     {
       "branch_score": 30,
@@ -16515,7 +16551,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 167,
+      "loc": 169,
       "major_symbols": [
         "most_relevant_competing_typed_claims",
         "typed_record_matches_publication_target",
@@ -21396,7 +21432,7 @@
       "imports": [],
       "kind": "test",
       "language": "python",
-      "loc": 178,
+      "loc": 179,
       "major_symbols": [
         "test_current_documentation_preserves_authority_and_evaluation_boundaries",
         "test_readme_relative_links_and_image_exist",
@@ -23593,7 +23629,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 58,
+      "loc": 59,
       "major_symbols": [
         "test_pet_contents_inflections_use_exact_source_without_generation",
         "test_positive_pet_checklist_cannot_establish_omissions_or_medicines"
@@ -23607,6 +23643,44 @@
         "test_pet_contents_inflections_use_exact_source_without_generation.run",
         "test_positive_pet_checklist_cannot_establish_omissions_or_medicines",
         "test_positive_pet_checklist_cannot_establish_omissions_or_medicines.run"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 6,
+      "fan_in": 0,
+      "fan_out": 2,
+      "generated": false,
+      "id": "tests/test_preparedbc_revision.py",
+      "import_specifiers": [
+        "firelens.publication.compiler",
+        "firelens.publication.records",
+        "hashlib",
+        "json",
+        "pathlib",
+        "pytest"
+      ],
+      "imports": [
+        "src/firelens/publication/compiler.py",
+        "src/firelens/publication/records.py"
+      ],
+      "kind": "test",
+      "language": "python",
+      "loc": 69,
+      "major_symbols": [
+        "test_adopted_claim_has_current_technical_binding_and_public_revision",
+        "test_retired_document_and_withdrawn_claim_are_not_current_evidence",
+        "test_historical_snapshot_bytes_remain_verifiable_and_unaffected_chunks_identical"
+      ],
+      "module": "tests.test_preparedbc_revision",
+      "path": "tests/test_preparedbc_revision.py",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "test_adopted_claim_has_current_technical_binding_and_public_revision",
+        "test_retired_document_and_withdrawn_claim_are_not_current_evidence",
+        "test_historical_snapshot_bytes_remain_verifiable_and_unaffected_chunks_identical",
+        "test_historical_snapshot_bytes_remain_verifiable_and_unaffected_chunks_identical.unaffected"
       ],
       "test_fan_in": 0
     },
@@ -23740,7 +23814,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 251,
+      "loc": 255,
       "major_symbols": [
         "checked",
         "test_selected_distance_requires_origin_and_resumes",
@@ -24751,7 +24825,8 @@
         "firelens.contracts",
         "firelens.publication.compiler",
         "firelens.publication.fallback",
-        "firelens.publication.records"
+        "firelens.publication.records",
+        "pathlib"
       ],
       "imports": [
         "src/firelens/answering/context_packet.py",
@@ -24762,7 +24837,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 188,
+      "loc": 197,
       "major_symbols": [
         "test_interleaved_evacuation_table_is_not_atomic_quote_only_support",
         "test_clean_single_stage_and_conditional_quotes_remain_atomic",
@@ -27318,7 +27393,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 901,
+      "loc": 903,
       "major_symbols": [
         "test_question_relevance_omits_unrelated_packet_claim",
         "test_sprinkler_action_does_not_publish_adjacent_gas_instruction",
@@ -29651,5 +29726,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "dbadc7c6a25985ff5d3013688cc01f2a7fc8a87d5cc9a580c5fdfebfaca76108"
+  "source_digest": "38a45545a031f2d2d84d70419c6f0407f60ea20dc00c29de98041108b29b0cf3"
 }

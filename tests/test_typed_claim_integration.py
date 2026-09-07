@@ -13,7 +13,7 @@ from firelens.answering.claim_integration import (
 from firelens.answering.typed_records import load_inventory
 from firelens.publication.records import clear_authority_caches, versioned_records
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1] / "data/history/preparedbc-f82166e0"
 INVENTORY = ROOT / "data/typed_claims/high_risk_v1.yaml"
 MANIFEST = ROOT / "docs/reports/V1_6_RC_INTEGRATION_MANIFEST.json"
 
@@ -47,8 +47,8 @@ def test_all_twenty_prepared_approvals_have_stable_production_ids() -> None:
 
 def test_integrated_inventory_has_twenty_six_bound_supported_claims() -> None:
     clear_authority_caches()
-    inventory = load_inventory()
-    records = versioned_records()
+    inventory = load_inventory(str(ROOT))
+    records = versioned_records(root=str(ROOT))
 
     assert len(inventory.records) == 26
     assert all(record.production_supported() for record in inventory.records)

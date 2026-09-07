@@ -276,6 +276,14 @@ def _has_exclusion_evidence(question: str, packet: EvidencePacket) -> bool:
     return False
 
 
+def supports_requested_polarity(text: str, question: str) -> bool:
+    """Keep a quote fallback from answering an omission with an inclusion list."""
+
+    return not _requires_exclusion_evidence(question) or _direct_exclusion_evidence(
+        text, _exclusion_topic(question)
+    )
+
+
 def decide_support(
     plan: QueryPlan,
     packet: EvidencePacket | None,

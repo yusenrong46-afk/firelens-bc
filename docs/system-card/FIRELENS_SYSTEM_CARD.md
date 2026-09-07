@@ -3,6 +3,22 @@
 Status: measured candidate evidence with historical results retained separately.
 Assessment date: 2026-09-05. Final release execution is authorized subject to current gates.
 
+## Source and UI polish checkpoint — 2026-09-07
+
+The [polish checkpoint](../releases/firelens-polish.md) supersedes no historical
+qualification result. Thomas adopted the named AI-assisted PreparedBC review:
+three version-bound extraction repairs, sixteen replacement claim bindings and
+withdrawal of `TC-GENERAL-036-01`. The exact owner decision and its limited basis
+are recorded in [the decision record](../reports/PREPAREDBC_REVISION_DECISIONS.json).
+This does not claim personal technical inspection or emergency-domain certification.
+
+The local corpus now has 178 chunks from the revised PreparedBC document and
+unchanged other sources. Production still serves the prior 179-chunk release.
+The real index rebuild, J01 acceptance-policy migration, complete candidate
+qualification and independent review remain open. Local fixture passes cannot
+stand in for those gates. Static evidence now carries its document hash through
+the API; UI check time and missing-layer coverage are separate facts.
+
 ## Final release successor — 2026-09-05
 
 The release starts from accepted documentation candidate `6d41a4c` and includes

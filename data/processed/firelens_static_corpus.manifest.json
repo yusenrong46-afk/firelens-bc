@@ -1,10 +1,10 @@
 {
   "admission_policy_version": "firelens_corpus_admission.v1",
   "admission_warnings": [],
-  "combined_chunk_count": 179,
+  "combined_chunk_count": 178,
   "combined_chunk_file": "data/processed/firelens_static_corpus.chunks.jsonl",
   "corpus_version": "firelens_static_corpus.v1",
-  "generated_at": "2026-09-01T01:17:36.439211+00:00",
+  "generated_at": "2026-09-07T13:46:27.527867+00:00",
   "included_source_count": 10,
   "quarantined_pages": [
     {
@@ -20,10 +20,10 @@
   "sources": [
     {
       "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
-      "chunk_count": 46,
+      "chunk_count": 45,
       "corpus_action": "include",
-      "document_sha256": "f82166e0c05cb3f46a42aa4023da7cdd71e3c3fdae64965c8f436426f5702ea3",
-      "excluded_record_count": 2,
+      "document_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+      "excluded_record_count": 4,
       "local_file": "data/raw/preparedbc_wildfire_guide.pdf",
       "record_count": 20,
       "review_status": "approved_static",

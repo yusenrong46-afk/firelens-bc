@@ -20,6 +20,8 @@ export type SourceProofItem = {
   url: string;
   excerpt: string;
   freshness: string;
+  revision?: string | undefined;
+  locator?: string | undefined;
 };
 
 function trimExcerpt(text: string): string {
@@ -55,7 +57,7 @@ export function reviewedSources(response: AskResponse | undefined): SourceProofI
   const seen = new Set<string>();
   const items: SourceProofItem[] = [];
   for (const item of shown) {
-    const key = `${item.canonical_url}::${item.title}`;
+    const key = `${item.canonical_url}::${item.document_sha256 ?? "unknown"}`;
     if (seen.has(key)) continue;
     seen.add(key);
     items.push({
@@ -64,9 +66,9 @@ export function reviewedSources(response: AskResponse | undefined): SourceProofI
       title: item.title,
       url: item.canonical_url,
       excerpt: trimExcerpt(quotesByEvidence.get(item.evidence_id) ?? item.primary_text),
-      freshness: item.temporal_class === "stable_guidance"
-        ? "Reviewed guidance; does not change day to day"
-        : "Reviewed source",
+      freshness: "Preparedness reference; publisher may revise this document",
+      revision: item.document_sha256 ?? undefined,
+      locator: item.locator ?? undefined,
     });
     if (items.length === 4) break;
   }
@@ -95,6 +97,7 @@ export function SourceProof({
         <span className="source-proof__badge">Official source</span>
         {showExcerpts && <blockquote>{primary.excerpt}</blockquote>}
         <p className="source-proof__freshness">{primary.freshness}</p>
+        <SourceRevision item={primary} />
         <a href={primary.url} target="_blank" rel="noreferrer">
           Open official source <ArrowSquareOut size={14} aria-hidden="true" />
         </a>
@@ -114,6 +117,7 @@ export function SourceProof({
                 </p>
                 {showExcerpts && <blockquote>{item.excerpt}</blockquote>}
                 <p className="source-proof__freshness">{item.freshness}</p>
+                <SourceRevision item={item} />
               </li>
             ))}
           </ol>
@@ -126,4 +130,13 @@ export function SourceProof({
       )}
     </section>
   );
+}
+
+function SourceRevision({ item }: { item: SourceProofItem }) {
+  return <details className="source-proof__more">
+    <summary>Source revision & location</summary>
+    <p>{item.locator ?? "Location not supplied"}</p>
+    <p>{item.revision ? <>Document SHA-256: <code style={{ overflowWrap: "anywhere" }}>{item.revision}</code></> : "Document revision not supplied"}</p>
+    <p>The publisher link may show a newer edition than the passage cited here.</p>
+  </details>;
 }

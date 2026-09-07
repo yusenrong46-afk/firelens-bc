@@ -67,6 +67,8 @@ def _typed_publication_scope(claim_id: str) -> str:
         value
         for value in (
             record.subject,
+            record.action,
+            record.object,
             record.status_stage,
             *record.conditions,
             *record.applies_to,

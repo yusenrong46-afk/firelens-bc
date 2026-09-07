@@ -43,6 +43,7 @@ def test_pet_contents_inflections_use_exact_source_without_generation(
     [
         "Which supplies should not be included for pets when evacuating a wildfire?",
         "What should not be packed for pets during a wildfire evacuation?",
+        "Which items should not be packed for pets during a wildfire evacuation?",
         "What shouldn't be included in a pet evacuation bag?",
         "What medicines should be included for pets when evacuating a wildfire?",
     ],

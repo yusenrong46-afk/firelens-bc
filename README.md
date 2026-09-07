@@ -17,12 +17,12 @@ FireLens do not exactly match the current PDF; the current checklist also adds
 insurance/important papers. Read the [release findings](docs/releases/firelens-final-ship.md)
 and consult the current official guide for that guidance.
 
-![Pacific Operations interface showing a synthetic nearby-fire answer, selectable records, source details and bottom question composer](docs/product/screenshots/pacific-operations-final-demo.png)
+![FireLens production home page with starter questions, optional community and question composer](docs/product/screenshots/production-idle-2026-09-07.png)
 
-_Synthetic demonstration data in the Pacific Operations interface. Names,
-locations, distances and timestamps are fixtures; map tiles are intentionally
-unavailable. This is a local interface demonstration, not a production capture
-or current wildfire information._
+_Production snapshot captured 2026-09-07, before the polish candidate. Counts and
+availability are dated observations, not current wildfire information. The
+candidate corrects the coverage/check-time wording shown here; it is not deployed.
+See the [polish checkpoint](docs/releases/firelens-polish.md)._
 
 ## Try three tasks
 
