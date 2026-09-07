@@ -1,9 +1,15 @@
 # FireLens polish checkpoint — 2026-09-07
 
-**FIRELENS_POLISH_BLOCKED_WITH_EVIDENCE** — implementation is local and not yet a
-frozen or independently accepted release candidate. The owner-adopted source
-revision is integrated; current J01 acceptance is approved and implemented. The real index/provider
-execution gate is blocked by an unavailable usable existing credential. See the [concrete J01 proposal](../reports/J01_CURRENT_ACCEPTANCE_PROPOSAL.md).
+**FIRELENS_POLISH_BLOCKED_WITH_EVIDENCE** — independent High review accepted the
+code; required mixed/pet real-provider qualification remains incomplete after
+upstream rate limiting. All eight allowed Ask requests have been used. The
+credential, source decision, J01 migration and real index rebuild are resolved.
+No push, merge or deployment occurred.
+
+Reviewed implementation: `11613679c7910c0c15962ee16da49ba7bc530ff2`, tree
+`37a6cca440ddeae3687482fcb0999ec77d24e9bf`. The documentation successor's exact
+commit/tree is recorded in the external final handoff; its runtime files are
+unchanged from this reviewed implementation.
 
 ## Identity and source
 
@@ -27,9 +33,12 @@ source chunks. Corpus SHA-256:
 `4045d15f475c4987571dc190b2f67053cdd95690eeb02506b45cccb532d1578c`.
 Inventory SHA-256:
 `5fcda128c37bd366227a8d5f0c7637de83a14be0d67a3637c0c4b74d462a6cb3`.
-No production vector index has been rebuilt. Complete `metadata_context_v1`
-inputs and matching embedding settings support 144 vector reuses and leave 34
-new inputs. Offline fixtures build temporary fake vectors and are labelled as such.
+The real `metadata_context_v1` index was rebuilt through the existing cache writer:
+144 complete rendered inputs were verified reusable, and exactly 34 new inputs were
+embedded with `openai/text-embedding-3-small`, dimension 1536. Every preexisting
+cache record was preserved. Matrix SHA-256:
+`d746759193fdbd844dfa173fca3898dba380ea2d3ad37da12d422643e2d4ce0d`.
+Offline fixtures remain separately labelled; no fixture vector entered this index.
 
 ## Implemented behavior
 
@@ -52,26 +61,59 @@ new inputs. Offline fixtures build temporary fake vectors and are labelled as su
   All four original starter requests were exercised with current-source offline
   fixtures; packing returns a supported partial quotation without generation.
 
-## Verification completed
+## Verification completed on the reviewed implementation
 
-- 106/106 source-aware deterministic cases; no external model calls, no authority
-  escalation and no Tier A/B generation.
-- 81 focused backend tests pass. One real-index retrieval test is explicitly not
-  run while the real index is absent. Earlier failures and logs remain retained.
-- 38 source acquisition, ingestion, repair, admission and revision checks pass.
-- Documentation/map checks: 18 pass; the one remaining failure is the expected
-  real corpus/index mismatch, retained as a release gate.
-- 98 focused frontend tests pass; production frontend build and TypeScript pass.
-- Built app with deterministic upstream fixtures: 1536, 390 and 320px; no horizontal
-  overflow, source revision on the wire, evidence open/close, focus restoration
-  and Home reset verified. These are local checks, not paid-provider qualification.
-- Historical source tests retain their original inputs/expectations in the
-  versioned snapshot. Current tests bind to the adopted revision. Significance
-  assertions normalize whitespace; no wording expectation was weakened.
+- `make verify`: exit 0; two backend passes of 2,623 tests and 709 subtests,
+  with 12 existing skips; lint, formatting, typing, secret scan,
+  OpenAPI generation, build, tooling and Sites worker checks pass.
+- Source/admission/corpus/index/typed-publication and accepted evaluator regressions
+  are included in that backend run. A separate check confirms all sixteen revised
+  span bindings, withdrawn-claim absence and no retired document in active retrieval.
+- Source-aware conversation: 106/106. Offline ProductBench: 31/31.
+- Current rc2.3 hard probe: 97/105, unchanged floor 86. Candidate-evidence validation
+  passes. J01 is current PASS and recomputed legacy FAIL; eight historical hard-probe
+  failures remain retained. Frozen dataset and profiles remain unchanged.
+- Frontend: 203 unit tests; 45 mocked browser passes, one existing skip.
+- Built-stack browser: 51/51 with deterministic upstream fixtures, including axe,
+  keyboard/evidence controls and 1536/390/320px behavior. These are not real-provider
+  qualification. Docs/map/index checks: 19/19. Typing: 295 source files.
+- Fresh independent read-only High review: all 1,107 frozen tracked hashes match,
+  79 additional focused tests pass; no blocking code regression established.
+  [Sealed review](../reports/FIRELENS_POLISH_INDEPENDENT_REVIEW.md).
 
-Artifacts, before/after screenshots, command logs and a hash manifest are in the
-external `firelens-polish-evidence/resumed` checkpoint. The [README](../../README.md)
-uses a dated actual production idle screenshot, explicitly labelled before polish.
+The full matrix first exposed a J01 evaluator import cycle and historical tests
+bound to the successor corpus. Shared response predicates were moved unchanged to
+one module; historical review tests now use their preserved corpus. Current-source
+phrase checks account for PDF line breaks and revised wording. Browser assertions
+now exercise the existing collapsed proof and current record/map controls. An axe
+finding placed the active question in a labelled region; an overbroad backend
+freshness label was corrected. Original failures remain in the external logs.
+
+## Real-provider smoke and accounting
+
+The real built stack used the actual successor index, normal OpenRouter models,
+approved embedding/generation ZDR requirements and real official services.
+Nearby records, selected-record follow-up and grab-and-go guidance succeeded.
+J01 initially failed with rerank HTTP 429 and retryable API 503; a bounded retry
+also failed. Mixed packing/personal-evacuation guidance failed with the same rate
+limit, and pet packing failed after the circuit opened. These used a single-attempt
+smoke setting. Ask 8 used the normal three-attempt policy and recovered J01: HTTP
+200, current-source exact quotation, zero generation attempts. It does not qualify
+the failed mixed/pet journeys. Home/reset and 320px overflow checks passed.
+
+The canonical source link/click was verified, and a separate HTTP-200 fetch matched
+the adopted PDF hash. Browser PDF rendering was not verified.
+
+Reported settled spend: **US$0.00642678**. Retained reservations: **US$0.275**, including
+the initial US$0.05 authentication-failed reservation and US$0.225 for three
+unsettled rerank failures. The original ledger entries remain; no failed-request
+reservation was silently released. The **US$1** ceiling still has room, but all
+**eight Ask requests** are used. No new key or production secret change occurred.
+
+Artifacts live in `firelens-polish-evidence/credential-resume`, with earlier evidence
+retained in `resumed` and `approved-execution`. Before/after screenshots are linked
+from the [README](../../README.md); the [five-minute GMT script](../product/GMT_DEMO_CHECKLIST.md)
+remains a script for a qualified successor, not a claim of current release readiness.
 
 ## Bounded findings and limits
 
@@ -91,29 +133,23 @@ dependency. The first-use hierarchy and optional community copy remain; source
 revision detail is collapsed to limit extra content. Detailed source repetition
 can be reduced later once the integrated candidate's final evidence is known.
 
-At the last remote inspection, main remained at the baseline. Existing main CI still has the
-source-aware failure and legacy J01 candidate refusal; no new CI run is claimed.
-At the last production inspection, production was build `c06474d34ff92433357be443d7c44eeffe28f0fe`, deployment
-`dpl_FeF5mba9xBMUWAPZqVTHtprhDXin`, release 1.6.4 with 179 chunks at
-https://firelens-bc.vercel.app/. No push, merge or deployment occurred.
+## Remote state and next gate
 
-The final matrix, independent read-only High review, real-provider smoke and
-release remain pending. Thomas separately approved J01 migration and the US$1
-execution ceiling. The new profile and packaging pass 65 focused tests, including
-current/legacy paired execution and source, conversation and generation controls.
-An additional hard-probe run had 43 passes and three runtime failures caused by
-the missing current index; those failures remain retained. Static typing passes.
-One embedding batch failed authentication; no embeddings were returned. The ledger
-records US$0 settled and US$0.05 still reserved, not a verified billing total.
-The retained key returns HTTP 401, and Vercel exports only a protected placeholder
-for the production key. No key was created and no production secret changed.
+Remote main was reverified at baseline `fc9b72368456bfefa4b1251c41a62422939cc0ab`.
+Its latest [Verify pull request](https://github.com/yusenrong46-afk/firelens-bc/actions/runs/33999056559)
+and [Build candidate evidence](https://github.com/yusenrong46-afk/firelens-bc/actions/runs/33999056554)
+runs remain failed. No candidate CI run is claimed because this work was not pushed.
+Production was rechecked: build `c06474d34ff92433357be443d7c44eeffe28f0fe`, deployment
+`dpl_FeF5mba9xBMUWAPZqVTHtprhDXin`, release 1.6.4, 179 chunks,
+[public app](https://firelens-bc.vercel.app/). It remains the rollback reference.
 
-## Next gate
+Production runtime source changed by net **+5 lines** versus main; evaluation code
+changed by net **+169**, chiefly the versioned J01 contract and paired validation.
+Generated API types are excluded from those counts. No dependency, model, provider,
+retrieval architecture or geometry-validation policy was added or replaced.
 
-Provide a usable existing OpenRouter credential through the local environment;
-do not paste it into conversation. J01 and the US$1 ceiling are already approved.
-Then rebuild the real index using the 144 verified reused vectors and 34 new
-inputs, finish the requested matrix, freeze the candidate, obtain the requested
-independent High review, and use normal PR/CI/release gates. Preserve all historical
-red outcomes. The [five-minute GMT script](../product/GMT_DEMO_CHECKLIST.md) is
-prepared for that qualified candidate. No release or independent acceptance is claimed.
+Independent verdict: **CODE_ACCEPTED_FOR_DOCUMENTATION_FINALIZATION**;
+**LIVE_PROVIDER_QUALIFICATION_BLOCKED**; **RELEASE_NO_GO**. Successful mixed/pet
+real-provider checks require a separately available Ask allowance. Do not infer
+them from fixture passes or J01 recovery. Preserve all failed attempts. Then resume
+normal exact-candidate PR/CI/release gates without force push or bypassing failures.

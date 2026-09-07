@@ -52,8 +52,13 @@ and one bounded real-provider smoke (up to eight Ask requests), using the existi
 OpenRouter credential. Reuse only the 144 vectors whose complete rendered inputs
 and embedding configuration were verified equal. No new key, model, large paid
 evaluation campaign or deployment-secret change is proposed. Stop if the cost
-ceiling cannot be enforced or the allowance is exhausted. One embedding batch was attempted after approval and failed authentication.
-The retained credential also returns HTTP 401 on the read-only key endpoint.
-Vercel protects the production key from export. No embeddings were returned;
-the US$0.05 reservation remains in the ledger pending settlement. No real Ask
-smoke ran. A usable existing credential is required to resume.
+ceiling cannot be enforced or the allowance is exhausted. One initial embedding batch failed authentication; its US$0.05 reservation remains.
+The supplied existing credential then passed zero-cost authentication and model
+preflight. The real rebuild succeeded with 34 new inputs and 144 verified reuses.
+Eight real Ask requests were used: nearby, selected-record, current guidance and
+the final J01 retry succeeded; initial J01, its first retry, mixed and pet requests
+failed during upstream rate limiting/circuit refusal. Final J01 used the normal
+three-attempt policy, passed the current-source oracle and had zero generation.
+Total reported settled cost is US$0.00642678; US$0.275 remains reserved. The
+monetary ceiling is not exhausted, but the eight-Ask scope is. Independent review
+accepted the code and kept release NO-GO pending successful mixed/pet qualification.

@@ -3,21 +3,42 @@
 Status: measured candidate evidence with historical results retained separately.
 Assessment date: 2026-09-05. Final release execution is authorized subject to current gates.
 
-## Source and UI polish checkpoint — 2026-09-07
+## Source and UI polish — 2026-09-07
 
-The [polish checkpoint](../releases/firelens-polish.md) supersedes no historical
-qualification result. Thomas adopted the named AI-assisted PreparedBC review:
-three version-bound extraction repairs, sixteen replacement claim bindings and
-withdrawal of `TC-GENERAL-036-01`. The exact owner decision and its limited basis
-are recorded in [the decision record](../reports/PREPAREDBC_REVISION_DECISIONS.json).
-This does not claim personal technical inspection or emergency-domain certification.
+Independent High review accepted implementation `11613679c7910c0c15962ee16da49ba7bc530ff2`
+(tree `37a6cca440ddeae3687482fcb0999ec77d24e9bf`) for documentation finalization.
+**Release remains NO-GO:** mixed/pet real-provider checks failed during upstream
+rate limiting, and the eight-Ask allowance is exhausted. Nearby, selected-record,
+current guidance and the final J01 retry succeeded; that does not qualify the
+unsuccessful journeys. [Review](../reports/FIRELENS_POLISH_INDEPENDENT_REVIEW.md)
+and [release evidence](../releases/firelens-polish.md) retain the separate outcomes.
 
-The local corpus now has 178 chunks from the revised PreparedBC document and
-unchanged other sources. Production still serves the prior 179-chunk release.
-The real index rebuild, J01 acceptance-policy migration, complete candidate
-qualification and independent review remain open. Local fixture passes cannot
-stand in for those gates. Static evidence now carries its document hash through
-the API; UI check time and missing-layer coverage are separate facts.
+Thomas adopted the named AI-assisted PreparedBC review: three extraction repairs,
+sixteen replacement claim bindings and withdrawal of `TC-GENERAL-036-01`.
+The [decision record](../reports/PREPAREDBC_REVISION_DECISIONS.json) identifies its
+limited basis, without claiming personal technical inspection or emergency-domain
+certification. The adopted PDF hash remains
+`9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2`.
+
+The successor has a real 178-chunk index: 144 complete embedding inputs verified
+reusable and 34 newly embedded through the existing provider/cache writer. Retired
+PreparedBC material is absent from current retrieval; the historical archive remains.
+The approved rc2.3 J01 gate preserves the same response's frozen rc2.2 failure.
+Source-aware conversation passes 106/106, offline ProductBench 31/31, current hard
+probe 97/105 against floor 86, built-stack journeys 51/51, and `make verify` passes.
+These remain distinct from the incomplete real-provider and release gates.
+
+Source proof distinguishes revision identities and exact support from reviewed
+wording. Check time, publisher time and unavailable coverage remain separate;
+one bounded session timer refreshes the summary. An accessibility finding was
+repaired without changing navigation. The canonical source link/click and HTTP-200
+source hash were verified; browser PDF rendering remains unverified.
+
+Production was rechecked on 2026-09-07 and still serves build `c06474d`, release
+1.6.4, with 179 chunks. No polish push, merge, deployment or secret change occurred.
+Reported settled cost is US$0.00642678, plus US$0.275 retained reservations under
+the US$1 aggregate ceiling. The existing credential is usable and stored only in
+an ignored local environment file.
 
 ## Final release successor — 2026-09-05
 

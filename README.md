@@ -17,12 +17,21 @@ FireLens do not exactly match the current PDF; the current checklist also adds
 insurance/important papers. Read the [release findings](docs/releases/firelens-final-ship.md)
 and consult the current official guide for that guidance.
 
-![FireLens production home page with starter questions, optional community and question composer](docs/product/screenshots/production-idle-2026-09-07.png)
+**Local polish implementation accepted; release remains blocked.** The successor
+admits the revised source, rebuilds the real 178-chunk index, and passes the local
+verification matrix. Independent review accepted the code. Mixed/pet real-provider
+smoke remains incomplete after rate limits; the eight-Ask allowance is exhausted.
+See the [polish release evidence](docs/releases/firelens-polish.md).
 
-_Production snapshot captured 2026-09-07, before the polish candidate. Counts and
-availability are dated observations, not current wildfire information. The
-candidate corrects the coverage/check-time wording shown here; it is not deployed.
-See the [polish checkpoint](docs/releases/firelens-polish.md)._
+![Reviewed local FireLens candidate answering grab-and-go guidance with inspectable source proof](docs/product/screenshots/polish-current-guidance-2026-09-07.png)
+
+_Local candidate `1161367`, captured 2026-09-07 with the real index and OpenRouter.
+This screenshot is not the deployed release or proof of complete provider qualification.
+Production snapshot captured 2026-09-07: the
+[before-polish screenshot](docs/product/screenshots/production-idle-2026-09-07.png)
+is retained from before the polish candidate. Its counts and availability are
+dated observations, not current wildfire information. Canonical source link/click and source bytes were verified; browser
+PDF rendering was not verified._
 
 ## Try three tasks
 
