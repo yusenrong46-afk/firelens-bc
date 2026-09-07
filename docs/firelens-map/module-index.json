@@ -10489,7 +10489,7 @@
     },
     {
       "branch_score": 120,
-      "fan_in": 181,
+      "fan_in": 182,
       "fan_out": 12,
       "generated": false,
       "id": "src/firelens/contracts.py",
@@ -11025,7 +11025,7 @@
     },
     {
       "branch_score": 97,
-      "fan_in": 8,
+      "fan_in": 9,
       "fan_out": 0,
       "generated": false,
       "id": "src/firelens/evaluation/candidate_evidence_common.py",
@@ -11040,7 +11040,7 @@
       "imports": [],
       "kind": "evaluation",
       "language": "python",
-      "loc": 519,
+      "loc": 525,
       "major_symbols": [
         "sha256_bytes",
         "canonical_bytes",
@@ -11165,9 +11165,9 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 102,
+      "branch_score": 104,
       "fan_in": 4,
-      "fan_out": 2,
+      "fan_out": 4,
       "generated": false,
       "id": "src/firelens/evaluation/candidate_evidence_validation.py",
       "import_specifiers": [
@@ -11175,6 +11175,8 @@
         "datetime",
         "firelens.evaluation",
         "firelens.evaluation.candidate_evidence_common",
+        "firelens.evaluation.hard_probe_expectations",
+        "firelens.evaluation.j01_current_acceptance",
         "hashlib",
         "json",
         "pathlib",
@@ -11183,11 +11185,13 @@
       ],
       "imports": [
         "src/firelens/evaluation/candidate_evidence_common.py",
-        "src/firelens/evaluation/candidate_evidence_productbench.py"
+        "src/firelens/evaluation/candidate_evidence_productbench.py",
+        "src/firelens/evaluation/hard_probe_expectations.py",
+        "src/firelens/evaluation/j01_current_acceptance.py"
       ],
       "kind": "evaluation",
       "language": "python",
-      "loc": 639,
+      "loc": 653,
       "major_symbols": [
         "validate_timestamp",
         "exact_object",
@@ -12138,9 +12142,9 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 131,
-      "fan_in": 4,
-      "fan_out": 14,
+      "branch_score": 134,
+      "fan_in": 6,
+      "fan_out": 15,
       "generated": false,
       "id": "src/firelens/evaluation/hard_probe_cli.py",
       "import_specifiers": [
@@ -12156,6 +12160,7 @@
         "firelens.config",
         "firelens.contracts",
         "firelens.evaluation.hard_probe_expectations",
+        "firelens.evaluation.j01_current_acceptance",
         "firelens.live",
         "firelens.live_contracts",
         "firelens.live_support",
@@ -12180,6 +12185,7 @@
         "src/firelens/config.py",
         "src/firelens/contracts.py",
         "src/firelens/evaluation/hard_probe_expectations.py",
+        "src/firelens/evaluation/j01_current_acceptance.py",
         "src/firelens/live.py",
         "src/firelens/live_contracts.py",
         "src/firelens/live_support.py",
@@ -12190,7 +12196,7 @@
       ],
       "kind": "evaluation",
       "language": "python",
-      "loc": 645,
+      "loc": 654,
       "major_symbols": [
         "OfflineLiveDataService",
         "run",
@@ -12223,17 +12229,18 @@
         "parse_args",
         "main"
       ],
-      "test_fan_in": 0
+      "test_fan_in": 1
     },
     {
-      "branch_score": 73,
-      "fan_in": 5,
-      "fan_out": 1,
+      "branch_score": 78,
+      "fan_in": 9,
+      "fan_out": 2,
       "generated": false,
       "id": "src/firelens/evaluation/hard_probe_expectations.py",
       "import_specifiers": [
         "__future__",
         "firelens.contracts",
+        "firelens.evaluation.j01_current_acceptance",
         "hashlib",
         "json",
         "pathlib",
@@ -12242,11 +12249,12 @@
         "yaml"
       ],
       "imports": [
-        "src/firelens/contracts.py"
+        "src/firelens/contracts.py",
+        "src/firelens/evaluation/j01_current_acceptance.py"
       ],
       "kind": "evaluation",
       "language": "python",
-      "loc": 517,
+      "loc": 537,
       "major_symbols": [
         "ProbeModel",
         "HardProbeCase",
@@ -12291,6 +12299,47 @@
         "_generation_provider_stages",
         "_exact_quote_support",
         "_migration_invariant_checks"
+      ],
+      "test_fan_in": 4
+    },
+    {
+      "branch_score": 34,
+      "fan_in": 5,
+      "fan_out": 4,
+      "generated": false,
+      "id": "src/firelens/evaluation/j01_current_acceptance.py",
+      "import_specifiers": [
+        "__future__",
+        "firelens.contracts",
+        "firelens.evaluation.candidate_evidence_common",
+        "firelens.evaluation.hard_probe_cli",
+        "firelens.evaluation.hard_probe_expectations",
+        "json",
+        "pathlib",
+        "typing"
+      ],
+      "imports": [
+        "src/firelens/contracts.py",
+        "src/firelens/evaluation/candidate_evidence_common.py",
+        "src/firelens/evaluation/hard_probe_cli.py",
+        "src/firelens/evaluation/hard_probe_expectations.py"
+      ],
+      "kind": "evaluation",
+      "language": "python",
+      "loc": 125,
+      "major_symbols": [
+        "current_source_explanation_supported",
+        "legacy_j01_result",
+        "validate_current_j01"
+      ],
+      "module": "firelens.evaluation.j01_current_acceptance",
+      "path": "src/firelens/evaluation/j01_current_acceptance.py",
+      "production_fan_in": 0,
+      "statically_unreferenced": false,
+      "symbols": [
+        "current_source_explanation_supported",
+        "legacy_j01_result",
+        "validate_current_j01"
       ],
       "test_fan_in": 2
     },
@@ -13853,7 +13902,7 @@
     },
     {
       "branch_score": 28,
-      "fan_in": 8,
+      "fan_in": 9,
       "fan_out": 11,
       "generated": false,
       "id": "src/firelens/evaluation/source_aware_conversation_runtime.py",
@@ -13910,7 +13959,7 @@
         "execute_one",
         "_failure_observation"
       ],
-      "test_fan_in": 6
+      "test_fan_in": 7
     },
     {
       "branch_score": 48,
@@ -20701,17 +20750,20 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 68,
+      "branch_score": 73,
       "fan_in": 0,
-      "fan_out": 9,
+      "fan_out": 11,
       "generated": false,
       "id": "tests/test_candidate_evidence.py",
       "import_specifiers": [
         "__future__",
+        "copy",
         "firelens.evaluation",
         "firelens.evaluation.candidate_evidence_common",
         "firelens.evaluation.candidate_evidence_validation",
         "firelens.evaluation.common",
+        "firelens.evaluation.hard_probe_expectations",
+        "firelens.evaluation.j01_current_acceptance",
         "firelens.evaluation.release_promotion",
         "firelens.evaluation.v1_6_2_patch_promotion",
         "firelens.evaluation.v1_6_standard",
@@ -20728,6 +20780,8 @@
         "src/firelens/evaluation/candidate_evidence_documents.py",
         "src/firelens/evaluation/candidate_evidence_validation.py",
         "src/firelens/evaluation/common.py",
+        "src/firelens/evaluation/hard_probe_expectations.py",
+        "src/firelens/evaluation/j01_current_acceptance.py",
         "src/firelens/evaluation/productbench_v2_report.py",
         "src/firelens/evaluation/release_promotion.py",
         "src/firelens/evaluation/v1_6_2_patch_promotion.py",
@@ -20735,7 +20789,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 1451,
+      "loc": 1486,
       "major_symbols": [
         "test_v2_bundle_binds_complete_candidate_and_recomputes",
         "test_security_findings_emit_evidence_but_fail_gate",
@@ -20744,7 +20798,7 @@
         "test_unclean_start_and_hard_probe_regression_are_rejected",
         "test_productbench_evidence_must_be_present_current_and_complete",
         "test_productbench_report_emitter_shape_is_candidate_evidence_compatible",
-        "test_current_report_requires_v2_rc2_2_tree_hashes_and_floor",
+        "test_current_report_requires_v2_rc2_3_tree_hashes_and_floor",
         "test_profile_missing_mutated_floor_base_and_roster_are_rejected",
         "test_frozen_rc2_profile_pair_remains_required_and_validated",
         "test_frozen_rc2_1_profile_pair_remains_required_and_validated",
@@ -20785,7 +20839,7 @@
         "test_unclean_start_and_hard_probe_regression_are_rejected",
         "test_productbench_evidence_must_be_present_current_and_complete",
         "test_productbench_report_emitter_shape_is_candidate_evidence_compatible",
-        "test_current_report_requires_v2_rc2_2_tree_hashes_and_floor",
+        "test_current_report_requires_v2_rc2_3_tree_hashes_and_floor",
         "test_profile_missing_mutated_floor_base_and_roster_are_rejected",
         "test_frozen_rc2_profile_pair_remains_required_and_validated",
         "test_frozen_rc2_1_profile_pair_remains_required_and_validated",
@@ -22316,6 +22370,60 @@
         "_StaticSpy.__init__",
         "_StaticSpy.ask",
         "test_validated_corpus_capabilities_bypass_outer_loop"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 17,
+      "fan_in": 0,
+      "fan_out": 4,
+      "generated": false,
+      "id": "tests/test_j01_current_acceptance.py",
+      "import_specifiers": [
+        "__future__",
+        "asyncio",
+        "copy",
+        "firelens.evaluation.hard_probe_cli",
+        "firelens.evaluation.hard_probe_expectations",
+        "firelens.evaluation.j01_current_acceptance",
+        "firelens.evaluation.source_aware_conversation_runtime",
+        "httpx",
+        "json",
+        "pathlib",
+        "pytest",
+        "types"
+      ],
+      "imports": [
+        "src/firelens/evaluation/hard_probe_cli.py",
+        "src/firelens/evaluation/hard_probe_expectations.py",
+        "src/firelens/evaluation/j01_current_acceptance.py",
+        "src/firelens/evaluation/source_aware_conversation_runtime.py"
+      ],
+      "kind": "test",
+      "language": "python",
+      "loc": 151,
+      "major_symbols": [
+        "response",
+        "packaged",
+        "test_only_j01_changes_and_floor_is_frozen",
+        "test_real_fixture_execution_emits_both_results",
+        "test_rejects_unsupported_response",
+        "test_checklist_requires_explicit_missing_explanation",
+        "test_package_rejects_antecedent_or_generation_drift"
+      ],
+      "module": "tests.test_j01_current_acceptance",
+      "path": "tests/test_j01_current_acceptance.py",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "response",
+        "packaged",
+        "test_only_j01_changes_and_floor_is_frozen",
+        "test_real_fixture_execution_emits_both_results",
+        "test_real_fixture_execution_emits_both_results.run",
+        "test_rejects_unsupported_response",
+        "test_checklist_requires_explicit_missing_explanation",
+        "test_package_rejects_antecedent_or_generation_drift"
       ],
       "test_fan_in": 0
     },
@@ -29726,5 +29834,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "38a45545a031f2d2d84d70419c6f0407f60ea20dc00c29de98041108b29b0cf3"
+  "source_digest": "c5e3ae3a2abed609beda5e7c6b1b1b3e8643ca7345840d970cf52d631dc59762"
 }

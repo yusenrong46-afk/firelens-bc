@@ -15,7 +15,7 @@ BUILD_TYPE = "https://firelens-bc.local/build-types/candidate-evidence/v2"
 COMMIT = re.compile(r"^[0-9a-f]{40}$")
 EXACT_REQUIREMENT = re.compile(r"^([A-Za-z0-9_.-]+)==([^\s;]+)$")
 STALE_REPORT_PATH = re.compile(r"(^|/)v1_5[^/]*(/|$)", re.IGNORECASE)
-HARD_PROBE_PROFILE = "rc2.2"
+HARD_PROBE_PROFILE = "rc2.3"
 HARD_PROBE_FROZEN_RC2_PROFILE_PATH = "data/evaluation/hard_probe_rc2_expectations.v1.yaml"
 HARD_PROBE_FROZEN_RC2_PROFILE_MANIFEST_PATH = (
     "data/evaluation/hard_probe_rc2_expectations.v1.manifest.json"
@@ -24,9 +24,9 @@ HARD_PROBE_FROZEN_RC2_1_PROFILE_PATH = "data/evaluation/hard_probe_rc2_1_expecta
 HARD_PROBE_FROZEN_RC2_1_PROFILE_MANIFEST_PATH = (
     "data/evaluation/hard_probe_rc2_1_expectations.v1.manifest.json"
 )
-HARD_PROBE_PROFILE_PATH = "data/evaluation/hard_probe_rc2_2_expectations.v1.yaml"
+HARD_PROBE_PROFILE_PATH = "data/evaluation/hard_probe_rc2_3_expectations.v1.yaml"
 HARD_PROBE_PROFILE_MANIFEST_PATH = (
-    "data/evaluation/hard_probe_rc2_2_expectations.v1.manifest.json"
+    "data/evaluation/hard_probe_rc2_3_expectations.v1.manifest.json"
 )
 HARD_PROBE_RC2_MIGRATED_IDS = (
     "A04",
@@ -73,6 +73,10 @@ MATERIAL_PATHS = (
     HARD_PROBE_FROZEN_RC2_PROFILE_MANIFEST_PATH,
     HARD_PROBE_FROZEN_RC2_1_PROFILE_PATH,
     HARD_PROBE_FROZEN_RC2_1_PROFILE_MANIFEST_PATH,
+    "data/evaluation/hard_probe_rc2_2_expectations.v1.yaml",
+    "data/evaluation/hard_probe_rc2_2_expectations.v1.manifest.json",
+    "docs/reports/POLISH_EXECUTION_AUTHORIZATION.json",
+    "src/firelens/evaluation/j01_current_acceptance.py",
     HARD_PROBE_PROFILE_PATH,
     HARD_PROBE_PROFILE_MANIFEST_PATH,
     "data/evaluation/v1_6_user_end_questions_50.json",
@@ -485,12 +489,14 @@ def validate_report_semantic_checks(row: dict[str, Any], *, case_id: str) -> Non
         ]
     elif case_id == "J01":
         expected_names = [
+            "at_least_one_claim",
+            "at_least_one_evidence",
+            "required_publication_kinds",
+            "validation_accepted",
+            "exact_quote_support",
             "zero_generation_attempts",
             "zero_generation_cost_usd",
-            "zero_claims",
-            "zero_evidence",
-            "official_handoff",
-            "required_reason_code",
+            "current_source_explanation",
         ]
     elif case_id in HARD_PROBE_MIXED_MIGRATED_IDS:
         expected_names = [

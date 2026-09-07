@@ -126,7 +126,7 @@ class HardProbeExpectationMigration(ProbeModel):
 
 class HardProbeExpectationOverlay(ProbeModel):
     schema_version: Literal["firelens.hard_probe_expectations.v1"]
-    profile: Literal["rc2", "rc2.1", "rc2.2"]
+    profile: Literal["rc2", "rc2.1", "rc2.2", "rc2.3"]
     base_dataset_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     minimum_passed: int
     migrations: list[HardProbeExpectationMigration] = Field(min_length=10, max_length=11)
@@ -153,7 +153,7 @@ class HardProbeExpectationOverlay(ProbeModel):
 
 class HardProbeExpectationManifest(ProbeModel):
     schema_version: Literal["firelens.hard_probe_expectations_manifest.v1"]
-    profile: Literal["rc2", "rc2.1", "rc2.2"]
+    profile: Literal["rc2", "rc2.1", "rc2.2", "rc2.3"]
     expectations_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     base_dataset_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     migration_count: int
@@ -175,7 +175,7 @@ class HardProbeExpectationManifest(ProbeModel):
 
 
 class LoadedExpectationProfile(ProbeModel):
-    profile: Literal["historical", "rc2", "rc2.1", "rc2.2"]
+    profile: Literal["historical", "rc2", "rc2.1", "rc2.2", "rc2.3"]
     base_dataset_sha256: str
     minimum_passed: int
     expectation_overlay_sha256: str | None
@@ -183,9 +183,9 @@ class LoadedExpectationProfile(ProbeModel):
 
 
 def _expected_profile_migration(
-    profile: Literal["rc2", "rc2.1", "rc2.2"], case_id: str
+    profile: Literal["rc2", "rc2.1", "rc2.2", "rc2.3"], case_id: str
 ) -> dict[str, Any]:
-    if profile == "rc2.2" and case_id in RC2_2_STRUCTURED_TWO_SIDED_IDS:
+    if profile in {"rc2.2", "rc2.3"} and case_id in RC2_2_STRUCTURED_TWO_SIDED_IDS:
         return {
             "id": case_id,
             "add_allowed_modes": ["partial"],
@@ -213,6 +213,12 @@ def _expected_profile_migration(
             "required_reason_code": None,
             "rationale": RC2_QUOTE_ONLY_RATIONALE,
         }
+    if profile == "rc2.3" and case_id == "J01":
+        return {
+            **_expected_profile_migration("rc2.2", "J02"),
+            "id": "J01",
+            "rationale": "Accept current-source exact quotations with supported preparation rationale or an explicit missing-explanation limitation; preserve the legacy J01 failure.",
+        }
     if case_id == "J01":
         return {
             "id": case_id,
@@ -227,7 +233,7 @@ def _expected_profile_migration(
             "required_reason_code": "high_risk_claim_not_structured",
             "rationale": RC2_HANDOFF_RATIONALE,
         }
-    if profile in {"rc2.1", "rc2.2"} and case_id == "A01":
+    if profile in {"rc2.1", "rc2.2", "rc2.3"} and case_id == "A01":
         return {
             "id": case_id,
             "add_allowed_modes": ["partial"],
@@ -275,7 +281,7 @@ def load_dataset(path: Path, manifest_path: Path) -> HardProbeDataset:
 
 
 def load_expectation_profile(
-    profile: Literal["historical", "rc2", "rc2.1", "rc2.2"],
+    profile: Literal["historical", "rc2", "rc2.1", "rc2.2", "rc2.3"],
     dataset: HardProbeDataset,
     *,
     dataset_path: Path = DEFAULT_DATASET,
@@ -297,7 +303,7 @@ def load_expectation_profile(
             expectation_overlay_sha256=None,
             migrations={},
         )
-    if profile not in {"rc2", "rc2.1", "rc2.2"}:
+    if profile not in {"rc2", "rc2.1", "rc2.2", "rc2.3"}:
         raise ValueError(f"unknown hard-probe expectation profile: {profile}")
 
     if profile == "rc2":
@@ -306,6 +312,9 @@ def load_expectation_profile(
     elif profile == "rc2.1":
         expectations_path = rc2_1_expectations_path
         manifest_path = rc2_1_manifest_path
+    elif profile == "rc2.3":
+        expectations_path = ROOT / "data/evaluation/hard_probe_rc2_3_expectations.v1.yaml"
+        manifest_path = ROOT / "data/evaluation/hard_probe_rc2_3_expectations.v1.manifest.json"
     else:
         expectations_path = rc2_2_expectations_path
         manifest_path = rc2_2_manifest_path
@@ -512,6 +521,17 @@ def _migration_invariant_checks(
                 expected=migration.required_reason_code,
                 actual=actual_reason,
                 passed=actual_reason == migration.required_reason_code,
+            )
+        )
+    if migration.id == "J01" and not migration.require_official_handoff:
+        from firelens.evaluation.j01_current_acceptance import (
+            current_source_explanation_supported,
+        )
+
+        supported = current_source_explanation_supported(response)
+        checks.append(
+            _invariant_result(
+                "current_source_explanation", expected=True, actual=supported, passed=supported
             )
         )
     return checks

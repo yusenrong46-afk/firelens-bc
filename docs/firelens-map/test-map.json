@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "38a45545a031f2d2d84d70419c6f0407f60ea20dc00c29de98041108b29b0cf3",
+  "source_digest": "c5e3ae3a2abed609beda5e7c6b1b1b3e8643ca7345840d970cf52d631dc59762",
   "tests": [
     {
       "cases": [
@@ -1300,7 +1300,7 @@
     {
       "cases": [
         "test_candidate_workflow_is_exact_head_zero_cost_v2_artifact",
-        "test_current_report_requires_v2_rc2_2_tree_hashes_and_floor",
+        "test_current_report_requires_v2_rc2_3_tree_hashes_and_floor",
         "test_frozen_rc2_1_profile_pair_remains_required_and_validated",
         "test_frozen_rc2_profile_pair_remains_required_and_validated",
         "test_identity_extra_missing_and_stale_report_paths_are_rejected",
@@ -2052,6 +2052,28 @@
       ],
       "language": "python",
       "path": "tests/test_intent_capability_bypass.py"
+    },
+    {
+      "cases": [
+        "test_checklist_requires_explicit_missing_explanation",
+        "test_only_j01_changes_and_floor_is_frozen",
+        "test_package_rejects_antecedent_or_generation_drift",
+        "test_real_fixture_execution_emits_both_results",
+        "test_rejects_unsupported_response"
+      ],
+      "direct_targets": [],
+      "endpoints": [],
+      "evaluation_families": [
+        "conversation",
+        "fault",
+        "hard_probe",
+        "mutation",
+        "provider",
+        "safety",
+        "source_aware"
+      ],
+      "language": "python",
+      "path": "tests/test_j01_current_acceptance.py"
     },
     {
       "cases": [

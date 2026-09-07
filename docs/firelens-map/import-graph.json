@@ -6772,6 +6772,22 @@
     {
       "kind": "static",
       "lines": [
+        336
+      ],
+      "source": "src/firelens/evaluation/candidate_evidence_validation.py",
+      "target": "src/firelens/evaluation/hard_probe_expectations.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        629
+      ],
+      "source": "src/firelens/evaluation/candidate_evidence_validation.py",
+      "target": "src/firelens/evaluation/j01_current_acceptance.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         20
       ],
       "source": "src/firelens/evaluation/capture.py",
@@ -7311,6 +7327,14 @@
     {
       "kind": "static",
       "lines": [
+        476
+      ],
+      "source": "src/firelens/evaluation/hard_probe_cli.py",
+      "target": "src/firelens/evaluation/j01_current_acceptance.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         59
       ],
       "source": "src/firelens/evaluation/hard_probe_cli.py",
@@ -7371,6 +7395,46 @@
       ],
       "source": "src/firelens/evaluation/hard_probe_expectations.py",
       "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        527
+      ],
+      "source": "src/firelens/evaluation/hard_probe_expectations.py",
+      "target": "src/firelens/evaluation/j01_current_acceptance.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        9
+      ],
+      "source": "src/firelens/evaluation/j01_current_acceptance.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        111
+      ],
+      "source": "src/firelens/evaluation/j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/candidate_evidence_common.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        80
+      ],
+      "source": "src/firelens/evaluation/j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/hard_probe_cli.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        81
+      ],
+      "source": "src/firelens/evaluation/j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
       "kind": "static",
@@ -11817,7 +11881,7 @@
     {
       "kind": "static",
       "lines": [
-        23
+        24
       ],
       "source": "tests/test_candidate_evidence.py",
       "target": "scripts/candidate_evidence.py"
@@ -11857,6 +11921,23 @@
     {
       "kind": "static",
       "lines": [
+        84,
+        400
+      ],
+      "source": "tests/test_candidate_evidence.py",
+      "target": "src/firelens/evaluation/hard_probe_expectations.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        14
+      ],
+      "source": "tests/test_candidate_evidence.py",
+      "target": "src/firelens/evaluation/j01_current_acceptance.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         10
       ],
       "source": "tests/test_candidate_evidence.py",
@@ -11865,7 +11946,7 @@
     {
       "kind": "static",
       "lines": [
-        14
+        15
       ],
       "source": "tests/test_candidate_evidence.py",
       "target": "src/firelens/evaluation/release_promotion.py"
@@ -11873,7 +11954,7 @@
     {
       "kind": "static",
       "lines": [
-        19
+        20
       ],
       "source": "tests/test_candidate_evidence.py",
       "target": "src/firelens/evaluation/v1_6_2_patch_promotion.py"
@@ -11881,7 +11962,7 @@
     {
       "kind": "static",
       "lines": [
-        22
+        23
       ],
       "source": "tests/test_candidate_evidence.py",
       "target": "src/firelens/evaluation/v1_6_standard.py"
@@ -12671,6 +12752,38 @@
       ],
       "source": "tests/test_intent_capability_bypass.py",
       "target": "src/firelens/live_answering.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        14
+      ],
+      "source": "tests/test_j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/hard_probe_cli.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        15
+      ],
+      "source": "tests/test_j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/hard_probe_expectations.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        21
+      ],
+      "source": "tests/test_j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/j01_current_acceptance.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        27
+      ],
+      "source": "tests/test_j01_current_acceptance.py",
+      "target": "src/firelens/evaluation/source_aware_conversation_runtime.py"
     },
     {
       "kind": "static",
@@ -17347,6 +17460,7 @@
     "src/firelens/evaluation/golden_traces.py",
     "src/firelens/evaluation/hard_probe_cli.py",
     "src/firelens/evaluation/hard_probe_expectations.py",
+    "src/firelens/evaluation/j01_current_acceptance.py",
     "src/firelens/evaluation/limitation_cases.py",
     "src/firelens/evaluation/limitation_cli.py",
     "src/firelens/evaluation/limitation_runtime.py",
@@ -17548,6 +17662,7 @@
     "tests/test_html_ingestion.py",
     "tests/test_human_review_workspace_cli.py",
     "tests/test_intent_capability_bypass.py",
+    "tests/test_j01_current_acceptance.py",
     "tests/test_limitation_probe.py",
     "tests/test_live.py",
     "tests/test_live_answering.py",
@@ -17664,7 +17779,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "38a45545a031f2d2d84d70419c6f0407f60ea20dc00c29de98041108b29b0cf3",
+  "source_digest": "c5e3ae3a2abed609beda5e7c6b1b1b3e8643ca7345840d970cf52d631dc59762",
   "unresolved_relative_imports": [
     {
       "line": 32,

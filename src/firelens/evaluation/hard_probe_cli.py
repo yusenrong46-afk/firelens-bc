@@ -434,7 +434,7 @@ async def _run_case(
         if not check["passed"]
     ]
     issues = sorted(set(base_issues + invariant_issues))
-    return {
+    result = {
         "id": case.id,
         "section": case.section,
         "question": case.question,
@@ -472,6 +472,12 @@ async def _run_case(
         "failure_reason": "; ".join(issues) if issues else None,
         "response": payload,
     }
+    if migration is not None and case.id == "J01" and not migration.require_official_handoff:
+        from firelens.evaluation.j01_current_acceptance import legacy_j01_result
+
+        result["legacy_profile_result"] = legacy_j01_result(payload, stages)
+        result["request_history"] = [turn.model_dump(mode="json") for turn in case.history]
+    return result
 
 
 async def run(args: argparse.Namespace) -> int:
@@ -615,7 +621,10 @@ async def run(args: argparse.Namespace) -> int:
         json.dump(report, stream, ensure_ascii=False, indent=2)
         stream.write("\n")
     print(json.dumps(report["summary"], indent=2))
-    if expectation_profile.profile in {"rc2", "rc2.1", "rc2.2"} and full_dataset_executed:
+    if (
+        expectation_profile.profile in {"rc2", "rc2.1", "rc2.2", "rc2.3"}
+        and full_dataset_executed
+    ):
         return 0 if minimum_passed_met else 1
     return 0 if failed_count == 0 else 1
 
@@ -625,7 +634,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--mode", choices=("offline", "qualified"), default="offline")
     parser.add_argument(
         "--expectation-profile",
-        choices=("historical", "rc2", "rc2.1", "rc2.2"),
+        choices=("historical", "rc2", "rc2.1", "rc2.2", "rc2.3"),
         default="historical",
     )
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)

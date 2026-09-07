@@ -11,6 +11,7 @@ from firelens.evaluation import candidate_evidence_documents, productbench_v2_re
 from firelens.evaluation.candidate_evidence_common import MATERIAL_PATHS
 from firelens.evaluation.candidate_evidence_validation import validate_workflow_identity
 from firelens.evaluation.common import file_sha256
+from firelens.evaluation.j01_current_acceptance import legacy_j01_result
 from firelens.evaluation.release_promotion import (
     MANIFEST_RELATIVE,
     promotion_manifest_document,
@@ -73,11 +74,17 @@ def _json(path: Path, value: object) -> None:
 
 
 def _fixture_material_sha(relative: str) -> str:
+    if relative == CORPUS_RELATIVE:
+        return hashlib.sha256(J01_CORPUS_BYTES).hexdigest()
     return hashlib.sha256(f"fixture:{relative}\n".encode()).hexdigest()
 
 
-def _migration(case_id: str, *, profile: str = "rc2.2") -> dict[str, object]:
-    two_sided = profile == "rc2.2" and case_id in STRUCTURED_TWO_SIDED_IDS
+def _migration(case_id: str, *, profile: str = "rc2.3") -> dict[str, object]:
+    if profile == "rc2.3" and case_id == "J01":
+        from firelens.evaluation.hard_probe_expectations import _expected_profile_migration
+
+        return _expected_profile_migration("rc2.3", "J01")
+    two_sided = profile in {"rc2.2", "rc2.3"} and case_id in STRUCTURED_TWO_SIDED_IDS
     quote_only = case_id in RC2_QUOTE_ONLY_IDS and not two_sided
     mixed = case_id == "A01"
     rationale = (
@@ -122,7 +129,7 @@ def _migration(case_id: str, *, profile: str = "rc2.2") -> dict[str, object]:
 
 RC2_MIGRATIONS = [_migration(case_id, profile="rc2") for case_id in RC2_MIGRATED_IDS]
 RC2_1_MIGRATIONS = [_migration(case_id, profile="rc2.1") for case_id in MIGRATED_IDS]
-MIGRATIONS = [_migration(case_id, profile="rc2.2") for case_id in MIGRATED_IDS]
+MIGRATIONS = [_migration(case_id, profile="rc2.3") for case_id in MIGRATED_IDS]
 MIGRATION_BY_ID = {str(item["id"]): item for item in MIGRATIONS}
 BASE_DATASET = {
     "dataset_version": "hard_probe.v1",
@@ -142,11 +149,22 @@ BASE_DATASET = {
     "browser_cases": [],
     "fixture_cases": [],
 }
+J01_RESPONSE = json.loads(
+    (Path(__file__).parent / "fixtures/j01_current_response.json").read_text()
+)
+
+J01_LEGACY = legacy_j01_result(J01_RESPONSE, [])
+for _case in BASE_DATASET["cases"]:
+    if _case["id"] == "J01":
+        _case["question"] = J01_LEGACY["question"]
+        _case["history"] = J01_LEGACY["history"]
+CORPUS_RELATIVE = "data/processed/firelens_static_corpus.chunks.jsonl"
+J01_CORPUS_BYTES = (Path(__file__).parents[1] / CORPUS_RELATIVE).read_bytes()
 BASE_DATASET_BYTES = yaml.safe_dump(BASE_DATASET, sort_keys=False).encode()
 BASE_DATASET_SHA256 = hashlib.sha256(BASE_DATASET_BYTES).hexdigest()
 PROFILE = {
     "schema_version": "firelens.hard_probe_expectations.v1",
-    "profile": "rc2.2",
+    "profile": "rc2.3",
     "base_dataset_sha256": BASE_DATASET_SHA256,
     "minimum_passed": 86,
     "migrations": MIGRATIONS,
@@ -173,7 +191,7 @@ RC2_1_PROFILE_BYTES = yaml.safe_dump(RC2_1_PROFILE, sort_keys=False).encode()
 RC2_1_PROFILE_SHA256 = hashlib.sha256(RC2_1_PROFILE_BYTES).hexdigest()
 EFFECTIVE_EXPECTATIONS = {
     "schema_version": "firelens.hard_probe_effective_expectations.v1",
-    "profile": "rc2.2",
+    "profile": "rc2.3",
     "base_dataset_sha256": BASE_DATASET_SHA256,
     "minimum_passed": 86,
     "cases": [
@@ -181,11 +199,7 @@ EFFECTIVE_EXPECTATIONS = {
             "id": case_id,
             "allowed_modes": [
                 "grounded",
-                *(
-                    ["partial" if case_id != "J01" else "scope_redirect"]
-                    if case_id in MIGRATED_IDS
-                    else []
-                ),
+                *(["partial"] if case_id in MIGRATED_IDS else []),
             ],
             "migration": MIGRATION_BY_ID.get(case_id),
         }
@@ -381,36 +395,37 @@ def _mixed_result() -> dict[str, object]:
 
 
 def _handoff_result() -> dict[str, object]:
+    from copy import deepcopy
+
+    from firelens.evaluation.hard_probe_expectations import (
+        DEFAULT_DATASET,
+        DEFAULT_MANIFEST,
+        _migration_invariant_checks,
+        load_dataset,
+        load_expectation_profile,
+    )
+
+    dataset = load_dataset(DEFAULT_DATASET, DEFAULT_MANIFEST)
+    migration = load_expectation_profile(
+        "rc2.3", dataset, dataset_path=DEFAULT_DATASET
+    ).migrations["J01"]
     return {
         "id": "J01",
         "passed": True,
         "cost_usd": 0.0,
-        "response_mode": "scope_redirect",
-        "validation_status": None,
+        "question": J01_LEGACY["question"],
+        "request_history": deepcopy(J01_LEGACY["history"]),
+        "legacy_profile_result": deepcopy(J01_LEGACY),
+        "response_mode": "partial",
+        "validation_status": "accepted",
         "provider_stages": [],
-        "effective_allowed_modes": ["grounded", "scope_redirect"],
+        "effective_allowed_modes": ["grounded", "partial"],
         "applied_migration": MIGRATION_BY_ID["J01"],
         "semantic_checks": {
             "base_issues": [],
-            "migration_invariants": _passing_invariants(
-                [
-                    "zero_generation_attempts",
-                    "zero_generation_cost_usd",
-                    "zero_claims",
-                    "zero_evidence",
-                    "official_handoff",
-                    "required_reason_code",
-                ]
-            ),
+            "migration_invariants": _migration_invariant_checks(migration, J01_RESPONSE, []),
         },
-        "response": {
-            "status": "answer",
-            "response_mode": "scope_redirect",
-            "answer": OFFICIAL_HANDOFF_ANSWER,
-            "reason_code": "high_risk_claim_not_structured",
-            "claims": [],
-            "evidence": [],
-        },
+        "response": deepcopy(J01_RESPONSE),
     }
 
 
@@ -451,7 +466,7 @@ def _hard_probe(
             "mode": "offline",
             "provider_boundary": "offline_double",
             "dataset_sha256": BASE_DATASET_SHA256,
-            "expectation_profile": "rc2.2",
+            "expectation_profile": "rc2.3",
             "expectation_overlay_sha256": PROFILE_SHA256,
             "effective_expectations_sha256": EFFECTIVE_EXPECTATIONS_SHA256,
             "corpus_sha256": _fixture_material_sha(
@@ -587,6 +602,26 @@ def _fixture_root(tmp_path: Path) -> Path:
     root = tmp_path / "repo"
     for relative in MATERIAL_PATHS:
         _write(root / relative, f"fixture:{relative}\n")
+    _write(root / CORPUS_RELATIVE, J01_CORPUS_BYTES)
+    old_profile = dict(
+        PROFILE,
+        profile="rc2.2",
+        migrations=[_migration(case_id, profile="rc2.2") for case_id in MIGRATED_IDS],
+    )
+    old_bytes = yaml.safe_dump(old_profile, sort_keys=False).encode()
+    _write(root / "data/evaluation/hard_probe_rc2_2_expectations.v1.yaml", old_bytes)
+    _json(
+        root / "data/evaluation/hard_probe_rc2_2_expectations.v1.manifest.json",
+        {
+            "schema_version": "firelens.hard_probe_expectations_manifest.v1",
+            "profile": "rc2.2",
+            "expectations_sha256": hashlib.sha256(old_bytes).hexdigest(),
+            "base_dataset_sha256": BASE_DATASET_SHA256,
+            "migration_count": 11,
+            "migration_ids": sorted(MIGRATED_IDS),
+            "minimum_passed": 86,
+        },
+    )
     _write(root / "data/evaluation/hard_probe.v1.yaml", BASE_DATASET_BYTES)
     _json(
         root / "data/evaluation/hard_probe.v1.manifest.json",
@@ -626,12 +661,12 @@ def _fixture_root(tmp_path: Path) -> Path:
             "minimum_passed": 86,
         },
     )
-    _write(root / "data/evaluation/hard_probe_rc2_2_expectations.v1.yaml", PROFILE_BYTES)
+    _write(root / "data/evaluation/hard_probe_rc2_3_expectations.v1.yaml", PROFILE_BYTES)
     _json(
-        root / "data/evaluation/hard_probe_rc2_2_expectations.v1.manifest.json",
+        root / "data/evaluation/hard_probe_rc2_3_expectations.v1.manifest.json",
         {
             "schema_version": "firelens.hard_probe_expectations_manifest.v1",
-            "profile": "rc2.2",
+            "profile": "rc2.3",
             "expectations_sha256": PROFILE_SHA256,
             "base_dataset_sha256": BASE_DATASET_SHA256,
             "migration_count": 11,
@@ -854,8 +889,8 @@ def test_v2_bundle_binds_complete_candidate_and_recomputes(tmp_path: Path) -> No
         "data/evaluation/hard_probe_rc2_expectations.v1.manifest.json",
         "data/evaluation/hard_probe_rc2_1_expectations.v1.yaml",
         "data/evaluation/hard_probe_rc2_1_expectations.v1.manifest.json",
-        "data/evaluation/hard_probe_rc2_2_expectations.v1.yaml",
-        "data/evaluation/hard_probe_rc2_2_expectations.v1.manifest.json",
+        "data/evaluation/hard_probe_rc2_3_expectations.v1.yaml",
+        "data/evaluation/hard_probe_rc2_3_expectations.v1.manifest.json",
         "data/evaluation/v1_6_user_end_questions_50.json",
         ".github/workflows/candidate.yml",
     }.issubset(material_names)
@@ -865,7 +900,7 @@ def test_v2_bundle_binds_complete_candidate_and_recomputes(tmp_path: Path) -> No
     qualification = json.loads((bundle / "candidate-qualification-summary.json").read_text())
     assert qualification["hard_probe"]["passed"] == 86
     assert qualification["hard_probe"]["paired_regressions"] == []
-    assert qualification["hard_probe"]["expectation_profile"] == "rc2.2"
+    assert qualification["hard_probe"]["expectation_profile"] == "rc2.3"
     assert qualification["hard_probe"]["migrated_case_ids"] == sorted(MIGRATED_IDS)
     assert qualification["productbench_deterministic"] == {
         "tier": "offline_fake",
@@ -1087,7 +1122,7 @@ def test_productbench_report_emitter_shape_is_candidate_evidence_compatible(
         ("below_floor", "frozen 86/105"),
     ],
 )
-def test_current_report_requires_v2_rc2_2_tree_hashes_and_floor(
+def test_current_report_requires_v2_rc2_3_tree_hashes_and_floor(
     tmp_path: Path, mutation: str, message: str
 ) -> None:
     root = _fixture_root(tmp_path)
@@ -1126,7 +1161,7 @@ def test_profile_missing_mutated_floor_base_and_roster_are_rejected(
     tmp_path: Path, mutation: str, message: str
 ) -> None:
     root = _fixture_root(tmp_path)
-    profile_path = root / "data/evaluation/hard_probe_rc2_2_expectations.v1.yaml"
+    profile_path = root / "data/evaluation/hard_probe_rc2_3_expectations.v1.yaml"
     if mutation == "missing":
         profile_path.unlink()
     elif mutation == "overlay_hash":
@@ -1203,7 +1238,7 @@ def test_unlisted_expectation_change_and_migrated_semantic_drift_are_rejected(
     report = _hard_probe()
     handoff = next(row for row in report["results"] if row["id"] == "J01")  # type: ignore[index]
     handoff["response"]["claims"] = [{"claim_id": "unexpected"}]  # type: ignore[index]
-    with pytest.raises(ValueError, match="handoff case J01 is not deterministic"):
+    with pytest.raises(ValueError, match="J01 current source/explanation contract failed"):
         _build(
             root,
             tmp_path / "handoff-drift",
@@ -1440,7 +1475,7 @@ def test_candidate_workflow_is_exact_head_zero_cost_v2_artifact() -> None:
         'productbench_deterministic="${{ steps.productbench.outputs.exit_code }}"'
         in workflow_text
     )
-    assert "--expectation-profile rc2.2" in workflow_text
+    assert "--expectation-profile rc2.3" in workflow_text
     assert "--release-version 1.6.4" in workflow_text
     assert "--release-version 1.6.0-rc.1" not in workflow_text
     assert "--release-version 1.6.0-rc.2" not in workflow_text

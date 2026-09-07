@@ -1,0 +1,12 @@
+{
+  "owner": "Thomas",
+  "decision": "approved",
+  "authorization": "yes",
+  "recorded_at": "2026-09-07T14:12:06.865082+00:00",
+  "proposal_sha256": "6439c2ed0bc4c99f8f527df7a5f0a940aa9d290fedb63f8003f6c96c6e458e35",
+  "scope": [
+    "Separate current J01 acceptance migration with retained legacy failure",
+    "US$1 aggregate ceiling; 34 new embedding inputs and at most eight real Ask smoke requests"
+  ],
+  "source_admission": "separate prior decision already recorded"
+}

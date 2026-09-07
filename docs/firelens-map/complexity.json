@@ -1362,7 +1362,7 @@
     },
     {
       "branch_score": 97,
-      "loc": 519,
+      "loc": 525,
       "path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
@@ -1376,8 +1376,8 @@
       "path": "src/firelens/evaluation/candidate_evidence_productbench.py"
     },
     {
-      "branch_score": 102,
-      "loc": 639,
+      "branch_score": 104,
+      "loc": 653,
       "path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
@@ -1486,14 +1486,19 @@
       "path": "src/firelens/evaluation/golden_traces.py"
     },
     {
-      "branch_score": 131,
-      "loc": 645,
+      "branch_score": 134,
+      "loc": 654,
       "path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
-      "branch_score": 73,
-      "loc": 517,
+      "branch_score": 78,
+      "loc": 537,
       "path": "src/firelens/evaluation/hard_probe_expectations.py"
+    },
+    {
+      "branch_score": 34,
+      "loc": 125,
+      "path": "src/firelens/evaluation/j01_current_acceptance.py"
     },
     {
       "branch_score": 21,
@@ -2341,8 +2346,8 @@
       "path": "tests/test_bm25.py"
     },
     {
-      "branch_score": 68,
-      "loc": 1451,
+      "branch_score": 73,
+      "loc": 1486,
       "path": "tests/test_candidate_evidence.py"
     },
     {
@@ -2499,6 +2504,11 @@
       "branch_score": 0,
       "loc": 105,
       "path": "tests/test_intent_capability_bypass.py"
+    },
+    {
+      "branch_score": 17,
+      "loc": 151,
+      "path": "tests/test_j01_current_acceptance.py"
     },
     {
       "branch_score": 2,
@@ -3067,7 +3077,7 @@
     }
   ],
   "schema_version": "firelens.complexity.v1",
-  "source_digest": "38a45545a031f2d2d84d70419c6f0407f60ea20dc00c29de98041108b29b0cf3",
+  "source_digest": "c5e3ae3a2abed609beda5e7c6b1b1b3e8643ca7345840d970cf52d631dc59762",
   "symbols": [
     {
       "branch_score": 0,
@@ -8951,67 +8961,67 @@
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::_exact_fields:199",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::_exact_fields:203",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::canonical_bytes:143",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::canonical_bytes:147",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::file_record:158",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::file_record:162",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::load_json:190",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::load_json:194",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::sha256_bytes:139",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::sha256_bytes:143",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 5,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::strict_file:147",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::strict_file:151",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::tree_record:163",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::tree_record:167",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 4,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_handoff_migration:433",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_handoff_migration:437",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 16,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_mixed_migration:291",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_mixed_migration:295",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 18,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_quote_only_migration:227",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_quote_only_migration:231",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 12,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_report_semantic_checks:450",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_report_semantic_checks:454",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 18,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_structured_two_sided_migration:352",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_structured_two_sided_migration:356",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
       "branch_score": 13,
-      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_zero_generation:205",
+      "id": "src/firelens/evaluation/candidate_evidence_common.py::validate_zero_generation:209",
       "module_path": "src/firelens/evaluation/candidate_evidence_common.py"
     },
     {
@@ -9081,87 +9091,87 @@
     },
     {
       "branch_score": 11,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_hard_probe_passed_ids:503",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_hard_probe_passed_ids:515",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 9,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_load_hard_probe_profile:431",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_load_hard_probe_profile:435",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 7,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_load_named_profile:378",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_load_named_profile:382",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 12,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_profile_case_inputs:255",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_profile_case_inputs:254",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
-      "branch_score": 7,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_validate_migration:300",
-      "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
-    },
-    {
-      "branch_score": 2,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::exact_object:50",
+      "branch_score": 9,
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::_validate_migration:299",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::nonempty_string:56",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::exact_object:49",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_build_environment:77",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::nonempty_string:55",
+      "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
+    },
+    {
+      "branch_score": 2,
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_build_environment:76",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 5,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_checkout_state:62",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_checkout_state:61",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 9,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_command_outcomes:90",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_command_outcomes:89",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 9,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_credential_absence:173",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_credential_absence:172",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 14,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_hard_probe:536",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_hard_probe:548",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_limitations:636",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_limitations:650",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_productbench_deterministic:122",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_productbench_deterministic:121",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_structured_eval:220",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_structured_eval:219",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_timestamp:40",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_timestamp:39",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
       "branch_score": 8,
-      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_workflow_identity:140",
+      "id": "src/firelens/evaluation/candidate_evidence_validation.py::validate_workflow_identity:139",
       "module_path": "src/firelens/evaluation/candidate_evidence_validation.py"
     },
     {
@@ -9870,7 +9880,7 @@
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
-      "branch_score": 12,
+      "branch_score": 15,
       "id": "src/firelens/evaluation/hard_probe_cli.py::_run_case:402",
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
@@ -9891,17 +9901,17 @@
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::main:640",
+      "id": "src/firelens/evaluation/hard_probe_cli.py::main:649",
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::parse_args:623",
+      "id": "src/firelens/evaluation/hard_probe_cli.py::parse_args:632",
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
       "branch_score": 31,
-      "id": "src/firelens/evaluation/hard_probe_cli.py::run:477",
+      "id": "src/firelens/evaluation/hard_probe_cli.py::run:483",
       "module_path": "src/firelens/evaluation/hard_probe_cli.py"
     },
     {
@@ -9926,58 +9936,73 @@
     },
     {
       "branch_score": 10,
-      "id": "src/firelens/evaluation/hard_probe_expectations.py::_exact_quote_support:398",
+      "id": "src/firelens/evaluation/hard_probe_expectations.py::_exact_quote_support:407",
       "module_path": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
-      "branch_score": 6,
+      "branch_score": 8,
       "id": "src/firelens/evaluation/hard_probe_expectations.py::_expected_profile_migration:185",
       "module_path": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/evaluation/hard_probe_expectations.py::_generation_provider_stages:389",
+      "id": "src/firelens/evaluation/hard_probe_expectations.py::_generation_provider_stages:398",
       "module_path": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/hard_probe_expectations.py::_invariant_result:385",
+      "id": "src/firelens/evaluation/hard_probe_expectations.py::_invariant_result:394",
       "module_path": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
-      "branch_score": 19,
-      "id": "src/firelens/evaluation/hard_probe_expectations.py::_migration_invariant_checks:413",
+      "branch_score": 21,
+      "id": "src/firelens/evaluation/hard_probe_expectations.py::_migration_invariant_checks:422",
       "module_path": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/hard_probe_expectations.py::canonical_json_sha256:254",
+      "id": "src/firelens/evaluation/hard_probe_expectations.py::canonical_json_sha256:260",
       "module_path": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/evaluation/hard_probe_expectations.py::effective_allowed_modes:350",
+      "id": "src/firelens/evaluation/hard_probe_expectations.py::effective_allowed_modes:359",
       "module_path": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/evaluation/hard_probe_expectations.py::effective_expectations_payload:359",
+      "id": "src/firelens/evaluation/hard_probe_expectations.py::effective_expectations_payload:368",
       "module_path": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/evaluation/hard_probe_expectations.py::file_sha256:250",
+      "id": "src/firelens/evaluation/hard_probe_expectations.py::file_sha256:256",
       "module_path": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/evaluation/hard_probe_expectations.py::load_dataset:266",
+      "id": "src/firelens/evaluation/hard_probe_expectations.py::load_dataset:272",
       "module_path": "src/firelens/evaluation/hard_probe_expectations.py"
     },
     {
-      "branch_score": 16,
-      "id": "src/firelens/evaluation/hard_probe_expectations.py::load_expectation_profile:277",
+      "branch_score": 17,
+      "id": "src/firelens/evaluation/hard_probe_expectations.py::load_expectation_profile:283",
       "module_path": "src/firelens/evaluation/hard_probe_expectations.py"
+    },
+    {
+      "branch_score": 24,
+      "id": "src/firelens/evaluation/j01_current_acceptance.py::current_source_explanation_supported:21",
+      "module_path": "src/firelens/evaluation/j01_current_acceptance.py"
+    },
+    {
+      "branch_score": 4,
+      "id": "src/firelens/evaluation/j01_current_acceptance.py::legacy_j01_result:78",
+      "module_path": "src/firelens/evaluation/j01_current_acceptance.py"
+    },
+    {
+      "branch_score": 6,
+      "id": "src/firelens/evaluation/j01_current_acceptance.py::validate_current_j01:110",
+      "module_path": "src/firelens/evaluation/j01_current_acceptance.py"
     },
     {
       "branch_score": 0,
@@ -17331,182 +17356,182 @@
     },
     {
       "branch_score": 2,
-      "id": "tests/test_candidate_evidence.py::_baseline_hard_probe:480",
+      "id": "tests/test_candidate_evidence.py::_baseline_hard_probe:495",
       "module_path": "tests/test_candidate_evidence.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::_build:795",
+      "id": "tests/test_candidate_evidence.py::_build:830",
       "module_path": "tests/test_candidate_evidence.py"
     },
     {
       "branch_score": 8,
-      "id": "tests/test_candidate_evidence.py::_evidence_inputs:678",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::_fixture_material_sha:75",
+      "id": "tests/test_candidate_evidence.py::_evidence_inputs:713",
       "module_path": "tests/test_candidate_evidence.py"
     },
     {
       "branch_score": 1,
-      "id": "tests/test_candidate_evidence.py::_fixture_root:586",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::_handoff_result:383",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 6,
-      "id": "tests/test_candidate_evidence.py::_hard_probe:417",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::_json:71",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 17,
-      "id": "tests/test_candidate_evidence.py::_migration:79",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::_mixed_result:332",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 1,
-      "id": "tests/test_candidate_evidence.py::_passing_invariants:225",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 1,
-      "id": "tests/test_candidate_evidence.py::_productbench_deterministic:495",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::_promoted_fixture_root:1271",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::_quote_only_result:229",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::_structured_two_sided_result:272",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::_verify:826",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 1,
-      "id": "tests/test_candidate_evidence.py::_write:63",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_candidate_workflow_is_exact_head_zero_cost_v2_artifact:1422",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 5,
-      "id": "tests/test_candidate_evidence.py::test_current_report_requires_v2_rc2_2_tree_hashes_and_floor:1090",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_frozen_rc2_1_profile_pair_remains_required_and_validated:1156",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_frozen_rc2_profile_pair_remains_required_and_validated:1147",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_identity_extra_missing_and_stale_report_paths_are_rejected:928",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_main_push_workflow_identity_is_accepted:1385",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_non_main_push_workflow_identity_is_rejected:1403",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_productbench_evidence_must_be_present_current_and_complete:990",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_productbench_report_emitter_shape_is_candidate_evidence_compatible:1027",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 4,
-      "id": "tests/test_candidate_evidence.py::test_profile_missing_mutated_floor_base_and_roster_are_rejected:1125",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_promoted_evidence_binds_and_rehashes_the_promotion_manifest:1310",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_promoted_release_version_requires_the_internal_manifest:1251",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_release_version_must_match_python_web_and_runtime_subject:1244",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_security_findings_emit_evidence_but_fail_gate:890",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_tampering_changed_material_and_changed_subject_are_rejected:905",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 0,
-      "id": "tests/test_candidate_evidence.py::test_unclean_start_and_hard_probe_regression_are_rejected:968",
-      "module_path": "tests/test_candidate_evidence.py"
-    },
-    {
-      "branch_score": 7,
-      "id": "tests/test_candidate_evidence.py::test_unlisted_expectation_change_and_migrated_semantic_drift_are_rejected:1165",
+      "id": "tests/test_candidate_evidence.py::_fixture_material_sha:76",
       "module_path": "tests/test_candidate_evidence.py"
     },
     {
       "branch_score": 2,
-      "id": "tests/test_candidate_evidence.py::test_v1_6_2_evidence_selects_patch_validator_and_material:1336",
+      "id": "tests/test_candidate_evidence.py::_fixture_root:601",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::_handoff_result:397",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 6,
+      "id": "tests/test_candidate_evidence.py::_hard_probe:432",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::_json:72",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 19,
+      "id": "tests/test_candidate_evidence.py::_migration:82",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::_mixed_result:346",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "tests/test_candidate_evidence.py::_passing_invariants:239",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "tests/test_candidate_evidence.py::_productbench_deterministic:510",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::_promoted_fixture_root:1306",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::_quote_only_result:243",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::_structured_two_sided_result:286",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::_verify:861",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "tests/test_candidate_evidence.py::_write:64",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_candidate_workflow_is_exact_head_zero_cost_v2_artifact:1457",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 5,
+      "id": "tests/test_candidate_evidence.py::test_current_report_requires_v2_rc2_3_tree_hashes_and_floor:1125",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_frozen_rc2_1_profile_pair_remains_required_and_validated:1191",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_frozen_rc2_profile_pair_remains_required_and_validated:1182",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_identity_extra_missing_and_stale_report_paths_are_rejected:963",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_main_push_workflow_identity_is_accepted:1420",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_non_main_push_workflow_identity_is_rejected:1438",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_productbench_evidence_must_be_present_current_and_complete:1025",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_productbench_report_emitter_shape_is_candidate_evidence_compatible:1062",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 4,
+      "id": "tests/test_candidate_evidence.py::test_profile_missing_mutated_floor_base_and_roster_are_rejected:1160",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_promoted_evidence_binds_and_rehashes_the_promotion_manifest:1345",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_promoted_release_version_requires_the_internal_manifest:1286",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_release_version_must_match_python_web_and_runtime_subject:1279",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_security_findings_emit_evidence_but_fail_gate:925",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_tampering_changed_material_and_changed_subject_are_rejected:940",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_candidate_evidence.py::test_unclean_start_and_hard_probe_regression_are_rejected:1003",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 7,
+      "id": "tests/test_candidate_evidence.py::test_unlisted_expectation_change_and_migrated_semantic_drift_are_rejected:1200",
+      "module_path": "tests/test_candidate_evidence.py"
+    },
+    {
+      "branch_score": 2,
+      "id": "tests/test_candidate_evidence.py::test_v1_6_2_evidence_selects_patch_validator_and_material:1371",
       "module_path": "tests/test_candidate_evidence.py"
     },
     {
       "branch_score": 3,
-      "id": "tests/test_candidate_evidence.py::test_v2_bundle_binds_complete_candidate_and_recomputes:835",
+      "id": "tests/test_candidate_evidence.py::test_v2_bundle_binds_complete_candidate_and_recomputes:870",
       "module_path": "tests/test_candidate_evidence.py"
     },
     {
@@ -18823,6 +18848,41 @@
       "branch_score": 0,
       "id": "tests/test_intent_capability_bypass.py::test_validated_corpus_capabilities_bypass_outer_loop:91",
       "module_path": "tests/test_intent_capability_bypass.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_j01_current_acceptance.py::packaged:36",
+      "module_path": "tests/test_j01_current_acceptance.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_j01_current_acceptance.py::response:30",
+      "module_path": "tests/test_j01_current_acceptance.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_j01_current_acceptance.py::test_checklist_requires_explicit_missing_explanation:121",
+      "module_path": "tests/test_j01_current_acceptance.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "tests/test_j01_current_acceptance.py::test_only_j01_changes_and_floor_is_frozen:49",
+      "module_path": "tests/test_j01_current_acceptance.py"
+    },
+    {
+      "branch_score": 5,
+      "id": "tests/test_j01_current_acceptance.py::test_package_rejects_antecedent_or_generation_drift:134",
+      "module_path": "tests/test_j01_current_acceptance.py"
+    },
+    {
+      "branch_score": 3,
+      "id": "tests/test_j01_current_acceptance.py::test_real_fixture_execution_emits_both_results:63",
+      "module_path": "tests/test_j01_current_acceptance.py"
+    },
+    {
+      "branch_score": 8,
+      "id": "tests/test_j01_current_acceptance.py::test_rejects_unsupported_response:94",
+      "module_path": "tests/test_j01_current_acceptance.py"
     },
     {
       "branch_score": 2,

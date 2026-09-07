@@ -1,4 +1,4 @@
-# J01 current acceptance proposal — decision pending
+# J01 current acceptance — approved and implemented
 
 This is separate from the adopted PreparedBC source decision. It changes the
 current evaluation contract, not production answer behavior.
@@ -37,8 +37,13 @@ rationale, positive checklists without the missing-explanation limitation,
 generated rationale and fabricated conversation/source antecedents. Existing
 unanchored follow-up and personal-safety tests remain protected.
 
-Owner decision: **PENDING**. No active profile or candidate validator has been
-changed by this proposal. Source admission is not acceptance-policy approval.
+Owner decision: **APPROVED** by Thomas’s “yes”, recorded separately in
+[POLISH_EXECUTION_AUTHORIZATION.json](POLISH_EXECUTION_AUTHORIZATION.json).
+Profile `rc2.3` changes only J01 and preserves the frozen profiles and 86/105 floor.
+Candidate packaging independently validates current corpus quotations and the
+original conversation, and recomputes the same response’s legacy failure.
+The approved proposal’s original bytes are retained in the external evidence
+checkpoint; the authorization record binds their hash.
 
 ## Bounded execution allowance proposed separately
 
@@ -47,5 +52,8 @@ and one bounded real-provider smoke (up to eight Ask requests), using the existi
 OpenRouter credential. Reuse only the 144 vectors whose complete rendered inputs
 and embedding configuration were verified equal. No new key, model, large paid
 evaluation campaign or deployment-secret change is proposed. Stop if the cost
-ceiling cannot be enforced or the allowance is exhausted. No paid call has been
-made during this resumed work.
+ceiling cannot be enforced or the allowance is exhausted. One embedding batch was attempted after approval and failed authentication.
+The retained credential also returns HTTP 401 on the read-only key endpoint.
+Vercel protects the production key from export. No embeddings were returned;
+the US$0.05 reservation remains in the ledger pending settlement. No real Ask
+smoke ran. A usable existing credential is required to resume.

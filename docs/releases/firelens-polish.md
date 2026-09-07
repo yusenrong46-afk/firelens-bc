@@ -2,8 +2,8 @@
 
 **FIRELENS_POLISH_BLOCKED_WITH_EVIDENCE** — implementation is local and not yet a
 frozen or independently accepted release candidate. The owner-adopted source
-revision is integrated; current J01 acceptance and the real index/provider
-execution gate remain pending. See the [concrete J01 proposal](../reports/J01_CURRENT_ACCEPTANCE_PROPOSAL.md).
+revision is integrated; current J01 acceptance is approved and implemented. The real index/provider
+execution gate is blocked by an unavailable usable existing credential. See the [concrete J01 proposal](../reports/J01_CURRENT_ACCEPTANCE_PROPOSAL.md).
 
 ## Identity and source
 
@@ -91,21 +91,29 @@ dependency. The first-use hierarchy and optional community copy remain; source
 revision detail is collapsed to limit extra content. Detailed source repetition
 can be reduced later once the integrated candidate's final evidence is known.
 
-Current remote main remains at the baseline. Existing main CI still has the
+At the last remote inspection, main remained at the baseline. Existing main CI still has the
 source-aware failure and legacy J01 candidate refusal; no new CI run is claimed.
-Production remains build `c06474d34ff92433357be443d7c44eeffe28f0fe`, deployment
+At the last production inspection, production was build `c06474d34ff92433357be443d7c44eeffe28f0fe`, deployment
 `dpl_FeF5mba9xBMUWAPZqVTHtprhDXin`, release 1.6.4 with 179 chunks at
 https://firelens-bc.vercel.app/. No push, merge or deployment occurred.
 
 The final matrix, independent read-only High review, real-provider smoke and
-release remain pending. The source decision does not approve J01's separate
-acceptance policy. No paid provider calls were made in this resumed work.
+release remain pending. Thomas separately approved J01 migration and the US$1
+execution ceiling. The new profile and packaging pass 65 focused tests, including
+current/legacy paired execution and source, conversation and generation controls.
+An additional hard-probe run had 43 passes and three runtime failures caused by
+the missing current index; those failures remain retained. Static typing passes.
+One embedding batch failed authentication; no embeddings were returned. The ledger
+records US$0 settled and US$0.05 still reserved, not a verified billing total.
+The retained key returns HTTP 401, and Vercel exports only a protected placeholder
+for the production key. No key was created and no production secret changed.
 
 ## Next gate
 
-Resolve the [current J01 acceptance proposal](../reports/J01_CURRENT_ACCEPTANCE_PROPOSAL.md)
-and positive paid-call ceiling. Then rebuild the real index using verified reuse,
-finish current expectation migration, pin the complete candidate, run the requested
-matrix, obtain independent review, and use normal PR/CI/release gates. Preserve
-all historical red outcomes. The [five-minute GMT script](../product/GMT_DEMO_CHECKLIST.md)
-is prepared for that qualified candidate.
+Provide a usable existing OpenRouter credential through the local environment;
+do not paste it into conversation. J01 and the US$1 ceiling are already approved.
+Then rebuild the real index using the 144 verified reused vectors and 34 new
+inputs, finish the requested matrix, freeze the candidate, obtain the requested
+independent High review, and use normal PR/CI/release gates. Preserve all historical
+red outcomes. The [five-minute GMT script](../product/GMT_DEMO_CHECKLIST.md) is
+prepared for that qualified candidate. No release or independent acceptance is claimed.
