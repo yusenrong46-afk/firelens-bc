@@ -796,3 +796,40 @@ test("guided questions submit once on click and follow-ups keep the conversation
   expect(seenRequests[1]!.question).toBe("How often should I update my emergency kit?");
   expect(seenRequests[1]!.history.some(turn => turn.content.includes("What official wildfire records"))).toBe(true);
 });
+
+
+test("map totals distinguish unavailable layers from available empty layers", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Ask FireLens a question").fill("Show stale official wildfire records");
+  await page.getByLabel("Send question").click();
+  await page.getByRole("button", { name: "Show these on the map" }).click();
+  const totals = page.getByLabel("Official record totals");
+  await expect(totals).toContainText("Evacuation records unavailable");
+  await expect(totals).not.toContainText("0 evacuation areas");
+  await expect(totals).toContainText("0 perimeters");
+  await expect(totals).toContainText("1 fires");
+});
+
+test("map record source links do not overlap status in the narrow rail", async ({ page }) => {
+  await page.setViewportSize({ width: 1536, height: 1000 });
+  await page.goto("/");
+  await page.getByLabel("Ask FireLens a question").fill("Show stale official wildfire records");
+  await page.getByLabel("Send question").click();
+  await page.getByRole("button", { name: "Show these on the map" }).click();
+  const list = page.getByRole("list", { name: "Matching this question" });
+  for (const width of [1536, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await expect(list).toBeVisible();
+    const overlap = await list.locator("li").first().evaluate((row) => {
+      const text = row.querySelector(".live-list__select small")!;
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      const link = row.querySelector("a")!.getBoundingClientRect();
+      return [...range.getClientRects()].some((box) => (
+        box.left < link.right && box.right > link.left && box.top < link.bottom && box.bottom > link.top
+      ));
+    });
+    expect(overlap, `status and source link overlap at ${width}px`).toBe(false);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  }
+});

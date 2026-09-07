@@ -1,6 +1,6 @@
 # FireLens System Card
 
-Status: deployed and production-verified polish release; historical results retained separately.
+Status: production guidance verified; final map-display correction tracked separately.
 Assessment date: 2026-09-07.
 
 ## Production release — 2026-09-07
@@ -16,7 +16,11 @@ Actual production mixed and pet requests passed with current PreparedBC passages
 partial publication and the personal evacuation boundary. Both used real
 embedding/rerank paths and zero generation. Live record selection and Home/reset
 passed; perimeter and evacuation geometry failures remained visibly unavailable.
-No all-clear or complete coverage is inferred. No rollback was required.
+No all-clear or complete coverage is inferred. No rollback was required for those guidance paths. Final visual review then
+identified unqualified zero totals for unavailable map layers and overlapping
+record links. This revision corrects those two frontend owners. The initial
+whole-polish completion claim was superseded; final display rollout and exact
+successor identity are recorded in [PR #79](https://github.com/yusenrong46-afk/firelens-bc/pull/79).
 
 The [final release record](../releases/firelens-polish.md) links maintained CI,
 review and disposition evidence, distinguishes fresh production from retained

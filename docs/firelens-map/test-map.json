@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "7c9f92e7e98033000f819e03069000ef6bdc6dc324afa7f77e62e7fc4208e3d8",
+  "source_digest": "119660041925338764f52e32128080ad3c7beaca2e3486a72172083b560b2d70",
   "tests": [
     {
       "cases": [
@@ -358,7 +358,9 @@
         "test_call_21",
         "test_call_22",
         "test_call_23",
-        "test_call_24"
+        "test_call_24",
+        "test_call_25",
+        "test_call_26"
       ],
       "direct_targets": [],
       "endpoints": [

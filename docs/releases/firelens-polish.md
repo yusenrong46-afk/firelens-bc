@@ -1,18 +1,38 @@
 # FireLens polish release — 2026-09-07
 
-**FIRELENS_POLISH_RELEASE_DEPLOYED_AND_VERIFIED**
+**Production guidance qualified; bounded map-display correction included.**
 
 [Open FireLens](https://firelens-bc.vercel.app/). [PR #78](https://github.com/yusenrong46-afk/firelens-bc/pull/78)
 merged as `8688c000017e4f1f54ef8b3e957de101c74c69b3`. Its complete tree,
 `3dfefc0b67921ea8881c20a53ef62d210a7d227b`, is byte-identical to independently
 reviewed candidate `20bbafd2c44e4bb298a861b656d33224ec5b4966`.
 
-The canonical deployment wrapper published production deployment
+The canonical deployment wrapper published the initial production deployment
 `dpl_DXBrUYroDBzLdEMoXasv1q48sUzq`, with the actual merge SHA as its build identity.
 The production alias, runtime candidate hash, 178-chunk corpus/index identity,
 models and approved privacy policy match the merged candidate. All 20 deployed
-client files match the reviewed build. No second deployment is needed for this
-release-record update; documentation changes do not alter production inputs.
+client files match the reviewed build. The final display-only successor and its production closeout are recorded on
+[PR #79](https://github.com/yusenrong46-afk/firelens-bc/pull/79). The build above
+remains the identity of the retained paid production guidance evidence.
+
+## Final map-display correction
+
+Final visual review found two pre-existing defects in the live-map panel: its
+footer labelled unavailable layers with numeric zeros, and narrow record cards
+allowed source links to overlap status text. Neither had explicit prior acceptance.
+The initial production guidance/source results below remain valid; the initial
+whole-polish completion claim was superseded while these findings were addressed.
+
+This revision fixes the existing footer to state layer unavailability and labels
+the total as displayed records. Available empty layers retain a numeric zero.
+The existing record-list grid now fits its container and places source links
+below the record body; an obsolete competing grid override is removed. Both
+focused browser controls failed before the patch and passed afterwards, including
+status/link separation at desktop, 390px and 320px. These are local fixture
+regressions, not new provider runs. No geometry validation, backend, corpus,
+index, provider, model or privacy policy changes. Final independent review,
+maintained CI and actual successor display checks are recorded in the PR closeout;
+paid guidance evidence transfers only through verified backend/input equivalence.
 
 ## Acceptance and independent review
 
