@@ -3,6 +3,26 @@
 Status: measured candidate evidence with historical results retained separately.
 Assessment date: 2026-09-05. Final release execution is authorized subject to current gates.
 
+## Final qualification continuation — 2026-09-07
+
+Mixed and pet real-provider journeys have now qualified using three additional
+Ask attempts. One independently reviewed coordinator repair preserves contents
+intent beside a personal safety boundary; the exact mixed confirmation now
+includes the admitted checklist and declines to decide evacuation. Pet output
+is an exact, partial source quotation. Repair implementation `287772bbf2f07c53456d4171a53e58fca69ad0fc`
+retains the source/index/model/privacy identities and passes `make verify`,
+106/106 source-aware, 31/31 offline ProductBench, 97/105 rc2.3 hard probe and
+51/51 built-stack checks. These checks do not replace maintained CI acceptance.
+
+**Release remains NO-GO pending final review and CI.** The maintained Verify
+EvalLab core command still fails 565/574 because its frozen rc2.2 validator
+rejects six retained CRITICAL-labelled outcomes. That gate has not been bypassed.
+Two additional provider 429s remain recorded despite successful retries. Settled
+receipts total US$0.01392722 and retained reservations US$0.425 under US$1.
+No further calls followed qualification, and no push, merge or deployment occurred.
+The [release record](../releases/firelens-polish.md) separates exact response and
+candidate identities, carried-forward pet evidence, and the historical checkpoint below.
+
 ## Source and UI polish — 2026-09-07
 
 Independent High review accepted implementation `11613679c7910c0c15962ee16da49ba7bc530ff2`

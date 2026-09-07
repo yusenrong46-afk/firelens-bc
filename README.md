@@ -17,11 +17,12 @@ FireLens do not exactly match the current PDF; the current checklist also adds
 insurance/important papers. Read the [release findings](docs/releases/firelens-final-ship.md)
 and consult the current official guide for that guidance.
 
-**Local polish implementation accepted; release remains blocked.** The successor
-admits the revised source, rebuilds the real 178-chunk index, and passes the local
-verification matrix. Independent review accepted the code. Mixed/pet real-provider
-smoke remains incomplete after rate limits; the eight-Ask allowance is exhausted.
-See the [polish release evidence](docs/releases/firelens-polish.md).
+**Local mixed and pet qualification completed; release remains blocked.** The
+successor admits the revised source and uses the real 178-chunk index. Three
+additional Ask attempts qualified both missing journeys after one reviewed
+contents-intent repair. `make verify` and the current rc2.3 matrix pass, but the
+maintained Verify workflow's frozen rc2.2 EvalLab core gate still fails. No polish
+release has been deployed. See the [polish release evidence](docs/releases/firelens-polish.md).
 
 ![Reviewed local FireLens candidate answering grab-and-go guidance with inspectable source proof](docs/product/screenshots/polish-current-guidance-2026-09-07.png)
 

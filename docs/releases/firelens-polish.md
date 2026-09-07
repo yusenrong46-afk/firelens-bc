@@ -1,4 +1,70 @@
-# FireLens polish checkpoint — 2026-09-07
+# FireLens final qualification continuation — 2026-09-07
+
+**Mixed and pet real-provider qualification completed; release remains NO-GO
+pending final independent review and maintained CI acceptance.** No push, merge
+or deployment occurred in this continuation checkpoint.
+
+Qualified repair implementation: `287772bbf2f07c53456d4171a53e58fca69ad0fc`, tree
+`a6db8b268d1efefcc955220d3399a121113de539`. It starts from documentation candidate
+`845fdecddc737bd8c439252b60e98fafff04df3a`; all 1,103 unchanged tracked paths were
+byte-compared against reviewed implementation `1161367`, and the six changed paths
+were documentation/image files. Runtime identity and assets were rebuilt for the
+exact starting candidate before paid requests and again for the repair. The final
+documentation successor is bound separately in the external qualification freeze.
+
+Only three of eight additional Ask attempts were used:
+
+1. Exact mixed question: HTTP 200, but only bag-construction guidance, without the
+   requested contents. Preserved as a semantic failure, not qualified success.
+2. Exact pet question: HTTP 200, partial exact quotation from adopted PreparedBC
+   page 6, including food, water, leashes and carriers. No invented full checklist.
+3. Exact mixed question after accepted repair: HTTP 200 with the page-5 contents
+   quotation, separately typed reviewed claim and personal evacuation boundary.
+
+The sole repair preserves the original isolated contents clause in the existing
+coordinator, using the existing `requests_contents` predicate. No parser, safety
+layer, source, model, provider, compiler or evaluation contract changed. The
+independent High repair review accepted it for paid confirmation; 214 protected
+tests plus 39 subtests passed. Standalone pet execution is unaffected and its
+successful prior response is explicitly carried forward, not rerun or relabelled
+as a fresh response from the repair. The current pet regression still passes.
+
+Actual provider completion includes two new transient rerank 429s, each followed
+by a successful normal-policy retry. They remain availability evidence. All three
+requests used the approved model/privacy policy and real index. The repaired
+mixed confirmation used no generation. No calls were made after both missing
+journeys qualified. Current accounting is US$0.01392722 settled receipts plus
+US$0.425 retained reservations under the unchanged US$1 ceiling. The original
+US$0.05 failed embedding reservation remains. Only unallocated Ask-envelope
+balances were released; no dispatched failed-provider reservation was released.
+
+Fresh implementation matrix: `make verify` passed (two backend passes of 2,625
+passed, 12 skipped and 709 subtests; frontend 203 tests; mocked browser 45 passed,
+one skipped); built-stack 51/51; source-aware 106/106; offline ProductBench 31/31;
+rc2.3 hard probe 97/105 against floor 86; structured-publication violations zero.
+The current same-response J01 pass and frozen rc2.2 failure remain distinct.
+Desktop/390px/320px presentation replay of the actual successful responses has no
+horizontal overflow; those screenshots replay retained provider responses and
+make no new provider or deployment claim.
+
+A separate run of the exact maintained Verify EvalLab core command is **FAIL
+565/574**. Its validator rejects six retained CRITICAL-labelled failures:
+F06, F07, F09, I04, K03 and K09. J01, I08 and L05 also remain individual failures.
+The candidate-evidence workflow uses rc2.3, but Verify still requires a PASS core
+envelope from the frozen rc2.2 adapter. This failure is preserved, not waived or
+replaced with the current profile's floor pass. No evaluator/CI acceptance rule
+was changed in this bounded repair. Final independent review must adjudicate the
+release disposition; current CI must pass before release.
+
+Evidence: `firelens-polish-evidence/final-qualification/`, including the original
+and fixed FailureRecords, exact public requests/responses/traces, budget ledger
+snapshot, repair High review, fresh matrix logs and final qualification freeze.
+The five-minute GMT script remains conditional on release gates; there is no
+production success claim. Earlier checkpoints below are historical.
+
+---
+
+# Historical FireLens polish checkpoint — 2026-09-07
 
 **FIRELENS_POLISH_BLOCKED_WITH_EVIDENCE** — independent High review accepted the
 code; required mixed/pet real-provider qualification remains incomplete after
