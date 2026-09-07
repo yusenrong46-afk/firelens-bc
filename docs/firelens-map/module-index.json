@@ -1777,7 +1777,7 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 44,
+      "branch_score": 47,
       "fan_in": 3,
       "fan_out": 11,
       "generated": false,
@@ -2852,7 +2852,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 61,
+      "branch_score": 65,
       "fan_in": 0,
       "fan_out": 0,
       "generated": false,
@@ -2864,7 +2864,7 @@
       "imports": [],
       "kind": "test",
       "language": "typescript",
-      "loc": 798,
+      "loc": 835,
       "major_symbols": [
         "AskRequest"
       ],
@@ -29926,5 +29926,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "7c9f92e7e98033000f819e03069000ef6bdc6dc324afa7f77e62e7fc4208e3d8"
+  "source_digest": "119660041925338764f52e32128080ad3c7beaca2e3486a72172083b560b2d70"
 }

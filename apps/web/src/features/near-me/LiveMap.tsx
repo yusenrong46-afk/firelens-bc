@@ -265,10 +265,10 @@ export function LiveMap({
       </div>
       {filteredResults.length > 0 && (
         <div className="live-roster-summary" aria-label="Official record totals">
-          <strong>{filteredResults.length} official map records</strong>
-          <span>{kindCounts.incident} fires</span>
-          <span>{kindCounts.evacuation} evacuation areas</span>
-          <span>{kindCounts.perimeter} perimeters</span>
+          <strong>{filteredResults.length} displayed official records</strong>
+          <span>{unavailableLayers.includes("incident") ? "Fire records unavailable" : `${kindCounts.incident} fires`}</span>
+          <span>{unavailableLayers.includes("evacuation") ? "Evacuation records unavailable" : `${kindCounts.evacuation} evacuation areas`}</span>
+          <span>{unavailableLayers.includes("perimeter") ? "Perimeter records unavailable" : `${kindCounts.perimeter} perimeters`}</span>
         </div>
       )}
       <ProvinceRecordList

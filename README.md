@@ -11,7 +11,7 @@ and general background distinct, including when a conversation moves between the
 [System Card](docs/system-card/FIRELENS_SYSTEM_CARD.md) ·
 [Evaluation guide](docs/eval/README.md)
 
-This revision uses the adopted current PreparedBC guide and a real178-chunk index.
+The deployed release uses the adopted PreparedBC guide and a real 178-chunk index.
 Exact source quotations, reviewed paraphrases and partial guidance are labelled
 separately. See the [dated release evidence](docs/releases/firelens-polish.md) for
 qualification, deployment status and retained limitations.

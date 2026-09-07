@@ -1,7 +1,31 @@
 # FireLens System Card
 
-Status: measured candidate evidence with historical results retained separately.
-Assessment date: 2026-09-05. Final release execution is authorized subject to current gates.
+Status: production guidance verified; final map-display correction tracked separately.
+Assessment date: 2026-09-07.
+
+## Production release — 2026-09-07
+
+PR #78 merged as `8688c000017e4f1f54ef8b3e957de101c74c69b3`, with the same
+complete tree as independently reviewed `20bbafd`. Maintained PR Verify and
+candidate-evidence checks passed. Production deployment
+`dpl_DXBrUYroDBzLdEMoXasv1q48sUzq` exposes that actual merge build, the bound
+178-chunk corpus/index and approved model/privacy policy. All 20 client files
+match the reviewed build.
+
+Actual production mixed and pet requests passed with current PreparedBC passages,
+partial publication and the personal evacuation boundary. Both used real
+embedding/rerank paths and zero generation. Live record selection and Home/reset
+passed; perimeter and evacuation geometry failures remained visibly unavailable.
+No all-clear or complete coverage is inferred. No rollback was required for those guidance paths. Final visual review then
+identified unqualified zero totals for unavailable map layers and overlapping
+record links. This revision corrects those two frontend owners. The initial
+whole-polish completion claim was superseded; final display rollout and exact
+successor identity are recorded in [PR #79](https://github.com/yusenrong46-afk/firelens-bc/pull/79).
+
+The [final release record](../releases/firelens-polish.md) links maintained CI,
+review and disposition evidence, distinguishes fresh production from retained
+qualification, and records US$0.01434842 settled plus US$0.9326656 reserved under
+US$1. Earlier NO-GO sections below are historical checkpoints.
 
 ## Current CI policy and security maintenance — 2026-09-07
 

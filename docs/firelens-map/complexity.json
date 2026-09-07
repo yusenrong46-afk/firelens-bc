@@ -216,7 +216,7 @@
       "path": "apps/web/src/features/near-me/LiveAnalysisWorkspace.tsx"
     },
     {
-      "branch_score": 44,
+      "branch_score": 47,
       "loc": 285,
       "path": "apps/web/src/features/near-me/LiveMap.tsx"
     },
@@ -381,8 +381,8 @@
       "path": "apps/web/tests/e2e-real/review-v2.spec.ts"
     },
     {
-      "branch_score": 61,
-      "loc": 798,
+      "branch_score": 65,
+      "loc": 835,
       "path": "apps/web/tests/e2e/app.spec.ts"
     },
     {
@@ -3082,7 +3082,7 @@
     }
   ],
   "schema_version": "firelens.complexity.v1",
-  "source_digest": "7c9f92e7e98033000f819e03069000ef6bdc6dc324afa7f77e62e7fc4208e3d8",
+  "source_digest": "119660041925338764f52e32128080ad3c7beaca2e3486a72172083b560b2d70",
   "symbols": [
     {
       "branch_score": 0,

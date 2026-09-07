@@ -199,7 +199,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .live-list-heading + .live-list { margin-top: 8px; }
 .live-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: 0 20px;
   margin: 18px 0 0;
   padding: 0;
@@ -207,13 +207,15 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 .live-list li {
   display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
+  grid-template-columns: 10px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   padding: 11px 6px;
   border-bottom: 1px solid var(--hairline-soft);
   border-radius: 8px;
 }
+.live-list__body { min-width: 0; overflow-wrap: anywhere; }
+.live-list li > a { grid-column: 2; justify-self: start; }
 .live-list__selected { background: rgba(255, 255, 255, 0.85); box-shadow: inset 0 0 0 1px var(--hairline); }
 .live-list strong, .live-list small { display: block; }
 .live-list strong { color: var(--ink); font-size: 16px; }
@@ -223,6 +225,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .live-dot--evacuation { background: #8f3a91; box-shadow: 0 0 0 3px rgba(143, 58, 145, 0.14); }
 .live-list__select {
   min-width: 0;
+  width: 100%;
   padding: 10px 4px;
   color: inherit;
   text-align: left;
@@ -1068,7 +1071,6 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   min-height: 360px;
   box-shadow: 0 10px 32px rgba(14, 32, 26, 0.13);
 }
-.evidence-panel--map .live-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 /* ---------- V1.6 adaptive answer and analysis workspace ---------- */
 
