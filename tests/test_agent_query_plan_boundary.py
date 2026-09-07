@@ -630,3 +630,28 @@ def test_contents_question_reaches_publication_without_retrieval_rewrite(questio
     agent = FireLensAgent(cast(Any, static), LiveAnswerCoordinator(cast(Any, object())))
     asyncio.run(agent.answer(QueryRequest(question=question)))
     assert static.questions == [question]
+
+
+@pytest.mark.parametrize(
+    "guidance,decision",
+    (
+        ("What belongs in a grab-and-go bag", "should I evacuate"),
+        ("What should I put in an emergency kit", "should I return home"),
+    ),
+)
+def test_mixed_contents_clause_reaches_publication_without_retrieval_rewrite(
+    guidance: str, decision: str
+) -> None:
+    static = RecordingStatic(
+        _grounded().model_copy(
+            update={"limitations": ["Stable guidance does not establish current conditions."]}
+        )
+    )
+    agent = FireLensAgent(cast(Any, static), LiveAnswerCoordinator(cast(Any, object())))
+    execution = asyncio.run(agent.answer(QueryRequest(question=f"{guidance}, and {decision}?")))
+    assert len(static.questions) == 1
+    assert static.questions[0].rstrip("?") == guidance
+    assert any(
+        section.kind.value == "safety_boundary"
+        for section in execution.response.answer_sections
+    )

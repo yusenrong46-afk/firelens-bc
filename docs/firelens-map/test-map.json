@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "f26e7f74eca1ce891abe45b7e186dc44362cd8380d05078bd99cf73aa385711a",
+  "source_digest": "ffe4aa1d0d085f02468b7ab83ecb63268623f057bba53cf4cecfc7a60c60f926",
   "tests": [
     {
       "cases": [
@@ -1043,6 +1043,7 @@
         "test_exposed_report_and_occurrence_requests_keep_two_bounded_lanes",
         "test_guidance_surface_variants_keep_mixed_agent_lanes",
         "test_mixed_answer_keeps_reviewed_claim_out_of_current_record_section",
+        "test_mixed_contents_clause_reaches_publication_without_retrieval_rewrite",
         "test_mixed_paraphrases_keep_a_live_owned_plan",
         "test_plural_closest_question_is_a_location_bound_live_plan",
         "test_positive_live_grammar_families_authorize_bounded_fire_tools",

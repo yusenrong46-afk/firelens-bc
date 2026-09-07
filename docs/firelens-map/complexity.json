@@ -816,8 +816,8 @@
       "path": "src/firelens/agent/compose_boundaries.py"
     },
     {
-      "branch_score": 82,
-      "loc": 500,
+      "branch_score": 83,
+      "loc": 501,
       "path": "src/firelens/agent/coordinator.py"
     },
     {
@@ -2301,8 +2301,8 @@
       "path": "tests/test_agent_query_plan.py"
     },
     {
-      "branch_score": 20,
-      "loc": 632,
+      "branch_score": 21,
+      "loc": 657,
       "path": "tests/test_agent_query_plan_boundary.py"
     },
     {
@@ -3082,7 +3082,7 @@
     }
   ],
   "schema_version": "firelens.complexity.v1",
-  "source_digest": "f26e7f74eca1ce891abe45b7e186dc44362cd8380d05078bd99cf73aa385711a",
+  "source_digest": "ffe4aa1d0d085f02468b7ab83ecb63268623f057bba53cf4cecfc7a60c60f926",
   "symbols": [
     {
       "branch_score": 0,
@@ -5556,52 +5556,52 @@
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/agent/coordinator.py::FireLensAgent.__init__:356",
+      "id": "src/firelens/agent/coordinator.py::FireLensAgent.__init__:357",
       "module_path": "src/firelens/agent/coordinator.py"
     },
     {
       "branch_score": 26,
-      "id": "src/firelens/agent/coordinator.py::FireLensAgent.answer:364",
+      "id": "src/firelens/agent/coordinator.py::FireLensAgent.answer:365",
       "module_path": "src/firelens/agent/coordinator.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/agent/coordinator.py::StaticAnswerService.ask:89",
+      "id": "src/firelens/agent/coordinator.py::StaticAnswerService.ask:90",
       "module_path": "src/firelens/agent/coordinator.py"
     },
     {
       "branch_score": 5,
-      "id": "src/firelens/agent/coordinator.py::_answer_mismatch_correction:209",
+      "id": "src/firelens/agent/coordinator.py::_answer_mismatch_correction:210",
       "module_path": "src/firelens/agent/coordinator.py"
     },
     {
-      "branch_score": 13,
-      "id": "src/firelens/agent/coordinator.py::_bounded_guidance_clause:318",
+      "branch_score": 14,
+      "id": "src/firelens/agent/coordinator.py::_bounded_guidance_clause:319",
       "module_path": "src/firelens/agent/coordinator.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/agent/coordinator.py::_declines_only_one_clause:301",
+      "id": "src/firelens/agent/coordinator.py::_declines_only_one_clause:302",
       "module_path": "src/firelens/agent/coordinator.py"
     },
     {
       "branch_score": 20,
-      "id": "src/firelens/agent/coordinator.py::_live_place_correction:136",
+      "id": "src/firelens/agent/coordinator.py::_live_place_correction:137",
       "module_path": "src/firelens/agent/coordinator.py"
     },
     {
       "branch_score": 9,
-      "id": "src/firelens/agent/coordinator.py::_live_tools:116",
+      "id": "src/firelens/agent/coordinator.py::_live_tools:117",
       "module_path": "src/firelens/agent/coordinator.py"
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/agent/coordinator.py::_static_tool:106",
+      "id": "src/firelens/agent/coordinator.py::_static_tool:107",
       "module_path": "src/firelens/agent/coordinator.py"
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/agent/coordinator.py::_useful_safety_boundary:223",
+      "id": "src/firelens/agent/coordinator.py::_useful_safety_boundary:224",
       "module_path": "src/firelens/agent/coordinator.py"
     },
     {
@@ -16917,6 +16917,11 @@
     {
       "branch_score": 2,
       "id": "tests/test_agent_query_plan_boundary.py::test_mixed_answer_keeps_reviewed_claim_out_of_current_record_section:548",
+      "module_path": "tests/test_agent_query_plan_boundary.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "tests/test_agent_query_plan_boundary.py::test_mixed_contents_clause_reaches_publication_without_retrieval_rewrite:642",
       "module_path": "tests/test_agent_query_plan_boundary.py"
     },
     {

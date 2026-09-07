@@ -2648,7 +2648,7 @@
         39
       ],
       "source": "src/firelens/agent/coordinator.py",
-      "target": "src/firelens/answering/responses.py"
+      "target": "src/firelens/answering/request_facets.py"
     },
     {
       "kind": "static",
@@ -2656,7 +2656,7 @@
         40
       ],
       "source": "src/firelens/agent/coordinator.py",
-      "target": "src/firelens/answering/static_guidance_subject.py"
+      "target": "src/firelens/answering/responses.py"
     },
     {
       "kind": "static",
@@ -2664,7 +2664,7 @@
         41
       ],
       "source": "src/firelens/agent/coordinator.py",
-      "target": "src/firelens/answering/unsupported_live.py"
+      "target": "src/firelens/answering/static_guidance_subject.py"
     },
     {
       "kind": "static",
@@ -2672,12 +2672,20 @@
         42
       ],
       "source": "src/firelens/agent/coordinator.py",
+      "target": "src/firelens/answering/unsupported_live.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        43
+      ],
+      "source": "src/firelens/agent/coordinator.py",
       "target": "src/firelens/contracts.py"
     },
     {
       "kind": "static",
       "lines": [
-        56
+        57
       ],
       "source": "src/firelens/agent/coordinator.py",
       "target": "src/firelens/guidance_capabilities.py"
@@ -2685,7 +2693,7 @@
     {
       "kind": "static",
       "lines": [
-        57
+        58
       ],
       "source": "src/firelens/agent/coordinator.py",
       "target": "src/firelens/live_answering.py"
@@ -17805,7 +17813,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "f26e7f74eca1ce891abe45b7e186dc44362cd8380d05078bd99cf73aa385711a",
+  "source_digest": "ffe4aa1d0d085f02468b7ab83ecb63268623f057bba53cf4cecfc7a60c60f926",
   "unresolved_relative_imports": [
     {
       "line": 32,
