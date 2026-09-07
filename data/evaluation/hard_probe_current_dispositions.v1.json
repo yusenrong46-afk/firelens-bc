@@ -277,7 +277,16 @@
     "src/firelens/understanding/place.py": "97828eb184616195a0897ec500cde6679a23dcc3dbefcaf1a69eb6e625ec27c5",
     "src/firelens/understanding/place_vocabulary.py": "001de8edb0308a67fd619a709b0ee0c12244c4161d2f8e3c8b25d43b1dd19d1b",
     "src/firelens/understanding/reference.py": "11593f14e8e61e7760f080bb600914166bb7780457fdce3358be982e409731b9",
-    "requirements.lock": "faac4831770304652f31e56e93d13d4cad5501955ede2755fade24860730627f"
+    "requirements.lock": "faac4831770304652f31e56e93d13d4cad5501955ede2755fade24860730627f",
+    "app.py": "c3f3ef2e85a403426a23398ccb5b10817f43099d54117f7898ad1710424a82ec",
+    "config/firelens.v1_6_2_patch_promotion.v1.json": "c579bb38a1f97e52a65a69d40ffc262eec1154e5b52b3df29d1440a40c36ae25",
+    "config/firelens.v1_6_3_patch_promotion.v1.json": "25bf032d39d00cbb17da42e5b5b928a0511cd42961e1ec16ccc098a1e09f1f41",
+    "config/firelens.v1_6_release_promotion.v1.json": "f90259567010edc1d31167f0ccb0e9284616b3550c9012c07dbc1955ee6292db",
+    "config/runtime_artifact_allowlist.v1.json": "1f0d82a853b8a44d4695c32c769352f97c75c808a3cb325ac5ee4680ce115020",
+    "config/vercel_firewall.v1.json": "4194bedb10828b2d411019ce58c6d825d5dbb47825123b345b84ee52ecdaa516",
+    "scripts/deploy_vercel.py": "c0f7ef2bc45ef3aae54b3e79017a2f03692d973e97e4feadc410be64a09d995c",
+    "scripts/write_runtime_candidate.py": "774ebe185a90fbd02aa0920ecd2e83bd52cf76150d326a4ac6d8c1e638b986ab",
+    "vercel.json": "64a0cd4ca5d07c04e8d7f3caf1351b23c645294eff98e1d6bee31dab4b81ad77"
   },
   "dispositions": {
     "F06": {
@@ -730,5 +739,49 @@
   },
   "evidence_scope": "I08 offline production agent with synthetic index; L05 actual built-stack/provider on reviewed candidate. Historical fake L05 remains FAIL, not evidence of two-concept efficacy.",
   "review_record": "docs/releases/firelens-polish-ci-policy.md",
-  "l05_provider_scope": "Current normal OpenRouter generation; planning exhausted three rate-limit attempts; writer succeeded on second attempt. No retrieved evidence. No retrieval availability claim."
+  "l05_provider_scope": "Current normal OpenRouter generation; planning exhausted three rate-limit attempts; writer succeeded on second attempt. No retrieved evidence. No retrieval availability claim.",
+  "offline_runtime_configuration": {
+    "embedding_model": "openai/text-embedding-3-small",
+    "retrieval_text_strategy": "metadata_context_v1",
+    "rerank_model": "cohere/rerank-4-pro",
+    "generation_model": "openai/gpt-5.6-luna",
+    "generation_temperature": 0.0,
+    "bm25_top_k": 30,
+    "vector_top_k": 30,
+    "fused_top_k": 30,
+    "rrf_k": 60,
+    "rerank_top_k": 5,
+    "neighbor_window": 1,
+    "max_evidence_spans": 5,
+    "max_context_chars": 8000,
+    "request_timeout_seconds": 30.0,
+    "public_request_deadline_seconds": 45.0,
+    "provider_max_attempts": 3,
+    "provider_retry_base_seconds": 0.25,
+    "provider_max_concurrency": 4,
+    "provider_adaptive_min_concurrency": 1,
+    "provider_adaptive_success_window": 20,
+    "provider_circuit_failure_threshold": 3,
+    "provider_circuit_cooldown_seconds": 15.0,
+    "embedding_batch_size": 64,
+    "query_embedding_cache_size": 256,
+    "require_parameters": true,
+    "embedding_zdr": "optional",
+    "reranking_zdr": "optional",
+    "generation_zdr": "optional",
+    "data_collection": "deny",
+    "allow_fallbacks": false
+  },
+  "provider_routing": {
+    "openrouter_base_url": "https://openrouter.ai/api/v1",
+    "generation_provider_only": []
+  },
+  "qualified_production_privacy": {
+    "data_collection": "deny",
+    "allow_fallbacks": false,
+    "require_parameters": true,
+    "embedding_zdr": "required",
+    "reranking_zdr": "optional",
+    "generation_zdr": "required"
+  }
 }

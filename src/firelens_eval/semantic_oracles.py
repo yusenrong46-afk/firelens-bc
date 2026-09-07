@@ -129,15 +129,35 @@ def current_disposition_issues(report: dict[str, Any], *, root: Path) -> list[st
     the independently reviewed exact response and obligation-specific evidence.
     No natural-language inference or case-ID-only exemption is performed here.
     """
+    from firelens.benchmark import benchmark_runtime_configuration
+    from firelens.config import FireLensConfig
     from firelens.contracts import AskResponse
     from firelens.evaluation import hard_probe_cli
     from firelens.evaluation.j01_current_acceptance import validate_current_j01
+    from firelens.privacy_policy import APPROVED_PRODUCTION_PRIVACY
 
     issues = []
     try:
         evidence = json.loads((root / CURRENT_DISPOSITIONS).read_text())
         if evidence["schema_version"] != "firelens.hard_probe.current_dispositions.v1":
             raise ValueError("unsupported current disposition schema")
+        config = FireLensConfig.from_env(root)
+        expected_configuration = evidence["offline_runtime_configuration"]
+        if (
+            report.get("manifest", {}).get("runtime_configuration") != expected_configuration
+            or benchmark_runtime_configuration(config) != expected_configuration
+        ):
+            issues.append("current disposition effective runtime configuration changed")
+        if {
+            "openrouter_base_url": config.openrouter_base_url,
+            "generation_provider_only": list(config.generation_provider_only),
+        } != evidence["provider_routing"]:
+            issues.append("current disposition provider routing changed")
+        if (
+            APPROVED_PRODUCTION_PRIVACY.model_dump(mode="json")
+            != evidence["qualified_production_privacy"]
+        ):
+            issues.append("current disposition qualified privacy changed")
         for group in ["frozen_materials", "runtime_materials"]:
             if not evidence[group]:
                 raise ValueError(f"missing {group}")
@@ -153,7 +173,17 @@ def current_disposition_issues(report: dict[str, Any], *, root: Path) -> list[st
                 and not name.startswith("src/firelens/evaluation/")
             )
             or (name.startswith("data/") and not name.startswith("data/evaluation/"))
-            or name in {"pyproject.toml", "requirements.lock", "uv.lock"}
+            or name.startswith("config/")
+            or name
+            in {
+                "pyproject.toml",
+                "requirements.lock",
+                "uv.lock",
+                "app.py",
+                "vercel.json",
+                "scripts/deploy_vercel.py",
+                "scripts/write_runtime_candidate.py",
+            }
         }
         if runtime_paths != set(evidence["runtime_materials"]):
             issues.append("current disposition runtime material set changed")

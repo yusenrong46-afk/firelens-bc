@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "73eb899056a579f1a6ccaa223ac7c9eea7b0b4408f22e03b5a3ec02239ef906d",
+  "source_digest": "408a28b6cda367cbd821c67c698290c8f6e1f4f4d016f5fcf5d99a75b76039d5",
   "tests": [
     {
       "cases": [
@@ -1778,6 +1778,8 @@
         "test_compare_rejects_nonexistent_commit_selectors",
         "test_compare_validates_each_clean_run_against_its_own_commit",
         "test_current_policy_preserves_historical_failure",
+        "test_current_policy_rejects_changed_bound_file",
+        "test_current_policy_rejects_changed_effective_provider_configuration",
         "test_current_policy_rejects_changed_report",
         "test_current_policy_rejects_missing_or_changed_evidence",
         "test_current_policy_rejects_same_mode_personal_action",

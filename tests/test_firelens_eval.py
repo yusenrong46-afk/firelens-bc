@@ -109,7 +109,13 @@ def two_commit_core_runs(
         shutil.copytree(ROOT / relative, repository / relative)
     schema = Path("evals/eval_lab/schema")
     shutil.copytree(ROOT / schema, repository / schema)
-    for relative in (".gitignore", "pyproject.toml", "requirements.lock"):
+    for relative in (
+        ".gitignore",
+        "pyproject.toml",
+        "requirements.lock",
+        "app.py",
+        "vercel.json",
+    ):
         shutil.copy2(ROOT / relative, repository / relative)
     subprocess.run(["git", "init", "-q", "-b", "main", str(repository)], check=True)
     subprocess.run(
@@ -1317,3 +1323,38 @@ def test_current_policy_rejects_missing_or_changed_evidence(
     monkeypatch.setattr(semantic_oracles, "CURRENT_DISPOSITIONS", path)
     # The unmodified policy hash rejects any changed retained evidence first.
     assert eval_lab.validate_current_hard_probe_report(report, repository_root=ROOT)
+
+
+@pytest.mark.parametrize(
+    "name,value",
+    [
+        ("FIRELENS_GENERATION_MODEL", "openai/not-the-qualified-model"),
+        ("FIRELENS_GENERATION_PROVIDER_ONLY", "unqualified/provider"),
+    ],
+)
+def test_current_policy_rejects_changed_effective_provider_configuration(
+    actual_core_run: Path, monkeypatch: pytest.MonkeyPatch, name: str, value: str
+) -> None:
+    report = json.loads((actual_core_run / "raw/hard_probe_rc2_2.json").read_text())
+    monkeypatch.setenv(name, value)
+    assert eval_lab.validate_current_hard_probe_report(report, repository_root=ROOT)
+
+
+@pytest.mark.parametrize(
+    "relative", ["app.py", "data/evaluation/hard_probe_rc2_2_expectations.v1.yaml"]
+)
+def test_current_policy_rejects_changed_bound_file(
+    two_commit_core_runs: tuple[Path, Path, str, str], relative: str
+) -> None:
+    from firelens_eval.semantic_oracles import current_disposition_issues
+
+    repository, artifacts, _, _ = two_commit_core_runs
+    report = json.loads((artifacts / "candidate/raw/hard_probe_rc2_2.json").read_text())
+    path = repository / relative
+    original = path.read_bytes()
+    try:
+        path.write_bytes(original + b"\n# unqualified change\n")
+        issues = current_disposition_issues(report, root=repository)
+        assert any(relative in issue and "changed" in issue for issue in issues)
+    finally:
+        path.write_bytes(original)
