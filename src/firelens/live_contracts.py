@@ -370,6 +370,7 @@ class LiveLayerStatus(FrozenStrictModel):
     freshness: Freshness | None = None
     matching_result_count: int = Field(ge=0)
     omitted_geometry_count: int = Field(default=0, ge=0)
+    omitted_status_count: int = Field(default=0, ge=0)
     unavailability_reason: Literal["invalid_geometry"] | None = None
 
     @field_validator("source_updated_at", "retrieved_at")
@@ -383,10 +384,8 @@ class LiveLayerStatus(FrozenStrictModel):
     def availability_fields_are_consistent(self) -> Self:
         if self.available and self.unavailability_reason is not None:
             raise ValueError("available layers cannot claim an unavailability reason")
-        if self.omitted_geometry_count and (
-            not self.available or not self.matching_result_count
-        ):
-            raise ValueError("partial layers require usable records and observations")
+        if (self.omitted_geometry_count or self.omitted_status_count) and not self.available:
+            raise ValueError("partial layers require source observations")
         observations = (self.source_updated_at, self.retrieved_at, self.freshness)
         if self.available and any(value is None for value in observations):
             raise ValueError("available live layers require source-level freshness metadata")
@@ -473,7 +472,9 @@ class LiveMapResponse(FrozenStrictModel):
         if self.aggregate_freshness != expected:
             raise ValueError("aggregate freshness must match the returned live records")
         partial = [
-            status.kind for status in self.layer_statuses if status.omitted_geometry_count
+            status.kind
+            for status in self.layer_statuses
+            if status.omitted_geometry_count or status.omitted_status_count
         ]
         if partial != self.partial_layers:
             raise ValueError("partial layers must match omitted geometry counts")
@@ -571,6 +572,7 @@ class NearMeResponse(FrozenStrictModel):
     results: list[LiveResult] = Field(max_length=200)
     pagination: LivePagination
     aggregate_freshness: AggregateFreshness | None = None
+    partial_layers: list[LiveResultKind] = Field(default_factory=list)
     unavailable_layers: list[LiveResultKind] = Field(default_factory=list)
     layer_statuses: list[LiveLayerStatus] = Field(default_factory=list, max_length=3)
     limitations: list[str] = Field(default_factory=list)
@@ -593,6 +595,12 @@ class NearMeResponse(FrozenStrictModel):
             raise ValueError("near-me unavailable layers must have been requested")
         if self.aggregate_freshness != aggregate_live_freshness(self.results):
             raise ValueError("aggregate freshness must match the returned live records")
+        if self.partial_layers != [
+            s.kind
+            for s in self.layer_statuses
+            if s.omitted_geometry_count or s.omitted_status_count
+        ]:
+            raise ValueError("near-me partial layers must match omissions")
         if self.layer_statuses:
             status_kinds = [status.kind for status in self.layer_statuses]
             if status_kinds != self.requested_layers:

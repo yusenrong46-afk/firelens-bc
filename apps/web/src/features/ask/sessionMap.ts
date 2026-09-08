@@ -18,6 +18,7 @@ export type SessionMapView = {
   mapFocusResults: LiveResult[];
   mapAggregateFreshness: MapAggregateFreshness;
   mapUnavailableLayers: string[];
+  mapPartialLayers: string[];
   mapGeometryOmissions: { kind: string; count: number }[];
 };
 
@@ -30,6 +31,7 @@ export function deriveSessionMapView(
 ): SessionMapView {
   const omissions = (provinceStatuses ?? []).filter((status) => (status.omitted_geometry_count ?? 0) > 0)
     .map((status) => ({ kind: status.kind, count: status.omitted_geometry_count! }));
+  const sourcePartial = (provinceStatuses ?? []).filter((s) => (s.omitted_geometry_count ?? 0) + (s.omitted_status_count ?? 0) > 0).map((s) => s.kind);
   const mapMatchingResults = roster?.results ?? [];
   if (!roster) {
     const idleResults = provinceResults ?? [];
@@ -42,6 +44,7 @@ export function deriveSessionMapView(
       mapAggregateFreshness: displayedAggregateFreshness(idleResults),
       mapUnavailableLayers: [...new Set(provinceUnavailable ?? [])],
       mapGeometryOmissions: omissions,
+      mapPartialLayers: sourcePartial,
     };
   }
   if (!contextLayersEnabled) {
@@ -54,6 +57,7 @@ export function deriveSessionMapView(
       mapAggregateFreshness: displayedAggregateFreshness(mapMatchingResults),
       mapUnavailableLayers: roster.unavailableLayers,
       mapGeometryOmissions: [],
+      mapPartialLayers: roster.partialLayers ?? [],
     };
   }
   const resultById = new Map<string, LiveResult>();
@@ -73,5 +77,6 @@ export function deriveSessionMapView(
     mapUnavailableLayers: [...new Set([...(provinceUnavailable ?? []), ...roster.unavailableLayers])]
       .filter((kind) => !omissions.some((item) => item.kind === kind)),
     mapGeometryOmissions: omissions,
+    mapPartialLayers: [...new Set([...sourcePartial, ...(roster.partialLayers ?? [])])],
   };
 }

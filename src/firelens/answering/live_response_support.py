@@ -14,6 +14,7 @@ from firelens.contracts import (
     AnswerSectionKind,
     AskResponse,
     CoarseResolvedLocation,
+    LiveResult,
     LiveResultKind,
     ReasonCode,
     RelatedLink,
@@ -54,11 +55,18 @@ def official_sources_checked(requested_layers: tuple[LiveResultKind, ...]) -> st
     return _join(names) or "the official wildfire sources"
 
 
-def _nothing_listed(requested_layers: tuple[LiveResultKind, ...]) -> str:
+def _nothing_listed(
+    requested_layers: tuple[LiveResultKind, ...], evacuation_statuses: tuple[str, ...] = ()
+) -> str:
     kinds = [kind for kind in _NOTHING_LISTED if kind in requested_layers]
     if LiveResultKind.INCIDENT in kinds and LiveResultKind.PERIMETER in kinds:
         kinds.remove(LiveResultKind.PERIMETER)
-    named = [_NOTHING_LISTED[kind] for kind in kinds] or ["records"]
+    named = [
+        ("evacuation " + " or ".join(status + "s" for status in evacuation_statuses))
+        if kind == LiveResultKind.EVACUATION and evacuation_statuses
+        else _NOTHING_LISTED[kind]
+        for kind in kinds
+    ] or ["records"]
     if len(named) == 1:
         return f"No {named[0]} are listed"
     return f"No {named[0]}, and no {' or '.join(named[1:])}, are listed"
@@ -96,6 +104,8 @@ def empty_live_response(
     requested_layers: tuple[LiveResultKind, ...],
     unavailable_layers: list[LiveResultKind],
     invalid_geometry_layers: list[LiveResultKind] | None = None,
+    partial_layers: list[LiveResultKind] | None = None,
+    evacuation_statuses: tuple[str, ...] = (),
     resolved_location: CoarseResolvedLocation | None,
     retrieved_at: datetime | None = None,
     place: str | None = None,
@@ -109,7 +119,17 @@ def empty_live_response(
     when = _checked_when(retrieved_at)
     invalid = [kind for kind in unavailable if kind in (invalid_geometry_layers or [])]
     failure = live_unavailability_text(list(unavailable), invalid)
-    if all_unavailable:
+    if partial_layers:
+        current_information = (
+            f"No validated matches could be returned{where}. Some retrieved official records "
+            "could not be validated, so coverage is incomplete. FireLens cannot determine "
+            f"whether additional matching records exist.{when}"
+        )
+        if failure:
+            current_information += " " + failure
+        headline = "Coverage incomplete"
+        availability = "Official data retrieved; some records could not be validated."
+    elif all_unavailable:
         current_information = (
             f"{failure} FireLens cannot confirm the complete official record coverage"
             f"{where}.{when}"
@@ -131,9 +151,7 @@ def empty_live_response(
         headline = "No records found; some sources unavailable"
         availability = "Some official records are unavailable; coverage is incomplete."
     else:
-        current_information = (
-            f"{_nothing_listed(requested_layers)}{where} right now in {sources}.{when}"
-        )
+        current_information = f"{_nothing_listed(requested_layers, evacuation_statuses)}{where} right now in {sources}.{when}"
         headline = "No records found"
         availability = f"Checked {sources}."
     current_information += " This does not mean the area is safe; it is not an all-clear."
@@ -205,6 +223,7 @@ def empty_live_response(
         reason_code=ReasonCode.LIVE_DATA_REQUIRED,
         limitations=limitations,
         related_links=links,
+        partial_layers=partial_layers or [],
         unavailable_layers=list(unavailable),
         resolved_location=resolved_location,
         status_banner=AnswerStatusBanner(
@@ -235,3 +254,23 @@ def records_section_heading(freshness: AggregateFreshness | None) -> str:
 
 def unique_limitations(*groups: list[str]) -> list[str]:
     return list(dict.fromkeys(item for group in groups for item in group if item))
+
+
+def partial_records_answer(records: list[LiveResult], unavailable: bool) -> str:
+    from firelens.answering.live_analysis import official_display_name
+
+    summary = "; ".join(
+        f"{official_display_name(item)}: {item.status}"
+        + (
+            f" ({item.geometry_relation.value} the coarse reference location)"
+            if item.geometry_relation.value in {"inside", "nearby"}
+            else ""
+        )
+        for item in records[:8]
+    )
+    return (
+        f"Showing validated official records from an incomplete lookup: {summary}. "
+        "Some retrieved official records could not be validated. Complete counts, absence of orders or alerts, and the nearest record cannot be established from this subset. "
+        "This is not an all-clear; confirm current instructions with EmergencyInfoBC and the issuing authority."
+        + (" Some additional requested layers are unavailable." if unavailable else "")
+    )

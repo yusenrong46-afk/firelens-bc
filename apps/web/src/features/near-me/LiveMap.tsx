@@ -29,6 +29,7 @@ export function LiveMap({
   provinceResults,
   aggregateFreshness,
   unavailableLayers = [],
+  partialLayers = [],
   geometryOmissions = [],
   focus,
   focusResults = EMPTY_RESULTS,
@@ -44,6 +45,7 @@ export function LiveMap({
   provinceResults?: LiveResult[] | undefined;
   aggregateFreshness?: "fresh" | "stale" | "mixed" | undefined;
   unavailableLayers?: string[] | undefined;
+  partialLayers?: string[] | undefined;
   geometryOmissions?: { kind: string; count: number }[] | undefined;
   focus?: MapFocus | undefined;
   focusResults?: LiveResult[] | undefined;
@@ -157,6 +159,7 @@ export function LiveMap({
           Some of these records are cached copies because a refresh failed. Check each record's update time.
         </p>
       )}
+      {partialLayers.length > 0 && <p role="status">Partial coverage for {partialLayers.join(", ")}: only validated records are shown. Missing records are not an all-clear.</p>}
       {unavailableLayers.length > 0 && (
         <p className="live-map__warning" role="status">
           Some official layers are unavailable: {unavailableLayers.join(", ")}.
@@ -275,9 +278,9 @@ export function LiveMap({
       {filteredResults.length > 0 && (
         <div className="live-roster-summary" aria-label="Official record totals">
           <strong>{filteredResults.length} displayed official records</strong>
-          <span>{unavailableLayers.includes("incident") ? "Fire records unavailable" : `${kindCounts.incident} fires${geometryOmissions.some((item) => item.kind === "incident") ? " (partial)" : ""}`}</span>
-          <span>{unavailableLayers.includes("evacuation") ? "Evacuation records unavailable" : `${kindCounts.evacuation} evacuation areas${geometryOmissions.some((item) => item.kind === "evacuation") ? " (partial)" : ""}`}</span>
-          <span>{unavailableLayers.includes("perimeter") ? "Perimeter records unavailable" : `${kindCounts.perimeter} perimeters${geometryOmissions.some((item) => item.kind === "perimeter") ? " (partial)" : ""}`}</span>
+          <span>{unavailableLayers.includes("incident") ? "Fire records unavailable" : `${kindCounts.incident} fires${(partialLayers.includes("incident") || geometryOmissions.some((item) => item.kind === "incident")) ? " (partial)" : ""}`}</span>
+          <span>{unavailableLayers.includes("evacuation") ? "Evacuation records unavailable" : `${kindCounts.evacuation} evacuation areas${(partialLayers.includes("evacuation") || geometryOmissions.some((item) => item.kind === "evacuation")) ? " (partial)" : ""}`}</span>
+          <span>{unavailableLayers.includes("perimeter") ? "Perimeter records unavailable" : `${kindCounts.perimeter} perimeters${(partialLayers.includes("perimeter") || geometryOmissions.some((item) => item.kind === "perimeter")) ? " (partial)" : ""}`}</span>
         </div>
       )}
       <ProvinceRecordList

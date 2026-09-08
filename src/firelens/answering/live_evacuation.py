@@ -41,6 +41,15 @@ def is_evacuation_record_question(question: str) -> bool:
     return bool(_EVACUATION_RECORD_QUERY.search(question))
 
 
+def requested_evacuation_statuses(question: str) -> tuple[str, ...]:
+    """Use the same explicit status selection for admission and composition."""
+    return tuple(
+        status
+        for status in ("order", "alert")
+        if re.search(rf"\b{status}s?\b", question, re.IGNORECASE)
+    )
+
+
 def evacuation_answer(
     request: QueryRequest,
     records: Sequence[LiveResult],
@@ -52,10 +61,7 @@ def evacuation_answer(
 
     location = request.location or coarse_location_from_question(request.question)
     place = location.label if location is not None and location.label else "the requested place"
-    lowered = request.question.casefold()
-    statuses = {
-        status for status in ("order", "alert") if re.search(rf"\b{status}s?\b", lowered)
-    }
+    statuses = set(requested_evacuation_statuses(request.question))
     status_label = (
         "order"
         if statuses == {"order"}

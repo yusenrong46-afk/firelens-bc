@@ -79,17 +79,18 @@ async def _native_invalid_boundary_survives_to_evacuation_answer(page):
 
             execution = await FireLensAgent(
                 cast(Any, UnexpectedStatic()), LiveAnswerCoordinator(service)
-            ).answer(QueryRequest(question="Are there evacuation orders near Kamloops?"))
+            ).answer(QueryRequest(question="Are there evacuation alerts near Kamloops?"))
             actual_response = execution.response
     assert result.results == []
-    assert result.unavailable_layers == [kind]
-    assert result.layer_statuses[0].unavailability_reason == "invalid_geometry"
+    assert result.unavailable_layers == []
+    assert result.partial_layers == [kind]
+    assert result.layer_statuses[0].omitted_geometry_count > 0
     packet = AgentPacket(
         resolved_location=CoarseResolvedLocation(latitude=50.68, longitude=-120.34)
     )
     _record_successful_live_response(packet, result)
     response = compose_response(
-        QueryRequest(question="Are there evacuation orders near Kamloops?"), packet, ""
+        QueryRequest(question="Are there evacuation alerts near Kamloops?"), packet, ""
     )
     if page == "agent":
         response = actual_response
@@ -101,7 +102,7 @@ async def _native_invalid_boundary_survives_to_evacuation_answer(page):
     assert "could not reach" not in public
     assert "no evacuation" not in public
     assert "not an all-clear" in public
-    assert response.response_mode.value == "abstention"
+    assert response.response_mode.value == "live"
     assert response.related_links[0].title == "EmergencyInfoBC"
     assert response.status_banner.official_escalation_title == "EmergencyInfoBC"
 

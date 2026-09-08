@@ -51,6 +51,7 @@ export type FireLensSession = {
   mapMessage: string | undefined;
   mapAggregateFreshness: MapAggregateFreshness;
   mapUnavailableLayers: string[];
+  mapPartialLayers: string[];
   mapGeometryOmissions?: { kind: string; count: number }[];
   setMapVisible: (visible: boolean) => void;
   mapFocus: { latitude: number; longitude: number } | undefined;
@@ -379,6 +380,7 @@ export function useFireLensSession(): FireLensSession {
     mapMessage: provinceMap.message,
     mapAggregateFreshness: mapView.mapAggregateFreshness,
     mapUnavailableLayers: mapView.mapUnavailableLayers,
+    mapPartialLayers: mapView.mapPartialLayers,
     mapGeometryOmissions: mapView.mapGeometryOmissions,
     setMapVisible,
     mapFocus: mapView.mapFocus,

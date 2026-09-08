@@ -23,6 +23,7 @@ from firelens.answering.live_analysis import (
 )
 from firelens.answering.live_composition import supported_static_when_live_missing
 from firelens.answering.live_distance import distance_answer, location_request
+from firelens.answering.live_evacuation import requested_evacuation_statuses
 from firelens.answering.live_listing import listing_place
 from firelens.answering.live_named_fire import (
     extracted_located_fire_name,
@@ -37,6 +38,7 @@ from firelens.answering.live_request_intent import (
 from firelens.answering.live_response_support import (
     empty_live_response,
     live_unavailability_text,
+    partial_records_answer,
     records_section_heading,
 )
 from firelens.answering.location_intent import coarse_location_from_question
@@ -97,6 +99,8 @@ def no_substitute_response(
             "FireLens is not sure which record you mean. Select a fire on the map, or ask "
             "for the current records near a B.C. community first."
         )
+    elif packet is not None and packet.partial_layers:
+        answer = "The selected official record could not be validated in this incomplete lookup. Its absence does not establish that it was withdrawn. Check the issuing authority."
     elif packet is not None and packet.unavailable_layers:
         answer = (
             "FireLens could not load that record from the official source just now, so it "
@@ -220,6 +224,15 @@ def _with_packet_fields(
 ) -> AskResponse:
     updates: dict[str, Any] = {}
     limitations = list(response.limitations)
+    if packet.partial_layers:
+        updates["partial_layers"] = list(packet.partial_layers)
+        updates["roster_total"] = None
+        updates["status_banner"] = None
+        updates["history_text"] = None
+        limitations.append(
+            "Only validated records are shown; coverage is incomplete. Counts describe displayed records, not complete official totals. This is not an all-clear."
+        )
+        updates["limitations"] = limitations
     degraded = "Official records loaded successfully. AI explanation is temporarily limited."
     if (
         packet.live_results
@@ -244,21 +257,17 @@ def _with_packet_fields(
         if limitation not in limitations:
             limitations.append(limitation)
             updates["limitations"] = limitations
-            # `history_text` is a derived public-contract field. Any visible
-            # limitation changes the answer history representation too.
             updates["history_text"] = None
     if request.context.selected_live_result_id and not response.selected_live_result_id:
         updates["selected_live_result_id"] = request.context.selected_live_result_id
     if packet.resolved_location is not None and response.resolved_location is None:
         updates["resolved_location"] = packet.resolved_location
-    # The plan's layers are what was asked for, even when one returned nothing;
-    # the validator's fallback only knows the kinds that came back.
     requested = list(
         dict.fromkeys([*_requested_live_layers(request, packet), *response.requested_layers])
     )
     if requested and requested != list(response.requested_layers):
         updates["requested_layers"] = requested
-    if packet.roster_total is not None:
+    if packet.roster_total is not None and not packet.partial_layers:
         updates["roster_total"] = max(packet.roster_total, len(packet.live_results))
     working = response.model_copy(update=updates) if updates else response
     public_limits = select_public_limitations(list(working.limitations))
@@ -270,7 +279,11 @@ def _with_packet_fields(
     if suggestions and not working.suggested_questions:
         extra["suggested_questions"] = suggestions
     if not extra:
-        return working if updates else response
+        return (
+            AskResponse.model_validate(working.model_dump(mode="python"))
+            if updates
+            else response
+        )
     merged = working.model_copy(update=extra)
     return AskResponse.model_validate(merged.model_dump(mode="python"))
 
@@ -312,6 +325,8 @@ def _packet_live_answer(
 ) -> str:
     """Compose live text without turning an unavailable layer into a zero result."""
 
+    if packet.partial_layers:
+        return partial_records_answer(packet.live_results, bool(packet.unavailable_layers))
     if packet.live_results and packet.unavailable_layers:
         place = listing_place(request) or "the place you asked about"
         unavailable = [layer.value.replace("_", " ") for layer in packet.unavailable_layers]
@@ -343,6 +358,8 @@ def _published_live_text(
     *,
     static_answer: str | None = None,
 ) -> str:
+    if packet.partial_layers:
+        return _packet_live_answer(request, packet, static_answer=static_answer)
     if is_distance_request(request) and packet.live_results:
         composed = distance_answer(request, packet.live_results)
         if composed:
@@ -434,9 +451,11 @@ def _build_ask_response(
         str(link.url) != str(selected_handoff.url) for link in links
     ):
         links.insert(0, selected_handoff)
-    if live and (packet.unavailable_layers or is_empty_map_safety_inference(request.question)):
-        # The false-inference correction is application-owned. A model may not
-        # soften it or turn returned records into a personalized safety claim.
+    if live and (
+        packet.unavailable_layers
+        or packet.partial_layers
+        or is_empty_map_safety_inference(request.question)
+    ):
         answer = _packet_live_answer(
             request,
             packet,
@@ -470,6 +489,8 @@ def _build_ask_response(
                 requested_layers=requested_layers,
                 unavailable_layers=packet.unavailable_layers,
                 invalid_geometry_layers=packet.invalid_geometry_layers,
+                partial_layers=packet.partial_layers,
+                evacuation_statuses=requested_evacuation_statuses(request.question),
                 resolved_location=packet.resolved_location,
                 retrieved_at=packet.retrieved_at,
                 place=listing_place(request),
@@ -687,6 +708,8 @@ def _build_ask_response(
                 requested_layers=requested,
                 unavailable_layers=packet.unavailable_layers,
                 invalid_geometry_layers=packet.invalid_geometry_layers,
+                partial_layers=packet.partial_layers,
+                evacuation_statuses=requested_evacuation_statuses(request.question),
                 resolved_location=packet.resolved_location,
                 retrieved_at=packet.retrieved_at,
                 place=listing_place(request),

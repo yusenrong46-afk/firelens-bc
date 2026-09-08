@@ -128,7 +128,9 @@ class RecordingLiveService:
         self.resolve_labels.append(getattr(location, "label", None))
         return 49.89, -119.49
 
-    async def map_results(self, *, layers: tuple[LiveResultKind, ...]) -> LiveMapResponse:
+    async def map_results(
+        self, *, layers: tuple[LiveResultKind, ...], **kwargs
+    ) -> LiveMapResponse:
         self.map_layers.append(layers)
         result = _live_result(
             LiveResultKind.EVACUATION

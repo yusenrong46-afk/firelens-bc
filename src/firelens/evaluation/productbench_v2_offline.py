@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 from pydantic import HttpUrl
 
@@ -36,6 +37,7 @@ class OfflineProductBenchLiveDataService:
         *,
         layers: tuple[LiveResultKind, ...],
         bbox: tuple[float, float, float, float] | None = None,
+        **_admission: Any,
     ) -> LiveMapResponse:
         del bbox
         results = [
@@ -92,6 +94,7 @@ class OfflineProductBenchLiveDataService:
         layers: tuple[LiveResultKind, ...] = tuple(LiveResultKind),
         page: int = 1,
         page_size: int = 100,
+        **_admission: Any,
     ) -> NearMeResponse:
         mapped = await self.nearby_results(location, layers=layers)
         total = len(mapped.results)

@@ -29,6 +29,7 @@ from firelens.answering.live_response_support import (
 )
 from firelens.answering.live_static_request import extract_static_request
 from firelens.answering.location_intent import coarse_location_from_question
+from firelens.answering.partial_live_response import partial_live_response
 from firelens.answering.unsupported_live import unsupported_live_topics
 from firelens.contracts import (
     BACKGROUND_LIMITATION,
@@ -59,8 +60,6 @@ def _section(kind: AnswerSectionKind, heading: str, text: str) -> AnswerSection:
 
 
 class LiveAnswerCoordinator:
-    """Own live-source policy and composition independently from HTTP transport."""
-
     def __init__(self, live_service: LiveDataService) -> None:
         self.live_service = live_service
 
@@ -153,7 +152,6 @@ class LiveAnswerCoordinator:
     async def answer(
         self, request: QueryRequest, static_result: AskResponse | None
     ) -> AskResponse:
-        """Legacy live composer. Public Ask uses FireLensAgent, not this method."""
         from firelens.answering.intent import plan_query
 
         plan = plan_query(request)
@@ -238,6 +236,9 @@ class LiveAnswerCoordinator:
                 unavailable_layers=list(layers),
                 limitations=["Official live sources are currently unavailable."],
             )
+
+        if getattr(live, "partial_layers", []):
+            return partial_live_response(request, live, static_result, layers)
 
         resolved_location = getattr(live, "resolved_location", None)
         if not live.results:

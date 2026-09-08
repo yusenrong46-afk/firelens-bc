@@ -1,7 +1,4 @@
-"""Strict evidence-visible contracts passed between FireLens RAG stages.
-
-Internal model drafts stay separate from public grounded and background types.
-"""
+"""Strict evidence-visible contracts; internal drafts stay separate from public claims."""
 
 from __future__ import annotations
 
@@ -28,7 +25,11 @@ from firelens.llm_io import PlanningResponse as PlanningResponse
 from firelens.presentation_identity import PresentationShell as PresentationShell
 from firelens.presentation_identity import ProvenanceClass as ProvenanceClass
 from firelens.presentation_identity import SuggestionOmissionReason as SuggestionOmissionReason
-from firelens.presentation_identity import attach_result_identity
+from firelens.presentation_identity import (
+    attach_result_identity,
+    validate_abstention_fields,
+    validate_answer_coverage,
+)
 from firelens.proof_presentation import AnswerStatusBanner, ProofCard, attach_proof_presentation
 from firelens.publication_contracts import PublicationAuthority
 from firelens.publication_response_binding import (
@@ -535,6 +536,7 @@ class AskResponse(StrictModel):
     error_kind: str | None = None
     live_results: list[LiveResult] = Field(default_factory=list)
     aggregate_freshness: AggregateFreshness | None = None
+    partial_layers: list[LiveResultKind] = Field(default_factory=list, max_length=3)
     unavailable_layers: list[LiveResultKind] = Field(default_factory=list)
     requested_layers: list[LiveResultKind] = Field(default_factory=list, max_length=3)
     roster_total: int | None = Field(default=None, ge=0)
@@ -589,8 +591,7 @@ class AskResponse(StrictModel):
             live_ids = {item.result_id for item in self.live_results}
             if any(result_id not in live_ids for result_id in self.sample_record_ids):
                 raise ValueError("sample record IDs must belong to the authorized result set")
-        if self.roster_total is not None and self.roster_total < len(self.live_results):
-            raise ValueError("roster total cannot be smaller than the authorized result set")
+        validate_answer_coverage(self)
         return self
 
     def _validate_answer_sections(self) -> None:
@@ -794,7 +795,6 @@ class AskResponse(StrictModel):
             raise ValueError("resumable input responses cannot contain evidence results")
 
     def _validate_abstention(self, _evidence_ids: list[str]) -> None:
-        if self.status not in {ResponseStatus.ABSTENTION, ResponseStatus.ERROR}:
-            raise ValueError("answer status requires a non-abstention response mode")
-        if self.claims or self.evidence or self.live_results:
-            raise ValueError("abstention and error responses cannot contain evidence claims")
+        validate_abstention_fields(
+            self.status, bool(self.claims or self.evidence or self.live_results)
+        )

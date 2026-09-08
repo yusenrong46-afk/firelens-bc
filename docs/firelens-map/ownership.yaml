@@ -99,4 +99,4 @@ domains:
       - "src/firelens/api/answer_routes.py"
       - "src/firelens/api/live_routes.py"
 schema_version: "firelens.ownership.v1"
-source_digest: "babd5e2bea4bb3f09b73e83c8db219d11078d6b948e567bd562492d07de97b9f"
+source_digest: "ee103de0061e74bc521077e940db52792b74df543af3930d4f5e500f2abfc097"

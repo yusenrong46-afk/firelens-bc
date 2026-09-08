@@ -28,7 +28,7 @@ class _GeographyAdapterSpy:
         self.nearby_calls: list[LocationInput] = []
         self.requested_layers: list[tuple[LiveResultKind, ...]] = []
 
-    async def map_results(self, *, layers: tuple[LiveResultKind, ...]) -> Any:
+    async def map_results(self, *, layers: tuple[LiveResultKind, ...], **kwargs) -> Any:
         self.map_calls += 1
         self.requested_layers.append(layers)
         return SimpleNamespace(

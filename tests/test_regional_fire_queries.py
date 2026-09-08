@@ -49,7 +49,9 @@ class _RosterService:
         self.nearby_calls = 0
         self.resolve_calls = 0
 
-    async def map_results(self, *, layers: tuple[LiveResultKind, ...]) -> LiveMapResponse:
+    async def map_results(
+        self, *, layers: tuple[LiveResultKind, ...], **kwargs
+    ) -> LiveMapResponse:
         self.map_calls += 1
         assert layers == (LiveResultKind.INCIDENT,)
         results = [
@@ -88,7 +90,9 @@ class _RegionService:
         self.nearby_calls = 0
         self.resolve_calls = 0
 
-    async def map_results(self, *, layers: tuple[LiveResultKind, ...]) -> LiveMapResponse:
+    async def map_results(
+        self, *, layers: tuple[LiveResultKind, ...], **kwargs
+    ) -> LiveMapResponse:
         del layers
         self.map_calls += 1
         return LiveMapResponse(

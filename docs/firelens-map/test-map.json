@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "babd5e2bea4bb3f09b73e83c8db219d11078d6b948e567bd562492d07de97b9f",
+  "source_digest": "ee103de0061e74bc521077e940db52792b74df543af3930d4f5e500f2abfc097",
   "tests": [
     {
       "cases": [
@@ -735,7 +735,8 @@
         "test_call_3",
         "test_call_4",
         "test_call_5",
-        "test_call_6"
+        "test_call_6",
+        "test_call_7"
       ],
       "direct_targets": [
         "apps/web/src/features/ask/roster.ts",
@@ -2278,7 +2279,7 @@
     },
     {
       "cases": [
-        "GeometryQuarantineTests.test_all_invalid_is_unavailable_and_empty_is_available",
+        "GeometryQuarantineTests.test_all_invalid_is_partial_and_empty_is_complete",
         "GeometryQuarantineTests.test_native_crs_and_published_count_are_not_bypassed",
         "GeometryQuarantineTests.test_native_source_capture_preserves_holes_and_quarantines_real_defects"
       ],
@@ -2721,6 +2722,30 @@
       ],
       "language": "python",
       "path": "tests/test_paid_floor_rails.py"
+    },
+    {
+      "cases": [
+        "test_empty_is_distinct_from_unknown_status",
+        "test_legacy_coordinator_preserves_partial_state",
+        "test_partial_cached_refresh_and_source_recovery",
+        "test_real_agent_prefetch_retains_partial_and_prevents_complete_claims",
+        "test_status_admission_precedes_geometry"
+      ],
+      "direct_targets": [
+        "src/firelens/agent/__init__.py",
+        "src/firelens/contracts.py",
+        "src/firelens/live.py",
+        "src/firelens/live_answering.py"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "live",
+        "provider",
+        "rag",
+        "retrieval"
+      ],
+      "language": "python",
+      "path": "tests/test_partial_live_coverage.py"
     },
     {
       "cases": [

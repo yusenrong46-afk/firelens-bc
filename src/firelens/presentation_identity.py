@@ -105,7 +105,7 @@ def attach_result_identity(response: Any) -> None:
     live = list(getattr(response, "live_results", []) or [])
     if not getattr(response, "requested_layers", None) and live:
         response.requested_layers = list(dict.fromkeys(item.kind for item in live))
-    if getattr(response, "roster_total", None) is None and live:
+    if getattr(response, "roster_total", None) is None and live and not response.partial_layers:
         response.roster_total = len(live)
     if not getattr(response, "sample_record_ids", None) and live:
         response.sample_record_ids = sample_record_ids(live, limit=INLINE_SAMPLE_LIMIT)
@@ -116,3 +116,21 @@ def attach_result_identity(response: Any) -> None:
         and getattr(response, "suggestion_omission_reason", None) is None
     ):
         response.suggestion_omission_reason = derive_suggestion_omission(response)
+
+
+def validate_answer_coverage(response: Any) -> None:
+    partial, unavailable = response.partial_layers, response.unavailable_layers
+    total, returned = response.roster_total, len(response.live_results)
+    if len(set(partial)) != len(partial) or set(partial) & set(unavailable):
+        raise ValueError("partial layers must be unique and distinct from unavailable layers")
+    if total is not None and total < returned:
+        raise ValueError("roster total cannot be smaller than the authorized result set")
+    if partial and total is not None:
+        raise ValueError("partial coverage cannot claim a complete roster total")
+
+
+def validate_abstention_fields(status: str, has_claims: bool) -> None:
+    if status not in {"abstention", "error"}:
+        raise ValueError("answer status requires a non-abstention response mode")
+    if has_claims:
+        raise ValueError("abstention and error responses cannot contain evidence claims")

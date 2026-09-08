@@ -97,6 +97,7 @@ class OfflineLiveDataService:
         *,
         layers: tuple[LiveResultKind, ...],
         bbox: tuple[float, float, float, float] | None = None,
+        **_admission: Any,
     ) -> LiveMapResponse:
         del bbox
         now = datetime.now(UTC)
@@ -154,6 +155,7 @@ class OfflineLiveDataService:
         layers: tuple[LiveResultKind, ...] = tuple(LiveResultKind),
         page: int = 1,
         page_size: int = 100,
+        **_admission: Any,
     ) -> NearMeResponse:
         mapped = await self.nearby_results(location, layers=layers)
         total = len(mapped.results)

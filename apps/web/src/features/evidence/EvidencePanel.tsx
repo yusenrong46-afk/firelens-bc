@@ -83,6 +83,7 @@ export function EvidencePanel({
     mapMatchingResults,
     mapProvinceResults,
     mapUnavailableLayers,
+    mapPartialLayers,
     mode,
     selected,
     selectedLiveResultId,
@@ -163,6 +164,7 @@ export function EvidencePanel({
             matchingResults={mapMatchingResults}
             provinceResults={mapProvinceResults}
             aggregateFreshness={mapAggregateFreshness}
+            partialLayers={mapPartialLayers}
             unavailableLayers={mapUnavailableLayers}
             geometryOmissions={session.mapGeometryOmissions}
             focus={mapFocus}

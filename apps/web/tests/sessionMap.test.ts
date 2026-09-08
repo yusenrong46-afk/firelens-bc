@@ -51,7 +51,7 @@ describe("nextRoster", () => {
 
   it("keeps the list through an answer with no records, and replaces it with a different list", () => {
     const shown = roster(["incident:1", "incident:2"]);
-    expect(nextRoster(shown, response([]))).toBe(shown);
+    expect(nextRoster(shown, response([], { requested_layers: [] }))).toBe(shown);
 
     const replaced = nextRoster(shown, response(["evacuation:7"]));
     expect(replaced.results.map((item) => item.result_id)).toEqual(["evacuation:7"]);
@@ -98,6 +98,7 @@ it("keeps partial province coverage out of a question-only roster", () => {
     available: true,
     matching_result_count: 1,
     omitted_geometry_count: 2,
+    omitted_status_count: 0,
   }];
   const province = [result("evacuation:valid", "evacuation")];
   const idle = deriveSessionMapView(undefined, province, [], false, statuses);
@@ -111,4 +112,14 @@ it("keeps partial province coverage out of a question-only roster", () => {
   expect(withContext.mapGeometryOmissions).toEqual(idle.mapGeometryOmissions);
   expect(withContext.mapUnavailableLayers).toEqual([]);
   expect(withContext.mapResults).toHaveLength(2);
+});
+
+
+it("replaces a previous roster with an empty partial lookup without losing its uncertainty", () => {
+  const previous = roster(["evacuation:old"]);
+  const next = nextRoster(previous, response([], { requested_layers: ["evacuation"], partial_layers: ["evacuation"] }));
+  expect(next.results).toEqual([]);
+  const map = deriveSessionMapView(next, [], []);
+  expect(map.mapPartialLayers).toEqual(["evacuation"]);
+  expect(map.mapUnavailableLayers).toEqual([]);
 });
