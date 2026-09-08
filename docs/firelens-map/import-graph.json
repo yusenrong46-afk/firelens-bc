@@ -3158,7 +3158,7 @@
       "kind": "static",
       "lines": [
         23,
-        88
+        89
       ],
       "source": "src/firelens/agent/packet.py",
       "target": "src/firelens/answering/live_analysis.py"
@@ -4871,7 +4871,7 @@
     {
       "kind": "static",
       "lines": [
-        8
+        10
       ],
       "source": "src/firelens/answering/live_response_support.py",
       "target": "src/firelens/answering/plain_time.py"
@@ -4879,7 +4879,7 @@
     {
       "kind": "static",
       "lines": [
-        9
+        11
       ],
       "source": "src/firelens/answering/live_response_support.py",
       "target": "src/firelens/contracts.py"
@@ -4887,7 +4887,7 @@
     {
       "kind": "static",
       "lines": [
-        21
+        23
       ],
       "source": "src/firelens/answering/live_response_support.py",
       "target": "src/firelens/freshness_language.py"
@@ -4895,7 +4895,7 @@
     {
       "kind": "static",
       "lines": [
-        22
+        24
       ],
       "source": "src/firelens/answering/live_response_support.py",
       "target": "src/firelens/live_support.py"
@@ -4903,7 +4903,7 @@
     {
       "kind": "static",
       "lines": [
-        23
+        25
       ],
       "source": "src/firelens/answering/live_response_support.py",
       "target": "src/firelens/proof_presentation.py"
@@ -13040,6 +13040,70 @@
     {
       "kind": "static",
       "lines": [
+        13
+      ],
+      "source": "tests/test_live_failure_reason.py",
+      "target": "src/firelens/agent/__init__.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        14
+      ],
+      "source": "tests/test_live_failure_reason.py",
+      "target": "src/firelens/agent/compose.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        15
+      ],
+      "source": "tests/test_live_failure_reason.py",
+      "target": "src/firelens/agent/packet.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        16
+      ],
+      "source": "tests/test_live_failure_reason.py",
+      "target": "src/firelens/agent/runtime_tools.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        17
+      ],
+      "source": "tests/test_live_failure_reason.py",
+      "target": "src/firelens/answering/live_response_support.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        18
+      ],
+      "source": "tests/test_live_failure_reason.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        24
+      ],
+      "source": "tests/test_live_failure_reason.py",
+      "target": "src/firelens/live.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        25
+      ],
+      "source": "tests/test_live_failure_reason.py",
+      "target": "src/firelens/live_answering.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         11
       ],
       "source": "tests/test_live_geometry_quarantine.py",
@@ -17841,6 +17905,7 @@
     "tests/test_live.py",
     "tests/test_live_answering.py",
     "tests/test_live_evacuation.py",
+    "tests/test_live_failure_reason.py",
     "tests/test_live_geometry_quarantine.py",
     "tests/test_live_prose_binding.py",
     "tests/test_live_qualification.py",
@@ -17954,7 +18019,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "c8a151b1a6f5c0b28b8d7686451f2352167a6368b1ba71f151e7338e04f00345",
+  "source_digest": "babd5e2bea4bb3f09b73e83c8db219d11078d6b948e567bd562492d07de97b9f",
   "unresolved_relative_imports": [
     {
       "line": 32,

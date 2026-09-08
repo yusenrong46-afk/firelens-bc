@@ -169,10 +169,7 @@ class LiveDataService:
     def _normalized_bbox(self, bbox: _BBox | None) -> _BBox | None:
         """Expand a viewport onto a stable grid so nearby pans share cache entries.
 
-        Expansion is deliberate: ArcGIS may return more records than the caller requested,
-        but :meth:`map_results` still filters against the exact requested bounds. A normalized
-        cache lookup therefore cannot hide a boundary record that an exact upstream query would
-        have returned.
+        ArcGIS may return extra records; map_results filters the exact bounds.
         """
         if bbox is None:
             return None
@@ -507,7 +504,9 @@ class LiveDataService:
             geometry=geometry,
         )
 
-    def _unavailable_status(self, kind: LiveResultKind) -> LiveLayerStatus:
+    def _unavailable_status(
+        self, kind: LiveResultKind, *, invalid_geometry: bool = False
+    ) -> LiveLayerStatus:
         definition = self.layer_definitions.get(kind, DEFAULT_LAYER_DEFINITIONS[kind])
         return LiveLayerStatus(
             kind=kind,
@@ -515,6 +514,7 @@ class LiveDataService:
             source_url=HttpUrl(definition.url),
             available=False,
             matching_result_count=0,
+            unavailability_reason="invalid_geometry" if invalid_geometry else None,
         )
 
     async def _map_layer_results(
@@ -570,7 +570,7 @@ class LiveDataService:
                     omitted_geometry_count += 1
                     continue
                 limitation = f"{kind.value} source returned spatially invalid geometry"
-                return [], self._unavailable_status(kind), limitation
+                return [], self._unavailable_status(kind, invalid_geometry=True), limitation
             try:
                 result = self._to_result(
                     kind,
@@ -587,7 +587,7 @@ class LiveDataService:
         if omitted_geometry_count and not results:
             return (
                 [],
-                self._unavailable_status(kind),
+                self._unavailable_status(kind, invalid_geometry=True),
                 f"{kind.value} source returned spatially invalid geometry",
             )
         return (

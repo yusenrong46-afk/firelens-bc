@@ -36,7 +36,7 @@ from firelens.answering.live_request_intent import (
 )
 from firelens.answering.live_response_support import (
     empty_live_response,
-    official_sources_checked,
+    live_unavailability_text,
     records_section_heading,
 )
 from firelens.answering.location_intent import coarse_location_from_question
@@ -232,8 +232,8 @@ def _with_packet_fields(
     if packet.unavailable_layers:
         updates["unavailable_layers"] = list(packet.unavailable_layers)
         layer_unavailable = (
-            f"FireLens could not load {official_sources_checked(tuple(packet.unavailable_layers))} "
-            "just now, so this may be incomplete. That is not an all-clear."
+            live_unavailability_text(packet.unavailable_layers, packet.invalid_geometry_layers)
+            + " This result may be incomplete. That is not an all-clear."
         )
         if layer_unavailable not in limitations:
             limitations.append(layer_unavailable)
@@ -469,6 +469,7 @@ def _build_ask_response(
             empty = empty_live_response(
                 requested_layers=requested_layers,
                 unavailable_layers=packet.unavailable_layers,
+                invalid_geometry_layers=packet.invalid_geometry_layers,
                 resolved_location=packet.resolved_location,
                 retrieved_at=packet.retrieved_at,
                 place=listing_place(request),
@@ -685,6 +686,7 @@ def _build_ask_response(
             empty = empty_live_response(
                 requested_layers=requested,
                 unavailable_layers=packet.unavailable_layers,
+                invalid_geometry_layers=packet.invalid_geometry_layers,
                 resolved_location=packet.resolved_location,
                 retrieved_at=packet.retrieved_at,
                 place=listing_place(request),

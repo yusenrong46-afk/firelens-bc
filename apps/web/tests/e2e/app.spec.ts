@@ -404,7 +404,7 @@ test("fails closed for a rejected no-claim response", async ({ page }) => {
   const status = conversation.getByRole("status", { name: "Answer status" });
   await expect(status).toContainText("Updated: Freshness not established");
   await expect(status).toContainText(
-    "Availability: FireLens could not reach the sources this needed.",
+    "Availability: Support was not established from the evidence returned.",
   );
   await expect(conversation.getByText("Grounded in reviewed official sources")).toHaveCount(0);
   await expect(conversation.getByRole("link", { name: "Current B.C. AQHI", exact: true })).toHaveAttribute(

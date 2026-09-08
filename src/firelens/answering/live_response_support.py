@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
+from pydantic import HttpUrl
+
 from firelens.answering.plain_time import human_time, time_ago
 from firelens.contracts import (
     AggregateFreshness,
@@ -68,10 +70,32 @@ def _checked_when(retrieved_at: datetime | None) -> str:
     return f" FireLens checked {time_ago(retrieved_at)} ({human_time(retrieved_at)})."
 
 
+def live_unavailability_text(
+    unavailable_layers: list[LiveResultKind],
+    invalid_geometry_layers: list[LiveResultKind],
+) -> str:
+    """Describe source-owned failures without inferring a network outage."""
+
+    invalid = tuple(kind for kind in unavailable_layers if kind in invalid_geometry_layers)
+    other = tuple(kind for kind in unavailable_layers if kind not in invalid)
+    parts = []
+    if invalid:
+        parts.append(
+            f"Some official mapped boundaries from {official_sources_checked(invalid)} "
+            "could not be validated."
+        )
+    if other:
+        parts.append(
+            f"FireLens could not load and validate {official_sources_checked(other)} just now."
+        )
+    return " ".join(parts)
+
+
 def empty_live_response(
     *,
     requested_layers: tuple[LiveResultKind, ...],
     unavailable_layers: list[LiveResultKind],
+    invalid_geometry_layers: list[LiveResultKind] | None = None,
     resolved_location: CoarseResolvedLocation | None,
     retrieved_at: datetime | None = None,
     place: str | None = None,
@@ -83,21 +107,29 @@ def empty_live_response(
     sources = official_sources_checked(requested_layers)
     where = f" near {place}" if place else ""
     when = _checked_when(retrieved_at)
+    invalid = [kind for kind in unavailable if kind in (invalid_geometry_layers or [])]
+    failure = live_unavailability_text(list(unavailable), invalid)
     if all_unavailable:
         current_information = (
-            f"FireLens could not reach {sources} just now, so it cannot say what is "
-            f"happening{where}.{when}"
+            f"{failure} FireLens cannot confirm the complete official record coverage"
+            f"{where}.{when}"
         )
-        headline = "Official sources could not be reached"
-        availability = "The official sources were unavailable. That is not an all-clear."
+        headline = (
+            "Official boundaries could not be validated"
+            if invalid
+            else "Official records unavailable"
+        )
+        availability = (
+            "Complete official record coverage is unavailable. That is not an all-clear."
+        )
     elif unavailable:
         current_information = (
-            f"{_nothing_listed(requested_layers)}{where} in the sources FireLens could "
-            f"reach, but {official_sources_checked(unavailable)} could not be loaded, so "
-            f"this may be incomplete.{when}"
+            f"{_nothing_listed(tuple(kind for kind in requested_layers if kind not in unavailable))}"
+            f"{where} in the sources FireLens validated. {failure} "
+            f"This result is incomplete.{when}"
         )
         headline = "No records found; some sources unavailable"
-        availability = f"{official_sources_checked(unavailable)} could not be loaded."
+        availability = "Some official records are unavailable; coverage is incomplete."
     else:
         current_information = (
             f"{_nothing_listed(requested_layers)}{where} right now in {sources}.{when}"
@@ -118,7 +150,8 @@ def empty_live_response(
     ]
     handoff = "Check the BC Wildfire Service map for current incidents and perimeters."
     if LiveResultKind.EVACUATION in requested_layers:
-        links.append(
+        links.insert(
+            0,
             RelatedLink(
                 title="EmergencyInfoBC",
                 url=OFFICIAL_FALLBACK_URLS[1],
@@ -126,7 +159,7 @@ def empty_live_response(
                     "Official provincial emergency information and links to issuing local "
                     "authorities."
                 ),
-            )
+            ),
         )
         handoff += (
             " Check EmergencyInfoBC and the issuing local authority for evacuation "
@@ -147,8 +180,8 @@ def empty_live_response(
     if all_unavailable:
         limitations.insert(
             0,
-            "The official sources were unavailable, so FireLens does not know whether "
-            "records exist.",
+            "Complete official record coverage is unavailable, so FireLens cannot "
+            "determine whether matching records exist.",
         )
     else:
         limitations.insert(0, _NO_MATCH_LIMITATION)
@@ -180,8 +213,8 @@ def empty_live_response(
             freshness_label="No records returned",
             availability_label=availability[:160],
             retrieval_completed_at=retrieved_at,
-            official_escalation_title="BC Wildfire Service map",
-            official_escalation_url=OFFICIAL_FALLBACK_URLS[0],
+            official_escalation_title=links[0].title,
+            official_escalation_url=HttpUrl(links[0].url),
         ),
     )
 

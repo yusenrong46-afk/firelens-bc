@@ -36,8 +36,8 @@ const PRESENTATIONS: Partial<Record<ReasonCode, AbstentionPresentation>> = {
     linkLead: "Open a related official source when one is provided.",
   },
   live_data_required: {
-    badge: "Current source unavailable",
-    title: "Current source unavailable",
+    badge: "Current status unconfirmed",
+    title: "Current status unconfirmed",
     summary: "FireLens could not establish the requested current status from its available official sources.",
     linkLead: "Open the related official source for the current status.",
   },

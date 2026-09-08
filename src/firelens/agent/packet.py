@@ -59,6 +59,7 @@ class AgentPacket:
     # repeated query for the same layer scope cannot double count it.
     roster_totals_by_scope: dict[str, int] = field(default_factory=dict)
     unavailable_layers: list[LiveResultKind] = field(default_factory=list)
+    invalid_geometry_layers: list[LiveResultKind] = field(default_factory=list)
     live_limitations: list[str] = field(default_factory=list)
     retrieved_at: datetime | None = None
     policy: RequestExecutionPolicy = field(default_factory=RequestExecutionPolicy)

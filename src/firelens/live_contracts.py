@@ -370,6 +370,7 @@ class LiveLayerStatus(FrozenStrictModel):
     freshness: Freshness | None = None
     matching_result_count: int = Field(ge=0)
     omitted_geometry_count: int = Field(default=0, ge=0)
+    unavailability_reason: Literal["invalid_geometry"] | None = None
 
     @field_validator("source_updated_at", "retrieved_at")
     @classmethod
@@ -380,6 +381,8 @@ class LiveLayerStatus(FrozenStrictModel):
 
     @model_validator(mode="after")
     def availability_fields_are_consistent(self) -> Self:
+        if self.available and self.unavailability_reason is not None:
+            raise ValueError("available layers cannot claim an unavailability reason")
         if self.omitted_geometry_count and (
             not self.available or not self.matching_result_count
         ):

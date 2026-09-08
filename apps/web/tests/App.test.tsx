@@ -759,7 +759,7 @@ describe("FireLens Source Lens", () => {
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByText("FireLens did not generate guidance")).toBeInTheDocument();
-    expect(screen.getAllByText("Current source unavailable").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Current status unconfirmed").length).toBeGreaterThan(0);
     expect(screen.getByText("Static guidance cannot establish current status.")).toBeInTheDocument();
     expect(screen.queryByText(/live_data_required/)).not.toBeInTheDocument();
     expect(screen.queryByText("Each statement and its source")).not.toBeInTheDocument();

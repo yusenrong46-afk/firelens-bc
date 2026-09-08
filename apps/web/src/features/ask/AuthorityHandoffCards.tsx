@@ -23,7 +23,7 @@ export function AuthorityHandoffCards({
           <p className="authority-handoff-card__topic">{item.title}</p>
           <p className="authority-handoff-card__authority">{handoffAuthority(item.title)}</p>
           <p>{item.description}</p>
-          <p className="authority-handoff-card__why">FireLens does not track this itself; the official source has the current information.</p>
+          <p className="authority-handoff-card__why">Use the official source to confirm current information and instructions.</p>
           <a href={item.url} target="_blank" rel="noreferrer" onClick={() => emitProductEvent("authority_handoff_opened")}>
             <span>Open official source</span>
             <ArrowSquareOut size={18} aria-hidden="true" />

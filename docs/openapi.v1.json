@@ -1275,6 +1275,18 @@
             "minLength": 1,
             "title": "Source Url",
             "type": "string"
+          },
+          "unavailability_reason": {
+            "anyOf": [
+              {
+                "const": "invalid_geometry",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailability Reason"
           }
         },
         "required": [

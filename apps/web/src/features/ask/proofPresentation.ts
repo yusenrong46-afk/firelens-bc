@@ -483,7 +483,7 @@ function availabilityLabel(response: AskResponse): string {
     return `Unavailable layers: ${layers.join(", ")}. That is not an all-clear.`;
   }
   if (response.status === "error" || response.response_mode === "abstention") {
-    return "FireLens could not reach the sources this needed.";
+    return "A validated answer is unavailable from the evidence returned.";
   }
   return "The sources this needed were available.";
 }
@@ -546,7 +546,7 @@ export function getStatusBanner(response: AskResponse | undefined): StatusBanner
       headline: "Not confirmed by FireLens sources",
       detail: "FireLens did not establish or validate support for this response.",
       freshness_label: "Freshness not established",
-      availability_label: "FireLens could not reach the sources this needed.",
+      availability_label: "Support was not established from the evidence returned.",
       retrieval_completed_at: retrieved ?? null,
       source_updated_at: updated ?? null,
       official_escalation_title: official.title ?? null,

@@ -16,6 +16,8 @@ The live-map geometry repair preserves official polygon holes and displays valid
 records with explicit partial-coverage labels when other boundaries fail validation.
 Chat and nearby searches retain strict handling of incomplete layers. See the
 [geometry repair record](docs/releases/live-geometry-repair.md) for qualification status.
+Evacuation lookup failures preserve the boundary-validation reason and lead to
+EmergencyInfoBC; see the [lookup repair record](docs/releases/evacuation-lookup-repair.md).
 Exact source quotations, reviewed paraphrases and partial guidance are labelled
 separately. See the [dated release evidence](docs/releases/firelens-polish.md) for
 qualification, deployment status and retained limitations.
