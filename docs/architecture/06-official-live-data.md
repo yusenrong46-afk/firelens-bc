@@ -66,6 +66,36 @@ The first capture harness had a decoding error; corrected retained-response
 replay establishes adapter behavior, not an uninterrupted online run. See the
 [System Card](../system-card/FIRELENS_SYSTEM_CARD.md) for exact scope.
 
+## Native polygons and map-only partial coverage
+
+Perimeter and evacuation queries request native ArcGIS JSON in EPSG:4326.
+`arcgis_geometry.polygon_geojson` decodes the [documented Esri ring semantics](https://developers.arcgis.com/rest/services-reference/enterprise/geometry-objects/):
+clockwise exteriors and counterclockwise holes, assigning each hole to its
+smallest containing exterior. It preserves every coordinate, bounds ring work
+at 512 rings per feature, and runs the unchanged geometry integrity validator.
+Unsupported dimensions/curves, unclosed rings, orphan holes, overlapping shells
+and self-intersections are rejected. It never uses buffer, make-valid or
+simplification. Existing GeoJSON responses remain accepted under the existing
+schema and CRS checks; incident queries continue to request GeoJSON.
+
+Only `/api/v1/live/map` opts into `allow_partial_geometry=True`. Valid records
+survive invalid geometry in another row. `matching_result_count` counts returned
+records; `omitted_geometry_count` counts otherwise-active rows withheld for
+invalid geometry in the fetched scope. `partial_layers` binds those omissions
+to the layer status. An invalid shape cannot establish whether it intersects a
+viewport, so an omission does not claim that record lies inside or outside it.
+A layer with no usable records remains unavailable; a genuinely empty layer
+remains available with zero results. Metadata, pagination, published-count,
+byte-limit and nongeometry record-contract failures still quarantine the layer.
+
+Chat, nearby queries and summary totals retain the default strict whole-layer
+policy. Partial map context does not authorize complete totals, nearest/ranking,
+area membership or all-clear conclusions. The UI labels omitted records and
+partial displayed counts and links to official emergency information.
+
+The [dated geometry repair record](../releases/live-geometry-repair.md) separates
+captured-source regression evidence from live and production verification.
+
 ## Publication
 
 Live public claim text is rendered from typed records and bound back to the exact `result_id`. Status, distance, and count language must match the returned authorized result set. The model may explain a live packet only within the composed lane; it does not own official values.

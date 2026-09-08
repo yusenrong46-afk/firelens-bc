@@ -5952,6 +5952,22 @@
     {
       "kind": "static",
       "lines": [
+        13
+      ],
+      "source": "src/firelens/arcgis_geometry.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        14
+      ],
+      "source": "src/firelens/arcgis_geometry.py",
+      "target": "src/firelens/live_support.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         17,
         20,
         23,
@@ -8922,15 +8938,15 @@
         19
       ],
       "source": "src/firelens/live.py",
-      "target": "src/firelens/contracts.py"
+      "target": "src/firelens/arcgis_geometry.py"
     },
     {
       "kind": "static",
       "lines": [
-        34
+        20
       ],
       "source": "src/firelens/live.py",
-      "target": "src/firelens/live_contracts.py"
+      "target": "src/firelens/contracts.py"
     },
     {
       "kind": "static",
@@ -8938,7 +8954,7 @@
         35
       ],
       "source": "src/firelens/live.py",
-      "target": "src/firelens/live_http.py"
+      "target": "src/firelens/live_contracts.py"
     },
     {
       "kind": "static",
@@ -8946,12 +8962,20 @@
         36
       ],
       "source": "src/firelens/live.py",
-      "target": "src/firelens/live_identity.py"
+      "target": "src/firelens/live_http.py"
     },
     {
       "kind": "static",
       "lines": [
         37
+      ],
+      "source": "src/firelens/live.py",
+      "target": "src/firelens/live_identity.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        38
       ],
       "source": "src/firelens/live.py",
       "target": "src/firelens/live_support.py"
@@ -11819,6 +11843,14 @@
     {
       "kind": "static",
       "lines": [
+        7
+      ],
+      "source": "tests/test_arcgis_geometry.py",
+      "target": "src/firelens/arcgis_geometry.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         11
       ],
       "source": "tests/test_astra_adapters.py",
@@ -13004,6 +13036,30 @@
       ],
       "source": "tests/test_live_evacuation.py",
       "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        11
+      ],
+      "source": "tests/test_live_geometry_quarantine.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        12
+      ],
+      "source": "tests/test_live_geometry_quarantine.py",
+      "target": "src/firelens/live.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        13
+      ],
+      "source": "tests/test_live_geometry_quarantine.py",
+      "target": "src/firelens/live_support.py"
     },
     {
       "kind": "static",
@@ -17526,6 +17582,7 @@
     "src/firelens/api/middleware.py",
     "src/firelens/api/responses.py",
     "src/firelens/api_contracts.py",
+    "src/firelens/arcgis_geometry.py",
     "src/firelens/assistant_history.py",
     "src/firelens/benchmark.py",
     "src/firelens/benchmark_contracts.py",
@@ -17738,6 +17795,7 @@
     "tests/test_agent_query_plan.py",
     "tests/test_agent_query_plan_boundary.py",
     "tests/test_api_privacy_boundary.py",
+    "tests/test_arcgis_geometry.py",
     "tests/test_architecture.py",
     "tests/test_astra_adapters.py",
     "tests/test_astra_performance.py",
@@ -17783,6 +17841,7 @@
     "tests/test_live.py",
     "tests/test_live_answering.py",
     "tests/test_live_evacuation.py",
+    "tests/test_live_geometry_quarantine.py",
     "tests/test_live_prose_binding.py",
     "tests/test_live_qualification.py",
     "tests/test_live_sample_ranking.py",
@@ -17895,7 +17954,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "119660041925338764f52e32128080ad3c7beaca2e3486a72172083b560b2d70",
+  "source_digest": "c8a151b1a6f5c0b28b8d7686451f2352167a6368b1ba71f151e7338e04f00345",
   "unresolved_relative_imports": [
     {
       "line": 32,

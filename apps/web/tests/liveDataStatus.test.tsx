@@ -63,7 +63,7 @@ describe("LiveDataStatus", () => {
 it("names the missing layer even when FireLens checked just now", () => {
   render(<LiveDataStatus liveSummary={oneLayerDown} readiness="ready" now={Date.parse(oneLayerDown.retrieved_at!)} />);
   expect(screen.getByRole("status")).toHaveTextContent("Partial official coverage");
-  expect(screen.getByRole("status")).toHaveTextContent("Evacuation records unavailable");
+  expect(screen.getByRole("status")).toHaveTextContent("Evacuation total unavailable");
   expect(screen.getByRole("status")).toHaveTextContent("Checked by FireLens just now");
   expect(screen.getByRole("status")).not.toHaveTextContent("Last successful update");
 });

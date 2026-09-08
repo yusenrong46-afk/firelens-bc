@@ -370,7 +370,7 @@ Remaining risk: lower-risk generated claims use bounded lexical/deterministic va
 
 ## 13. Fault Handling
 
-Typed public errors distinguish invalid request, rate/body limits, not-ready, provider, deadline, live source, and selected-record failures. Live availability is per layer. The local candidate repair quarantines an entire layer when any otherwise-in-scope official row has invalid/unclassifiable geometry or cannot satisfy `LiveResult`; healthy sibling layers remain, while successful empty remains available-zero.
+Typed public errors distinguish invalid request, rate/body limits, not-ready, provider, deadline, live source, and selected-record failures. Live availability is per layer. Chat, nearby searches and summary totals quarantine an entire layer when any otherwise-in-scope official row has invalid/unclassifiable geometry or cannot satisfy `LiveResult`; healthy sibling layers remain, while successful empty remains available-zero. The map-only geometry repair permits validated rows from a partially usable layer, with explicit omitted-geometry counts and partial displayed totals. Entirely invalid layers remain unavailable. Native ArcGIS polygon decoding preserves source coordinates and holes without repairing invalid topology. See the [geometry repair qualification record](../releases/live-geometry-repair.md).
 
 Unexpected programming failures are sanitized publicly and loud in local/test paths. Some early failure branches have incomplete normal request telemetry.
 

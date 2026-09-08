@@ -12,6 +12,10 @@ and general background distinct, including when a conversation moves between the
 [Evaluation guide](docs/eval/README.md)
 
 The deployed release uses the adopted PreparedBC guide and a real 178-chunk index.
+The live-map geometry repair preserves official polygon holes and displays valid
+records with explicit partial-coverage labels when other boundaries fail validation.
+Chat and nearby searches retain strict handling of incomplete layers. See the
+[geometry repair record](docs/releases/live-geometry-repair.md) for qualification status.
 Exact source quotations, reviewed paraphrases and partial guidance are labelled
 separately. See the [dated release evidence](docs/releases/firelens-polish.md) for
 qualification, deployment status and retained limitations.

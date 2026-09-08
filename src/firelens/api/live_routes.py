@@ -119,7 +119,9 @@ def install_live_routes(
                 error_kind="invalid_request",
                 message="bbox must be minLongitude,minLatitude,maxLongitude,maxLatitude.",
             )
-        return await current_live_service().map_results(layers=requested, bbox=parsed_bbox)
+        return await current_live_service().map_results(
+            layers=requested, bbox=parsed_bbox, allow_partial_geometry=True
+        )
 
     @app.get(
         "/api/v1/live/map",
@@ -181,7 +183,7 @@ def install_live_routes(
         if incident_count is None or evacuation_count is None:
             missing = ", ".join(layer.value for layer in payload.unavailable_layers)
             limitation = (
-                f"FireLens could not reach the official {missing} records. That is not an "
+                f"FireLens could not validate the complete official {missing} records. That is not an "
                 "all-clear and is not a zero count."
             )
         return LiveCurrentSummary(

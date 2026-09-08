@@ -833,3 +833,41 @@ test("map record source links do not overlap status in the narrow rail", async (
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   }
 });
+
+test("partial map keeps valid evacuation boundaries and labels omitted records", async ({ page }) => {
+  await page.route("**/api/v1/live/map*", async (route) => {
+    await route.fulfill({ json: {
+      generated_at: "2026-09-07T22:00:00Z",
+      aggregate_freshness: "fresh",
+      results: [{
+        result_id: "evacuation:valid",
+        kind: "evacuation",
+        authority: "Province of British Columbia",
+        source_url: "https://www.emergencyinfobc.gov.bc.ca/",
+        source_updated_at: "2026-09-07T21:00:00Z",
+        retrieved_at: "2026-09-07T22:00:00Z",
+        freshness: "fresh",
+        name: "Test official area",
+        status: "Alert",
+        geometry: { type: "Polygon", coordinates: [[[-120, 49], [-120, 50], [-119, 50], [-119, 49], [-120, 49]]] },
+      }],
+      unavailable_layers: [],
+      partial_layers: ["evacuation"],
+      layer_statuses: [{ kind: "evacuation", available: true, matching_result_count: 1, omitted_geometry_count: 2 }],
+      limitations: ["Two invalid boundaries omitted."],
+    } });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Explore live map" }).click();
+  for (const width of [1536, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 });
+    const map = page.getByRole("region", { name: "Official wildfire records map" });
+    await expect(map).toContainText("2 evacuation records omitted");
+    await expect(map).toContainText("A missing area is not an all-clear");
+    await expect(page.getByLabel("Official record totals")).toContainText("1 evacuation areas (partial)");
+    await expect(map).not.toContainText("Evacuation records unavailable");
+    await expect(map.getByRole("link", { name: "Check official emergency information" })).toHaveAttribute("href", "https://www.emergencyinfobc.gov.bc.ca/");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  }
+  expect(seenRequests).toHaveLength(0);
+});

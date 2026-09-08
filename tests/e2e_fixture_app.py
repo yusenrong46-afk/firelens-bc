@@ -178,8 +178,9 @@ class DeterministicLiveService:
         *,
         layers: tuple[LiveResultKind, ...],
         bbox: tuple[float, float, float, float] | None = None,
+        allow_partial_geometry: bool = False,
     ) -> LiveMapResponse:
-        del bbox
+        del bbox, allow_partial_geometry
         all_records = [
             MOUNTAIN_FIRE,
             BEAR_CREEK_FIRE,

@@ -54,4 +54,4 @@ core:
     maximum_tier_a_b_generation_cost_usd: 0.0
 current_hard_probe_dispositions:
   path: data/evaluation/hard_probe_current_dispositions.v1.json
-  sha256: 66e0d63b3087fa55ce1ceadc624c837056243de98582c11aaaf2f7755aad5c67
+  sha256: 35a72e36ee450a4e83fbf80d7e86f76e7401f8f19a149d5fb58a392c90d6026b

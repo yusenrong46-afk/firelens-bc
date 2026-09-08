@@ -89,3 +89,26 @@ describe("deriveSessionMapView", () => {
     expect(view.mapProvinceResults.map((item) => item.result_id)).toEqual(["incident:9"]);
   });
 });
+
+it("keeps partial province coverage out of a question-only roster", () => {
+  const statuses = [{
+    kind: "evacuation" as const,
+    authority: "Province of BC",
+    source_url: "https://example.test/evacuations",
+    available: true,
+    matching_result_count: 1,
+    omitted_geometry_count: 2,
+  }];
+  const province = [result("evacuation:valid", "evacuation")];
+  const idle = deriveSessionMapView(undefined, province, [], false, statuses);
+  expect(idle.mapGeometryOmissions).toEqual([{ kind: "evacuation", count: 2 }]);
+  const questionRoster = { ...roster(["incident:1"]), unavailableLayers: ["evacuation"] };
+  const focused = deriveSessionMapView(questionRoster, province, [], false, statuses);
+  expect(focused.mapGeometryOmissions).toEqual([]);
+  expect(focused.mapResults).toHaveLength(1);
+  expect(focused.mapUnavailableLayers).toEqual(["evacuation"]);
+  const withContext = deriveSessionMapView(questionRoster, province, [], true, statuses);
+  expect(withContext.mapGeometryOmissions).toEqual(idle.mapGeometryOmissions);
+  expect(withContext.mapUnavailableLayers).toEqual([]);
+  expect(withContext.mapResults).toHaveLength(2);
+});

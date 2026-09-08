@@ -51,6 +51,7 @@ export type FireLensSession = {
   mapMessage: string | undefined;
   mapAggregateFreshness: MapAggregateFreshness;
   mapUnavailableLayers: string[];
+  mapGeometryOmissions?: { kind: string; count: number }[];
   setMapVisible: (visible: boolean) => void;
   mapFocus: { latitude: number; longitude: number } | undefined;
   mapFocusResults: LiveResult[];
@@ -119,8 +120,9 @@ export function useFireLensSession(): FireLensSession {
         provinceMap.data?.results,
         provinceMap.data?.unavailable_layers,
         contextLayersEnabled,
+        provinceMap.data?.layer_statuses,
       ),
-    [contextLayersEnabled, provinceMap.data?.results, provinceMap.data?.unavailable_layers, roster, view.kind],
+    [contextLayersEnabled, provinceMap.data?.layer_statuses, provinceMap.data?.results, provinceMap.data?.unavailable_layers, roster, view.kind],
   );
 
   useEffect(() => {
@@ -377,6 +379,7 @@ export function useFireLensSession(): FireLensSession {
     mapMessage: provinceMap.message,
     mapAggregateFreshness: mapView.mapAggregateFreshness,
     mapUnavailableLayers: mapView.mapUnavailableLayers,
+    mapGeometryOmissions: mapView.mapGeometryOmissions,
     setMapVisible,
     mapFocus: mapView.mapFocus,
     mapFocusResults: mapView.mapFocusResults,
@@ -406,7 +409,7 @@ function currentSummaryText(summary: LiveCurrentSummary): string {
     ? "The BC Wildfire Service fire list is unavailable right now."
     : `Right now the BC Wildfire Service lists ${summary.incident_record_count} ${summary.incident_record_count === 1 ? "fire" : "fires"} in B.C.`;
   const evacuations = summary.evacuation_record_count == null
-    ? " Evacuation records are unavailable right now."
+    ? " A complete evacuation total is unavailable right now."
     : ` EmergencyInfoBC lists ${summary.evacuation_record_count} evacuation ${summary.evacuation_record_count === 1 ? "order or alert" : "orders and alerts"}.`;
   return `${fires}${evacuations} ${summary.limitation}`;
 }

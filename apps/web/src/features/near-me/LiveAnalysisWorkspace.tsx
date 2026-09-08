@@ -188,6 +188,7 @@ export function LiveAnalysisWorkspace({
               provinceResults={filteredMapProvinceResults}
               aggregateFreshness={session.mapAggregateFreshness}
               unavailableLayers={session.mapUnavailableLayers}
+                  geometryOmissions={session.mapGeometryOmissions}
               focus={session.mapFocus}
               focusResults={session.mapFocusResults}
               selectedResultId={session.selectedLiveResultId}

@@ -1,4 +1,4 @@
-import type { LiveResult } from "../../shared/api/api";
+import type { LiveMapResponse, LiveResult } from "../../shared/api/api";
 import type { Roster } from "./roster";
 
 export type MapAggregateFreshness = "fresh" | "stale" | "mixed" | undefined;
@@ -18,6 +18,7 @@ export type SessionMapView = {
   mapFocusResults: LiveResult[];
   mapAggregateFreshness: MapAggregateFreshness;
   mapUnavailableLayers: string[];
+  mapGeometryOmissions: { kind: string; count: number }[];
 };
 
 export function deriveSessionMapView(
@@ -25,7 +26,10 @@ export function deriveSessionMapView(
   provinceResults: LiveResult[] | undefined,
   provinceUnavailable: string[] | undefined,
   contextLayersEnabled = false,
+  provinceStatuses?: LiveMapResponse["layer_statuses"],
 ): SessionMapView {
+  const omissions = (provinceStatuses ?? []).filter((status) => (status.omitted_geometry_count ?? 0) > 0)
+    .map((status) => ({ kind: status.kind, count: status.omitted_geometry_count! }));
   const mapMatchingResults = roster?.results ?? [];
   if (!roster) {
     const idleResults = provinceResults ?? [];
@@ -37,6 +41,7 @@ export function deriveSessionMapView(
       mapFocusResults: [],
       mapAggregateFreshness: displayedAggregateFreshness(idleResults),
       mapUnavailableLayers: [...new Set(provinceUnavailable ?? [])],
+      mapGeometryOmissions: omissions,
     };
   }
   if (!contextLayersEnabled) {
@@ -48,6 +53,7 @@ export function deriveSessionMapView(
       mapFocusResults: mapMatchingResults,
       mapAggregateFreshness: displayedAggregateFreshness(mapMatchingResults),
       mapUnavailableLayers: roster.unavailableLayers,
+      mapGeometryOmissions: [],
     };
   }
   const resultById = new Map<string, LiveResult>();
@@ -64,6 +70,8 @@ export function deriveSessionMapView(
     mapFocus: roster.focus,
     mapFocusResults: mapMatchingResults,
     mapAggregateFreshness: displayedAggregateFreshness(mapResults),
-    mapUnavailableLayers: [...new Set([...(provinceUnavailable ?? []), ...roster.unavailableLayers])],
+    mapUnavailableLayers: [...new Set([...(provinceUnavailable ?? []), ...roster.unavailableLayers])]
+      .filter((kind) => !omissions.some((item) => item.kind === kind)),
+    mapGeometryOmissions: omissions,
   };
 }

@@ -34,7 +34,7 @@ export function LiveDataStatus({ liveSummary, readiness, now = Date.now() }: {
   const tone = liveDataTone(liveSummary, readiness);
   const missing = liveSummary ? [
     liveSummary.incident_record_count == null ? "Incident records unavailable" : undefined,
-    liveSummary.evacuation_record_count == null ? "Evacuation records unavailable" : undefined,
+    liveSummary.evacuation_record_count == null ? "Evacuation total unavailable" : undefined,
   ].filter(Boolean).join("; ") : "";
   const label = tone === "unavailable" ? "Live data unavailable"
     : tone === "partial" ? "Partial official coverage"
