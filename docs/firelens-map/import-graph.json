@@ -13040,18 +13040,10 @@
     {
       "kind": "static",
       "lines": [
-        12
-      ],
-      "source": "tests/test_live_failure_reason.py",
-      "target": "src/firelens/agent/compose.py"
-    },
-    {
-      "kind": "static",
-      "lines": [
         13
       ],
       "source": "tests/test_live_failure_reason.py",
-      "target": "src/firelens/agent/packet.py"
+      "target": "src/firelens/agent/__init__.py"
     },
     {
       "kind": "static",
@@ -13059,7 +13051,7 @@
         14
       ],
       "source": "tests/test_live_failure_reason.py",
-      "target": "src/firelens/agent/runtime_tools.py"
+      "target": "src/firelens/agent/compose.py"
     },
     {
       "kind": "static",
@@ -13067,7 +13059,7 @@
         15
       ],
       "source": "tests/test_live_failure_reason.py",
-      "target": "src/firelens/answering/live_response_support.py"
+      "target": "src/firelens/agent/packet.py"
     },
     {
       "kind": "static",
@@ -13075,15 +13067,39 @@
         16
       ],
       "source": "tests/test_live_failure_reason.py",
+      "target": "src/firelens/agent/runtime_tools.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        17
+      ],
+      "source": "tests/test_live_failure_reason.py",
+      "target": "src/firelens/answering/live_response_support.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        18
+      ],
+      "source": "tests/test_live_failure_reason.py",
       "target": "src/firelens/contracts.py"
     },
     {
       "kind": "static",
       "lines": [
-        22
+        24
       ],
       "source": "tests/test_live_failure_reason.py",
       "target": "src/firelens/live.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        25
+      ],
+      "source": "tests/test_live_failure_reason.py",
+      "target": "src/firelens/live_answering.py"
     },
     {
       "kind": "static",
@@ -18003,7 +18019,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "ccb3147069f493b1589497ce9b80c55fb6543f7948c934da5f67fe705ae8b834",
+  "source_digest": "babd5e2bea4bb3f09b73e83c8db219d11078d6b948e567bd562492d07de97b9f",
   "unresolved_relative_imports": [
     {
       "line": 32,

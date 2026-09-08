@@ -105,8 +105,8 @@ def test_empty_official_map_never_becomes_an_all_clear() -> None:
             AnswerSectionKind.OFFICIAL_HANDOFF,
         ]
         assert [link.title for link in response.related_links] == [
-            "BC Wildfire Service map",
             "EmergencyInfoBC",
+            "BC Wildfire Service map",
         ]
 
     asyncio.run(run())
@@ -221,7 +221,7 @@ def test_empty_live_partially_unavailable_layers_is_never_an_all_clear() -> None
         assert "checked" in public
         assert "bc wildfire service" in public
         assert "not an all-clear" in public
-        assert "are listed near kelowna in the sources firelens could reach" in public
+        assert "are listed near kelowna in the sources firelens validated" in public
         assert "you are safe" not in public
         assert response.status_banner is not None
         assert response.status_banner.retrieval_completed_at is not None

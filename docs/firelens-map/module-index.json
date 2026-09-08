@@ -5570,7 +5570,7 @@
     },
     {
       "branch_score": 0,
-      "fan_in": 21,
+      "fan_in": 22,
       "fan_out": 2,
       "generated": false,
       "id": "src/firelens/agent/__init__.py",
@@ -5591,7 +5591,7 @@
       "production_fan_in": 1,
       "statically_unreferenced": false,
       "symbols": [],
-      "test_fan_in": 20
+      "test_fan_in": 21
     },
     {
       "branch_score": 9,
@@ -6251,7 +6251,7 @@
       "test_fan_in": 14
     },
     {
-      "branch_score": 51,
+      "branch_score": 53,
       "fan_in": 3,
       "fan_out": 13,
       "generated": false,
@@ -6292,7 +6292,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 252,
+      "loc": 255,
       "major_symbols": [
         "prefetch_selected",
         "ensure_official_fetch",
@@ -15173,7 +15173,7 @@
     },
     {
       "branch_score": 62,
-      "fan_in": 32,
+      "fan_in": 33,
       "fan_out": 11,
       "generated": false,
       "id": "src/firelens/live_answering.py",
@@ -15225,7 +15225,7 @@
         "LiveAnswerCoordinator._prohibited_live_handoff",
         "LiveAnswerCoordinator.answer"
       ],
-      "test_fan_in": 23
+      "test_fan_in": 24
     },
     {
       "branch_score": 4,
@@ -22882,37 +22882,42 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 4,
+      "branch_score": 10,
       "fan_in": 0,
-      "fan_out": 6,
+      "fan_out": 8,
       "generated": false,
       "id": "tests/test_live_failure_reason.py",
       "import_specifiers": [
         "asyncio",
         "datetime",
+        "firelens.agent",
         "firelens.agent.compose",
         "firelens.agent.packet",
         "firelens.agent.runtime_tools",
         "firelens.answering.live_response_support",
         "firelens.contracts",
         "firelens.live",
+        "firelens.live_answering",
         "httpx",
         "json",
         "pathlib",
         "pytest",
-        "test_live"
+        "test_live",
+        "typing"
       ],
       "imports": [
+        "src/firelens/agent/__init__.py",
         "src/firelens/agent/compose.py",
         "src/firelens/agent/packet.py",
         "src/firelens/agent/runtime_tools.py",
         "src/firelens/answering/live_response_support.py",
         "src/firelens/contracts.py",
-        "src/firelens/live.py"
+        "src/firelens/live.py",
+        "src/firelens/live_answering.py"
       ],
       "kind": "test",
       "language": "python",
-      "loc": 102,
+      "loc": 142,
       "major_symbols": [
         "test_native_invalid_boundary_survives_to_evacuation_answer",
         "test_failure_reason_does_not_claim_missing_layer_is_empty",
@@ -30091,5 +30096,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "ccb3147069f493b1589497ce9b80c55fb6543f7948c934da5f67fe705ae8b834"
+  "source_digest": "babd5e2bea4bb3f09b73e83c8db219d11078d6b948e567bd562492d07de97b9f"
 }

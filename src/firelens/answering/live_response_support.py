@@ -81,8 +81,8 @@ def live_unavailability_text(
     parts = []
     if invalid:
         parts.append(
-            f"FireLens reached {official_sources_checked(invalid)}, but some official "
-            "mapped boundaries could not be validated."
+            f"Some official mapped boundaries from {official_sources_checked(invalid)} "
+            "could not be validated."
         )
     if other:
         parts.append(

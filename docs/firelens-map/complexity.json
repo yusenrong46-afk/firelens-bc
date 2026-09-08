@@ -856,8 +856,8 @@
       "path": "src/firelens/agent/packet.py"
     },
     {
-      "branch_score": 51,
-      "loc": 252,
+      "branch_score": 53,
+      "loc": 255,
       "path": "src/firelens/agent/prefetch.py"
     },
     {
@@ -2546,8 +2546,8 @@
       "path": "tests/test_live_evacuation.py"
     },
     {
-      "branch_score": 4,
-      "loc": 102,
+      "branch_score": 10,
+      "loc": 142,
       "path": "tests/test_live_failure_reason.py"
     },
     {
@@ -3102,7 +3102,7 @@
     }
   ],
   "schema_version": "firelens.complexity.v1",
-  "source_digest": "ccb3147069f493b1589497ce9b80c55fb6543f7948c934da5f67fe705ae8b834",
+  "source_digest": "babd5e2bea4bb3f09b73e83c8db219d11078d6b948e567bd562492d07de97b9f",
   "symbols": [
     {
       "branch_score": 0,
@@ -5815,7 +5815,7 @@
       "module_path": "src/firelens/agent/prefetch.py"
     },
     {
-      "branch_score": 21,
+      "branch_score": 23,
       "id": "src/firelens/agent/prefetch.py::_merge_isolated_packet:194",
       "module_path": "src/firelens/agent/prefetch.py"
     },
@@ -5841,7 +5841,7 @@
     },
     {
       "branch_score": 4,
-      "id": "src/firelens/agent/prefetch.py::resolve_place:240",
+      "id": "src/firelens/agent/prefetch.py::resolve_place:243",
       "module_path": "src/firelens/agent/prefetch.py"
     },
     {
@@ -19505,28 +19505,28 @@
       "module_path": "tests/test_live_evacuation.py"
     },
     {
-      "branch_score": 4,
-      "id": "tests/test_live_failure_reason.py::_native_invalid_boundary_survives_to_evacuation_answer:30",
+      "branch_score": 10,
+      "id": "tests/test_live_failure_reason.py::_native_invalid_boundary_survives_to_evacuation_answer:33",
       "module_path": "tests/test_live_failure_reason.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_live_failure_reason.py::_network_failure_does_not_claim_invalid_geometry:91",
+      "id": "tests/test_live_failure_reason.py::_network_failure_does_not_claim_invalid_geometry:131",
       "module_path": "tests/test_live_failure_reason.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_live_failure_reason.py::test_failure_reason_does_not_claim_missing_layer_is_empty:70",
+      "id": "tests/test_live_failure_reason.py::test_failure_reason_does_not_claim_missing_layer_is_empty:110",
       "module_path": "tests/test_live_failure_reason.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_live_failure_reason.py::test_native_invalid_boundary_survives_to_evacuation_answer:26",
+      "id": "tests/test_live_failure_reason.py::test_native_invalid_boundary_survives_to_evacuation_answer:29",
       "module_path": "tests/test_live_failure_reason.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_live_failure_reason.py::test_network_failure_does_not_claim_invalid_geometry:87",
+      "id": "tests/test_live_failure_reason.py::test_network_failure_does_not_claim_invalid_geometry:127",
       "module_path": "tests/test_live_failure_reason.py"
     },
     {

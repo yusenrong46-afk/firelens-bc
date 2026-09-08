@@ -4,11 +4,13 @@ import asyncio
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any, cast
 
 import httpx
 import pytest
-from test_live import _metadata
+from test_live import _locality_feature, _metadata
 
+from firelens.agent import FireLensAgent
 from firelens.agent.compose import compose_response
 from firelens.agent.packet import AgentPacket
 from firelens.agent.runtime_tools import _record_successful_live_response
@@ -20,9 +22,10 @@ from firelens.contracts import (
     QueryRequest,
 )
 from firelens.live import LiveDataService
+from firelens.live_answering import LiveAnswerCoordinator
 
 
-@pytest.mark.parametrize("page", [False, True])
+@pytest.mark.parametrize("page", [False, True, "agent", "cached"])
 def test_native_invalid_boundary_survives_to_evacuation_answer(page):
     asyncio.run(_native_invalid_boundary_survives_to_evacuation_answer(page))
 
@@ -33,7 +36,20 @@ async def _native_invalid_boundary_survives_to_evacuation_answer(page):
         (Path(__file__).parent / "fixtures/arcgis/evacuation-2026-09-07.json").read_text()
     )
 
+    offline = False
+    failed_requests = []
+
     def handler(request):
+        if offline:
+            failed_requests.append(request.url.path)
+            raise httpx.ConnectError("offline", request=request)
+        if "geocoder" in request.url.host:
+            return httpx.Response(
+                200,
+                json={
+                    "features": [_locality_feature("Kamloops", coordinates=[-120.34, 50.68])]
+                },
+            )
         if not request.url.path.endswith("/query"):
             return httpx.Response(200, json=_metadata(kind))
         if request.url.params.get("returnCountOnly") == "true":
@@ -41,9 +57,30 @@ async def _native_invalid_boundary_survives_to_evacuation_answer(page):
         return httpx.Response(200, json=payload)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        service = LiveDataService(client=client)
+        service = LiveDataService(client=client, fresh_seconds=0)
         lookup = service.nearby_page if page else service.nearby_results
         result = await lookup(LocationInput(latitude=50.68, longitude=-120.34), layers=(kind,))
+        if page == "cached":
+            offline = True
+            result = await service.nearby_page(
+                LocationInput(latitude=50.68, longitude=-120.34), layers=(kind,)
+            )
+        if page == "cached":
+            assert len(failed_requests) == 3
+        if page == "agent":
+
+            class UnexpectedStatic:
+                provider = None
+
+                async def ask(self, *args, **kwargs):
+                    raise AssertionError(
+                        "Live evacuation query must not retrieve static guidance"
+                    )
+
+            execution = await FireLensAgent(
+                cast(Any, UnexpectedStatic()), LiveAnswerCoordinator(service)
+            ).answer(QueryRequest(question="Are there evacuation orders near Kamloops?"))
+            actual_response = execution.response
     assert result.results == []
     assert result.unavailable_layers == [kind]
     assert result.layer_statuses[0].unavailability_reason == "invalid_geometry"
@@ -54,9 +91,12 @@ async def _native_invalid_boundary_survives_to_evacuation_answer(page):
     response = compose_response(
         QueryRequest(question="Are there evacuation orders near Kamloops?"), packet, ""
     )
+    if page == "agent":
+        response = actual_response
     public = " ".join([response.answer or "", *response.limitations]).lower()
-    assert "firelens reached emergencyinfobc" in public
-    assert "boundaries could not be validated" in public
+    assert "firelens reached" not in public
+    assert "emergencyinfobc" in public
+    assert "could not be validated" in public
     assert "near kamloops" in public
     assert "could not reach" not in public
     assert "no evacuation" not in public
@@ -80,7 +120,7 @@ def test_failure_reason_does_not_claim_missing_layer_is_empty(invalid):
     assert "no fires are listed" in public
     assert "no evacuation" not in public
     assert "could not reach" not in public
-    assert ("boundaries could not be validated" in public) == bool(invalid)
+    assert ("could not be validated" in public) == bool(invalid)
     assert "not an all-clear" in public
 
 
