@@ -14,6 +14,7 @@ export function OfficialSourcesCard({ response, selectedResultId, selectedRecord
     : records[0];
   const sources = [...new Map(records.map((item) => [item.source_url, item])).values()];
   const additionalSources = record ? sources.filter((item) => item.source_url !== record.source_url) : [];
+  const partial = response?.partial_layers ?? [];
   const unavailable = response?.unavailable_layers ?? [];
   return (
     <aside className="official-sources-card" aria-label="Official sources">
@@ -29,6 +30,7 @@ export function OfficialSourcesCard({ response, selectedResultId, selectedRecord
           <div><dt>Checked by FireLens</dt><dd>{formatTimestamp(record.retrieved_at)}</dd></div>
         </dl>
       </>}
+      {partial.length > 0 && <p className="official-sources-card__warning">Partial coverage: {partial.join(", ")}. Only validated records are shown; missing records are not an all-clear.</p>}
       {unavailable.length > 0 && <p className="official-sources-card__warning">Unavailable layers: {unavailable.join(", ")}. Returned records do not cover those layers.</p>}
       {!record && response && <p>{response.status_banner?.availability_label || "No current records supplied with this answer."}</p>}
       <div className="official-sources-card__footer">

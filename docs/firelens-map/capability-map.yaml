@@ -31,4 +31,4 @@ capabilities:
     id: "guided_questions"
     owner: "http_api"
 schema_version: "firelens.capability_map.v1"
-source_digest: "babd5e2bea4bb3f09b73e83c8db219d11078d6b948e567bd562492d07de97b9f"
+source_digest: "27b7939a30bb3111c5107211b14c3b6345fa6506c4341df1139b3e41c45938c9"

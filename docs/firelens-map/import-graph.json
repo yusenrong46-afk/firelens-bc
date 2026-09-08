@@ -2408,7 +2408,7 @@
         26
       ],
       "source": "src/firelens/agent/compose.py",
-      "target": "src/firelens/answering/live_listing.py"
+      "target": "src/firelens/answering/live_evacuation.py"
     },
     {
       "kind": "static",
@@ -2416,12 +2416,20 @@
         27
       ],
       "source": "src/firelens/agent/compose.py",
+      "target": "src/firelens/answering/live_listing.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        28
+      ],
+      "source": "src/firelens/agent/compose.py",
       "target": "src/firelens/answering/live_named_fire.py"
     },
     {
       "kind": "static",
       "lines": [
-        31
+        32
       ],
       "source": "src/firelens/agent/compose.py",
       "target": "src/firelens/answering/live_request_intent.py"
@@ -2429,7 +2437,7 @@
     {
       "kind": "static",
       "lines": [
-        37
+        38
       ],
       "source": "src/firelens/agent/compose.py",
       "target": "src/firelens/answering/live_response_support.py"
@@ -2437,7 +2445,7 @@
     {
       "kind": "static",
       "lines": [
-        42
+        45
       ],
       "source": "src/firelens/agent/compose.py",
       "target": "src/firelens/answering/location_intent.py"
@@ -2445,7 +2453,7 @@
     {
       "kind": "static",
       "lines": [
-        43
+        46
       ],
       "source": "src/firelens/agent/compose.py",
       "target": "src/firelens/answering/registered_suggestions.py"
@@ -2453,7 +2461,7 @@
     {
       "kind": "static",
       "lines": [
-        44
+        47
       ],
       "source": "src/firelens/agent/compose.py",
       "target": "src/firelens/contract_composition.py"
@@ -2461,7 +2469,7 @@
     {
       "kind": "static",
       "lines": [
-        45
+        48
       ],
       "source": "src/firelens/agent/compose.py",
       "target": "src/firelens/contracts.py"
@@ -2469,7 +2477,7 @@
     {
       "kind": "static",
       "lines": [
-        61
+        64
       ],
       "source": "src/firelens/agent/compose.py",
       "target": "src/firelens/understanding/fire_name.py"
@@ -3158,7 +3166,7 @@
       "kind": "static",
       "lines": [
         23,
-        89
+        90
       ],
       "source": "src/firelens/agent/packet.py",
       "target": "src/firelens/answering/live_analysis.py"
@@ -3585,7 +3593,7 @@
         28
       ],
       "source": "src/firelens/agent/runtime_tools.py",
-      "target": "src/firelens/answering/live_named_fire.py"
+      "target": "src/firelens/answering/live_evacuation.py"
     },
     {
       "kind": "static",
@@ -3593,7 +3601,7 @@
         29
       ],
       "source": "src/firelens/agent/runtime_tools.py",
-      "target": "src/firelens/answering/live_record_intent.py"
+      "target": "src/firelens/answering/live_named_fire.py"
     },
     {
       "kind": "static",
@@ -3601,7 +3609,7 @@
         30
       ],
       "source": "src/firelens/agent/runtime_tools.py",
-      "target": "src/firelens/answering/live_sample.py"
+      "target": "src/firelens/answering/live_record_intent.py"
     },
     {
       "kind": "static",
@@ -3609,15 +3617,15 @@
         31
       ],
       "source": "src/firelens/agent/runtime_tools.py",
-      "target": "src/firelens/answering/location_intent.py"
+      "target": "src/firelens/answering/live_sample.py"
     },
     {
       "kind": "static",
       "lines": [
-        37
+        32
       ],
       "source": "src/firelens/agent/runtime_tools.py",
-      "target": "src/firelens/answering/request_facets.py"
+      "target": "src/firelens/answering/location_intent.py"
     },
     {
       "kind": "static",
@@ -3625,7 +3633,7 @@
         38
       ],
       "source": "src/firelens/agent/runtime_tools.py",
-      "target": "src/firelens/answering/static_guidance_subject.py"
+      "target": "src/firelens/answering/request_facets.py"
     },
     {
       "kind": "static",
@@ -3633,15 +3641,15 @@
         39
       ],
       "source": "src/firelens/agent/runtime_tools.py",
-      "target": "src/firelens/contracts.py"
+      "target": "src/firelens/answering/static_guidance_subject.py"
     },
     {
       "kind": "static",
       "lines": [
-        46
+        40
       ],
       "source": "src/firelens/agent/runtime_tools.py",
-      "target": "src/firelens/errors.py"
+      "target": "src/firelens/contracts.py"
     },
     {
       "kind": "static",
@@ -3649,7 +3657,7 @@
         47
       ],
       "source": "src/firelens/agent/runtime_tools.py",
-      "target": "src/firelens/live.py"
+      "target": "src/firelens/errors.py"
     },
     {
       "kind": "static",
@@ -3657,12 +3665,20 @@
         48
       ],
       "source": "src/firelens/agent/runtime_tools.py",
-      "target": "src/firelens/live_answering.py"
+      "target": "src/firelens/live.py"
     },
     {
       "kind": "static",
       "lines": [
         49
+      ],
+      "source": "src/firelens/agent/runtime_tools.py",
+      "target": "src/firelens/live_answering.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        50
       ],
       "source": "src/firelens/agent/runtime_tools.py",
       "target": "src/firelens/live_support.py"
@@ -4871,6 +4887,14 @@
     {
       "kind": "static",
       "lines": [
+        262
+      ],
+      "source": "src/firelens/answering/live_response_support.py",
+      "target": "src/firelens/answering/live_analysis.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         10
       ],
       "source": "src/firelens/answering/live_response_support.py",
@@ -4887,7 +4911,7 @@
     {
       "kind": "static",
       "lines": [
-        23
+        24
       ],
       "source": "src/firelens/answering/live_response_support.py",
       "target": "src/firelens/freshness_language.py"
@@ -4895,7 +4919,7 @@
     {
       "kind": "static",
       "lines": [
-        24
+        25
       ],
       "source": "src/firelens/answering/live_response_support.py",
       "target": "src/firelens/live_support.py"
@@ -4903,7 +4927,7 @@
     {
       "kind": "static",
       "lines": [
-        25
+        26
       ],
       "source": "src/firelens/answering/live_response_support.py",
       "target": "src/firelens/proof_presentation.py"
@@ -4963,6 +4987,38 @@
       ],
       "source": "src/firelens/answering/location_intent.py",
       "target": "src/firelens/understanding/place.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "src/firelens/answering/partial_live_response.py",
+      "target": "src/firelens/answering/live_composition.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        6
+      ],
+      "source": "src/firelens/answering/partial_live_response.py",
+      "target": "src/firelens/answering/live_response_support.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        7
+      ],
+      "source": "src/firelens/answering/partial_live_response.py",
+      "target": "src/firelens/contract_composition.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        8
+      ],
+      "source": "src/firelens/answering/partial_live_response.py",
+      "target": "src/firelens/contracts.py"
     },
     {
       "kind": "static",
@@ -6446,7 +6502,7 @@
     {
       "kind": "static",
       "lines": [
-        14
+        11
       ],
       "source": "src/firelens/contracts.py",
       "target": "src/firelens/api_contracts.py"
@@ -6454,9 +6510,9 @@
     {
       "kind": "static",
       "lines": [
-        16,
-        17,
-        18
+        13,
+        14,
+        15
       ],
       "source": "src/firelens/contracts.py",
       "target": "src/firelens/assistant_history.py"
@@ -6464,7 +6520,7 @@
     {
       "kind": "static",
       "lines": [
-        19
+        16
       ],
       "source": "src/firelens/contracts.py",
       "target": "src/firelens/claim_trust.py"
@@ -6472,7 +6528,7 @@
     {
       "kind": "static",
       "lines": [
-        20
+        17
       ],
       "source": "src/firelens/contracts.py",
       "target": "src/firelens/contract_base.py"
@@ -6480,8 +6536,8 @@
     {
       "kind": "static",
       "lines": [
-        21,
-        24
+        18,
+        21
       ],
       "source": "src/firelens/contracts.py",
       "target": "src/firelens/contract_composition.py"
@@ -6489,7 +6545,7 @@
     {
       "kind": "static",
       "lines": [
-        25
+        22
       ],
       "source": "src/firelens/contracts.py",
       "target": "src/firelens/evidence_packet_identity.py"
@@ -6497,7 +6553,7 @@
     {
       "kind": "static",
       "lines": [
-        15
+        12
       ],
       "source": "src/firelens/contracts.py",
       "target": "src/firelens/live_contracts.py"
@@ -6505,8 +6561,8 @@
     {
       "kind": "static",
       "lines": [
-        26,
-        27
+        23,
+        24
       ],
       "source": "src/firelens/contracts.py",
       "target": "src/firelens/llm_io.py"
@@ -6514,10 +6570,10 @@
     {
       "kind": "static",
       "lines": [
-        28,
-        29,
-        30,
-        31
+        25,
+        26,
+        27,
+        28
       ],
       "source": "src/firelens/contracts.py",
       "target": "src/firelens/presentation_identity.py"
@@ -6525,7 +6581,7 @@
     {
       "kind": "static",
       "lines": [
-        32
+        33
       ],
       "source": "src/firelens/contracts.py",
       "target": "src/firelens/proof_presentation.py"
@@ -6533,7 +6589,7 @@
     {
       "kind": "static",
       "lines": [
-        33
+        34
       ],
       "source": "src/firelens/contracts.py",
       "target": "src/firelens/publication_contracts.py"
@@ -6541,7 +6597,7 @@
     {
       "kind": "static",
       "lines": [
-        34
+        35
       ],
       "source": "src/firelens/contracts.py",
       "target": "src/firelens/publication_response_binding.py"
@@ -7359,7 +7415,7 @@
     {
       "kind": "static",
       "lines": [
-        376
+        378
       ],
       "source": "src/firelens/evaluation/hard_probe_cli.py",
       "target": "src/firelens/evaluation/j01_current_acceptance.py"
@@ -7891,7 +7947,7 @@
     {
       "kind": "static",
       "lines": [
-        9
+        10
       ],
       "source": "src/firelens/evaluation/productbench_v2_offline.py",
       "target": "src/firelens/contracts.py"
@@ -7899,7 +7955,7 @@
     {
       "kind": "static",
       "lines": [
-        21
+        22
       ],
       "source": "src/firelens/evaluation/productbench_v2_offline.py",
       "target": "src/firelens/live.py"
@@ -7907,7 +7963,7 @@
     {
       "kind": "static",
       "lines": [
-        22
+        23
       ],
       "source": "src/firelens/evaluation/productbench_v2_offline.py",
       "target": "src/firelens/live_contracts.py"
@@ -7915,7 +7971,7 @@
     {
       "kind": "static",
       "lines": [
-        23
+        24
       ],
       "source": "src/firelens/evaluation/productbench_v2_offline.py",
       "target": "src/firelens/live_support.py"
@@ -8935,7 +8991,7 @@
     {
       "kind": "static",
       "lines": [
-        19
+        18
       ],
       "source": "src/firelens/live.py",
       "target": "src/firelens/arcgis_geometry.py"
@@ -8943,10 +8999,18 @@
     {
       "kind": "static",
       "lines": [
-        20
+        19
       ],
       "source": "src/firelens/live.py",
       "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        34
+      ],
+      "source": "src/firelens/live.py",
+      "target": "src/firelens/live_admission.py"
     },
     {
       "kind": "static",
@@ -8983,9 +9047,33 @@
     {
       "kind": "static",
       "lines": [
-        8,
-        73,
-        157
+        10
+      ],
+      "source": "src/firelens/live_admission.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        16
+      ],
+      "source": "src/firelens/live_admission.py",
+      "target": "src/firelens/live_identity.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        17
+      ],
+      "source": "src/firelens/live_admission.py",
+      "target": "src/firelens/live_support.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        9,
+        72,
+        142
       ],
       "source": "src/firelens/live_answering.py",
       "target": "src/firelens/answering/intent.py"
@@ -8993,7 +9081,7 @@
     {
       "kind": "static",
       "lines": [
-        12
+        13
       ],
       "source": "src/firelens/live_answering.py",
       "target": "src/firelens/answering/live_composition.py"
@@ -9001,7 +9089,7 @@
     {
       "kind": "static",
       "lines": [
-        13
+        14
       ],
       "source": "src/firelens/live_answering.py",
       "target": "src/firelens/answering/live_distance.py"
@@ -9009,7 +9097,15 @@
     {
       "kind": "static",
       "lines": [
-        14
+        15
+      ],
+      "source": "src/firelens/live_answering.py",
+      "target": "src/firelens/answering/live_evacuation.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        16
       ],
       "source": "src/firelens/live_answering.py",
       "target": "src/firelens/answering/live_handoffs.py"
@@ -9017,7 +9113,7 @@
     {
       "kind": "static",
       "lines": [
-        19
+        21
       ],
       "source": "src/firelens/live_answering.py",
       "target": "src/firelens/answering/live_request_intent.py"
@@ -9025,7 +9121,7 @@
     {
       "kind": "static",
       "lines": [
-        25
+        27
       ],
       "source": "src/firelens/live_answering.py",
       "target": "src/firelens/answering/live_response_support.py"
@@ -9033,7 +9129,7 @@
     {
       "kind": "static",
       "lines": [
-        30
+        32
       ],
       "source": "src/firelens/live_answering.py",
       "target": "src/firelens/answering/live_static_request.py"
@@ -9041,7 +9137,7 @@
     {
       "kind": "static",
       "lines": [
-        31
+        33
       ],
       "source": "src/firelens/live_answering.py",
       "target": "src/firelens/answering/location_intent.py"
@@ -9049,7 +9145,15 @@
     {
       "kind": "static",
       "lines": [
-        32
+        34
+      ],
+      "source": "src/firelens/live_answering.py",
+      "target": "src/firelens/answering/partial_live_response.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        35
       ],
       "source": "src/firelens/live_answering.py",
       "target": "src/firelens/answering/unsupported_live.py"
@@ -9057,7 +9161,7 @@
     {
       "kind": "static",
       "lines": [
-        33
+        36
       ],
       "source": "src/firelens/live_answering.py",
       "target": "src/firelens/contracts.py"
@@ -9065,7 +9169,7 @@
     {
       "kind": "static",
       "lines": [
-        54
+        55
       ],
       "source": "src/firelens/live_answering.py",
       "target": "src/firelens/live.py"
@@ -13665,6 +13769,40 @@
     {
       "kind": "static",
       "lines": [
+        10
+      ],
+      "source": "tests/test_partial_live_coverage.py",
+      "target": "src/firelens/agent/__init__.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        11,
+        239,
+        301
+      ],
+      "source": "tests/test_partial_live_coverage.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        12
+      ],
+      "source": "tests/test_partial_live_coverage.py",
+      "target": "src/firelens/live.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        13
+      ],
+      "source": "tests/test_partial_live_coverage.py",
+      "target": "src/firelens/live_answering.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         11
       ],
       "source": "tests/test_pdf_ingestion.py",
@@ -17618,6 +17756,7 @@
     "src/firelens/answering/live_sample.py",
     "src/firelens/answering/live_static_request.py",
     "src/firelens/answering/location_intent.py",
+    "src/firelens/answering/partial_live_response.py",
     "src/firelens/answering/plain_time.py",
     "src/firelens/answering/planner.py",
     "src/firelens/answering/product_scope.py",
@@ -17754,6 +17893,7 @@
     "src/firelens/ingestion/pdf.py",
     "src/firelens/ingestion/repairs.py",
     "src/firelens/live.py",
+    "src/firelens/live_admission.py",
     "src/firelens/live_answering.py",
     "src/firelens/live_claim_renderer.py",
     "src/firelens/live_contracts.py",
@@ -17919,6 +18059,7 @@
     "tests/test_openrouter_smoke.py",
     "tests/test_owner_review.py",
     "tests/test_paid_floor_rails.py",
+    "tests/test_partial_live_coverage.py",
     "tests/test_pdf_ingestion.py",
     "tests/test_pet_contents_support.py",
     "tests/test_preparedbc_revision.py",
@@ -18019,7 +18160,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "babd5e2bea4bb3f09b73e83c8db219d11078d6b948e567bd562492d07de97b9f",
+  "source_digest": "27b7939a30bb3111c5107211b14c3b6345fa6506c4341df1139b3e41c45938c9",
   "unresolved_relative_imports": [
     {
       "line": 32,

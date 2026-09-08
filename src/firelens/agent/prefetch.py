@@ -221,6 +221,9 @@ def _merge_isolated_packet(packet: AgentPacket, isolated: AgentPacket) -> None:
         # not gone through the official layer tools.
         packet.roster_total = max(packet.roster_total or 0, isolated.roster_total)
     packet.mark_unavailable(isolated.unavailable_layers)
+    for kind in isolated.partial_layers:
+        if kind not in packet.partial_layers:
+            packet.partial_layers.append(kind)
     for kind in isolated.invalid_geometry_layers:
         if kind not in packet.invalid_geometry_layers:
             packet.invalid_geometry_layers.append(kind)

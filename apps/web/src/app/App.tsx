@@ -337,6 +337,7 @@ export function App() {
                   matchingResults={session.mapMatchingResults}
                   provinceResults={session.mapProvinceResults}
                   aggregateFreshness={session.mapAggregateFreshness}
+                  partialLayers={session.mapPartialLayers}
                   unavailableLayers={session.mapUnavailableLayers}
                   geometryOmissions={session.mapGeometryOmissions}
                   focus={session.mapFocus}

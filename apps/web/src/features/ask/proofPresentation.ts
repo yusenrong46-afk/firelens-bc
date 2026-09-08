@@ -478,6 +478,7 @@ function freshnessLabel(response: AskResponse): string {
 }
 
 function availabilityLabel(response: AskResponse): string {
+  if ((response.partial_layers ?? []).length > 0) return "Partial coverage: only validated records are shown. This is not an all-clear.";
   const layers = response.unavailable_layers ?? [];
   if (layers.length > 0) {
     return `Unavailable layers: ${layers.join(", ")}. That is not an all-clear.`;

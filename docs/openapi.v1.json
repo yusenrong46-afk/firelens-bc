@@ -226,6 +226,14 @@
             "title": "Live Results",
             "type": "array"
           },
+          "partial_layers": {
+            "items": {
+              "$ref": "#/components/schemas/LiveResultKind"
+            },
+            "maxItems": 3,
+            "title": "Partial Layers",
+            "type": "array"
+          },
           "presentation_shell": {
             "$ref": "#/components/schemas/PresentationShell",
             "default": "chat"
@@ -1245,6 +1253,12 @@
             "title": "Omitted Geometry Count",
             "type": "integer"
           },
+          "omitted_status_count": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Omitted Status Count",
+            "type": "integer"
+          },
           "retrieved_at": {
             "anyOf": [
               {
@@ -1828,6 +1842,13 @@
           },
           "pagination": {
             "$ref": "#/components/schemas/LivePagination"
+          },
+          "partial_layers": {
+            "items": {
+              "$ref": "#/components/schemas/LiveResultKind"
+            },
+            "title": "Partial Layers",
+            "type": "array"
           },
           "requested_layers": {
             "items": {

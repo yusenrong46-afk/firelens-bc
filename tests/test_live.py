@@ -965,11 +965,10 @@ class LiveDataServiceTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(response.results, [])
-        self.assertEqual(response.unavailable_layers, [LiveResultKind.EVACUATION])
-        self.assertFalse(response.layer_statuses[0].available)
-        self.assertTrue(
-            any("spatially invalid geometry" in item for item in response.limitations)
-        )
+        self.assertEqual(response.unavailable_layers, [])
+        self.assertEqual(response.partial_layers, [LiveResultKind.EVACUATION])
+        self.assertTrue(response.layer_statuses[0].available)
+        self.assertTrue(any("geometry is invalid" in item for item in response.limitations))
 
     async def test_map_results_quarantine_layer_with_invalid_geometry(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:

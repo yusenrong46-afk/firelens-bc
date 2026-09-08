@@ -14,7 +14,6 @@ from typing import Any
 import httpx
 from pydantic import HttpUrl
 from shapely.geometry import box
-from shapely.geometry.base import BaseGeometry
 
 from firelens.arcgis_geometry import decode_features
 from firelens.contracts import (
@@ -32,9 +31,10 @@ from firelens.contracts import (
     aggregate_live_freshness,
     freshness_for_observation,
 )
+from firelens.live_admission import map_layer_results
 from firelens.live_contracts import stale_observation_limitations
 from firelens.live_http import decoded_response_headers, envelope_params, official_flag
-from firelens.live_identity import feature_identity, record_ids
+from firelens.live_identity import feature_identity
 from firelens.live_support import (
     DEFAULT_LAYER_DEFINITIONS,
     LAYER_URLS,
@@ -51,7 +51,6 @@ from firelens.live_support import (
     authority,
     bc_region_entry,
     geometry_relation,
-    map_geometry_state,
     property_value,
     regional_lookup_limitations,
     resolve_bc_location,
@@ -517,105 +516,13 @@ class LiveDataService:
             unavailability_reason="invalid_geometry" if invalid_geometry else None,
         )
 
-    async def _map_layer_results(
-        self,
-        kind: LiveResultKind,
-        *,
-        bbox: _BBox | None,
-        bounds: BaseGeometry | None,
-        allow_partial_geometry: bool = False,
-    ) -> tuple[list[LiveResult], LiveLayerStatus, str | None]:
-        try:
-            entry, freshness = await self._features(kind, bbox=bbox)
-        except LiveDataUnavailable as exc:
-            return [], self._unavailable_status(kind), str(exc)
-        results: list[LiveResult] = []
-        omitted_geometry_count = 0
-        for feature, result_id in zip(
-            entry.features, record_ids(kind, entry.features), strict=True
-        ):
-            properties = feature["properties"]
-            status = (
-                str(
-                    property_value(
-                        properties,
-                        "FIRE_STATUS",
-                        "ORDER_ALERT_STATUS",
-                        "STATUS",
-                        "EVENT_STATUS",
-                    )
-                    or ""
-                )
-                .strip()
-                .casefold()
-            )
-            if status in {
-                "out",
-                "inactive",
-                "expired",
-                "cancelled",
-                "canceled",
-                "rescinded",
-            }:
-                continue
-            if kind == LiveResultKind.EVACUATION:
-                event_type = str(property_value(properties, "EVENT_TYPE") or "").casefold()
-                if event_type and "fire" not in event_type:
-                    continue
-            state = map_geometry_state(feature.get("geometry"), bounds)
-            if state == "outside":
-                continue
-            if state == "invalid":
-                if allow_partial_geometry:
-                    omitted_geometry_count += 1
-                    continue
-                limitation = f"{kind.value} source returned spatially invalid geometry"
-                return [], self._unavailable_status(kind, invalid_geometry=True), limitation
-            try:
-                result = self._to_result(
-                    kind,
-                    feature,
-                    result_id=result_id,
-                    retrieved_at=entry.retrieved_at,
-                    freshness=freshness,
-                    source_updated_at=entry.source_updated_at,
-                )
-            except (TypeError, ValueError):
-                limitation = f"{kind.value} source returned a record that did not match the live result contract"
-                return [], self._unavailable_status(kind), limitation
-            results.append(result)
-        if omitted_geometry_count and not results:
-            return (
-                [],
-                self._unavailable_status(kind, invalid_geometry=True),
-                f"{kind.value} source returned spatially invalid geometry",
-            )
-        return (
-            results,
-            LiveLayerStatus(
-                kind=kind,
-                authority=authority(kind),
-                source_url=HttpUrl(self._layer(kind).url),
-                available=True,
-                source_updated_at=entry.source_updated_at,
-                retrieved_at=entry.retrieved_at,
-                freshness=freshness_for_observation(
-                    freshness,
-                    source_updated_at=entry.source_updated_at,
-                    retrieved_at=entry.retrieved_at,
-                ),
-                matching_result_count=len(results),
-                omitted_geometry_count=omitted_geometry_count,
-            ),
-            None,
-        )
-
     async def map_results(
         self,
         *,
         layers: tuple[LiveResultKind, ...],
         bbox: tuple[float, float, float, float] | None = None,
         allow_partial_geometry: bool = False,
+        evacuation_statuses: tuple[str, ...] = (),
     ) -> LiveMapResponse:
         results: list[LiveResult] = []
         unavailable: list[LiveResultKind] = []
@@ -624,11 +531,13 @@ class LiveDataService:
         bounds = box(*bbox) if bbox is not None else None
         layer_outcomes = await asyncio.gather(
             *(
-                self._map_layer_results(
+                map_layer_results(
+                    self,
                     kind,
                     bbox=bbox,
                     bounds=bounds,
                     allow_partial_geometry=allow_partial_geometry,
+                    evacuation_statuses=evacuation_statuses,
                 )
                 for kind in layers
             )
@@ -651,12 +560,20 @@ class LiveDataService:
                 "Some official layers were unavailable or exceeded bounded retrieval limits: "
                 + "; ".join(unavailable_reasons)
             )
-        partial = [status.kind for status in layer_statuses if status.omitted_geometry_count]
+        partial = [
+            status.kind
+            for status in layer_statuses
+            if status.omitted_geometry_count or status.omitted_status_count
+        ]
         for status in layer_statuses:
             if status.omitted_geometry_count:
                 limitations.append(
                     f"{status.kind.value}: {status.omitted_geometry_count} official records omitted because their geometry is invalid. "
                     "Displayed records are incomplete; absence is not an all-clear."
+                )
+            if status.omitted_status_count:
+                limitations.append(
+                    f"{status.kind.value}: {status.omitted_status_count} official records have an unrecognized status; coverage is incomplete."
                 )
         limitations.extend(stale_observation_limitations(layer_statuses, results))
         return LiveMapResponse(
@@ -674,6 +591,7 @@ class LiveDataService:
         location: LocationInput,
         *,
         layers: tuple[LiveResultKind, ...],
+        evacuation_statuses: tuple[str, ...] = (),
     ) -> tuple[LiveMapResponse, float, float, _BBox]:
         latitude, longitude = await self.resolve_location(location)
         radius_km = location.radius_km
@@ -689,6 +607,8 @@ class LiveDataService:
         response = await self.map_results(
             layers=layers,
             bbox=bbox,
+            allow_partial_geometry=True,
+            evacuation_statuses=evacuation_statuses,
         )
         related: list[LiveResult] = []
         unknown_located = False
@@ -731,10 +651,12 @@ class LiveDataService:
         location: LocationInput,
         *,
         layers: tuple[LiveResultKind, ...] = tuple(LiveResultKind),
+        evacuation_statuses: tuple[str, ...] = (),
     ) -> LiveMapResponse:
         response, _latitude, _longitude, _bbox = await self._nearby_full(
             location,
             layers=layers,
+            evacuation_statuses=evacuation_statuses,
         )
         return response
 
@@ -743,6 +665,7 @@ class LiveDataService:
         location: LocationInput,
         *,
         layers: tuple[LiveResultKind, ...] = tuple(LiveResultKind),
+        evacuation_statuses: tuple[str, ...] = (),
         page: int = 1,
         page_size: int = 100,
     ) -> NearMeResponse:
@@ -755,6 +678,7 @@ class LiveDataService:
         response, latitude, longitude, bbox = await self._nearby_full(
             location,
             layers=requested_layers,
+            evacuation_statuses=evacuation_statuses,
         )
         total_results = len(response.results)
         total_pages = math.ceil(total_results / page_size)
@@ -763,14 +687,23 @@ class LiveDataService:
         limitations = list(response.limitations)
         if total_results > page_size or page > 1:
             if page_results:
+                scope = (
+                    "validated subset; complete official totals are unknown"
+                    if response.partial_layers
+                    else "full roster"
+                )
                 limitations.append(
                     f"Showing official records {start + 1}-{start + len(page_results)} of "
-                    f"{total_results}; use the record-list pagination to inspect the full roster."
+                    f"{total_results}; use the record-list pagination to inspect the {scope}."
                 )
             else:
+                scope = (
+                    "validated record subset"
+                    if response.partial_layers
+                    else "matching official record roster"
+                )
                 limitations.append(
-                    "The requested page is beyond the matching official record roster; "
-                    "return to page 1."
+                    f"The requested page is beyond the {scope}; return to page 1."
                 )
         west, south, east, north = bbox
         return NearMeResponse(
@@ -793,6 +726,7 @@ class LiveDataService:
                 has_next=page < total_pages,
             ),
             aggregate_freshness=aggregate_live_freshness(page_results),
+            partial_layers=response.partial_layers,
             unavailable_layers=response.unavailable_layers,
             layer_statuses=response.layer_statuses,
             limitations=limitations,

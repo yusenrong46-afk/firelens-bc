@@ -224,6 +224,8 @@ export interface components {
             limitations?: string[];
             /** Live Results */
             live_results?: components["schemas"]["LiveResult"][];
+            /** Partial Layers */
+            partial_layers?: components["schemas"]["LiveResultKind"][];
             /** @default chat */
             presentation_shell: components["schemas"]["PresentationShell"];
             /** Proof Cards */
@@ -593,6 +595,11 @@ export interface components {
              * @default 0
              */
             omitted_geometry_count: number;
+            /**
+             * Omitted Status Count
+             * @default 0
+             */
+            omitted_status_count: number;
             /** Retrieved At */
             retrieved_at?: string | null;
             /** Source Updated At */
@@ -782,6 +789,8 @@ export interface components {
             /** Official Fallback Urls */
             official_fallback_urls: string[];
             pagination: components["schemas"]["LivePagination"];
+            /** Partial Layers */
+            partial_layers?: components["schemas"]["LiveResultKind"][];
             /** Requested Layers */
             requested_layers: components["schemas"]["LiveResultKind"][];
             /** Requested Radius Km */

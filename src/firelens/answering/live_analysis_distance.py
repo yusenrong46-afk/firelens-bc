@@ -110,7 +110,9 @@ def ranked_live_results_for_request(
 ) -> list[LiveResult]:
     """Return a stable incident ranking only when the user explicitly asks for one."""
 
-    if not is_ranked_distance_question(question):
+    if not is_ranked_distance_question(question) or any(
+        item.kind == LiveResultKind.EVACUATION for item in records
+    ):
         return list(records)
     ranked = _unique_ranked_incidents(records)
     requested_count = _TOP_CLOSEST_COUNT.search(question)

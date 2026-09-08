@@ -456,6 +456,8 @@ def _freshness_label(response: Any) -> str:
 
 
 def _availability_label(response: Any) -> str:
+    if response.partial_layers:
+        return "Partial coverage: only validated records are shown. This is not an all-clear."
     layers = [str(kind) for kind in response.unavailable_layers]
     if layers:
         names = ", ".join(layers)
@@ -472,6 +474,8 @@ def _availability_label(response: Any) -> str:
 
 
 def _escalation(response: Any) -> tuple[str | None, HttpUrl | None]:
+    if "evacuation" in response.partial_layers:
+        return "EmergencyInfoBC", HttpUrl("https://www.emergencyinfobc.gov.bc.ca/")
     if response.related_links:
         link = response.related_links[0]
         return link.title, link.url

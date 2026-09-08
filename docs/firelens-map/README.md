@@ -1,9 +1,9 @@
 # FireLens engineering map
 
-Deterministic, offline navigation index for the current source content. It is not runtime, qualification, deployment, or release evidence. Source digest: `babd5e2bea4bb3f09b73e83c8db219d11078d6b948e567bd562492d07de97b9f`.
+Deterministic, offline navigation index for the current source content. It is not runtime, qualification, deployment, or release evidence. Source digest: `27b7939a30bb3111c5107211b14c3b6345fa6506c4341df1139b3e41c45938c9`.
 
-Inventory: 213 production Python modules, 56 production TS/TSX modules,
-203 test modules, and 2144 resolved internal import edges.
+Inventory: 215 production Python modules, 56 production TS/TSX modules,
+204 test modules, and 2161 resolved internal import edges.
 
 Generate with `PYTHONPATH=src:tests .venv/bin/python scripts/firelens_agent/build_map.py`; validate with `PYTHONPATH=src:tests .venv/bin/python scripts/firelens_agent/validate_map.py`.
 Inspect impact with `PYTHONPATH=src:tests .venv/bin/python scripts/firelens_agent/impact.py <file-or-symbol>`; inspect a planning trace with `PYTHONPATH=src:tests .venv/bin/python scripts/firelens_agent/trace_case.py "<question>"`.

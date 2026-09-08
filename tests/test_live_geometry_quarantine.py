@@ -67,15 +67,19 @@ class GeometryQuarantineTests(unittest.IsolatedAsyncioTestCase):
                         near = await service.nearby_results(
                             LocationInput(latitude=51.1, longitude=-122.1), layers=(kind,)
                         )
-                        self.assertEqual(near.results, [])
-                        self.assertEqual(near.unavailable_layers, [kind])
+                        self.assertEqual(len(near.results), 1)
+                        self.assertEqual(
+                            geometry_integrity_errors(near.results[0].geometry), []
+                        )
+                        self.assertEqual(near.unavailable_layers, [])
+                        self.assertEqual(near.partial_layers, [kind])
 
                     bad = mapped.model_dump(mode="json")
                     bad["partial_layers"] = [] if mapped.partial_layers else [kind.value]
                     with self.assertRaises(ValueError):
                         LiveMapResponse.model_validate(bad)
 
-    async def test_all_invalid_is_unavailable_and_empty_is_available(self):
+    async def test_all_invalid_is_partial_and_empty_is_complete(self):
         kind = LiveResultKind.EVACUATION
         captured = json.loads(
             (Path(__file__).parent / "fixtures/arcgis/evacuation-2026-09-07.json").read_text()
@@ -96,8 +100,8 @@ class GeometryQuarantineTests(unittest.IsolatedAsyncioTestCase):
                         layers=(kind,), allow_partial_geometry=True
                     )
                 self.assertEqual(mapped.results, [])
-                self.assertEqual(mapped.layer_statuses[0].available, not unavailable)
-                self.assertEqual(mapped.partial_layers, [])
+                self.assertTrue(mapped.layer_statuses[0].available)
+                self.assertEqual(mapped.partial_layers, [kind] if unavailable else [])
 
     async def test_native_crs_and_published_count_are_not_bypassed(self):
         kind = LiveResultKind.EVACUATION

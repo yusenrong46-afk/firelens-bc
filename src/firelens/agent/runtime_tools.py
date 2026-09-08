@@ -25,6 +25,7 @@ from firelens.answering.live_analysis import (
     filter_requested_named_fire_results,
 )
 from firelens.answering.live_analysis_distance import ranked_live_results_for_request
+from firelens.answering.live_evacuation import requested_evacuation_statuses
 from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.live_record_intent import is_fire_geography_analysis
 from firelens.answering.live_sample import display_order
@@ -269,7 +270,7 @@ async def _fetch_selected(
         "evacuation": (LiveResultKind.EVACUATION,),
     }.get(kind, (LiveResultKind.INCIDENT, LiveResultKind.PERIMETER))
     try:
-        mapped = await live_service.map_results(layers=layers)
+        mapped = await live_service.map_results(layers=layers, allow_partial_geometry=True)
     except LiveDataUnavailable:
         _remember_retrieval(packet, datetime.now(UTC))
         packet.mark_unavailable(layers)
@@ -363,6 +364,9 @@ async def _fetch_layers(
     fire_centre = official_fire_centre_label(location.label) if location is not None else None
     if location is not None:
         packet.add_live_limitation(regional_reference_point_limitation(location))
+    admission: dict[str, Any] = {}
+    if LiveResultKind.EVACUATION in layers:
+        admission["evacuation_statuses"] = requested_evacuation_statuses(request.question)
     try:
         if location is not None and fire_centre is None:
             page = await live_service.nearby_page(
@@ -370,6 +374,7 @@ async def _fetch_layers(
                 layers=layers,
                 page=1,
                 page_size=_NAMED_LOOKUP_PAGE_SIZE,
+                **admission,
             )
             resolved = getattr(page, "resolved_location", None)
             if resolved is None:
@@ -395,6 +400,7 @@ async def _fetch_layers(
                         layers=layers,
                         page=page_number,
                         page_size=_NAMED_LOOKUP_PAGE_SIZE,
+                        **admission,
                     )
                     _record_successful_live_response(packet, next_page)
                     for item in next_page.results:
@@ -415,7 +421,10 @@ async def _fetch_layers(
             if (
                 named_fire is not None
                 and not filtered
-                and not any(layer in packet.unavailable_layers for layer in layers)
+                and not any(
+                    layer in packet.unavailable_layers + packet.partial_layers
+                    for layer in layers
+                )
             ):
                 _note_topic(packet, "named_fire_not_found")
             return (
@@ -423,7 +432,9 @@ async def _fetch_layers(
                 resolved,
                 len(filtered) if named_fire is not None else roster_total,
             )
-        mapped = await live_service.map_results(layers=layers)
+        mapped = await live_service.map_results(
+            layers=layers, allow_partial_geometry=True, **admission
+        )
         # A BCWS fire-centre label is an administrative source field, not a
         # geocodable origin.  Do not attach distances from an unrelated place
         # returned by a gazetteer lookup.
@@ -457,7 +468,12 @@ async def _fetch_layers(
             filter_requested_named_fire_results(request, centre_filtered),
         )
         named_fire = extracted_located_fire_name(request.question)
-        if named_fire is not None and not filtered:
+        if (
+            named_fire is not None
+            and not filtered
+            and not getattr(mapped, "partial_layers", [])
+            and not getattr(mapped, "unavailable_layers", [])
+        ):
             _note_topic(packet, "named_fire_not_found")
         _record_successful_live_response(packet, mapped)
         return (
@@ -484,6 +500,11 @@ def _record_successful_live_response(packet: AgentPacket, response: Any) -> None
     unavailable = getattr(response, "unavailable_layers", None)
     if unavailable:
         packet.mark_unavailable(unavailable)
+    for kind in getattr(response, "partial_layers", ()):
+        if kind not in packet.partial_layers:
+            packet.partial_layers.append(kind)
+    for limitation in getattr(response, "limitations", ()):
+        packet.add_live_limitation(limitation)
     for status in getattr(response, "layer_statuses", ()):
         if (
             status.kind in packet.unavailable_layers

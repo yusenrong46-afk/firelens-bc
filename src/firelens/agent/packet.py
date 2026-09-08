@@ -59,6 +59,7 @@ class AgentPacket:
     # repeated query for the same layer scope cannot double count it.
     roster_totals_by_scope: dict[str, int] = field(default_factory=dict)
     unavailable_layers: list[LiveResultKind] = field(default_factory=list)
+    partial_layers: list[LiveResultKind] = field(default_factory=list)
     invalid_geometry_layers: list[LiveResultKind] = field(default_factory=list)
     live_limitations: list[str] = field(default_factory=list)
     retrieved_at: datetime | None = None
@@ -112,6 +113,11 @@ class AgentPacket:
         }
         if self.static_response is not None and self.static_response.answer:
             payload["reviewed_guidance_answer"] = self.static_response.answer
+        if self.partial_layers:
+            payload["partial_layers"] = [kind.value for kind in self.partial_layers]
+            payload["coverage_limitation"] = (
+                "Only validated records are shown; complete counts, absence and nearest claims are not established."
+            )
         if self.unavailable_layers:
             payload["unavailable_layers"] = [kind.value for kind in self.unavailable_layers]
         return payload
