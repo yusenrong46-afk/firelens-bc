@@ -13778,7 +13778,8 @@
       "kind": "static",
       "lines": [
         11,
-        239
+        239,
+        301
       ],
       "source": "tests/test_partial_live_coverage.py",
       "target": "src/firelens/contracts.py"
@@ -18159,7 +18160,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "772cda94f9f8bff5a7ddf7b596edf478e59213cc252891fef0990b5407360502",
+  "source_digest": "27b7939a30bb3111c5107211b14c3b6345fa6506c4341df1139b3e41c45938c9",
   "unresolved_relative_imports": [
     {
       "line": 32,

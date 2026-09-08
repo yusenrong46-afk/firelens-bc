@@ -292,3 +292,28 @@ def test_partial_pagination_describes_validated_subset(page):
             assert any("validated subset" in x for x in response.limitations)
 
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("zero", [True, False])
+def test_legacy_partial_conflict_retains_reason_and_reviewed_sections(zero):
+    from test_v1_5_v3_composition import _accepted_conflict
+
+    from firelens.contracts import ReasonCode
+
+    async def run():
+        rows = [feature(2, "Alert", True)] + ([] if zero else [feature()])
+        async with httpx.AsyncClient(transport=httpx.MockTransport(Feed(rows))) as client:
+            response = await LiveAnswerCoordinator(LiveDataService(client=client)).answer(
+                QueryRequest(
+                    question="Show evacuation orders and alerts near Kamloops, plus what belongs in an emergency kit?"
+                ),
+                _accepted_conflict(),
+            )
+        assert response.partial_layers == [EVAC]
+        assert response.reason_code == ReasonCode.CONFLICTING_EVIDENCE
+        assert any(
+            section.kind.value == "conflicting_guidance" for section in response.answer_sections
+        )
+        assert response.claims
+
+    asyncio.run(run())

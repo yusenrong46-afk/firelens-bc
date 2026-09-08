@@ -1,7 +1,7 @@
 {
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.symbol_index.v1",
-  "source_digest": "772cda94f9f8bff5a7ddf7b596edf478e59213cc252891fef0990b5407360502",
+  "source_digest": "27b7939a30bb3111c5107211b14c3b6345fa6506c4341df1139b3e41c45938c9",
   "symbols": [
     {
       "branch_score": 0,
@@ -14746,8 +14746,8 @@
       "qualname": "place_mention_for_question"
     },
     {
-      "branch_score": 16,
-      "end_line": 95,
+      "branch_score": 17,
+      "end_line": 96,
       "id": "src/firelens/answering/partial_live_response.py::partial_live_response:22",
       "kind": "function",
       "language": "python",
@@ -57462,6 +57462,32 @@
       "name": "test_legacy_partial_background_retains_required_limitation",
       "public": true,
       "qualname": "test_legacy_partial_background_retains_required_limitation"
+    },
+    {
+      "branch_score": 2,
+      "end_line": 317,
+      "id": "tests/test_partial_live_coverage.py::test_legacy_partial_conflict_retains_reason_and_reviewed_sections.run:303",
+      "kind": "nested_function",
+      "language": "python",
+      "line": 303,
+      "major": false,
+      "module_path": "tests/test_partial_live_coverage.py",
+      "name": "run",
+      "public": true,
+      "qualname": "test_legacy_partial_conflict_retains_reason_and_reviewed_sections.run"
+    },
+    {
+      "branch_score": 2,
+      "end_line": 319,
+      "id": "tests/test_partial_live_coverage.py::test_legacy_partial_conflict_retains_reason_and_reviewed_sections:298",
+      "kind": "function",
+      "language": "python",
+      "line": 298,
+      "major": true,
+      "module_path": "tests/test_partial_live_coverage.py",
+      "name": "test_legacy_partial_conflict_retains_reason_and_reviewed_sections",
+      "public": true,
+      "qualname": "test_legacy_partial_conflict_retains_reason_and_reviewed_sections"
     },
     {
       "branch_score": 0,

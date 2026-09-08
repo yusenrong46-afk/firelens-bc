@@ -83,6 +83,7 @@ def partial_live_response(
         claims=merged.claims if merged else [],
         evidence=merged.evidence if merged else [],
         validation=merged.validation if merged else None,
+        reason_code=merged.reason_code if merged else None,
         limitations=list(
             dict.fromkeys([*live.limitations, *(merged.limitations if merged else [])])
         ),

@@ -1111,8 +1111,8 @@
       "path": "src/firelens/answering/location_intent.py"
     },
     {
-      "branch_score": 16,
-      "loc": 95,
+      "branch_score": 17,
+      "loc": 96,
       "path": "src/firelens/answering/partial_live_response.py"
     },
     {
@@ -2626,8 +2626,8 @@
       "path": "tests/test_paid_floor_rails.py"
     },
     {
-      "branch_score": 14,
-      "loc": 294,
+      "branch_score": 16,
+      "loc": 319,
       "path": "tests/test_partial_live_coverage.py"
     },
     {
@@ -3117,7 +3117,7 @@
     }
   ],
   "schema_version": "firelens.complexity.v1",
-  "source_digest": "772cda94f9f8bff5a7ddf7b596edf478e59213cc252891fef0990b5407360502",
+  "source_digest": "27b7939a30bb3111c5107211b14c3b6345fa6506c4341df1139b3e41c45938c9",
   "symbols": [
     {
       "branch_score": 0,
@@ -7580,7 +7580,7 @@
       "module_path": "src/firelens/answering/location_intent.py"
     },
     {
-      "branch_score": 16,
+      "branch_score": 17,
       "id": "src/firelens/answering/partial_live_response.py::partial_live_response:22",
       "module_path": "src/firelens/answering/partial_live_response.py"
     },
@@ -21142,6 +21142,11 @@
     {
       "branch_score": 1,
       "id": "tests/test_partial_live_coverage.py::test_legacy_partial_background_retains_required_limitation:236",
+      "module_path": "tests/test_partial_live_coverage.py"
+    },
+    {
+      "branch_score": 2,
+      "id": "tests/test_partial_live_coverage.py::test_legacy_partial_conflict_retains_reason_and_reviewed_sections:298",
       "module_path": "tests/test_partial_live_coverage.py"
     },
     {

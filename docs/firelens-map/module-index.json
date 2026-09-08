@@ -8639,7 +8639,7 @@
       "test_fan_in": 11
     },
     {
-      "branch_score": 16,
+      "branch_score": 17,
       "fan_in": 1,
       "fan_out": 4,
       "generated": false,
@@ -8659,7 +8659,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 95,
+      "loc": 96,
       "major_symbols": [
         "partial_live_response"
       ],
@@ -24025,7 +24025,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 14,
+      "branch_score": 16,
       "fan_in": 0,
       "fan_out": 4,
       "generated": false,
@@ -24040,6 +24040,7 @@
         "pytest",
         "test_agent_query_plan_boundary",
         "test_live",
+        "test_v1_5_v3_composition",
         "typing"
       ],
       "imports": [
@@ -24050,7 +24051,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 294,
+      "loc": 319,
       "major_symbols": [
         "feature",
         "Feed",
@@ -24064,7 +24065,8 @@
         "test_legacy_admission_matches_public_scope",
         "test_legacy_partial_background_retains_required_limitation",
         "test_zero_partial_banner_retains_check_observation",
-        "test_partial_pagination_describes_validated_subset"
+        "test_partial_pagination_describes_validated_subset",
+        "test_legacy_partial_conflict_retains_reason_and_reviewed_sections"
       ],
       "module": "tests.test_partial_live_coverage",
       "path": "tests/test_partial_live_coverage.py",
@@ -24096,7 +24098,9 @@
         "test_zero_partial_banner_retains_check_observation",
         "test_zero_partial_banner_retains_check_observation.run",
         "test_partial_pagination_describes_validated_subset",
-        "test_partial_pagination_describes_validated_subset.run"
+        "test_partial_pagination_describes_validated_subset.run",
+        "test_legacy_partial_conflict_retains_reason_and_reviewed_sections",
+        "test_legacy_partial_conflict_retains_reason_and_reviewed_sections.run"
       ],
       "test_fan_in": 0
     },
@@ -30262,5 +30266,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "772cda94f9f8bff5a7ddf7b596edf478e59213cc252891fef0990b5407360502"
+  "source_digest": "27b7939a30bb3111c5107211b14c3b6345fa6506c4341df1139b3e41c45938c9"
 }
