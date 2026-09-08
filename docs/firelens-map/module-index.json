@@ -5661,7 +5661,7 @@
       "test_fan_in": 4
     },
     {
-      "branch_score": 132,
+      "branch_score": 133,
       "fan_in": 9,
       "fan_out": 22,
       "generated": false,
@@ -5719,7 +5719,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 793,
+      "loc": 798,
       "major_symbols": [
         "safety_response",
         "no_substitute_response",
@@ -7991,7 +7991,7 @@
       "test_fan_in": 4
     },
     {
-      "branch_score": 36,
+      "branch_score": 38,
       "fan_in": 6,
       "fan_out": 4,
       "generated": false,
@@ -8014,7 +8014,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 189,
+      "loc": 191,
       "major_symbols": [
         "official_display_name",
         "is_ranked_distance_question",
@@ -8159,7 +8159,7 @@
     },
     {
       "branch_score": 43,
-      "fan_in": 6,
+      "fan_in": 7,
       "fan_out": 2,
       "generated": false,
       "id": "src/firelens/answering/live_evacuation.py",
@@ -8185,7 +8185,7 @@
       ],
       "module": "firelens.answering.live_evacuation",
       "path": "src/firelens/answering/live_evacuation.py",
-      "production_fan_in": 4,
+      "production_fan_in": 5,
       "statically_unreferenced": false,
       "symbols": [
         "is_evacuation_record_question",
@@ -8458,7 +8458,7 @@
       "test_fan_in": 2
     },
     {
-      "branch_score": 41,
+      "branch_score": 42,
       "fan_in": 7,
       "fan_out": 6,
       "generated": false,
@@ -8485,7 +8485,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 276,
+      "loc": 293,
       "major_symbols": [
         "official_sources_checked",
         "live_unavailability_text",
@@ -8493,7 +8493,8 @@
         "freshness_limitation",
         "records_section_heading",
         "unique_limitations",
-        "partial_records_answer"
+        "partial_records_answer",
+        "partial_empty_banner"
       ],
       "module": "firelens.answering.live_response_support",
       "path": "src/firelens/answering/live_response_support.py",
@@ -8509,7 +8510,8 @@
         "freshness_limitation",
         "records_section_heading",
         "unique_limitations",
-        "partial_records_answer"
+        "partial_records_answer",
+        "partial_empty_banner"
       ],
       "test_fan_in": 3
     },
@@ -8637,7 +8639,7 @@
       "test_fan_in": 11
     },
     {
-      "branch_score": 15,
+      "branch_score": 16,
       "fan_in": 1,
       "fan_out": 4,
       "generated": false,
@@ -8657,7 +8659,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 91,
+      "loc": 95,
       "major_symbols": [
         "partial_live_response"
       ],
@@ -15145,7 +15147,7 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 100,
+      "branch_score": 102,
       "fan_in": 27,
       "fan_out": 7,
       "generated": false,
@@ -15182,7 +15184,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 725,
+      "loc": 734,
       "major_symbols": [
         "LiveDataService"
       ],
@@ -15252,9 +15254,9 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 63,
+      "branch_score": 64,
       "fan_in": 34,
-      "fan_out": 12,
+      "fan_out": 13,
       "generated": false,
       "id": "src/firelens/live_answering.py",
       "import_specifiers": [
@@ -15263,6 +15265,7 @@
         "firelens.answering.intent",
         "firelens.answering.live_composition",
         "firelens.answering.live_distance",
+        "firelens.answering.live_evacuation",
         "firelens.answering.live_handoffs",
         "firelens.answering.live_request_intent",
         "firelens.answering.live_response_support",
@@ -15272,12 +15275,14 @@
         "firelens.answering.unsupported_live",
         "firelens.contracts",
         "firelens.live",
+        "typing",
         "uuid"
       ],
       "imports": [
         "src/firelens/answering/intent.py",
         "src/firelens/answering/live_composition.py",
         "src/firelens/answering/live_distance.py",
+        "src/firelens/answering/live_evacuation.py",
         "src/firelens/answering/live_handoffs.py",
         "src/firelens/answering/live_request_intent.py",
         "src/firelens/answering/live_response_support.py",
@@ -15290,7 +15295,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 650,
+      "loc": 646,
       "major_symbols": [
         "LiveAnswerCoordinator"
       ],
@@ -15303,7 +15308,6 @@
         "LiveAnswerCoordinator",
         "LiveAnswerCoordinator.__init__",
         "LiveAnswerCoordinator.handles",
-        "LiveAnswerCoordinator._nearby_records",
         "LiveAnswerCoordinator._prohibited_live_handoff",
         "LiveAnswerCoordinator.answer"
       ],
@@ -19925,7 +19929,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 368,
+      "loc": 370,
       "major_symbols": [
         "DeterministicLiveService",
         "DeterministicStaticService"
@@ -24021,7 +24025,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 7,
+      "branch_score": 14,
       "fan_in": 0,
       "fan_out": 4,
       "generated": false,
@@ -24034,6 +24038,7 @@
         "firelens.live_answering",
         "httpx",
         "pytest",
+        "test_agent_query_plan_boundary",
         "test_live",
         "typing"
       ],
@@ -24045,7 +24050,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 187,
+      "loc": 294,
       "major_symbols": [
         "feature",
         "Feed",
@@ -24054,7 +24059,12 @@
         "NoStatic",
         "test_real_agent_prefetch_retains_partial_and_prevents_complete_claims",
         "test_partial_cached_refresh_and_source_recovery",
-        "test_legacy_coordinator_preserves_partial_state"
+        "test_legacy_coordinator_preserves_partial_state",
+        "test_ranked_evacuation_request_preserves_authorized_rows",
+        "test_legacy_admission_matches_public_scope",
+        "test_legacy_partial_background_retains_required_limitation",
+        "test_zero_partial_banner_retains_check_observation",
+        "test_partial_pagination_describes_validated_subset"
       ],
       "module": "tests.test_partial_live_coverage",
       "path": "tests/test_partial_live_coverage.py",
@@ -24076,7 +24086,17 @@
         "test_partial_cached_refresh_and_source_recovery",
         "test_partial_cached_refresh_and_source_recovery.run",
         "test_legacy_coordinator_preserves_partial_state",
-        "test_legacy_coordinator_preserves_partial_state.run"
+        "test_legacy_coordinator_preserves_partial_state.run",
+        "test_ranked_evacuation_request_preserves_authorized_rows",
+        "test_ranked_evacuation_request_preserves_authorized_rows.run",
+        "test_legacy_admission_matches_public_scope",
+        "test_legacy_admission_matches_public_scope.run",
+        "test_legacy_partial_background_retains_required_limitation",
+        "test_legacy_partial_background_retains_required_limitation.run",
+        "test_zero_partial_banner_retains_check_observation",
+        "test_zero_partial_banner_retains_check_observation.run",
+        "test_partial_pagination_describes_validated_subset",
+        "test_partial_pagination_describes_validated_subset.run"
       ],
       "test_fan_in": 0
     },
@@ -30242,5 +30262,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "ee103de0061e74bc521077e940db52792b74df543af3930d4f5e500f2abfc097"
+  "source_digest": "772cda94f9f8bff5a7ddf7b596edf478e59213cc252891fef0990b5407360502"
 }

@@ -56,8 +56,9 @@ def partial_live_response(
             base.model_copy(
                 update={
                     "partial_layers": live.partial_layers,
+                    "selected_live_result_id": request.context.selected_live_result_id,
                     "roster_total": None,
-                    "status_banner": None,
+                    "status_banner": empty.status_banner,
                     "history_text": None,
                 }
             ).model_dump()
@@ -82,10 +83,13 @@ def partial_live_response(
         claims=merged.claims if merged else [],
         evidence=merged.evidence if merged else [],
         validation=merged.validation if merged else None,
-        limitations=list(live.limitations),
+        limitations=list(
+            dict.fromkeys([*live.limitations, *(merged.limitations if merged else [])])
+        ),
         partial_layers=live.partial_layers,
         unavailable_layers=live.unavailable_layers,
         related_links=empty.related_links,
         requested_layers=list(layers),
+        selected_live_result_id=request.context.selected_live_result_id,
         resolved_location=resolved,
     )

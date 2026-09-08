@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from firelens.answering.intent import (
@@ -11,6 +12,7 @@ from firelens.answering.intent import (
 )
 from firelens.answering.live_composition import supported_static_when_live_missing
 from firelens.answering.live_distance import location_request
+from firelens.answering.live_evacuation import requested_evacuation_statuses
 from firelens.answering.live_handoffs import (
     merge_related_links,
     related_live_links,
@@ -40,8 +42,6 @@ from firelens.contracts import (
     CoarseResolvedLocation,
     LiveMapResponse,
     LiveResultKind,
-    LocationInput,
-    NearMeResponse,
     QueryPlan,
     QueryRequest,
     QueryRoute,
@@ -84,19 +84,6 @@ class LiveAnswerCoordinator:
             or self.is_selected_live_request(request)
             or self.is_unsupported_selected_request(request)
             or plan.route == QueryRoute.LIVE
-        )
-
-    async def _nearby_records(
-        self,
-        location: LocationInput,
-        *,
-        layers: tuple[LiveResultKind, ...],
-    ) -> NearMeResponse:
-        return await self.live_service.nearby_page(
-            location,
-            layers=layers,
-            page=1,
-            page_size=100,
         )
 
     async def _prohibited_live_handoff(
@@ -223,11 +210,20 @@ class LiveAnswerCoordinator:
             and not unsupported_selected_request
         ):
             return location_request(request)
+        admission: dict[str, Any] = (
+            {"evacuation_statuses": requested_evacuation_statuses(request.question)}
+            if LiveResultKind.EVACUATION in layers
+            else {}
+        )
         try:
             live = (
-                await self._nearby_records(effective_location, layers=layers)
+                await self.live_service.nearby_page(
+                    effective_location, layers=layers, page=1, page_size=100, **admission
+                )
                 if effective_location is not None
-                else await self.live_service.map_results(layers=layers)
+                else await self.live_service.map_results(
+                    layers=layers, allow_partial_geometry=True, **admission
+                )
             )
         except LiveDataUnavailable:
             live = LiveMapResponse(

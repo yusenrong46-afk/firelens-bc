@@ -687,14 +687,23 @@ class LiveDataService:
         limitations = list(response.limitations)
         if total_results > page_size or page > 1:
             if page_results:
+                scope = (
+                    "validated subset; complete official totals are unknown"
+                    if response.partial_layers
+                    else "full roster"
+                )
                 limitations.append(
                     f"Showing official records {start + 1}-{start + len(page_results)} of "
-                    f"{total_results}; use the record-list pagination to inspect the full roster."
+                    f"{total_results}; use the record-list pagination to inspect the {scope}."
                 )
             else:
+                scope = (
+                    "validated record subset"
+                    if response.partial_layers
+                    else "matching official record roster"
+                )
                 limitations.append(
-                    "The requested page is beyond the matching official record roster; "
-                    "return to page 1."
+                    f"The requested page is beyond the {scope}; return to page 1."
                 )
         west, south, east, north = bbox
         return NearMeResponse(

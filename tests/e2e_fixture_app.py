@@ -179,6 +179,7 @@ class DeterministicLiveService:
         layers: tuple[LiveResultKind, ...],
         bbox: tuple[float, float, float, float] | None = None,
         allow_partial_geometry: bool = False,
+        **_admission: Any,
     ) -> LiveMapResponse:
         del bbox, allow_partial_geometry
         all_records = [
@@ -207,6 +208,7 @@ class DeterministicLiveService:
         layers: tuple[LiveResultKind, ...],
         page: int = 1,
         page_size: int = 100,
+        **_admission: Any,
     ) -> NearMeResponse:
         label = location.label or ""
         latitude, longitude = await self.resolve_location(location)

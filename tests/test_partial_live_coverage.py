@@ -185,3 +185,110 @@ def test_legacy_coordinator_preserves_partial_state(rows):
         assert "no evacuation" not in result.answer.lower()
 
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("invalid", [True, False])
+def test_ranked_evacuation_request_preserves_authorized_rows(invalid):
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(Feed([feature(), feature(2, "Alert", invalid)]))
+        ) as client:
+            response = (
+                await FireLensAgent(
+                    cast(Any, NoStatic()), LiveAnswerCoordinator(LiveDataService(client=client))
+                ).answer(
+                    QueryRequest(
+                        question="List the nearest evacuation orders and alerts to Kamloops"
+                    )
+                )
+            ).response
+        assert len(response.live_results) == (1 if invalid else 2)
+        assert "no evacuation" not in response.answer.lower()
+        if invalid:
+            assert "nearest record cannot be established" in response.answer
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize(
+    "question, partial",
+    [
+        ("Show evacuation orders near Kamloops", False),
+        ("Show evacuation orders and alerts across BC", True),
+    ],
+)
+def test_legacy_admission_matches_public_scope(question, partial):
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(Feed([feature(), feature(2, "Alert", True)]))
+        ) as client:
+            response = await LiveAnswerCoordinator(LiveDataService(client=client)).answer(
+                QueryRequest(question=question), None
+            )
+        assert len(response.live_results) == 1
+        assert bool(response.partial_layers) == partial
+        assert response.unavailable_layers == []
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("zero", [True, False])
+def test_legacy_partial_background_retains_required_limitation(zero):
+    from test_agent_query_plan_boundary import _background
+
+    from firelens.contracts import BACKGROUND_LIMITATION
+
+    async def run():
+        rows = [feature(2, "Alert", True)] + ([] if zero else [feature()])
+        async with httpx.AsyncClient(transport=httpx.MockTransport(Feed(rows))) as client:
+            response = await LiveAnswerCoordinator(LiveDataService(client=client)).answer(
+                QueryRequest(
+                    question="Show evacuation orders and alerts near Kamloops, plus what belongs in an emergency kit?"
+                ),
+                _background(),
+            )
+        assert response.partial_layers == [EVAC]
+        assert BACKGROUND_LIMITATION in response.limitations
+        assert response.claims
+
+    asyncio.run(run())
+
+
+def test_zero_partial_banner_retains_check_observation():
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(Feed([feature(2, "Alert", True)]))
+        ) as client:
+            response = (
+                await FireLensAgent(
+                    cast(Any, NoStatic()), LiveAnswerCoordinator(LiveDataService(client=client))
+                ).answer(QueryRequest(question="Evacuation alerts near Kamloops"))
+            ).response
+        assert response.status_banner.retrieval_completed_at is not None
+        assert response.status_banner.freshness_label == "No validated live records returned"
+        assert response.status_banner.source_updated_at is None
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("page", [1, 2, 3, 4])
+def test_partial_pagination_describes_validated_subset(page):
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                Feed([feature(i) for i in range(1, 202)] + [feature(202, "Alert", True)])
+            )
+        ) as client:
+            response = await LiveDataService(client=client).nearby_page(
+                LocationInput(latitude=50.68, longitude=-120.34),
+                layers=(EVAC,),
+                page=page,
+                page_size=100,
+            )
+        assert response.partial_layers == [EVAC]
+        assert response.pagination.total_results == 201
+        assert not any("full roster" in x for x in response.limitations)
+        if response.results:
+            assert any("validated subset" in x for x in response.limitations)
+
+    asyncio.run(run())

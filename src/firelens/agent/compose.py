@@ -38,6 +38,7 @@ from firelens.answering.live_request_intent import (
 from firelens.answering.live_response_support import (
     empty_live_response,
     live_unavailability_text,
+    partial_empty_banner,
     partial_records_answer,
     records_section_heading,
 )
@@ -227,7 +228,11 @@ def _with_packet_fields(
     if packet.partial_layers:
         updates["partial_layers"] = list(packet.partial_layers)
         updates["roster_total"] = None
-        updates["status_banner"] = None
+        updates["status_banner"] = (
+            partial_empty_banner(response.status_banner, packet.retrieved_at)
+            if not packet.live_results
+            else None
+        )
         updates["history_text"] = None
         limitations.append(
             "Only validated records are shown; coverage is incomplete. Counts describe displayed records, not complete official totals. This is not an all-clear."

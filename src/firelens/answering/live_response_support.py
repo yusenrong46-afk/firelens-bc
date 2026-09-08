@@ -128,7 +128,9 @@ def empty_live_response(
         if failure:
             current_information += " " + failure
         headline = "Coverage incomplete"
-        availability = "Official data retrieved; some records could not be validated."
+        availability = (
+            "Partial coverage: official data retrieved; some records could not be validated."
+        )
     elif all_unavailable:
         current_information = (
             f"{failure} FireLens cannot confirm the complete official record coverage"
@@ -273,4 +275,19 @@ def partial_records_answer(records: list[LiveResult], unavailable: bool) -> str:
         "Some retrieved official records could not be validated. Complete counts, absence of orders or alerts, and the nearest record cannot be established from this subset. "
         "This is not an all-clear; confirm current instructions with EmergencyInfoBC and the issuing authority."
         + (" Some additional requested layers are unavailable." if unavailable else "")
+    )
+
+
+def partial_empty_banner(
+    banner: AnswerStatusBanner | None, retrieved_at: datetime | None
+) -> AnswerStatusBanner | None:
+    if banner is None:
+        return None
+    return banner.model_copy(
+        update={
+            "availability_label": "Partial coverage: only validated records are shown. This is not an all-clear.",
+            "freshness_label": "No validated live records returned",
+            "retrieval_completed_at": retrieved_at,
+            "source_updated_at": None,
+        }
     )
