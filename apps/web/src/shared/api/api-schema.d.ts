@@ -602,6 +602,8 @@ export interface components {
              * Format: uri
              */
             source_url: string;
+            /** Unavailability Reason */
+            unavailability_reason?: "invalid_geometry" | null;
         };
         /** LiveMapResponse */
         LiveMapResponse: {

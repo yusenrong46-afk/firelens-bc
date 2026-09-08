@@ -484,6 +484,13 @@ def _record_successful_live_response(packet: AgentPacket, response: Any) -> None
     unavailable = getattr(response, "unavailable_layers", None)
     if unavailable:
         packet.mark_unavailable(unavailable)
+    for status in getattr(response, "layer_statuses", ()):
+        if (
+            status.kind in packet.unavailable_layers
+            and status.unavailability_reason == "invalid_geometry"
+            and status.kind not in packet.invalid_geometry_layers
+        ):
+            packet.invalid_geometry_layers.append(status.kind)
 
 
 def _remember_retrieval(packet: AgentPacket, generated_at: datetime | None) -> None:

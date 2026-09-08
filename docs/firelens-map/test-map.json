@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "c8a151b1a6f5c0b28b8d7686451f2352167a6368b1ba71f151e7338e04f00345",
+  "source_digest": "ccb3147069f493b1589497ce9b80c55fb6543f7948c934da5f67fe705ae8b834",
   "tests": [
     {
       "cases": [
@@ -2251,6 +2251,27 @@
       ],
       "language": "python",
       "path": "tests/test_live_evacuation.py"
+    },
+    {
+      "cases": [
+        "test_failure_reason_does_not_claim_missing_layer_is_empty",
+        "test_native_invalid_boundary_survives_to_evacuation_answer",
+        "test_network_failure_does_not_claim_invalid_geometry"
+      ],
+      "direct_targets": [
+        "src/firelens/agent/compose.py",
+        "src/firelens/agent/packet.py",
+        "src/firelens/agent/runtime_tools.py",
+        "src/firelens/answering/live_response_support.py",
+        "src/firelens/contracts.py",
+        "src/firelens/live.py"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "live"
+      ],
+      "language": "python",
+      "path": "tests/test_live_failure_reason.py"
     },
     {
       "cases": [

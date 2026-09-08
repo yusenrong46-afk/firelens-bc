@@ -222,7 +222,7 @@ exceptions only to the 650-line target: the hard 800-line cap still applies.
 
 | Module | Baseline | Current | Bounded repair and deferred split |
 | --- | ---: | ---: | --- |
-| `src/firelens/agent/compose.py` | 612 | 768 | Added packet identity fields, selected-record follow-up binding, and public limitation/suggestion binding. The one-turn compose owner stays intact so live, mixed, and clarification routes keep a single result-set writer. |
+| `src/firelens/agent/compose.py` | 612 | 770 | Added packet identity fields, selected-record follow-up binding, and public limitation/suggestion binding. The one-turn compose owner stays intact so live, mixed, and clarification routes keep a single result-set writer. |
 | `src/firelens/agent/query_plan.py` | 633 | 762 | Mixed-clause planning, selected-record recovery, terminal safety-boundary retention, explicit province scope, and selected-distance input requirements. The immutable planner remains the authorization owner. |
 | `src/firelens/answering/live_analysis.py` | 640 | 636 | Added deterministic sample ranking and honest unnamed-record labels. Distance, roster, and official-prose rendering remain one owner so the ranked sample cannot diverge from the authorized set. |
 | `src/firelens/evaluation/capture.py` | 734 | 800 | Added paired private-attestation and preview-raw-evidence capture guards. The immutable before/after artifact roster remains one owner; splitting it during this repair would add serializer and evidence-schema churn. |

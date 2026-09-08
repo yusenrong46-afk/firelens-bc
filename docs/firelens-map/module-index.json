@@ -2324,7 +2324,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 238,
+      "branch_score": 239,
       "fan_in": 1,
       "fan_out": 0,
       "generated": true,
@@ -2333,7 +2333,7 @@
       "imports": [],
       "kind": "production",
       "language": "typescript",
-      "loc": 1672,
+      "loc": 1674,
       "major_symbols": [
         "paths",
         "webhooks",
@@ -5662,7 +5662,7 @@
     },
     {
       "branch_score": 126,
-      "fan_in": 8,
+      "fan_in": 9,
       "fan_out": 21,
       "generated": false,
       "id": "src/firelens/agent/compose.py",
@@ -5717,7 +5717,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 768,
+      "loc": 770,
       "major_symbols": [
         "safety_response",
         "no_substitute_response",
@@ -5752,7 +5752,7 @@
         "_out_of_province_response",
         "_build_ask_response"
       ],
-      "test_fan_in": 7
+      "test_fan_in": 8
     },
     {
       "branch_score": 17,
@@ -6209,7 +6209,7 @@
     },
     {
       "branch_score": 17,
-      "fan_in": 24,
+      "fan_in": 25,
       "fan_out": 3,
       "generated": false,
       "id": "src/firelens/agent/packet.py",
@@ -6229,7 +6229,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 116,
+      "loc": 117,
       "major_symbols": [
         "live_record_fact",
         "AgentPacket"
@@ -6248,7 +6248,7 @@
         "AgentPacket.allowed_result_ids",
         "AgentPacket.facts_for_model"
       ],
-      "test_fan_in": 13
+      "test_fan_in": 14
     },
     {
       "branch_score": 51,
@@ -6541,8 +6541,8 @@
       "test_fan_in": 4
     },
     {
-      "branch_score": 105,
-      "fan_in": 6,
+      "branch_score": 108,
+      "fan_in": 7,
       "fan_out": 19,
       "generated": false,
       "id": "src/firelens/agent/runtime_tools.py",
@@ -6597,7 +6597,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 508,
+      "loc": 515,
       "major_symbols": [
         "execute_tool"
       ],
@@ -6619,7 +6619,7 @@
         "_note_topic",
         "_resolve"
       ],
-      "test_fan_in": 3
+      "test_fan_in": 4
     },
     {
       "branch_score": 0,
@@ -8452,8 +8452,8 @@
       "test_fan_in": 2
     },
     {
-      "branch_score": 24,
-      "fan_in": 5,
+      "branch_score": 32,
+      "fan_in": 6,
       "fan_out": 5,
       "generated": false,
       "id": "src/firelens/answering/live_response_support.py",
@@ -8465,6 +8465,7 @@
         "firelens.freshness_language",
         "firelens.live_support",
         "firelens.proof_presentation",
+        "pydantic",
         "uuid"
       ],
       "imports": [
@@ -8476,9 +8477,10 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 204,
+      "loc": 237,
       "major_symbols": [
         "official_sources_checked",
+        "live_unavailability_text",
         "empty_live_response",
         "freshness_limitation",
         "records_section_heading",
@@ -8493,12 +8495,13 @@
         "official_sources_checked",
         "_nothing_listed",
         "_checked_when",
+        "live_unavailability_text",
         "empty_live_response",
         "freshness_limitation",
         "records_section_heading",
         "unique_limitations"
       ],
-      "test_fan_in": 2
+      "test_fan_in": 3
     },
     {
       "branch_score": 42,
@@ -10525,7 +10528,7 @@
     },
     {
       "branch_score": 120,
-      "fan_in": 186,
+      "fan_in": 187,
       "fan_out": 12,
       "generated": false,
       "id": "src/firelens/contracts.py",
@@ -10674,7 +10677,7 @@
         "AskResponse._validate_requires_input",
         "AskResponse._validate_abstention"
       ],
-      "test_fan_in": 79
+      "test_fan_in": 80
     },
     {
       "branch_score": 26,
@@ -15097,8 +15100,8 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 111,
-      "fan_in": 25,
+      "branch_score": 112,
+      "fan_in": 26,
       "fan_out": 6,
       "generated": false,
       "id": "src/firelens/live.py",
@@ -15166,7 +15169,7 @@
         "LiveDataService.nearby_results",
         "LiveDataService.nearby_page"
       ],
-      "test_fan_in": 11
+      "test_fan_in": 12
     },
     {
       "branch_score": 62,
@@ -15253,7 +15256,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 116,
+      "branch_score": 118,
       "fan_in": 23,
       "fan_out": 2,
       "generated": false,
@@ -15276,7 +15279,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 617,
+      "loc": 620,
       "major_symbols": [
         "LocationInput",
         "LiveResultKind",
@@ -22879,6 +22882,58 @@
       "test_fan_in": 0
     },
     {
+      "branch_score": 4,
+      "fan_in": 0,
+      "fan_out": 6,
+      "generated": false,
+      "id": "tests/test_live_failure_reason.py",
+      "import_specifiers": [
+        "asyncio",
+        "datetime",
+        "firelens.agent.compose",
+        "firelens.agent.packet",
+        "firelens.agent.runtime_tools",
+        "firelens.answering.live_response_support",
+        "firelens.contracts",
+        "firelens.live",
+        "httpx",
+        "json",
+        "pathlib",
+        "pytest",
+        "test_live"
+      ],
+      "imports": [
+        "src/firelens/agent/compose.py",
+        "src/firelens/agent/packet.py",
+        "src/firelens/agent/runtime_tools.py",
+        "src/firelens/answering/live_response_support.py",
+        "src/firelens/contracts.py",
+        "src/firelens/live.py"
+      ],
+      "kind": "test",
+      "language": "python",
+      "loc": 102,
+      "major_symbols": [
+        "test_native_invalid_boundary_survives_to_evacuation_answer",
+        "test_failure_reason_does_not_claim_missing_layer_is_empty",
+        "test_network_failure_does_not_claim_invalid_geometry"
+      ],
+      "module": "tests.test_live_failure_reason",
+      "path": "tests/test_live_failure_reason.py",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "test_native_invalid_boundary_survives_to_evacuation_answer",
+        "_native_invalid_boundary_survives_to_evacuation_answer",
+        "_native_invalid_boundary_survives_to_evacuation_answer.handler",
+        "test_failure_reason_does_not_claim_missing_layer_is_empty",
+        "test_network_failure_does_not_claim_invalid_geometry",
+        "_network_failure_does_not_claim_invalid_geometry",
+        "_network_failure_does_not_claim_invalid_geometry.handler"
+      ],
+      "test_fan_in": 0
+    },
+    {
       "branch_score": 16,
       "fan_in": 0,
       "fan_out": 3,
@@ -30036,5 +30091,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "c8a151b1a6f5c0b28b8d7686451f2352167a6368b1ba71f151e7338e04f00345"
+  "source_digest": "ccb3147069f493b1589497ce9b80c55fb6543f7948c934da5f67fe705ae8b834"
 }

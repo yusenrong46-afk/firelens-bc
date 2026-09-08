@@ -782,7 +782,7 @@ describe("proof-carrying answer surface", () => {
       headline: "Not confirmed by FireLens sources",
       detail: "FireLens did not establish or validate support for this response.",
       freshness_label: "Freshness not established",
-      availability_label: "FireLens could not reach the sources this needed.",
+      availability_label: "Support was not established from the evidence returned.",
       retrieval_completed_at: null,
       source_updated_at: null,
       official_escalation_title: "Current B.C. AQHI",
