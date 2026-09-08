@@ -22,7 +22,9 @@ successors. The accepted review ran 64 tests, seven subtests and 32 probes.
 The unchanged real corpus/index contains 178 chunks and 178 by 1536 embeddings.
 Historical rc2.2 remains 96/105, including its frozen J01 failure; rc2.3 retains
 97/105 and the separately accepted J01 behavior. Nine failed-row evidence hashes
-change only for additive empty `partial_layers` fields. Fifteen runtime material
+change only for additive empty `partial_layers` fields. The same additive empty
+field is bound in both retained I08 conversation turns, independently confirmed
+otherwise identical with zero generation calls. Fifteen runtime material
 bindings and their consuming policy digest are rebound after acceptance; frozen
 expectations and disposition classifications remain unchanged.
 

@@ -408,7 +408,8 @@
         "unknown_items": [
           "FireLens did not treat that input as a wildfire question."
         ],
-        "proof_cards": []
+        "proof_cards": [],
+        "partial_layers": []
       }
     },
     {
@@ -430,7 +431,7 @@
         "response_mode": "partial",
         "answer": "During a wildfire\nFOLLOW INSTRUCTIONS\nThe most important thing you can do is follow all Evacuation Alerts\nand Orders and follow instructions from your Band Office, municipality,\nregional district or local government. Trust in your preparedness and\nfollow your emergency plan.\nNatural gas safety\nDo NOT shut off your natural gas when you receive an Evacuation\nOrder.",
         "answer_sections": [],
-        "history_text": "Authority: Reviewed guidance + uncertainty. Answer: During a wildfire FOLLOW INSTRUCTIONS The most important thing you can do is follow all Evacuation Alerts and Orders and follow instructions from your Band Office, municipality, regional district or local government. Trust in your preparedness and follow your emergency plan. Natural gas safety Do NOT shut off your natural gas when you receive an Evacuation Order. Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions. | Exact source wording \u2014 not a structured FireLens claim. | Some requested high-risk guidance has no reviewed structured claim. FireLens is showing official wording or a handoff, not an interpreted claim.",
+        "history_text": "Authority: Reviewed guidance + uncertainty. Answer: During a wildfire FOLLOW INSTRUCTIONS The most important thing you can do is follow all Evacuation Alerts and Orders and follow instructions from your Band Office, municipality, regional district or local government. Trust in your preparedness and follow your emergency plan. Natural gas safety Do NOT shut off your natural gas when you receive an Evacuation Order. Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions. | Exact source wording — not a structured FireLens claim. | Some requested high-risk guidance has no reviewed structured claim. FireLens is showing official wording or a handoff, not an interpreted claim.",
         "claims": [
           {
             "claim_id": "C1",
@@ -482,7 +483,7 @@
         ],
         "limitations": [
           "The evidence contains stable official guidance and does not establish current wildfire conditions.",
-          "Exact source wording \u2014 not a structured FireLens claim.",
+          "Exact source wording — not a structured FireLens claim.",
           "Some requested high-risk guidance has no reviewed structured claim. FireLens is showing official wording or a handoff, not an interpreted claim."
         ],
         "suggested_questions": [
@@ -527,7 +528,7 @@
         "supported_items": [],
         "unknown_items": [
           "The evidence contains stable official guidance and does not establish current wildfire conditions.",
-          "Exact source wording \u2014 not a structured FireLens claim.",
+          "Exact source wording — not a structured FireLens claim.",
           "Some requested high-risk guidance has no reviewed structured claim. FireLens is showing official wording or a handoff, not an interpreted claim."
         ],
         "proof_cards": [
@@ -535,7 +536,7 @@
             "claim_id": "C1",
             "claim_text": "During a wildfire\nFOLLOW INSTRUCTIONS\nThe most important thing you can do is follow all Evacuation Alerts\nand Orders and follow instructions from your Band Office, municipality,\nregional district or local government. Trust in your preparedness and\nfollow your emergency plan.\nNatural gas safety\nDo NOT shut off your natural gas when you receive an Evacuation\nOrder.",
             "support_state": "official_quote_only",
-            "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+            "support_label": "Exact source wording — not a structured FireLens claim",
             "authority": "PreparedBC",
             "exact_passage": "During a wildfire\nFOLLOW INSTRUCTIONS\nThe most important thing you can do is follow all Evacuation Alerts\nand Orders and follow instructions from your Band Office, municipality,\nregional district or local government. Trust in your preparedness and\nfollow your emergency plan.\nNatural gas safety\nDo NOT shut off your natural gas when you receive an Evacuation\nOrder.",
             "source_title": "Wildfire Preparedness Guide",
@@ -560,7 +561,8 @@
               "risk_tier": "A"
             }
           }
-        ]
+        ],
+        "partial_layers": []
       }
     }
   ],
@@ -582,7 +584,7 @@
       "response_mode": "background",
       "answer": "Quantum entanglement is a phenomenon in which two or more particles share a joint quantum state, so measurements of correlated properties are linked even when the particles are far apart. It does not allow usable information to travel faster than light. In British Columbia, wildfire rank generally describes observed fire behaviour, commonly using Rank 1 through Rank 6: from a smouldering or low-intensity fire, through progressively stronger surface fire, to extreme crown-fire behaviour with rapid spread and spotting. The precise rank depends on the classification system and conditions being assessed.",
       "answer_sections": [],
-      "history_text": "Authority: General background. Answer: Quantum entanglement is a phenomenon in which two or more particles share a joint quantum state, so measurements of correlated properties are linked even when the particles are far apart. It does not allow usable information to travel faster than light. In British Columbia, wildfire rank generally describes observed fire behaviour, commonly using Rank 1 through Rank 6: from a smouldering or low-intensity fire, through progressively stronger surface fire, to extreme crown-fire behaviour with rapid spread and spotting. The precise rank depends on the classification system and conditions being assessed. Limitations: General background \u2014 not verified against the FireLens corpus. | \u201cWildfire ranks\u201d can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning.",
+      "history_text": "Authority: General background. Answer: Quantum entanglement is a phenomenon in which two or more particles share a joint quantum state, so measurements of correlated properties are linked even when the particles are far apart. It does not allow usable information to travel faster than light. In British Columbia, wildfire rank generally describes observed fire behaviour, commonly using Rank 1 through Rank 6: from a smouldering or low-intensity fire, through progressively stronger surface fire, to extreme crown-fire behaviour with rapid spread and spotting. The precise rank depends on the classification system and conditions being assessed. Limitations: General background — not verified against the FireLens corpus. | “Wildfire ranks” can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning.",
       "claims": [
         {
           "claim_id": "C1",
@@ -623,8 +625,8 @@
       ],
       "evidence": [],
       "limitations": [
-        "General background \u2014 not verified against the FireLens corpus.",
-        "\u201cWildfire ranks\u201d can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
+        "General background — not verified against the FireLens corpus.",
+        "“Wildfire ranks” can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
       ],
       "suggested_questions": [
         "How should I build and review a household emergency plan?",
@@ -656,7 +658,7 @@
       "selected_live_result_id": null,
       "resolved_location": null,
       "status_banner": {
-        "headline": "General model knowledge \u2014 not checked against reviewed sources",
+        "headline": "General model knowledge — not checked against reviewed sources",
         "detail": "This explanation uses general model knowledge, not reviewed quotations.",
         "freshness_label": "Freshness not applicable",
         "availability_label": "Reviewed source support not established; general model knowledge only.",
@@ -667,15 +669,15 @@
       },
       "supported_items": [],
       "unknown_items": [
-        "General background \u2014 not verified against the FireLens corpus.",
-        "\u201cWildfire ranks\u201d can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
+        "General background — not verified against the FireLens corpus.",
+        "“Wildfire ranks” can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
       ],
       "proof_cards": [
         {
           "claim_id": "C1",
           "claim_text": "Quantum entanglement is a phenomenon in which two or more particles share a joint quantum state, so measurements of correlated properties are linked even when the particles are far apart. It does not allow usable information to travel faster than light.",
           "support_state": "background",
-          "support_label": "General background \u2014 not a reviewed quotation",
+          "support_label": "General background — not a reviewed quotation",
           "authority": "General model knowledge",
           "exact_passage": null,
           "source_title": null,
@@ -684,8 +686,8 @@
           "critical_fields_checked": "Not applicable",
           "freshness": "Freshness not applicable",
           "conflicts_or_unknowns": [
-            "General background \u2014 not verified against the FireLens corpus.",
-            "\u201cWildfire ranks\u201d can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
+            "General background — not verified against the FireLens corpus.",
+            "“Wildfire ranks” can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
           ],
           "official_url": null,
           "truth_class": "model_summary",
@@ -707,7 +709,7 @@
           "claim_id": "C2",
           "claim_text": "In British Columbia, wildfire rank generally describes observed fire behaviour, commonly using Rank 1 through Rank 6: from a smouldering or low-intensity fire, through progressively stronger surface fire, to extreme crown-fire behaviour with rapid spread and spotting. The precise rank depends on the classification system and conditions being assessed.",
           "support_state": "background",
-          "support_label": "General background \u2014 not a reviewed quotation",
+          "support_label": "General background — not a reviewed quotation",
           "authority": "General model knowledge",
           "exact_passage": null,
           "source_title": null,
@@ -716,8 +718,8 @@
           "critical_fields_checked": "Not applicable",
           "freshness": "Freshness not applicable",
           "conflicts_or_unknowns": [
-            "General background \u2014 not verified against the FireLens corpus.",
-            "\u201cWildfire ranks\u201d can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
+            "General background — not verified against the FireLens corpus.",
+            "“Wildfire ranks” can also refer to organizational roles or severity categories in other jurisdictions; this answer uses the British Columbia fire-behaviour meaning."
           ],
           "official_url": null,
           "truth_class": "model_summary",
