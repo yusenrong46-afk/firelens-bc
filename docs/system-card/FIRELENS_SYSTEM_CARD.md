@@ -1,7 +1,9 @@
 # FireLens System Card
 
-Status: production guidance verified; final map-display correction tracked separately.
-Assessment date: 2026-09-07.
+Status: production guidance verified; evacuation partial-coverage repair independently accepted, release gates pending.
+Assessment date: 2026-09-08.
+
+See the [partial coverage repair record](../releases/partial-coverage-repair.md) for the current repair and its qualification boundary.
 
 ## Production release — 2026-09-07
 
@@ -370,7 +372,9 @@ Remaining risk: lower-risk generated claims use bounded lexical/deterministic va
 
 ## 13. Fault Handling
 
-Typed public errors distinguish invalid request, rate/body limits, not-ready, provider, deadline, live source, and selected-record failures. Live availability is per layer. Chat, nearby searches and summary totals quarantine an entire layer when any otherwise-in-scope official row has invalid/unclassifiable geometry or cannot satisfy `LiveResult`; healthy sibling layers remain, while successful empty remains available-zero. The map-only geometry repair permits validated rows from a partially usable layer, with explicit omitted-geometry counts and partial displayed totals. Entirely invalid layers remain unavailable. Native ArcGIS polygon decoding preserves source coordinates and holes without repairing invalid topology. See the [geometry repair qualification record](../releases/live-geometry-repair.md). The evacuation lookup successor preserves a typed invalid-geometry reason through concurrent agent prefetch and public responses. Failed validation does not imply a current network outage or successful refresh; generic failures remain load/validation failures. Evacuation handoffs lead to EmergencyInfoBC. See the [lookup repair record](../releases/evacuation-lookup-repair.md).
+Typed public errors distinguish invalid request, rate/body limits, not-ready, provider, deadline, live source, and selected-record failures. Live availability is per layer. Map and nearby queries quarantine individual invalid geometries while retaining validated records and explicit partial coverage. Requested evacuation statuses are selected before geometry admission; unknown statuses remain unresolved omissions. Partial layers may return zero validated matches without establishing absence. Counts describe displayed or validated records; complete totals, global nearest claims and negative containment conclusions are not supported for incomplete layers. Healthy sibling layers remain usable. Summary totals retain strict admission and do not convert an incomplete layer to zero.
+
+Native ArcGIS polygon decoding preserves source coordinates and holes without repairing invalid topology. Malformed boundaries never enter distance, containment or rendering. Partial state survives concurrent prefetch, composition, publication and the interface. Retrieval timestamps remain bound to the evidence, including empty partial responses. Source failures and incomplete boundaries have distinct wording; cached data does not prove a successful refresh. EmergencyInfoBC and issuing-authority handoffs remain visible. See the [partial coverage repair record](../releases/partial-coverage-repair.md).
 
 Unexpected programming failures are sanitized publicly and loud in local/test paths. Some early failure branches have incomplete normal request telemetry.
 

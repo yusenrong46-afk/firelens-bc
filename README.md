@@ -12,12 +12,12 @@ and general background distinct, including when a conversation moves between the
 [Evaluation guide](docs/eval/README.md)
 
 The deployed release uses the adopted PreparedBC guide and a real 178-chunk index.
-The live-map geometry repair preserves official polygon holes and displays valid
-records with explicit partial-coverage labels when other boundaries fail validation.
-Chat and nearby searches retain strict handling of incomplete layers. See the
-[geometry repair record](docs/releases/live-geometry-repair.md) for qualification status.
-Evacuation lookup failures preserve the boundary-validation reason and lead to
-EmergencyInfoBC; see the [lookup repair record](docs/releases/evacuation-lookup-repair.md).
+Map and nearby evacuation lookups preserve validated official records when other
+boundaries fail validation, with explicit partial-coverage labels and unknown
+complete totals. Order-only requests exclude alerts before geometry admission.
+Incomplete coverage, including zero validated matches, is never an all-clear.
+See the [partial coverage repair record](docs/releases/partial-coverage-repair.md)
+for review, qualification status and remaining upstream limitations.
 Exact source quotations, reviewed paraphrases and partial guidance are labelled
 separately. See the [dated release evidence](docs/releases/firelens-polish.md) for
 qualification, deployment status and retained limitations.
