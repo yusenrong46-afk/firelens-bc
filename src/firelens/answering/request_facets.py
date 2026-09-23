@@ -51,7 +51,18 @@ def _normalize_container(value: str) -> str | None:
     container = _TRAILING_QUALIFIER.sub("", container).strip()
     container = _LEADING_DETERMINER.sub("", container).strip()
     container = " ".join(container.split())
-    if not container or container.casefold() in {"it", "this", "that", "them"}:
+    if not container or container.casefold() in {
+        "it",
+        "this",
+        "that",
+        "them",
+        "i",
+        "we",
+        "you",
+        "he",
+        "she",
+        "they",
+    }:
         return None
     if len(container.split()) > 12:
         return None

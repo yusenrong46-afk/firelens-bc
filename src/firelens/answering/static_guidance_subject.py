@@ -24,7 +24,9 @@ class StaticGuidanceSubject(StrEnum):
 _KIT_GUIDANCE_TOKENS = frozenset({"kit", "kits"})
 _BAG_GUIDANCE_TOKENS = frozenset({"bag", "bags"})
 _BAG_GUIDANCE_QUALIFIERS = frozenset({"emergency", "evacuation", "grab", "go"})
-_PET_GUIDANCE_TOKENS = frozenset({"pet", "pets", "animal", "animals"})
+_PET_GUIDANCE_TOKENS = frozenset(
+    {"pet", "pets", "animal", "animals", "dog", "dogs", "cat", "cats"}
+)
 _EVACUATION_GUIDANCE_TOKENS = frozenset({"evacuation", "evacuate", "evacuated", "evacuating"})
 _SMOKE_GUIDANCE_TOKENS = frozenset({"smoke", "smoky"})
 _SMOKE_RESPIRATOR_TOKENS = frozenset({"n95", "respirator", "respirators"})
@@ -47,6 +49,50 @@ _SMOKE_SPECIFIC_TOKENS = frozenset(
         "pregnant",
     }
 )
+
+
+def is_pet_packing_followup(question: str) -> bool:
+    """Recognize a pet-supplies request whose container may come from history."""
+
+    tokens = frozenset(lex.tokenize(question))
+    # Only a bare addition request can inherit the missing preparedness purpose.
+    # An explicit destination or activity is a new task, even when it includes
+    # packing vocabulary. Unknown wording remains independent.
+    actions = {"add", "pack", "packing", "include", "bring", "supplies"}
+    connective = {
+        "what",
+        "which",
+        "and",
+        "else",
+        "should",
+        "can",
+        "could",
+        "would",
+        "do",
+        "i",
+        "we",
+        "you",
+        "my",
+        "our",
+        "your",
+        "for",
+        "or",
+        "the",
+        "a",
+        "an",
+        "need",
+        "to",
+        "also",
+        "about",
+        "how",
+        "s",
+        "please",
+    }
+    return bool(
+        tokens & _PET_GUIDANCE_TOKENS
+        and tokens & actions
+        and not tokens - _PET_GUIDANCE_TOKENS - actions - connective
+    )
 
 
 def static_guidance_subject(question: str) -> StaticGuidanceSubject | None:

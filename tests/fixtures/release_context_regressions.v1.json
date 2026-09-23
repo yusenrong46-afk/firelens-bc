@@ -1,0 +1,554 @@
+{
+  "schema_version": "firelens.release_context_regressions.v1",
+  "frozen_at": "2026-09-23T22:51:46.669135+00:00",
+  "baseline": "ed2a7af26ceea0113619c8cdb72052a62e4d2903",
+  "starting_candidate": "f103afd0a76fdc63c2a79dac3e5d8303a458f84e",
+  "cases": [
+    {
+      "id": "A01",
+      "request": {
+        "question": "What should I add for my dog or cat?",
+        "history": [
+          {
+            "role": "user",
+            "content": "What should I put in a wildfire grab-and-go bag?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: Reviewed guidance + uncertainty. Answer: Build grab-and-go bags now for everyone in your home. Grab-and-Go Bag \u2022 Pen & notepad \u2022 Phone charger & battery bank \u2022 Flashlight \u2022 Radio \u2022 First aid kit \u2022 Personal toiletries \u2022 Seasonal clothing \u2022 Food & water \u2022 Batteries \u2022 Whistle \u2022 Emergency plan and insurance/important papers Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "pet_guidance",
+      "required": "Use PreparedBC page 6: food, water, leashes and carriers; recent picture; copies of vaccination records and health information; consider local animal emergency resources and plan where pets might stay. Preserve recommendation wording and attribution.",
+      "publication_check": true,
+      "source": {
+        "chunk_id": "preparedbc_wildfire_guide:page:6:chunk:3",
+        "document_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+        "locator": "page:6"
+      }
+    },
+    {
+      "id": "A02",
+      "request": {
+        "question": "What should I pack for my pets?",
+        "history": [
+          {
+            "role": "user",
+            "content": "What should I put in a wildfire grab-and-go bag?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: Reviewed guidance + uncertainty. Answer: Build grab-and-go bags now for everyone in your home. Grab-and-Go Bag \u2022 Pen & notepad \u2022 Phone charger & battery bank \u2022 Flashlight \u2022 Radio \u2022 First aid kit \u2022 Personal toiletries \u2022 Seasonal clothing \u2022 Food & water \u2022 Batteries \u2022 Whistle \u2022 Emergency plan and insurance/important papers Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "pet_guidance",
+      "required": "Use PreparedBC page 6: food, water, leashes and carriers; recent picture; copies of vaccination records and health information; consider local animal emergency resources and plan where pets might stay. Preserve recommendation wording and attribution.",
+      "publication_check": true,
+      "source": {
+        "chunk_id": "preparedbc_wildfire_guide:page:6:chunk:3",
+        "document_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+        "locator": "page:6"
+      }
+    },
+    {
+      "id": "A03",
+      "request": {
+        "question": "And what supplies should I add for my cat?",
+        "history": [
+          {
+            "role": "user",
+            "content": "What should I put in a wildfire grab-and-go bag?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: Reviewed guidance + uncertainty. Answer: Build grab-and-go bags now for everyone in your home. Grab-and-Go Bag \u2022 Pen & notepad \u2022 Phone charger & battery bank \u2022 Flashlight \u2022 Radio \u2022 First aid kit \u2022 Personal toiletries \u2022 Seasonal clothing \u2022 Food & water \u2022 Batteries \u2022 Whistle \u2022 Emergency plan and insurance/important papers Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "pet_guidance",
+      "required": "Use PreparedBC page 6: food, water, leashes and carriers; recent picture; copies of vaccination records and health information; consider local animal emergency resources and plan where pets might stay. Preserve recommendation wording and attribution.",
+      "publication_check": true,
+      "source": {
+        "chunk_id": "preparedbc_wildfire_guide:page:6:chunk:3",
+        "document_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+        "locator": "page:6"
+      }
+    },
+    {
+      "id": "A04",
+      "request": {
+        "question": "What else should I bring for my dog?",
+        "history": [
+          {
+            "role": "user",
+            "content": "What should I put in a wildfire grab-and-go bag?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: Reviewed guidance + uncertainty. Answer: Build grab-and-go bags now for everyone in your home. Grab-and-Go Bag \u2022 Pen & notepad \u2022 Phone charger & battery bank \u2022 Flashlight \u2022 Radio \u2022 First aid kit \u2022 Personal toiletries \u2022 Seasonal clothing \u2022 Food & water \u2022 Batteries \u2022 Whistle \u2022 Emergency plan and insurance/important papers Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "pet_guidance",
+      "required": "Use PreparedBC page 6: food, water, leashes and carriers; recent picture; copies of vaccination records and health information; consider local animal emergency resources and plan where pets might stay. Preserve recommendation wording and attribution.",
+      "publication_check": true,
+      "source": {
+        "chunk_id": "preparedbc_wildfire_guide:page:6:chunk:3",
+        "document_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+        "locator": "page:6"
+      }
+    },
+    {
+      "id": "A05",
+      "request": {
+        "question": "What about supplies for our pets?",
+        "history": [
+          {
+            "role": "user",
+            "content": "What should I put in a wildfire grab-and-go bag?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: Reviewed guidance + uncertainty. Answer: Build grab-and-go bags now for everyone in your home. Grab-and-Go Bag \u2022 Pen & notepad \u2022 Phone charger & battery bank \u2022 Flashlight \u2022 Radio \u2022 First aid kit \u2022 Personal toiletries \u2022 Seasonal clothing \u2022 Food & water \u2022 Batteries \u2022 Whistle \u2022 Emergency plan and insurance/important papers Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "pet_guidance",
+      "required": "Use PreparedBC page 6: food, water, leashes and carriers; recent picture; copies of vaccination records and health information; consider local animal emergency resources and plan where pets might stay. Preserve recommendation wording and attribution.",
+      "publication_check": true,
+      "source": {
+        "chunk_id": "preparedbc_wildfire_guide:page:6:chunk:3",
+        "document_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+        "locator": "page:6"
+      }
+    },
+    {
+      "id": "A06",
+      "request": {
+        "question": "What should we include for our animals?",
+        "history": [
+          {
+            "role": "user",
+            "content": "What should I put in a wildfire grab-and-go bag?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: Reviewed guidance + uncertainty. Answer: Build grab-and-go bags now for everyone in your home. Grab-and-Go Bag \u2022 Pen & notepad \u2022 Phone charger & battery bank \u2022 Flashlight \u2022 Radio \u2022 First aid kit \u2022 Personal toiletries \u2022 Seasonal clothing \u2022 Food & water \u2022 Batteries \u2022 Whistle \u2022 Emergency plan and insurance/important papers Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "pet_guidance",
+      "required": "Use PreparedBC page 6: food, water, leashes and carriers; recent picture; copies of vaccination records and health information; consider local animal emergency resources and plan where pets might stay. Preserve recommendation wording and attribution.",
+      "publication_check": true,
+      "source": {
+        "chunk_id": "preparedbc_wildfire_guide:page:6:chunk:3",
+        "document_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+        "locator": "page:6"
+      }
+    },
+    {
+      "id": "A07",
+      "request": {
+        "question": "Tell me about a cat's normal sleep habits.",
+        "history": [
+          {
+            "role": "user",
+            "content": "What should I put in a wildfire grab-and-go bag?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: Reviewed guidance + uncertainty. Answer: Build grab-and-go bags now for everyone in your home. Grab-and-Go Bag \u2022 Pen & notepad \u2022 Phone charger & battery bank \u2022 Flashlight \u2022 Radio \u2022 First aid kit \u2022 Personal toiletries \u2022 Seasonal clothing \u2022 Food & water \u2022 Batteries \u2022 Whistle \u2022 Emergency plan and insurance/important papers Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "independent",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": false
+    },
+    {
+      "id": "A08",
+      "request": {
+        "question": "Why does my dog bark at strangers?",
+        "history": [
+          {
+            "role": "user",
+            "content": "What should I put in a wildfire grab-and-go bag?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: Reviewed guidance + uncertainty. Answer: Build grab-and-go bags now for everyone in your home. Grab-and-Go Bag \u2022 Pen & notepad \u2022 Phone charger & battery bank \u2022 Flashlight \u2022 Radio \u2022 First aid kit \u2022 Personal toiletries \u2022 Seasonal clothing \u2022 Food & water \u2022 Batteries \u2022 Whistle \u2022 Emergency plan and insurance/important papers Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "independent",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": false
+    },
+    {
+      "id": "A09",
+      "request": {
+        "question": "What should I add for my dog or cat?",
+        "history": [],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "no_context",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": false
+    },
+    {
+      "id": "A10",
+      "request": {
+        "question": "What should I pack in an evacuation bag for my dog?",
+        "history": [
+          {
+            "role": "user",
+            "content": "What should I put in a wildfire grab-and-go bag?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: Reviewed guidance + uncertainty. Answer: Build grab-and-go bags now for everyone in your home. Grab-and-Go Bag \u2022 Pen & notepad \u2022 Phone charger & battery bank \u2022 Flashlight \u2022 Radio \u2022 First aid kit \u2022 Personal toiletries \u2022 Seasonal clothing \u2022 Food & water \u2022 Batteries \u2022 Whistle \u2022 Emergency plan and insurance/important papers Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "pet_guidance",
+      "required": "Use PreparedBC page 6: food, water, leashes and carriers; recent picture; copies of vaccination records and health information; consider local animal emergency resources and plan where pets might stay. Preserve recommendation wording and attribution.",
+      "publication_check": true,
+      "source": {
+        "chunk_id": "preparedbc_wildfire_guide:page:6:chunk:3",
+        "document_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+        "locator": "page:6"
+      }
+    },
+    {
+      "id": "A11",
+      "request": {
+        "question": "What should I add for my dog or cat?",
+        "history": [
+          {
+            "role": "user",
+            "content": "How does wind affect wildfire behaviour?"
+          },
+          {
+            "role": "assistant",
+            "content": "Wind can influence fire spread."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "different_history",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": false
+    },
+    {
+      "id": "A12",
+      "request": {
+        "question": "Can you tell me which medication dose to give my dog?",
+        "history": [
+          {
+            "role": "user",
+            "content": "What should I put in a wildfire grab-and-go bag?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: Reviewed guidance + uncertainty. Answer: Build grab-and-go bags now for everyone in your home. Grab-and-Go Bag \u2022 Pen & notepad \u2022 Phone charger & battery bank \u2022 Flashlight \u2022 Radio \u2022 First aid kit \u2022 Personal toiletries \u2022 Seasonal clothing \u2022 Food & water \u2022 Batteries \u2022 Whistle \u2022 Emergency plan and insurance/important papers Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "not_pet_guidance",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": false
+    },
+    {
+      "id": "B01",
+      "request": {
+        "question": "Are there current fires within 50 km of Prince George?",
+        "history": [
+          {
+            "role": "user",
+            "content": "How can hot, dry, windy weather affect wildfire behaviour?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: General background. Answer: Hot weather dries out vegetation and soils, making fuels easier to ignite and allowing fires to burn more intensely. Dry conditions reduce fuel moisture, so flames can spread faster and embers can ignite additional areas more readily. Wind supplies oxygen, pushes flames and heat into unburned vegetation, and can carry embers ahead of the main fire, causing rapid or unpredictable spread. Limitations: General background \u2014 not verified against the FireLens corpus."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "live_pg",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": true
+    },
+    {
+      "id": "B02",
+      "request": {
+        "question": "Are there any active wildfires near Prince George within 50 km?",
+        "history": [
+          {
+            "role": "user",
+            "content": "How can hot, dry, windy weather affect wildfire behaviour?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: General background. Answer: Hot weather dries out vegetation and soils, making fuels easier to ignite and allowing fires to burn more intensely. Dry conditions reduce fuel moisture, so flames can spread faster and embers can ignite additional areas more readily. Wind supplies oxygen, pushes flames and heat into unburned vegetation, and can carry embers ahead of the main fire, causing rapid or unpredictable spread. Limitations: General background \u2014 not verified against the FireLens corpus."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "live_pg",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": true
+    },
+    {
+      "id": "B03",
+      "request": {
+        "question": "Show current wildfires near Prince George within 50 km.",
+        "history": [
+          {
+            "role": "user",
+            "content": "How can hot, dry, windy weather affect wildfire behaviour?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: General background. Answer: Hot weather dries out vegetation and soils, making fuels easier to ignite and allowing fires to burn more intensely. Dry conditions reduce fuel moisture, so flames can spread faster and embers can ignite additional areas more readily. Wind supplies oxygen, pushes flames and heat into unburned vegetation, and can carry embers ahead of the main fire, causing rapid or unpredictable spread. Limitations: General background \u2014 not verified against the FireLens corpus."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "live_pg",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": true
+    },
+    {
+      "id": "B04",
+      "request": {
+        "question": "Which fires are currently within 50 km of Prince George?",
+        "history": [
+          {
+            "role": "user",
+            "content": "How can hot, dry, windy weather affect wildfire behaviour?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: General background. Answer: Hot weather dries out vegetation and soils, making fuels easier to ignite and allowing fires to burn more intensely. Dry conditions reduce fuel moisture, so flames can spread faster and embers can ignite additional areas more readily. Wind supplies oxygen, pushes flames and heat into unburned vegetation, and can carry embers ahead of the main fire, causing rapid or unpredictable spread. Limitations: General background \u2014 not verified against the FireLens corpus."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "live_pg",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": true
+    },
+    {
+      "id": "B05",
+      "request": {
+        "question": "Are any wildfires burning within 50 km of Prince George right now?",
+        "history": [
+          {
+            "role": "user",
+            "content": "How can hot, dry, windy weather affect wildfire behaviour?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: General background. Answer: Hot weather dries out vegetation and soils, making fuels easier to ignite and allowing fires to burn more intensely. Dry conditions reduce fuel moisture, so flames can spread faster and embers can ignite additional areas more readily. Wind supplies oxygen, pushes flames and heat into unburned vegetation, and can carry embers ahead of the main fire, causing rapid or unpredictable spread. Limitations: General background \u2014 not verified against the FireLens corpus."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "live_pg",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": true
+    },
+    {
+      "id": "B06",
+      "request": {
+        "question": "List current fires within a 50 km radius of Prince George.",
+        "history": [
+          {
+            "role": "user",
+            "content": "How can hot, dry, windy weather affect wildfire behaviour?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: General background. Answer: Hot weather dries out vegetation and soils, making fuels easier to ignite and allowing fires to burn more intensely. Dry conditions reduce fuel moisture, so flames can spread faster and embers can ignite additional areas more readily. Wind supplies oxygen, pushes flames and heat into unburned vegetation, and can carry embers ahead of the main fire, causing rapid or unpredictable spread. Limitations: General background \u2014 not verified against the FireLens corpus."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "live_pg",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": true
+    },
+    {
+      "id": "B07",
+      "request": {
+        "question": "What is the current weather forecast for Prince George?",
+        "history": [
+          {
+            "role": "user",
+            "content": "How can hot, dry, windy weather affect wildfire behaviour?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: General background. Answer: Hot weather dries out vegetation and soils, making fuels easier to ignite and allowing fires to burn more intensely. Dry conditions reduce fuel moisture, so flames can spread faster and embers can ignite additional areas more readily. Wind supplies oxygen, pushes flames and heat into unburned vegetation, and can carry embers ahead of the main fire, causing rapid or unpredictable spread. Limitations: General background \u2014 not verified against the FireLens corpus."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "weather",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": false
+    },
+    {
+      "id": "B08",
+      "request": {
+        "question": "Why does that happen?",
+        "history": [
+          {
+            "role": "user",
+            "content": "How can hot, dry, windy weather affect wildfire behaviour?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: General background. Answer: Hot weather dries out vegetation and soils, making fuels easier to ignite and allowing fires to burn more intensely. Dry conditions reduce fuel moisture, so flames can spread faster and embers can ignite additional areas more readily. Wind supplies oxygen, pushes flames and heat into unburned vegetation, and can carry embers ahead of the main fire, causing rapid or unpredictable spread. Limitations: General background \u2014 not verified against the FireLens corpus."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "context",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": false
+    },
+    {
+      "id": "B09",
+      "request": {
+        "question": "What about current weather in Kelowna?",
+        "history": [
+          {
+            "role": "user",
+            "content": "How can hot, dry, windy weather affect wildfire behaviour?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: General background. Answer: Hot weather dries out vegetation and soils, making fuels easier to ignite and allowing fires to burn more intensely. Dry conditions reduce fuel moisture, so flames can spread faster and embers can ignite additional areas more readily. Wind supplies oxygen, pushes flames and heat into unburned vegetation, and can carry embers ahead of the main fire, causing rapid or unpredictable spread. Limitations: General background \u2014 not verified against the FireLens corpus."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "weather",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": false
+    },
+    {
+      "id": "B10",
+      "request": {
+        "question": "What is the status of this fire?",
+        "history": [
+          {
+            "role": "user",
+            "content": "How can hot, dry, windy weather affect wildfire behaviour?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: General background. Answer: Hot weather dries out vegetation and soils, making fuels easier to ignite and allowing fires to burn more intensely. Dry conditions reduce fuel moisture, so flames can spread faster and embers can ignite additional areas more readily. Wind supplies oxygen, pushes flames and heat into unburned vegetation, and can carry embers ahead of the main fire, causing rapid or unpredictable spread. Limitations: General background \u2014 not verified against the FireLens corpus."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": [],
+          "selected_live_result_id": "fixture-selected-fire"
+        }
+      },
+      "expectation": "selected",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": false
+    },
+    {
+      "id": "B11",
+      "request": {
+        "question": "Are there current fires within 50 km of Prince George?",
+        "history": [],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "no_history_live",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": true
+    },
+    {
+      "id": "B12",
+      "request": {
+        "question": "How does wind affect wildfire behaviour?",
+        "history": [
+          {
+            "role": "user",
+            "content": "How can hot, dry, windy weather affect wildfire behaviour?"
+          },
+          {
+            "role": "assistant",
+            "content": "Authority: General background. Answer: Hot weather dries out vegetation and soils, making fuels easier to ignite and allowing fires to burn more intensely. Dry conditions reduce fuel moisture, so flames can spread faster and embers can ignite additional areas more readily. Wind supplies oxygen, pushes flames and heat into unburned vegetation, and can carry embers ahead of the main fire, causing rapid or unpredictable spread. Limitations: General background \u2014 not verified against the FireLens corpus."
+          }
+        ],
+        "context": {
+          "visible_live_result_ids": []
+        }
+      },
+      "expectation": "background",
+      "required": "Preserve the current task and authority; do not inherit an incompatible prior task.",
+      "publication_check": false
+    }
+  ]
+}
