@@ -23,3 +23,29 @@ it("fits initial records and explicit selection or scope, retaining viewport thr
   rerender(<FitResults results={[updated]} focusResults={[updated]} scopeKey="new-question" focus={{ latitude: 49, longitude: -119 }} />);
   expect(map.fitBounds).toHaveBeenCalledTimes(4);
 });
+
+it("retains the viewport on unchanged hide and return", () => {
+  const result = render(<FitResults results={[record]} focusResults={[record]} scopeKey="answer" />);
+  map.fitBounds.mockClear();
+  result.rerender(<FitResults active={false} results={[record]} focusResults={[record]} scopeKey="answer" />);
+  result.rerender(<FitResults active results={[record]} focusResults={[record]} scopeKey="answer" />);
+  expect(map.fitBounds).not.toHaveBeenCalled();
+});
+
+it("applies a pending location once when the hidden map returns", () => {
+  const result = render(<FitResults results={[]} focusResults={[]} scopeKey="province" />);
+  const focus = { latitude: 53.91, longitude: -122.75 };
+  result.rerender(<FitResults active={false} results={[]} focusResults={[]} scopeKey="PG" focus={focus} />);
+  expect(map.setView).not.toHaveBeenCalled();
+  result.rerender(<FitResults active results={[]} focusResults={[]} scopeKey="PG" focus={focus} />);
+  expect(map.setView).toHaveBeenCalledExactlyOnceWith([53.91, -122.75], 10, { animate: false });
+});
+
+it("applies pending record selection on return without fitting while hidden", () => {
+  const result = render(<FitResults results={[record]} focusResults={[]} scopeKey="province" />);
+  map.fitBounds.mockClear();
+  result.rerender(<FitResults active={false} results={[record]} focusResults={[]} scopeKey="province" selectedResultId={record.result_id} />);
+  expect(map.fitBounds).not.toHaveBeenCalled();
+  result.rerender(<FitResults active results={[record]} focusResults={[]} scopeKey="province" selectedResultId={record.result_id} />);
+  expect(map.fitBounds).toHaveBeenCalledExactlyOnceWith([[49, -119]], { padding: [40, 40], maxZoom: 12, animate: false });
+});

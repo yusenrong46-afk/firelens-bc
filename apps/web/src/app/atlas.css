@@ -1,6 +1,6 @@
 /* FireLens product shell. Navigation and Home have one style owner. */
 .atlas-shell { --ink: #24292b; --bc-navy: #24292b; --pacific-blue: #276e68; --deep-ocean: #276e68; --coastal-teal: #276e68; --slate: #596363; --muted-slate: #596363; --warm-mist: #f8faf9; --snow: #fff; --sea-glass: #edf4f1; --water-blue: #f1f5f3; --divider: #e1e7e3; background: var(--warm-mist); font-family: var(--font-ui); }
-.atlas-header { min-height: 68px; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; gap: 20px; background: #fff; border-bottom: 1px solid var(--divider); position: sticky; top: 0; z-index: 1001; }
+.atlas-header { min-height: 56px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; background: #fff; border-bottom: 1px solid var(--divider); position: sticky; top: 0; z-index: 1001; }
 .atlas-brand { display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--ink); }
 .atlas-brand img { object-fit: contain; filter: grayscale(1); }
 .atlas-brand strong { font: 600 24px/1 var(--font-ui); letter-spacing: -.05em; }
@@ -43,7 +43,7 @@
 .atlas-location-message { font-size: 16px; line-height: 1.6; color: var(--slate); }
 .atlas-menu, .atlas-question { color: var(--ink); background: #fff; border: 1px solid var(--divider); border-radius: 12px; box-shadow: 0 12px 48px #12251b1f; }
 .atlas-menu::backdrop, .atlas-question::backdrop { background: #16242030; }
-.atlas-menu { margin: 78px 20px 20px auto; padding: 16px; width: min(340px, calc(100% - 32px)); max-height: calc(100svh - 98px); }
+.atlas-menu { margin: 64px 16px 16px auto; padding: 16px; width: min(340px, calc(100% - 32px)); max-height: calc(100svh - 80px); }
 .atlas-menu__heading, .atlas-question__heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .atlas-menu nav a { padding: 12px 8px; color: var(--ink); font: 500 16px/1.5 var(--font-ui); }
 .atlas-menu nav { display: grid; padding-block: 12px; }
@@ -52,9 +52,11 @@
 .atlas-menu h2 { font: 500 16px/1.5 var(--font-ui); margin: 0 8px 6px; color: var(--slate); }
 .atlas-menu section button { font-size: 16px; overflow-wrap: anywhere; }
 .atlas-menu > p { font-size: 16px; color: var(--slate); margin: 12px 8px; }
-.atlas-question { width: min(720px, calc(100% - 32px)); padding: 24px; max-height: calc(100svh - 48px); }
-.atlas-question__heading { margin-bottom: 24px; }
-.atlas-question h2 { font: 500 22px/1.4 var(--font-ui); margin: 0; }
+.atlas-question { inset: 0 0 auto auto; margin: 64px 24px 0; width: min(540px, calc(100% - 32px)); padding: 16px 20px; max-height: calc(100dvh - 80px); }
+.atlas-question::backdrop { background: #16242010; }
+.atlas-question .composer-input input:focus-visible { outline: none; }
+.atlas-question__heading { margin-bottom: 8px; }
+.atlas-question h2 { font: 500 16px/1.4 var(--font-ui); margin: 0; }
 .atlas-question .ask-start-panel { padding: 12px 0 0; }
 .atlas-question .guided-questions__categories { max-height: 45svh; }
 .atlas-shell :is(button, input, a, summary):focus-visible { outline: 2px solid var(--coastal-teal); outline-offset: 3px; }
@@ -62,3 +64,7 @@
 @media (max-width: 767px) { .atlas-header { padding-inline: 16px; gap: 8px; } .atlas-header > nav { gap: 2px; } .atlas-header .atlas-header__home { display: none; } .atlas-header button { padding-inline: 8px; } .atlas-home { padding: 64px 20px 24px; } .atlas-home h1 { font-size: 38px; } .atlas-home__description, .atlas-shell .composer-input input { font-size: 16px; } .atlas-home__tasks { grid-template-columns: 1fr; gap: 0; } .atlas-home__tasks > button { border: 0; border-bottom: 1px solid var(--divider); border-radius: 0; min-height: 60px; padding-inline: 4px; } .atlas-home__nearby form > div { flex-direction: column; } .atlas-home__status { margin-block: 28px; } .atlas-question { padding: 16px; } }
 @media (max-width: 420px) { .atlas-brand strong { font-size: 22px; } .atlas-brand img { width: 24px; height: 24px; } .atlas-header .atlas-ask { gap: 0; } .atlas-header .atlas-ask > span { display: none; } .atlas-header .atlas-ask svg { width: 21px; } .atlas-home h1 { font-size: 34px; } }
 @media (prefers-reduced-motion: reduce) { .atlas-shell *, .atlas-shell *::before, .atlas-shell *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+@media (max-width: 1023px) { .atlas-question { inset: auto 0 0; margin: 0; width: 100%; max-width: 100%; max-height: min(85dvh, 720px); border-radius: 16px 16px 0 0; padding: 16px 20px max(20px, env(safe-area-inset-bottom)); } }
+
+.atlas-nearby-trigger { margin-top: 8px; min-height: 44px; padding: 8px 0; background: transparent; border: 0; color: var(--coastal-teal); font: 500 16px/1.5 var(--font-ui); cursor: pointer; }

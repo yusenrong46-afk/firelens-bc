@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
@@ -63,7 +63,7 @@ afterEach(() => {
 
 describe("FireLens Source Lens", () => {
   it("explains the publication boundary without covering the product", async () => {
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Open menu" }));
     const trigger = screen.getByRole("button", { name: "About & methodology" });
@@ -84,7 +84,7 @@ describe("FireLens Source Lens", () => {
   });
 
   it("exposes only the public same-origin OpenAPI contract", async () => {
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Open menu" }));
     await user.click(screen.getByRole("button", { name: "About & methodology" }));
@@ -107,7 +107,7 @@ describe("FireLens Source Lens", () => {
       return new Promise<Response>((resolve) => { resolveAsk = resolve; });
     })));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     await user.type(
       screen.getByLabelText("Ask FireLens a question"),
@@ -191,7 +191,7 @@ describe("FireLens Source Lens", () => {
       aggregate_freshness: "fresh",
       validation: { accepted: true },
     }), { status: 200 }))));
-    const { container } = render(<App />);
+    const { container } = render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Show wildfire distribution by status across B.C.");
     await user.click(screen.getByLabelText("Send question"));
@@ -278,7 +278,7 @@ describe("FireLens Source Lens", () => {
       validation: { accepted: true },
     }), { status: 200 }))));
 
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Ask FireLens a question"), "How fresh are these wildfire records?");
     await user.click(screen.getByLabelText("Send question"));
@@ -320,7 +320,7 @@ describe("FireLens Source Lens", () => {
       validation: { accepted: true },
     }), { status: 200 }))));
 
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Compare the returned wildfire records");
     await user.click(screen.getByLabelText("Send question"));
@@ -371,7 +371,7 @@ describe("FireLens Source Lens", () => {
       aggregate_freshness: "fresh",
       validation: { accepted: true },
     }), { status: 200 }))));
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Current wildfire records, and what should I pack?");
     await user.click(screen.getByLabelText("Send question"));
@@ -417,7 +417,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 200 }),
     ))));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Show Mountain Fire on the map");
     const sendButton = screen.getByLabelText("Send question");
     await user.click(sendButton);
@@ -429,33 +429,15 @@ describe("FireLens Source Lens", () => {
     expect(screen.getByLabelText("Current question")).toBeVisible();
   });
 
-  it("loads official records only after an explicit map action, without an Ask request", async () => {
-    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({
-      generated_at: "2026-08-23T12:00:00Z",
-      results: [],
-      unavailable_layers: [],
-    }), { status: 200 })));
-    vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
-    const user = userEvent.setup();
+  it("opens the province map immediately without an Ask request", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(new Response(JSON.stringify({ results: [], unavailable_layers: [] }), { status: 200 })));
+    vi.stubGlobal("fetch", wrapAppFetch(fetchMock));
     render(<App />);
-    expect(screen.getAllByRole("link", { name: /FireLens home/ }).length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: /Know what’s happening/ })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Ask FireLens a question" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Explore example questions" })).toBeVisible();
-    expect(screen.getByRole("link", { name: "Skip to conversation" })).toHaveAttribute("href", "#conversation");
-    expect(screen.queryByRole("region", { name: "Official wildfire records map" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Skip to official map" })).not.toBeInTheDocument();
-    expect(vi.mocked(globalThis.fetch).mock.calls.filter(([url]) => String(url).includes("/live/map"))).toHaveLength(0);
-    expect(askCallOptions(fetchMock)).toHaveLength(0);
-
-    await user.click(screen.getByRole("button", { name: "Open menu" }));
-    await user.click(screen.getByRole("button", { name: "Explore B.C. records" }));
-    expect(await screen.findByRole("region", { name: "Official wildfire records map" })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Official wildfire records map" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Skip to official map" })).toHaveAttribute("href", "#official-map");
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith(
-      "/api/v1/live/map?layers=incidents,perimeters,evacuations",
-      expect.objectContaining({ signal: expect.any(AbortSignal) }),
-    ));
+    expect(screen.queryByRole("textbox", { name: "Ask FireLens a question" })).not.toBeInTheDocument();
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith("/api/v1/live/map?layers=incidents,perimeters,evacuations", expect.objectContaining({ signal: expect.any(AbortSignal) })));
+    expect(askCallOptions(fetchMock)).toHaveLength(0);
   });
 
   it("scrolls the assistant reply into view after an answer", async () => {
@@ -467,7 +449,7 @@ describe("FireLens Source Lens", () => {
     });
     vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(new Response(JSON.stringify(answer), { status: 200 }))));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What belongs in a grab-and-go bag?");
     await user.click(screen.getByLabelText("Send question"));
     expect(
@@ -481,7 +463,7 @@ describe("FireLens Source Lens", () => {
   });
 
   it("warns when the browser is offline and recovers when connectivity returns", async () => {
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     expect(screen.queryByText(/You're offline/)).not.toBeInTheDocument();
     window.dispatchEvent(new Event("offline"));
     expect(await screen.findByRole("status", { name: "Connection status" })).toHaveTextContent(/offline/i);
@@ -505,7 +487,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 200 }),
     )));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What can you help me with?");
     await user.click(screen.getByLabelText("Send question"));
 
@@ -562,7 +544,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 200 }),
     )));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What is happening?");
     await user.click(screen.getByLabelText("Send question"));
 
@@ -606,7 +588,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 200 }),
     )));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Show this fire and explain the conflicting guidance.");
     await user.click(screen.getByLabelText("Send question"));
 
@@ -620,7 +602,7 @@ describe("FireLens Source Lens", () => {
       new Response(JSON.stringify(answer), { status: 200 }),
     )));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What goes in a grab-and-go bag?");
     await user.click(screen.getByLabelText("Send question"));
 
@@ -657,7 +639,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 200 }),
     )));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Why can embers be dangerous?");
     await user.click(screen.getByLabelText("Send question"));
 
@@ -697,7 +679,7 @@ describe("FireLens Source Lens", () => {
       });
       vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
       const user = userEvent.setup();
-      render(<App />);
+      render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
       await user.type(screen.getByLabelText("Ask FireLens a question"), `Test ${responseMode} limitations`);
       await user.click(screen.getByLabelText("Send question"));
@@ -706,7 +688,7 @@ describe("FireLens Source Lens", () => {
       expect(within(limitations).getAllByText(limitation)).toHaveLength(1);
       expect(within(limitations).getAllByRole("listitem")).toHaveLength(1);
       expect(screen.queryByLabelText("What FireLens established")).not.toBeInTheDocument();
-      expect(screen.getAllByText(limitation)).toHaveLength(1);
+      expect(within(screen.getByRole("region", { name: "Question and answer" })).getAllByText(limitation)).toHaveLength(1);
       const conversation = screen.getByRole("region", { name: "Question and answer" });
       const answerText = within(conversation).getByText(`Answer in ${responseMode} mode.`);
       expect(limitations.compareDocumentPosition(answerText) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
@@ -732,7 +714,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 200 }),
     )));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What is the current air quality in Kelowna?");
     await user.click(screen.getByLabelText("Send question"));
 
@@ -760,7 +742,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 200 }),
     )));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Is a fire active near me right now?");
     await user.click(screen.getByLabelText("Send question"));
 
@@ -791,7 +773,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 200 }),
     )));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Should I evacuate now?");
     await user.click(screen.getByLabelText("Send question"));
 
@@ -840,7 +822,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 200 }));
     })));
     const user = userEvent.setup();
-    const { container } = render(<App />);
+    const { container } = render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Is there an active wildfire now?");
     await user.click(screen.getByLabelText("Send question"));
     await user.click(await screen.findByRole("button", { name: /^(Show these on the map|View map —)/ }));
@@ -910,7 +892,7 @@ describe("FireLens Source Lens", () => {
     });
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Show the matching fire");
     await user.click(screen.getByLabelText("Send question"));
@@ -970,7 +952,7 @@ describe("FireLens Source Lens", () => {
     });
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Where is Question Fire?");
     await user.click(screen.getByLabelText("Send question"));
@@ -1043,7 +1025,7 @@ describe("FireLens Source Lens", () => {
     });
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Where are the fires in Kelowna?");
     await user.click(screen.getByLabelText("Send question"));
@@ -1116,7 +1098,7 @@ describe("FireLens Source Lens", () => {
     });
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     expect(screen.queryByLabelText("BC community for this question")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Open menu" }));
@@ -1168,7 +1150,7 @@ describe("FireLens Source Lens", () => {
     });
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     await user.click(screen.getByRole("button", { name: "Near me" }));
     await user.type(screen.getByLabelText("BC community for a nearby lookup"), "Kelowna");
@@ -1232,7 +1214,7 @@ describe("FireLens Source Lens", () => {
     });
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "How close is the wildfire perimeter near me today?");
     await user.click(screen.getByLabelText("Send question"));
     expect(await screen.findByText("One detail needed")).toBeInTheDocument();
@@ -1287,7 +1269,7 @@ describe("FireLens Source Lens", () => {
     });
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What official fires are near me?");
     await user.click(screen.getByLabelText("Send question"));
@@ -1306,6 +1288,7 @@ describe("FireLens Source Lens", () => {
 
     await user.click(document.querySelector(".sheet-sources > summary")!);
     await user.click(screen.getByLabelText("Clear conversation history"));
+    await user.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What official fires are near me?");
     await user.click(screen.getByLabelText("Send question"));
     await waitFor(() => expect(askCallOptions(fetchMock)).toHaveLength(4));
@@ -1353,7 +1336,7 @@ describe("FireLens Source Lens", () => {
     });
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "How close is the wildfire perimeter near me today?");
     await user.click(screen.getByLabelText("Send question"));
     expect(await screen.findByText("One detail needed")).toBeInTheDocument();
@@ -1371,7 +1354,7 @@ describe("FireLens Source Lens", () => {
     ));
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What should I pack?");
     await user.click(screen.getByLabelText("Send question"));
@@ -1432,7 +1415,7 @@ describe("FireLens Source Lens", () => {
     });
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Show current wildfire records");
     await user.click(screen.getByLabelText("Send question"));
@@ -1469,7 +1452,7 @@ describe("FireLens Source Lens", () => {
     ));
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Question one");
     await user.click(screen.getByLabelText("Send question"));
@@ -1491,7 +1474,7 @@ describe("FireLens Source Lens", () => {
     ));
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     for (const question of ["Question one", "Question two", "Question three", "Question four"]) {
       await user.type(screen.getByLabelText("Ask FireLens a question"), question);
@@ -1512,16 +1495,17 @@ describe("FireLens Source Lens", () => {
     ));
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "First question");
     await user.click(screen.getByLabelText("Send question"));
     await waitFor(() => expect(screen.getByLabelText("Ask FireLens a question")).not.toBeDisabled());
     await user.click(document.querySelector(".sheet-sources > summary")!);
     await user.click(screen.getByLabelText("Clear conversation history"));
+    await user.click(screen.getByRole("button", { name: "Ask FireLens" }));
     expect(screen.queryByText("0 of 6 turns in context")).not.toBeInTheDocument();
     expect(screen.queryByText("No earlier turns in context")).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Know what’s happening/ })).toBeInTheDocument();
+    expect(screen.getByRole("main", { name: "Explore official records" })).toBeVisible();
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Fresh question");
     await user.click(screen.getByLabelText("Send question"));
@@ -1560,7 +1544,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 200 }));
     })));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "surface:mixed");
     await user.click(screen.getByLabelText("Send question"));
     expect(await screen.findByText("Preparedness sources")).toBeInTheDocument();
@@ -1605,7 +1589,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 200 }));
     })));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "surface:live-stale");
     await user.click(screen.getByLabelText("Send question"));
     await user.click(await screen.findByRole("button", { name: /^(Show these on the map|View map —)/ }));
@@ -1653,7 +1637,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 200 }));
     })));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "surface:live-fresh");
     await user.click(screen.getByLabelText("Send question"));
     await user.click(await screen.findByRole("tab", { name: "Map" }));
@@ -1725,7 +1709,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 200 }));
     })));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "surface:requires-location");
     await user.click(screen.getByLabelText("Send question"));
     await screen.findByText("One detail needed");
@@ -1746,7 +1730,7 @@ describe("FireLens Source Lens", () => {
       }), { status: 503 }),
     )));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "How should I prepare for wildfire?");
     await user.click(screen.getByLabelText("Send question"));
     expect(await screen.findByText(/You can retry this question\./)).toBeInTheDocument();
@@ -1769,7 +1753,7 @@ describe("FireLens Source Lens", () => {
       retryable: false,
     }), { status: 400 }))));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "invalid request");
     await user.click(screen.getByLabelText("Send question"));
@@ -1808,7 +1792,7 @@ describe("FireLens Source Lens", () => {
     const fetchMock = vi.fn().mockImplementation(fetchResult);
     vi.stubGlobal("fetch", wrapAppFetch( fetchMock));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Are there evacuation orders near Kelowna?");
     await user.click(screen.getByLabelText("Send question"));
@@ -1830,7 +1814,7 @@ describe("FireLens Source Lens", () => {
   it("has no automated accessibility violations in a retryable service failure", async () => {
     vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(new Response("<html>bad gateway</html>", { status: 502 }))));
     const user = userEvent.setup();
-    const { container } = render(<App />);
+    const { container } = render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Where is Mountain Fire near Kelowna?");
     await user.click(screen.getByLabelText("Send question"));
     expect(await screen.findByRole("button", { name: "Retry this question" })).toBeInTheDocument();
@@ -1862,7 +1846,7 @@ describe("FireLens Source Lens", () => {
       aggregate_freshness: "fresh",
     }), { status: 200 }))));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Where is Mountain Fire near Kelowna?");
     await user.click(screen.getByLabelText("Send question"));
 
@@ -1875,7 +1859,7 @@ describe("FireLens Source Lens", () => {
   });
 
   it("has no automated accessibility violations in the idle state", async () => {
-    const { container } = render(<App />);
+    const { container } = render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     const result = await axe(container);
     expect(result.violations).toEqual([]);
   });
@@ -1885,7 +1869,7 @@ describe("FireLens Source Lens", () => {
       new Response(JSON.stringify(answer), { status: 200 }),
     )));
     const user = userEvent.setup();
-    const { container } = render(<App />);
+    const { container } = render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What should I pack?");
     await user.click(screen.getByLabelText("Send question"));
     await screen.findByText("Each statement and its source");

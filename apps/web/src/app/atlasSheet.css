@@ -1,8 +1,8 @@
 /* Task-led answer and map layouts. No text furniture overlays the geography. */
 .atlas-sheet-shell .pc-frame { padding: 0; max-width: none; }
-.atlas-sheet-shell .pc-layout { display: grid; grid-template-columns: minmax(420px, 460px) minmax(0, 1fr); gap: 0; align-items: start; }
+.atlas-sheet-shell .pc-layout { display: grid; grid-template-columns: 440px minmax(0, 1fr); gap: 0; align-items: start; }
 .atlas-sheet-shell .pc-layout--expanded, .atlas-sheet-shell .pc-layout--no-map { grid-template-columns: minmax(0, 1fr); }
-.atlas-sheet-shell .pc-main { padding: 28px 32px 32px; border-right: 1px solid var(--divider); min-height: calc(100svh - 68px); gap: 24px; scroll-margin-top: 84px; }
+.atlas-sheet-shell .pc-main { padding: 28px 32px 32px; border-right: 1px solid var(--divider); min-height: calc(100svh - 56px); gap: 24px; scroll-margin-top: 84px; }
 .atlas-sheet-shell .pc-main[hidden] { display: none; }
 .atlas-sheet-shell .pc-layout--no-map > .pc-main { width: min(800px, 100%); max-width: 800px; padding: 40px; border: 0; margin-inline: auto; }
 .atlas-sheet-shell .pc-layout--no-map > .pc-main:has(.analysis-workspace) { width: 100%; max-width: 1440px; }
@@ -34,13 +34,13 @@
 .atlas-sheet-shell .evidence-panel .context-toolbar { position: sticky; top: -28px; z-index: 1; background: #fff; padding-block: 12px; }
 .atlas-sheet-shell .evidence-panel :is(p, li, dd, dt, summary, button, a, span) { font-size: 16px; line-height: 1.6; }
 .atlas-sheet-shell .evidence-panel .context-close { min-width: 44px; min-height: 44px; }
-.atlas-sheet-shell .pc-map-rail { position: sticky; top: 68px; padding: 0; min-width: 0; background: #f4f7f5; }
+.atlas-sheet-shell .pc-map-rail { position: sticky; top: 56px; padding: 0; min-width: 0; background: #f4f7f5; }
 .atlas-sheet-shell .pc-map-rail__toolbar { padding: 12px 20px; min-height: 60px; margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--divider); }
 .pc-map-rail__toolbar > span { display: flex; align-items: center; gap: 10px; font-size: 16px; }
 .pc-map-rail__toolbar button { min-height: 44px; font-size: 16px; }
 .map-availability { padding: 12px 20px 0; }
 .atlas-sheet-shell .atlas-live-map { position: relative; isolation: isolate; border: 0; border-radius: 0; background: #f4f7f5; display: flex; flex-direction: column; padding: 0; }
-.atlas-live-tools { order: -1; padding: 16px 20px; border-bottom: 1px solid var(--divider); }
+.atlas-live-tools { order: -1; padding: 6px 20px; border-bottom: 1px solid var(--divider); }
 .atlas-live-tools > p { font-size: 16px; color: var(--slate); margin: 0 0 12px; }
 .atlas-live-tools .live-map__filters { padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .atlas-sheet-shell .atlas-live-tools .live-map__filter-row { gap: 6px; }
@@ -49,13 +49,13 @@
 .atlas-sheet-shell .atlas-live-tools .live-map__filter-row button[aria-pressed="false"] { color: var(--slate); text-decoration: line-through; }
 .atlas-sheet-shell .atlas-live-tools .live-map__status-filter summary { font-size: 16px; min-height: 44px; padding: 10px 0; }
 .atlas-live-canvas { position: relative; width: 100%; height: clamp(360px, 55svh, 640px); }
-.pc-layout--expanded .atlas-live-canvas { height: max(420px, calc(100svh - 280px)); }
+.pc-layout--expanded .atlas-live-canvas { height: max(420px, calc(100svh - 144px)); }
 .atlas-sheet-shell .atlas-live-canvas .leaflet-container { height: 100%; min-height: 0; width: 100%; border-radius: 0; background: #edf1ee; }
 .atlas-sheet-shell .atlas-live-canvas .leaflet-tile-pane { filter: grayscale(.65); }
 .atlas-live-canvas .leaflet-control-zoom { margin: 0 16px 24px 0; border: 1px solid #ccd7d0; border-radius: 8px; overflow: hidden; box-shadow: none; }
 .atlas-live-canvas .leaflet-control-zoom a { width: 44px; height: 44px; line-height: 44px; color: var(--ink); }
 .atlas-live-canvas .leaflet-control-attribution { font-size: 16px; }
-.atlas-live-status { padding: 20px; width: 100%; border-top: 1px solid var(--divider); }
+.atlas-live-status { padding: 16px 20px; width: 100%; border-top: 1px solid var(--divider); }
 .atlas-sheet-shell .atlas-live-status .live-roster-summary { padding: 0; margin: 0; font-size: 16px; gap: 4px 12px; }
 .atlas-sheet-shell .atlas-live-status .live-roster-summary strong { font-size: 16px; font-weight: 500; }
 .atlas-live-status .map-refresh-status { margin-top: 12px; font-size: 16px; }
@@ -100,3 +100,9 @@ html:has(.atlas-sheet-shell) { scroll-padding-top: 84px; }
 .atlas-sheet-shell .live-list :is(small, strong) { font-size: 16px; }
 
 .atlas-shell :is(h2, h3, h4, h5, h6) { font-family: var(--font-ui); }
+
+.atlas-sheet-shell .pc-map-rail[hidden] { display: none; }
+.atlas-live-status > .live-data-status { margin-bottom: 12px; }
+.atlas-live-status > .live-data-status :is(small, strong) { font-size: 16px; }
+.atlas-sheet-shell .pc-layout--expanded .atlas-live-canvas { min-height: 420px; }
+@media (min-width: 1024px) { .atlas-live-tools { min-height: 56px; } }

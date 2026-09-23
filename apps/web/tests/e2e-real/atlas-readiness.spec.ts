@@ -197,6 +197,7 @@ test("keyboard answer actions remain unobscured at desktop, 390 and 320 with red
 test("Home community submits all nearby layers at 50km, binds a record follow-up and resets", async ({ page }) => {
   const asks = recordAsks(page);
   await page.goto("/");
+  await openComposer(page);
   await page.getByRole("button", { name: "Near me", exact: true }).click();
   await page.getByLabel("BC community for a nearby lookup").fill("Kelowna");
   expect(asks).toHaveLength(0);

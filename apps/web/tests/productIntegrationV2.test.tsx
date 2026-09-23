@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
@@ -17,7 +17,7 @@ const spatial: AskResponse = { ...guidance, response_mode: "live", presentation_
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 function setup(response: AskResponse) {
   const fetch = wrapAppFetch(vi.fn((url) => Promise.resolve(jsonResponse(String(url).includes("/ask") ? response : { results: [{ ...record, source_url: "https://example.test/refreshed-observation", retrieved_at: "2026-09-20T11:00:00Z" }], unavailable_layers: [], layer_statuses: [] }))));
-  vi.stubGlobal("fetch", fetch); render(<App />); return { user: userEvent.setup(), fetch };
+  vi.stubGlobal("fetch", fetch); render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" })); return { user: userEvent.setup(), fetch };
 }
 async function ask(user: ReturnType<typeof userEvent.setup>) { await user.type(screen.getByLabelText("Ask FireLens a question"), "A source question"); await user.click(screen.getByLabelText("Send question")); await screen.findByText(guidance.answer!); }
 
@@ -37,15 +37,15 @@ describe("task-led product integration v2", () => {
     expect(screen.getAllByText(response.limitations![0]!).some((node) => node.closest("aside[aria-label='Answer limitations']"))).toBe(true);
     expect(fetch.mock.calls.filter(([url]) => String(url).includes("/ask"))).toHaveLength(1);
   });
-  it("does not load a province map on Home or a guidance answer", async () => {
+  it("loads Home map once and hides it for a guidance answer", async () => {
     const { user, fetch } = setup(guidance);
-    expect(screen.getByRole("textbox", { name: "Ask FireLens a question" })).toBeVisible();
-    expect(screen.queryByRole("region", { name: "Official wildfire records map" })).not.toBeInTheDocument();
+    await waitFor(() => expect(fetch.mock.calls.filter(([url]) => String(url).includes("/live/map"))).toHaveLength(1));
     await ask(user);
     expect(screen.queryByRole("region", { name: "Official wildfire records map" })).not.toBeInTheDocument();
-    expect(fetch.mock.calls.filter(([url]) => String(url).includes("/live/map"))).toHaveLength(0);
+    expect(fetch.mock.calls.filter(([url]) => String(url).includes("/live/map"))).toHaveLength(1);
     expect(screen.getByText("Conditions remain visible.")).toBeVisible();
   });
+
   it("retains the same map component and filters through expand and return", async () => {
     const { user } = setup(spatial); await ask(user);
     const map = await screen.findByRole("region", { name: "Official wildfire records map" });
@@ -61,6 +61,21 @@ describe("task-led product integration v2", () => {
     await user.click(screen.getByRole("button", { name: "Back to answer" }));
     expect(screen.getByRole("region", { name: "Official wildfire records map" })).toBe(map);
     expect(screen.getByRole("button", { name: "Fires only" })).toBeVisible();
+  });
+  it("Back to map preserves answer, map filters, and actual follow-up history", async () => {
+    const { user, fetch } = setup(spatial); await ask(user);
+    await user.click(screen.getByRole("button", { name: "All layers" }));
+    await user.click(screen.getByRole("button", { name: "Back to map" }));
+    expect(screen.getByRole("button", { name: "Fires only" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Back to answer" }));
+    expect(screen.getByText(guidance.answer!)).toBeVisible();
+    await user.type(screen.getByLabelText("Ask FireLens a question"), "Explain that source");
+    await user.click(screen.getByLabelText("Send question"));
+    const calls = fetch.mock.calls.filter(([url]) => String(url).includes("/ask"));
+    await waitFor(() => expect(calls).toHaveLength(2));
+    const body = JSON.parse(String(calls[1]![1]?.body));
+    expect(body.history[0].content).toBe("A source question");
+    expect(body.history[1].content).toContain(guidance.answer!);
   });
   it("opens source evidence in a dialog without replacing the answer snapshot", async () => {
     const { user, fetch } = setup(spatial); await ask(user);

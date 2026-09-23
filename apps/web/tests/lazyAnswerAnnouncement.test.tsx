@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { fireEvent, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { App } from "../src/app/App";
@@ -12,7 +12,7 @@ it("announces an immediately returned answer without a separate answer-view down
     answer: "Prepare water, food, and medication.", claims: [], evidence: [], limitations: [],
   }), { status: 200 }))));
   const user = userEvent.setup();
-  render(<App />);
+  render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
   await user.type(screen.getByLabelText("Ask FireLens a question"), "What should I pack?");
   await user.click(screen.getByLabelText("Send question"));
   expect(await screen.findByText("Prepare water, food, and medication.")).toBeVisible();

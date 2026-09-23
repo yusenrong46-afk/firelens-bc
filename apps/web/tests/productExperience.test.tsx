@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/app/App";
@@ -25,7 +25,7 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 describe("product experience protected regressions", () => {
   it("opens evidence on a spatial answer and restores focus", async () => {
     vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockImplementation((url) => Promise.resolve(new Response(JSON.stringify(String(url).includes("/ask") ? spatial : { results: [], unavailable_layers: [] }), { status: 200 })))));
-    const user = userEvent.setup(); render(<App />);
+    const user = userEvent.setup(); render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Show nearby records and preparedness");
     await user.click(screen.getByLabelText("Send question"));
     await screen.findByText(spatial.answer!);
@@ -53,7 +53,7 @@ describe("Home task flows", () => {
       if (String(url).includes("/ask")) requests.push(JSON.parse(init.body));
       return Promise.resolve(new Response(JSON.stringify(String(url).includes("/ask") ? response : { results: [], unavailable_layers: [] }), { status: 200 }));
     })));
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     return { user: userEvent.setup(), requests };
   }
 
@@ -66,6 +66,15 @@ describe("Home task flows", () => {
     await user.click(within(screen.getByRole("dialog", { name: "FireLens menu" })).getByRole("button", { name: "Preparedness" }));
     expect(screen.getByLabelText("Ask FireLens a question")).toHaveValue("What belongs in a wildfire grab-and-go bag?");
     await waitFor(() => expect(screen.getByLabelText("Ask FireLens a question")).toHaveFocus());
+    expect(requests).toHaveLength(0);
+  });
+
+  it("shows location denial inside initial Ask without submitting", async () => {
+    const { user, requests } = setup();
+    vi.stubGlobal("navigator", { ...navigator, geolocation: { getCurrentPosition: (_ok: unknown, fail: (error: { code: number }) => void) => fail({ code: 1 }) } });
+    await user.click(screen.getByRole("button", { name: "Near me" }));
+    await user.click(screen.getByRole("button", { name: "Use approximate location" }));
+    expect(within(screen.getByRole("dialog", { name: "Ask FireLens" })).getByText(/Location was not shared/)).toBeVisible();
     expect(requests).toHaveLength(0);
   });
 
@@ -88,7 +97,7 @@ describe("Home task flows", () => {
     await user.click(screen.getByRole("button", { name: "Open menu" }));
     await user.click(screen.getByRole("button", { name: "Explore B.C. records" }));
     expect(screen.queryByRole("textbox", { name: "Ask FireLens a question" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Back to Home" }));
+    await user.click(screen.getByRole("button", { name: "Ask FireLens" }));
     expect(screen.getByLabelText("Ask FireLens a question")).toHaveValue("A draft question");
     expect(requests).toHaveLength(0);
   });

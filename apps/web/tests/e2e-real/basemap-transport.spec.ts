@@ -31,7 +31,7 @@ for (const mode of ["success", "403", "network failure"] as const) {
     } }));
     const document = await page.goto("/?question=private-canary&lat=49.123456&lon=-123.654321#private-fragment");
     expect(document?.headers()["referrer-policy"]).toBe("no-referrer");
-    await page.getByRole("button", { name: "Explore map", exact: true }).click();
+    await expect(page.getByRole("region", { name: "Official wildfire records map" })).toBeVisible();
     await expect.poll(() => tiles.length).toBeGreaterThan(0);
     for (const tile of tiles) {
       expect(tile.headers.referer).toBe(`${localOrigin}/`);

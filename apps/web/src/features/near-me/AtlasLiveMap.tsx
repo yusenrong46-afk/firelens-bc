@@ -1,3 +1,4 @@
+import { LiveDataStatus } from "../../app/LiveDataStatus";
 import { AnswerMapScope, answerMapScope } from "./AnswerMapScope";
 import { useMemo, useState } from "react";
 import { MapContainer, ZoomControl } from "react-leaflet";
@@ -15,7 +16,7 @@ import { isRenderableGeometry } from "./liveResultPresentation";
 import { HistoricalMapRecords, MapRefreshStatus } from "./MapRefreshStatus";
 
 /** Geographic presentation of the session's existing official map response. */
-export default function AtlasLiveMap({ session }: { session: FireLensSession }) {
+export default function AtlasLiveMap({ session, visible = true }: { session: FireLensSession; visible?: boolean }) {
   const [hiddenKinds, setHiddenKinds] = useState<Set<"incident" | "perimeter" | "evacuation">>(new Set());
   const [statuses, setStatuses] = useState<Set<string>>(new Set());
   const [statusMode, setStatusMode] = useState<IncidentStatusMode>("all");
@@ -32,7 +33,7 @@ export default function AtlasLiveMap({ session }: { session: FireLensSession }) 
     <div className="atlas-live-canvas" role="region" aria-label="Interactive map of official wildfire records">
       <MapContainer bounds={BC_BOUNDS} zoomControl={false} scrollWheelZoom={false} zoomAnimation={false} keyboard>
         <OfficialBasemap focus={session.mapFocus} onTileError={() => setTilesFailed(true)} />
-        <FitResults results={filtered} focus={session.mapFocus} focusResults={session.mapFocusResults} selectedResultId={session.selectedLiveResultId} scopeKey={session.mapScopeKey} />
+        <FitResults active={visible} results={filtered} focus={session.mapFocus} focusResults={session.mapFocusResults} selectedResultId={session.selectedLiveResultId} scopeKey={session.mapScopeKey} />
         {areas.map((result) => <StaticGeometry key={result.result_id} result={result} matching={matches.has(result.result_id)} selected={session.selectedLiveResultId === result.result_id} onSelectResult={session.setSelectedLiveResultId} onAskAboutResult={session.askAboutResult} />)}
         <ClusteredPointMarkers results={points} matchingResultIds={matches} selectedResultId={session.selectedLiveResultId} onSelectResult={session.setSelectedLiveResultId} onAskAboutResult={session.askAboutResult} />
         <ZoomControl position="bottomright" />
@@ -47,7 +48,8 @@ export default function AtlasLiveMap({ session }: { session: FireLensSession }) 
         onToggleStatus={(status) => { setStatusMode("selected"); setStatuses((old) => { if (statusMode === "all") return new Set([status]); const next = new Set(old); if (next.has(status)) next.delete(status); else next.add(status); return next; }); }}
         onShowAllStatuses={() => { setStatusMode("all"); setStatuses(new Set()); }} />
     </div>
-    <div className="atlas-live-status">
+    {visible && <div className="atlas-live-status">
+      <LiveDataStatus liveSummary={session.liveSummary} readiness={session.readiness} now={session.statusNow} />
       <TileFailureWarning failed={tilesFailed} />
       <LiveMapCoverage condensed results={session.mapResults} displayedResults={filtered} matchingCount={session.mapMatchingResults.length} displayedMatchingCount={matching.length}
         freshnessState={session.mapAggregateFreshness} loading={!session.mapLoaded && !session.mapMessage} loadError={session.mapMessage}
@@ -67,6 +69,6 @@ export default function AtlasLiveMap({ session }: { session: FireLensSession }) 
         <p>Street context uses OpenStreetMap tiles. The B.C. outline is the locally bundled <a href="https://catalogue.data.gov.bc.ca/dataset/province-of-british-columbia-legally-defined-administrative-areas-of-bc" target="_blank" rel="noreferrer">Government of BC provincial boundary</a> under the <a href="https://www2.gov.bc.ca/gov/content/data/open-data/open-government-licence-bc" target="_blank" rel="noreferrer">Open Government Licence – BC</a>.</p>
         <p>Tile requests go directly to OpenStreetMap and reveal the map area being viewed. The referrer contains only the site origin, without your question or page path. Use the official BCWS map for operational context.</p>
       </details>
-    </div>
+    </div>}
   </section>;
 }

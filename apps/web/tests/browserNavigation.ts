@@ -15,10 +15,11 @@ export async function goHome(page: Page) {
   // Submission can close the dialog between visibility inspection and click.
   await page.keyboard.press("Escape");
   await page.getByRole("link", { name: "FireLens home", exact: true }).click();
-  await expect(page.getByRole("main", { name: "Find wildfire information" })).toBeVisible();
+  await expect(page.getByRole("main", { name: "Explore official records" })).toBeVisible();
 }
 
 export async function menuAction(page: Page, name: string) {
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Open menu", exact: true }).click();
   await page.getByRole("dialog", { name: "FireLens menu", exact: true }).getByRole("button", { name, exact: true }).click();
 }

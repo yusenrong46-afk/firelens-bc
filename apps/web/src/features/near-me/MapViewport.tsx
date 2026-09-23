@@ -13,11 +13,13 @@ export type MapFocus = { latitude: number; longitude: number };
 
 export function FitResults({
   results,
+  active = true,
   focus,
   focusResults,
   selectedResultId,
   scopeKey,
 }: {
+  active?: boolean;
   results: LiveResult[];
   focus?: MapFocus | undefined;
   focusResults: LiveResult[];
@@ -41,6 +43,7 @@ export function FitResults({
   }, [map]);
 
   useEffect(() => {
+    if (!active) return;
     const before = previous.current;
     const needsFit = !before || before.scope !== scope
       || (Boolean(selectedResultId) && before.selectedId !== selectedResultId)
@@ -76,6 +79,6 @@ export function FitResults({
     } else {
       map.fitBounds(BC_BOUNDS, { padding: [12, 12], animate: false });
     }
-  }, [map, scope, results, focus, focusResults, selected, selectedResultId]);
+  }, [active, map, scope, results, focus, focusResults, selected, selectedResultId]);
   return null;
 }

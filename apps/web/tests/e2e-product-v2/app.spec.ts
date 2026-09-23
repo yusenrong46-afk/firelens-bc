@@ -346,7 +346,7 @@ test("opens the employer explainer in flow without covering FireLens", async ({ 
 
   const geometry = await page.evaluate(() => {
     const panel = document.querySelector("#how-firelens-works")!;
-    const workspace = document.querySelector("main")!;
+    const workspace = document.querySelector("main, [role=main]")!;
     const panelRect = panel.getBoundingClientRect();
     const workspaceRect = workspace.getBoundingClientRect();
     return {
@@ -401,7 +401,7 @@ test("sends bounded conversation context and can clear it", async ({ page }) => 
   await page.getByLabel("Clear conversation history").click();
   await expect(page.getByText("0 of 6 turns in context")).toHaveCount(0);
   await expect(page.getByText("No earlier turns in context")).toHaveCount(0);
-  await expect(page.getByRole("main", { name: "Find wildfire information" })).toBeVisible();
+  await expect(page.getByRole("main", { name: "Explore official records" })).toBeVisible();
   await (await openComposer(page)).fill("Fresh question");
   await page.getByLabel("Send question").click();
   await expect.poll(() => seenRequests.length).toBe(3);
@@ -568,12 +568,13 @@ test("shows stale and partial-layer state without hiding records", async ({ page
 test("keeps the workspace usable at a 320px viewport", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto("/");
-  await expect(page.getByRole("main", { name: "Find wildfire information" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Official wildfire records map" })).toHaveCount(0);
+  await expect(page.getByRole("main", { name: "Explore official records" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Official wildfire records map" })).toBeVisible();
+  await openComposer(page);
   await page.getByRole("button", { name: "Near me", exact: true }).click();
   await expect(page.getByLabel("BC community for a nearby lookup")).toBeVisible();
   const actions = page.locator(".atlas-header > nav > button:visible");
-  await expect(actions).toHaveCount(3);
+  await expect(actions).toHaveCount(2);
   for (const action of await actions.all()) {
     const bounds = await action.boundingBox();
     expect(bounds?.width).toBeGreaterThanOrEqual(44);
@@ -586,8 +587,8 @@ test("keeps the workspace usable at a 320px viewport", async ({ page }) => {
 test("keeps primary controls reachable at a 640px 200-percent zoom proxy", async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 400 });
   await page.goto("/");
+  await expect(page.getByRole("link", { name: "Skip to official map" })).toHaveAttribute("href", "#official-map");
   await expect(await openComposer(page)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Skip to conversation" })).toHaveAttribute("href", "#conversation");
   const overflowX = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
@@ -607,11 +608,11 @@ test("keeps the assistant answer in view on a short mobile overlay", async ({ pa
 
 test("places skip links first and limitations after the answer", async ({ page }) => {
   await page.goto("/");
-  const skipConversation = page.getByRole("link", { name: "Skip to conversation" });
+  const skipConversation = page.getByRole("link", { name: "Skip to official map" });
   await skipConversation.focus();
   await expect(skipConversation).toBeVisible();
   await skipConversation.press("Enter");
-  await expect(page.locator("#conversation")).toBeInViewport();
+  await expect(page.locator("#official-map")).toBeInViewport();
   await (await openComposer(page)).fill("What belongs in a grab-and-go bag?");
   await page.getByLabel("Send question").click();
   const limitations = page.getByLabel("Answer limitations");
@@ -779,11 +780,11 @@ test("respects reduced motion without hiding the answer", async ({ page }) => {
 });
 
 
-test("Home composer becomes an in-flow answer composer without reusing the submitted question", async ({ page }) => {
+test("Compact Ask becomes an in-flow answer composer without reusing the submitted question", async ({ page }) => {
   await page.goto("/");
   const input = await openComposer(page);
-  await expect(page.getByRole("main", { name: "Find wildfire information" })).toBeVisible();
-  await expect(page.getByRole("dialog", { name: "Ask FireLens", exact: true })).not.toBeVisible();
+  await expect(page.getByRole("main", { name: "Explore official records" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Ask FireLens", exact: true })).toBeVisible();
   await expect(page.locator(".sheet-composer")).toHaveCount(0);
   await input.fill("What belongs in a grab-and-go bag?");
   await input.press("Enter");
@@ -808,6 +809,7 @@ test("guided questions submit once on click and follow-ups keep the conversation
   }));
   await page.goto("/");
 
+  await openComposer(page);
   await page.getByRole("button", { name: "Near me", exact: true }).click();
   await page.getByLabel("BC community for a nearby lookup").fill("Kelowna, BC");
   await menuAction(page, "Example questions");
@@ -885,7 +887,7 @@ test("partial map keeps valid evacuation boundaries and labels omitted records",
     } });
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "Explore map", exact: true }).click();
+  await menuAction(page, "Explore B.C. records");
   await page.getByRole("region", { name: "Official wildfire records map", exact: true }).waitFor();
   for (const width of [1536, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });

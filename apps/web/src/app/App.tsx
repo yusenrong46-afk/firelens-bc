@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowsOut, MapTrifold } from "@phosphor-icons/react";
+import { ArrowLeft, ArrowsOut } from "@phosphor-icons/react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
@@ -15,11 +15,9 @@ import { LiveAnalysisWorkspace, preloadAnalysisCharts } from "../features/near-m
 import { emitProductEvent } from "../shared/telemetry";
 import { ContextChips, deriveContextChips } from "./ContextChips";
 import { HowFireLensWorks } from "./HowFireLensWorks";
-import { LiveDataStatus } from "./LiveDataStatus";
 import { deriveRecentQuestions } from "./ProductSidebar";
 import { shouldOfferContextMap, shouldUseAnalyticalWorkspace, workspaceLayout } from "./workspacePresentation";
 import { AtlasHeader } from "./AtlasHeader";
-import { AtlasHome } from "./AtlasHome";
 import { AtlasQuestion } from "./AtlasQuestion";
 import "./tokens.css";
 import "./styles.css";
@@ -35,6 +33,7 @@ const AtlasLiveMap = lazy(() => import("../features/near-me/AtlasLiveMap"));
 export function App() {
   const session = useFireLensSession();
   const [mapRequested, setMapRequested] = useState(false);
+  const [mapEpoch, setMapEpoch] = useState(0);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
@@ -48,8 +47,8 @@ export function App() {
   const closeProject = useCallback(() => setProjectOpen(false), []);
   const analytical = shouldUseAnalyticalWorkspace({ mode: session.mode, response: session.response });
   const contextualMap = !analytical && shouldOfferContextMap({ mode: session.mode, response: session.response });
-  const showMap = mapExpanded || mapRequested || contextualMap;
-  const home = session.view.kind === "idle" && !showMap;
+  const home = session.view.kind === "idle";
+  const showMap = home || mapExpanded || mapRequested || contextualMap;
   const layout = workspaceLayout({ analytical, spatial: showMap });
   const recentQuestions = useMemo(() => deriveRecentQuestions(session.history, session.visibleQuestion), [session.history, session.visibleQuestion]);
   const contextChips = useMemo(() => deriveContextChips({ response: session.response, locationLabel: session.activeLocation?.label ?? session.locationLabel, activeRadiusKm: session.activeLocation?.radius_km }), [session.activeLocation, session.locationLabel, session.response]);
@@ -63,7 +62,7 @@ export function App() {
 
   useEffect(() => {
     // The analytical workspace owns its tab visibility. All other routes use
-    // the rendered map surface, so guidance and Home do no province-map work.
+    // the visible map surface; guidance pauses automatic province refresh.
     if (analytical) return;
     session.setMapVisible(showMap);
     session.setContextLayersEnabled(showMap);
@@ -95,36 +94,37 @@ export function App() {
     requestAnimationFrame(() => { if (trigger?.isConnected) trigger.focus(); });
   }
   function showOfficialMap() {
+    setAskOpen(false);
     setMapRequested(true);
     requestAnimationFrame(() => { mapRailRef.current?.scrollIntoView?.({ block: "start" }); mapRailRef.current?.focus({ preventScroll: true }); });
     emitProductEvent("map_opened");
   }
   function expandOfficialMap() { session.setContextLayersEnabled(true); showOfficialMap(); setMapExpanded(true); }
   function goHome() {
-    session.clearHistory(); setMapRequested(false); setEvidenceOpen(false); setProjectOpen(false); setAskOpen(false); setMapExpanded(false);
+    session.clearHistory(); setMapEpoch(epoch => epoch + 1); setMapRequested(false); setEvidenceOpen(false); setProjectOpen(false); setAskOpen(false); setMapExpanded(false);
     window.scrollTo({ top: 0 });
-    requestAnimationFrame(() => composerRef.current?.focus());
+    requestAnimationFrame(() => mapRailRef.current?.focus());
   }
   function fillQuestion(question: string) {
-    setMapExpanded(false); setMapRequested(false); setAskOpen(false); session.setQuery(question);
+    setMapExpanded(false); setMapRequested(false); setAskOpen(true); session.setQuery(question);
     requestAnimationFrame(() => composerRef.current?.focus());
   }
   function openAsk() {
-    if (home || (!mapExpanded && session.view.kind !== "idle")) requestAnimationFrame(() => composerRef.current?.focus());
+    if (!mapExpanded && session.view.kind !== "idle") requestAnimationFrame(() => composerRef.current?.focus());
     else setAskOpen(true);
   }
   function showExamples() { setExamplesRequested(true); setAskOpen(true); }
   const composer = <QuestionComposer idle={session.view.kind === "idle"} loading={session.view.kind === "loading"} continuationPending={session.requiresLocation} query={session.query} onQueryChange={session.setQuery} onSubmit={session.submit} inputRef={composerRef} />;
   return <div className={`app-shell atlas-shell atlas-sheet-shell${home ? " app-shell--home" : ""}`} id="top">
-    {!mapExpanded && (home || session.view.kind !== "idle") && <a className="skip-link" href="#conversation">Skip to conversation</a>}
+    {!mapExpanded && !home && <a className="skip-link" href="#conversation">Skip to conversation</a>}
     {showMap && <a className="skip-link" href="#official-map">Skip to official map</a>}
     <ConnectionStatus />
     <HowFireLensWorks open={projectOpen} onClose={closeProject} />
-    <AtlasHeader onHome={goHome} onAsk={openAsk} onMap={expandOfficialMap} onPrepare={() => fillQuestion(PREPAREDNESS_QUESTION)} onExamples={showExamples} onAbout={() => setProjectOpen(true)} onLocation={() => { goHome(); session.useApproximateLocation(); }} onRecent={fillQuestion} recentQuestions={recentQuestions} />
-    {home ? <AtlasHome session={session} composer={!askOpen && composer} onMap={expandOfficialMap} onPrepare={() => fillQuestion(PREPAREDNESS_QUESTION)} onExamples={showExamples} /> : <div className="pc-frame" role={mapExpanded || session.view.kind === "idle" ? "main" : undefined} aria-label={mapExpanded || session.view.kind === "idle" ? "Explore official records" : undefined}>
-      <div className={`pc-layout${showMap ? "" : " pc-layout--no-map"}${mapExpanded ? " pc-layout--expanded" : ""}`}>
+    <AtlasHeader onHome={goHome} onAsk={openAsk} onMap={expandOfficialMap} onPrepare={() => fillQuestion(PREPAREDNESS_QUESTION)} onExamples={showExamples} onAbout={() => setProjectOpen(true)} onLocation={() => { setAskOpen(true); session.useApproximateLocation(); }} onRecent={fillQuestion} recentQuestions={recentQuestions} />
+    <div className="pc-frame" role={mapExpanded || session.view.kind === "idle" ? "main" : undefined} aria-label={mapExpanded || session.view.kind === "idle" ? "Explore official records" : undefined}>
+      <div className={`pc-layout${showMap ? "" : " pc-layout--no-map"}${mapExpanded || home ? " pc-layout--expanded" : ""}`}>
         {session.view.kind !== "idle" && <div className="pc-main" hidden={mapExpanded}>
-          <nav className="sheet-heading" aria-label="Answer navigation"><button type="button" onClick={goHome}><ArrowLeft size={18} />New question</button>{showMap && <button type="button" onClick={expandOfficialMap} aria-label="Expand map"><ArrowsOut size={18} />Expand map</button>}</nav>
+          <nav className="sheet-heading" aria-label="Answer navigation"><button type="button" onClick={expandOfficialMap}><ArrowLeft size={18} />Back to map</button><button type="button" onClick={expandOfficialMap} aria-label="Expand map"><ArrowsOut size={18} />Expand map</button></nav>
           {session.visibleQuestion && <section aria-label="Current question"><h1 className="pc-current-question">{session.visibleQuestion}</h1></section>}
           <main className={`workspace workspace--${layout} workspace--solo ${showMap ? "workspace--map" : "workspace--evidence"}`}>
             <ConversationPanel session={session} analytical={analytical} condensed={!analytical}
@@ -134,16 +134,12 @@ export function App() {
           {!askOpen && <div className="sheet-composer" role="search" aria-label="Ask FireLens">{composer}</div>}
           <footer className="pc-disclaimer">Follow local authorities. For emergencies call 9-1-1.</footer>
         </div>}
-        {showMap && <aside className="pc-map-rail" aria-label="Map" id="map-context" ref={mapRailRef} tabIndex={-1}>
-          <div className="pc-map-rail__toolbar">
-            <span><MapTrifold size={20} />{session.activeLocation?.label ? `Near ${session.activeLocation.label}` : "Across British Columbia"}</span>
-            {mapExpanded ? <button type="button" className="product-nav map-back" onClick={() => { setMapExpanded(false); setMapRequested(false); requestAnimationFrame(() => composerRef.current?.focus()); }}><ArrowLeft size={18} />{session.view.kind === "idle" ? "Back to Home" : "Back to answer"}</button> : <button type="button" className="product-nav" onClick={expandOfficialMap}><ArrowsOut size={18} />Expand</button>}
-          </div>
-          {session.view.kind === "idle" && <div className="map-availability"><LiveDataStatus liveSummary={session.liveSummary} readiness={session.readiness} now={session.statusNow} /></div>}
-          <Suspense fallback={<p role="status">Loading map…</p>}><AtlasLiveMap session={session} /></Suspense>
-        </aside>}
+        <aside hidden={!showMap} className="pc-map-rail" aria-label="Map" id="map-context" ref={mapRailRef} tabIndex={-1}>
+          {mapExpanded && !home && <div className="pc-map-rail__toolbar"><button type="button" className="product-nav map-back" onClick={() => { setMapExpanded(false); setMapRequested(false); requestAnimationFrame(() => composerRef.current?.focus()); }}><ArrowLeft size={18} />Back to answer</button></div>}
+          <Suspense fallback={<p role="status">Loading map…</p>}><AtlasLiveMap key={mapEpoch} session={session} visible={showMap} /></Suspense>
+        </aside>
       </div>
-    </div>}
+    </div>
     <dialog ref={evidenceDialog} className="evidence-dialog" aria-label="Inspect answer evidence" onCancel={closeEvidence} onClose={() => setEvidenceOpen(false)}>
       {evidenceOpen && <EvidencePanel session={session} surface="evidence" mapAvailable={false} panelRef={contextRef} onClose={closeEvidence} onSurfaceChange={() => { closeEvidence(); showOfficialMap(); }} />}
     </dialog>

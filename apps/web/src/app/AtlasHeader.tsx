@@ -16,8 +16,6 @@ export function AtlasHeader({ onHome, onAsk, onMap, onPrepare, onExamples, onAbo
       <img src="/assets/firelens-mark.png" alt="" width="30" height="30" /><strong>FireLens</strong>
     </a>
     <nav aria-label="Primary navigation">
-      <button className="atlas-header__home" type="button" onClick={onHome}>Home</button>
-      <button className="atlas-header__map" type="button" onClick={onMap}>Map</button>
       <button className="atlas-ask" aria-label="Ask FireLens" type="button" onClick={onAsk}><MagnifyingGlass size={21} /><span>Ask FireLens</span></button>
       <button ref={trigger} type="button" aria-label="Open menu" aria-haspopup="dialog" onClick={() => menu.current?.showModal()}><List size={24} /></button>
     </nav>
