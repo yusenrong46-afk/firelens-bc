@@ -316,11 +316,11 @@ test("supports keyboard submission and skip-link navigation against the real sta
 }) => {
   const attemptedExternal = await localOnly(context, page);
   await page.goto("/");
-  const skip = page.getByRole("link", { name: "Skip to conversation" });
+  const skip = page.getByRole("link", { name: "Skip to official map" });
   await skip.focus();
   await expect(skip).toBeVisible();
   await skip.press("Enter");
-  await expect(page.locator("#conversation")).toBeInViewport();
+  await expect(page.locator("#official-map")).toBeInViewport();
   await ask(page, "What does an evacuation alert mean?");
   await expect(page.locator("#conversation .assistant-message .answer-lead")).toContainText(
     "be ready to leave on short notice",

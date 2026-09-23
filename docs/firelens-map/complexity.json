@@ -36,9 +36,14 @@
       "path": "apps/web/scripts/prepare-sites-build.mjs"
     },
     {
-      "branch_score": 609,
-      "loc": 3362,
+      "branch_score": 616,
+      "loc": 3389,
       "path": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "branch_score": 23,
+      "loc": 40,
+      "path": "apps/web/scripts/release-smoke-gate.mjs"
     },
     {
       "branch_score": 7,
@@ -56,13 +61,13 @@
       "path": "apps/web/scripts/verify-native-zoom.mjs"
     },
     {
-      "branch_score": 47,
-      "loc": 152,
+      "branch_score": 40,
+      "loc": 148,
       "path": "apps/web/src/app/App.tsx"
     },
     {
       "branch_score": 2,
-      "loc": 39,
+      "loc": 37,
       "path": "apps/web/src/app/AtlasHeader.tsx"
     },
     {
@@ -71,8 +76,8 @@
       "path": "apps/web/src/app/AtlasHome.tsx"
     },
     {
-      "branch_score": 4,
-      "loc": 26,
+      "branch_score": 12,
+      "loc": 39,
       "path": "apps/web/src/app/AtlasQuestion.tsx"
     },
     {
@@ -276,8 +281,8 @@
       "path": "apps/web/src/features/near-me/AnswerMapScope.tsx"
     },
     {
-      "branch_score": 15,
-      "loc": 72,
+      "branch_score": 18,
+      "loc": 73,
       "path": "apps/web/src/features/near-me/AtlasLiveMap.tsx"
     },
     {
@@ -331,8 +336,8 @@
       "path": "apps/web/src/features/near-me/MapScope.tsx"
     },
     {
-      "branch_score": 18,
-      "loc": 81,
+      "branch_score": 20,
+      "loc": 86,
       "path": "apps/web/src/features/near-me/MapViewport.tsx"
     },
     {
@@ -402,7 +407,7 @@
     },
     {
       "branch_score": 108,
-      "loc": 1895,
+      "loc": 1879,
       "path": "apps/web/tests/App.test.tsx"
     },
     {
@@ -412,7 +417,7 @@
     },
     {
       "branch_score": 0,
-      "loc": 54,
+      "loc": 58,
       "path": "apps/web/tests/MapViewport.test.tsx"
     },
     {
@@ -452,7 +457,7 @@
     },
     {
       "branch_score": 10,
-      "loc": 59,
+      "loc": 60,
       "path": "apps/web/tests/browserNavigation.ts"
     },
     {
@@ -467,7 +472,7 @@
     },
     {
       "branch_score": 68,
-      "loc": 901,
+      "loc": 903,
       "path": "apps/web/tests/e2e-product-v2/app.spec.ts"
     },
     {
@@ -477,7 +482,7 @@
     },
     {
       "branch_score": 32,
-      "loc": 238,
+      "loc": 239,
       "path": "apps/web/tests/e2e-real/atlas-readiness.spec.ts"
     },
     {
@@ -531,8 +536,8 @@
       "path": "apps/web/tests/fetchStub.ts"
     },
     {
-      "branch_score": 25,
-      "loc": 912,
+      "branch_score": 26,
+      "loc": 930,
       "path": "apps/web/tests/frontend-surface-runner.test.mjs"
     },
     {
@@ -577,7 +582,7 @@
     },
     {
       "branch_score": 6,
-      "loc": 128,
+      "loc": 129,
       "path": "apps/web/tests/liveMapPresentation.test.tsx"
     },
     {
@@ -621,18 +626,18 @@
       "path": "apps/web/tests/mapSelectionRefresh.test.ts"
     },
     {
-      "branch_score": 0,
-      "loc": 25,
+      "branch_score": 1,
+      "loc": 51,
       "path": "apps/web/tests/mapViewportRefresh.test.tsx"
     },
     {
       "branch_score": 11,
-      "loc": 109,
+      "loc": 118,
       "path": "apps/web/tests/productExperience.test.tsx"
     },
     {
-      "branch_score": 3,
-      "loc": 80,
+      "branch_score": 4,
+      "loc": 95,
       "path": "apps/web/tests/productIntegrationV2.test.tsx"
     },
     {
@@ -659,6 +664,11 @@
       "branch_score": 45,
       "loc": 240,
       "path": "apps/web/tests/reality/product-reality.spec.ts"
+    },
+    {
+      "branch_score": 0,
+      "loc": 41,
+      "path": "apps/web/tests/release-smoke-gate.test.mjs"
     },
     {
       "branch_score": 7,
@@ -1206,8 +1216,8 @@
       "path": "src/firelens/answering/intent_automaton_types.py"
     },
     {
-      "branch_score": 63,
-      "loc": 345,
+      "branch_score": 66,
+      "loc": 367,
       "path": "src/firelens/answering/intent_conversation.py"
     },
     {
@@ -1352,7 +1362,7 @@
     },
     {
       "branch_score": 11,
-      "loc": 135,
+      "loc": 146,
       "path": "src/firelens/answering/request_facets.py"
     },
     {
@@ -1396,8 +1406,8 @@
       "path": "src/firelens/answering/service_support.py"
     },
     {
-      "branch_score": 15,
-      "loc": 102,
+      "branch_score": 16,
+      "loc": 148,
       "path": "src/firelens/answering/static_guidance_subject.py"
     },
     {
@@ -2686,8 +2696,8 @@
       "path": "tests/test_firelens200_grader.py"
     },
     {
-      "branch_score": 75,
-      "loc": 1360,
+      "branch_score": 79,
+      "loc": 1394,
       "path": "tests/test_firelens_eval.py"
     },
     {
@@ -2954,6 +2964,11 @@
       "branch_score": 9,
       "loc": 306,
       "path": "tests/test_regional_fire_queries.py"
+    },
+    {
+      "branch_score": 17,
+      "loc": 134,
+      "path": "tests/test_release_context_repairs.py"
     },
     {
       "branch_score": 18,
@@ -3332,166 +3347,176 @@
     }
   ],
   "schema_version": "firelens.complexity.v1",
-  "source_digest": "b34233de1afb1e422105315fb54580f95628d4c8e73af84e270fb51522bbdfb2",
+  "source_digest": "bd8adfdd1982449b66e255af6939b788d7c6a0473e832f4bda6a26116cc4acb9",
   "symbols": [
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::browserContextConfiguration:627",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::browserContextConfiguration:654",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::buildIdentity:3021",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::buildIdentity:3048",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::canonicalApiRequestRecord:421",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::canonicalApiRequestRecord:448",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::canonicalHttpUrl:657",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::canonicalHttpUrl:684",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::canonicalRequestUrl:639",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::canonicalRequestUrl:666",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::captureFailureArtifact:1719",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::captureFailureArtifact:1746",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::captureSurfaceRow:1546",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::captureSurfaceRow:1573",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::classifyConsoleErrors:1461",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::classifyConsoleErrors:1488",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::collectRuntimeSignals:1383",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::collectRuntimeSignals:1410",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::configurePerformancePage:2276",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::configurePerformancePage:2303",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::configuredExecutionRunProfiles:3059",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::configuredExecutionRunProfiles:3086",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::contiguousDomIndices:884",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::contiguousDomIndices:911",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::derivePrivacyEvidence:1964",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::derivePrivacyEvidence:1991",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::deriveRequestEvidence:1426",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::deriveRequestEvidence:1453",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::driveState:835",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::driveState:862",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::exactPartition:888",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::exactPartition:915",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::executionEnvironment:3098",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::executionEnvironment:3125",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedMapResponseDetails:865",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedMapResponseDetails:892",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedMapResponseRecordIds:861",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedMapResponseRecordIds:888",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedMapResponseRecords:854",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedMapResponseRecords:881",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedPairs:2493",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedPairs:2520",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::fileSha256:443",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::fileSha256:470",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::fixtureForQuestion:671",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::fixtureForQuestion:698",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::gitCommit:3013",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::gitCommit:3040",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::hasExactKeys:3128",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::hasExactKeys:3155",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::historyJourney:2188",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::historyJourney:2215",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::initialApplicableMapEvidence:1017",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::initialApplicableMapEvidence:1044",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::inspectLayoutAndCss:1246",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::inspectLayoutAndCss:1273",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::inspectMapEvidence:1062",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::inspectMapEvidence:1089",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::inspectPrivacyBrowserSurfaces:1806",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::inspectPrivacyBrowserSurfaces:1833",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::installDeterministicRoutes:689",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::installDeterministicRoutes:716",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::isCurrentSurfaceProtocol:376",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::interactionContract:392",
+      "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::isCurrentSurfaceProtocol:389",
+      "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::isMapFirstProtocol:386",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
@@ -3501,277 +3526,282 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::keyboardJourney:1757",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::keyboardJourney:1784",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::loadProtocol:454",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::loadProtocol:481",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::main:3261",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::main:3288",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::newJourneyPage:1747",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::newJourneyPage:1774",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::normalizedText:3031",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::normalizedText:3058",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::notApplicableMapEvidence:997",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::notApplicableMapEvidence:1024",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::npmVersion:3093",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::npmVersion:3120",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openOfficialMapContext:791",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openOfficialMapContext:818",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openSurfaceComposer:777",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openSurfaceComposer:804",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openSurfaceSources:784",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openSurfaceSources:811",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openTechnicalEvidenceContext:807",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openTechnicalEvidenceContext:834",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::p75NearestRank:2268",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::p75NearestRank:2295",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::parseArguments:598",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::parseArguments:625",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::performanceSample:2338",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::performanceSample:2365",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::privacyJourney:2104",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::privacyJourney:2131",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeAxeImpactCounts:2513",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeAxeImpactCounts:2540",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeMapDetailIntegrity:901",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeMapDetailIntegrity:928",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeMapListParity:970",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeMapListParity:997",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeMarkerPlacementSanity:945",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeMarkerPlacementSanity:972",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputePerformanceProfile:2717",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputePerformanceProfile:2744",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::relativeArtifact:1541",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::relativeArtifact:1568",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::requestOrigin:664",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::requestOrigin:691",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::requiresOnDemandMapContext:390",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::requiresOnDemandMapContext:417",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::resolveUniqueRecord:1051",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::resolveUniqueRecord:1078",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runAxe:1200",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runAxe:1227",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runFunctionalJourneys:2235",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runFunctionalJourneys:2262",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runPerformance:2480",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runPerformance:2507",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runPerformanceProfile:2402",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runPerformanceProfile:2429",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runSurfaceMatrix:1728",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runSurfaceMatrix:1755",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::sameExactRoster:874",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::sameExactRoster:901",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::sha256Bytes:403",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::sha256Bytes:430",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::stableJson:407",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::stableJson:434",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::stableJsonString:417",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::stableJsonString:444",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::startPreview:3211",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::startPreview:3238",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::stopPreview:3243",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::stopPreview:3270",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::strictObject:447",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::strictObject:474",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceChecks:1489",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceChecks:1516",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceMatrixComplete:2499",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceMapFirstSuccessorIssues:397",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceProtocolSuccessorIssues:380",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceMatrixComplete:2526",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceReadyTextCoverageIssues:392",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceProtocolSuccessorIssues:407",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::tokenMatchFindings:1945",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceReadyTextCoverageIssues:419",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::unthrottledRunProfile:3048",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::tokenMatchFindings:1972",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateAxeEvidence:2522",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::unthrottledRunProfile:3075",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateExecutionEnvironment:3137",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateAxeEvidence:2549",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateFunctionalJourneys:2685",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateExecutionEnvironment:3164",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateMapEvidence:2817",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateFunctionalJourneys:2712",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validatePerformance:2747",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateMapEvidence:2844",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validatePrivacyJourney:2642",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validatePerformance:2774",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateReportStructure:2935",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validatePrivacyJourney:2669",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateRequestRuntime:2568",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateReportStructure:2962",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::viewportExecutionProfile:3035",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateRequestRuntime:2595",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForCurrentAnswer:817",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::viewportExecutionProfile:3062",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForPreview:3194",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForCurrentAnswer:844",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForSurfaceHome:828",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForPreview:3221",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForText:773",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForSurfaceHome:855",
+      "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForText:800",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
@@ -3781,8 +3811,18 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::writeReport:3252",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::writeReport:3279",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/release-smoke-gate.mjs::assertReservedDispatch:30",
+      "module_path": "apps/web/scripts/release-smoke-gate.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/release-smoke-gate.mjs::reserveSubmission:6",
+      "module_path": "apps/web/scripts/release-smoke-gate.mjs"
     },
     {
       "branch_score": 0,
@@ -3806,7 +3846,7 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/app/App.tsx::App:35",
+      "id": "apps/web/src/app/App.tsx::App:33",
       "module_path": "apps/web/src/app/App.tsx"
     },
     {
@@ -4871,7 +4911,7 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/browserNavigation.ts::openClaimDetails:54",
+      "id": "apps/web/tests/browserNavigation.ts::openClaimDetails:55",
       "module_path": "apps/web/tests/browserNavigation.ts"
     },
     {
@@ -4881,17 +4921,17 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/browserNavigation.ts::openMapRecords:42",
+      "id": "apps/web/tests/browserNavigation.ts::openMapRecords:43",
       "module_path": "apps/web/tests/browserNavigation.ts"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/browserNavigation.ts::openMatchingRecords:34",
+      "id": "apps/web/tests/browserNavigation.ts::openMatchingRecords:35",
       "module_path": "apps/web/tests/browserNavigation.ts"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/browserNavigation.ts::openSources:26",
+      "id": "apps/web/tests/browserNavigation.ts::openSources:27",
       "module_path": "apps/web/tests/browserNavigation.ts"
     },
     {
@@ -4986,27 +5026,27 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/frontend-surface-runner.test.mjs::completeReport:377",
+      "id": "apps/web/tests/frontend-surface-runner.test.mjs::completeReport:378",
       "module_path": "apps/web/tests/frontend-surface-runner.test.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/frontend-surface-runner.test.mjs::mapEvidenceForState:164",
+      "id": "apps/web/tests/frontend-surface-runner.test.mjs::mapEvidenceForState:165",
       "module_path": "apps/web/tests/frontend-surface-runner.test.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/frontend-surface-runner.test.mjs::performanceProfile:322",
+      "id": "apps/web/tests/frontend-surface-runner.test.mjs::performanceProfile:323",
       "module_path": "apps/web/tests/frontend-surface-runner.test.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/frontend-surface-runner.test.mjs::privacyEvidence:251",
+      "id": "apps/web/tests/frontend-surface-runner.test.mjs::privacyEvidence:252",
       "module_path": "apps/web/tests/frontend-surface-runner.test.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/frontend-surface-runner.test.mjs::requestEvent:238",
+      "id": "apps/web/tests/frontend-surface-runner.test.mjs::requestEvent:239",
       "module_path": "apps/web/tests/frontend-surface-runner.test.mjs"
     },
     {
@@ -5083,6 +5123,11 @@
       "branch_score": 0,
       "id": "apps/web/tests/reality/product-reality.spec.ts::trackAssetFailures:26",
       "module_path": "apps/web/tests/reality/product-reality.spec.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/release-smoke-gate.test.mjs::setup:9",
+      "module_path": "apps/web/tests/release-smoke-gate.test.mjs"
     },
     {
       "branch_score": 0,
@@ -7261,107 +7306,112 @@
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/answering/intent_conversation.py::_deictic_action_boundary:182",
-      "module_path": "src/firelens/answering/intent_conversation.py"
-    },
-    {
-      "branch_score": 1,
-      "id": "src/firelens/answering/intent_conversation.py::_historical_wildfire_explanation:266",
-      "module_path": "src/firelens/answering/intent_conversation.py"
-    },
-    {
-      "branch_score": 2,
-      "id": "src/firelens/answering/intent_conversation.py::_is_elliptical_followup:102",
-      "module_path": "src/firelens/answering/intent_conversation.py"
-    },
-    {
-      "branch_score": 1,
-      "id": "src/firelens/answering/intent_conversation.py::_named_individual_fire_request:277",
-      "module_path": "src/firelens/answering/intent_conversation.py"
-    },
-    {
-      "branch_score": 2,
-      "id": "src/firelens/answering/intent_conversation.py::_routing_texts:172",
-      "module_path": "src/firelens/answering/intent_conversation.py"
-    },
-    {
-      "branch_score": 2,
-      "id": "src/firelens/answering/intent_conversation.py::_selected_or_deictic_record_request:259",
+      "id": "src/firelens/answering/intent_conversation.py::_deictic_action_boundary:204",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/answering/intent_conversation.py::continues_prior_live_place:158",
+      "id": "src/firelens/answering/intent_conversation.py::_followup_prior_question:149",
+      "module_path": "src/firelens/answering/intent_conversation.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "src/firelens/answering/intent_conversation.py::_historical_wildfire_explanation:288",
+      "module_path": "src/firelens/answering/intent_conversation.py"
+    },
+    {
+      "branch_score": 4,
+      "id": "src/firelens/answering/intent_conversation.py::_is_elliptical_followup:107",
+      "module_path": "src/firelens/answering/intent_conversation.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "src/firelens/answering/intent_conversation.py::_named_individual_fire_request:299",
+      "module_path": "src/firelens/answering/intent_conversation.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "src/firelens/answering/intent_conversation.py::_routing_texts:194",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/answering/intent_conversation.py::conversation_planning_question:149",
+      "id": "src/firelens/answering/intent_conversation.py::_selected_or_deictic_record_request:281",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/answering/intent_conversation.py::explicit_corpus_attribution:241",
+      "id": "src/firelens/answering/intent_conversation.py::continues_prior_live_place:180",
+      "module_path": "src/firelens/answering/intent_conversation.py"
+    },
+    {
+      "branch_score": 2,
+      "id": "src/firelens/answering/intent_conversation.py::conversation_planning_question:171",
+      "module_path": "src/firelens/answering/intent_conversation.py"
+    },
+    {
+      "branch_score": 3,
+      "id": "src/firelens/answering/intent_conversation.py::explicit_corpus_attribution:263",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/answering/intent_conversation.py::focused_question:90",
+      "id": "src/firelens/answering/intent_conversation.py::focused_question:95",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/answering/intent_conversation.py::is_packing_exclusion_question:309",
+      "id": "src/firelens/answering/intent_conversation.py::is_packing_exclusion_question:331",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/answering/intent_conversation.py::is_selected_record_followup:83",
+      "id": "src/firelens/answering/intent_conversation.py::is_selected_record_followup:88",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/answering/intent_conversation.py::is_significance_followup:115",
+      "id": "src/firelens/answering/intent_conversation.py::is_significance_followup:127",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/answering/intent_conversation.py::is_true_deictic_followup:109",
+      "id": "src/firelens/answering/intent_conversation.py::is_true_deictic_followup:121",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 7,
-      "id": "src/firelens/answering/intent_conversation.py::named_corpus_attribution:216",
+      "id": "src/firelens/answering/intent_conversation.py::named_corpus_attribution:238",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 10,
-      "id": "src/firelens/answering/intent_conversation.py::prefers_general_background:284",
+      "id": "src/firelens/answering/intent_conversation.py::prefers_general_background:306",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/answering/intent_conversation.py::prior_anchor_user_question:123",
+      "id": "src/firelens/answering/intent_conversation.py::prior_anchor_user_question:135",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/answering/intent_conversation.py::publication_question:340",
-      "module_path": "src/firelens/answering/intent_conversation.py"
-    },
-    {
-      "branch_score": 2,
-      "id": "src/firelens/answering/intent_conversation.py::resolved_user_question:137",
+      "id": "src/firelens/answering/intent_conversation.py::publication_question:362",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/answering/intent_conversation.py::reviewed_guidance_intent:207",
+      "id": "src/firelens/answering/intent_conversation.py::resolved_user_question:164",
+      "module_path": "src/firelens/answering/intent_conversation.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "src/firelens/answering/intent_conversation.py::reviewed_guidance_intent:229",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
       "branch_score": 5,
-      "id": "src/firelens/answering/intent_conversation.py::skips_provider_planning:327",
+      "id": "src/firelens/answering/intent_conversation.py::skips_provider_planning:349",
       "module_path": "src/firelens/answering/intent_conversation.py"
     },
     {
@@ -8141,17 +8191,17 @@
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/answering/request_facets.py::contents_request_facet:61",
+      "id": "src/firelens/answering/request_facets.py::contents_request_facet:72",
       "module_path": "src/firelens/answering/request_facets.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/answering/request_facets.py::requests_contents:86",
+      "id": "src/firelens/answering/request_facets.py::requests_contents:97",
       "module_path": "src/firelens/answering/request_facets.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/answering/request_facets.py::significance_subject:95",
+      "id": "src/firelens/answering/request_facets.py::significance_subject:106",
       "module_path": "src/firelens/answering/request_facets.py"
     },
     {
@@ -8410,13 +8460,18 @@
       "module_path": "src/firelens/answering/service_support.py"
     },
     {
+      "branch_score": 1,
+      "id": "src/firelens/answering/static_guidance_subject.py::is_pet_packing_followup:54",
+      "module_path": "src/firelens/answering/static_guidance_subject.py"
+    },
+    {
       "branch_score": 7,
-      "id": "src/firelens/answering/static_guidance_subject.py::static_guidance_retrieval_query:74",
+      "id": "src/firelens/answering/static_guidance_subject.py::static_guidance_retrieval_query:120",
       "module_path": "src/firelens/answering/static_guidance_subject.py"
     },
     {
       "branch_score": 8,
-      "id": "src/firelens/answering/static_guidance_subject.py::static_guidance_subject:52",
+      "id": "src/firelens/answering/static_guidance_subject.py::static_guidance_subject:98",
       "module_path": "src/firelens/answering/static_guidance_subject.py"
     },
     {
@@ -18950,6 +19005,11 @@
       "module_path": "tests/test_firelens_eval.py"
     },
     {
+      "branch_score": 4,
+      "id": "tests/test_firelens_eval.py::test_context_release_binding_preserves_all_historical_dispositions:1363",
+      "module_path": "tests/test_firelens_eval.py"
+    },
+    {
       "branch_score": 1,
       "id": "tests/test_firelens_eval.py::test_current_policy_preserves_historical_failure:1233",
       "module_path": "tests/test_firelens_eval.py"
@@ -23123,6 +23183,31 @@
       "branch_score": 0,
       "id": "tests/test_regional_fire_queries.py::_incident:30",
       "module_path": "tests/test_regional_fire_queries.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_release_context_repairs.py::test_explicit_new_pet_purpose_does_not_inherit_emergency_authority:111",
+      "module_path": "tests/test_release_context_repairs.py"
+    },
+    {
+      "branch_score": 17,
+      "id": "tests/test_release_context_repairs.py::test_frozen_release_context:30",
+      "module_path": "tests/test_release_context_repairs.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_release_context_repairs.py::test_kit_maintenance_keeps_grounded_route_after_context_composition:124",
+      "module_path": "tests/test_release_context_repairs.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_release_context_repairs.py::test_named_container_remains_a_contents_request:97",
+      "module_path": "tests/test_release_context_repairs.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_release_context_repairs.py::test_person_is_not_a_contents_container:93",
+      "module_path": "tests/test_release_context_repairs.py"
     },
     {
       "branch_score": 3,

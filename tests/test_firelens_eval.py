@@ -1358,3 +1358,37 @@ def test_current_policy_rejects_changed_bound_file(
         assert any(relative in issue and "changed" in issue for issue in issues)
     finally:
         path.write_bytes(original)
+
+
+def test_context_release_binding_preserves_all_historical_dispositions() -> None:
+    import yaml
+
+    previous = json.loads(
+        (ROOT / "data/evaluation/hard_probe_current_dispositions.v1.json").read_text()
+    )
+    successor = json.loads(
+        (ROOT / "data/evaluation/hard_probe_current_dispositions.v2.json").read_text()
+    )
+    for key in [
+        "frozen_materials",
+        "dispositions",
+        "i08_trajectory",
+        "l05_current_provider_observation",
+        "offline_runtime_configuration",
+        "provider_routing",
+        "qualified_production_privacy",
+    ]:
+        assert successor[key] == previous[key]
+    changed = {
+        name
+        for name, digest in previous["runtime_materials"].items()
+        if successor["runtime_materials"][name] != digest
+    }
+    assert changed == {
+        f"src/firelens/answering/{name}.py"
+        for name in ["intent_conversation", "static_guidance_subject", "request_facets"]
+    }
+    old_policy = yaml.safe_load((ROOT / "data/evaluation/eval_lab_policy.v2.yaml").read_text())
+    new_policy = yaml.safe_load((ROOT / "data/evaluation/eval_lab_policy.v3.yaml").read_text())
+    for key in old_policy.keys() - {"policy_id", "current_hard_probe_dispositions"}:
+        assert new_policy[key] == old_policy[key]

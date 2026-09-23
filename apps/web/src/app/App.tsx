@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowsOut } from "@phosphor-icons/react";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
@@ -12,8 +12,10 @@ import { QuestionComposer } from "../features/ask/QuestionComposer";
 import { useFireLensSession } from "../features/ask/useFireLensSession";
 import { EvidencePanel } from "../features/evidence/EvidencePanel";
 import { LiveAnalysisWorkspace, preloadAnalysisCharts } from "../features/near-me/LiveAnalysisWorkspace";
+import AtlasLiveMap from "../features/near-me/AtlasLiveMap";
 import { emitProductEvent } from "../shared/telemetry";
 import { ContextChips, deriveContextChips } from "./ContextChips";
+import { LiveDataStatus } from "./LiveDataStatus";
 import { HowFireLensWorks } from "./HowFireLensWorks";
 import { deriveRecentQuestions } from "./ProductSidebar";
 import { shouldOfferContextMap, shouldUseAnalyticalWorkspace, workspaceLayout } from "./workspacePresentation";
@@ -27,8 +29,6 @@ import "./productExperience.css";
 import "./atlas.css";
 import "./atlasAnswers.css";
 import "./atlasSheet.css";
-
-const AtlasLiveMap = lazy(() => import("../features/near-me/AtlasLiveMap"));
 
 export function App() {
   const session = useFireLensSession();
@@ -136,7 +136,7 @@ export function App() {
         </div>}
         <aside hidden={!showMap} className="pc-map-rail" aria-label="Map" id="map-context" ref={mapRailRef} tabIndex={-1}>
           {mapExpanded && !home && <div className="pc-map-rail__toolbar"><button type="button" className="product-nav map-back" onClick={() => { setMapExpanded(false); setMapRequested(false); requestAnimationFrame(() => composerRef.current?.focus()); }}><ArrowLeft size={18} />Back to answer</button></div>}
-          <Suspense fallback={<p role="status">Loading map…</p>}><AtlasLiveMap key={mapEpoch} session={session} visible={showMap} /></Suspense>
+          <Suspense fallback={<p role="status">Loading map…</p>}><AtlasLiveMap key={mapEpoch} session={session} visible={showMap} statusSlot={<LiveDataStatus liveSummary={session.liveSummary} readiness={session.readiness} now={session.statusNow} />} /></Suspense>
         </aside>
       </div>
     </div>

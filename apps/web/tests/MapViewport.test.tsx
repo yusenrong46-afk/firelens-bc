@@ -41,6 +41,10 @@ describe("map container resizing", () => {
     expect(observe).toHaveBeenCalledWith(container);
     expect(map.fitBounds).toHaveBeenCalledOnce();
 
+    // The initial fit refreshes dimensions before calculating its bounds.
+    expect(map.invalidateSize).toHaveBeenCalledOnce();
+    map.invalidateSize.mockClear();
+
     resized?.(); // The compact rail expands without a browser resize event.
     resized?.(); // Back to answer shrinks the same map container.
 

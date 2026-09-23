@@ -59,18 +59,10 @@
     {
       "kind": "static",
       "lines": [
-        21
-      ],
-      "source": "apps/web/src/app/App.tsx",
-      "target": "apps/web/src/app/AtlasHeader.tsx"
-    },
-    {
-      "kind": "static",
-      "lines": [
         22
       ],
       "source": "apps/web/src/app/App.tsx",
-      "target": "apps/web/src/app/AtlasHome.tsx"
+      "target": "apps/web/src/app/AtlasHeader.tsx"
     },
     {
       "kind": "static",
@@ -83,7 +75,7 @@
     {
       "kind": "static",
       "lines": [
-        16
+        17
       ],
       "source": "apps/web/src/app/App.tsx",
       "target": "apps/web/src/app/ContextChips.tsx"
@@ -91,7 +83,7 @@
     {
       "kind": "static",
       "lines": [
-        17
+        19
       ],
       "source": "apps/web/src/app/App.tsx",
       "target": "apps/web/src/app/HowFireLensWorks.tsx"
@@ -107,7 +99,7 @@
     {
       "kind": "static",
       "lines": [
-        19
+        20
       ],
       "source": "apps/web/src/app/App.tsx",
       "target": "apps/web/src/app/ProductSidebar.tsx"
@@ -115,7 +107,7 @@
     {
       "kind": "static",
       "lines": [
-        20
+        21
       ],
       "source": "apps/web/src/app/App.tsx",
       "target": "apps/web/src/app/workspacePresentation.ts"
@@ -171,7 +163,7 @@
     {
       "kind": "static",
       "lines": [
-        33
+        15
       ],
       "source": "apps/web/src/app/App.tsx",
       "target": "apps/web/src/features/near-me/AtlasLiveMap.tsx"
@@ -187,7 +179,7 @@
     {
       "kind": "static",
       "lines": [
-        15
+        16
       ],
       "source": "apps/web/src/app/App.tsx",
       "target": "apps/web/src/shared/telemetry.ts"
@@ -2351,6 +2343,14 @@
       ],
       "source": "apps/web/tests/readableAnswer.test.tsx",
       "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        6
+      ],
+      "source": "apps/web/tests/release-smoke-gate.test.mjs",
+      "target": "apps/web/scripts/release-smoke-gate.mjs"
     },
     {
       "kind": "static",
@@ -5299,12 +5299,20 @@
         14
       ],
       "source": "src/firelens/answering/intent_conversation.py",
+      "target": "src/firelens/answering/static_guidance_subject.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        19
+      ],
+      "source": "src/firelens/answering/intent_conversation.py",
       "target": "src/firelens/contracts.py"
     },
     {
       "kind": "static",
       "lines": [
-        15
+        20
       ],
       "source": "src/firelens/answering/intent_conversation.py",
       "target": "src/firelens/guidance_capabilities.py"
@@ -5312,7 +5320,7 @@
     {
       "kind": "static",
       "lines": [
-        16
+        21
       ],
       "source": "src/firelens/answering/intent_conversation.py",
       "target": "src/firelens/source_requirements.py"
@@ -15481,6 +15489,94 @@
     {
       "kind": "static",
       "lines": [
+        12
+      ],
+      "source": "tests/test_release_context_repairs.py",
+      "target": "src/firelens/agent/__init__.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        13
+      ],
+      "source": "tests/test_release_context_repairs.py",
+      "target": "src/firelens/agent/query_plan.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        125
+      ],
+      "source": "tests/test_release_context_repairs.py",
+      "target": "src/firelens/answering/intent.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        14
+      ],
+      "source": "tests/test_release_context_repairs.py",
+      "target": "src/firelens/answering/intent_conversation.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        15
+      ],
+      "source": "tests/test_release_context_repairs.py",
+      "target": "src/firelens/answering/request_facets.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        16
+      ],
+      "source": "tests/test_release_context_repairs.py",
+      "target": "src/firelens/answering/static_guidance_subject.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        17
+      ],
+      "source": "tests/test_release_context_repairs.py",
+      "target": "src/firelens/config.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        18
+      ],
+      "source": "tests/test_release_context_repairs.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        19
+      ],
+      "source": "tests/test_release_context_repairs.py",
+      "target": "src/firelens/live_answering.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        20
+      ],
+      "source": "tests/test_release_context_repairs.py",
+      "target": "src/firelens/providers/fake.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        21
+      ],
+      "source": "tests/test_release_context_repairs.py",
+      "target": "src/firelens/runtime.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         14
       ],
       "source": "tests/test_release_operations.py",
@@ -18440,6 +18536,7 @@
     "apps/web/playwright.reality.config.ts",
     "apps/web/scripts/prepare-sites-build.mjs",
     "apps/web/scripts/qualify-frontend-surface.mjs",
+    "apps/web/scripts/release-smoke-gate.mjs",
     "apps/web/scripts/surface-identity.mjs",
     "apps/web/scripts/verify-native-zoom-v2.mjs",
     "apps/web/scripts/verify-native-zoom.mjs",
@@ -18564,6 +18661,7 @@
     "apps/web/tests/raw-modules.d.ts",
     "apps/web/tests/readableAnswer.test.tsx",
     "apps/web/tests/reality/product-reality.spec.ts",
+    "apps/web/tests/release-smoke-gate.test.mjs",
     "apps/web/tests/sessionLifecycle.test.ts",
     "apps/web/tests/sessionMap.test.ts",
     "apps/web/tests/setup.ts",
@@ -19023,6 +19121,7 @@
     "tests/test_qualification.py",
     "tests/test_quote_only_atomicity.py",
     "tests/test_regional_fire_queries.py",
+    "tests/test_release_context_repairs.py",
     "tests/test_release_operations.py",
     "tests/test_release_promotion.py",
     "tests/test_reliability.py",
@@ -19101,7 +19200,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "b34233de1afb1e422105315fb54580f95628d4c8e73af84e270fb51522bbdfb2",
+  "source_digest": "bd8adfdd1982449b66e255af6939b788d7c6a0473e832f4bda6a26116cc4acb9",
   "unresolved_relative_imports": [
     {
       "line": 26,

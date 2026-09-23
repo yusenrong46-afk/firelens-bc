@@ -7,7 +7,7 @@ import path from "node:path";
 import { chromium } from "@playwright/test";
 import { loadProtocol, installDeterministicRoutes, driveState } from "./qualify-frontend-surface.mjs";
 
-const [baseUrl, label, outputDirectory] = process.argv.slice(2);
+const [baseUrl, label, outputDirectory, protocolPath] = process.argv.slice(2);
 if (!baseUrl || !["before", "after"].includes(label) || !outputDirectory || !["127.0.0.1", "localhost"].includes(new URL(baseUrl).hostname)) {
   throw new Error("Usage: node scripts/verify-native-zoom.mjs <loopback URL> <before|after> <output directory>");
 }
@@ -15,7 +15,7 @@ await mkdir(outputDirectory, { recursive: true });
 const extension = await mkdtemp(path.join(tmpdir(), "firelens-native-zoom-"));
 await writeFile(path.join(extension, "manifest.json"), JSON.stringify({ manifest_version: 3, name: "Local native zoom verification", version: "1.0", permissions: ["tabs"], background: { service_worker: "worker.js" } }));
 await writeFile(path.join(extension, "worker.js"), "chrome.runtime.onInstalled.addListener(() => {});\n");
-const protocol = await loadProtocol();
+const protocol = await loadProtocol(protocolPath);
 const rows = [];
 let context;
 try {
@@ -30,7 +30,7 @@ try {
         const tabs = await chrome.tabs.query({ url: `${url}/*` });
         await chrome.tabs.setZoom(tabs.at(-1).id, 1);
       }, baseUrl.replace(/\/$/, ""));
-      await driveState(page, protocol.states.find(state => state.id === id));
+      await driveState(page, protocol.states.find(state => state.id === id), protocol);
       for (const width of [1440, 390, 320]) {
         await page.setViewportSize({ width, height: 1000 });
         await page.evaluate(() => window.scrollTo(0, 0));
@@ -50,7 +50,7 @@ try {
         return chrome.tabs.getZoom(tab.id);
       }, baseUrl.replace(/\/$/, ""));
       assert.equal(zoom, 2);
-      await driveState(page, protocol.states.find(state => state.id === id));
+      await driveState(page, protocol.states.find(state => state.id === id), protocol);
       await page.evaluate(() => window.scrollTo(0, 0));
       const observed = await page.evaluate(() => ({ inner_width: innerWidth, device_pixel_ratio: devicePixelRatio, overflow: Math.max(0, document.documentElement.scrollWidth - innerWidth), css_zoom: getComputedStyle(document.documentElement).zoom }));
       assert.equal(observed.inner_width, 720);

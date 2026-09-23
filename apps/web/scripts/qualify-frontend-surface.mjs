@@ -373,8 +373,35 @@ export const surfaceStateReadyTextV2 = Object.freeze({
   partial_layer: responseFixtures["surface:partial-layer"].answer,
 });
 
+export const surfaceInteractionContractV3 = Object.freeze({
+  ...surfaceInteractionContractV2,
+  version: "map_first_compact_ask_v3",
+  home_region_name: "Explore official records",
+});
+
+export const surfaceStateReadyTextV3 = Object.freeze({
+  ...surfaceStateReadyTextV2, idle: "Explore official records",
+});
+
+function isMapFirstProtocol(protocol) {
+  return protocol?.protocol_id === "firelens_frontend_surface_v3";
+}
 function isCurrentSurfaceProtocol(protocol) {
-  return protocol?.protocol_id === "firelens_frontend_surface_v2";
+  return isMapFirstProtocol(protocol) || protocol?.protocol_id === "firelens_frontend_surface_v2";
+}
+function interactionContract(protocol) {
+  return isMapFirstProtocol(protocol) ? surfaceInteractionContractV3
+    : isCurrentSurfaceProtocol(protocol) ? surfaceInteractionContractV2 : surfaceInteractionContract;
+}
+
+export function surfaceMapFirstSuccessorIssues(previous, successor) {
+  const expected = structuredClone(previous);
+  expected.protocol_id = "firelens_frontend_surface_v3";
+  expected.description = successor.description;
+  expected.states = expected.states.map(state => state.id === "idle"
+    ? { ...state, ready_text: "Explore official records" } : state);
+  return stableJsonString(expected) === stableJsonString(successor)
+    ? [] : ["surface v3 changes exceed the reviewed idle readiness update"];
 }
 
 export function surfaceProtocolSuccessorIssues(previous, successor) {
@@ -390,7 +417,7 @@ export function surfaceProtocolSuccessorIssues(previous, successor) {
 export function requiresOnDemandMapContext() { return false; }
 
 export function surfaceReadyTextCoverageIssues(protocol) {
-  const readyText = isCurrentSurfaceProtocol(protocol) ? surfaceStateReadyTextV2 : surfaceStateReadyText;
+  const readyText = isMapFirstProtocol(protocol) ? surfaceStateReadyTextV3 : isCurrentSurfaceProtocol(protocol) ? surfaceStateReadyTextV2 : surfaceStateReadyText;
   return protocol.states.flatMap((state) => {
     const expected = readyText[state.id];
     if (typeof expected !== "string") return [`missing ready-text expectation ${state.id}`];
@@ -463,8 +490,8 @@ export async function loadProtocol(protocolPath = defaultProtocolPath) {
   }
   strictObject(protocol, "frontend surface protocol");
   if (isCurrentSurfaceProtocol(protocol)) {
-    const previous = JSON.parse(await readFile(path.join(driverFrontendRoot, "../../data/evaluation/frontend_surface.v1.yaml"), "utf8"));
-    const issues = surfaceProtocolSuccessorIssues(previous, protocol);
+    const previous = JSON.parse(await readFile(path.join(driverFrontendRoot, `../../data/evaluation/frontend_surface.${isMapFirstProtocol(protocol) ? "v2" : "v1"}.yaml`), "utf8"));
+    const issues = isMapFirstProtocol(protocol) ? surfaceMapFirstSuccessorIssues(previous, protocol) : surfaceProtocolSuccessorIssues(previous, protocol);
     if (issues.length) throw new Error(issues.join("; "));
   }
   if (protocol.schema_version !== "firelens.frontend_surface_protocol.v1") {
@@ -827,7 +854,7 @@ async function waitForCurrentAnswer(page, question) {
 
 async function waitForSurfaceHome(page, protocol) {
   if (isCurrentSurfaceProtocol(protocol)) {
-    await page.getByRole("main", { name: surfaceInteractionContractV2.home_region_name, exact: true }).waitFor();
+    await page.getByRole("main", { name: interactionContract(protocol).home_region_name, exact: true }).waitFor();
     await page.getByRole("link", { name: surfaceInteractionContractV2.home_reset_name, exact: true }).waitFor();
   } else await page.getByLabel("BC community for a nearby lookup").waitFor();
 }
@@ -3295,7 +3322,7 @@ async function main() {
           protocol_status: protocol.status,
           protocol_frozen_at: protocol.frozen_at,
           interaction_driver: {
-            ...(isCurrentSurfaceProtocol(protocol) ? surfaceInteractionContractV2 : surfaceInteractionContract),
+            ...interactionContract(protocol),
             driver_sha256: await fileSha256(fileURLToPath(import.meta.url)),
             application_frontend_root: frontendRoot,
             fixture_clock: "2026-08-06T12:00:00Z",

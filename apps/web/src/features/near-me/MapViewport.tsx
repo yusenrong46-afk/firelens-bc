@@ -50,6 +50,8 @@ export function FitResults({
       || (!before.fittedRecords && results.length > 0);
     previous.current = { scope, selectedId: selectedResultId, fittedRecords: before?.fittedRecords || results.length > 0 };
     if (!needsFit) return;
+    // Read the visible dimensions before fitting after a hidden/full-width transition.
+    map.invalidateSize({ animate: false, pan: false });
     if (selected) {
       const selectedCoordinates = geometryLatLngs(selected);
       if (selectedCoordinates.length > 0) {

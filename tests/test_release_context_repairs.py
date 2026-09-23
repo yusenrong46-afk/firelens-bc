@@ -119,3 +119,16 @@ def test_explicit_new_pet_purpose_does_not_inherit_emergency_authority(question:
     assert static_guidance_subject(conversation_planning_question(request)) is None
     independent = plan_agent_request(QueryRequest(question=question))
     assert plan_agent_request(request).tool_calls == independent.tool_calls
+
+
+def test_kit_maintenance_keeps_grounded_route_after_context_composition() -> None:
+    from firelens.answering.intent import plan_query
+
+    request = QueryRequest.model_validate(
+        {
+            "question": "How often should I check and replace those supplies?",
+            "history": CASES[0]["request"]["history"],
+        }
+    )
+    assert plan_query(request).route == "related"
+    assert "earlier question" in conversation_planning_question(request)

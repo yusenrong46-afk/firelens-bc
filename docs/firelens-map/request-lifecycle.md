@@ -1,6 +1,6 @@
 # Public Ask request lifecycle
 
-Source digest: `b34233de1afb1e422105315fb54580f95628d4c8e73af84e270fb51522bbdfb2`. This is a navigation trace, not executed evidence.
+Source digest: `bd8adfdd1982449b66e255af6939b788d7c6a0473e832f4bda6a26116cc4acb9`. This is a navigation trace, not executed evidence.
 
 1. `api/answer_routes.py` applies readiness and deadline boundaries.
 2. `agent/coordinator.py` builds the immutable `AgentQueryPlan`.

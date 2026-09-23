@@ -221,7 +221,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 609,
+      "branch_score": 616,
       "fan_in": 4,
       "fan_out": 1,
       "generated": false,
@@ -242,7 +242,7 @@
       ],
       "kind": "script",
       "language": "javascript",
-      "loc": 3362,
+      "loc": 3389,
       "major_symbols": [
         "SurfaceQualificationTimeoutError",
         "withQualificationTimeout",
@@ -250,6 +250,9 @@
         "surfaceInteractionContract",
         "surfaceInteractionContractV2",
         "surfaceStateReadyTextV2",
+        "surfaceInteractionContractV3",
+        "surfaceStateReadyTextV3",
+        "surfaceMapFirstSuccessorIssues",
         "surfaceProtocolSuccessorIssues",
         "requiresOnDemandMapContext",
         "surfaceReadyTextCoverageIssues",
@@ -301,7 +304,12 @@
         "surfaceInteractionContract",
         "surfaceInteractionContractV2",
         "surfaceStateReadyTextV2",
+        "surfaceInteractionContractV3",
+        "surfaceStateReadyTextV3",
+        "isMapFirstProtocol",
         "isCurrentSurfaceProtocol",
+        "interactionContract",
+        "surfaceMapFirstSuccessorIssues",
         "surfaceProtocolSuccessorIssues",
         "requiresOnDemandMapContext",
         "surfaceReadyTextCoverageIssues",
@@ -391,6 +399,35 @@
         "main"
       ],
       "test_fan_in": 2
+    },
+    {
+      "branch_score": 23,
+      "fan_in": 1,
+      "fan_out": 0,
+      "generated": false,
+      "id": "apps/web/scripts/release-smoke-gate.mjs",
+      "import_specifiers": [
+        "node:crypto",
+        "node:fs/promises",
+        "node:path"
+      ],
+      "imports": [],
+      "kind": "script",
+      "language": "javascript",
+      "loc": 40,
+      "major_symbols": [
+        "reserveSubmission",
+        "assertReservedDispatch"
+      ],
+      "module": "apps/web/scripts/release-smoke-gate",
+      "path": "apps/web/scripts/release-smoke-gate.mjs",
+      "production_fan_in": 0,
+      "statically_unreferenced": false,
+      "symbols": [
+        "reserveSubmission",
+        "assertReservedDispatch"
+      ],
+      "test_fan_in": 1
     },
     {
       "branch_score": 7,
@@ -496,9 +533,9 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 47,
+      "branch_score": 40,
       "fan_in": 7,
-      "fan_out": 17,
+      "fan_out": 16,
       "generated": false,
       "id": "apps/web/src/app/App.tsx",
       "import_specifiers": [
@@ -512,7 +549,6 @@
         "../features/near-me/LiveAnalysisWorkspace",
         "../shared/telemetry",
         "./AtlasHeader",
-        "./AtlasHome",
         "./AtlasQuestion",
         "./ContextChips",
         "./HowFireLensWorks",
@@ -537,7 +573,6 @@
       ],
       "imports": [
         "apps/web/src/app/AtlasHeader.tsx",
-        "apps/web/src/app/AtlasHome.tsx",
         "apps/web/src/app/AtlasQuestion.tsx",
         "apps/web/src/app/ContextChips.tsx",
         "apps/web/src/app/HowFireLensWorks.tsx",
@@ -556,9 +591,8 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 152,
+      "loc": 148,
       "major_symbols": [
-        "AtlasLiveMap",
         "App"
       ],
       "module": "apps/web/src/app/App",
@@ -566,7 +600,6 @@
       "production_fan_in": 1,
       "statically_unreferenced": false,
       "symbols": [
-        "AtlasLiveMap",
         "App"
       ],
       "test_fan_in": 6
@@ -587,7 +620,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 39,
+      "loc": 37,
       "major_symbols": [
         "AtlasHeader"
       ],
@@ -602,7 +635,7 @@
     },
     {
       "branch_score": 8,
-      "fan_in": 1,
+      "fan_in": 0,
       "fan_out": 3,
       "generated": false,
       "id": "apps/web/src/app/AtlasHome.tsx",
@@ -626,15 +659,15 @@
       ],
       "module": "apps/web/src/app/AtlasHome",
       "path": "apps/web/src/app/AtlasHome.tsx",
-      "production_fan_in": 1,
-      "statically_unreferenced": false,
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
       "symbols": [
         "AtlasHome"
       ],
       "test_fan_in": 0
     },
     {
-      "branch_score": 4,
+      "branch_score": 12,
       "fan_in": 1,
       "fan_out": 2,
       "generated": false,
@@ -651,7 +684,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 26,
+      "loc": 39,
       "major_symbols": [
         "AtlasQuestion"
       ],
@@ -2189,7 +2222,7 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 15,
+      "branch_score": 18,
       "fan_in": 1,
       "fan_out": 11,
       "generated": false,
@@ -2226,7 +2259,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 72,
+      "loc": 73,
       "major_symbols": [
         "AtlasLiveMap"
       ],
@@ -2600,7 +2633,7 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 18,
+      "branch_score": 20,
       "fan_in": 5,
       "fan_out": 2,
       "generated": false,
@@ -2618,7 +2651,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 81,
+      "loc": 86,
       "major_symbols": [
         "BC_BOUNDS",
         "MapFocus",
@@ -3153,7 +3186,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 1895,
+      "loc": 1879,
       "major_symbols": [],
       "module": "apps/web/tests/App.test",
       "path": "apps/web/tests/App.test.tsx",
@@ -3208,7 +3241,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 54,
+      "loc": 58,
       "major_symbols": [],
       "module": "apps/web/tests/MapViewport.test",
       "path": "apps/web/tests/MapViewport.test.tsx",
@@ -3443,7 +3476,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 59,
+      "loc": 60,
       "major_symbols": [
         "localOrigin",
         "openComposer",
@@ -3534,7 +3567,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 901,
+      "loc": 903,
       "major_symbols": [
         "AskRequest"
       ],
@@ -3590,7 +3623,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 238,
+      "loc": 239,
       "major_symbols": [],
       "module": "apps/web/tests/e2e-real/atlas-readiness.spec",
       "path": "apps/web/tests/e2e-real/atlas-readiness.spec.ts",
@@ -3895,7 +3928,7 @@
       "test_fan_in": 6
     },
     {
-      "branch_score": 25,
+      "branch_score": 26,
       "fan_in": 0,
       "fan_out": 1,
       "generated": false,
@@ -3913,7 +3946,7 @@
       ],
       "kind": "test",
       "language": "javascript",
-      "loc": 912,
+      "loc": 930,
       "major_symbols": [],
       "module": "apps/web/tests/frontend-surface-runner.test",
       "path": "apps/web/tests/frontend-surface-runner.test.mjs",
@@ -4192,7 +4225,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 128,
+      "loc": 129,
       "major_symbols": [],
       "module": "apps/web/tests/liveMapPresentation.test",
       "path": "apps/web/tests/liveMapPresentation.test.tsx",
@@ -4452,7 +4485,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 0,
+      "branch_score": 1,
       "fan_in": 0,
       "fan_out": 2,
       "generated": false,
@@ -4469,7 +4502,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 25,
+      "loc": 51,
       "major_symbols": [],
       "module": "apps/web/tests/mapViewportRefresh.test",
       "path": "apps/web/tests/mapViewportRefresh.test.tsx",
@@ -4504,7 +4537,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 109,
+      "loc": 118,
       "major_symbols": [],
       "module": "apps/web/tests/productExperience.test",
       "path": "apps/web/tests/productExperience.test.tsx",
@@ -4516,7 +4549,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 3,
+      "branch_score": 4,
       "fan_in": 0,
       "fan_out": 4,
       "generated": false,
@@ -4539,7 +4572,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 80,
+      "loc": 95,
       "major_symbols": [],
       "module": "apps/web/tests/productIntegrationV2.test",
       "path": "apps/web/tests/productIntegrationV2.test.tsx",
@@ -4713,6 +4746,38 @@
         "ask",
         "openHome",
         "nestedVerticalScrollers"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 0,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/tests/release-smoke-gate.test.mjs",
+      "import_specifiers": [
+        "../scripts/release-smoke-gate.mjs",
+        "node:assert/strict",
+        "node:fs/promises",
+        "node:os",
+        "node:path",
+        "node:test"
+      ],
+      "imports": [
+        "apps/web/scripts/release-smoke-gate.mjs"
+      ],
+      "kind": "test",
+      "language": "javascript",
+      "loc": 41,
+      "major_symbols": [],
+      "module": "apps/web/tests/release-smoke-gate.test",
+      "path": "apps/web/tests/release-smoke-gate.test.mjs",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "origin",
+        "bankBytes",
+        "setup"
       ],
       "test_fan_in": 0
     },
@@ -7046,7 +7111,7 @@
     },
     {
       "branch_score": 0,
-      "fan_in": 23,
+      "fan_in": 24,
       "fan_out": 2,
       "generated": false,
       "id": "src/firelens/agent/__init__.py",
@@ -7067,7 +7132,7 @@
       "production_fan_in": 1,
       "statically_unreferenced": false,
       "symbols": [],
-      "test_fan_in": 22
+      "test_fan_in": 23
     },
     {
       "branch_score": 9,
@@ -7818,7 +7883,7 @@
     },
     {
       "branch_score": 120,
-      "fan_in": 21,
+      "fan_in": 22,
       "fan_out": 21,
       "generated": false,
       "id": "src/firelens/agent/query_plan.py",
@@ -7911,7 +7976,7 @@
         "_plan_request_body",
         "build_agent_query_plan"
       ],
-      "test_fan_in": 14
+      "test_fan_in": 15
     },
     {
       "branch_score": 5,
@@ -8837,7 +8902,7 @@
     },
     {
       "branch_score": 82,
-      "fan_in": 31,
+      "fan_in": 32,
       "fan_out": 18,
       "generated": false,
       "id": "src/firelens/answering/intent.py",
@@ -8912,7 +8977,7 @@
         "apply_planning_decision",
         "reviewed_guidance_plan"
       ],
-      "test_fan_in": 15
+      "test_fan_in": 16
     },
     {
       "branch_score": 175,
@@ -9059,9 +9124,9 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 63,
-      "fan_in": 13,
-      "fan_out": 10,
+      "branch_score": 66,
+      "fan_in": 14,
+      "fan_out": 11,
       "generated": false,
       "id": "src/firelens/answering/intent_conversation.py",
       "import_specifiers": [
@@ -9073,6 +9138,7 @@
         "firelens.answering.location_intent",
         "firelens.answering.return_intent",
         "firelens.answering.scope",
+        "firelens.answering.static_guidance_subject",
         "firelens.contracts",
         "firelens.guidance_capabilities",
         "firelens.source_requirements",
@@ -9086,13 +9152,14 @@
         "src/firelens/answering/location_intent.py",
         "src/firelens/answering/return_intent.py",
         "src/firelens/answering/scope.py",
+        "src/firelens/answering/static_guidance_subject.py",
         "src/firelens/contracts.py",
         "src/firelens/guidance_capabilities.py",
         "src/firelens/source_requirements.py"
       ],
       "kind": "production",
       "language": "python",
-      "loc": 345,
+      "loc": 367,
       "major_symbols": [
         "is_selected_record_followup",
         "focused_question",
@@ -9121,6 +9188,7 @@
         "is_true_deictic_followup",
         "is_significance_followup",
         "prior_anchor_user_question",
+        "_followup_prior_question",
         "resolved_user_question",
         "conversation_planning_question",
         "continues_prior_live_place",
@@ -9137,7 +9205,7 @@
         "skips_provider_planning",
         "publication_question"
       ],
-      "test_fan_in": 3
+      "test_fan_in": 4
     },
     {
       "branch_score": 41,
@@ -10277,7 +10345,7 @@
     },
     {
       "branch_score": 11,
-      "fan_in": 8,
+      "fan_in": 9,
       "fan_out": 0,
       "generated": false,
       "id": "src/firelens/answering/request_facets.py",
@@ -10289,7 +10357,7 @@
       "imports": [],
       "kind": "production",
       "language": "python",
-      "loc": 135,
+      "loc": 146,
       "major_symbols": [
         "ContentsRequestFacet",
         "contents_request_facet",
@@ -10307,7 +10375,7 @@
         "requests_contents",
         "significance_subject"
       ],
-      "test_fan_in": 1
+      "test_fan_in": 2
     },
     {
       "branch_score": 7,
@@ -10702,8 +10770,8 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 15,
-      "fan_in": 6,
+      "branch_score": 16,
+      "fan_in": 8,
       "fan_out": 2,
       "generated": false,
       "id": "src/firelens/answering/static_guidance_subject.py",
@@ -10719,22 +10787,24 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 102,
+      "loc": 148,
       "major_symbols": [
         "StaticGuidanceSubject",
+        "is_pet_packing_followup",
         "static_guidance_subject",
         "static_guidance_retrieval_query"
       ],
       "module": "firelens.answering.static_guidance_subject",
       "path": "src/firelens/answering/static_guidance_subject.py",
-      "production_fan_in": 4,
+      "production_fan_in": 5,
       "statically_unreferenced": false,
       "symbols": [
         "StaticGuidanceSubject",
+        "is_pet_packing_followup",
         "static_guidance_subject",
         "static_guidance_retrieval_query"
       ],
-      "test_fan_in": 2
+      "test_fan_in": 3
     },
     {
       "branch_score": 106,
@@ -11862,7 +11932,7 @@
     },
     {
       "branch_score": 36,
-      "fan_in": 67,
+      "fan_in": 68,
       "fan_out": 2,
       "generated": false,
       "id": "src/firelens/config.py",
@@ -11901,7 +11971,7 @@
         "FireLensConfig.from_env",
         "FireLensConfig.from_env.setting"
       ],
-      "test_fan_in": 24
+      "test_fan_in": 25
     },
     {
       "branch_score": 76,
@@ -12050,7 +12120,7 @@
     },
     {
       "branch_score": 116,
-      "fan_in": 190,
+      "fan_in": 191,
       "fan_out": 12,
       "generated": false,
       "id": "src/firelens/contracts.py",
@@ -12199,7 +12269,7 @@
         "AskResponse._validate_requires_input",
         "AskResponse._validate_abstention"
       ],
-      "test_fan_in": 81
+      "test_fan_in": 82
     },
     {
       "branch_score": 26,
@@ -16731,7 +16801,7 @@
     },
     {
       "branch_score": 64,
-      "fan_in": 34,
+      "fan_in": 35,
       "fan_out": 13,
       "generated": false,
       "id": "src/firelens/live_answering.py",
@@ -16787,7 +16857,7 @@
         "LiveAnswerCoordinator._prohibited_live_handoff",
         "LiveAnswerCoordinator.answer"
       ],
-      "test_fan_in": 25
+      "test_fan_in": 26
     },
     {
       "branch_score": 4,
@@ -17559,7 +17629,7 @@
     },
     {
       "branch_score": 65,
-      "fan_in": 21,
+      "fan_in": 22,
       "fan_out": 4,
       "generated": false,
       "id": "src/firelens/providers/fake.py",
@@ -17606,7 +17676,7 @@
         "FakeProvider.generate_background",
         "FakeProvider.chat_turn"
       ],
-      "test_fan_in": 16
+      "test_fan_in": 17
     },
     {
       "branch_score": 81,
@@ -19991,7 +20061,7 @@
     },
     {
       "branch_score": 85,
-      "fan_in": 39,
+      "fan_in": 40,
       "fan_out": 16,
       "generated": false,
       "id": "src/firelens/runtime.py",
@@ -20063,7 +20133,7 @@
         "_validate_corpus_admission",
         "load_runtime"
       ],
-      "test_fan_in": 15
+      "test_fan_in": 16
     },
     {
       "branch_score": 143,
@@ -23448,7 +23518,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 75,
+      "branch_score": 79,
       "fan_in": 0,
       "fan_out": 7,
       "generated": false,
@@ -23468,7 +23538,8 @@
         "pytest",
         "shutil",
         "subprocess",
-        "sys"
+        "sys",
+        "yaml"
       ],
       "imports": [
         "src/firelens/contracts.py",
@@ -23481,7 +23552,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 1360,
+      "loc": 1394,
       "major_symbols": [
         "actual_core_run",
         "two_commit_core_runs",
@@ -23525,7 +23596,8 @@
         "test_current_policy_rejects_changed_report",
         "test_current_policy_rejects_missing_or_changed_evidence",
         "test_current_policy_rejects_changed_effective_provider_configuration",
-        "test_current_policy_rejects_changed_bound_file"
+        "test_current_policy_rejects_changed_bound_file",
+        "test_context_release_binding_preserves_all_historical_dispositions"
       ],
       "module": "tests.test_firelens_eval",
       "path": "tests/test_firelens_eval.py",
@@ -23583,7 +23655,8 @@
         "test_current_policy_rejects_changed_report",
         "test_current_policy_rejects_missing_or_changed_evidence",
         "test_current_policy_rejects_changed_effective_provider_configuration",
-        "test_current_policy_rejects_changed_bound_file"
+        "test_current_policy_rejects_changed_bound_file",
+        "test_context_release_binding_preserves_all_historical_dispositions"
       ],
       "test_fan_in": 0
     },
@@ -26934,6 +27007,68 @@
         "RegionalFireQueryTests.test_cariboo_uses_the_official_fire_centre_filter",
         "RegionalFireQueryTests.test_explicit_official_fire_centre_bypasses_community_geocoding",
         "RegionalFireQueryTests.test_okanagan_remains_a_bounded_radius_lookup_with_a_visible_limit"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 17,
+      "fan_in": 0,
+      "fan_out": 11,
+      "generated": false,
+      "id": "tests/test_release_context_repairs.py",
+      "import_specifiers": [
+        "__future__",
+        "asyncio",
+        "firelens.agent",
+        "firelens.agent.query_plan",
+        "firelens.answering.intent",
+        "firelens.answering.intent_conversation",
+        "firelens.answering.request_facets",
+        "firelens.answering.static_guidance_subject",
+        "firelens.config",
+        "firelens.contracts",
+        "firelens.live_answering",
+        "firelens.providers.fake",
+        "firelens.runtime",
+        "json",
+        "pathlib",
+        "pytest",
+        "test_v1_6_user_end_questions_end_to_end"
+      ],
+      "imports": [
+        "src/firelens/agent/__init__.py",
+        "src/firelens/agent/query_plan.py",
+        "src/firelens/answering/intent.py",
+        "src/firelens/answering/intent_conversation.py",
+        "src/firelens/answering/request_facets.py",
+        "src/firelens/answering/static_guidance_subject.py",
+        "src/firelens/config.py",
+        "src/firelens/contracts.py",
+        "src/firelens/live_answering.py",
+        "src/firelens/providers/fake.py",
+        "src/firelens/runtime.py"
+      ],
+      "kind": "test",
+      "language": "python",
+      "loc": 134,
+      "major_symbols": [
+        "test_frozen_release_context",
+        "test_person_is_not_a_contents_container",
+        "test_named_container_remains_a_contents_request",
+        "test_explicit_new_pet_purpose_does_not_inherit_emergency_authority",
+        "test_kit_maintenance_keeps_grounded_route_after_context_composition"
+      ],
+      "module": "tests.test_release_context_repairs",
+      "path": "tests/test_release_context_repairs.py",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "test_frozen_release_context",
+        "test_frozen_release_context.run",
+        "test_person_is_not_a_contents_container",
+        "test_named_container_remains_a_contents_request",
+        "test_explicit_new_pet_purpose_does_not_inherit_emergency_authority",
+        "test_kit_maintenance_keeps_grounded_route_after_context_composition"
       ],
       "test_fan_in": 0
     },
@@ -31742,5 +31877,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "b34233de1afb1e422105315fb54580f95628d4c8e73af84e270fb51522bbdfb2"
+  "source_digest": "bd8adfdd1982449b66e255af6939b788d7c6a0473e832f4bda6a26116cc4acb9"
 }

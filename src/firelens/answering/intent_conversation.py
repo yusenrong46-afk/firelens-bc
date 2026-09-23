@@ -146,8 +146,8 @@ def prior_anchor_user_question(request: QueryRequest) -> str | None:
     return previous[-1] if previous else None
 
 
-def resolved_user_question(request: QueryRequest) -> str:
-    """Name the previous user subject for a genuinely elliptical follow-up."""
+def _followup_prior_question(request: QueryRequest) -> str | None:
+    """Resolve the prior subject once for both display and route construction."""
 
     current = focused_question(request.question)
     prior = prior_anchor_user_question(request)
@@ -158,11 +158,14 @@ def resolved_user_question(request: QueryRequest) -> str:
         and static_guidance_subject(prior)
         in {StaticGuidanceSubject.EMERGENCY_KIT, StaticGuidanceSubject.PET_GRAB_AND_GO}
     )
-    if not _is_elliptical_followup(current) and not packing_followup:
-        return current
-    if not prior:
-        return current
-    return f"Regarding the earlier question '{prior}', {current}"[:2_000]
+    return prior if _is_elliptical_followup(current) or packing_followup else None
+
+
+def resolved_user_question(request: QueryRequest) -> str:
+    """Name the previous user subject for a genuinely elliptical follow-up."""
+    current = focused_question(request.question)
+    prior = _followup_prior_question(request)
+    return f"Regarding the earlier question '{prior}', {current}"[:2_000] if prior else current
 
 
 def conversation_planning_question(request: QueryRequest) -> str:
@@ -192,8 +195,10 @@ def _routing_texts(request: QueryRequest) -> tuple[str, ...]:
     """Use history only for a genuinely elliptical current question."""
 
     current = focused_question(request.question).lower()
-    resolved = resolved_user_question(request).lower()
-    return (current, resolved) if resolved != current else (current,)
+    prior = _followup_prior_question(request)
+    # Routing sees only user-authored wording. The explanatory wrapper used for
+    # retrieval is not a new clause and must not turn kit guidance into a live task.
+    return (current, f"{prior.lower()} {current}") if prior else (current,)
 
 
 def _deictic_action_boundary(request: QueryRequest) -> ReasonCode | None:

@@ -217,7 +217,7 @@ test("Home community submits all nearby layers at 50km, binds a record follow-up
   await openSources(page);
   await expect(page.locator("#conversation details.sheet-sources")).toHaveAttribute("open", "");
   await goHome(page);
-  await expect(page.getByLabel("Ask FireLens a question")).toBeFocused();
+  await expect(page.getByRole("complementary", { name: "Map", exact: true })).toBeFocused();
   await expect(await openComposer(page)).toHaveValue("");
   expect(asks).toHaveLength(2);
 });

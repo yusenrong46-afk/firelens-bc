@@ -18,7 +18,7 @@ test("Home clears an unsubmitted private draft and returns keyboard focus", asyn
   await page.screenshot({ path: testInfo.outputPath("before-home.png"), fullPage: true });
   await goHome(page);
   await page.screenshot({ path: testInfo.outputPath("after-home.png"), fullPage: true });
-  await expect(page.getByLabel("Ask FireLens a question")).toBeFocused();
+  await expect(page.getByRole("complementary", { name: "Map", exact: true })).toBeFocused();
   await expect(await openComposer(page)).toHaveValue("");
 });
 
@@ -37,7 +37,7 @@ test("Home invalidates a pending browser location callback without sending coord
   // Allow the callback's microtasks and rendering to finish; no arbitrary sleep.
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   expect(asks).toEqual([]);
-  await expect(page.locator("#conversation")).not.toContainText("Approximate location ready");
+  await expect(page.locator("body")).not.toContainText("Approximate location ready");
 });
 
 async function ask(page: import("@playwright/test").Page, question: string) {

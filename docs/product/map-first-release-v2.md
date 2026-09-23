@@ -12,7 +12,11 @@ Permitted backend changes are limited to `intent_conversation.py`,
 `static_guidance_subject.py` and `request_facets.py`. They restore bare pet-supplies
 follow-ups to actual kit history, prevent an explicit located live request from
 inheriting weather context, and prevent personal pronouns becoming a contents
-container. Independent pet activities remain independent. No source, model,
+container. Independent pet activities remain independent. Evaluation-only changes in `firelens_eval/lab.py` and `semantic_oracles.py` select
+a versioned v3 policy/v2 binding after reviewing unchanged raw outcomes. The nine
+historical discrepancy payloads, original files, thresholds and obligations remain
+unchanged; 14 passing live cases differ only in run-time fixture clock values.
+No source, model,
 Python dependency or API contract changes are part of this release.
 
 ## Design review

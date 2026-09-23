@@ -146,7 +146,7 @@ test("R4 Home protects a new request from a delayed real response", async ({ pag
   await page.goto("/"); const input = await openComposer(page);
   await input.fill("Show fires near Kelowna"); await input.press("Enter"); await started;
   await goHome(page);
-  await expect(page.getByLabel("Ask FireLens a question")).toBeFocused(); await expect(await openComposer(page)).toHaveValue("");
+  await expect(page.getByRole("complementary", { name: "Map", exact: true })).toBeFocused(); await expect(await openComposer(page)).toHaveValue("");
   await ask(page, "Are there current wildfires near Emptytown?"); release();
   await expect(page.locator("#conversation")).toContainText("Emptytown");
   await expect(page.locator("#conversation")).not.toContainText("Mountain Fire");

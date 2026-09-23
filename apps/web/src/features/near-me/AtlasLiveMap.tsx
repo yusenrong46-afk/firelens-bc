@@ -1,6 +1,5 @@
-import { LiveDataStatus } from "../../app/LiveDataStatus";
 import { AnswerMapScope, answerMapScope } from "./AnswerMapScope";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { MapContainer, ZoomControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./liveMap.css";
@@ -16,7 +15,7 @@ import { isRenderableGeometry } from "./liveResultPresentation";
 import { HistoricalMapRecords, MapRefreshStatus } from "./MapRefreshStatus";
 
 /** Geographic presentation of the session's existing official map response. */
-export default function AtlasLiveMap({ session, visible = true }: { session: FireLensSession; visible?: boolean }) {
+export default function AtlasLiveMap({ session, visible = true, statusSlot }: { session: FireLensSession; visible?: boolean; statusSlot?: ReactNode }) {
   const [hiddenKinds, setHiddenKinds] = useState<Set<"incident" | "perimeter" | "evacuation">>(new Set());
   const [statuses, setStatuses] = useState<Set<string>>(new Set());
   const [statusMode, setStatusMode] = useState<IncidentStatusMode>("all");
@@ -49,7 +48,7 @@ export default function AtlasLiveMap({ session, visible = true }: { session: Fir
         onShowAllStatuses={() => { setStatusMode("all"); setStatuses(new Set()); }} />
     </div>
     {visible && <div className="atlas-live-status">
-      <LiveDataStatus liveSummary={session.liveSummary} readiness={session.readiness} now={session.statusNow} />
+      {statusSlot}
       <TileFailureWarning failed={tilesFailed} />
       <LiveMapCoverage condensed results={session.mapResults} displayedResults={filtered} matchingCount={session.mapMatchingResults.length} displayedMatchingCount={matching.length}
         freshnessState={session.mapAggregateFreshness} loading={!session.mapLoaded && !session.mapMessage} loadError={session.mapMessage}

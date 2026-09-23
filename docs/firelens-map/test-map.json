@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "b34233de1afb1e422105315fb54580f95628d4c8e73af84e270fb51522bbdfb2",
+  "source_digest": "bd8adfdd1982449b66e255af6939b788d7c6a0473e832f4bda6a26116cc4acb9",
   "tests": [
     {
       "cases": [
@@ -700,7 +700,8 @@
         "test_call_21",
         "test_call_22",
         "test_call_23",
-        "test_call_24"
+        "test_call_24",
+        "test_call_25"
       ],
       "direct_targets": [],
       "endpoints": [
@@ -1040,7 +1041,10 @@
     },
     {
       "cases": [
-        "test_call_1"
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4"
       ],
       "direct_targets": [
         "apps/web/src/features/near-me/MapViewport.tsx",
@@ -1058,7 +1062,8 @@
         "test_call_1",
         "test_call_2",
         "test_call_3",
-        "test_call_4"
+        "test_call_4",
+        "test_call_5"
       ],
       "direct_targets": [
         "apps/web/src/app/App.tsx",
@@ -1080,7 +1085,8 @@
         "test_call_1",
         "test_call_2",
         "test_call_3",
-        "test_call_4"
+        "test_call_4",
+        "test_call_5"
       ],
       "direct_targets": [
         "apps/web/src/app/App.tsx",
@@ -1231,6 +1237,19 @@
       ],
       "language": "typescript",
       "path": "apps/web/tests/reality/product-reality.spec.ts"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4"
+      ],
+      "direct_targets": [],
+      "endpoints": [],
+      "evaluation_families": [],
+      "language": "javascript",
+      "path": "apps/web/tests/release-smoke-gate.test.mjs"
     },
     {
       "cases": [
@@ -2365,6 +2384,7 @@
         "test_compare_rejects_malformed_envelope_instead_of_passing",
         "test_compare_rejects_nonexistent_commit_selectors",
         "test_compare_validates_each_clean_run_against_its_own_commit",
+        "test_context_release_binding_preserves_all_historical_dispositions",
         "test_current_policy_preserves_historical_failure",
         "test_current_policy_rejects_changed_bound_file",
         "test_current_policy_rejects_changed_effective_provider_configuration",
@@ -2410,9 +2430,11 @@
         "fault",
         "frontend",
         "hard_probe",
+        "intent",
         "judge",
         "live",
         "mutation",
+        "privacy",
         "productbench",
         "provider",
         "rag",
@@ -3938,6 +3960,38 @@
       ],
       "language": "python",
       "path": "tests/test_regional_fire_queries.py"
+    },
+    {
+      "cases": [
+        "test_explicit_new_pet_purpose_does_not_inherit_emergency_authority",
+        "test_frozen_release_context",
+        "test_kit_maintenance_keeps_grounded_route_after_context_composition",
+        "test_named_container_remains_a_contents_request",
+        "test_person_is_not_a_contents_container"
+      ],
+      "direct_targets": [
+        "src/firelens/agent/__init__.py",
+        "src/firelens/agent/query_plan.py",
+        "src/firelens/answering/intent.py",
+        "src/firelens/answering/intent_conversation.py",
+        "src/firelens/answering/request_facets.py",
+        "src/firelens/answering/static_guidance_subject.py",
+        "src/firelens/config.py",
+        "src/firelens/contracts.py",
+        "src/firelens/live_answering.py",
+        "src/firelens/providers/fake.py",
+        "src/firelens/runtime.py"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "conversation",
+        "intent",
+        "live",
+        "provider",
+        "publication"
+      ],
+      "language": "python",
+      "path": "tests/test_release_context_repairs.py"
     },
     {
       "cases": [

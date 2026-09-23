@@ -7,6 +7,7 @@ import type { LiveResult } from "../src/shared/api/api";
 const map = vi.hoisted(() => ({
   fitBounds: vi.fn(),
   setView: vi.fn(),
+  invalidateSize: vi.fn(),
   getZoom: () => 10,
   on: vi.fn(),
   off: vi.fn(),

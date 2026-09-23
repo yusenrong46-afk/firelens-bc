@@ -20,6 +20,7 @@ import {
   surfaceInteractionContract,
   surfaceInteractionContractV2,
   surfaceProtocolSuccessorIssues,
+  surfaceMapFirstSuccessorIssues,
   SurfaceQualificationTimeoutError,
   surfaceMatrixComplete,
   requiresOnDemandMapContext,
@@ -909,4 +910,21 @@ test("package exposes build-preview qualification and focused tests", async () =
     "node --test tests/frontend-surface-runner.test.mjs tests/surface-identity.test.mjs tests/surface-layout.test.mjs",
   );
   assert.equal(packageJson.devDependencies["axe-core"], "^4.12.1");
+});
+
+
+test("map-first v3 changes only idle readiness, preserving frozen thresholds and scenarios", async () => {
+  const previous = await loadProtocol(path.join(repositoryRoot, "data/evaluation/frontend_surface.v2.yaml"));
+  const current = await loadProtocol(path.join(repositoryRoot, "data/evaluation/frontend_surface.v3.yaml"));
+  assert.deepEqual(surfaceMapFirstSuccessorIssues(previous, current), []);
+  assert.deepEqual(surfaceReadyTextCoverageIssues(current), []);
+  for (const mutate of [
+    value => { value.status = "ratified"; },
+    value => { value.matrix.expected_rows = 35; },
+    value => { value.states[1].question = "easier fixture"; },
+    value => { value.surface_thresholds.allowed_request_origins.push("https://unapproved.example"); },
+  ]) {
+    const invalid = structuredClone(current); mutate(invalid);
+    assert.notDeepEqual(surfaceMapFirstSuccessorIssues(previous, invalid), []);
+  }
 });
