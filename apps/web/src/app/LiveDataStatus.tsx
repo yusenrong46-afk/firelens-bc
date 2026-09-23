@@ -14,15 +14,18 @@ function relativeCheck(iso: string | null | undefined, now: number): string {
 
 export function liveDataTone(
   liveSummary: LiveCurrentSummary | undefined,
-  readiness: ReadinessState,
+  _readiness: ReadinessState,
+  now?: number,
 ): "unavailable" | "partial" | "delayed" | "live" {
-  if (readiness === "not_ready" || !liveSummary) return "unavailable";
+  if (!liveSummary) return "unavailable";
   const missing = [liveSummary.incident_record_count, liveSummary.evacuation_record_count]
     .filter((count) => count == null).length;
   if (missing === 2) return "unavailable";
   if (missing === 1 || liveSummary.source_status === "partial") return "partial";
   if (/unavailable|fail|error/i.test(liveSummary.source_status)) return "unavailable";
   if (liveSummary.freshness !== "fresh" || /delay|stale/i.test(liveSummary.source_status)) return "delayed";
+  const checked = liveSummary.retrieved_at ? Date.parse(liveSummary.retrieved_at) : NaN;
+  if (now !== undefined && (!Number.isFinite(checked) || now - checked >= 300_000)) return "delayed";
   return "live";
 }
 
@@ -31,7 +34,7 @@ export function LiveDataStatus({ liveSummary, readiness, now = Date.now() }: {
   readiness: ReadinessState;
   now?: number;
 }) {
-  const tone = liveDataTone(liveSummary, readiness);
+  const tone = liveDataTone(liveSummary, readiness, now);
   const missing = liveSummary ? [
     liveSummary.incident_record_count == null ? "Incident records unavailable" : undefined,
     liveSummary.evacuation_record_count == null ? "Evacuation total unavailable" : undefined,

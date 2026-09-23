@@ -1,0 +1,164 @@
+{
+  "response": {
+    "status": "answer",
+    "trace_id": "6326cf143d8c4b8fbbb77a4b1c051fbd",
+    "response_mode": "live",
+    "answer": "Quilpituk Creek (K51402) is listed as Under Control by BC Wildfire Service. It is 1275.7 hectares, is in the Kamloops Fire Centre and is 22.6 km from Kelowna. It is marked on the map as a point. BC Wildfire Service last updated this record about 13 minutes ago (5:56 a.m. PDT today).",
+    "answer_sections": [],
+    "history_text": "Authority: Official current records. Answer: Quilpituk Creek (K51402) is listed as Under Control by BC Wildfire Service. It is 1275.7 hectares, is in the Kamloops Fire Centre and is 22.6 km from Kelowna. It is marked on the map as a point. BC Wildfire Service last updated this record about 13 minutes ago (5:56 a.m. PDT today). Limitations: This uses official records and is not a safety assessment.",
+    "claims": [],
+    "evidence": [],
+    "limitations": [
+      "This uses official records and is not a safety assessment."
+    ],
+    "suggested_questions": [
+      "What belongs in an emergency kit?",
+      "What is the difference between an evacuation alert and order?",
+      "How can I prepare for wildfire smoke?"
+    ],
+    "related_links": [],
+    "reason_code": null,
+    "validation": null,
+    "error_kind": null,
+    "live_results": [
+      {
+        "result_id": "incident:K51402",
+        "kind": "incident",
+        "authority": "BC Wildfire Service",
+        "source_url": "https://services6.arcgis.com/ubm4tcTYICKBpist/arcgis/rest/services/BCWS_ActiveFires_PublicView/FeatureServer/0",
+        "source_updated_at": "2026-09-23T12:56:07.116000Z",
+        "retrieved_at": "2026-09-23T13:07:49.565610Z",
+        "freshness": "fresh",
+        "status": "Under Control",
+        "name": "Quilpituk Creek",
+        "incident_number": "K51402",
+        "size_hectares": 1275.7,
+        "fire_centre": "Kamloops Fire Centre",
+        "fire_zone": null,
+        "issuer": null,
+        "fire_of_note": false,
+        "geometry_relation": "nearby",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -119.505449999849,
+            50.0930999995979
+          ]
+        },
+        "distance_km": 22.6,
+        "distance_basis": "incident_point",
+        "distance_derivation": {
+          "truth_class": "deterministic_derivation",
+          "publication_state": "verified",
+          "input_source_ids": [
+            "incident:K51402",
+            "place:49.89,-119.50"
+          ],
+          "algorithm": "pyproj.Geod.inv WGS84 after shapely nearest_points",
+          "crs": "EPSG:4326",
+          "coordinate_order": "longitude_latitude",
+          "units": "km",
+          "calculated_at": "2026-09-23T13:09:18.673200Z",
+          "validation_status": "valid",
+          "input_freshness": "fresh",
+          "distance_km": 22.6,
+          "distance_basis": "incident_point"
+        }
+      }
+    ],
+    "aggregate_freshness": "fresh",
+    "partial_layers": [],
+    "unavailable_layers": [],
+    "requested_layers": [
+      "incident"
+    ],
+    "roster_total": 1,
+    "sample_record_ids": [
+      "incident:K51402"
+    ],
+    "presentation_shell": "chat",
+    "provenance_class": "official_live",
+    "suggestion_omission_reason": "none_registered",
+    "required_input": null,
+    "selected_live_result_id": "incident:K51402",
+    "resolved_location": {
+      "latitude": 49.89,
+      "longitude": -119.5
+    },
+    "status_banner": {
+      "headline": "Current official records",
+      "detail": "These facts come from official B.C. wildfire records. This is not a safety assessment.",
+      "freshness_label": "Current official records",
+      "availability_label": "Sources for the displayed evidence or official records were available.",
+      "retrieval_completed_at": "2026-09-23T13:07:49.565610Z",
+      "source_updated_at": "2026-09-23T12:56:07.116000Z",
+      "official_escalation_title": "Open BCWS map",
+      "official_escalation_url": "https://wildfiresituation.nrs.gov.bc.ca/map"
+    },
+    "supported_items": [
+      "Quilpituk Creek (incident)"
+    ],
+    "unknown_items": [
+      "This uses official records and is not a safety assessment."
+    ],
+    "proof_cards": [
+      {
+        "claim_id": "incident:K51402",
+        "claim_text": "Quilpituk Creek",
+        "support_state": "live_record",
+        "support_label": "Official live record as published",
+        "authority": "BC Wildfire Service",
+        "exact_passage": "Under Control",
+        "source_title": "Quilpituk Creek",
+        "source_revision": "2026-09-23T12:56:07.116000+00:00",
+        "review_state": "Official live feed as published",
+        "critical_fields_checked": "Not applicable \u2014 live record, not a reviewed claim",
+        "freshness": "fresh",
+        "conflicts_or_unknowns": [],
+        "official_url": "https://services6.arcgis.com/ubm4tcTYICKBpist/arcgis/rest/services/BCWS_ActiveFires_PublicView/FeatureServer/0",
+        "truth_class": "source_fact",
+        "publication_state": "verified",
+        "derivation": {
+          "truth_class": "deterministic_derivation",
+          "publication_state": "verified",
+          "input_source_ids": [
+            "incident:K51402",
+            "place:49.89,-119.50"
+          ],
+          "algorithm": "pyproj.Geod.inv WGS84 after shapely nearest_points",
+          "crs": "EPSG:4326",
+          "coordinate_order": "longitude_latitude",
+          "units": "km",
+          "calculated_at": "2026-09-23T13:09:18.673200Z",
+          "validation_status": "valid",
+          "input_freshness": "fresh",
+          "distance_km": 22.6,
+          "distance_basis": "incident_point"
+        },
+        "publication": {
+          "kind": "official_live_typed",
+          "typed_claim_id": null,
+          "typed_live_fact_id": "incident:K51402",
+          "review_status": "official_live_record",
+          "source_revision_sha256": null,
+          "source_span_sha256": null,
+          "renderer_id": "firelens.live_typed_renderer.v1",
+          "support_provenance": "typed_official_live_fact",
+          "risk_tier": "B"
+        }
+      }
+    ]
+  },
+  "lookup_ids": [
+    "incident:K51402",
+    "incident:K51490",
+    "incident:K41351",
+    "perimeter:K51402",
+    "perimeter:K51490",
+    "perimeter:K41351",
+    "evacuation:57c47826684a",
+    "evacuation:f051ee4285f3",
+    "evacuation:87e6af4b4dc4",
+    "evacuation:e209044b6b89"
+  ]
+}

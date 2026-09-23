@@ -1,0 +1,348 @@
+{
+  "status": "answer",
+  "trace_id": "316f26786fe1428bb4fd3152400ccbf5",
+  "response_mode": "partial",
+  "answer": "FIREWOOD PILES\nWood piled against a house is\na major fire hazard. Moving\nyour firewood pile may be the\nfactor that allows your home to\nsurvive a wildland fire. Move\nfirewood piles to the Extended\nZone (10 \u2013 30 metres from your\nhome), or into a FireSmart-\nmitigated building. Intermediate Zone (1.5 to 10 metres from a structure or home)\n\u00a2 Plant fire-resistant vegetation and select non-combustible landscaping\nmaterials\n\u00a2 Avoid incorporating any woody debris, including mulch\n\u00a2 Keep combustible items like firewood, construction materials, patio\nfurniture, tools and decorative pieces out of this zone \u00a2 Move trailers, recreational vehicles, storage sheds, and other combustible\nmaterials into the Extended Zone. If that is not possible, store firewood\ninside your mitigated garage, shed, or other ember-resistant structures\n\u00a2 Create a non-combustible ground cover, like a gravel pad, underneath\nand 1.5 metres around trailers, recreational vehicles and sheds\nExtended Zone (10 to 30 metres from a structure or home) GRASS\nA mowed lawn is a fire-resistant\nlawn. Grasses shorter than 10\ncentimetres in height are less\nlikely to burn intensely.\nBark mulches are\nhighly flammable.\nFirewood piles should be stored at\nleast 10 metres from your home.\n18",
+  "answer_sections": [],
+  "history_text": "Authority: Reviewed guidance + uncertainty. Answer: FIREWOOD PILES Wood piled against a house is a major fire hazard. Moving your firewood pile may be the factor that allows your home to survive a wildland fire. Move firewood piles to the Extended Zone (10 \u2013 30 metres from your home), or into a FireSmart- mitigated building. Intermediate Zone (1.5 to 10 metres from a structure or home) \u00a2 Plant fire-resistant vegetation and select non-combustible landscaping materials \u00a2 Avoid incorporating any woody debris, including mulch \u00a2 Keep combustible items like firewood, construction materials, patio furniture, tools and decorative pieces out of this zone \u00a2 Move trailers, recreational vehicles, storage sheds, and other combustible materials into the Extended Zone. If that is not possible, store firewood inside your mitigated garage, shed, or other ember-resistant structures \u00a2 Create a non-combustible ground cover, like a gravel pad, underneath and 1.5 metres around trailers, recreational vehicles and sheds Extended Zone (10 to 30 metres from a structure or home) GRASS A mowed lawn is a fire-resistant lawn. Grasses shorter than 10 centimetres in height are less likely to burn intensely. Bark mulches are highly flammable. Firewood piles should be stored at least 10 metres from your home. 18 Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions. | This answer cites a retained historical FireSmart document. Its wording describes that edition and does not establish current publisher guidance or program availability.",
+  "claims": [
+    {
+      "claim_id": "C1",
+      "text": "FIREWOOD PILES\nWood piled against a house is\na major fire hazard. Moving\nyour firewood pile may be the\nfactor that allows your home to\nsurvive a wildland fire. Move\nfirewood piles to the Extended\nZone (10 \u2013 30 metres from your\nhome), or into a FireSmart-\nmitigated building.",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E1",
+          "quote": "FIREWOOD PILES\nWood piled against a house is\na major fire hazard. Moving\nyour firewood pile may be the\nfactor that allows your home to\nsurvive a wildland fire. Move\nfirewood piles to the Extended\nZone (10 \u2013 30 metres from your\nhome), or into a FireSmart-\nmitigated building."
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "FireSmart BC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C2",
+      "text": "Intermediate Zone (1.5 to 10 metres from a structure or home)\n\u00a2 Plant fire-resistant vegetation and select non-combustible landscaping\nmaterials\n\u00a2 Avoid incorporating any woody debris, including mulch\n\u00a2 Keep combustible items like firewood, construction materials, patio\nfurniture, tools and decorative pieces out of this zone",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E2",
+          "quote": "Intermediate Zone (1.5 to 10 metres from a structure or home)\n\u00a2 Plant fire-resistant vegetation and select non-combustible landscaping\nmaterials\n\u00a2 Avoid incorporating any woody debris, including mulch\n\u00a2 Keep combustible items like firewood, construction materials, patio\nfurniture, tools and decorative pieces out of this zone"
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "PreparedBC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C3",
+      "text": "\u00a2 Move trailers, recreational vehicles, storage sheds, and other combustible\nmaterials into the Extended Zone. If that is not possible, store firewood\ninside your mitigated garage, shed, or other ember-resistant structures\n\u00a2 Create a non-combustible ground cover, like a gravel pad, underneath\nand 1.5 metres around trailers, recreational vehicles and sheds\nExtended Zone (10 to 30 metres from a structure or home)",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E2",
+          "quote": "\u00a2 Move trailers, recreational vehicles, storage sheds, and other combustible\nmaterials into the Extended Zone. If that is not possible, store firewood\ninside your mitigated garage, shed, or other ember-resistant structures\n\u00a2 Create a non-combustible ground cover, like a gravel pad, underneath\nand 1.5 metres around trailers, recreational vehicles and sheds\nExtended Zone (10 to 30 metres from a structure or home)"
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "PreparedBC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C4",
+      "text": "GRASS\nA mowed lawn is a fire-resistant\nlawn. Grasses shorter than 10\ncentimetres in height are less\nlikely to burn intensely.\nBark mulches are\nhighly flammable.\nFirewood piles should be stored at\nleast 10 metres from your home.\n18",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E3",
+          "quote": "GRASS\nA mowed lawn is a fire-resistant\nlawn. Grasses shorter than 10\ncentimetres in height are less\nlikely to burn intensely.\nBark mulches are\nhighly flammable.\nFirewood piles should be stored at\nleast 10 metres from your home.\n18"
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "FireSmart BC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "E1",
+      "title": "FireSmart BC Begins at Home Guide",
+      "publisher": "FireSmart BC",
+      "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2020/04/05.30.23_BeginsatHomeGuide_Web.pdf",
+      "locator": "page:12",
+      "document_sha256": "c808a14bb873eb8b70930470976b0f2e091eed9cfdc1fe4b63d6325b4ae3c2ca",
+      "temporal_class": "stable_guidance",
+      "review_provenance": "native_text",
+      "primary_text": "FIREWOOD PILES\nWood piled against a house is\na major fire hazard. Moving\nyour firewood pile may be the\nfactor that allows your home to\nsurvive a wildland fire. Move\nfirewood piles to the Extended\nZone (10 \u2013 30 metres from your\nhome), or into a FireSmart-\nmitigated building.",
+      "context_text": "BARK MULCH &\nPINE NEEDLES\nDo not use bark or pine needle\nmulches within 10 metres of\nyour home, as they are highly\ncombustible. Gravel mulch and\ndecorative crushed rock mulch\nsignificantly reduce the risk of\nwildland fire.\n\nFIREWOOD PILES\nWood piled against a house is\na major fire hazard. Moving\nyour firewood pile may be the\nfactor that allows your home to\nsurvive a wildland fire. Move\nfirewood piles to the Extended\nZone (10 \u2013 30 metres from your\nhome), or into a FireSmart-\nmitigated building.\n\nBURN BARRELS & FIRE\nPITS\nBurn barrels should be placed as\nfar as possible from structures\nand trees. Keep the area within\n3 metres of the burn barrel free\nof combustible material. Always\nensure that your burn barrel\nhas proper ventilation and is\nscreened with 6 millimetre or\nfiner wire mesh.\nCheck with your local\nmunicipality regarding specific\nrequirements and restrictions for\nbackyard fire pits.\nFire permits for both burn\nbarrels and fire pits are required\nin many jurisdictions.\n19"
+    },
+    {
+      "evidence_id": "E2",
+      "title": "Wildfire Preparedness Guide",
+      "publisher": "PreparedBC",
+      "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+      "locator": "page:9",
+      "document_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+      "temporal_class": "stable_guidance",
+      "review_provenance": "native_text",
+      "primary_text": "Immediate Zone (0 to 1.5 metres from a structure or home)\n\u00a2 Choose non-combustible building materials when constructing or\nrenovating your home\n\u00a2 Clear vegetation and combustible material down to mineral soil and\ncover with non-combustible materials like gravel, brick, or concrete\n\u00a2 Avoid planting woody shrubs or trees. If any are present, prune and\nmaintain them regularly\nIntermediate Zone (1.5 to 10 metres from a structure or home)\n\u00a2 Plant fire-resistant vegetation and select non-combustible landscaping\nmaterials\n\u00a2 Avoid incorporating any woody debris, including mulch\n\u00a2 Keep combustible items like firewood, construction materials, patio\nfurniture, tools and decorative pieces out of this zone\n\n\u00a2 Move trailers, recreational vehicles, storage sheds, and other combustible\nmaterials into the Extended Zone. If that is not possible, store firewood\ninside your mitigated garage, shed, or other ember-resistant structures\n\u00a2 Create a non-combustible ground cover, like a gravel pad, underneath\nand 1.5 metres around trailers, recreational vehicles and sheds\nExtended Zone (10 to 30 metres from a structure or home)\n\u00a2 Selectively remove evergreen trees to create at least 3 metres of\nhorizontal space between the single or grouped tree crowns\n\u00a2 Remove all branches to a height of 2 metres from the ground\n\u00a2 Regularly clean up accumulations of fallen branches, dry grass, and\nneedles to eliminate potential surface fuels",
+      "context_text": "Immediate Zone (0 to 1.5 metres from a structure or home)\n\u00a2 Choose non-combustible building materials when constructing or\nrenovating your home\n\u00a2 Clear vegetation and combustible material down to mineral soil and\ncover with non-combustible materials like gravel, brick, or concrete\n\u00a2 Avoid planting woody shrubs or trees. If any are present, prune and\nmaintain them regularly\nIntermediate Zone (1.5 to 10 metres from a structure or home)\n\u00a2 Plant fire-resistant vegetation and select non-combustible landscaping\nmaterials\n\u00a2 Avoid incorporating any woody debris, including mulch\n\u00a2 Keep combustible items like firewood, construction materials, patio\nfurniture, tools and decorative pieces out of this zone\n\n\u00a2 Move trailers, recreational vehicles, storage sheds, and other combustible\nmaterials into the Extended Zone. If that is not possible, store firewood\ninside your mitigated garage, shed, or other ember-resistant structures\n\u00a2 Create a non-combustible ground cover, like a gravel pad, underneath\nand 1.5 metres around trailers, recreational vehicles and sheds\nExtended Zone (10 to 30 metres from a structure or home)\n\u00a2 Selectively remove evergreen trees to create at least 3 metres of\nhorizontal space between the single or grouped tree crowns\n\u00a2 Remove all branches to a height of 2 metres from the ground\n\u00a2 Regularly clean up accumulations of fallen branches, dry grass, and\nneedles to eliminate potential surface fuels\n\n\u00a2 Continue to apply these principles if your property extends beyond 30m.\nWork with your neighbours in overlapping zones and seek guidance\nfrom a forest professional if affected by other conditions like steep slopes"
+    },
+    {
+      "evidence_id": "E3",
+      "title": "FireSmart BC Begins at Home Guide",
+      "publisher": "FireSmart BC",
+      "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2020/04/05.30.23_BeginsatHomeGuide_Web.pdf",
+      "locator": "page:11",
+      "document_sha256": "c808a14bb873eb8b70930470976b0f2e091eed9cfdc1fe4b63d6325b4ae3c2ca",
+      "temporal_class": "stable_guidance",
+      "review_provenance": "native_text",
+      "primary_text": "GRASS\nA mowed lawn is a fire-resistant\nlawn. Grasses shorter than 10\ncentimetres in height are less\nlikely to burn intensely.\nBark mulches are\nhighly flammable.\nFirewood piles should be stored at\nleast 10 metres from your home.\n18",
+      "context_text": "HIGHLY FLAMMABLE\nPLANTS\n\u2022 Leaves or needles are\naromatic\n\u2022 Accumulates fine, dry, dead\nmaterial\n\u2022 Contains resin or oils\n\u2022 Loose, papery, or flaky bark\n\nGRASS\nA mowed lawn is a fire-resistant\nlawn. Grasses shorter than 10\ncentimetres in height are less\nlikely to burn intensely.\nBark mulches are\nhighly flammable.\nFirewood piles should be stored at\nleast 10 metres from your home.\n18"
+    }
+  ],
+  "limitations": [
+    "The evidence contains stable official guidance and does not establish current wildfire conditions.",
+    "This answer cites a retained historical FireSmart document. Its wording describes that edition and does not establish current publisher guidance or program availability."
+  ],
+  "suggested_questions": [
+    "What belongs in an emergency kit?",
+    "How should I build and review a household emergency plan?",
+    "How can I reduce combustible material around my home?"
+  ],
+  "related_links": [],
+  "reason_code": "high_risk_claim_not_structured",
+  "validation": {
+    "accepted": true,
+    "schema_valid": true,
+    "citation_ids_valid": true,
+    "quotes_exact": true,
+    "claim_support_valid": true,
+    "policy_valid": true,
+    "errors": []
+  },
+  "error_kind": null,
+  "live_results": [],
+  "aggregate_freshness": null,
+  "partial_layers": [],
+  "unavailable_layers": [],
+  "requested_layers": [],
+  "roster_total": null,
+  "sample_record_ids": [],
+  "presentation_shell": "chat",
+  "provenance_class": "reviewed_guidance",
+  "suggestion_omission_reason": "none_registered",
+  "required_input": null,
+  "selected_live_result_id": null,
+  "resolved_location": null,
+  "status_banner": {
+    "headline": "Official wording from a source",
+    "detail": "FireLens is showing an exact source quotation. It has not been approved as a structured FireLens claim.",
+    "freshness_label": "Stable source wording",
+    "availability_label": "Sources for the displayed evidence or official records were available.",
+    "retrieval_completed_at": null,
+    "source_updated_at": null,
+    "official_escalation_title": "Open official source",
+    "official_escalation_url": "https://firesmartbc.ca/wp-content/uploads/2020/04/05.30.23_BeginsatHomeGuide_Web.pdf"
+  },
+  "supported_items": [],
+  "unknown_items": [
+    "The evidence contains stable official guidance and does not establish current wildfire conditions.",
+    "Exact source wording \u2014 not a structured FireLens claim.",
+    "Some requested high-risk guidance has no reviewed structured claim. FireLens is showing official wording or a handoff, not an interpreted claim."
+  ],
+  "proof_cards": [
+    {
+      "claim_id": "C1",
+      "claim_text": "FIREWOOD PILES\nWood piled against a house is\na major fire hazard. Moving\nyour firewood pile may be the\nfactor that allows your home to\nsurvive a wildland fire. Move\nfirewood piles to the Extended\nZone (10 \u2013 30 metres from your\nhome), or into a FireSmart-\nmitigated building.",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "FireSmart BC",
+      "exact_passage": "FIREWOOD PILES\nWood piled against a house is\na major fire hazard. Moving\nyour firewood pile may be the\nfactor that allows your home to\nsurvive a wildland fire. Move\nfirewood piles to the Extended\nZone (10 \u2013 30 metres from your\nhome), or into a FireSmart-\nmitigated building.",
+      "source_title": "FireSmart BC Begins at Home Guide",
+      "source_revision": "page:12",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://firesmartbc.ca/wp-content/uploads/2020/04/05.30.23_BeginsatHomeGuide_Web.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C2",
+      "claim_text": "Intermediate Zone (1.5 to 10 metres from a structure or home)\n\u00a2 Plant fire-resistant vegetation and select non-combustible landscaping\nmaterials\n\u00a2 Avoid incorporating any woody debris, including mulch\n\u00a2 Keep combustible items like firewood, construction materials, patio\nfurniture, tools and decorative pieces out of this zone",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "PreparedBC",
+      "exact_passage": "Intermediate Zone (1.5 to 10 metres from a structure or home)\n\u00a2 Plant fire-resistant vegetation and select non-combustible landscaping\nmaterials\n\u00a2 Avoid incorporating any woody debris, including mulch\n\u00a2 Keep combustible items like firewood, construction materials, patio\nfurniture, tools and decorative pieces out of this zone",
+      "source_title": "Wildfire Preparedness Guide",
+      "source_revision": "page:9",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C3",
+      "claim_text": "\u00a2 Move trailers, recreational vehicles, storage sheds, and other combustible\nmaterials into the Extended Zone. If that is not possible, store firewood\ninside your mitigated garage, shed, or other ember-resistant structures\n\u00a2 Create a non-combustible ground cover, like a gravel pad, underneath\nand 1.5 metres around trailers, recreational vehicles and sheds\nExtended Zone (10 to 30 metres from a structure or home)",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "PreparedBC",
+      "exact_passage": "\u00a2 Move trailers, recreational vehicles, storage sheds, and other combustible\nmaterials into the Extended Zone. If that is not possible, store firewood\ninside your mitigated garage, shed, or other ember-resistant structures\n\u00a2 Create a non-combustible ground cover, like a gravel pad, underneath\nand 1.5 metres around trailers, recreational vehicles and sheds\nExtended Zone (10 to 30 metres from a structure or home)",
+      "source_title": "Wildfire Preparedness Guide",
+      "source_revision": "page:9",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C4",
+      "claim_text": "GRASS\nA mowed lawn is a fire-resistant\nlawn. Grasses shorter than 10\ncentimetres in height are less\nlikely to burn intensely.\nBark mulches are\nhighly flammable.\nFirewood piles should be stored at\nleast 10 metres from your home.\n18",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "FireSmart BC",
+      "exact_passage": "GRASS\nA mowed lawn is a fire-resistant\nlawn. Grasses shorter than 10\ncentimetres in height are less\nlikely to burn intensely.\nBark mulches are\nhighly flammable.\nFirewood piles should be stored at\nleast 10 metres from your home.\n18",
+      "source_title": "FireSmart BC Begins at Home Guide",
+      "source_revision": "page:11",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://firesmartbc.ca/wp-content/uploads/2020/04/05.30.23_BeginsatHomeGuide_Web.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    }
+  ]
+}

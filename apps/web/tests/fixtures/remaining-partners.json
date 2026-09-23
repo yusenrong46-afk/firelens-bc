@@ -1,0 +1,211 @@
+{
+  "status": "answer",
+  "trace_id": "offline-partners",
+  "response_mode": "partial",
+  "answer": "Core Programs\nProgram Name\nAudience\nDescription\nHome Partners\nProgram (HPP)\nResidents, wildfire mitigation\nspecialists, insurance companies,\nFirst Nation communities, and\nlocal governments.\nA professional home assessment\nwith property-specific\nrecommendations.\nFireSmart Canada \u25cf Every Day Chores Make Everyday Heroes\nKey Messaging\nWhat is FireSmart?\n\u25cf FireSmart BC is a provincial program committed to reducing the negative impacts of\nwildfire.\n\u25cf FireSmart BC is the go-to resource for individuals, neighbourhoods and communities\nlooking to protect themselves and their properties from wildfire.\n\u25cf FireSmart BC is based on scientific research that shows that doing simple FireSmart\ntasks around where you live can make your property more resilient to wildfire.",
+  "answer_sections": [],
+  "history_text": "Authority: Reviewed guidance + uncertainty. Answer: Core Programs Program Name Audience Description Home Partners Program (HPP) Residents, wildfire mitigation specialists, insurance companies, First Nation communities, and local governments. A professional home assessment with property-specific recommendations. FireSmart Canada \u25cf Every Day Chores Make Everyday Heroes Key Messaging What is FireSmart? \u25cf FireSmart BC is a provincial program committed to reducing the negative impacts of wildfire. \u25cf FireSmart BC is the go-to resource for individuals, neighbourhoods and communities looking to protect themselves and their properties from wildfire. \u25cf FireSmart BC is based on scientific research that shows that doing simple FireSmart tasks around where you live can make your property more resilient to wildfire. Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions.",
+  "claims": [
+    {
+      "claim_id": "C1",
+      "text": "Core Programs\nProgram Name\nAudience\nDescription\nHome Partners\nProgram (HPP)\nResidents, wildfire mitigation\nspecialists, insurance companies,\nFirst Nation communities, and\nlocal governments.\nA professional home assessment\nwith property-specific\nrecommendations.\nFireSmart Canada",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E1",
+          "quote": "Core Programs\nProgram Name\nAudience\nDescription\nHome Partners\nProgram (HPP)\nResidents, wildfire mitigation\nspecialists, insurance companies,\nFirst Nation communities, and\nlocal governments.\nA professional home assessment\nwith property-specific\nrecommendations.\nFireSmart Canada"
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "FireSmart BC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "C"
+      }
+    },
+    {
+      "claim_id": "C2",
+      "text": "\u25cf Every Day Chores Make Everyday Heroes\nKey Messaging\nWhat is FireSmart?\n\u25cf FireSmart BC is a provincial program committed to reducing the negative impacts of\nwildfire.\n\u25cf FireSmart BC is the go-to resource for individuals, neighbourhoods and communities\nlooking to protect themselves and their properties from wildfire.\n\u25cf FireSmart BC is based on scientific research that shows that doing simple FireSmart\ntasks around where you live can make your property more resilient to wildfire.",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E2",
+          "quote": "\u25cf Every Day Chores Make Everyday Heroes\nKey Messaging\nWhat is FireSmart?\n\u25cf FireSmart BC is a provincial program committed to reducing the negative impacts of\nwildfire.\n\u25cf FireSmart BC is the go-to resource for individuals, neighbourhoods and communities\nlooking to protect themselves and their properties from wildfire.\n\u25cf FireSmart BC is based on scientific research that shows that doing simple FireSmart\ntasks around where you live can make your property more resilient to wildfire."
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "FireSmart BC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "E1",
+      "title": "FireSmart BC Information Guide and Key Messaging",
+      "publisher": "FireSmart BC",
+      "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2021/06/FireSmart-BC-Information-Guide-Key-Messaging-.pdf",
+      "locator": "page:4",
+      "document_sha256": "7623bf89601821be1a0a6d7d745f1d11a214d3195d65613c0eadcb4e71240071",
+      "temporal_class": "stable_guidance",
+      "review_provenance": "native_text",
+      "primary_text": "Core Programs\nProgram Name\nAudience\nDescription\nHome Partners\nProgram (HPP)\nResidents, wildfire mitigation\nspecialists, insurance companies,\nFirst Nation communities, and\nlocal governments.\nA professional home assessment\nwith property-specific\nrecommendations.\nFireSmart Canada",
+      "context_text": "Core Programs\nProgram Name\nAudience\nDescription\nHome Partners\nProgram (HPP)\nResidents, wildfire mitigation\nspecialists, insurance companies,\nFirst Nation communities, and\nlocal governments.\nA professional home assessment\nwith property-specific\nrecommendations.\nFireSmart Canada\n\nNeighbourhood\nRecognition\nProgram\nNeighbourhoods, subdivisions,\ncommunities.\nFormal recognition program for\nneighbourhoods who have\ncollectively taken steps to prepare\nfor wildfire."
+    },
+    {
+      "evidence_id": "E2",
+      "title": "FireSmart BC Information Guide and Key Messaging",
+      "publisher": "FireSmart BC",
+      "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2021/06/FireSmart-BC-Information-Guide-Key-Messaging-.pdf",
+      "locator": "page:2",
+      "document_sha256": "7623bf89601821be1a0a6d7d745f1d11a214d3195d65613c0eadcb4e71240071",
+      "temporal_class": "stable_guidance",
+      "review_provenance": "native_text",
+      "primary_text": "\u25cf Every Day Chores Make Everyday Heroes\nKey Messaging\nWhat is FireSmart?\n\u25cf FireSmart BC is a provincial program committed to reducing the negative impacts of\nwildfire.\n\u25cf FireSmart BC is the go-to resource for individuals, neighbourhoods and communities\nlooking to protect themselves and their properties from wildfire.\n\u25cf FireSmart BC is based on scientific research that shows that doing simple FireSmart\ntasks around where you live can make your property more resilient to wildfire.\n\u25cf FireSmart is the Canadian standard recognized by all provinces and territories based on\nNational Fire Protection Association (NFPA) standards.\nWhy FireSmart?\n\u25cf Wildfires are growing in frequency, scale, and severity. In 2023, BC experienced 2,252\nwildfires.\n\u25cf 92% of people believe that wildfires are one of the most important issues facing BC.\n\u25cf We must be more proactive to adapt to a world with more wildfires.",
+      "context_text": "FireSmart Campaign Taglines\n\u25cf FireSmart Your Home and Community Today\n\u25cf It\u2019s Time for [Location] to get FireSmart\n\u25cf The Homes that are Prepared are the Homes Left Standing\n\n\u25cf Every Day Chores Make Everyday Heroes\nKey Messaging\nWhat is FireSmart?\n\u25cf FireSmart BC is a provincial program committed to reducing the negative impacts of\nwildfire.\n\u25cf FireSmart BC is the go-to resource for individuals, neighbourhoods and communities\nlooking to protect themselves and their properties from wildfire.\n\u25cf FireSmart BC is based on scientific research that shows that doing simple FireSmart\ntasks around where you live can make your property more resilient to wildfire.\n\u25cf FireSmart is the Canadian standard recognized by all provinces and territories based on\nNational Fire Protection Association (NFPA) standards.\nWhy FireSmart?\n\u25cf Wildfires are growing in frequency, scale, and severity. In 2023, BC experienced 2,252\nwildfires.\n\u25cf 92% of people believe that wildfires are one of the most important issues facing BC.\n\u25cf We must be more proactive to adapt to a world with more wildfires.\n\n\u25cf Research shows that taking steps to FireSmart your property is one of the most effective\nways to help defend against wildfire.\n\u25cf Wildfire prevention is a shared responsibility. When individuals, business owners and\nthe government work together, it can make a big difference in reducing community\nwildfire risk.\nHow Does FireSmart BC Work?\n\u25cf For a wildfire to ignite and grow, it needs fuel such as trees, grass, or other vegetation.\n\u25cf Embers are smoldering, slow-burning pieces of solid fuel, typically composed of tree\nneedles, flakes of tree bark, small branches, lichen, and even airborne, flammable\nbuilding materials."
+    }
+  ],
+  "limitations": [
+    "The evidence contains stable official guidance and does not establish current wildfire conditions."
+  ],
+  "suggested_questions": [
+    "What belongs in an emergency kit?",
+    "How should I build and review a household emergency plan?",
+    "How can I reduce combustible material around my home?"
+  ],
+  "related_links": [],
+  "reason_code": "high_risk_claim_not_structured",
+  "validation": {
+    "accepted": true,
+    "schema_valid": true,
+    "citation_ids_valid": true,
+    "quotes_exact": true,
+    "claim_support_valid": true,
+    "policy_valid": true,
+    "errors": []
+  },
+  "error_kind": null,
+  "live_results": [],
+  "aggregate_freshness": null,
+  "partial_layers": [],
+  "unavailable_layers": [],
+  "requested_layers": [],
+  "roster_total": null,
+  "sample_record_ids": [],
+  "presentation_shell": "chat",
+  "provenance_class": "reviewed_guidance",
+  "suggestion_omission_reason": "none_registered",
+  "required_input": null,
+  "selected_live_result_id": null,
+  "resolved_location": null,
+  "status_banner": {
+    "headline": "Official wording from a source",
+    "detail": "FireLens is showing an exact source quotation. It has not been approved as a structured FireLens claim.",
+    "freshness_label": "Stable source wording",
+    "availability_label": "Sources for the displayed evidence or official records were available.",
+    "retrieval_completed_at": null,
+    "source_updated_at": null,
+    "official_escalation_title": "Open official source",
+    "official_escalation_url": "https://firesmartbc.ca/wp-content/uploads/2021/06/FireSmart-BC-Information-Guide-Key-Messaging-.pdf"
+  },
+  "supported_items": [],
+  "unknown_items": [
+    "The evidence contains stable official guidance and does not establish current wildfire conditions.",
+    "Exact source wording \u2014 not a structured FireLens claim.",
+    "Some requested high-risk guidance has no reviewed structured claim. FireLens is showing official wording or a handoff, not an interpreted claim."
+  ],
+  "proof_cards": [
+    {
+      "claim_id": "C1",
+      "claim_text": "Core Programs\nProgram Name\nAudience\nDescription\nHome Partners\nProgram (HPP)\nResidents, wildfire mitigation\nspecialists, insurance companies,\nFirst Nation communities, and\nlocal governments.\nA professional home assessment\nwith property-specific\nrecommendations.\nFireSmart Canada",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "FireSmart BC",
+      "exact_passage": "Core Programs\nProgram Name\nAudience\nDescription\nHome Partners\nProgram (HPP)\nResidents, wildfire mitigation\nspecialists, insurance companies,\nFirst Nation communities, and\nlocal governments.\nA professional home assessment\nwith property-specific\nrecommendations.\nFireSmart Canada",
+      "source_title": "FireSmart BC Information Guide and Key Messaging",
+      "source_revision": "page:4",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://firesmartbc.ca/wp-content/uploads/2021/06/FireSmart-BC-Information-Guide-Key-Messaging-.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "C"
+      }
+    },
+    {
+      "claim_id": "C2",
+      "claim_text": "\u25cf Every Day Chores Make Everyday Heroes\nKey Messaging\nWhat is FireSmart?\n\u25cf FireSmart BC is a provincial program committed to reducing the negative impacts of\nwildfire.\n\u25cf FireSmart BC is the go-to resource for individuals, neighbourhoods and communities\nlooking to protect themselves and their properties from wildfire.\n\u25cf FireSmart BC is based on scientific research that shows that doing simple FireSmart\ntasks around where you live can make your property more resilient to wildfire.",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "FireSmart BC",
+      "exact_passage": "\u25cf Every Day Chores Make Everyday Heroes\nKey Messaging\nWhat is FireSmart?\n\u25cf FireSmart BC is a provincial program committed to reducing the negative impacts of\nwildfire.\n\u25cf FireSmart BC is the go-to resource for individuals, neighbourhoods and communities\nlooking to protect themselves and their properties from wildfire.\n\u25cf FireSmart BC is based on scientific research that shows that doing simple FireSmart\ntasks around where you live can make your property more resilient to wildfire.",
+      "source_title": "FireSmart BC Information Guide and Key Messaging",
+      "source_revision": "page:2",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://firesmartbc.ca/wp-content/uploads/2021/06/FireSmart-BC-Information-Guide-Key-Messaging-.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    }
+  ]
+}

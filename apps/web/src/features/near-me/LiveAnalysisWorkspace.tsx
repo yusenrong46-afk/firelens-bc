@@ -41,11 +41,13 @@ export function LiveAnalysisWorkspace({
   session,
   answerIdentity,
   evidenceOpen = false,
+  externalMapOpen = false,
   onOpenEvidence,
 }: {
   session: FireLensSession;
   answerIdentity: string;
   evidenceOpen?: boolean;
+  externalMapOpen?: boolean;
   onOpenEvidence?: (() => void) | undefined;
 }) {
   const results = useMemo(
@@ -102,9 +104,9 @@ export function LiveAnalysisWorkspace({
   }, undefined);
 
   useEffect(() => {
-    session.setMapVisible(hasUsefulMap && surface === "map");
+    session.setMapVisible(externalMapOpen || (hasUsefulMap && surface === "map"));
     return () => session.setMapVisible(false);
-  }, [hasUsefulMap, session.setMapVisible, surface]);
+  }, [externalMapOpen, hasUsefulMap, session.setMapVisible, surface]);
 
   useEffect(() => {
     if (!hasUsefulMap && surface === "map") setSurface("summary");
@@ -184,12 +186,17 @@ export function LiveAnalysisWorkspace({
           <Suspense fallback={<EvidencePlaceholder icon={<span className="spinner" />} title="Loading map">Preparing map…</EvidencePlaceholder>}>
             <LiveMap
               results={filteredMapResults}
+              loading={session.contextLayersEnabled && !session.mapLoaded && !session.mapMessage}
+              loadError={session.contextLayersEnabled ? session.mapMessage : undefined}
               matchingResults={filteredMapMatchingResults}
               provinceResults={filteredMapProvinceResults}
               aggregateFreshness={session.mapAggregateFreshness}
               partialLayers={session.mapPartialLayers}
                   unavailableLayers={session.mapUnavailableLayers}
                   geometryOmissions={session.mapGeometryOmissions}
+                  snapshotStatus={session.mapSnapshotStatus}
+                  historicalResults={session.mapHistoricalResults}
+                  scopeKey={session.mapScopeKey}
               focus={session.mapFocus}
               focusResults={session.mapFocusResults}
               selectedResultId={session.selectedLiveResultId}

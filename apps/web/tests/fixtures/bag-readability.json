@@ -1,0 +1,349 @@
+{
+  "status": "answer",
+  "trace_id": "3e9512bb74364a698ecd83f82d5be2e0",
+  "response_mode": "partial",
+  "answer": "Build grab-and-go bags now for everyone in your home. \u00a2 Bottled water and ready-to-\neat food, like high-calorie\npower bars\n\u00a2 Phone charger and battery\nbank\n\u00a2 Small battery-powered or\nhand-crank radio\n\u00a2 Battery-powered or hand-\ncrank flashlight\n\u00a2 Extra batteries\n\u00a2 Small first aid kit and\npersonal medications \u00a2 Toiletries and items such as\nan extra pair of glasses or\ncontact lenses & solution\n\u00a2 Copy of your emergency\nplan and copies of\nimportant documents, such\nas insurance papers\n\u00a2 Seasonal clothing and\nan emergency blanket\n\u00a2 Pen and notepad\n\u00a2 Whistle Start with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs.",
+  "answer_sections": [],
+  "history_text": "Authority: Reviewed guidance + uncertainty. Answer: Build grab-and-go bags now for everyone in your home. \u00a2 Bottled water and ready-to- eat food, like high-calorie power bars \u00a2 Phone charger and battery bank \u00a2 Small battery-powered or hand-crank radio \u00a2 Battery-powered or hand- crank flashlight \u00a2 Extra batteries \u00a2 Small first aid kit and personal medications \u00a2 Toiletries and items such as an extra pair of glasses or contact lenses & solution \u00a2 Copy of your emergency plan and copies of important documents, such as insurance papers \u00a2 Seasonal clothing and an emergency blanket \u00a2 Pen and notepad \u00a2 Whistle Start with our basic list then consider the additional needs of your household. Do you have pets? Do you have young children? Are you a foster parent? Are you caring for older adults or people with disabilities? If yes, prepare and customize bags specific to everyone's needs. Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions.",
+  "claims": [
+    {
+      "claim_id": "C1",
+      "text": "Build grab-and-go bags now for everyone in your home.",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "S-TC-FIRESMART-021-01",
+          "quote": "Take time now to build grab-and-go bags for everyone in your home so you\u2019re not caught off guard."
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "PreparedBC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "structured_reviewed",
+        "typed_claim_id": "TC-FIRESMART-021-01",
+        "typed_live_fact_id": null,
+        "review_status": "approved_static",
+        "source_revision_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+        "source_span_sha256": "8ee031b108168cf5692d98edd9ace5cc9a30e18bd736fbd0de268cdd630ddd6e",
+        "renderer_id": "firelens.structured_renderer.v1",
+        "support_provenance": "human_reviewed_typed_claim",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C2",
+      "text": "\u00a2 Bottled water and ready-to-\neat food, like high-calorie\npower bars\n\u00a2 Phone charger and battery\nbank\n\u00a2 Small battery-powered or\nhand-crank radio\n\u00a2 Battery-powered or hand-\ncrank flashlight\n\u00a2 Extra batteries\n\u00a2 Small first aid kit and\npersonal medications",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E1",
+          "quote": "\u00a2 Bottled water and ready-to-\neat food, like high-calorie\npower bars\n\u00a2 Phone charger and battery\nbank\n\u00a2 Small battery-powered or\nhand-crank radio\n\u00a2 Battery-powered or hand-\ncrank flashlight\n\u00a2 Extra batteries\n\u00a2 Small first aid kit and\npersonal medications"
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "PreparedBC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "human_verified_repair",
+        "extraction_repair_state": "human_verified_repair",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C3",
+      "text": "\u00a2 Toiletries and items such as\nan extra pair of glasses or\ncontact lenses & solution\n\u00a2 Copy of your emergency\nplan and copies of\nimportant documents, such\nas insurance papers\n\u00a2 Seasonal clothing and\nan emergency blanket\n\u00a2 Pen and notepad\n\u00a2 Whistle",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E1",
+          "quote": "\u00a2 Toiletries and items such as\nan extra pair of glasses or\ncontact lenses & solution\n\u00a2 Copy of your emergency\nplan and copies of\nimportant documents, such\nas insurance papers\n\u00a2 Seasonal clothing and\nan emergency blanket\n\u00a2 Pen and notepad\n\u00a2 Whistle"
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "PreparedBC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "human_verified_repair",
+        "extraction_repair_state": "human_verified_repair",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C4",
+      "text": "Start with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs.",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E2",
+          "quote": "Start with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs."
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "PreparedBC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "S-TC-FIRESMART-021-01",
+      "title": "PreparedBC reviewed guidance",
+      "publisher": "PreparedBC",
+      "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+      "locator": "page:4",
+      "document_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+      "temporal_class": "stable_guidance",
+      "review_provenance": "native_text",
+      "primary_text": "Take time now to build grab-and-go bags for everyone in your home so you\u2019re not caught off guard.",
+      "context_text": "Take time now to build grab-and-go bags for everyone in your home so you\u2019re not caught off guard."
+    },
+    {
+      "evidence_id": "E1",
+      "title": "Wildfire Preparedness Guide",
+      "publisher": "PreparedBC",
+      "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+      "locator": "page:6",
+      "document_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+      "temporal_class": "stable_guidance",
+      "review_provenance": "human_verified_repair",
+      "primary_text": "Basic list:\n\u00a2 Bottled water and ready-to-\neat food, like high-calorie\npower bars\n\u00a2 Phone charger and battery\nbank\n\u00a2 Small battery-powered or\nhand-crank radio\n\u00a2 Battery-powered or hand-\ncrank flashlight\n\u00a2 Extra batteries\n\u00a2 Small first aid kit and\npersonal medications\n\u00a2 Toiletries and items such as\nan extra pair of glasses or\ncontact lenses & solution\n\u00a2 Copy of your emergency\nplan and copies of\nimportant documents, such\nas insurance papers\n\u00a2 Seasonal clothing and\nan emergency blanket\n\u00a2 Pen and notepad\n\u00a2 Whistle\nFor more advice on building grab-and-go bags, go to\nPreparedBC.ca/EmergencyKits",
+      "context_text": "Basic list:\n\u00a2 Bottled water and ready-to-\neat food, like high-calorie\npower bars\n\u00a2 Phone charger and battery\nbank\n\u00a2 Small battery-powered or\nhand-crank radio\n\u00a2 Battery-powered or hand-\ncrank flashlight\n\u00a2 Extra batteries\n\u00a2 Small first aid kit and\npersonal medications\n\u00a2 Toiletries and items such as\nan extra pair of glasses or\ncontact lenses & solution\n\u00a2 Copy of your emergency\nplan and copies of\nimportant documents, such\nas insurance papers\n\u00a2 Seasonal clothing and\nan emergency blanket\n\u00a2 Pen and notepad\n\u00a2 Whistle\nFor more advice on building grab-and-go bags, go to\nPreparedBC.ca/EmergencyKits\n\nTIP: Have grab-and-go bags at home, at work and in\nyour vehicle. That way you\u2019ll always be ready for the\nunexpected. Refresh supplies at least twice per year"
+    },
+    {
+      "evidence_id": "E2",
+      "title": "Wildfire Preparedness Guide",
+      "publisher": "PreparedBC",
+      "canonical_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+      "locator": "page:4",
+      "document_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+      "temporal_class": "stable_guidance",
+      "review_provenance": "native_text",
+      "primary_text": "BUILD YOUR GRAB-AND-GO BAGS\nIn the event of a wildfire, you may need to leave home quickly. Take time\nnow to build grab-and-go bags for everyone in your home so you\u2019re not\ncaught off guard.\nStart with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs.",
+      "context_text": "TIP: Not being able to communicate with loved ones during an emergency\ncan be extremely stressful and affect your ability to respond\nand help others. Follow these guidelines for staying connected:\n\u2022 Keep your phone fully charged. Preserve battery life by dimming\nyour screen and avoiding power-hungry apps and videos\n\u2022 Create family and emergency contact lists and program them\ninto your phone for quick access\n\u2022 Texts, emails and social media are best during disasters. Data-\nbased services are less likely to experience major interruptions\n\u2022 Consider a virtual meeting place. Create a closed Facebook or\nWhatsApp group to check in during an emergency\n\nBUILD YOUR GRAB-AND-GO BAGS\nIn the event of a wildfire, you may need to leave home quickly. Take time\nnow to build grab-and-go bags for everyone in your home so you\u2019re not\ncaught off guard.\nStart with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs."
+    }
+  ],
+  "limitations": [
+    "The evidence contains stable official guidance and does not establish current wildfire conditions."
+  ],
+  "suggested_questions": [
+    "What belongs in an emergency kit?",
+    "How should I build and review a household emergency plan?",
+    "How can I reduce combustible material around my home?"
+  ],
+  "related_links": [],
+  "reason_code": "high_risk_claim_not_structured",
+  "validation": {
+    "accepted": true,
+    "schema_valid": true,
+    "citation_ids_valid": true,
+    "quotes_exact": true,
+    "claim_support_valid": true,
+    "policy_valid": true,
+    "errors": []
+  },
+  "error_kind": null,
+  "live_results": [],
+  "aggregate_freshness": null,
+  "partial_layers": [],
+  "unavailable_layers": [],
+  "requested_layers": [],
+  "roster_total": null,
+  "sample_record_ids": [],
+  "presentation_shell": "chat",
+  "provenance_class": "reviewed_guidance",
+  "suggestion_omission_reason": "none_registered",
+  "required_input": null,
+  "selected_live_result_id": null,
+  "resolved_location": null,
+  "status_banner": {
+    "headline": "Reviewed claims plus source wording",
+    "detail": "Reviewed structured claims and extraction-only source wording are labelled separately.",
+    "freshness_label": "Stable guidance and source wording",
+    "availability_label": "Sources for the displayed evidence or official records were available.",
+    "retrieval_completed_at": null,
+    "source_updated_at": null,
+    "official_escalation_title": "Open official source",
+    "official_escalation_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf"
+  },
+  "supported_items": [
+    "Build grab-and-go bags now for everyone in your home."
+  ],
+  "unknown_items": [
+    "The evidence contains stable official guidance and does not establish current wildfire conditions.",
+    "Exact source wording \u2014 not a structured FireLens claim.",
+    "Some requested high-risk guidance has no reviewed structured claim. FireLens is showing official wording or a handoff, not an interpreted claim."
+  ],
+  "proof_cards": [
+    {
+      "claim_id": "C1",
+      "claim_text": "Build grab-and-go bags now for everyone in your home.",
+      "support_state": "structured_reviewed",
+      "support_label": "Reviewed structured claim",
+      "authority": "PreparedBC",
+      "exact_passage": "Take time now to build grab-and-go bags for everyone in your home so you\u2019re not caught off guard.",
+      "source_title": "PreparedBC reviewed guidance",
+      "source_revision": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+      "review_state": "approved_static",
+      "critical_fields_checked": "Compiled from a reviewed typed record",
+      "freshness": "Stable reviewed guidance",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "verified",
+      "derivation": null,
+      "publication": {
+        "kind": "structured_reviewed",
+        "typed_claim_id": "TC-FIRESMART-021-01",
+        "typed_live_fact_id": null,
+        "review_status": "approved_static",
+        "source_revision_sha256": "9185b43a8b9b57820c2fdd17a8e7887d483e02519358d001445460b4f44446d2",
+        "source_span_sha256": "8ee031b108168cf5692d98edd9ace5cc9a30e18bd736fbd0de268cdd630ddd6e",
+        "renderer_id": "firelens.structured_renderer.v1",
+        "support_provenance": "human_reviewed_typed_claim",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C2",
+      "claim_text": "\u00a2 Bottled water and ready-to-\neat food, like high-calorie\npower bars\n\u00a2 Phone charger and battery\nbank\n\u00a2 Small battery-powered or\nhand-crank radio\n\u00a2 Battery-powered or hand-\ncrank flashlight\n\u00a2 Extra batteries\n\u00a2 Small first aid kit and\npersonal medications",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "PreparedBC",
+      "exact_passage": "\u00a2 Bottled water and ready-to-\neat food, like high-calorie\npower bars\n\u00a2 Phone charger and battery\nbank\n\u00a2 Small battery-powered or\nhand-crank radio\n\u00a2 Battery-powered or hand-\ncrank flashlight\n\u00a2 Extra batteries\n\u00a2 Small first aid kit and\npersonal medications",
+      "source_title": "Wildfire Preparedness Guide",
+      "source_revision": "page:6",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C3",
+      "claim_text": "\u00a2 Toiletries and items such as\nan extra pair of glasses or\ncontact lenses & solution\n\u00a2 Copy of your emergency\nplan and copies of\nimportant documents, such\nas insurance papers\n\u00a2 Seasonal clothing and\nan emergency blanket\n\u00a2 Pen and notepad\n\u00a2 Whistle",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "PreparedBC",
+      "exact_passage": "\u00a2 Toiletries and items such as\nan extra pair of glasses or\ncontact lenses & solution\n\u00a2 Copy of your emergency\nplan and copies of\nimportant documents, such\nas insurance papers\n\u00a2 Seasonal clothing and\nan emergency blanket\n\u00a2 Pen and notepad\n\u00a2 Whistle",
+      "source_title": "Wildfire Preparedness Guide",
+      "source_revision": "page:6",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C4",
+      "claim_text": "Start with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs.",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "PreparedBC",
+      "exact_passage": "Start with our basic list then consider the additional needs of your\nhousehold. Do you have pets? Do you have young children? Are you a\nfoster parent? Are you caring for older adults or people with disabilities?\nIf yes, prepare and customize bags specific to everyone's needs.",
+      "source_title": "Wildfire Preparedness Guide",
+      "source_revision": "page:4",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://www2.gov.bc.ca/assets/gov/public-safety-and-emergency-services/emergency-preparedness-response-recovery/embc/preparedbc/preparedbc-guides/wildfire_preparedness_guide.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    }
+  ]
+}

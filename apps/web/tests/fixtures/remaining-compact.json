@@ -1,0 +1,411 @@
+{
+  "status": "answer",
+  "trace_id": "offline-compact",
+  "response_mode": "partial",
+  "answer": "If you have installed a structure protection sprinkler system on your property DO NOT activate your system as you are evacuating. Structure Protection Specialists will activate sprinkler systems when the time is right. \u2022 Pre-emptively activating structure protection sprinkler systems can drain reservoirs and\ndeplete valuable water resources that first responders depend on to protect homes,\nneighbourhoods and communities \u2022 Follow official evacuation alerts and orders. Always follow the advice and direction of\nyour local authority. Structure Protection Sprinkler System Best Practices\nFireSmart BC does not recommend that individuals (residents and property owners) install\ntheir own structure protection sprinkler systems.\n\u2022 Installing and effectively using structure protection sprinkler systems requires experience\nand technical expertise.\n\u2022 Structure protection sprinkler systems are most effective when used in addition to\nFireSmart principles and guidelines. \u2022 Installing your own structure protection sprinkler system can lead to uninsurable water\ndamage to your property.",
+  "answer_sections": [],
+  "history_text": "Authority: Reviewed guidance + uncertainty. Answer: If you have installed a structure protection sprinkler system on your property DO NOT activate your system as you are evacuating. Structure Protection Specialists will activate sprinkler systems when the time is right. \u2022 Pre-emptively activating structure protection sprinkler systems can drain reservoirs and deplete valuable water resources that first responders depend on to protect homes, neighbourhoods and communities \u2022 Follow official evacuation alerts and orders. Always follow the advice and direction of your local authority. Structure Protection Sprinkler System Best Practices FireSmart BC does not recommend that individuals (residents and property owners) install their own structure protection sprinkler systems. \u2022 Installing and effectively using structure protection sprinkler systems requires experience and technical expertise. \u2022 Structure protection sprinkler systems are most effective when used in addition to FireSmart principles and guidelines. \u2022 Installing your own structure protection sprinkler system can lead to uninsurable water damage to your property. Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions.",
+  "claims": [
+    {
+      "claim_id": "C1",
+      "text": "If you have installed a structure protection sprinkler system on your property DO NOT activate your system as you are evacuating. Structure Protection Specialists will activate sprinkler systems when the time is right.",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "S-TC-SPRINKLER-001",
+          "quote": "If you have installed a structure protection sprinkler system on your property DO NOT activate your system as you are evacuating. Structure Protection Specialists will activate sprinkler systems when the time is right."
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "FireSmart BC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "structured_reviewed",
+        "typed_claim_id": "TC-SPRINKLER-001",
+        "typed_live_fact_id": null,
+        "review_status": "approved_static",
+        "source_revision_sha256": "0ff63733942c4af1febc8145dfc5493556d33c9444668bc74d20679d6e3899a1",
+        "source_span_sha256": "1072546a85ff0d78b698526008f186b9eb9b267ebdf4a94ae6f9a83ddee18394",
+        "renderer_id": "firelens.structured_renderer.v1",
+        "support_provenance": "human_reviewed_typed_claim",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C2",
+      "text": "\u2022 Pre-emptively activating structure protection sprinkler systems can drain reservoirs and\ndeplete valuable water resources that first responders depend on to protect homes,\nneighbourhoods and communities",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E1",
+          "quote": "\u2022 Pre-emptively activating structure protection sprinkler systems can drain reservoirs and\ndeplete valuable water resources that first responders depend on to protect homes,\nneighbourhoods and communities"
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "FireSmart BC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C3",
+      "text": "\u2022 Follow official evacuation alerts and orders. Always follow the advice and direction of\nyour local authority.",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E1",
+          "quote": "\u2022 Follow official evacuation alerts and orders. Always follow the advice and direction of\nyour local authority."
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "FireSmart BC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C4",
+      "text": "Structure Protection Sprinkler System Best Practices\nFireSmart BC does not recommend that individuals (residents and property owners) install\ntheir own structure protection sprinkler systems.\n\u2022 Installing and effectively using structure protection sprinkler systems requires experience\nand technical expertise.\n\u2022 Structure protection sprinkler systems are most effective when used in addition to\nFireSmart principles and guidelines.",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E2",
+          "quote": "Structure Protection Sprinkler System Best Practices\nFireSmart BC does not recommend that individuals (residents and property owners) install\ntheir own structure protection sprinkler systems.\n\u2022 Installing and effectively using structure protection sprinkler systems requires experience\nand technical expertise.\n\u2022 Structure protection sprinkler systems are most effective when used in addition to\nFireSmart principles and guidelines."
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "FireSmart BC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C5",
+      "text": "\u2022 Installing your own structure protection sprinkler system can lead to uninsurable water\ndamage to your property.",
+      "evidence_status": "verified_corpus",
+      "supports": [
+        {
+          "evidence_id": "E2",
+          "quote": "\u2022 Installing your own structure protection sprinkler system can lead to uninsurable water\ndamage to your property."
+        }
+      ],
+      "trust": {
+        "source_provenance": "approved_static_corpus",
+        "source_authority": "FireSmart BC",
+        "jurisdiction": "british_columbia",
+        "human_review_state": "approved_static",
+        "extraction_repair_state": "native_text",
+        "critical_field_preservation": "preserved",
+        "semantic_support_state": "exact_quote",
+        "conflict_or_supersession": "none",
+        "freshness": "stable_guidance"
+      },
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "S-TC-SPRINKLER-001",
+      "title": "FireSmart BC reviewed guidance",
+      "publisher": "FireSmart BC",
+      "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2024/08/2024.10.30_FSBC_StructureProtectionSprinklersandWaterUsage-1-1.pdf",
+      "locator": "page:3",
+      "document_sha256": "0ff63733942c4af1febc8145dfc5493556d33c9444668bc74d20679d6e3899a1",
+      "temporal_class": "stable_guidance",
+      "review_provenance": "native_text",
+      "primary_text": "If you have installed a structure protection sprinkler system on your property DO NOT activate your system as you are evacuating. Structure Protection Specialists will activate sprinkler systems when the time is right.",
+      "context_text": "If you have installed a structure protection sprinkler system on your property DO NOT activate your system as you are evacuating. Structure Protection Specialists will activate sprinkler systems when the time is right."
+    },
+    {
+      "evidence_id": "E1",
+      "title": "Water Use, Structure Protection and FireSmart: How Fires Move Across the Landscape",
+      "publisher": "FireSmart BC",
+      "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2024/08/2024.10.30_FSBC_StructureProtectionSprinklersandWaterUsage-1-1.pdf",
+      "locator": "page:3",
+      "document_sha256": "0ff63733942c4af1febc8145dfc5493556d33c9444668bc74d20679d6e3899a1",
+      "temporal_class": "stable_guidance",
+      "review_provenance": "native_text",
+      "primary_text": "3\nSprinkler Activation and Evacuations\n\u2022 If you have installed a structure protection sprinkler system on your property DO NOT\nactivate your system as you are evacuating. Structure Protection Specialists will activate\nsprinkler systems when the time is right.\n\u2022 Pre-emptively activating structure protection sprinkler systems can drain reservoirs and\ndeplete valuable water resources that first responders depend on to protect homes,\nneighbourhoods and communities\n\u2022 Plan and prepare to evacuate during wildfire season if there are fires in your area.\n\u2022 Follow official evacuation alerts and orders. Always follow the advice and direction of\nyour local authority.",
+      "context_text": "3\nSprinkler Activation and Evacuations\n\u2022 If you have installed a structure protection sprinkler system on your property DO NOT\nactivate your system as you are evacuating. Structure Protection Specialists will activate\nsprinkler systems when the time is right.\n\u2022 Pre-emptively activating structure protection sprinkler systems can drain reservoirs and\ndeplete valuable water resources that first responders depend on to protect homes,\nneighbourhoods and communities\n\u2022 Plan and prepare to evacuate during wildfire season if there are fires in your area.\n\u2022 Follow official evacuation alerts and orders. Always follow the advice and direction of\nyour local authority.\n\nFor more information on wildfire preparedness visit:\nPreparedBC Wildfire Preparedness Guide"
+    },
+    {
+      "evidence_id": "E2",
+      "title": "Water Use, Structure Protection and FireSmart: How Fires Move Across the Landscape",
+      "publisher": "FireSmart BC",
+      "canonical_url": "https://firesmartbc.ca/wp-content/uploads/2024/08/2024.10.30_FSBC_StructureProtectionSprinklersandWaterUsage-1-1.pdf",
+      "locator": "page:2",
+      "document_sha256": "0ff63733942c4af1febc8145dfc5493556d33c9444668bc74d20679d6e3899a1",
+      "temporal_class": "stable_guidance",
+      "review_provenance": "native_text",
+      "primary_text": "Structure Protection Sprinkler System Best Practices\nFireSmart BC does not recommend that individuals (residents and property owners) install\ntheir own structure protection sprinkler systems.\n\u2022 Installing and effectively using structure protection sprinkler systems requires experience\nand technical expertise.\n\u2022 Structure protection sprinkler systems are most effective when used in addition to\nFireSmart principles and guidelines.\n\u2022 Installing your own structure protection sprinkler system can lead to uninsurable water\ndamage to your property.\nFor more information on the BC Wildfire Service Structure Protection Program Visit:\nBC Wildfire Service Structure Protection Program\nFireSmart, Intelli-feu and other associated Marks are trademarks of the Canadian Interagency Forest Fire Centre.",
+      "context_text": "For information on water use authorization requirements contact:\nFront Counter BC at 1-877-855-3222 or FrontCounterBC@gov.bc.ca\n\nStructure Protection Sprinkler System Best Practices\nFireSmart BC does not recommend that individuals (residents and property owners) install\ntheir own structure protection sprinkler systems.\n\u2022 Installing and effectively using structure protection sprinkler systems requires experience\nand technical expertise.\n\u2022 Structure protection sprinkler systems are most effective when used in addition to\nFireSmart principles and guidelines.\n\u2022 Installing your own structure protection sprinkler system can lead to uninsurable water\ndamage to your property.\nFor more information on the BC Wildfire Service Structure Protection Program Visit:\nBC Wildfire Service Structure Protection Program\nFireSmart, Intelli-feu and other associated Marks are trademarks of the Canadian Interagency Forest Fire Centre."
+    }
+  ],
+  "limitations": [
+    "The evidence contains stable official guidance and does not establish current wildfire conditions."
+  ],
+  "suggested_questions": [
+    "What belongs in an emergency kit?",
+    "How should I build and review a household emergency plan?",
+    "How can I reduce combustible material around my home?"
+  ],
+  "related_links": [],
+  "reason_code": "high_risk_claim_not_structured",
+  "validation": {
+    "accepted": true,
+    "schema_valid": true,
+    "citation_ids_valid": true,
+    "quotes_exact": true,
+    "claim_support_valid": true,
+    "policy_valid": true,
+    "errors": []
+  },
+  "error_kind": null,
+  "live_results": [],
+  "aggregate_freshness": null,
+  "partial_layers": [],
+  "unavailable_layers": [],
+  "requested_layers": [],
+  "roster_total": null,
+  "sample_record_ids": [],
+  "presentation_shell": "chat",
+  "provenance_class": "reviewed_guidance",
+  "suggestion_omission_reason": "none_registered",
+  "required_input": null,
+  "selected_live_result_id": null,
+  "resolved_location": null,
+  "status_banner": {
+    "headline": "Reviewed claims plus source wording",
+    "detail": "Reviewed structured claims and extraction-only source wording are labelled separately.",
+    "freshness_label": "Stable guidance and source wording",
+    "availability_label": "Sources for the displayed evidence or official records were available.",
+    "retrieval_completed_at": null,
+    "source_updated_at": null,
+    "official_escalation_title": "Open official source",
+    "official_escalation_url": "https://firesmartbc.ca/wp-content/uploads/2024/08/2024.10.30_FSBC_StructureProtectionSprinklersandWaterUsage-1-1.pdf"
+  },
+  "supported_items": [
+    "If you have installed a structure protection sprinkler system on your property DO NOT activate your system as you are evacuating. Structure Protection Specialists will activate sprinkler systems when\u2026"
+  ],
+  "unknown_items": [
+    "The evidence contains stable official guidance and does not establish current wildfire conditions.",
+    "Exact source wording \u2014 not a structured FireLens claim.",
+    "Some requested high-risk guidance has no reviewed structured claim. FireLens is showing official wording or a handoff, not an interpreted claim."
+  ],
+  "proof_cards": [
+    {
+      "claim_id": "C1",
+      "claim_text": "If you have installed a structure protection sprinkler system on your property DO NOT activate your system as you are evacuating. Structure Protection Specialists will activate sprinkler systems when the time is right.",
+      "support_state": "structured_reviewed",
+      "support_label": "Reviewed structured claim",
+      "authority": "FireSmart BC",
+      "exact_passage": "If you have installed a structure protection sprinkler system on your property DO NOT activate your system as you are evacuating. Structure Protection Specialists will activate sprinkler systems when the time is right.",
+      "source_title": "FireSmart BC reviewed guidance",
+      "source_revision": "0ff63733942c4af1febc8145dfc5493556d33c9444668bc74d20679d6e3899a1",
+      "review_state": "approved_static",
+      "critical_fields_checked": "Compiled from a reviewed typed record",
+      "freshness": "Stable reviewed guidance",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://firesmartbc.ca/wp-content/uploads/2024/08/2024.10.30_FSBC_StructureProtectionSprinklersandWaterUsage-1-1.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "verified",
+      "derivation": null,
+      "publication": {
+        "kind": "structured_reviewed",
+        "typed_claim_id": "TC-SPRINKLER-001",
+        "typed_live_fact_id": null,
+        "review_status": "approved_static",
+        "source_revision_sha256": "0ff63733942c4af1febc8145dfc5493556d33c9444668bc74d20679d6e3899a1",
+        "source_span_sha256": "1072546a85ff0d78b698526008f186b9eb9b267ebdf4a94ae6f9a83ddee18394",
+        "renderer_id": "firelens.structured_renderer.v1",
+        "support_provenance": "human_reviewed_typed_claim",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C2",
+      "claim_text": "\u2022 Pre-emptively activating structure protection sprinkler systems can drain reservoirs and\ndeplete valuable water resources that first responders depend on to protect homes,\nneighbourhoods and communities",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "FireSmart BC",
+      "exact_passage": "\u2022 Pre-emptively activating structure protection sprinkler systems can drain reservoirs and\ndeplete valuable water resources that first responders depend on to protect homes,\nneighbourhoods and communities",
+      "source_title": "Water Use, Structure Protection and FireSmart: How Fires Move Across the Landscape",
+      "source_revision": "page:3",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://firesmartbc.ca/wp-content/uploads/2024/08/2024.10.30_FSBC_StructureProtectionSprinklersandWaterUsage-1-1.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C3",
+      "claim_text": "\u2022 Follow official evacuation alerts and orders. Always follow the advice and direction of\nyour local authority.",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "FireSmart BC",
+      "exact_passage": "\u2022 Follow official evacuation alerts and orders. Always follow the advice and direction of\nyour local authority.",
+      "source_title": "Water Use, Structure Protection and FireSmart: How Fires Move Across the Landscape",
+      "source_revision": "page:3",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://firesmartbc.ca/wp-content/uploads/2024/08/2024.10.30_FSBC_StructureProtectionSprinklersandWaterUsage-1-1.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C4",
+      "claim_text": "Structure Protection Sprinkler System Best Practices\nFireSmart BC does not recommend that individuals (residents and property owners) install\ntheir own structure protection sprinkler systems.\n\u2022 Installing and effectively using structure protection sprinkler systems requires experience\nand technical expertise.\n\u2022 Structure protection sprinkler systems are most effective when used in addition to\nFireSmart principles and guidelines.",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "FireSmart BC",
+      "exact_passage": "Structure Protection Sprinkler System Best Practices\nFireSmart BC does not recommend that individuals (residents and property owners) install\ntheir own structure protection sprinkler systems.\n\u2022 Installing and effectively using structure protection sprinkler systems requires experience\nand technical expertise.\n\u2022 Structure protection sprinkler systems are most effective when used in addition to\nFireSmart principles and guidelines.",
+      "source_title": "Water Use, Structure Protection and FireSmart: How Fires Move Across the Landscape",
+      "source_revision": "page:2",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://firesmartbc.ca/wp-content/uploads/2024/08/2024.10.30_FSBC_StructureProtectionSprinklersandWaterUsage-1-1.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    },
+    {
+      "claim_id": "C5",
+      "claim_text": "\u2022 Installing your own structure protection sprinkler system can lead to uninsurable water\ndamage to your property.",
+      "support_state": "official_quote_only",
+      "support_label": "Exact source wording \u2014 not a structured FireLens claim",
+      "authority": "FireSmart BC",
+      "exact_passage": "\u2022 Installing your own structure protection sprinkler system can lead to uninsurable water\ndamage to your property.",
+      "source_title": "Water Use, Structure Protection and FireSmart: How Fires Move Across the Landscape",
+      "source_revision": "page:2",
+      "review_state": "Source extraction only; no structured-claim review",
+      "critical_fields_checked": "Exact official wording, not a FireLens interpretation",
+      "freshness": "Stable source wording",
+      "conflicts_or_unknowns": [],
+      "official_url": "https://firesmartbc.ca/wp-content/uploads/2024/08/2024.10.30_FSBC_StructureProtectionSprinklersandWaterUsage-1-1.pdf",
+      "truth_class": "source_fact",
+      "publication_state": "review",
+      "derivation": null,
+      "publication": {
+        "kind": "official_quote_only",
+        "typed_claim_id": null,
+        "typed_live_fact_id": null,
+        "review_status": "extraction_only",
+        "source_revision_sha256": null,
+        "source_span_sha256": null,
+        "renderer_id": "firelens.quote_only_renderer.v1",
+        "support_provenance": "exact_official_quote",
+        "risk_tier": "A"
+      }
+    }
+  ]
+}

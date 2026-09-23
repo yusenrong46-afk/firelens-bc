@@ -13,10 +13,13 @@ import {
   expectedMapResponseDetails,
   expectedMapResponseRecordIds,
   loadProtocol,
+  openOfficialMapContext,
   p75NearestRank,
   recomputeMapListParity,
   surfaceReadyTextCoverageIssues,
   surfaceInteractionContract,
+  surfaceInteractionContractV2,
+  surfaceProtocolSuccessorIssues,
   SurfaceQualificationTimeoutError,
   surfaceMatrixComplete,
   requiresOnDemandMapContext,
@@ -31,6 +34,90 @@ const installedAxeCoreVersion = JSON.parse(await readFile(
   path.join(frontendRoot, "node_modules/axe-core/package.json"),
   "utf8",
 )).version;
+
+test("surface v2 waits for a lazy answer map without switching to province view", async () => {
+  const protocol = await loadProtocol(path.join(repositoryRoot, "data/evaluation/frontend_surface.v2.yaml"));
+  let mounted = false;
+  let mapWaited = false;
+  let tilesWaited = false;
+  let releaseMount;
+  const mount = new Promise(resolve => { releaseMount = () => { mounted = true; resolve(); }; });
+  const map = {
+    count: async () => 0,
+    waitFor: async () => { await mount; mapWaited = true; },
+    locator: () => ({ count: async () => 0 }),
+    getByRole: () => ({ all: async () => [] }),
+  };
+  const page = {
+    getByRole: (role, options) => {
+      assert.equal(role, "region", "Navigation must not replace the current answer state");
+      assert.equal(options.name, "Official wildfire records map");
+      return map;
+    },
+    locator: () => ({ waitFor: async () => { assert.equal(mounted, true); tilesWaited = true; } }),
+  };
+  const pending = openOfficialMapContext(page, protocol);
+  await Promise.resolve();
+  assert.equal(mapWaited, false);
+  assert.equal(tilesWaited, false);
+  releaseMount();
+  await pending;
+  assert.equal(mapWaited, true);
+  assert.equal(tilesWaited, true);
+});
+
+test("a missing v2 answer map remains a failure rather than loading unrelated province records", async () => {
+  const protocol = await loadProtocol(path.join(repositoryRoot, "data/evaluation/frontend_surface.v2.yaml"));
+  await assert.rejects(openOfficialMapContext({
+    getByRole: (role) => {
+      assert.equal(role, "region");
+      return { count: async () => 0, waitFor: async () => { throw new Error("expected answer map unavailable"); } };
+    },
+  }, protocol), /expected answer map unavailable/);
+});
+
+test("tile evidence counts canonical and legacy hosts without hiding unexpected origins", async () => {
+  const protocol = await loadProtocol(protocolPath);
+  const events = ["tile.openstreetmap.org", "a.tile.openstreetmap.org", "tile.openstreetmap.org.evil.test"].map(host => ({
+    url: `https://${host}/5/5/10.png`, origin: `https://${host}`,
+    resource_type: "image", response_status: 200, failure: null,
+  }));
+  const evidence = deriveRequestEvidence(events, protocol.surface_thresholds);
+  assert.deepEqual(evidence.direct_third_party_tile_requests, events.slice(0, 2));
+  // The preserved protocol does not yet admit the canonical tile origin.
+  assert.deepEqual(evidence.unexpected_request_origins, ["https://tile.openstreetmap.org", "https://tile.openstreetmap.org.evil.test"]);
+});
+
+test("surface v2 preserves every obligation and admits only the canonical tile origin", async () => {
+  const previous = await loadProtocol(protocolPath);
+  const current = await loadProtocol(path.join(repositoryRoot, "data/evaluation/frontend_surface.v2.yaml"));
+  assert.deepEqual(surfaceProtocolSuccessorIssues(previous, current), []);
+  assert.deepEqual(surfaceReadyTextCoverageIssues(current), []);
+  assert.equal(current.status, "provisional");
+  assert.equal(current.frozen_at, null);
+  assert.equal(current.matrix.expected_rows, 36);
+  assert.equal(surfaceInteractionContractV2.home_reset_name, "FireLens home");
+  const events = ["tile.openstreetmap.org", "tile.openstreetmap.org.evil.test"].map(host => ({
+    url: `https://${host}/5/5/10.png`, origin: `https://${host}`,
+    resource_type: "image", response_status: 200, failure: null,
+  }));
+  assert.deepEqual(deriveRequestEvidence(events, current.surface_thresholds).unexpected_request_origins,
+    ["https://tile.openstreetmap.org.evil.test"]);
+  for (const mutate of [
+    p => { p.surface_thresholds.minimum_body_text_css_px = 14; },
+    p => { p.surface_thresholds.allowed_request_origins.push("https://evil.test"); },
+    p => { p.performance.cold_samples = 1; },
+    p => { p.states.pop(); },
+    p => { p.functional_journeys[1].required_checks.pop(); },
+    p => { p.privacy_evidence.persistence_probe_tokens.pop(); },
+    p => { p.states[1].ready_text = "FireLens"; },
+    p => { p.status = "ratified"; },
+  ]) {
+    const invalid = structuredClone(current);
+    mutate(invalid);
+    assert.notDeepEqual(surfaceProtocolSuccessorIssues(previous, invalid), []);
+  }
+});
 
 test("a stalled surface phase fails promptly with its exact phase label", async () => {
   const startedAt = performance.now();
@@ -57,9 +144,10 @@ test("provisional protocol ready text matches the current fixture UI expectation
   assert.deepEqual(surfaceReadyTextCoverageIssues(protocol), []);
 });
 
-test("surface harness opens context only through the chat-first controls", async () => {
+test("surface harness uses the Atlas navigation without changing the protocol roster", async () => {
   const protocol = await loadProtocol(protocolPath);
-  assert.equal(surfaceInteractionContract.map_control_name, "View official map context");
+  assert.equal(surfaceInteractionContract.map_control_name, "Map");
+  assert.equal(surfaceInteractionContract.version, "atlas_answer_sheet_v1");
   assert.equal(surfaceInteractionContract.evidence_control_name, "Review technical evidence");
   assert.deepEqual(
     surfaceInteractionContract.map_state_ids,
@@ -68,7 +156,7 @@ test("surface harness opens context only through the chat-first controls", async
   for (const state of protocol.states) {
     assert.equal(
       requiresOnDemandMapContext(state.id),
-      surfaceInteractionContract.map_state_ids.includes(state.id),
+      false,
     );
   }
 });
@@ -818,7 +906,7 @@ test("package exposes build-preview qualification and focused tests", async () =
   );
   assert.equal(
     packageJson.scripts["test:surface"],
-    "node --test tests/frontend-surface-runner.test.mjs",
+    "node --test tests/frontend-surface-runner.test.mjs tests/surface-identity.test.mjs tests/surface-layout.test.mjs",
   );
   assert.equal(packageJson.devDependencies["axe-core"], "^4.12.1");
 });

@@ -24,6 +24,21 @@ export function wrapAppFetch(
     if (path.startsWith("/api/v1/product-events")) {
       return Promise.resolve(new Response(null, { status: 204 }));
     }
+    // Home loads the map before Ask. Preserve Ask-only one-shot mocks and
+    // return independent response bodies for concurrently requested resources.
+    if (path.startsWith("/api/v1/live/map")) {
+      const mock = impl as typeof impl & { getMockImplementation?: () => typeof impl | undefined };
+      const mapImpl = mock.getMockImplementation ? mock.getMockImplementation() : impl;
+      return Promise.resolve(mapImpl?.(input, init)).then(async (result) => {
+        if (!(result instanceof Response)) return jsonResponse({ results: [], unavailable_layers: [], layer_statuses: [] });
+        const copy = result.clone();
+        if (copy.ok) {
+          const payload = await copy.clone().json().catch(() => null);
+          if (payload?.answer || payload?.response_mode) return jsonResponse({ results: [], unavailable_layers: [], layer_statuses: [] });
+        }
+        return copy;
+      });
+    }
     return impl(input, init);
   });
 }

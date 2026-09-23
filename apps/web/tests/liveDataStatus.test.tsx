@@ -33,8 +33,12 @@ const oneLayerDown: LiveCurrentSummary = {
 };
 
 describe("liveDataTone", () => {
-  it("never treats a 503-ready process as live", () => {
-    expect(liveDataTone(reachable, "not_ready")).toBe("unavailable");
+  it("keeps official-feed availability independent of AI readiness", () => {
+    const now = Date.parse(reachable.retrieved_at!);
+    expect(liveDataTone(reachable, "not_ready", now)).toBe("live");
+    expect(liveDataTone(bothLayersDown, "not_ready", now)).toBe("unavailable");
+    expect(liveDataTone(oneLayerDown, "not_ready", now)).toBe("partial");
+    expect(liveDataTone(reachable, "not_ready", now + 300_000)).toBe("delayed");
   });
 
   it("never treats a retrieved-but-empty official fetch as live", () => {

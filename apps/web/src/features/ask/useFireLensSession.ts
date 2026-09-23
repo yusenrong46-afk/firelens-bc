@@ -14,6 +14,7 @@ import {
   type ResponseMode,
 } from "../../shared/api/api";
 import { useProvinceMap } from "../near-me/useProvinceMap";
+import type { MapSnapshotStatus } from "../near-me/MapRefreshStatus";
 import { looksLikeCommunityLabel, selectedResultIdForQuestion } from "./askContinuation";
 import {
   getResponseMode,
@@ -47,7 +48,11 @@ export type FireLensSession = {
   mapResults: LiveResult[];
   mapMatchingResults: LiveResult[];
   mapProvinceResults: LiveResult[];
+  mapHistoricalResults?: LiveResult[];
+  mapScopeKey?: string;
+  mapSnapshotStatus?: MapSnapshotStatus;
   mapLoading: boolean;
+  mapLoaded?: boolean;
   mapMessage: string | undefined;
   mapAggregateFreshness: MapAggregateFreshness;
   mapUnavailableLayers: string[];
@@ -61,7 +66,7 @@ export type FireLensSession = {
   askAboutResult: (resultId: string, question: string) => void;
   submitQuestion: (question: string) => Promise<void>;
   clearHistory: () => void;
-  useApproximateLocation: () => void;
+  useApproximateLocation: (question?: string) => void;
   submitLocation: (event: FormEvent<HTMLFormElement>) => void;
   submit: (event: FormEvent<HTMLFormElement>) => void;
   clearManualLocation: () => void;
@@ -84,12 +89,16 @@ export function useFireLensSession(): FireLensSession {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
   const [view, setView] = useState<ViewState>({ kind: "idle" });
-  const provinceMap = useProvinceMap(mapVisible && (contextLayersEnabled || view.kind === "idle"));
+  const showProvinceContext = contextLayersEnabled || view.kind === "idle";
+  const [mapNavigationEpoch, setMapNavigationEpoch] = useState(0);
+  const provinceMap = useProvinceMap(mapVisible && showProvinceContext, mapNavigationEpoch);
   const [history, setHistory] = useState<ConversationTurn[]>([]);
   const [locationLabel, setLocationLabel] = useState("");
   const [activeLocation, setActiveLocation] = useState<LocationInput>();
   const [locationMessage, setLocationMessage] = useState("");
   const [selectedLiveResultId, setSelectedLiveResultId] = useState<string>();
+  const [mapSelectionMessage, setMapSelectionMessage] = useState<string>();
+  const previousMap = useRef(provinceMap.data);
   const [roster, setRoster] = useState<Roster>(EMPTY_ROSTER);
   const activeRequest = useRef<AbortController | null>(null);
   const locationGeneration = useRef(0);
@@ -125,6 +134,18 @@ export function useFireLensSession(): FireLensSession {
       ),
     [contextLayersEnabled, provinceMap.data?.layer_statuses, provinceMap.data?.results, provinceMap.data?.unavailable_layers, roster, view.kind],
   );
+
+  useEffect(() => {
+    const previous = previousMap.current;
+    previousMap.current = provinceMap.data;
+    if (!provinceMap.data || previous === provinceMap.data || !selectedLiveResultId) return;
+    if (previous?.results.some((record) => record.result_id === selectedLiveResultId)
+      && !mapView.mapResults.some((record) => record.result_id === selectedLiveResultId)
+      && !mapView.mapHistoricalResults.some((record) => record.result_id === selectedLiveResultId)) {
+      setSelectedLiveResultId(undefined);
+      setMapSelectionMessage("The selected record is absent from the latest map response. This does not establish that the incident ended.");
+    }
+  }, [mapView.mapHistoricalResults, mapView.mapResults, provinceMap.data, selectedLiveResultId]);
 
   useEffect(() => {
     let controller: AbortController | undefined;
@@ -175,6 +196,7 @@ export function useFireLensSession(): FireLensSession {
   ) {
     const normalized = question.trim();
     if (!normalized) return;
+    setMapNavigationEpoch(epoch => epoch + 1);
     locationGeneration.current += 1;
     const requestHistory = history.slice(-6);
     activeRequest.current?.abort();
@@ -200,6 +222,7 @@ export function useFireLensSession(): FireLensSession {
         roster.results,
       );
       if (contextSelected) context.selected_live_result_id = contextSelected;
+      setSelectedLiveResultId(contextSelected);
       const nextResponse = await askFireLens(
         normalized,
         requestHistory,
@@ -265,6 +288,7 @@ export function useFireLensSession(): FireLensSession {
   }
 
   function clearHistory() {
+    setMapNavigationEpoch(epoch => epoch + 1);
     locationGeneration.current += 1;
     activeRequest.current?.abort();
     activeRequest.current = null;
@@ -276,11 +300,12 @@ export function useFireLensSession(): FireLensSession {
     setActiveLocation(undefined);
     setLocationMessage("");
     setSelectedLiveResultId(undefined);
+    setMapSelectionMessage(undefined);
     setRoster(EMPTY_ROSTER);
     setView({ kind: "idle" });
   }
 
-  function useApproximateLocation() {
+  function useApproximateLocation(question?: string) {
     const generation = ++locationGeneration.current;
     if (!navigator.geolocation) {
       setLocationMessage("Location is not available in this browser.");
@@ -299,6 +324,7 @@ export function useFireLensSession(): FireLensSession {
         setActiveLocation(location);
         setLocationMessage("Approximate location ready for this conversation.");
         const continuation = response?.required_input?.continuation_question
+          ?? question
           ?? "What official fires are near this location?";
         void submitQuestionWithContext(continuation, location);
       },
@@ -376,8 +402,28 @@ export function useFireLensSession(): FireLensSession {
     mapResults: mapView.mapResults,
     mapMatchingResults: mapView.mapMatchingResults,
     mapProvinceResults: mapView.mapProvinceResults,
-    mapLoading: provinceMap.loading,
-    mapMessage: provinceMap.message,
+    mapHistoricalResults: mapView.mapHistoricalResults,
+    mapScopeKey: roster.results.map((record) => record.result_id).join("|"),
+    mapSnapshotStatus: showProvinceContext ? {
+      mode: "province",
+      generatedAt: provinceMap.data?.generated_at,
+      checkedAt: provinceMap.checkedAt,
+      now: statusNow,
+      refreshing: provinceMap.loading,
+      error: provinceMap.message,
+      statuses: provinceMap.data?.layer_statuses,
+      limitations: provinceMap.data?.limitations,
+      selectionMessage: mapSelectionMessage,
+      onRefresh: provinceMap.refresh,
+    } : {
+      mode: "answer",
+      now: statusNow,
+      refreshing: false,
+      limitations: response?.limitations,
+    },
+    mapLoading: showProvinceContext && provinceMap.loading,
+    mapLoaded: showProvinceContext ? Boolean(provinceMap.data) : true,
+    mapMessage: showProvinceContext ? provinceMap.message : undefined,
     mapAggregateFreshness: mapView.mapAggregateFreshness,
     mapUnavailableLayers: mapView.mapUnavailableLayers,
     mapPartialLayers: mapView.mapPartialLayers,
@@ -386,7 +432,7 @@ export function useFireLensSession(): FireLensSession {
     mapFocus: mapView.mapFocus,
     mapFocusResults: mapView.mapFocusResults,
     selectedLiveResultId,
-    setSelectedLiveResultId,
+    setSelectedLiveResultId: (id) => { setMapSelectionMessage(undefined); setSelectedLiveResultId(id); },
     askAboutResult,
     submitQuestion,
     clearHistory,

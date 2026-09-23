@@ -1,4 +1,4 @@
-import { ArrowSquareOut, House, Info, MapTrifold, Trash } from "@phosphor-icons/react";
+import { ArrowSquareOut, Backpack, House, Info, MapTrifold, Trash } from "@phosphor-icons/react";
 import { BCWS_MAP_URL } from "../shared/officialLinks";
 
 export type RecentQuestion = {
@@ -8,6 +8,9 @@ export type RecentQuestion = {
 
 export function ProductSidebar({
   homeActive,
+  mapActive,
+  onMap,
+  onPrepare,
   onHome,
   onHowItWorks,
   onClear,
@@ -16,6 +19,9 @@ export function ProductSidebar({
   recentQuestions,
 }: {
   homeActive: boolean;
+  mapActive: boolean;
+  onMap: () => void;
+  onPrepare: () => void;
   onHome: () => void;
   onHowItWorks: () => void;
   onClear: () => void;
@@ -52,25 +58,8 @@ export function ProductSidebar({
         >
           <House size={18} /> Home
         </button>
-        <button
-          type="button"
-          className="product-nav"
-          aria-expanded={howItWorksOpen}
-          aria-controls="how-firelens-works"
-          onClick={onHowItWorks}
-        >
-          <Info size={18} /> How it works
-        </button>
-        <a
-          className="product-nav"
-          href={BCWS_MAP_URL}
-          target="_blank"
-          rel="noreferrer"
-        >
-          <MapTrifold size={18} /> Official map
-          <ArrowSquareOut size={14} aria-hidden="true" className="product-nav__external" />
-          <span className="response-announcement">Opens in a new tab</span>
-        </a>
+        <button type="button" className={`product-nav${mapActive ? " product-nav--active" : ""}`} aria-pressed={mapActive} onClick={onMap}><MapTrifold size={18} /> Map</button>
+        <button type="button" className="product-nav" onClick={onPrepare}><Backpack size={18} /> Preparedness</button>
       </nav>
 
       {recentQuestions.length > 0 && (
@@ -93,9 +82,8 @@ export function ProductSidebar({
       )}
 
       <div className="product-sidebar__footer">
-        <div className="product-sidebar__landscape" aria-hidden="true">
-          <img src="/assets/pacific-landscape.svg" alt="" loading="lazy" />
-        </div>
+        <button type="button" className="product-nav product-nav--about" aria-expanded={howItWorksOpen} aria-controls="how-firelens-works" onClick={onHowItWorks}><Info size={18} /> About & methodology</button>
+        <a className="product-nav product-nav--official" href={BCWS_MAP_URL} target="_blank" rel="noreferrer"><MapTrifold size={18} /> Official map <ArrowSquareOut size={14} aria-hidden="true" /><span className="response-announcement">Opens in a new tab</span></a>
         <button type="button" className="product-sidebar__clear" onClick={onClear}>
           <Trash size={16} /> Clear conversation
         </button>

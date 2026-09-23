@@ -110,8 +110,9 @@ it("keeps partial province coverage out of a question-only roster", () => {
   expect(focused.mapUnavailableLayers).toEqual(["evacuation"]);
   const withContext = deriveSessionMapView(questionRoster, province, [], true, statuses);
   expect(withContext.mapGeometryOmissions).toEqual(idle.mapGeometryOmissions);
-  expect(withContext.mapUnavailableLayers).toEqual([]);
+  expect(withContext.mapUnavailableLayers).toEqual(["evacuation"]);
   expect(withContext.mapResults).toHaveLength(2);
+  expect(withContext.mapHistoricalResults).toEqual([]);
 });
 
 

@@ -389,7 +389,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .answer-markdown p { margin: 10px 0 0; }
 .answer-markdown ul,
 .answer-markdown ol { margin: 10px 0 0; padding-left: 24px; }
-.answer-markdown li { margin-top: 4px; padding-left: 2px; }
+.answer-markdown li { margin-top: 8px; padding-left: 2px; }
 .answer-markdown li > p { margin: 0; }
 .answer-markdown a { color: var(--forest); font-weight: 650; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .answer-markdown code {
@@ -1401,3 +1401,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 
 /* ---------- Home and inline source proof ---------- */
+
+/* Source-bound topic labels; all published words remain visible. */
+.guidance-groups { margin: 0; padding-left: 1.2em; }
+.guidance-groups > li { padding-left: .3em; margin-bottom: 24px; }
+.guidance-groups h2 { margin: 0 0 8px; font-size: 1em; line-height: 1.5; }
+.guidance-groups .answer-markdown > :first-child { margin-top: 6px; }

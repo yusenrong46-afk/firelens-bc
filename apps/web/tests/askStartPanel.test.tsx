@@ -20,6 +20,8 @@ function renderPanel({ locationLabel = "Kelowna, BC", onSelectQuestion = vi.fn()
     <AskStartPanel
       locationLabel={locationLabel}
       onSelectQuestion={onSelectQuestion}
+      onPrepareQuestion={vi.fn()}
+      onOpenMap={vi.fn()}
       onLocationChange={vi.fn()}
       onUseApproximateLocation={vi.fn()}
     />,
@@ -40,13 +42,14 @@ describe("AskStartPanel", () => {
     const user = userEvent.setup();
     renderPanel({ onSelectQuestion });
 
-    expect(screen.getByRole("heading", { name: "What do you want to know about wildfires in B.C.?" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Know what’s happening. Know where the information came from." })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Near me/ }));
     expect(screen.getByLabelText("BC community for a nearby lookup")).toBeInTheDocument();
-    const trigger = screen.getByRole("button", { name: /Browse guided questions/ });
+    const trigger = screen.getByRole("button", { name: /Explore example questions/ });
     await user.click(trigger);
     const panel = await screen.findByRole("region", { name: "Guided questions" });
     expect(within(panel).getAllByRole("listitem")).toHaveLength(24);
-    expect(trigger).toHaveAccessibleName("Browse guided questions · 24");
+    expect(trigger).toHaveAccessibleName("Explore example questions · 24");
     await user.click(screen.getByRole("button", { name: /Nearby wildfire records/ }));
 
     expect(onSelectQuestion).toHaveBeenCalledTimes(1);
@@ -64,12 +67,12 @@ describe("AskStartPanel", () => {
     vi.stubGlobal("fetch", wrapAppFetch(fetchMock));
     renderPanel();
 
-    await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
+    await user.click(screen.getByRole("button", { name: /Explore example questions/ }));
     expect(fetchMock).toHaveBeenCalledTimes(1);
     await user.click(screen.getByRole("button", { name: "Close guided questions" }));
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit | undefined)?.signal?.aborted).toBe(true);
 
-    await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
+    await user.click(screen.getByRole("button", { name: /Explore example questions/ }));
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(await screen.findByRole("button", { name: /Listed wildfires/ })).toBeInTheDocument();
   });
@@ -79,17 +82,18 @@ describe("AskStartPanel", () => {
     vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockRejectedValue(new Error("offline"))));
     renderPanel();
 
-    await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
+    await user.click(screen.getByRole("button", { name: /Explore example questions/ }));
     expect(await screen.findByRole("status", { name: "Guided questions status" })).toHaveTextContent(/temporarily unavailable/i);
     expect(screen.getByRole("button", { name: "Retry guided questions" })).toBeInTheDocument();
-    expect(screen.getByLabelText("BC community for a nearby lookup")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole("button", { name: "Retry guided questions" })).toHaveFocus());
+    await user.click(screen.getByRole("button", { name: /^Near me/ }));
+    expect(screen.getByLabelText("BC community for a nearby lookup")).toBeInTheDocument();
   });
 
   it("searches and filters the semantic question list", async () => {
     const user = userEvent.setup();
     renderPanel();
-    await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
+    await user.click(screen.getByRole("button", { name: /Explore example questions/ }));
 
     const search = screen.getByRole("searchbox", { name: "Search guided questions" });
     await user.type(search, "bag");
@@ -104,7 +108,7 @@ describe("AskStartPanel", () => {
   it("Escape closes the disclosure and restores focus to its trigger", async () => {
     const user = userEvent.setup();
     renderPanel();
-    const trigger = screen.getByRole("button", { name: /Browse guided questions/ });
+    const trigger = screen.getByRole("button", { name: /Explore example questions/ });
     await user.click(trigger);
     await waitFor(() => expect(screen.getByRole("searchbox", { name: "Search guided questions" })).toHaveFocus());
     await user.keyboard("{Escape}");
@@ -116,7 +120,7 @@ describe("AskStartPanel", () => {
     const onSelectQuestion = vi.fn();
     const user = userEvent.setup();
     renderPanel({ locationLabel: "", onSelectQuestion });
-    await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
+    await user.click(screen.getByRole("button", { name: /Explore example questions/ }));
     await user.click(screen.getByRole("button", { name: /Nearby wildfire records/ }));
     expect(onSelectQuestion).toHaveBeenCalledWith("What official wildfire records are near {place}?");
   });
@@ -131,7 +135,7 @@ describe("AskStartPanel", () => {
     };
     vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(malformed), { status: 200 }))));
     renderPanel();
-    await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
+    await user.click(screen.getByRole("button", { name: /Explore example questions/ }));
     expect(await screen.findByRole("status", { name: "Guided questions status" })).toHaveTextContent(/temporarily unavailable/i);
     expect(screen.queryByRole("button", { name: /Listed wildfires/ })).not.toBeInTheDocument();
   });
@@ -151,7 +155,7 @@ describe("AskStartPanel", () => {
     };
     vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(malformed), { status: 200 }))));
     renderPanel();
-    await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
+    await user.click(screen.getByRole("button", { name: /Explore example questions/ }));
     expect(await screen.findByRole("status", { name: "Guided questions status" })).toHaveTextContent(/temporarily unavailable/i);
   });
 
@@ -162,7 +166,7 @@ describe("AskStartPanel", () => {
       .mockResolvedValueOnce(response());
     vi.stubGlobal("fetch", wrapAppFetch(fetchMock));
     renderPanel();
-    await user.click(screen.getByRole("button", { name: /Browse guided questions/ }));
+    await user.click(screen.getByRole("button", { name: /Explore example questions/ }));
     await screen.findByRole("button", { name: "Retry guided questions" });
     await user.click(screen.getByRole("button", { name: "Retry guided questions" }));
     expect(await screen.findByRole("button", { name: /Listed wildfires/ })).toBeInTheDocument();

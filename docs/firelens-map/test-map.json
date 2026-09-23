@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "27b7939a30bb3111c5107211b14c3b6345fa6506c4341df1139b3e41c45938c9",
+  "source_digest": "b34233de1afb1e422105315fb54580f95628d4c8e73af84e270fb51522bbdfb2",
   "tests": [
     {
       "cases": [
@@ -59,6 +59,7 @@
       ],
       "evaluation_families": [
         "conversation",
+        "fault",
         "live",
         "provider",
         "publication",
@@ -86,6 +87,21 @@
     },
     {
       "cases": [
+        "test_call_1"
+      ],
+      "direct_targets": [
+        "apps/web/src/features/near-me/MapViewport.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "live"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/MapViewport.test.tsx"
+    },
+    {
+      "cases": [
         "test_call_1",
         "test_call_2",
         "test_call_3"
@@ -102,6 +118,61 @@
       ],
       "language": "typescript",
       "path": "apps/web/tests/OfficialSourcesCard.test.tsx"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4",
+        "test_call_5",
+        "test_call_6",
+        "test_call_7",
+        "test_call_8",
+        "test_call_9",
+        "test_call_10",
+        "test_call_11",
+        "test_call_12",
+        "test_call_13",
+        "test_call_14",
+        "test_call_15"
+      ],
+      "direct_targets": [
+        "apps/web/src/features/ask/AnswerActions.tsx",
+        "apps/web/src/features/ask/answerActionPresentation.ts",
+        "apps/web/src/features/ask/responseModeBadge.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "conversation",
+        "live",
+        "publication",
+        "rag",
+        "safety"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/answerActions.test.tsx"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4",
+        "test_call_5"
+      ],
+      "direct_targets": [
+        "apps/web/src/features/near-me/AnswerMapScope.tsx",
+        "apps/web/src/features/near-me/LiveRecordLists.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "live"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/answerMapScope.test.tsx"
     },
     {
       "cases": [
@@ -204,6 +275,17 @@
       "path": "apps/web/tests/askStartPanel.test.tsx"
     },
     {
+      "cases": [],
+      "direct_targets": [],
+      "endpoints": [],
+      "evaluation_families": [
+        "conversation",
+        "live"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/browserNavigation.ts"
+    },
+    {
       "cases": [
         "test_call_1"
       ],
@@ -239,6 +321,56 @@
         "test_call_3",
         "test_call_4",
         "test_call_5",
+        "test_call_6",
+        "test_call_7",
+        "test_call_8",
+        "test_call_9",
+        "test_call_10",
+        "test_call_11",
+        "test_call_12",
+        "test_call_13",
+        "test_call_14",
+        "test_call_15",
+        "test_call_16",
+        "test_call_17",
+        "test_call_18",
+        "test_call_19",
+        "test_call_20",
+        "test_call_21",
+        "test_call_22",
+        "test_call_23",
+        "test_call_24",
+        "test_call_25",
+        "test_call_26",
+        "test_call_27",
+        "test_call_28"
+      ],
+      "direct_targets": [],
+      "endpoints": [
+        "GET /api/v1/guided-questions",
+        "GET /api/v1/health/ready",
+        "GET /api/v1/live/map",
+        "GET /api/v1/live/summary",
+        "POST /api/v1/ask",
+        "POST /api/v1/product-events"
+      ],
+      "evaluation_families": [
+        "conversation",
+        "live",
+        "provider",
+        "publication",
+        "safety"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/e2e-product-v2/app.spec.ts"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4",
+        "test_call_5",
         "test_call_6"
       ],
       "direct_targets": [],
@@ -248,10 +380,126 @@
       "evaluation_families": [
         "conversation",
         "live",
-        "publication"
+        "publication",
+        "retrieval"
       ],
       "language": "typescript",
       "path": "apps/web/tests/e2e-real/astra.spec.ts"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4",
+        "test_call_5",
+        "test_call_6",
+        "test_call_7",
+        "test_call_8"
+      ],
+      "direct_targets": [],
+      "endpoints": [
+        "GET /api/v1/live/map",
+        "POST /api/v1/ask"
+      ],
+      "evaluation_families": [
+        "conversation",
+        "live",
+        "safety"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/e2e-real/atlas-readiness.spec.ts"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2"
+      ],
+      "direct_targets": [],
+      "endpoints": [
+        "GET /api/v1/live/map",
+        "POST /api/v1/ask"
+      ],
+      "evaluation_families": [
+        "live",
+        "rag"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/e2e-real/basemap-transport.spec.ts"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4",
+        "test_call_5",
+        "test_call_6",
+        "test_call_7",
+        "test_call_8",
+        "test_call_9",
+        "test_call_10",
+        "test_call_11",
+        "test_call_12",
+        "test_call_13",
+        "test_call_14",
+        "test_call_15",
+        "test_call_16",
+        "test_call_17",
+        "test_call_18",
+        "test_call_19",
+        "test_call_20"
+      ],
+      "direct_targets": [],
+      "endpoints": [
+        "POST /api/v1/ask"
+      ],
+      "evaluation_families": [
+        "conversation",
+        "live",
+        "publication",
+        "retrieval",
+        "safety"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4",
+        "test_call_5",
+        "test_call_6",
+        "test_call_7",
+        "test_call_8",
+        "test_call_9",
+        "test_call_10",
+        "test_call_11",
+        "test_call_12",
+        "test_call_13",
+        "test_call_14",
+        "test_call_15",
+        "test_call_16",
+        "test_call_17",
+        "test_call_18",
+        "test_call_19",
+        "test_call_20"
+      ],
+      "direct_targets": [],
+      "endpoints": [
+        "POST /api/v1/ask"
+      ],
+      "evaluation_families": [
+        "conversation",
+        "live",
+        "publication",
+        "retrieval",
+        "safety"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts"
     },
     {
       "cases": [
@@ -328,6 +576,7 @@
         "conversation",
         "live",
         "publication",
+        "retrieval",
         "safety"
       ],
       "language": "typescript",
@@ -416,6 +665,7 @@
       "direct_targets": [],
       "endpoints": [
         "GET /api/v1/health/ready",
+        "GET /api/v1/live/map",
         "GET /api/v1/live/summary",
         "POST /api/v1/product-events"
       ],
@@ -446,7 +696,11 @@
         "test_call_17",
         "test_call_18",
         "test_call_19",
-        "test_call_20"
+        "test_call_20",
+        "test_call_21",
+        "test_call_22",
+        "test_call_23",
+        "test_call_24"
       ],
       "direct_targets": [],
       "endpoints": [
@@ -485,6 +739,37 @@
       ],
       "language": "typescript",
       "path": "apps/web/tests/frontendSemanticOwner.test.ts"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2"
+      ],
+      "direct_targets": [
+        "apps/web/src/features/ask/AnswerBody.tsx",
+        "apps/web/src/features/ask/answerActionPresentation.ts",
+        "apps/web/src/features/ask/guidanceGroups.ts",
+        "apps/web/src/features/ask/readableAnswer.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [],
+      "language": "typescript",
+      "path": "apps/web/tests/guidanceGroups.test.tsx"
+    },
+    {
+      "cases": [
+        "test_call_1"
+      ],
+      "direct_targets": [
+        "apps/web/src/app/App.tsx"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "live"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/lazyAnswerAnnouncement.test.tsx"
     },
     {
       "cases": [
@@ -590,6 +875,26 @@
       "cases": [
         "test_call_1",
         "test_call_2",
+        "test_call_3",
+        "test_call_4",
+        "test_call_5"
+      ],
+      "direct_targets": [
+        "apps/web/src/features/near-me/LiveMap.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "live",
+        "rag"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/liveMapPresentation.test.tsx"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
         "test_call_3"
       ],
       "direct_targets": [
@@ -602,6 +907,27 @@
       ],
       "language": "typescript",
       "path": "apps/web/tests/liveResultPresentation.test.ts"
+    },
+    {
+      "cases": [
+        "test_call_1"
+      ],
+      "direct_targets": [],
+      "endpoints": [],
+      "evaluation_families": [],
+      "language": "typescript",
+      "path": "apps/web/tests/localBrowserOrigin.test.ts"
+    },
+    {
+      "cases": [],
+      "direct_targets": [],
+      "endpoints": [],
+      "evaluation_families": [
+        "provider",
+        "rag"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/localBrowserOrigin.ts"
     },
     {
       "cases": [
@@ -622,6 +948,154 @@
       ],
       "language": "typescript",
       "path": "apps/web/tests/mapClustering.test.ts"
+    },
+    {
+      "cases": [
+        "test_call_1"
+      ],
+      "direct_targets": [
+        "apps/web/src/features/near-me/StaticGeometry.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "live"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/mapGeometryRefresh.test.tsx"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4"
+      ],
+      "direct_targets": [
+        "apps/web/src/features/ask/useFireLensSession.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "conversation",
+        "live"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/mapNavigationReset.test.ts"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4",
+        "test_call_5",
+        "test_call_6",
+        "test_call_7",
+        "test_call_8",
+        "test_call_9",
+        "test_call_10",
+        "test_call_11",
+        "test_call_12",
+        "test_call_13",
+        "test_call_14",
+        "test_call_15",
+        "test_call_16"
+      ],
+      "direct_targets": [
+        "apps/web/src/app/LiveDataStatus.tsx",
+        "apps/web/src/features/ask/sessionMap.ts",
+        "apps/web/src/features/near-me/MapRefreshStatus.tsx",
+        "apps/web/src/features/near-me/useProvinceMap.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [
+        "GET /api/v1/live/map"
+      ],
+      "evaluation_families": [
+        "live",
+        "rag",
+        "retrieval"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/mapRefresh.test.tsx"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3"
+      ],
+      "direct_targets": [
+        "apps/web/src/features/ask/useFireLensSession.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "live",
+        "rag"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/mapSelectionRefresh.test.ts"
+    },
+    {
+      "cases": [
+        "test_call_1"
+      ],
+      "direct_targets": [
+        "apps/web/src/features/near-me/MapViewport.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "live"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/mapViewportRefresh.test.tsx"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4"
+      ],
+      "direct_targets": [
+        "apps/web/src/app/App.tsx",
+        "apps/web/src/app/ContextChips.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "fault",
+        "live",
+        "publication",
+        "spatial"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/productExperience.test.tsx"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4"
+      ],
+      "direct_targets": [
+        "apps/web/src/app/App.tsx",
+        "apps/web/src/features/ask/useFireLensSession.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "conversation",
+        "fault",
+        "live",
+        "spatial"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/productIntegrationV2.test.tsx"
     },
     {
       "cases": [
@@ -674,6 +1148,30 @@
       "path": "apps/web/tests/proofCards.test.tsx"
     },
     {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4",
+        "test_call_5",
+        "test_call_6",
+        "test_call_7",
+        "test_call_8"
+      ],
+      "direct_targets": [
+        "apps/web/src/features/ask/AnswerBody.tsx",
+        "apps/web/src/features/ask/answerActionPresentation.ts",
+        "apps/web/src/features/ask/readableAnswer.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "publication"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/quoteAttribution.test.tsx"
+    },
+    {
       "cases": [],
       "direct_targets": [],
       "endpoints": [],
@@ -682,6 +1180,29 @@
       ],
       "language": "typescript",
       "path": "apps/web/tests/raw-modules.d.ts"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4",
+        "test_call_5"
+      ],
+      "direct_targets": [
+        "apps/web/src/features/ask/AnswerBody.tsx",
+        "apps/web/src/features/ask/answerActionPresentation.ts",
+        "apps/web/src/features/ask/readableAnswer.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "live",
+        "publication",
+        "safety"
+      ],
+      "language": "typescript",
+      "path": "apps/web/tests/readableAnswer.test.tsx"
     },
     {
       "cases": [
@@ -715,7 +1236,8 @@
       "cases": [
         "test_call_1",
         "test_call_2",
-        "test_call_3"
+        "test_call_3",
+        "test_call_4"
       ],
       "direct_targets": [
         "apps/web/src/features/ask/useFireLensSession.ts",
@@ -775,16 +1297,49 @@
     {
       "cases": [
         "test_call_1",
-        "test_call_2"
+        "test_call_2",
+        "test_call_3",
+        "test_call_4",
+        "test_call_5",
+        "test_call_6"
       ],
       "direct_targets": [
         "apps/web/src/features/ask/SourceProof.tsx",
         "apps/web/src/shared/api/api.ts"
       ],
       "endpoints": [],
-      "evaluation_families": [],
+      "evaluation_families": [
+        "publication"
+      ],
       "language": "typescript",
       "path": "apps/web/tests/sourceRevision.test.tsx"
+    },
+    {
+      "cases": [
+        "test_call_1",
+        "test_call_2",
+        "test_call_3",
+        "test_call_4"
+      ],
+      "direct_targets": [],
+      "endpoints": [],
+      "evaluation_families": [
+        "mutation"
+      ],
+      "language": "javascript",
+      "path": "apps/web/tests/surface-identity.test.mjs"
+    },
+    {
+      "cases": [
+        "test_call_1"
+      ],
+      "direct_targets": [],
+      "endpoints": [],
+      "evaluation_families": [
+        "frontend"
+      ],
+      "language": "javascript",
+      "path": "apps/web/tests/surface-layout.test.mjs"
     },
     {
       "cases": [
@@ -807,6 +1362,16 @@
       ],
       "language": "javascript",
       "path": "apps/web/tests/tooling-config.test.mjs"
+    },
+    {
+      "cases": [],
+      "direct_targets": [
+        "apps/web/src/features/near-me/useProvinceMap.ts"
+      ],
+      "endpoints": [],
+      "evaluation_families": [],
+      "language": "typescript",
+      "path": "apps/web/tests/useProvinceMap.test.ts"
     },
     {
       "cases": [

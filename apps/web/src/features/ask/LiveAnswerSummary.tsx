@@ -141,6 +141,7 @@ export function LiveAnswerSummary({
   radiusKm,
   response,
   selectedResultId,
+  mapOpen = false,
 }: {
   onSelectResult?: ((resultId: string) => void) | undefined;
   onOpenMap?: (() => void) | undefined;
@@ -148,6 +149,7 @@ export function LiveAnswerSummary({
   radiusKm?: number | undefined;
   response: AskResponse;
   selectedResultId?: string | undefined;
+  mapOpen?: boolean;
 }) {
   const results = response.live_results ?? [];
   if (results.length === 0) return null;
@@ -181,7 +183,7 @@ export function LiveAnswerSummary({
       {(onOpenMap || completeWildfireRoster) && (
         <div className="live-answer-summary__map">
           {onOpenMap ? (
-          <button type="button" className="live-answer-map-link" aria-label={`View map — ${internalMapLabel}`} onClick={onOpenMap}>
+          <button type="button" className="live-answer-map-link" aria-label={`View map — ${internalMapLabel}`} aria-controls="map-context" aria-expanded={mapOpen} onClick={onOpenMap}>
             View map
             <ArrowRight size={16} aria-hidden="true" />
           </button>
@@ -226,6 +228,7 @@ function RecordRow({ result, selected, onSelect }: {
   const status = resultStatus(result);
   return <div className={`live-record-row${selected ? " live-record-row--selected" : ""}`}>
     <button type="button" className={`live-record-select${selected ? " is-selected" : ""}`}
+      data-result-id={result.result_id}
       aria-pressed={selected} onClick={() => onSelect?.(result.result_id)}>
       <span className={`live-record-icon status-pill--${statusTone(status)}`}>
         {result.kind === "incident" ? <Fire size={25} aria-hidden="true" /> : <Stack size={24} aria-hidden="true" />}
@@ -242,10 +245,11 @@ function RecordRow({ result, selected, onSelect }: {
       </span>
       <CaretRight className="live-record-caret" size={16} aria-hidden="true" />
     </button>
-    <div className="live-record-source">
+    <details className="live-record-source">
+      <summary>Source & update</summary>
       <a href={result.source_url} target="_blank" rel="noreferrer">{result.authority} <ArrowSquareOut size={14} aria-hidden="true" /></a>
       <span>{relativeMinutes(result.source_updated_at ?? undefined) ?? "Update time not published"}</span>
-    </div>
+    </details>
   </div>;
 }
 

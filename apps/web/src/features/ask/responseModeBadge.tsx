@@ -30,7 +30,9 @@ export function ResponseModeBadge({
   };
   const quoteOnly = (response?.claims?.length ?? 0) > 0
     && (response?.claims ?? []).every((claim) => claim.publication?.kind === "official_quote_only");
-  if (mode === "partial" && quoteOnly) labels.partial = "Exact wording from an official source";
+  if (quoteOnly && (mode === "grounded" || mode === "partial")) {
+    labels[mode] = "Exact wording from an official source";
+  }
   if (mode === "abstention") labels.abstention = abstentionPresentation(reasonCode).badge;
   if (mode === "scope_redirect" && reasonCode === "no_approved_evidence") {
     labels.scope_redirect = isReviewedSourceHandoff(response) ? "Reviewed source handoff" : "Coverage limit";

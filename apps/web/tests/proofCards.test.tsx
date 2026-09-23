@@ -174,7 +174,7 @@ describe("proof-carrying answer surface", () => {
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What does the source say?");
     await user.click(screen.getByLabelText("Send question"));
 
-    expect(await screen.findByText("Exact wording from an official source")).toBeInTheDocument();
+    expect(await screen.findByRole("status", { name: "Answer status" })).toHaveTextContent("Exact wording from an official source");
     expect(screen.getByText(
       "FireLens is showing the source's own words rather than a summary.",
     )).toBeInTheDocument();

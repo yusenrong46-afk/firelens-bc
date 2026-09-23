@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { MapContainer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import "./liveMap.css";
 import type { LiveResult } from "../../shared/api/api";
 import { ClusteredPointMarkers } from "./ClusteredPointMarkers";
 import { MatchingRecordList, ProvinceRecordList } from "./LiveRecordLists";
 import { MapContextLayers } from "./MapContextLayers";
-import { MapScope } from "./MapScope";
+import { LiveMapCoverage } from "./LiveMapCoverage";
+import { HistoricalMapRecords, MapRefreshStatus, type MapSnapshotStatus, mapSnapshotAge } from "./MapRefreshStatus";
 import {
   filterMapResults,
   incidentStatuses,
@@ -39,6 +41,14 @@ export function LiveMap({
   contextLayersEnabled = false,
   onContextLayersChange,
   variant = "full",
+  heading,
+  contextLabel,
+  onExpand,
+  loading = false,
+  loadError,
+  snapshotStatus,
+  historicalResults = EMPTY_RESULTS,
+  scopeKey,
 }: {
   results: LiveResult[];
   matchingResults?: LiveResult[] | undefined;
@@ -55,6 +65,14 @@ export function LiveMap({
   contextLayersEnabled?: boolean | undefined;
   onContextLayersChange?: ((enabled: boolean) => void) | undefined;
   variant?: "compact" | "full";
+  heading?: string | undefined;
+  contextLabel?: string | undefined;
+  onExpand?: (() => void) | undefined;
+  loading?: boolean;
+  loadError?: string | undefined;
+  snapshotStatus?: MapSnapshotStatus | undefined;
+  historicalResults?: LiveResult[] | undefined;
+  scopeKey?: string | undefined;
 }) {
   const [hiddenKinds, setHiddenKinds] = useState<Set<LiveResult["kind"]>>(new Set());
   const [statusMode, setStatusMode] = useState<IncidentStatusMode>("all");
@@ -102,16 +120,27 @@ export function LiveMap({
     ),
     [filteredResults],
   );
-  const kindCounts = useMemo(
-    () => filteredResults.reduce(
-      (counts, result) => ({ ...counts, [result.kind]: counts[result.kind] + 1 }),
-      { incident: 0, evacuation: 0, perimeter: 0 },
-    ),
-    [filteredResults],
-  );
   const hasMatchingResults = answerMatchingResults.length > 0;
   const [tilesFailed, setTilesFailed] = useState(false);
   const compact = variant === "compact";
+  const answerSnapshot = snapshotStatus?.mode === "answer";
+  const snapshotAged = snapshotStatus && (mapSnapshotAge(snapshotStatus, results).overdue || Boolean(snapshotStatus.error));
+  const Heading = compact ? "h2" : "h1";
+  const records = (
+    <>
+      <MatchingRecordList
+        results={displayedMatchingResults}
+        selectedResultId={selectedResultId}
+        onSelectResult={onSelectResult}
+      />
+      <ProvinceRecordList
+        results={displayedProvinceResults}
+        hasMatchingResults={hasMatchingResults}
+        selectedResultId={selectedResultId}
+        onSelectResult={onSelectResult}
+      />
+    </>
+  );
   return (
     <section
       className={compact ? "live-map live-map--compact" : "live-map"}
@@ -119,11 +148,10 @@ export function LiveMap({
       aria-label="Official wildfire records map"
       tabIndex={-1}
     >
-      {!compact && (
       <div className="live-map__heading">
         <div>
           <span>
-            {freshnessState === "stale"
+            {answerSnapshot ? "Answer snapshot" : snapshotAged ? "Previously retrieved official records" : freshnessState === "stale"
               ? "Cached official records"
               : freshnessState === "mixed"
                 ? "Official records, some out of date"
@@ -131,50 +159,31 @@ export function LiveMap({
                   ? "Current official records"
                   : "Official wildfire map"}
           </span>
-          <h1>
-            {freshnessState === "stale"
+          <Heading>
+            {heading ?? (answerSnapshot ? "Records from this answer" : snapshotAged ? "Official wildfire records in B.C." : freshnessState === "stale"
               ? "Wildfires in B.C. (cached records)"
               : freshnessState === "mixed"
                 ? "Wildfires in B.C. (some records out of date)"
                 : freshnessState === "fresh"
                   ? "Wildfires in B.C. right now"
-                  : "Wildfires across British Columbia"}
-          </h1>
+                  : "Wildfires across British Columbia")}
+          </Heading>
+          {contextLabel && <p className="live-map__location">{contextLabel}</p>}
         </div>
+        {compact && onExpand ? (
+          <button type="button" className="live-map__expand" onClick={onExpand}>
+            Expand map
+          </button>
+        ) : !compact && (
         <a href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
           Open the BC Wildfire Service map
         </a>
+        )}
       </div>
-      )}
       {!compact && onContextLayersChange && (
         <MapContextLayers enabled={contextLayersEnabled} onChange={onContextLayersChange} />
       )}
-      {freshnessState === "stale" && (
-        <p className="live-map__warning" role="status">
-          FireLens could not refresh these records, so it is showing its last cached copy. They may be out of date.
-        </p>
-      )}
-      {freshnessState === "mixed" && (
-        <p className="live-map__warning" role="status">
-          Some of these records are cached copies because a refresh failed. Check each record's update time.
-        </p>
-      )}
-      {partialLayers.length > 0 && <p role="status">Partial coverage for {partialLayers.join(", ")}: only validated records are shown. Missing records are not an all-clear.</p>}
-      {unavailableLayers.length > 0 && (
-        <p className="live-map__warning" role="status">
-          Some official layers are unavailable: {unavailableLayers.join(", ")}.
-          The records below do not represent those missing layers.
-        </p>
-      )}
-      {geometryOmissions.length > 0 && (
-        <p className="live-map__warning" role="status">
-          Partial coverage: {geometryOmissions.map(({ kind, count }) => `${count} ${kind} records omitted`).join(", ")}
-          {" because their boundaries could not be validated. Displayed counts are incomplete. A missing area is not an all-clear. "}
-          <a href="https://www.emergencyinfobc.gov.bc.ca/" target="_blank" rel="noreferrer">Check official emergency information</a>.
-        </p>
-      )}
       <TileFailureWarning failed={tilesFailed} />
-      {!compact && (
       <MapLayerFilters
         hiddenKinds={hiddenKinds}
         availableStatuses={availableStatuses}
@@ -202,16 +211,14 @@ export function LiveMap({
           setStatuses(new Set());
         }}
         statusMode={statusMode}
+        compact={compact}
       />
-      )}
-      {!compact && (
-      <MapScope
-        displayedCount={filteredResults.length}
-        displayedMatchingCount={displayedMatchingResults.length}
-        matchingCount={answerMatchingResults.length}
-        resultCount={results.length}
-      />
-      )}
+      <LiveMapCoverage results={results} displayedResults={filteredResults}
+        matchingCount={answerMatchingResults.length} displayedMatchingCount={displayedMatchingResults.length}
+        freshnessState={freshnessState} loading={loading} loadError={loadError}
+        unavailableLayers={unavailableLayers} partialLayers={partialLayers} geometryOmissions={geometryOmissions} />
+      <MapRefreshStatus status={snapshotStatus} results={results} />
+      <HistoricalMapRecords results={historicalResults} selectedId={selectedResultId} onSelect={onSelectResult} />
       <div role="region" aria-label="Interactive map of official wildfire records">
         <MapContainer
           bounds={BC_BOUNDS}
@@ -226,6 +233,7 @@ export function LiveMap({
           focus={focus}
           focusResults={focusResults}
           selectedResultId={selectedResultId}
+          scopeKey={scopeKey}
         />
         {featureResults.map((result) => (
           <StaticGeometry
@@ -247,19 +255,24 @@ export function LiveMap({
         </MapContainer>
       </div>
       {compact ? (
+        <>
+        {filteredResults.length > 0 && (
+          <details className="live-map__records" open={tilesFailed || undefined}>
+            <summary>View displayed records ({filteredResults.length})</summary>
+            {records}
+          </details>
+        )}
         <div className="live-map__compact-actions">
           <a href="https://wildfiresituation.nrs.gov.bc.ca/map" target="_blank" rel="noreferrer">
             Open official BCWS map
           </a>
           <span>OSM · Open Government Licence – BC</span>
         </div>
+        <p className="live-map__safety-note">Follow the issuing authority. This map is not a safety determination.</p>
+        </>
       ) : (
         <>
-      <MatchingRecordList
-        results={displayedMatchingResults}
-        selectedResultId={selectedResultId}
-        onSelectResult={onSelectResult}
-      />
+      {records}
       {focus && (
         <p className="map-surface-status" role="status">
           Approximate place marker near {focus.latitude.toFixed(2)}, {focus.longitude.toFixed(2)}.
@@ -275,20 +288,6 @@ export function LiveMap({
         <span>{MAP_GEOMETRY_LEGEND.points}</span>
         <span>{MAP_GEOMETRY_LEGEND.polygons}</span>
       </div>
-      {filteredResults.length > 0 && (
-        <div className="live-roster-summary" aria-label="Official record totals">
-          <strong>{filteredResults.length} displayed official records</strong>
-          <span>{unavailableLayers.includes("incident") ? "Fire records unavailable" : `${kindCounts.incident} fires${(partialLayers.includes("incident") || geometryOmissions.some((item) => item.kind === "incident")) ? " (partial)" : ""}`}</span>
-          <span>{unavailableLayers.includes("evacuation") ? "Evacuation records unavailable" : `${kindCounts.evacuation} evacuation areas${(partialLayers.includes("evacuation") || geometryOmissions.some((item) => item.kind === "evacuation")) ? " (partial)" : ""}`}</span>
-          <span>{unavailableLayers.includes("perimeter") ? "Perimeter records unavailable" : `${kindCounts.perimeter} perimeters${(partialLayers.includes("perimeter") || geometryOmissions.some((item) => item.kind === "perimeter")) ? " (partial)" : ""}`}</span>
-        </div>
-      )}
-      <ProvinceRecordList
-        results={displayedProvinceResults}
-        hasMatchingResults={hasMatchingResults}
-        selectedResultId={selectedResultId}
-        onSelectResult={onSelectResult}
-      />
       <p className="live-map__note">Follow instructions from the issuing authority. The map is not a safety determination.</p>
         </>
       )}

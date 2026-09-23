@@ -11,18 +11,50 @@
     {
       "kind": "static",
       "lines": [
-        19
+        3
       ],
-      "source": "apps/web/src/app/App.tsx",
-      "target": "apps/web/src/app/ContextChips.tsx"
+      "source": "apps/web/playwright.config.ts",
+      "target": "apps/web/tests/localBrowserOrigin.ts"
     },
     {
       "kind": "static",
       "lines": [
-        20
+        3
       ],
-      "source": "apps/web/src/app/App.tsx",
-      "target": "apps/web/src/app/HowFireLensWorks.tsx"
+      "source": "apps/web/playwright.product.config.ts",
+      "target": "apps/web/playwright.config.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/playwright.real.config.ts",
+      "target": "apps/web/tests/localBrowserOrigin.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/scripts/qualify-frontend-surface.mjs",
+      "target": "apps/web/scripts/surface-identity.mjs"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        8
+      ],
+      "source": "apps/web/scripts/verify-native-zoom-v2.mjs",
+      "target": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        8
+      ],
+      "source": "apps/web/scripts/verify-native-zoom.mjs",
+      "target": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "kind": "static",
@@ -30,7 +62,7 @@
         21
       ],
       "source": "apps/web/src/app/App.tsx",
-      "target": "apps/web/src/app/LiveDataStatus.tsx"
+      "target": "apps/web/src/app/AtlasHeader.tsx"
     },
     {
       "kind": "static",
@@ -38,7 +70,7 @@
         22
       ],
       "source": "apps/web/src/app/App.tsx",
-      "target": "apps/web/src/app/OfficialSourcesCard.tsx"
+      "target": "apps/web/src/app/AtlasHome.tsx"
     },
     {
       "kind": "static",
@@ -46,15 +78,55 @@
         23
       ],
       "source": "apps/web/src/app/App.tsx",
+      "target": "apps/web/src/app/AtlasQuestion.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        16
+      ],
+      "source": "apps/web/src/app/App.tsx",
+      "target": "apps/web/src/app/ContextChips.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        17
+      ],
+      "source": "apps/web/src/app/App.tsx",
+      "target": "apps/web/src/app/HowFireLensWorks.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        18
+      ],
+      "source": "apps/web/src/app/App.tsx",
+      "target": "apps/web/src/app/LiveDataStatus.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        19
+      ],
+      "source": "apps/web/src/app/App.tsx",
       "target": "apps/web/src/app/ProductSidebar.tsx"
     },
     {
       "kind": "static",
       "lines": [
-        24
+        20
       ],
       "source": "apps/web/src/app/App.tsx",
       "target": "apps/web/src/app/workspacePresentation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        10
+      ],
+      "source": "apps/web/src/app/App.tsx",
+      "target": "apps/web/src/features/ask/AskStartPanel.tsx"
     },
     {
       "kind": "static",
@@ -75,7 +147,7 @@
     {
       "kind": "static",
       "lines": [
-        10
+        11
       ],
       "source": "apps/web/src/app/App.tsx",
       "target": "apps/web/src/features/ask/QuestionComposer.tsx"
@@ -83,7 +155,7 @@
     {
       "kind": "static",
       "lines": [
-        11
+        12
       ],
       "source": "apps/web/src/app/App.tsx",
       "target": "apps/web/src/features/ask/useFireLensSession.ts"
@@ -91,7 +163,7 @@
     {
       "kind": "static",
       "lines": [
-        12
+        13
       ],
       "source": "apps/web/src/app/App.tsx",
       "target": "apps/web/src/features/evidence/EvidencePanel.tsx"
@@ -99,7 +171,15 @@
     {
       "kind": "static",
       "lines": [
-        13
+        33
+      ],
+      "source": "apps/web/src/app/App.tsx",
+      "target": "apps/web/src/features/near-me/AtlasLiveMap.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        14
       ],
       "source": "apps/web/src/app/App.tsx",
       "target": "apps/web/src/features/near-me/LiveAnalysisWorkspace.tsx"
@@ -107,26 +187,58 @@
     {
       "kind": "static",
       "lines": [
-        36
-      ],
-      "source": "apps/web/src/app/App.tsx",
-      "target": "apps/web/src/features/near-me/LiveMap.tsx"
-    },
-    {
-      "kind": "static",
-      "lines": [
-        17
-      ],
-      "source": "apps/web/src/app/App.tsx",
-      "target": "apps/web/src/shared/officialLinks.ts"
-    },
-    {
-      "kind": "static",
-      "lines": [
-        18
+        15
       ],
       "source": "apps/web/src/app/App.tsx",
       "target": "apps/web/src/shared/telemetry.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/src/app/AtlasHeader.tsx",
+      "target": "apps/web/src/app/ProductSidebar.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "apps/web/src/app/AtlasHome.tsx",
+      "target": "apps/web/src/app/LiveDataStatus.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/src/app/AtlasHome.tsx",
+      "target": "apps/web/src/features/ask/AskStartPanel.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/src/app/AtlasHome.tsx",
+      "target": "apps/web/src/features/ask/useFireLensSession.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/src/app/AtlasQuestion.tsx",
+      "target": "apps/web/src/features/ask/AskStartPanel.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/src/app/AtlasQuestion.tsx",
+      "target": "apps/web/src/features/ask/useFireLensSession.ts"
     },
     {
       "kind": "static",
@@ -147,26 +259,10 @@
     {
       "kind": "static",
       "lines": [
-        3
-      ],
-      "source": "apps/web/src/app/OfficialSourcesCard.tsx",
-      "target": "apps/web/src/features/near-me/liveResultPresentation.ts"
-    },
-    {
-      "kind": "static",
-      "lines": [
         2
       ],
       "source": "apps/web/src/app/OfficialSourcesCard.tsx",
-      "target": "apps/web/src/shared/api/api.ts"
-    },
-    {
-      "kind": "static",
-      "lines": [
-        4
-      ],
-      "source": "apps/web/src/app/OfficialSourcesCard.tsx",
-      "target": "apps/web/src/shared/officialLinks.ts"
+      "target": "apps/web/src/features/evidence/OfficialSourcesCard.tsx"
     },
     {
       "kind": "static",
@@ -197,16 +293,32 @@
       "lines": [
         5
       ],
-      "source": "apps/web/src/features/ask/AnswerBody.tsx",
-      "target": "apps/web/src/features/ask/AnswerMarkdown.tsx"
+      "source": "apps/web/src/features/ask/AnswerActions.tsx",
+      "target": "apps/web/src/features/ask/answerActionPresentation.ts"
     },
     {
       "kind": "static",
       "lines": [
-        8
+        4
+      ],
+      "source": "apps/web/src/features/ask/AnswerActions.tsx",
+      "target": "apps/web/src/features/near-me/liveResultPresentation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/src/features/ask/AnswerActions.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
       ],
       "source": "apps/web/src/features/ask/AnswerBody.tsx",
-      "target": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
+      "target": "apps/web/src/features/ask/AnswerMarkdown.tsx"
     },
     {
       "kind": "static",
@@ -214,12 +326,20 @@
         10
       ],
       "source": "apps/web/src/features/ask/AnswerBody.tsx",
+      "target": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        12
+      ],
+      "source": "apps/web/src/features/ask/AnswerBody.tsx",
       "target": "apps/web/src/features/ask/SourceProof.tsx"
     },
     {
       "kind": "static",
       "lines": [
-        11
+        13
       ],
       "source": "apps/web/src/features/ask/AnswerBody.tsx",
       "target": "apps/web/src/features/ask/StatusBanner.tsx"
@@ -235,10 +355,10 @@
     {
       "kind": "static",
       "lines": [
-        7
+        8
       ],
       "source": "apps/web/src/features/ask/AnswerBody.tsx",
-      "target": "apps/web/src/features/ask/limitationsPresentation.ts"
+      "target": "apps/web/src/features/ask/guidanceGroups.ts"
     },
     {
       "kind": "static",
@@ -246,7 +366,23 @@
         9
       ],
       "source": "apps/web/src/features/ask/AnswerBody.tsx",
+      "target": "apps/web/src/features/ask/limitationsPresentation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        11
+      ],
+      "source": "apps/web/src/features/ask/AnswerBody.tsx",
       "target": "apps/web/src/features/ask/proofPresentation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        7
+      ],
+      "source": "apps/web/src/features/ask/AnswerBody.tsx",
+      "target": "apps/web/src/features/ask/readableAnswer.ts"
     },
     {
       "kind": "static",
@@ -323,18 +459,34 @@
     {
       "kind": "static",
       "lines": [
-        5
+        2
       ],
-      "source": "apps/web/src/features/ask/ConversationPanel.tsx",
-      "target": "apps/web/src/features/ask/AnswerBody.tsx"
+      "source": "apps/web/src/features/ask/ConversationExtras.tsx",
+      "target": "apps/web/src/features/ask/ConversationPresentation.tsx"
     },
     {
       "kind": "static",
       "lines": [
-        9
+        3
+      ],
+      "source": "apps/web/src/features/ask/ConversationExtras.tsx",
+      "target": "apps/web/src/features/ask/useFireLensSession.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        1
+      ],
+      "source": "apps/web/src/features/ask/ConversationExtras.tsx",
+      "target": "apps/web/src/features/feedback/FeedbackControls.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
       ],
       "source": "apps/web/src/features/ask/ConversationPanel.tsx",
-      "target": "apps/web/src/features/ask/AskStartPanel.tsx"
+      "target": "apps/web/src/features/ask/AnswerActions.tsx"
     },
     {
       "kind": "static",
@@ -342,15 +494,7 @@
         7
       ],
       "source": "apps/web/src/features/ask/ConversationPanel.tsx",
-      "target": "apps/web/src/features/ask/AuthorityHandoffCards.tsx"
-    },
-    {
-      "kind": "static",
-      "lines": [
-        17
-      ],
-      "source": "apps/web/src/features/ask/ConversationPanel.tsx",
-      "target": "apps/web/src/features/ask/ConversationEvidenceDetails.tsx"
+      "target": "apps/web/src/features/ask/AnswerBody.tsx"
     },
     {
       "kind": "static",
@@ -358,31 +502,15 @@
         11
       ],
       "source": "apps/web/src/features/ask/ConversationPanel.tsx",
-      "target": "apps/web/src/features/ask/ConversationPresentation.tsx"
+      "target": "apps/web/src/features/ask/AskStartPanel.tsx"
     },
     {
       "kind": "static",
       "lines": [
-        6
+        9
       ],
       "source": "apps/web/src/features/ask/ConversationPanel.tsx",
-      "target": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
-    },
-    {
-      "kind": "static",
-      "lines": [
-        8
-      ],
-      "source": "apps/web/src/features/ask/ConversationPanel.tsx",
-      "target": "apps/web/src/features/ask/abstentionPresentation.ts"
-    },
-    {
-      "kind": "static",
-      "lines": [
-        10
-      ],
-      "source": "apps/web/src/features/ask/ConversationPanel.tsx",
-      "target": "apps/web/src/features/ask/answerSections.ts"
+      "target": "apps/web/src/features/ask/AuthorityHandoffCards.tsx"
     },
     {
       "kind": "static",
@@ -390,12 +518,60 @@
         19
       ],
       "source": "apps/web/src/features/ask/ConversationPanel.tsx",
+      "target": "apps/web/src/features/ask/ConversationEvidenceDetails.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        6
+      ],
+      "source": "apps/web/src/features/ask/ConversationPanel.tsx",
+      "target": "apps/web/src/features/ask/ConversationExtras.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        13
+      ],
+      "source": "apps/web/src/features/ask/ConversationPanel.tsx",
+      "target": "apps/web/src/features/ask/ConversationPresentation.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        8
+      ],
+      "source": "apps/web/src/features/ask/ConversationPanel.tsx",
+      "target": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        10
+      ],
+      "source": "apps/web/src/features/ask/ConversationPanel.tsx",
+      "target": "apps/web/src/features/ask/abstentionPresentation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        12
+      ],
+      "source": "apps/web/src/features/ask/ConversationPanel.tsx",
+      "target": "apps/web/src/features/ask/answerSections.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        21
+      ],
+      "source": "apps/web/src/features/ask/ConversationPanel.tsx",
       "target": "apps/web/src/features/ask/conversationAnnouncements.ts"
     },
     {
       "kind": "static",
       "lines": [
-        18
+        20
       ],
       "source": "apps/web/src/features/ask/ConversationPanel.tsx",
       "target": "apps/web/src/features/ask/responseModeBadge.tsx"
@@ -403,7 +579,7 @@
     {
       "kind": "static",
       "lines": [
-        20
+        22
       ],
       "source": "apps/web/src/features/ask/ConversationPanel.tsx",
       "target": "apps/web/src/features/ask/useFireLensSession.ts"
@@ -515,6 +691,54 @@
     {
       "kind": "static",
       "lines": [
+        6
+      ],
+      "source": "apps/web/src/features/ask/answerActionPresentation.ts",
+      "target": "apps/web/src/features/ask/SourceProof.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/src/features/ask/answerActionPresentation.ts",
+      "target": "apps/web/src/features/ask/answerSections.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/src/features/ask/answerActionPresentation.ts",
+      "target": "apps/web/src/features/ask/guidanceGroups.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "apps/web/src/features/ask/answerActionPresentation.ts",
+      "target": "apps/web/src/features/ask/proofPresentation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        2
+      ],
+      "source": "apps/web/src/features/ask/answerActionPresentation.ts",
+      "target": "apps/web/src/features/ask/readableAnswer.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        1
+      ],
+      "source": "apps/web/src/features/ask/answerActionPresentation.ts",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
         1
       ],
       "source": "apps/web/src/features/ask/answerSections.ts",
@@ -533,7 +757,23 @@
       "lines": [
         1
       ],
+      "source": "apps/web/src/features/ask/guidanceGroups.ts",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        1
+      ],
       "source": "apps/web/src/features/ask/proofPresentation.ts",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        1
+      ],
+      "source": "apps/web/src/features/ask/readableAnswer.ts",
       "target": "apps/web/src/shared/api/api.ts"
     },
     {
@@ -603,7 +843,7 @@
     {
       "kind": "static",
       "lines": [
-        17
+        18
       ],
       "source": "apps/web/src/features/ask/useFireLensSession.ts",
       "target": "apps/web/src/features/ask/askContinuation.ts"
@@ -611,7 +851,7 @@
     {
       "kind": "static",
       "lines": [
-        18
+        19
       ],
       "source": "apps/web/src/features/ask/useFireLensSession.ts",
       "target": "apps/web/src/features/ask/responseModel.ts"
@@ -619,7 +859,7 @@
     {
       "kind": "static",
       "lines": [
-        26
+        27
       ],
       "source": "apps/web/src/features/ask/useFireLensSession.ts",
       "target": "apps/web/src/features/ask/roster.ts"
@@ -627,10 +867,18 @@
     {
       "kind": "static",
       "lines": [
-        27
+        28
       ],
       "source": "apps/web/src/features/ask/useFireLensSession.ts",
       "target": "apps/web/src/features/ask/sessionMap.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        17
+      ],
+      "source": "apps/web/src/features/ask/useFireLensSession.ts",
+      "target": "apps/web/src/features/near-me/MapRefreshStatus.tsx"
     },
     {
       "kind": "static",
@@ -651,7 +899,7 @@
     {
       "kind": "static",
       "lines": [
-        25
+        26
       ],
       "source": "apps/web/src/features/ask/useFireLensSession.ts",
       "target": "apps/web/src/shared/telemetry.ts"
@@ -659,7 +907,7 @@
     {
       "kind": "static",
       "lines": [
-        11
+        12
       ],
       "source": "apps/web/src/features/evidence/EvidencePanel.tsx",
       "target": "apps/web/src/features/ask/StatusBanner.tsx"
@@ -667,7 +915,7 @@
     {
       "kind": "static",
       "lines": [
-        10
+        11
       ],
       "source": "apps/web/src/features/evidence/EvidencePanel.tsx",
       "target": "apps/web/src/features/ask/abstentionPresentation.ts"
@@ -675,7 +923,7 @@
     {
       "kind": "static",
       "lines": [
-        12
+        13
       ],
       "source": "apps/web/src/features/evidence/EvidencePanel.tsx",
       "target": "apps/web/src/features/ask/proofPresentation.ts"
@@ -683,7 +931,7 @@
     {
       "kind": "static",
       "lines": [
-        17
+        18
       ],
       "source": "apps/web/src/features/evidence/EvidencePanel.tsx",
       "target": "apps/web/src/features/ask/responseModel.ts"
@@ -691,7 +939,7 @@
     {
       "kind": "static",
       "lines": [
-        19
+        20
       ],
       "source": "apps/web/src/features/evidence/EvidencePanel.tsx",
       "target": "apps/web/src/features/ask/useFireLensSession.ts"
@@ -699,7 +947,15 @@
     {
       "kind": "static",
       "lines": [
-        20
+        10
+      ],
+      "source": "apps/web/src/features/evidence/EvidencePanel.tsx",
+      "target": "apps/web/src/features/evidence/OfficialSourcesCard.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        21
       ],
       "source": "apps/web/src/features/evidence/EvidencePanel.tsx",
       "target": "apps/web/src/features/evidence/evidencePresentation.tsx"
@@ -707,7 +963,7 @@
     {
       "kind": "static",
       "lines": [
-        26
+        27
       ],
       "source": "apps/web/src/features/evidence/EvidencePanel.tsx",
       "target": "apps/web/src/features/near-me/LiveMap.tsx"
@@ -715,10 +971,34 @@
     {
       "kind": "static",
       "lines": [
-        18
+        19
       ],
       "source": "apps/web/src/features/evidence/EvidencePanel.tsx",
       "target": "apps/web/src/features/near-me/liveResultPresentation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/src/features/evidence/OfficialSourcesCard.tsx",
+      "target": "apps/web/src/features/near-me/liveResultPresentation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        2
+      ],
+      "source": "apps/web/src/features/evidence/OfficialSourcesCard.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/src/features/evidence/OfficialSourcesCard.tsx",
+      "target": "apps/web/src/shared/officialLinks.ts"
     },
     {
       "kind": "static",
@@ -767,6 +1047,102 @@
       ],
       "source": "apps/web/src/features/near-me/AnalysisCharts.tsx",
       "target": "apps/web/src/features/near-me/liveAnalysis.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        1
+      ],
+      "source": "apps/web/src/features/near-me/AnswerMapScope.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        6
+      ],
+      "source": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "target": "apps/web/src/features/ask/useFireLensSession.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        1
+      ],
+      "source": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "target": "apps/web/src/features/near-me/AnswerMapScope.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        7
+      ],
+      "source": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "target": "apps/web/src/features/near-me/ClusteredPointMarkers.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        9
+      ],
+      "source": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "target": "apps/web/src/features/near-me/LiveMapCoverage.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        8
+      ],
+      "source": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "target": "apps/web/src/features/near-me/LiveRecordLists.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        10
+      ],
+      "source": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "target": "apps/web/src/features/near-me/MapLayerFilters.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        15
+      ],
+      "source": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "target": "apps/web/src/features/near-me/MapRefreshStatus.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        11
+      ],
+      "source": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "target": "apps/web/src/features/near-me/MapViewport.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        12
+      ],
+      "source": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "target": "apps/web/src/features/near-me/OfficialBasemap.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        13
+      ],
+      "source": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "target": "apps/web/src/features/near-me/StaticGeometry.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        14
+      ],
+      "source": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "target": "apps/web/src/features/near-me/liveResultPresentation.ts"
     },
     {
       "kind": "static",
@@ -875,7 +1251,7 @@
     {
       "kind": "static",
       "lines": [
-        5
+        6
       ],
       "source": "apps/web/src/features/near-me/LiveMap.tsx",
       "target": "apps/web/src/features/near-me/ClusteredPointMarkers.tsx"
@@ -883,10 +1259,10 @@
     {
       "kind": "static",
       "lines": [
-        6
+        9
       ],
       "source": "apps/web/src/features/near-me/LiveMap.tsx",
-      "target": "apps/web/src/features/near-me/LiveRecordLists.tsx"
+      "target": "apps/web/src/features/near-me/LiveMapCoverage.tsx"
     },
     {
       "kind": "static",
@@ -894,15 +1270,7 @@
         7
       ],
       "source": "apps/web/src/features/near-me/LiveMap.tsx",
-      "target": "apps/web/src/features/near-me/MapContextLayers.tsx"
-    },
-    {
-      "kind": "static",
-      "lines": [
-        9
-      ],
-      "source": "apps/web/src/features/near-me/LiveMap.tsx",
-      "target": "apps/web/src/features/near-me/MapLayerFilters.tsx"
+      "target": "apps/web/src/features/near-me/LiveRecordLists.tsx"
     },
     {
       "kind": "static",
@@ -910,23 +1278,23 @@
         8
       ],
       "source": "apps/web/src/features/near-me/LiveMap.tsx",
-      "target": "apps/web/src/features/near-me/MapScope.tsx"
+      "target": "apps/web/src/features/near-me/MapContextLayers.tsx"
     },
     {
       "kind": "static",
       "lines": [
-        16
+        11
       ],
       "source": "apps/web/src/features/near-me/LiveMap.tsx",
-      "target": "apps/web/src/features/near-me/MapViewport.tsx"
+      "target": "apps/web/src/features/near-me/MapLayerFilters.tsx"
     },
     {
       "kind": "static",
       "lines": [
-        17
+        10
       ],
       "source": "apps/web/src/features/near-me/LiveMap.tsx",
-      "target": "apps/web/src/features/near-me/OfficialBasemap.tsx"
+      "target": "apps/web/src/features/near-me/MapRefreshStatus.tsx"
     },
     {
       "kind": "static",
@@ -934,7 +1302,7 @@
         18
       ],
       "source": "apps/web/src/features/near-me/LiveMap.tsx",
-      "target": "apps/web/src/features/near-me/StaticGeometry.tsx"
+      "target": "apps/web/src/features/near-me/MapViewport.tsx"
     },
     {
       "kind": "static",
@@ -942,12 +1310,28 @@
         19
       ],
       "source": "apps/web/src/features/near-me/LiveMap.tsx",
+      "target": "apps/web/src/features/near-me/OfficialBasemap.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        20
+      ],
+      "source": "apps/web/src/features/near-me/LiveMap.tsx",
+      "target": "apps/web/src/features/near-me/StaticGeometry.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        21
+      ],
+      "source": "apps/web/src/features/near-me/LiveMap.tsx",
       "target": "apps/web/src/features/near-me/liveResultPresentation.ts"
     },
     {
       "kind": "static",
       "lines": [
-        15
+        17
       ],
       "source": "apps/web/src/features/near-me/LiveMap.tsx",
       "target": "apps/web/src/features/near-me/mapClustering.ts"
@@ -955,9 +1339,25 @@
     {
       "kind": "static",
       "lines": [
-        4
+        5
       ],
       "source": "apps/web/src/features/near-me/LiveMap.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        2
+      ],
+      "source": "apps/web/src/features/near-me/LiveMapCoverage.tsx",
+      "target": "apps/web/src/features/near-me/MapScope.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        1
+      ],
+      "source": "apps/web/src/features/near-me/LiveMapCoverage.tsx",
       "target": "apps/web/src/shared/api/api.ts"
     },
     {
@@ -1003,6 +1403,30 @@
     {
       "kind": "static",
       "lines": [
+        3
+      ],
+      "source": "apps/web/src/features/near-me/MapRefreshStatus.tsx",
+      "target": "apps/web/src/features/near-me/liveResultPresentation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        2
+      ],
+      "source": "apps/web/src/features/near-me/MapRefreshStatus.tsx",
+      "target": "apps/web/src/features/near-me/useProvinceMap.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        1
+      ],
+      "source": "apps/web/src/features/near-me/MapRefreshStatus.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
         5
       ],
       "source": "apps/web/src/features/near-me/MapViewport.tsx",
@@ -1019,7 +1443,7 @@
     {
       "kind": "static",
       "lines": [
-        3
+        4
       ],
       "source": "apps/web/src/features/near-me/OfficialBasemap.tsx",
       "target": "apps/web/src/features/near-me/MapViewport.tsx"
@@ -1027,7 +1451,7 @@
     {
       "kind": "static",
       "lines": [
-        2
+        3
       ],
       "source": "apps/web/src/features/near-me/OfficialBasemap.tsx",
       "target": "apps/web/src/features/near-me/bcBoundary.ts"
@@ -1035,7 +1459,7 @@
     {
       "kind": "static",
       "lines": [
-        4
+        5
       ],
       "source": "apps/web/src/features/near-me/StaticGeometry.tsx",
       "target": "apps/web/src/features/near-me/MapRecordPopup.tsx"
@@ -1043,7 +1467,7 @@
     {
       "kind": "static",
       "lines": [
-        5
+        6
       ],
       "source": "apps/web/src/features/near-me/StaticGeometry.tsx",
       "target": "apps/web/src/features/near-me/liveResultPresentation.ts"
@@ -1051,7 +1475,7 @@
     {
       "kind": "static",
       "lines": [
-        3
+        4
       ],
       "source": "apps/web/src/features/near-me/StaticGeometry.tsx",
       "target": "apps/web/src/shared/api/api.ts"
@@ -1165,6 +1589,22 @@
       "lines": [
         3
       ],
+      "source": "apps/web/tests/MapViewport.test.tsx",
+      "target": "apps/web/src/features/near-me/MapViewport.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/MapViewport.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
       "source": "apps/web/tests/OfficialSourcesCard.test.tsx",
       "target": "apps/web/src/app/OfficialSourcesCard.tsx"
     },
@@ -1174,6 +1614,62 @@
         4
       ],
       "source": "apps/web/tests/OfficialSourcesCard.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/answerActions.test.tsx",
+      "target": "apps/web/src/features/ask/AnswerActions.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "apps/web/tests/answerActions.test.tsx",
+      "target": "apps/web/src/features/ask/answerActionPresentation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        6
+      ],
+      "source": "apps/web/tests/answerActions.test.tsx",
+      "target": "apps/web/src/features/ask/responseModeBadge.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        7
+      ],
+      "source": "apps/web/tests/answerActions.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/answerMapScope.test.tsx",
+      "target": "apps/web/src/features/near-me/AnswerMapScope.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "apps/web/tests/answerMapScope.test.tsx",
+      "target": "apps/web/src/features/near-me/LiveRecordLists.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/tests/answerMapScope.test.tsx",
       "target": "apps/web/src/shared/api/api.ts"
     },
     {
@@ -1235,6 +1731,14 @@
     {
       "kind": "static",
       "lines": [
+        3
+      ],
+      "source": "apps/web/tests/browserNavigation.ts",
+      "target": "apps/web/tests/localBrowserOrigin.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
         2
       ],
       "source": "apps/web/tests/conversationAccessibility.test.ts",
@@ -1247,6 +1751,62 @@
       ],
       "source": "apps/web/tests/conversationPresentation.test.ts",
       "target": "apps/web/src/features/ask/ConversationPresentation.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        2
+      ],
+      "source": "apps/web/tests/e2e-product-v2/app.spec.ts",
+      "target": "apps/web/tests/browserNavigation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        1
+      ],
+      "source": "apps/web/tests/e2e-real/astra.spec.ts",
+      "target": "apps/web/tests/browserNavigation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        2
+      ],
+      "source": "apps/web/tests/e2e-real/atlas-readiness.spec.ts",
+      "target": "apps/web/tests/browserNavigation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        2
+      ],
+      "source": "apps/web/tests/e2e-real/basemap-transport.spec.ts",
+      "target": "apps/web/tests/browserNavigation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        2
+      ],
+      "source": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts",
+      "target": "apps/web/tests/browserNavigation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        2
+      ],
+      "source": "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts",
+      "target": "apps/web/tests/browserNavigation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        1
+      ],
+      "source": "apps/web/tests/e2e-real/review-v2.spec.ts",
+      "target": "apps/web/tests/browserNavigation.ts"
     },
     {
       "kind": "static",
@@ -1295,6 +1855,62 @@
       ],
       "source": "apps/web/tests/frontendSemanticOwner.test.ts",
       "target": "apps/web/src/features/ask/AnswerBody.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/tests/guidanceGroups.test.tsx",
+      "target": "apps/web/src/features/ask/AnswerBody.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/guidanceGroups.test.tsx",
+      "target": "apps/web/src/features/ask/answerActionPresentation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "apps/web/tests/guidanceGroups.test.tsx",
+      "target": "apps/web/src/features/ask/guidanceGroups.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        6
+      ],
+      "source": "apps/web/tests/guidanceGroups.test.tsx",
+      "target": "apps/web/src/features/ask/readableAnswer.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        7
+      ],
+      "source": "apps/web/tests/guidanceGroups.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/lazyAnswerAnnouncement.test.tsx",
+      "target": "apps/web/src/app/App.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "apps/web/tests/lazyAnswerAnnouncement.test.tsx",
+      "target": "apps/web/tests/fetchStub.ts"
     },
     {
       "kind": "static",
@@ -1387,6 +2003,22 @@
     {
       "kind": "static",
       "lines": [
+        4
+      ],
+      "source": "apps/web/tests/liveMapPresentation.test.tsx",
+      "target": "apps/web/src/features/near-me/LiveMap.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "apps/web/tests/liveMapPresentation.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
         2
       ],
       "source": "apps/web/tests/liveResultPresentation.test.ts",
@@ -1399,6 +2031,14 @@
       ],
       "source": "apps/web/tests/liveResultPresentation.test.ts",
       "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        2
+      ],
+      "source": "apps/web/tests/localBrowserOrigin.test.ts",
+      "target": "apps/web/tests/localBrowserOrigin.ts"
     },
     {
       "kind": "static",
@@ -1423,6 +2063,174 @@
       ],
       "source": "apps/web/tests/mapClustering.test.ts",
       "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "apps/web/tests/mapGeometryRefresh.test.tsx",
+      "target": "apps/web/src/features/near-me/StaticGeometry.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/mapGeometryRefresh.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/tests/mapNavigationReset.test.ts",
+      "target": "apps/web/src/features/ask/useFireLensSession.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/mapNavigationReset.test.ts",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "apps/web/tests/mapRefresh.test.tsx",
+      "target": "apps/web/src/app/LiveDataStatus.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/mapRefresh.test.tsx",
+      "target": "apps/web/src/features/ask/sessionMap.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        7
+      ],
+      "source": "apps/web/tests/mapRefresh.test.tsx",
+      "target": "apps/web/src/features/near-me/MapRefreshStatus.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/tests/mapRefresh.test.tsx",
+      "target": "apps/web/src/features/near-me/useProvinceMap.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        6
+      ],
+      "source": "apps/web/tests/mapRefresh.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/tests/mapSelectionRefresh.test.ts",
+      "target": "apps/web/src/features/ask/useFireLensSession.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/mapSelectionRefresh.test.ts",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/tests/mapViewportRefresh.test.tsx",
+      "target": "apps/web/src/features/near-me/MapViewport.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/mapViewportRefresh.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/productExperience.test.tsx",
+      "target": "apps/web/src/app/App.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "apps/web/tests/productExperience.test.tsx",
+      "target": "apps/web/src/app/ContextChips.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        6
+      ],
+      "source": "apps/web/tests/productExperience.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        7
+      ],
+      "source": "apps/web/tests/productExperience.test.tsx",
+      "target": "apps/web/tests/fetchStub.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "apps/web/tests/productIntegrationV2.test.tsx",
+      "target": "apps/web/src/app/App.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        6
+      ],
+      "source": "apps/web/tests/productIntegrationV2.test.tsx",
+      "target": "apps/web/src/features/ask/useFireLensSession.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        7
+      ],
+      "source": "apps/web/tests/productIntegrationV2.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        8
+      ],
+      "source": "apps/web/tests/productIntegrationV2.test.tsx",
+      "target": "apps/web/tests/fetchStub.ts"
     },
     {
       "kind": "static",
@@ -1479,6 +2287,70 @@
       ],
       "source": "apps/web/tests/proofCards.test.tsx",
       "target": "apps/web/tests/fetchStub.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/tests/quoteAttribution.test.tsx",
+      "target": "apps/web/src/features/ask/AnswerBody.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/quoteAttribution.test.tsx",
+      "target": "apps/web/src/features/ask/answerActionPresentation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "apps/web/tests/quoteAttribution.test.tsx",
+      "target": "apps/web/src/features/ask/readableAnswer.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        7
+      ],
+      "source": "apps/web/tests/quoteAttribution.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/tests/readableAnswer.test.tsx",
+      "target": "apps/web/src/features/ask/AnswerBody.tsx"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        5
+      ],
+      "source": "apps/web/tests/readableAnswer.test.tsx",
+      "target": "apps/web/src/features/ask/answerActionPresentation.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/readableAnswer.test.tsx",
+      "target": "apps/web/src/features/ask/readableAnswer.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        6
+      ],
+      "source": "apps/web/tests/readableAnswer.test.tsx",
+      "target": "apps/web/src/shared/api/api.ts"
     },
     {
       "kind": "static",
@@ -1543,6 +2415,32 @@
       ],
       "source": "apps/web/tests/sourceRevision.test.tsx",
       "target": "apps/web/src/shared/api/api.ts"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3,
+        20,
+        42
+      ],
+      "source": "apps/web/tests/surface-identity.test.mjs",
+      "target": "apps/web/scripts/surface-identity.mjs"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        4
+      ],
+      "source": "apps/web/tests/surface-layout.test.mjs",
+      "target": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        3
+      ],
+      "source": "apps/web/tests/useProvinceMap.test.ts",
+      "target": "apps/web/src/features/near-me/useProvinceMap.ts"
     },
     {
       "kind": "static",
@@ -17537,23 +18435,32 @@
   "nodes": [
     "app.py",
     "apps/web/playwright.config.ts",
+    "apps/web/playwright.product.config.ts",
     "apps/web/playwright.real.config.ts",
     "apps/web/playwright.reality.config.ts",
     "apps/web/scripts/prepare-sites-build.mjs",
     "apps/web/scripts/qualify-frontend-surface.mjs",
+    "apps/web/scripts/surface-identity.mjs",
+    "apps/web/scripts/verify-native-zoom-v2.mjs",
+    "apps/web/scripts/verify-native-zoom.mjs",
     "apps/web/src/app/App.tsx",
+    "apps/web/src/app/AtlasHeader.tsx",
+    "apps/web/src/app/AtlasHome.tsx",
+    "apps/web/src/app/AtlasQuestion.tsx",
     "apps/web/src/app/ContextChips.tsx",
     "apps/web/src/app/HowFireLensWorks.tsx",
     "apps/web/src/app/LiveDataStatus.tsx",
     "apps/web/src/app/OfficialSourcesCard.tsx",
     "apps/web/src/app/ProductSidebar.tsx",
     "apps/web/src/app/workspacePresentation.ts",
+    "apps/web/src/features/ask/AnswerActions.tsx",
     "apps/web/src/features/ask/AnswerBody.tsx",
     "apps/web/src/features/ask/AnswerMarkdown.tsx",
     "apps/web/src/features/ask/AskStartPanel.tsx",
     "apps/web/src/features/ask/AuthorityHandoffCards.tsx",
     "apps/web/src/features/ask/ConnectionStatus.tsx",
     "apps/web/src/features/ask/ConversationEvidenceDetails.tsx",
+    "apps/web/src/features/ask/ConversationExtras.tsx",
     "apps/web/src/features/ask/ConversationPanel.tsx",
     "apps/web/src/features/ask/ConversationPresentation.tsx",
     "apps/web/src/features/ask/LiveAnswerSummary.tsx",
@@ -17561,27 +18468,35 @@
     "apps/web/src/features/ask/SourceProof.tsx",
     "apps/web/src/features/ask/StatusBanner.tsx",
     "apps/web/src/features/ask/abstentionPresentation.ts",
+    "apps/web/src/features/ask/answerActionPresentation.ts",
     "apps/web/src/features/ask/answerSections.ts",
     "apps/web/src/features/ask/askContinuation.ts",
     "apps/web/src/features/ask/conversationAnnouncements.ts",
+    "apps/web/src/features/ask/guidanceGroups.ts",
     "apps/web/src/features/ask/limitationsPresentation.ts",
     "apps/web/src/features/ask/proofPresentation.ts",
+    "apps/web/src/features/ask/readableAnswer.ts",
     "apps/web/src/features/ask/responseModeBadge.tsx",
     "apps/web/src/features/ask/responseModel.ts",
     "apps/web/src/features/ask/roster.ts",
     "apps/web/src/features/ask/sessionMap.ts",
     "apps/web/src/features/ask/useFireLensSession.ts",
     "apps/web/src/features/evidence/EvidencePanel.tsx",
+    "apps/web/src/features/evidence/OfficialSourcesCard.tsx",
     "apps/web/src/features/evidence/evidencePresentation.tsx",
     "apps/web/src/features/feedback/FeedbackControls.tsx",
     "apps/web/src/features/near-me/AnalysisCharts.tsx",
+    "apps/web/src/features/near-me/AnswerMapScope.tsx",
+    "apps/web/src/features/near-me/AtlasLiveMap.tsx",
     "apps/web/src/features/near-me/ClusteredPointMarkers.tsx",
     "apps/web/src/features/near-me/LiveAnalysisWorkspace.tsx",
     "apps/web/src/features/near-me/LiveMap.tsx",
+    "apps/web/src/features/near-me/LiveMapCoverage.tsx",
     "apps/web/src/features/near-me/LiveRecordLists.tsx",
     "apps/web/src/features/near-me/MapContextLayers.tsx",
     "apps/web/src/features/near-me/MapLayerFilters.tsx",
     "apps/web/src/features/near-me/MapRecordPopup.tsx",
+    "apps/web/src/features/near-me/MapRefreshStatus.tsx",
     "apps/web/src/features/near-me/MapScope.tsx",
     "apps/web/src/features/near-me/MapViewport.tsx",
     "apps/web/src/features/near-me/OfficialBasemap.tsx",
@@ -17599,14 +18514,23 @@
     "apps/web/src/shared/telemetry.ts",
     "apps/web/tests/App.test.tsx",
     "apps/web/tests/MapScope.test.tsx",
+    "apps/web/tests/MapViewport.test.tsx",
     "apps/web/tests/OfficialSourcesCard.test.tsx",
+    "apps/web/tests/answerActions.test.tsx",
+    "apps/web/tests/answerMapScope.test.tsx",
     "apps/web/tests/answerMarkdown.test.tsx",
     "apps/web/tests/api.test.ts",
     "apps/web/tests/askContinuation.test.ts",
     "apps/web/tests/askStartPanel.test.tsx",
+    "apps/web/tests/browserNavigation.ts",
     "apps/web/tests/conversationAccessibility.test.ts",
     "apps/web/tests/conversationPresentation.test.ts",
+    "apps/web/tests/e2e-product-v2/app.spec.ts",
     "apps/web/tests/e2e-real/astra.spec.ts",
+    "apps/web/tests/e2e-real/atlas-readiness.spec.ts",
+    "apps/web/tests/e2e-real/basemap-transport.spec.ts",
+    "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts",
+    "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts",
     "apps/web/tests/e2e-real/fullstack.spec.ts",
     "apps/web/tests/e2e-real/pacific-operations.spec.ts",
     "apps/web/tests/e2e-real/review-v2.spec.ts",
@@ -17616,22 +18540,39 @@
     "apps/web/tests/fetchStub.ts",
     "apps/web/tests/frontend-surface-runner.test.mjs",
     "apps/web/tests/frontendSemanticOwner.test.ts",
+    "apps/web/tests/guidanceGroups.test.tsx",
+    "apps/web/tests/lazyAnswerAnnouncement.test.tsx",
     "apps/web/tests/liveAnalysis.test.ts",
     "apps/web/tests/liveAnalysisWorkspace.test.tsx",
     "apps/web/tests/liveAnswerSummary.test.tsx",
     "apps/web/tests/liveDataStatus.test.tsx",
     "apps/web/tests/liveMapPopup.test.tsx",
+    "apps/web/tests/liveMapPresentation.test.tsx",
     "apps/web/tests/liveResultPresentation.test.ts",
+    "apps/web/tests/localBrowserOrigin.test.ts",
+    "apps/web/tests/localBrowserOrigin.ts",
     "apps/web/tests/mapClustering.test.ts",
+    "apps/web/tests/mapGeometryRefresh.test.tsx",
+    "apps/web/tests/mapNavigationReset.test.ts",
+    "apps/web/tests/mapRefresh.test.tsx",
+    "apps/web/tests/mapSelectionRefresh.test.ts",
+    "apps/web/tests/mapViewportRefresh.test.tsx",
+    "apps/web/tests/productExperience.test.tsx",
+    "apps/web/tests/productIntegrationV2.test.tsx",
     "apps/web/tests/proofCards.test.tsx",
+    "apps/web/tests/quoteAttribution.test.tsx",
     "apps/web/tests/raw-modules.d.ts",
+    "apps/web/tests/readableAnswer.test.tsx",
     "apps/web/tests/reality/product-reality.spec.ts",
     "apps/web/tests/sessionLifecycle.test.ts",
     "apps/web/tests/sessionMap.test.ts",
     "apps/web/tests/setup.ts",
     "apps/web/tests/sites-worker.test.mjs",
     "apps/web/tests/sourceRevision.test.tsx",
+    "apps/web/tests/surface-identity.test.mjs",
+    "apps/web/tests/surface-layout.test.mjs",
     "apps/web/tests/tooling-config.test.mjs",
+    "apps/web/tests/useProvinceMap.test.ts",
     "apps/web/tests/workspacePresentation.test.ts",
     "apps/web/vite.config.mjs",
     "apps/web/vitest.config.ts",
@@ -18160,32 +19101,62 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "27b7939a30bb3111c5107211b14c3b6345fa6506c4341df1139b3e41c45938c9",
+  "source_digest": "b34233de1afb1e422105315fb54580f95628d4c8e73af84e270fb51522bbdfb2",
   "unresolved_relative_imports": [
     {
-      "line": 32,
+      "line": 26,
       "source": "apps/web/src/app/App.tsx",
       "specifier": "./answer.css"
     },
     {
-      "line": 33,
+      "line": 29,
       "source": "apps/web/src/app/App.tsx",
-      "specifier": "./shell.css"
-    },
-    {
-      "line": 31,
-      "source": "apps/web/src/app/App.tsx",
-      "specifier": "./styles.css"
+      "specifier": "./atlas.css"
     },
     {
       "line": 30,
       "source": "apps/web/src/app/App.tsx",
+      "specifier": "./atlasAnswers.css"
+    },
+    {
+      "line": 31,
+      "source": "apps/web/src/app/App.tsx",
+      "specifier": "./atlasSheet.css"
+    },
+    {
+      "line": 28,
+      "source": "apps/web/src/app/App.tsx",
+      "specifier": "./productExperience.css"
+    },
+    {
+      "line": 27,
+      "source": "apps/web/src/app/App.tsx",
+      "specifier": "./shell.css"
+    },
+    {
+      "line": 25,
+      "source": "apps/web/src/app/App.tsx",
+      "specifier": "./styles.css"
+    },
+    {
+      "line": 24,
+      "source": "apps/web/src/app/App.tsx",
       "specifier": "./tokens.css"
     },
     {
-      "line": 21,
+      "line": 6,
+      "source": "apps/web/src/features/ask/AnswerActions.tsx",
+      "specifier": "./answerActions.css"
+    },
+    {
+      "line": 23,
       "source": "apps/web/src/features/ask/ConversationPanel.tsx",
       "specifier": "./conversationAccessibility.css"
+    },
+    {
+      "line": 5,
+      "source": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "specifier": "./liveMap.css"
     },
     {
       "line": 20,
@@ -18193,14 +19164,54 @@
       "specifier": "./analysisWorkspace.css"
     },
     {
+      "line": 4,
+      "source": "apps/web/src/features/near-me/LiveMap.tsx",
+      "specifier": "./liveMap.css"
+    },
+    {
+      "line": 6,
+      "source": "apps/web/tests/answerMapScope.test.tsx",
+      "specifier": "./fixtures/v8-selected-followup.json"
+    },
+    {
       "line": 5,
       "source": "apps/web/tests/askStartPanel.test.tsx",
       "specifier": "../../../data/capabilities/guided_questions.v1.json"
     },
     {
+      "line": 4,
+      "source": "apps/web/tests/e2e-product-v2/app.spec.ts",
+      "specifier": "../../../../data/capabilities/guided_questions.v1.json"
+    },
+    {
       "line": 2,
       "source": "apps/web/tests/e2e/app.spec.ts",
       "specifier": "../../../../data/capabilities/guided_questions.v1.json"
+    },
+    {
+      "line": 9,
+      "source": "apps/web/tests/guidanceGroups.test.tsx",
+      "specifier": "./fixtures/remaining-compact.json"
+    },
+    {
+      "line": 8,
+      "source": "apps/web/tests/guidanceGroups.test.tsx",
+      "specifier": "./fixtures/remaining-partners.json"
+    },
+    {
+      "line": 6,
+      "source": "apps/web/tests/quoteAttribution.test.tsx",
+      "specifier": "./fixtures/v8-firewood-comparison.json"
+    },
+    {
+      "line": 8,
+      "source": "apps/web/tests/readableAnswer.test.tsx",
+      "specifier": "./fixtures/bag-readability.json"
+    },
+    {
+      "line": 7,
+      "source": "apps/web/tests/readableAnswer.test.tsx",
+      "specifier": "./fixtures/v8-communication-bullets.json"
     }
   ]
 }

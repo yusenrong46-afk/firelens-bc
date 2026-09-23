@@ -7,6 +7,7 @@ import {
   WarningCircle,
   X,
 } from "@phosphor-icons/react";
+import { OfficialSourcesCard } from "./OfficialSourcesCard";
 import { abstentionPresentation } from "../ask/abstentionPresentation";
 import { ProofCard } from "../ask/StatusBanner";
 import {
@@ -128,7 +129,7 @@ export function EvidencePanel({
     >
       <div className="context-toolbar">
         <div>
-          <span className="selected-kicker">Context</span>
+          <span className="selected-kicker">Answer evidence</span>
           <h2>{contextTitle}</h2>
         </div>
         {mapAvailable && view.kind !== "idle" && (
@@ -183,12 +184,7 @@ export function EvidencePanel({
         <div className="context-lens" role="region" aria-label="Answer evidence and context">
         {view.kind === "answer" && selectedClaim && selectedState ? (
           <>
-            <span className="selected-kicker">Selected claim {selected + 1}</span>
-            <h2>{selectedClaim.text}</h2>
-            {selectedProof && <ProofCard card={selectedProof} />}
-            <div className="answer-claim">
-              <Shield size={18} /><strong>{selectedClaimHeading(selectedState)}</strong><span>{selectedClaim.text}</span>
-            </div>
+            <p className="evidence-authority">{selectedClaimHeading(selectedState)}</p>
             {supportedEvidence.map(({ evidence, support }, index) => (
               <SourcePanel
                 key={`${evidence.evidence_id}:${support.quote}`}
@@ -207,11 +203,18 @@ export function EvidencePanel({
                 ))}
               </div>
             )}
-            <div className="access-date"><Shield size={17} weight="fill" /> {selectedClaimFooter(selectedState)}</div>
+            <details className="evidence-validation">
+              <summary>Statement and validation</summary>
+              <p>{selectedClaim.text}</p>
+              {selectedProof && <ProofCard card={selectedProof} />}
+              <p>{selectedClaimFooter(selectedState)}</p>
+            </details>
           </>
         ) : view.kind === "answer" && (mode === "live" || mode === "mixed") ? (
           <div className="map-answer-summary">
-            <span className="selected-kicker">Official map records</span>
+            <span className="selected-kicker">Records supplied with this answer</span>
+            {selectedLiveResultId && !(view.response.live_results ?? []).some(record => record.result_id === selectedLiveResultId) && <p>The selected map record is outside this answer. These sources describe the original answer snapshot.</p>}
+            <OfficialSourcesCard response={view.response} selectedResultId={(view.response.live_results ?? []).some(record => record.result_id === selectedLiveResultId) ? selectedLiveResultId : undefined} />
             {selectedProof && <ProofCard card={selectedProof} />}
             {(view.response.live_results ?? []).map((item) => (
               <div className="map-record-actions" key={item.result_id}>

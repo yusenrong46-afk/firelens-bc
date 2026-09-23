@@ -1,21 +1,25 @@
+import { openComposer, goHome, openClaimDetails, menuAction, localOrigin } from "../browserNavigation";
 import { expect, test } from "@playwright/test";
+
+// Use the existing fixture retrieval instant; never apply this clock to live feeds.
+test.beforeEach(async ({ page }) => { await page.clock.setFixedTime(new Date("2026-08-24T15:02:00Z")); });
 
 test.beforeEach(async ({ context }) => {
   await context.route("**/*", async (route) => {
-    if (route.request().url().startsWith("http://127.0.0.1:8766/")) await route.continue();
+    if (route.request().url().startsWith(`${localOrigin}/`)) await route.continue();
     else await route.abort("blockedbyclient");
   });
 });
 
 test("Home clears an unsubmitted private draft and returns keyboard focus", async ({ page }, testInfo) => {
   await page.goto("/");
-  const input = page.getByLabel("Ask FireLens a question");
+  const input = await openComposer(page);
   await input.fill("unsubmitted private draft");
   await page.screenshot({ path: testInfo.outputPath("before-home.png"), fullPage: true });
-  await page.getByRole("button", { name: "Home", exact: true }).click();
+  await goHome(page);
   await page.screenshot({ path: testInfo.outputPath("after-home.png"), fullPage: true });
-  await expect(input).toHaveValue("");
-  await expect(input).toBeFocused();
+  await expect(page.getByLabel("Ask FireLens a question")).toBeFocused();
+  await expect(await openComposer(page)).toHaveValue("");
 });
 
 test("Home invalidates a pending browser location callback without sending coordinates", async ({ page }) => {
@@ -27,8 +31,8 @@ test("Home invalidates a pending browser location callback without sending coord
   const asks: string[] = [];
   page.on("request", (request) => { if (request.url().endsWith("/api/v1/ask")) asks.push(request.postData() ?? ""); });
   await page.goto("/");
-  await page.getByRole("button", { name: "Use approximate location", exact: true }).click();
-  await page.getByRole("button", { name: "Home", exact: true }).click();
+  await menuAction(page, "Use approximate location");
+  await goHome(page);
   await page.evaluate(() => (window as unknown as { finishAstraLocation: () => void }).finishAstraLocation());
   // Allow the callback's microtasks and rendering to finish; no arbitrary sleep.
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -38,7 +42,7 @@ test("Home invalidates a pending browser location callback without sending coord
 
 async function ask(page: import("@playwright/test").Page, question: string) {
   const pending = page.waitForResponse((response) => response.url().endsWith("/api/v1/ask"));
-  await page.getByLabel("Ask FireLens a question").fill(question);
+  await (await openComposer(page)).fill(question);
   await page.getByLabel("Ask FireLens a question").press("Enter");
   const response = await pending;
   expect(response.status()).toBe(200);
@@ -68,7 +72,7 @@ test("mixed answer exposes distinct current-record and source-proof tasks", asyn
   expect(payload.live_results.map((row: { result_id: string }) => row.result_id).sort()).toEqual(["incident:bear-creek", "incident:mountain"]);
   expect(payload.claims.some((claim: { publication?: { kind: string } }) => claim.publication?.kind === "structured_reviewed")).toBe(true);
   await expect(page.getByText("Reviewed preparedness guidance", { exact: true })).toBeVisible();
-  await page.getByText("More detail on each statement", { exact: true }).click();
+  await openClaimDetails(page);
   await page.getByRole("button", { name: /Review technical evidence for/ }).first().click();
   await expect(page.getByText("Reviewed structured claim", { exact: true }).first()).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("mixed-evidence.png"), fullPage: true });
@@ -90,7 +94,7 @@ for (const width of [390, 1536]) {
   test(`current interface is usable at ${width}px without hiding warnings`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto("/");
-    await expect(page.getByLabel("Ask FireLens a question")).toBeVisible();
+    await expect(await openComposer(page)).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("idle.png"), fullPage: true });
     await ask(page, "Are there current wildfires near Emptytown?");
     await expect(page.locator(".assistant-message").last()).toContainText("not an all-clear");

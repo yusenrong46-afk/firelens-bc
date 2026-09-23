@@ -48,13 +48,13 @@
       "@types/react-dom": "^19.2.3",
       "axe-core": "^4.12.1",
       "brace-expansion": "5.0.9",
-      "js-yaml": "4.3.1",
+      "js-yaml": "4.3.2",
       "jsdom": "^29.1.1",
       "nanoid": "3.3.18",
       "openapi-typescript": "^7.13.0",
-      "sharp": "^0.35.3",
+      "sharp": "^0.35.4",
       "typescript": "5.9.3",
-      "vitest": "^4.1.10",
+      "vitest": "^4.1.11",
       "vitest-axe": "^0.1.0"
     }
   },
@@ -95,45 +95,79 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 0,
-      "fan_in": 0,
-      "fan_out": 0,
+      "branch_score": 2,
+      "fan_in": 1,
+      "fan_out": 1,
       "generated": false,
       "id": "apps/web/playwright.config.ts",
       "import_specifiers": [
+        "./tests/localBrowserOrigin",
         "@playwright/test"
       ],
-      "imports": [],
+      "imports": [
+        "apps/web/tests/localBrowserOrigin.ts"
+      ],
       "kind": "config",
       "language": "typescript",
-      "loc": 15,
+      "loc": 19,
       "major_symbols": [],
       "module": "apps/web/playwright.config",
       "path": "apps/web/playwright.config.ts",
+      "production_fan_in": 0,
+      "statically_unreferenced": false,
+      "symbols": [
+        "externalBaseURL"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 0,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/playwright.product.config.ts",
+      "import_specifiers": [
+        "./playwright.config",
+        "@playwright/test"
+      ],
+      "imports": [
+        "apps/web/playwright.config.ts"
+      ],
+      "kind": "config",
+      "language": "typescript",
+      "loc": 8,
+      "major_symbols": [],
+      "module": "apps/web/playwright.product.config",
+      "path": "apps/web/playwright.product.config.ts",
       "production_fan_in": 0,
       "statically_unreferenced": true,
       "symbols": [],
       "test_fan_in": 0
     },
     {
-      "branch_score": 1,
+      "branch_score": 3,
       "fan_in": 0,
-      "fan_out": 0,
+      "fan_out": 1,
       "generated": false,
       "id": "apps/web/playwright.real.config.ts",
       "import_specifiers": [
+        "./tests/localBrowserOrigin",
         "@playwright/test"
       ],
-      "imports": [],
+      "imports": [
+        "apps/web/tests/localBrowserOrigin.ts"
+      ],
       "kind": "config",
       "language": "typescript",
-      "loc": 21,
+      "loc": 25,
       "major_symbols": [],
       "module": "apps/web/playwright.real.config",
       "path": "apps/web/playwright.real.config.ts",
       "production_fan_in": 0,
       "statically_unreferenced": true,
-      "symbols": [],
+      "symbols": [
+        "externalBaseURL"
+      ],
       "test_fan_in": 0
     },
     {
@@ -187,12 +221,13 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 570,
-      "fan_in": 1,
-      "fan_out": 0,
+      "branch_score": 609,
+      "fan_in": 4,
+      "fan_out": 1,
       "generated": false,
       "id": "apps/web/scripts/qualify-frontend-surface.mjs",
       "import_specifiers": [
+        "./surface-identity.mjs",
         "@playwright/test",
         "node:child_process",
         "node:crypto",
@@ -202,26 +237,38 @@
         "node:url",
         "sharp"
       ],
-      "imports": [],
+      "imports": [
+        "apps/web/scripts/surface-identity.mjs"
+      ],
       "kind": "script",
       "language": "javascript",
-      "loc": 3223,
+      "loc": 3362,
       "major_symbols": [
         "SurfaceQualificationTimeoutError",
         "withQualificationTimeout",
         "surfaceStateReadyText",
         "surfaceInteractionContract",
+        "surfaceInteractionContractV2",
+        "surfaceStateReadyTextV2",
+        "surfaceProtocolSuccessorIssues",
         "requiresOnDemandMapContext",
         "surfaceReadyTextCoverageIssues",
         "canonicalApiRequestRecord",
         "loadProtocol",
         "canonicalRequestUrl",
+        "installDeterministicRoutes",
+        "openOfficialMapContext",
+        "driveState",
         "expectedMapResponseRecordIds",
         "expectedMapResponseDetails",
         "recomputeMapListParity",
+        "inspectLayoutAndCss",
         "deriveRequestEvidence",
         "classifyConsoleErrors",
+        "captureSurfaceRow",
         "derivePrivacyEvidence",
+        "runFunctionalJourneys",
+        "runPerformance",
         "surfaceMatrixComplete",
         "validateReportStructure",
         "configuredExecutionRunProfiles"
@@ -231,6 +278,7 @@
       "production_fan_in": 0,
       "statically_unreferenced": false,
       "symbols": [
+        "driverFrontendRoot",
         "frontendRoot",
         "repositoryRoot",
         "defaultProtocolPath",
@@ -251,6 +299,10 @@
         "responseFixtures",
         "surfaceStateReadyText",
         "surfaceInteractionContract",
+        "surfaceInteractionContractV2",
+        "surfaceStateReadyTextV2",
+        "isCurrentSurfaceProtocol",
+        "surfaceProtocolSuccessorIssues",
         "requiresOnDemandMapContext",
         "surfaceReadyTextCoverageIssues",
         "sha256Bytes",
@@ -268,8 +320,12 @@
         "fixtureForQuestion",
         "installDeterministicRoutes",
         "waitForText",
+        "openSurfaceComposer",
+        "openSurfaceSources",
         "openOfficialMapContext",
         "openTechnicalEvidenceContext",
+        "waitForCurrentAnswer",
+        "waitForSurfaceHome",
         "driveState",
         "expectedMapResponseRecords",
         "expectedMapResponseRecordIds",
@@ -292,6 +348,7 @@
         "surfaceChecks",
         "relativeArtifact",
         "captureSurfaceRow",
+        "captureFailureArtifact",
         "runSurfaceMatrix",
         "newJourneyPage",
         "keyboardJourney",
@@ -333,30 +390,139 @@
         "writeReport",
         "main"
       ],
+      "test_fan_in": 2
+    },
+    {
+      "branch_score": 7,
+      "fan_in": 2,
+      "fan_out": 0,
+      "generated": false,
+      "id": "apps/web/scripts/surface-identity.mjs",
+      "import_specifiers": [
+        "node:child_process",
+        "node:crypto",
+        "node:fs/promises",
+        "node:net",
+        "node:path"
+      ],
+      "imports": [],
+      "kind": "script",
+      "language": "javascript",
+      "loc": 48,
+      "major_symbols": [
+        "captureSurfaceIdentity",
+        "assertSurfaceIdentityUnchanged",
+        "assertPreviewPortAvailable"
+      ],
+      "module": "apps/web/scripts/surface-identity",
+      "path": "apps/web/scripts/surface-identity.mjs",
+      "production_fan_in": 0,
+      "statically_unreferenced": false,
+      "symbols": [
+        "digest",
+        "fileInventory",
+        "captureSurfaceIdentity",
+        "assertSurfaceIdentityUnchanged",
+        "assertPreviewPortAvailable"
+      ],
       "test_fan_in": 1
     },
     {
-      "branch_score": 58,
-      "fan_in": 4,
-      "fan_out": 15,
+      "branch_score": 12,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/scripts/verify-native-zoom-v2.mjs",
+      "import_specifiers": [
+        "./qualify-frontend-surface.mjs",
+        "@playwright/test",
+        "node:assert/strict",
+        "node:fs/promises",
+        "node:os",
+        "node:path"
+      ],
+      "imports": [
+        "apps/web/scripts/qualify-frontend-surface.mjs"
+      ],
+      "kind": "script",
+      "language": "javascript",
+      "loc": 76,
+      "major_symbols": [],
+      "module": "apps/web/scripts/verify-native-zoom-v2",
+      "path": "apps/web/scripts/verify-native-zoom-v2.mjs",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "extension",
+        "protocol",
+        "rows",
+        "context",
+        "report"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 12,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/scripts/verify-native-zoom.mjs",
+      "import_specifiers": [
+        "./qualify-frontend-surface.mjs",
+        "@playwright/test",
+        "node:assert/strict",
+        "node:fs/promises",
+        "node:os",
+        "node:path"
+      ],
+      "imports": [
+        "apps/web/scripts/qualify-frontend-surface.mjs"
+      ],
+      "kind": "script",
+      "language": "javascript",
+      "loc": 76,
+      "major_symbols": [],
+      "module": "apps/web/scripts/verify-native-zoom",
+      "path": "apps/web/scripts/verify-native-zoom.mjs",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "extension",
+        "protocol",
+        "rows",
+        "context",
+        "report"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 47,
+      "fan_in": 7,
+      "fan_out": 17,
       "generated": false,
       "id": "apps/web/src/app/App.tsx",
       "import_specifiers": [
+        "../features/ask/AskStartPanel",
         "../features/ask/ConnectionStatus",
         "../features/ask/ConversationPanel",
         "../features/ask/QuestionComposer",
         "../features/ask/useFireLensSession",
         "../features/evidence/EvidencePanel",
+        "../features/near-me/AtlasLiveMap",
         "../features/near-me/LiveAnalysisWorkspace",
-        "../features/near-me/LiveMap",
-        "../shared/officialLinks",
         "../shared/telemetry",
+        "./AtlasHeader",
+        "./AtlasHome",
+        "./AtlasQuestion",
         "./ContextChips",
         "./HowFireLensWorks",
         "./LiveDataStatus",
-        "./OfficialSourcesCard",
         "./ProductSidebar",
         "./answer.css",
+        "./atlas.css",
+        "./atlasAnswers.css",
+        "./atlasSheet.css",
+        "./productExperience.css",
         "./shell.css",
         "./styles.css",
         "./tokens.css",
@@ -370,27 +536,29 @@
         "react"
       ],
       "imports": [
+        "apps/web/src/app/AtlasHeader.tsx",
+        "apps/web/src/app/AtlasHome.tsx",
+        "apps/web/src/app/AtlasQuestion.tsx",
         "apps/web/src/app/ContextChips.tsx",
         "apps/web/src/app/HowFireLensWorks.tsx",
         "apps/web/src/app/LiveDataStatus.tsx",
-        "apps/web/src/app/OfficialSourcesCard.tsx",
         "apps/web/src/app/ProductSidebar.tsx",
         "apps/web/src/app/workspacePresentation.ts",
+        "apps/web/src/features/ask/AskStartPanel.tsx",
         "apps/web/src/features/ask/ConnectionStatus.tsx",
         "apps/web/src/features/ask/ConversationPanel.tsx",
         "apps/web/src/features/ask/QuestionComposer.tsx",
         "apps/web/src/features/ask/useFireLensSession.ts",
         "apps/web/src/features/evidence/EvidencePanel.tsx",
+        "apps/web/src/features/near-me/AtlasLiveMap.tsx",
         "apps/web/src/features/near-me/LiveAnalysisWorkspace.tsx",
-        "apps/web/src/features/near-me/LiveMap.tsx",
-        "apps/web/src/shared/officialLinks.ts",
         "apps/web/src/shared/telemetry.ts"
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 370,
+      "loc": 152,
       "major_symbols": [
-        "CompactLiveMap",
+        "AtlasLiveMap",
         "App"
       ],
       "module": "apps/web/src/app/App",
@@ -398,14 +566,107 @@
       "production_fan_in": 1,
       "statically_unreferenced": false,
       "symbols": [
-        "CompactLiveMap",
+        "AtlasLiveMap",
         "App"
       ],
-      "test_fan_in": 3
+      "test_fan_in": 6
     },
     {
-      "branch_score": 15,
+      "branch_score": 2,
       "fan_in": 1,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/src/app/AtlasHeader.tsx",
+      "import_specifiers": [
+        "./ProductSidebar",
+        "@phosphor-icons/react",
+        "react"
+      ],
+      "imports": [
+        "apps/web/src/app/ProductSidebar.tsx"
+      ],
+      "kind": "production",
+      "language": "typescript",
+      "loc": 39,
+      "major_symbols": [
+        "AtlasHeader"
+      ],
+      "module": "apps/web/src/app/AtlasHeader",
+      "path": "apps/web/src/app/AtlasHeader.tsx",
+      "production_fan_in": 1,
+      "statically_unreferenced": false,
+      "symbols": [
+        "AtlasHeader"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 8,
+      "fan_in": 1,
+      "fan_out": 3,
+      "generated": false,
+      "id": "apps/web/src/app/AtlasHome.tsx",
+      "import_specifiers": [
+        "../features/ask/AskStartPanel",
+        "../features/ask/useFireLensSession",
+        "./LiveDataStatus",
+        "@phosphor-icons/react",
+        "react"
+      ],
+      "imports": [
+        "apps/web/src/app/LiveDataStatus.tsx",
+        "apps/web/src/features/ask/AskStartPanel.tsx",
+        "apps/web/src/features/ask/useFireLensSession.ts"
+      ],
+      "kind": "production",
+      "language": "typescript",
+      "loc": 38,
+      "major_symbols": [
+        "AtlasHome"
+      ],
+      "module": "apps/web/src/app/AtlasHome",
+      "path": "apps/web/src/app/AtlasHome.tsx",
+      "production_fan_in": 1,
+      "statically_unreferenced": false,
+      "symbols": [
+        "AtlasHome"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 4,
+      "fan_in": 1,
+      "fan_out": 2,
+      "generated": false,
+      "id": "apps/web/src/app/AtlasQuestion.tsx",
+      "import_specifiers": [
+        "../features/ask/AskStartPanel",
+        "../features/ask/useFireLensSession",
+        "@phosphor-icons/react",
+        "react"
+      ],
+      "imports": [
+        "apps/web/src/features/ask/AskStartPanel.tsx",
+        "apps/web/src/features/ask/useFireLensSession.ts"
+      ],
+      "kind": "production",
+      "language": "typescript",
+      "loc": 26,
+      "major_symbols": [
+        "AtlasQuestion"
+      ],
+      "module": "apps/web/src/app/AtlasQuestion",
+      "path": "apps/web/src/app/AtlasQuestion.tsx",
+      "production_fan_in": 1,
+      "statically_unreferenced": false,
+      "symbols": [
+        "AtlasQuestion"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 20,
+      "fan_in": 2,
       "fan_out": 1,
       "generated": false,
       "id": "apps/web/src/app/ContextChips.tsx",
@@ -417,7 +678,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 57,
+      "loc": 61,
       "major_symbols": [
         "ContextChip",
         "deriveContextChips",
@@ -432,7 +693,7 @@
         "deriveContextChips",
         "ContextChips"
       ],
-      "test_fan_in": 0
+      "test_fan_in": 1
     },
     {
       "branch_score": 4,
@@ -461,8 +722,8 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 24,
-      "fan_in": 2,
+      "branch_score": 28,
+      "fan_in": 4,
       "fan_out": 1,
       "generated": false,
       "id": "apps/web/src/app/LiveDataStatus.tsx",
@@ -474,7 +735,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 53,
+      "loc": 56,
       "major_symbols": [
         "ReadinessState",
         "liveDataTone",
@@ -482,7 +743,7 @@
       ],
       "module": "apps/web/src/app/LiveDataStatus",
       "path": "apps/web/src/app/LiveDataStatus.tsx",
-      "production_fan_in": 1,
+      "production_fan_in": 2,
       "statically_unreferenced": false,
       "symbols": [
         "ReadinessState",
@@ -490,43 +751,34 @@
         "liveDataTone",
         "LiveDataStatus"
       ],
-      "test_fan_in": 1
+      "test_fan_in": 2
     },
     {
-      "branch_score": 20,
-      "fan_in": 2,
-      "fan_out": 3,
+      "branch_score": 1,
+      "fan_in": 1,
+      "fan_out": 1,
       "generated": false,
       "id": "apps/web/src/app/OfficialSourcesCard.tsx",
       "import_specifiers": [
-        "../features/near-me/liveResultPresentation",
-        "../shared/api/api",
-        "../shared/officialLinks",
-        "@phosphor-icons/react"
+        "../features/evidence/OfficialSourcesCard"
       ],
       "imports": [
-        "apps/web/src/features/near-me/liveResultPresentation.ts",
-        "apps/web/src/shared/api/api.ts",
-        "apps/web/src/shared/officialLinks.ts"
+        "apps/web/src/features/evidence/OfficialSourcesCard.tsx"
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 47,
-      "major_symbols": [
-        "OfficialSourcesCard"
-      ],
+      "loc": 2,
+      "major_symbols": [],
       "module": "apps/web/src/app/OfficialSourcesCard",
       "path": "apps/web/src/app/OfficialSourcesCard.tsx",
-      "production_fan_in": 1,
+      "production_fan_in": 0,
       "statically_unreferenced": false,
-      "symbols": [
-        "OfficialSourcesCard"
-      ],
+      "symbols": [],
       "test_fan_in": 1
     },
     {
-      "branch_score": 10,
-      "fan_in": 1,
+      "branch_score": 11,
+      "fan_in": 2,
       "fan_out": 1,
       "generated": false,
       "id": "apps/web/src/app/ProductSidebar.tsx",
@@ -539,7 +791,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 129,
+      "loc": 117,
       "major_symbols": [
         "RecentQuestion",
         "ProductSidebar",
@@ -547,7 +799,7 @@
       ],
       "module": "apps/web/src/app/ProductSidebar",
       "path": "apps/web/src/app/ProductSidebar.tsx",
-      "production_fan_in": 1,
+      "production_fan_in": 2,
       "statically_unreferenced": false,
       "symbols": [
         "RecentQuestion",
@@ -597,9 +849,43 @@
       "test_fan_in": 2
     },
     {
-      "branch_score": 62,
-      "fan_in": 3,
-      "fan_out": 9,
+      "branch_score": 30,
+      "fan_in": 2,
+      "fan_out": 3,
+      "generated": false,
+      "id": "apps/web/src/features/ask/AnswerActions.tsx",
+      "import_specifiers": [
+        "../../shared/api/api",
+        "../near-me/liveResultPresentation",
+        "./answerActionPresentation",
+        "./answerActions.css",
+        "@phosphor-icons/react",
+        "react"
+      ],
+      "imports": [
+        "apps/web/src/features/ask/answerActionPresentation.ts",
+        "apps/web/src/features/near-me/liveResultPresentation.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "production",
+      "language": "typescript",
+      "loc": 151,
+      "major_symbols": [
+        "AnswerActions"
+      ],
+      "module": "apps/web/src/features/ask/AnswerActions",
+      "path": "apps/web/src/features/ask/AnswerActions.tsx",
+      "production_fan_in": 1,
+      "statically_unreferenced": false,
+      "symbols": [
+        "AnswerActions"
+      ],
+      "test_fan_in": 1
+    },
+    {
+      "branch_score": 95,
+      "fan_in": 6,
+      "fan_out": 11,
       "generated": false,
       "id": "apps/web/src/features/ask/AnswerBody.tsx",
       "import_specifiers": [
@@ -610,8 +896,10 @@
         "./SourceProof",
         "./StatusBanner",
         "./answerSections",
+        "./guidanceGroups",
         "./limitationsPresentation",
         "./proofPresentation",
+        "./readableAnswer",
         "@phosphor-icons/react",
         "react"
       ],
@@ -621,14 +909,16 @@
         "apps/web/src/features/ask/SourceProof.tsx",
         "apps/web/src/features/ask/StatusBanner.tsx",
         "apps/web/src/features/ask/answerSections.ts",
+        "apps/web/src/features/ask/guidanceGroups.ts",
         "apps/web/src/features/ask/limitationsPresentation.ts",
         "apps/web/src/features/ask/proofPresentation.ts",
+        "apps/web/src/features/ask/readableAnswer.ts",
         "apps/web/src/features/near-me/liveAnalysis.ts",
         "apps/web/src/shared/api/api.ts"
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 174,
+      "loc": 217,
       "major_symbols": [
         "AnswerBody",
         "QuoteOnlyAnswer"
@@ -641,7 +931,7 @@
         "AnswerBody",
         "QuoteOnlyAnswer"
       ],
-      "test_fan_in": 2
+      "test_fan_in": 5
     },
     {
       "branch_score": 32,
@@ -690,8 +980,8 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 61,
-      "fan_in": 2,
+      "branch_score": 63,
+      "fan_in": 5,
       "fan_out": 2,
       "generated": false,
       "id": "apps/web/src/features/ask/AskStartPanel.tsx",
@@ -707,25 +997,27 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 256,
+      "loc": 271,
       "major_symbols": [
-        "STARTER_QUESTIONS",
+        "PREPAREDNESS_QUESTION",
+        "NEARBY_QUESTION",
         "AskStartPanel"
       ],
       "module": "apps/web/src/features/ask/AskStartPanel",
       "path": "apps/web/src/features/ask/AskStartPanel.tsx",
-      "production_fan_in": 1,
+      "production_fan_in": 4,
       "statically_unreferenced": false,
       "symbols": [
         "expandPlace",
         "isGuidedQuestionCatalogue",
-        "STARTER_QUESTIONS",
+        "PREPAREDNESS_QUESTION",
+        "NEARBY_QUESTION",
         "AskStartPanel"
       ],
       "test_fan_in": 1
     },
     {
-      "branch_score": 8,
+      "branch_score": 10,
       "fan_in": 1,
       "fan_out": 1,
       "generated": false,
@@ -739,7 +1031,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 35,
+      "loc": 38,
       "major_symbols": [
         "handoffAuthority",
         "AuthorityHandoffCards"
@@ -815,18 +1107,51 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 64,
+      "branch_score": 4,
       "fan_in": 1,
-      "fan_out": 13,
+      "fan_out": 3,
+      "generated": false,
+      "id": "apps/web/src/features/ask/ConversationExtras.tsx",
+      "import_specifiers": [
+        "../feedback/FeedbackControls",
+        "./ConversationPresentation",
+        "./useFireLensSession"
+      ],
+      "imports": [
+        "apps/web/src/features/ask/ConversationPresentation.tsx",
+        "apps/web/src/features/ask/useFireLensSession.ts",
+        "apps/web/src/features/feedback/FeedbackControls.tsx"
+      ],
+      "kind": "production",
+      "language": "typescript",
+      "loc": 16,
+      "major_symbols": [
+        "ConversationExtras"
+      ],
+      "module": "apps/web/src/features/ask/ConversationExtras",
+      "path": "apps/web/src/features/ask/ConversationExtras.tsx",
+      "production_fan_in": 1,
+      "statically_unreferenced": false,
+      "symbols": [
+        "ConversationExtras"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 78,
+      "fan_in": 1,
+      "fan_out": 15,
       "generated": false,
       "id": "apps/web/src/features/ask/ConversationPanel.tsx",
       "import_specifiers": [
         "../feedback/FeedbackControls",
         "../near-me/liveResultPresentation",
+        "./AnswerActions",
         "./AnswerBody",
         "./AskStartPanel",
         "./AuthorityHandoffCards",
         "./ConversationEvidenceDetails",
+        "./ConversationExtras",
         "./ConversationPresentation",
         "./LiveAnswerSummary",
         "./abstentionPresentation",
@@ -839,10 +1164,12 @@
         "react"
       ],
       "imports": [
+        "apps/web/src/features/ask/AnswerActions.tsx",
         "apps/web/src/features/ask/AnswerBody.tsx",
         "apps/web/src/features/ask/AskStartPanel.tsx",
         "apps/web/src/features/ask/AuthorityHandoffCards.tsx",
         "apps/web/src/features/ask/ConversationEvidenceDetails.tsx",
+        "apps/web/src/features/ask/ConversationExtras.tsx",
         "apps/web/src/features/ask/ConversationPresentation.tsx",
         "apps/web/src/features/ask/LiveAnswerSummary.tsx",
         "apps/web/src/features/ask/abstentionPresentation.ts",
@@ -855,7 +1182,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 278,
+      "loc": 300,
       "major_symbols": [
         "ConversationPanel"
       ],
@@ -870,7 +1197,7 @@
     },
     {
       "branch_score": 30,
-      "fan_in": 3,
+      "fan_in": 4,
       "fan_out": 2,
       "generated": false,
       "id": "apps/web/src/features/ask/ConversationPresentation.tsx",
@@ -900,7 +1227,7 @@
       ],
       "module": "apps/web/src/features/ask/ConversationPresentation",
       "path": "apps/web/src/features/ask/ConversationPresentation.tsx",
-      "production_fan_in": 2,
+      "production_fan_in": 3,
       "statically_unreferenced": false,
       "symbols": [
         "OFFICIAL_BCWS_MAP_URL",
@@ -917,7 +1244,7 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 78,
+      "branch_score": 79,
       "fan_in": 3,
       "fan_out": 3,
       "generated": false,
@@ -935,7 +1262,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 258,
+      "loc": 262,
       "major_symbols": [
         "StatusPill",
         "LiveAnswerSummary",
@@ -988,8 +1315,8 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 35,
-      "fan_in": 2,
+      "branch_score": 43,
+      "fan_in": 3,
       "fan_out": 3,
       "generated": false,
       "id": "apps/web/src/features/ask/SourceProof.tsx",
@@ -1006,18 +1333,20 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 142,
+      "loc": 144,
       "major_symbols": [
         "CITABLE_STATES",
         "EXCERPT_LIMIT",
         "SourceProofItem",
         "reviewedSources",
+        "sourcesForQuote",
         "SourceProof",
+        "SourceDocument",
         "SourceRevision"
       ],
       "module": "apps/web/src/features/ask/SourceProof",
       "path": "apps/web/src/features/ask/SourceProof.tsx",
-      "production_fan_in": 1,
+      "production_fan_in": 2,
       "statically_unreferenced": false,
       "symbols": [
         "CITABLE_STATES",
@@ -1025,13 +1354,15 @@
         "SourceProofItem",
         "trimExcerpt",
         "reviewedSources",
+        "sourcesForQuote",
         "SourceProof",
+        "SourceDocument",
         "SourceRevision"
       ],
       "test_fan_in": 1
     },
     {
-      "branch_score": 24,
+      "branch_score": 26,
       "fan_in": 3,
       "fan_out": 2,
       "generated": false,
@@ -1046,7 +1377,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 96,
+      "loc": 98,
       "major_symbols": [
         "StatusBanner",
         "ProofCard"
@@ -1097,8 +1428,58 @@
       "test_fan_in": 0
     },
     {
+      "branch_score": 78,
+      "fan_in": 5,
+      "fan_out": 6,
+      "generated": false,
+      "id": "apps/web/src/features/ask/answerActionPresentation.ts",
+      "import_specifiers": [
+        "../../shared/api/api",
+        "./SourceProof",
+        "./answerSections",
+        "./guidanceGroups",
+        "./proofPresentation",
+        "./readableAnswer"
+      ],
+      "imports": [
+        "apps/web/src/features/ask/SourceProof.tsx",
+        "apps/web/src/features/ask/answerSections.ts",
+        "apps/web/src/features/ask/guidanceGroups.ts",
+        "apps/web/src/features/ask/proofPresentation.ts",
+        "apps/web/src/features/ask/readableAnswer.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "production",
+      "language": "typescript",
+      "loc": 192,
+      "major_symbols": [
+        "AnswerActionSource",
+        "AnswerCheck",
+        "AnswerExplanation",
+        "LAYER_LABELS",
+        "explainAnswer",
+        "formatAnswerForCopy"
+      ],
+      "module": "apps/web/src/features/ask/answerActionPresentation",
+      "path": "apps/web/src/features/ask/answerActionPresentation.ts",
+      "production_fan_in": 1,
+      "statically_unreferenced": false,
+      "symbols": [
+        "AnswerActionSource",
+        "AnswerCheck",
+        "AnswerExplanation",
+        "LAYER_LABELS",
+        "unique",
+        "suppliedTimestamp",
+        "explainAnswer",
+        "copiedPassageSources",
+        "formatAnswerForCopy"
+      ],
+      "test_fan_in": 4
+    },
+    {
       "branch_score": 8,
-      "fan_in": 2,
+      "fan_in": 3,
       "fan_out": 1,
       "generated": false,
       "id": "apps/web/src/features/ask/answerSections.ts",
@@ -1119,7 +1500,7 @@
       ],
       "module": "apps/web/src/features/ask/answerSections",
       "path": "apps/web/src/features/ask/answerSections.ts",
-      "production_fan_in": 2,
+      "production_fan_in": 3,
       "statically_unreferenced": false,
       "symbols": [
         "SECTION_KINDS",
@@ -1197,6 +1578,37 @@
       "test_fan_in": 1
     },
     {
+      "branch_score": 32,
+      "fan_in": 3,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/src/features/ask/guidanceGroups.ts",
+      "import_specifiers": [
+        "../../shared/api/api"
+      ],
+      "imports": [
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "production",
+      "language": "typescript",
+      "loc": 44,
+      "major_symbols": [
+        "Claim",
+        "GuidanceGroup",
+        "guidanceGroups"
+      ],
+      "module": "apps/web/src/features/ask/guidanceGroups",
+      "path": "apps/web/src/features/ask/guidanceGroups.ts",
+      "production_fan_in": 2,
+      "statically_unreferenced": false,
+      "symbols": [
+        "Claim",
+        "GuidanceGroup",
+        "guidanceGroups"
+      ],
+      "test_fan_in": 1
+    },
+    {
       "branch_score": 3,
       "fan_in": 2,
       "fan_out": 0,
@@ -1223,7 +1635,7 @@
     },
     {
       "branch_score": 267,
-      "fan_in": 9,
+      "fan_in": 10,
       "fan_out": 1,
       "generated": false,
       "id": "apps/web/src/features/ask/proofPresentation.ts",
@@ -1273,7 +1685,7 @@
       ],
       "module": "apps/web/src/features/ask/proofPresentation",
       "path": "apps/web/src/features/ask/proofPresentation.ts",
-      "production_fan_in": 8,
+      "production_fan_in": 9,
       "statically_unreferenced": false,
       "symbols": [
         "GROUNDED_PUBLIC_WORDING",
@@ -1336,8 +1748,35 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 27,
-      "fan_in": 2,
+      "branch_score": 20,
+      "fan_in": 5,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/src/features/ask/readableAnswer.ts",
+      "import_specifiers": [
+        "../../shared/api/api"
+      ],
+      "imports": [
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "production",
+      "language": "typescript",
+      "loc": 36,
+      "major_symbols": [
+        "readableAnswer"
+      ],
+      "module": "apps/web/src/features/ask/readableAnswer",
+      "path": "apps/web/src/features/ask/readableAnswer.ts",
+      "production_fan_in": 2,
+      "statically_unreferenced": false,
+      "symbols": [
+        "readableAnswer"
+      ],
+      "test_fan_in": 3
+    },
+    {
+      "branch_score": 28,
+      "fan_in": 3,
       "fan_out": 4,
       "generated": false,
       "id": "apps/web/src/features/ask/responseModeBadge.tsx",
@@ -1355,7 +1794,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 50,
+      "loc": 52,
       "major_symbols": [
         "ResponseModeBadge"
       ],
@@ -1366,7 +1805,7 @@
       "symbols": [
         "ResponseModeBadge"
       ],
-      "test_fan_in": 1
+      "test_fan_in": 2
     },
     {
       "branch_score": 19,
@@ -1416,7 +1855,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 18,
+      "branch_score": 20,
       "fan_in": 3,
       "fan_out": 1,
       "generated": false,
@@ -1429,7 +1868,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 31,
+      "loc": 33,
       "major_symbols": [
         "Roster",
         "EMPTY_ROSTER",
@@ -1447,8 +1886,8 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 21,
-      "fan_in": 2,
+      "branch_score": 36,
+      "fan_in": 3,
       "fan_out": 2,
       "generated": false,
       "id": "apps/web/src/features/ask/sessionMap.ts",
@@ -1462,7 +1901,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 82,
+      "loc": 87,
       "major_symbols": [
         "MapAggregateFreshness",
         "displayedAggregateFreshness",
@@ -1476,20 +1915,22 @@
       "symbols": [
         "MapAggregateFreshness",
         "displayedAggregateFreshness",
+        "latestObservation",
         "SessionMapView",
         "deriveSessionMapView"
       ],
-      "test_fan_in": 1
+      "test_fan_in": 2
     },
     {
-      "branch_score": 84,
-      "fan_in": 7,
-      "fan_out": 7,
+      "branch_score": 101,
+      "fan_in": 14,
+      "fan_out": 8,
       "generated": false,
       "id": "apps/web/src/features/ask/useFireLensSession.ts",
       "import_specifiers": [
         "../../shared/api/api",
         "../../shared/telemetry",
+        "../near-me/MapRefreshStatus",
         "../near-me/useProvinceMap",
         "./askContinuation",
         "./responseModel",
@@ -1502,32 +1943,33 @@
         "apps/web/src/features/ask/responseModel.ts",
         "apps/web/src/features/ask/roster.ts",
         "apps/web/src/features/ask/sessionMap.ts",
+        "apps/web/src/features/near-me/MapRefreshStatus.tsx",
         "apps/web/src/features/near-me/useProvinceMap.ts",
         "apps/web/src/shared/api/api.ts",
         "apps/web/src/shared/telemetry.ts"
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 417,
+      "loc": 463,
       "major_symbols": [
         "FireLensSession",
         "useFireLensSession"
       ],
       "module": "apps/web/src/features/ask/useFireLensSession",
       "path": "apps/web/src/features/ask/useFireLensSession.ts",
-      "production_fan_in": 5,
+      "production_fan_in": 9,
       "statically_unreferenced": false,
       "symbols": [
         "FireLensSession",
         "useFireLensSession",
         "currentSummaryText"
       ],
-      "test_fan_in": 2
+      "test_fan_in": 5
     },
     {
-      "branch_score": 52,
+      "branch_score": 57,
       "fan_in": 1,
-      "fan_out": 8,
+      "fan_out": 9,
       "generated": false,
       "id": "apps/web/src/features/evidence/EvidencePanel.tsx",
       "import_specifiers": [
@@ -1538,6 +1980,7 @@
         "../ask/useFireLensSession",
         "../near-me/LiveMap",
         "../near-me/liveResultPresentation",
+        "./OfficialSourcesCard",
         "./evidencePresentation",
         "@phosphor-icons/react",
         "react"
@@ -1548,13 +1991,14 @@
         "apps/web/src/features/ask/proofPresentation.ts",
         "apps/web/src/features/ask/responseModel.ts",
         "apps/web/src/features/ask/useFireLensSession.ts",
+        "apps/web/src/features/evidence/OfficialSourcesCard.tsx",
         "apps/web/src/features/evidence/evidencePresentation.tsx",
         "apps/web/src/features/near-me/LiveMap.tsx",
         "apps/web/src/features/near-me/liveResultPresentation.ts"
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 270,
+      "loc": 273,
       "major_symbols": [
         "LiveMap",
         "EvidencePanel"
@@ -1568,6 +2012,38 @@
         "selectedClaimHeading",
         "selectedClaimFooter",
         "EvidencePanel"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 20,
+      "fan_in": 2,
+      "fan_out": 3,
+      "generated": false,
+      "id": "apps/web/src/features/evidence/OfficialSourcesCard.tsx",
+      "import_specifiers": [
+        "../../shared/api/api",
+        "../../shared/officialLinks",
+        "../near-me/liveResultPresentation",
+        "@phosphor-icons/react"
+      ],
+      "imports": [
+        "apps/web/src/features/near-me/liveResultPresentation.ts",
+        "apps/web/src/shared/api/api.ts",
+        "apps/web/src/shared/officialLinks.ts"
+      ],
+      "kind": "production",
+      "language": "typescript",
+      "loc": 47,
+      "major_symbols": [
+        "OfficialSourcesCard"
+      ],
+      "module": "apps/web/src/features/evidence/OfficialSourcesCard",
+      "path": "apps/web/src/features/evidence/OfficialSourcesCard.tsx",
+      "production_fan_in": 2,
+      "statically_unreferenced": false,
+      "symbols": [
+        "OfficialSourcesCard"
       ],
       "test_fan_in": 0
     },
@@ -1614,7 +2090,7 @@
     },
     {
       "branch_score": 5,
-      "fan_in": 2,
+      "fan_in": 3,
       "fan_out": 2,
       "generated": false,
       "id": "apps/web/src/features/feedback/FeedbackControls.tsx",
@@ -1637,7 +2113,7 @@
       ],
       "module": "apps/web/src/features/feedback/FeedbackControls",
       "path": "apps/web/src/features/feedback/FeedbackControls.tsx",
-      "production_fan_in": 1,
+      "production_fan_in": 2,
       "statically_unreferenced": false,
       "symbols": [
         "ISSUE_CATEGORIES",
@@ -1684,8 +2160,88 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 13,
+      "branch_score": 4,
+      "fan_in": 2,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/src/features/near-me/AnswerMapScope.tsx",
+      "import_specifiers": [
+        "../../shared/api/api"
+      ],
+      "imports": [
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "production",
+      "language": "typescript",
+      "loc": 21,
+      "major_symbols": [
+        "answerMapScope",
+        "AnswerMapScope"
+      ],
+      "module": "apps/web/src/features/near-me/AnswerMapScope",
+      "path": "apps/web/src/features/near-me/AnswerMapScope.tsx",
+      "production_fan_in": 1,
+      "statically_unreferenced": false,
+      "symbols": [
+        "answerMapScope",
+        "AnswerMapScope"
+      ],
+      "test_fan_in": 1
+    },
+    {
+      "branch_score": 15,
       "fan_in": 1,
+      "fan_out": 11,
+      "generated": false,
+      "id": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "import_specifiers": [
+        "../ask/useFireLensSession",
+        "./AnswerMapScope",
+        "./ClusteredPointMarkers",
+        "./LiveMapCoverage",
+        "./LiveRecordLists",
+        "./MapLayerFilters",
+        "./MapRefreshStatus",
+        "./MapViewport",
+        "./OfficialBasemap",
+        "./StaticGeometry",
+        "./liveMap.css",
+        "./liveResultPresentation",
+        "leaflet/dist/leaflet.css",
+        "react",
+        "react-leaflet"
+      ],
+      "imports": [
+        "apps/web/src/features/ask/useFireLensSession.ts",
+        "apps/web/src/features/near-me/AnswerMapScope.tsx",
+        "apps/web/src/features/near-me/ClusteredPointMarkers.tsx",
+        "apps/web/src/features/near-me/LiveMapCoverage.tsx",
+        "apps/web/src/features/near-me/LiveRecordLists.tsx",
+        "apps/web/src/features/near-me/MapLayerFilters.tsx",
+        "apps/web/src/features/near-me/MapRefreshStatus.tsx",
+        "apps/web/src/features/near-me/MapViewport.tsx",
+        "apps/web/src/features/near-me/OfficialBasemap.tsx",
+        "apps/web/src/features/near-me/StaticGeometry.tsx",
+        "apps/web/src/features/near-me/liveResultPresentation.ts"
+      ],
+      "kind": "production",
+      "language": "typescript",
+      "loc": 72,
+      "major_symbols": [
+        "AtlasLiveMap"
+      ],
+      "module": "apps/web/src/features/near-me/AtlasLiveMap",
+      "path": "apps/web/src/features/near-me/AtlasLiveMap.tsx",
+      "production_fan_in": 1,
+      "statically_unreferenced": false,
+      "symbols": [
+        "AtlasLiveMap"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 13,
+      "fan_in": 2,
       "fan_out": 4,
       "generated": false,
       "id": "apps/web/src/features/near-me/ClusteredPointMarkers.tsx",
@@ -1706,13 +2262,13 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 99,
+      "loc": 101,
       "major_symbols": [
         "ClusteredPointMarkers"
       ],
       "module": "apps/web/src/features/near-me/ClusteredPointMarkers",
       "path": "apps/web/src/features/near-me/ClusteredPointMarkers.tsx",
-      "production_fan_in": 1,
+      "production_fan_in": 2,
       "statically_unreferenced": false,
       "symbols": [
         "bindRecordMarker",
@@ -1721,7 +2277,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 44,
+      "branch_score": 49,
       "fan_in": 2,
       "fan_out": 9,
       "generated": false,
@@ -1753,7 +2309,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 257,
+      "loc": 264,
       "major_symbols": [
         "LiveMap",
         "preloadAnalysisCharts",
@@ -1777,21 +2333,23 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 58,
+      "branch_score": 61,
       "fan_in": 3,
-      "fan_out": 11,
+      "fan_out": 12,
       "generated": false,
       "id": "apps/web/src/features/near-me/LiveMap.tsx",
       "import_specifiers": [
         "../../shared/api/api",
         "./ClusteredPointMarkers",
+        "./LiveMapCoverage",
         "./LiveRecordLists",
         "./MapContextLayers",
         "./MapLayerFilters",
-        "./MapScope",
+        "./MapRefreshStatus",
         "./MapViewport",
         "./OfficialBasemap",
         "./StaticGeometry",
+        "./liveMap.css",
         "./liveResultPresentation",
         "./mapClustering",
         "leaflet/dist/leaflet.css",
@@ -1800,10 +2358,11 @@
       ],
       "imports": [
         "apps/web/src/features/near-me/ClusteredPointMarkers.tsx",
+        "apps/web/src/features/near-me/LiveMapCoverage.tsx",
         "apps/web/src/features/near-me/LiveRecordLists.tsx",
         "apps/web/src/features/near-me/MapContextLayers.tsx",
         "apps/web/src/features/near-me/MapLayerFilters.tsx",
-        "apps/web/src/features/near-me/MapScope.tsx",
+        "apps/web/src/features/near-me/MapRefreshStatus.tsx",
         "apps/web/src/features/near-me/MapViewport.tsx",
         "apps/web/src/features/near-me/OfficialBasemap.tsx",
         "apps/web/src/features/near-me/StaticGeometry.tsx",
@@ -1813,24 +2372,53 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 297,
+      "loc": 296,
       "major_symbols": [
         "EMPTY_RESULTS",
         "LiveMap"
       ],
       "module": "apps/web/src/features/near-me/LiveMap",
       "path": "apps/web/src/features/near-me/LiveMap.tsx",
-      "production_fan_in": 3,
+      "production_fan_in": 2,
       "statically_unreferenced": false,
       "symbols": [
         "EMPTY_RESULTS",
         "LiveMap"
       ],
+      "test_fan_in": 1
+    },
+    {
+      "branch_score": 27,
+      "fan_in": 2,
+      "fan_out": 2,
+      "generated": false,
+      "id": "apps/web/src/features/near-me/LiveMapCoverage.tsx",
+      "import_specifiers": [
+        "../../shared/api/api",
+        "./MapScope"
+      ],
+      "imports": [
+        "apps/web/src/features/near-me/MapScope.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "production",
+      "language": "typescript",
+      "loc": 79,
+      "major_symbols": [
+        "LiveMapCoverage"
+      ],
+      "module": "apps/web/src/features/near-me/LiveMapCoverage",
+      "path": "apps/web/src/features/near-me/LiveMapCoverage.tsx",
+      "production_fan_in": 2,
+      "statically_unreferenced": false,
+      "symbols": [
+        "LiveMapCoverage"
+      ],
       "test_fan_in": 0
     },
     {
-      "branch_score": 41,
-      "fan_in": 3,
+      "branch_score": 42,
+      "fan_in": 5,
       "fan_out": 2,
       "generated": false,
       "id": "apps/web/src/features/near-me/LiveRecordLists.tsx",
@@ -1845,7 +2433,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 184,
+      "loc": 188,
       "major_symbols": [
         "INITIAL_LIST_LIMIT",
         "RecordRow",
@@ -1854,7 +2442,7 @@
       ],
       "module": "apps/web/src/features/near-me/LiveRecordLists",
       "path": "apps/web/src/features/near-me/LiveRecordLists.tsx",
-      "production_fan_in": 2,
+      "production_fan_in": 3,
       "statically_unreferenced": false,
       "symbols": [
         "INITIAL_LIST_LIMIT",
@@ -1862,7 +2450,7 @@
         "MatchingRecordList",
         "ProvinceRecordList"
       ],
-      "test_fan_in": 1
+      "test_fan_in": 2
     },
     {
       "branch_score": 0,
@@ -1888,8 +2476,8 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 6,
-      "fan_in": 2,
+      "branch_score": 9,
+      "fan_in": 3,
       "fan_out": 1,
       "generated": false,
       "id": "apps/web/src/features/near-me/MapLayerFilters.tsx",
@@ -1901,7 +2489,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 87,
+      "loc": 98,
       "major_symbols": [
         "LAYERS",
         "IncidentStatusMode",
@@ -1911,7 +2499,7 @@
       ],
       "module": "apps/web/src/features/near-me/MapLayerFilters",
       "path": "apps/web/src/features/near-me/MapLayerFilters.tsx",
-      "production_fan_in": 1,
+      "production_fan_in": 2,
       "statically_unreferenced": false,
       "symbols": [
         "LAYERS",
@@ -1952,6 +2540,43 @@
       "test_fan_in": 1
     },
     {
+      "branch_score": 45,
+      "fan_in": 4,
+      "fan_out": 3,
+      "generated": false,
+      "id": "apps/web/src/features/near-me/MapRefreshStatus.tsx",
+      "import_specifiers": [
+        "../../shared/api/api",
+        "./liveResultPresentation",
+        "./useProvinceMap"
+      ],
+      "imports": [
+        "apps/web/src/features/near-me/liveResultPresentation.ts",
+        "apps/web/src/features/near-me/useProvinceMap.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "production",
+      "language": "typescript",
+      "loc": 78,
+      "major_symbols": [
+        "MapSnapshotStatus",
+        "mapSnapshotAge",
+        "MapRefreshStatus",
+        "HistoricalMapRecords"
+      ],
+      "module": "apps/web/src/features/near-me/MapRefreshStatus",
+      "path": "apps/web/src/features/near-me/MapRefreshStatus.tsx",
+      "production_fan_in": 3,
+      "statically_unreferenced": false,
+      "symbols": [
+        "MapSnapshotStatus",
+        "mapSnapshotAge",
+        "MapRefreshStatus",
+        "HistoricalMapRecords"
+      ],
+      "test_fan_in": 1
+    },
+    {
       "branch_score": 20,
       "fan_in": 2,
       "fan_out": 0,
@@ -1975,8 +2600,8 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 8,
-      "fan_in": 2,
+      "branch_score": 18,
+      "fan_in": 5,
       "fan_out": 2,
       "generated": false,
       "id": "apps/web/src/features/near-me/MapViewport.tsx",
@@ -1993,7 +2618,7 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 67,
+      "loc": 81,
       "major_symbols": [
         "BC_BOUNDS",
         "MapFocus",
@@ -2001,24 +2626,25 @@
       ],
       "module": "apps/web/src/features/near-me/MapViewport",
       "path": "apps/web/src/features/near-me/MapViewport.tsx",
-      "production_fan_in": 2,
+      "production_fan_in": 3,
       "statically_unreferenced": false,
       "symbols": [
         "BC_BOUNDS",
         "MapFocus",
         "FitResults"
       ],
-      "test_fan_in": 0
+      "test_fan_in": 2
     },
     {
       "branch_score": 5,
-      "fan_in": 1,
+      "fan_in": 2,
       "fan_out": 2,
       "generated": false,
       "id": "apps/web/src/features/near-me/OfficialBasemap.tsx",
       "import_specifiers": [
         "./MapViewport",
         "./bcBoundary",
+        "leaflet",
         "react-leaflet"
       ],
       "imports": [
@@ -2027,17 +2653,20 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 58,
+      "loc": 72,
       "major_symbols": [
+        "REGIONAL_TILE_BOUNDS",
         "OSM_ATTRIBUTION",
         "TileFailureWarning",
         "OfficialBasemap"
       ],
       "module": "apps/web/src/features/near-me/OfficialBasemap",
       "path": "apps/web/src/features/near-me/OfficialBasemap.tsx",
-      "production_fan_in": 1,
+      "production_fan_in": 2,
       "statically_unreferenced": false,
       "symbols": [
+        "paddedBounds",
+        "REGIONAL_TILE_BOUNDS",
         "OSM_ATTRIBUTION",
         "TileFailureWarning",
         "OfficialBasemap"
@@ -2045,8 +2674,8 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 6,
-      "fan_in": 1,
+      "branch_score": 9,
+      "fan_in": 3,
       "fan_out": 3,
       "generated": false,
       "id": "apps/web/src/features/near-me/StaticGeometry.tsx",
@@ -2054,6 +2683,7 @@
         "../../shared/api/api",
         "./MapRecordPopup",
         "./liveResultPresentation",
+        "leaflet",
         "react",
         "react-leaflet"
       ],
@@ -2064,18 +2694,18 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 42,
+      "loc": 56,
       "major_symbols": [
         "StaticGeometry"
       ],
       "module": "apps/web/src/features/near-me/StaticGeometry",
       "path": "apps/web/src/features/near-me/StaticGeometry.tsx",
-      "production_fan_in": 1,
+      "production_fan_in": 2,
       "statically_unreferenced": false,
       "symbols": [
         "StaticGeometry"
       ],
-      "test_fan_in": 0
+      "test_fan_in": 1
     },
     {
       "branch_score": 12,
@@ -2181,7 +2811,7 @@
     },
     {
       "branch_score": 47,
-      "fan_in": 14,
+      "fan_in": 17,
       "fan_out": 1,
       "generated": false,
       "id": "apps/web/src/features/near-me/liveResultPresentation.ts",
@@ -2210,7 +2840,7 @@
       ],
       "module": "apps/web/src/features/near-me/liveResultPresentation",
       "path": "apps/web/src/features/near-me/liveResultPresentation.ts",
-      "production_fan_in": 13,
+      "production_fan_in": 16,
       "statically_unreferenced": false,
       "symbols": [
         "formatTimestamp",
@@ -2267,8 +2897,8 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 9,
-      "fan_in": 1,
+      "branch_score": 24,
+      "fan_in": 4,
       "fan_out": 1,
       "generated": false,
       "id": "apps/web/src/features/near-me/useProvinceMap.ts",
@@ -2281,20 +2911,24 @@
       ],
       "kind": "production",
       "language": "typescript",
-      "loc": 42,
+      "loc": 89,
       "major_symbols": [
+        "MAP_REFRESH_MS",
+        "RETRY_MS",
         "ProvinceMapState",
         "useProvinceMap"
       ],
       "module": "apps/web/src/features/near-me/useProvinceMap",
       "path": "apps/web/src/features/near-me/useProvinceMap.ts",
-      "production_fan_in": 1,
+      "production_fan_in": 2,
       "statically_unreferenced": false,
       "symbols": [
+        "MAP_REFRESH_MS",
+        "RETRY_MS",
         "ProvinceMapState",
         "useProvinceMap"
       ],
-      "test_fan_in": 0
+      "test_fan_in": 2
     },
     {
       "branch_score": 3,
@@ -2356,7 +2990,7 @@
     },
     {
       "branch_score": 47,
-      "fan_in": 48,
+      "fan_in": 69,
       "fan_out": 1,
       "generated": false,
       "id": "apps/web/src/shared/api/api.ts",
@@ -2404,7 +3038,7 @@
       ],
       "module": "apps/web/src/shared/api/api",
       "path": "apps/web/src/shared/api/api.ts",
-      "production_fan_in": 33,
+      "production_fan_in": 40,
       "statically_unreferenced": false,
       "symbols": [
         "AskResponse",
@@ -2445,11 +3079,11 @@
         "submitFeedback",
         "fetchGuidedQuestions"
       ],
-      "test_fan_in": 15
+      "test_fan_in": 29
     },
     {
       "branch_score": 1,
-      "fan_in": 4,
+      "fan_in": 3,
       "fan_out": 0,
       "generated": false,
       "id": "apps/web/src/shared/officialLinks.ts",
@@ -2464,7 +3098,7 @@
       ],
       "module": "apps/web/src/shared/officialLinks",
       "path": "apps/web/src/shared/officialLinks.ts",
-      "production_fan_in": 4,
+      "production_fan_in": 3,
       "statically_unreferenced": false,
       "symbols": [
         "BCWS_MAP_URL",
@@ -2519,7 +3153,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 1882,
+      "loc": 1895,
       "major_symbols": [],
       "module": "apps/web/tests/App.test",
       "path": "apps/web/tests/App.test.tsx",
@@ -2557,6 +3191,35 @@
       "test_fan_in": 0
     },
     {
+      "branch_score": 0,
+      "fan_in": 0,
+      "fan_out": 2,
+      "generated": false,
+      "id": "apps/web/tests/MapViewport.test.tsx",
+      "import_specifiers": [
+        "../src/features/near-me/MapViewport",
+        "../src/shared/api/api",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/features/near-me/MapViewport.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 54,
+      "major_symbols": [],
+      "module": "apps/web/tests/MapViewport.test",
+      "path": "apps/web/tests/MapViewport.test.tsx",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "map"
+      ],
+      "test_fan_in": 0
+    },
+    {
       "branch_score": 1,
       "fan_in": 0,
       "fan_out": 2,
@@ -2584,6 +3247,74 @@
         "first",
         "second",
         "response"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 10,
+      "fan_in": 0,
+      "fan_out": 4,
+      "generated": false,
+      "id": "apps/web/tests/answerActions.test.tsx",
+      "import_specifiers": [
+        "../src/features/ask/AnswerActions",
+        "../src/features/ask/answerActionPresentation",
+        "../src/features/ask/responseModeBadge",
+        "../src/shared/api/api",
+        "@testing-library/react",
+        "@testing-library/user-event",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/features/ask/AnswerActions.tsx",
+        "apps/web/src/features/ask/answerActionPresentation.ts",
+        "apps/web/src/features/ask/responseModeBadge.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 289,
+      "major_symbols": [],
+      "module": "apps/web/tests/answerActions.test",
+      "path": "apps/web/tests/answerActions.test.tsx",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "guidance",
+        "liveRecord"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 0,
+      "fan_in": 0,
+      "fan_out": 3,
+      "generated": false,
+      "id": "apps/web/tests/answerMapScope.test.tsx",
+      "import_specifiers": [
+        "../src/features/near-me/AnswerMapScope",
+        "../src/features/near-me/LiveRecordLists",
+        "../src/shared/api/api",
+        "./fixtures/v8-selected-followup.json",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/features/near-me/AnswerMapScope.tsx",
+        "apps/web/src/features/near-me/LiveRecordLists.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 36,
+      "major_symbols": [],
+      "module": "apps/web/tests/answerMapScope.test",
+      "path": "apps/web/tests/answerMapScope.test.tsx",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "answer",
+        "lookup"
       ],
       "test_fan_in": 0
     },
@@ -2665,7 +3396,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 11,
+      "branch_score": 10,
       "fan_in": 0,
       "fan_out": 2,
       "generated": false,
@@ -2684,7 +3415,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 171,
+      "loc": 175,
       "major_symbols": [],
       "module": "apps/web/tests/askStartPanel.test",
       "path": "apps/web/tests/askStartPanel.test.tsx",
@@ -2696,6 +3427,48 @@
         "renderPanel"
       ],
       "test_fan_in": 0
+    },
+    {
+      "branch_score": 10,
+      "fan_in": 7,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/tests/browserNavigation.ts",
+      "import_specifiers": [
+        "./localBrowserOrigin",
+        "@playwright/test"
+      ],
+      "imports": [
+        "apps/web/tests/localBrowserOrigin.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 59,
+      "major_symbols": [
+        "localOrigin",
+        "openComposer",
+        "goHome",
+        "menuAction",
+        "openSources",
+        "openMatchingRecords",
+        "openMapRecords",
+        "openClaimDetails"
+      ],
+      "module": "apps/web/tests/browserNavigation",
+      "path": "apps/web/tests/browserNavigation.ts",
+      "production_fan_in": 0,
+      "statically_unreferenced": false,
+      "symbols": [
+        "localOrigin",
+        "openComposer",
+        "goHome",
+        "menuAction",
+        "openSources",
+        "openMatchingRecords",
+        "openMapRecords",
+        "openClaimDetails"
+      ],
+      "test_fan_in": 7
     },
     {
       "branch_score": 0,
@@ -2746,18 +3519,52 @@
       "test_fan_in": 0
     },
     {
+      "branch_score": 68,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/tests/e2e-product-v2/app.spec.ts",
+      "import_specifiers": [
+        "../../../../data/capabilities/guided_questions.v1.json",
+        "../browserNavigation",
+        "@playwright/test"
+      ],
+      "imports": [
+        "apps/web/tests/browserNavigation.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 901,
+      "major_symbols": [
+        "AskRequest"
+      ],
+      "module": "apps/web/tests/e2e-product-v2/app.spec",
+      "path": "apps/web/tests/e2e-product-v2/app.spec.ts",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "answer",
+        "AskRequest",
+        "seenRequests"
+      ],
+      "test_fan_in": 0
+    },
+    {
       "branch_score": 12,
       "fan_in": 0,
-      "fan_out": 0,
+      "fan_out": 1,
       "generated": false,
       "id": "apps/web/tests/e2e-real/astra.spec.ts",
       "import_specifiers": [
+        "../browserNavigation",
         "@playwright/test"
       ],
-      "imports": [],
+      "imports": [
+        "apps/web/tests/browserNavigation.ts"
+      ],
       "kind": "test",
       "language": "typescript",
-      "loc": 101,
+      "loc": 105,
       "major_symbols": [],
       "module": "apps/web/tests/e2e-real/astra.spec",
       "path": "apps/web/tests/e2e-real/astra.spec.ts",
@@ -2765,6 +3572,134 @@
       "statically_unreferenced": true,
       "symbols": [
         "ask"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 32,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/tests/e2e-real/atlas-readiness.spec.ts",
+      "import_specifiers": [
+        "../browserNavigation",
+        "@playwright/test"
+      ],
+      "imports": [
+        "apps/web/tests/browserNavigation.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 238,
+      "major_symbols": [],
+      "module": "apps/web/tests/e2e-real/atlas-readiness.spec",
+      "path": "apps/web/tests/e2e-real/atlas-readiness.spec.ts",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "fixtureTime",
+        "ask",
+        "recordAsks"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 12,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/tests/e2e-real/basemap-transport.spec.ts",
+      "import_specifiers": [
+        "../browserNavigation",
+        "@playwright/test"
+      ],
+      "imports": [
+        "apps/web/tests/browserNavigation.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 54,
+      "major_symbols": [],
+      "module": "apps/web/tests/e2e-real/basemap-transport.spec",
+      "path": "apps/web/tests/e2e-real/basemap-transport.spec.ts",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "tileUrl",
+        "tileImage",
+        "instant"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 45,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts",
+      "import_specifiers": [
+        "../browserNavigation",
+        "@playwright/test"
+      ],
+      "imports": [
+        "apps/web/tests/browserNavigation.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 468,
+      "major_symbols": [
+        "LOCAL_ORIGIN",
+        "AskWireRequest",
+        "AskWireResponse"
+      ],
+      "module": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec",
+      "path": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "LOCAL_ORIGIN",
+        "AskWireRequest",
+        "AskWireResponse",
+        "localOnly",
+        "nonLocalExceptBlockedBasemap",
+        "ask",
+        "askWithExchange"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 44,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts",
+      "import_specifiers": [
+        "../browserNavigation",
+        "@playwright/test"
+      ],
+      "imports": [
+        "apps/web/tests/browserNavigation.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 469,
+      "major_symbols": [
+        "LOCAL_ORIGIN",
+        "AskWireRequest",
+        "AskWireResponse"
+      ],
+      "module": "apps/web/tests/e2e-real/fullstack-product-v2.spec",
+      "path": "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "LOCAL_ORIGIN",
+        "AskWireRequest",
+        "AskWireResponse",
+        "localOnly",
+        "nonLocalExceptBlockedBasemap",
+        "ask",
+        "askWithExchange"
       ],
       "test_fan_in": 0
     },
@@ -2828,16 +3763,19 @@
     {
       "branch_score": 23,
       "fan_in": 0,
-      "fan_out": 0,
+      "fan_out": 1,
       "generated": false,
       "id": "apps/web/tests/e2e-real/review-v2.spec.ts",
       "import_specifiers": [
+        "../browserNavigation",
         "@playwright/test"
       ],
-      "imports": [],
+      "imports": [
+        "apps/web/tests/browserNavigation.ts"
+      ],
       "kind": "test",
       "language": "typescript",
-      "loc": 155,
+      "loc": 162,
       "major_symbols": [],
       "module": "apps/web/tests/e2e-real/review-v2.spec",
       "path": "apps/web/tests/e2e-real/review-v2.spec.ts",
@@ -2930,8 +3868,8 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 5,
-      "fan_in": 3,
+      "branch_score": 14,
+      "fan_in": 6,
       "fan_out": 0,
       "generated": false,
       "id": "apps/web/tests/fetchStub.ts",
@@ -2941,7 +3879,7 @@
       "imports": [],
       "kind": "test",
       "language": "typescript",
-      "loc": 29,
+      "loc": 44,
       "major_symbols": [
         "jsonResponse",
         "wrapAppFetch"
@@ -2954,10 +3892,10 @@
         "jsonResponse",
         "wrapAppFetch"
       ],
-      "test_fan_in": 3
+      "test_fan_in": 6
     },
     {
-      "branch_score": 23,
+      "branch_score": 25,
       "fan_in": 0,
       "fan_out": 1,
       "generated": false,
@@ -2975,7 +3913,7 @@
       ],
       "kind": "test",
       "language": "javascript",
-      "loc": 824,
+      "loc": 912,
       "major_symbols": [],
       "module": "apps/web/tests/frontend-surface-runner.test",
       "path": "apps/web/tests/frontend-surface-runner.test.mjs",
@@ -3017,6 +3955,69 @@
       "major_symbols": [],
       "module": "apps/web/tests/frontendSemanticOwner.test",
       "path": "apps/web/tests/frontendSemanticOwner.test.ts",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 4,
+      "fan_in": 0,
+      "fan_out": 5,
+      "generated": false,
+      "id": "apps/web/tests/guidanceGroups.test.tsx",
+      "import_specifiers": [
+        "../src/features/ask/AnswerBody",
+        "../src/features/ask/answerActionPresentation",
+        "../src/features/ask/guidanceGroups",
+        "../src/features/ask/readableAnswer",
+        "../src/shared/api/api",
+        "./fixtures/remaining-compact.json",
+        "./fixtures/remaining-partners.json",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/features/ask/AnswerBody.tsx",
+        "apps/web/src/features/ask/answerActionPresentation.ts",
+        "apps/web/src/features/ask/guidanceGroups.ts",
+        "apps/web/src/features/ask/readableAnswer.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 43,
+      "major_symbols": [],
+      "module": "apps/web/tests/guidanceGroups.test",
+      "path": "apps/web/tests/guidanceGroups.test.tsx",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 1,
+      "fan_in": 0,
+      "fan_out": 2,
+      "generated": false,
+      "id": "apps/web/tests/lazyAnswerAnnouncement.test.tsx",
+      "import_specifiers": [
+        "../src/app/App",
+        "./fetchStub",
+        "@testing-library/react",
+        "@testing-library/user-event",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/app/App.tsx",
+        "apps/web/tests/fetchStub.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 21,
+      "major_symbols": [],
+      "module": "apps/web/tests/lazyAnswerAnnouncement.test",
+      "path": "apps/web/tests/lazyAnswerAnnouncement.test.tsx",
       "production_fan_in": 0,
       "statically_unreferenced": true,
       "symbols": [],
@@ -3130,7 +4131,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 77,
+      "loc": 81,
       "major_symbols": [],
       "module": "apps/web/tests/liveDataStatus.test",
       "path": "apps/web/tests/liveDataStatus.test.tsx",
@@ -3173,6 +4174,38 @@
       "test_fan_in": 0
     },
     {
+      "branch_score": 6,
+      "fan_in": 0,
+      "fan_out": 2,
+      "generated": false,
+      "id": "apps/web/tests/liveMapPresentation.test.tsx",
+      "import_specifiers": [
+        "../src/features/near-me/LiveMap",
+        "../src/shared/api/api",
+        "@testing-library/react",
+        "react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/features/near-me/LiveMap.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 128,
+      "major_symbols": [],
+      "module": "apps/web/tests/liveMapPresentation.test",
+      "path": "apps/web/tests/liveMapPresentation.test.tsx",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "map",
+        "incident",
+        "evacuation"
+      ],
+      "test_fan_in": 0
+    },
+    {
       "branch_score": 2,
       "fan_in": 0,
       "fan_out": 2,
@@ -3201,6 +4234,53 @@
       "test_fan_in": 0
     },
     {
+      "branch_score": 2,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/tests/localBrowserOrigin.test.ts",
+      "import_specifiers": [
+        "./localBrowserOrigin",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/tests/localBrowserOrigin.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 15,
+      "major_symbols": [],
+      "module": "apps/web/tests/localBrowserOrigin.test",
+      "path": "apps/web/tests/localBrowserOrigin.test.ts",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 8,
+      "fan_in": 4,
+      "fan_out": 0,
+      "generated": false,
+      "id": "apps/web/tests/localBrowserOrigin.ts",
+      "import_specifiers": [],
+      "imports": [],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 10,
+      "major_symbols": [
+        "localBrowserOrigin"
+      ],
+      "module": "apps/web/tests/localBrowserOrigin",
+      "path": "apps/web/tests/localBrowserOrigin.ts",
+      "production_fan_in": 0,
+      "statically_unreferenced": false,
+      "symbols": [
+        "localBrowserOrigin"
+      ],
+      "test_fan_in": 2
+    },
+    {
       "branch_score": 0,
       "fan_in": 0,
       "fan_out": 3,
@@ -3227,6 +4307,250 @@
       "statically_unreferenced": true,
       "symbols": [
         "point"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 3,
+      "fan_in": 0,
+      "fan_out": 2,
+      "generated": false,
+      "id": "apps/web/tests/mapGeometryRefresh.test.tsx",
+      "import_specifiers": [
+        "../src/features/near-me/StaticGeometry",
+        "../src/shared/api/api",
+        "@testing-library/react",
+        "leaflet",
+        "react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/features/near-me/StaticGeometry.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 32,
+      "major_symbols": [],
+      "module": "apps/web/tests/mapGeometryRefresh.test",
+      "path": "apps/web/tests/mapGeometryRefresh.test.tsx",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "current",
+        "record"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 2,
+      "fan_in": 0,
+      "fan_out": 2,
+      "generated": false,
+      "id": "apps/web/tests/mapNavigationReset.test.ts",
+      "import_specifiers": [
+        "../src/features/ask/useFireLensSession",
+        "../src/shared/api/api",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/features/ask/useFireLensSession.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 73,
+      "major_symbols": [
+        "NOW"
+      ],
+      "module": "apps/web/tests/mapNavigationReset.test",
+      "path": "apps/web/tests/mapNavigationReset.test.ts",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "NOW",
+        "record",
+        "snapshot",
+        "pending",
+        "settle"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 21,
+      "fan_in": 0,
+      "fan_out": 5,
+      "generated": false,
+      "id": "apps/web/tests/mapRefresh.test.tsx",
+      "import_specifiers": [
+        "../src/app/LiveDataStatus",
+        "../src/features/ask/sessionMap",
+        "../src/features/near-me/MapRefreshStatus",
+        "../src/features/near-me/useProvinceMap",
+        "../src/shared/api/api",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/app/LiveDataStatus.tsx",
+        "apps/web/src/features/ask/sessionMap.ts",
+        "apps/web/src/features/near-me/MapRefreshStatus.tsx",
+        "apps/web/src/features/near-me/useProvinceMap.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 176,
+      "major_symbols": [
+        "NOW"
+      ],
+      "module": "apps/web/tests/mapRefresh.test",
+      "path": "apps/web/tests/mapRefresh.test.tsx",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "NOW",
+        "record",
+        "payload",
+        "ok",
+        "settle",
+        "advance",
+        "visibility"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 0,
+      "fan_in": 0,
+      "fan_out": 2,
+      "generated": false,
+      "id": "apps/web/tests/mapSelectionRefresh.test.ts",
+      "import_specifiers": [
+        "../src/features/ask/useFireLensSession",
+        "../src/shared/api/api",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/features/ask/useFireLensSession.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 42,
+      "major_symbols": [],
+      "module": "apps/web/tests/mapSelectionRefresh.test",
+      "path": "apps/web/tests/mapSelectionRefresh.test.ts",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "state",
+        "record",
+        "data"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 0,
+      "fan_in": 0,
+      "fan_out": 2,
+      "generated": false,
+      "id": "apps/web/tests/mapViewportRefresh.test.tsx",
+      "import_specifiers": [
+        "../src/features/near-me/MapViewport",
+        "../src/shared/api/api",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/features/near-me/MapViewport.tsx",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 25,
+      "major_symbols": [],
+      "module": "apps/web/tests/mapViewportRefresh.test",
+      "path": "apps/web/tests/mapViewportRefresh.test.tsx",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "map",
+        "record"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 11,
+      "fan_in": 0,
+      "fan_out": 4,
+      "generated": false,
+      "id": "apps/web/tests/productExperience.test.tsx",
+      "import_specifiers": [
+        "../src/app/App",
+        "../src/app/ContextChips",
+        "../src/shared/api/api",
+        "./fetchStub",
+        "@testing-library/react",
+        "@testing-library/user-event",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/app/App.tsx",
+        "apps/web/src/app/ContextChips.tsx",
+        "apps/web/src/shared/api/api.ts",
+        "apps/web/tests/fetchStub.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 109,
+      "major_symbols": [],
+      "module": "apps/web/tests/productExperience.test",
+      "path": "apps/web/tests/productExperience.test.tsx",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "spatial"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 3,
+      "fan_in": 0,
+      "fan_out": 4,
+      "generated": false,
+      "id": "apps/web/tests/productIntegrationV2.test.tsx",
+      "import_specifiers": [
+        "../src/app/App",
+        "../src/features/ask/useFireLensSession",
+        "../src/shared/api/api",
+        "./fetchStub",
+        "@testing-library/react",
+        "@testing-library/user-event",
+        "react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/app/App.tsx",
+        "apps/web/src/features/ask/useFireLensSession.ts",
+        "apps/web/src/shared/api/api.ts",
+        "apps/web/tests/fetchStub.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 80,
+      "major_symbols": [],
+      "module": "apps/web/tests/productIntegrationV2.test",
+      "path": "apps/web/tests/productIntegrationV2.test.tsx",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "guidance",
+        "record",
+        "spatial",
+        "setup",
+        "ask"
       ],
       "test_fan_in": 0
     },
@@ -3272,6 +4596,40 @@
       "test_fan_in": 0
     },
     {
+      "branch_score": 2,
+      "fan_in": 0,
+      "fan_out": 4,
+      "generated": false,
+      "id": "apps/web/tests/quoteAttribution.test.tsx",
+      "import_specifiers": [
+        "../src/features/ask/AnswerBody",
+        "../src/features/ask/answerActionPresentation",
+        "../src/features/ask/readableAnswer",
+        "../src/shared/api/api",
+        "./fixtures/v8-firewood-comparison.json",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/features/ask/AnswerBody.tsx",
+        "apps/web/src/features/ask/answerActionPresentation.ts",
+        "apps/web/src/features/ask/readableAnswer.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 73,
+      "major_symbols": [],
+      "module": "apps/web/tests/quoteAttribution.test",
+      "path": "apps/web/tests/quoteAttribution.test.tsx",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "response"
+      ],
+      "test_fan_in": 0
+    },
+    {
       "branch_score": 1,
       "fan_in": 0,
       "fan_out": 0,
@@ -3288,6 +4646,41 @@
       "production_fan_in": 0,
       "statically_unreferenced": true,
       "symbols": [],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 3,
+      "fan_in": 0,
+      "fan_out": 4,
+      "generated": false,
+      "id": "apps/web/tests/readableAnswer.test.tsx",
+      "import_specifiers": [
+        "../src/features/ask/AnswerBody",
+        "../src/features/ask/answerActionPresentation",
+        "../src/features/ask/readableAnswer",
+        "../src/shared/api/api",
+        "./fixtures/bag-readability.json",
+        "./fixtures/v8-communication-bullets.json",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/features/ask/AnswerBody.tsx",
+        "apps/web/src/features/ask/answerActionPresentation.ts",
+        "apps/web/src/features/ask/readableAnswer.ts",
+        "apps/web/src/shared/api/api.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 80,
+      "major_symbols": [],
+      "module": "apps/web/tests/readableAnswer.test",
+      "path": "apps/web/tests/readableAnswer.test.tsx",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "response"
+      ],
       "test_fan_in": 0
     },
     {
@@ -3324,7 +4717,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 6,
+      "branch_score": 7,
       "fan_in": 0,
       "fan_out": 2,
       "generated": false,
@@ -3341,7 +4734,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 94,
+      "loc": 103,
       "major_symbols": [],
       "module": "apps/web/tests/sessionLifecycle.test",
       "path": "apps/web/tests/sessionLifecycle.test.ts",
@@ -3371,7 +4764,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 125,
+      "loc": 126,
       "major_symbols": [],
       "module": "apps/web/tests/sessionMap.test",
       "path": "apps/web/tests/sessionMap.test.ts",
@@ -3385,7 +4778,7 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 0,
+      "branch_score": 1,
       "fan_in": 0,
       "fan_out": 0,
       "generated": false,
@@ -3396,7 +4789,7 @@
       "imports": [],
       "kind": "test",
       "language": "typescript",
-      "loc": 1,
+      "loc": 7,
       "major_symbols": [],
       "module": "apps/web/tests/setup",
       "path": "apps/web/tests/setup.ts",
@@ -3449,7 +4842,7 @@
       ],
       "kind": "test",
       "language": "typescript",
-      "loc": 31,
+      "loc": 77,
       "major_symbols": [],
       "module": "apps/web/tests/sourceRevision.test",
       "path": "apps/web/tests/sourceRevision.test.tsx",
@@ -3459,6 +4852,64 @@
         "evidence",
         "response"
       ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 2,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/tests/surface-identity.test.mjs",
+      "import_specifiers": [
+        "../scripts/surface-identity.mjs",
+        "node:assert/strict",
+        "node:child_process",
+        "node:fs/promises",
+        "node:net",
+        "node:os",
+        "node:path",
+        "node:test"
+      ],
+      "imports": [
+        "apps/web/scripts/surface-identity.mjs"
+      ],
+      "kind": "test",
+      "language": "javascript",
+      "loc": 49,
+      "major_symbols": [],
+      "module": "apps/web/tests/surface-identity.test",
+      "path": "apps/web/tests/surface-identity.test.mjs",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "identity"
+      ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 0,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/tests/surface-layout.test.mjs",
+      "import_specifiers": [
+        "../scripts/qualify-frontend-surface.mjs",
+        "@playwright/test",
+        "node:assert/strict",
+        "node:test"
+      ],
+      "imports": [
+        "apps/web/scripts/qualify-frontend-surface.mjs"
+      ],
+      "kind": "test",
+      "language": "javascript",
+      "loc": 24,
+      "major_symbols": [],
+      "module": "apps/web/tests/surface-layout.test",
+      "path": "apps/web/tests/surface-layout.test.mjs",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [],
       "test_fan_in": 0
     },
     {
@@ -3475,7 +4926,7 @@
       "imports": [],
       "kind": "test",
       "language": "javascript",
-      "loc": 84,
+      "loc": 86,
       "major_symbols": [],
       "module": "apps/web/tests/tooling-config.test",
       "path": "apps/web/tests/tooling-config.test.mjs",
@@ -3487,6 +4938,31 @@
         "realPlaywrightConfig",
         "makefile"
       ],
+      "test_fan_in": 0
+    },
+    {
+      "branch_score": 0,
+      "fan_in": 0,
+      "fan_out": 1,
+      "generated": false,
+      "id": "apps/web/tests/useProvinceMap.test.ts",
+      "import_specifiers": [
+        "../src/features/near-me/useProvinceMap",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "imports": [
+        "apps/web/src/features/near-me/useProvinceMap.ts"
+      ],
+      "kind": "test",
+      "language": "typescript",
+      "loc": 21,
+      "major_symbols": [],
+      "module": "apps/web/tests/useProvinceMap.test",
+      "path": "apps/web/tests/useProvinceMap.test.ts",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [],
       "test_fan_in": 0
     },
     {
@@ -30266,5 +31742,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "27b7939a30bb3111c5107211b14c3b6345fa6506c4341df1139b3e41c45938c9"
+  "source_digest": "b34233de1afb1e422105315fb54580f95628d4c8e73af84e270fb51522bbdfb2"
 }

@@ -11,13 +11,18 @@
       "path": "app.py"
     },
     {
-      "branch_score": 0,
-      "loc": 15,
+      "branch_score": 2,
+      "loc": 19,
       "path": "apps/web/playwright.config.ts"
     },
     {
-      "branch_score": 1,
-      "loc": 21,
+      "branch_score": 0,
+      "loc": 8,
+      "path": "apps/web/playwright.product.config.ts"
+    },
+    {
+      "branch_score": 3,
+      "loc": 25,
       "path": "apps/web/playwright.real.config.ts"
     },
     {
@@ -31,18 +36,48 @@
       "path": "apps/web/scripts/prepare-sites-build.mjs"
     },
     {
-      "branch_score": 570,
-      "loc": 3223,
+      "branch_score": 609,
+      "loc": 3362,
       "path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
-      "branch_score": 58,
-      "loc": 370,
+      "branch_score": 7,
+      "loc": 48,
+      "path": "apps/web/scripts/surface-identity.mjs"
+    },
+    {
+      "branch_score": 12,
+      "loc": 76,
+      "path": "apps/web/scripts/verify-native-zoom-v2.mjs"
+    },
+    {
+      "branch_score": 12,
+      "loc": 76,
+      "path": "apps/web/scripts/verify-native-zoom.mjs"
+    },
+    {
+      "branch_score": 47,
+      "loc": 152,
       "path": "apps/web/src/app/App.tsx"
     },
     {
-      "branch_score": 15,
-      "loc": 57,
+      "branch_score": 2,
+      "loc": 39,
+      "path": "apps/web/src/app/AtlasHeader.tsx"
+    },
+    {
+      "branch_score": 8,
+      "loc": 38,
+      "path": "apps/web/src/app/AtlasHome.tsx"
+    },
+    {
+      "branch_score": 4,
+      "loc": 26,
+      "path": "apps/web/src/app/AtlasQuestion.tsx"
+    },
+    {
+      "branch_score": 20,
+      "loc": 61,
       "path": "apps/web/src/app/ContextChips.tsx"
     },
     {
@@ -51,18 +86,18 @@
       "path": "apps/web/src/app/HowFireLensWorks.tsx"
     },
     {
-      "branch_score": 24,
-      "loc": 53,
+      "branch_score": 28,
+      "loc": 56,
       "path": "apps/web/src/app/LiveDataStatus.tsx"
     },
     {
-      "branch_score": 20,
-      "loc": 47,
+      "branch_score": 1,
+      "loc": 2,
       "path": "apps/web/src/app/OfficialSourcesCard.tsx"
     },
     {
-      "branch_score": 10,
-      "loc": 129,
+      "branch_score": 11,
+      "loc": 117,
       "path": "apps/web/src/app/ProductSidebar.tsx"
     },
     {
@@ -71,8 +106,13 @@
       "path": "apps/web/src/app/workspacePresentation.ts"
     },
     {
-      "branch_score": 62,
-      "loc": 174,
+      "branch_score": 30,
+      "loc": 151,
+      "path": "apps/web/src/features/ask/AnswerActions.tsx"
+    },
+    {
+      "branch_score": 95,
+      "loc": 217,
       "path": "apps/web/src/features/ask/AnswerBody.tsx"
     },
     {
@@ -81,13 +121,13 @@
       "path": "apps/web/src/features/ask/AnswerMarkdown.tsx"
     },
     {
-      "branch_score": 61,
-      "loc": 256,
+      "branch_score": 63,
+      "loc": 271,
       "path": "apps/web/src/features/ask/AskStartPanel.tsx"
     },
     {
-      "branch_score": 8,
-      "loc": 35,
+      "branch_score": 10,
+      "loc": 38,
       "path": "apps/web/src/features/ask/AuthorityHandoffCards.tsx"
     },
     {
@@ -101,8 +141,13 @@
       "path": "apps/web/src/features/ask/ConversationEvidenceDetails.tsx"
     },
     {
-      "branch_score": 64,
-      "loc": 278,
+      "branch_score": 4,
+      "loc": 16,
+      "path": "apps/web/src/features/ask/ConversationExtras.tsx"
+    },
+    {
+      "branch_score": 78,
+      "loc": 300,
       "path": "apps/web/src/features/ask/ConversationPanel.tsx"
     },
     {
@@ -111,8 +156,8 @@
       "path": "apps/web/src/features/ask/ConversationPresentation.tsx"
     },
     {
-      "branch_score": 78,
-      "loc": 258,
+      "branch_score": 79,
+      "loc": 262,
       "path": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
     },
     {
@@ -121,19 +166,24 @@
       "path": "apps/web/src/features/ask/QuestionComposer.tsx"
     },
     {
-      "branch_score": 35,
-      "loc": 142,
+      "branch_score": 43,
+      "loc": 144,
       "path": "apps/web/src/features/ask/SourceProof.tsx"
     },
     {
-      "branch_score": 24,
-      "loc": 96,
+      "branch_score": 26,
+      "loc": 98,
       "path": "apps/web/src/features/ask/StatusBanner.tsx"
     },
     {
       "branch_score": 3,
       "loc": 56,
       "path": "apps/web/src/features/ask/abstentionPresentation.ts"
+    },
+    {
+      "branch_score": 78,
+      "loc": 192,
+      "path": "apps/web/src/features/ask/answerActionPresentation.ts"
     },
     {
       "branch_score": 8,
@@ -151,6 +201,11 @@
       "path": "apps/web/src/features/ask/conversationAnnouncements.ts"
     },
     {
+      "branch_score": 32,
+      "loc": 44,
+      "path": "apps/web/src/features/ask/guidanceGroups.ts"
+    },
+    {
       "branch_score": 3,
       "loc": 23,
       "path": "apps/web/src/features/ask/limitationsPresentation.ts"
@@ -161,8 +216,13 @@
       "path": "apps/web/src/features/ask/proofPresentation.ts"
     },
     {
-      "branch_score": 27,
-      "loc": 50,
+      "branch_score": 20,
+      "loc": 36,
+      "path": "apps/web/src/features/ask/readableAnswer.ts"
+    },
+    {
+      "branch_score": 28,
+      "loc": 52,
       "path": "apps/web/src/features/ask/responseModeBadge.tsx"
     },
     {
@@ -171,24 +231,29 @@
       "path": "apps/web/src/features/ask/responseModel.ts"
     },
     {
-      "branch_score": 18,
-      "loc": 31,
+      "branch_score": 20,
+      "loc": 33,
       "path": "apps/web/src/features/ask/roster.ts"
     },
     {
-      "branch_score": 21,
-      "loc": 82,
+      "branch_score": 36,
+      "loc": 87,
       "path": "apps/web/src/features/ask/sessionMap.ts"
     },
     {
-      "branch_score": 84,
-      "loc": 417,
+      "branch_score": 101,
+      "loc": 463,
       "path": "apps/web/src/features/ask/useFireLensSession.ts"
     },
     {
-      "branch_score": 52,
-      "loc": 270,
+      "branch_score": 57,
+      "loc": 273,
       "path": "apps/web/src/features/evidence/EvidencePanel.tsx"
+    },
+    {
+      "branch_score": 20,
+      "loc": 47,
+      "path": "apps/web/src/features/evidence/OfficialSourcesCard.tsx"
     },
     {
       "branch_score": 17,
@@ -206,23 +271,38 @@
       "path": "apps/web/src/features/near-me/AnalysisCharts.tsx"
     },
     {
+      "branch_score": 4,
+      "loc": 21,
+      "path": "apps/web/src/features/near-me/AnswerMapScope.tsx"
+    },
+    {
+      "branch_score": 15,
+      "loc": 72,
+      "path": "apps/web/src/features/near-me/AtlasLiveMap.tsx"
+    },
+    {
       "branch_score": 13,
-      "loc": 99,
+      "loc": 101,
       "path": "apps/web/src/features/near-me/ClusteredPointMarkers.tsx"
     },
     {
-      "branch_score": 44,
-      "loc": 257,
+      "branch_score": 49,
+      "loc": 264,
       "path": "apps/web/src/features/near-me/LiveAnalysisWorkspace.tsx"
     },
     {
-      "branch_score": 58,
-      "loc": 297,
+      "branch_score": 61,
+      "loc": 296,
       "path": "apps/web/src/features/near-me/LiveMap.tsx"
     },
     {
-      "branch_score": 41,
-      "loc": 184,
+      "branch_score": 27,
+      "loc": 79,
+      "path": "apps/web/src/features/near-me/LiveMapCoverage.tsx"
+    },
+    {
+      "branch_score": 42,
+      "loc": 188,
       "path": "apps/web/src/features/near-me/LiveRecordLists.tsx"
     },
     {
@@ -231,8 +311,8 @@
       "path": "apps/web/src/features/near-me/MapContextLayers.tsx"
     },
     {
-      "branch_score": 6,
-      "loc": 87,
+      "branch_score": 9,
+      "loc": 98,
       "path": "apps/web/src/features/near-me/MapLayerFilters.tsx"
     },
     {
@@ -241,23 +321,28 @@
       "path": "apps/web/src/features/near-me/MapRecordPopup.tsx"
     },
     {
+      "branch_score": 45,
+      "loc": 78,
+      "path": "apps/web/src/features/near-me/MapRefreshStatus.tsx"
+    },
+    {
       "branch_score": 20,
       "loc": 45,
       "path": "apps/web/src/features/near-me/MapScope.tsx"
     },
     {
-      "branch_score": 8,
-      "loc": 67,
+      "branch_score": 18,
+      "loc": 81,
       "path": "apps/web/src/features/near-me/MapViewport.tsx"
     },
     {
       "branch_score": 5,
-      "loc": 58,
+      "loc": 72,
       "path": "apps/web/src/features/near-me/OfficialBasemap.tsx"
     },
     {
-      "branch_score": 6,
-      "loc": 42,
+      "branch_score": 9,
+      "loc": 56,
       "path": "apps/web/src/features/near-me/StaticGeometry.tsx"
     },
     {
@@ -286,8 +371,8 @@
       "path": "apps/web/src/features/near-me/mapClustering.ts"
     },
     {
-      "branch_score": 9,
-      "loc": 42,
+      "branch_score": 24,
+      "loc": 89,
       "path": "apps/web/src/features/near-me/useProvinceMap.ts"
     },
     {
@@ -317,7 +402,7 @@
     },
     {
       "branch_score": 108,
-      "loc": 1882,
+      "loc": 1895,
       "path": "apps/web/tests/App.test.tsx"
     },
     {
@@ -326,9 +411,24 @@
       "path": "apps/web/tests/MapScope.test.tsx"
     },
     {
+      "branch_score": 0,
+      "loc": 54,
+      "path": "apps/web/tests/MapViewport.test.tsx"
+    },
+    {
       "branch_score": 1,
       "loc": 35,
       "path": "apps/web/tests/OfficialSourcesCard.test.tsx"
+    },
+    {
+      "branch_score": 10,
+      "loc": 289,
+      "path": "apps/web/tests/answerActions.test.tsx"
+    },
+    {
+      "branch_score": 0,
+      "loc": 36,
+      "path": "apps/web/tests/answerMapScope.test.tsx"
     },
     {
       "branch_score": 3,
@@ -346,9 +446,14 @@
       "path": "apps/web/tests/askContinuation.test.ts"
     },
     {
-      "branch_score": 11,
-      "loc": 171,
+      "branch_score": 10,
+      "loc": 175,
       "path": "apps/web/tests/askStartPanel.test.tsx"
+    },
+    {
+      "branch_score": 10,
+      "loc": 59,
+      "path": "apps/web/tests/browserNavigation.ts"
     },
     {
       "branch_score": 0,
@@ -361,9 +466,34 @@
       "path": "apps/web/tests/conversationPresentation.test.ts"
     },
     {
+      "branch_score": 68,
+      "loc": 901,
+      "path": "apps/web/tests/e2e-product-v2/app.spec.ts"
+    },
+    {
       "branch_score": 12,
-      "loc": 101,
+      "loc": 105,
       "path": "apps/web/tests/e2e-real/astra.spec.ts"
+    },
+    {
+      "branch_score": 32,
+      "loc": 238,
+      "path": "apps/web/tests/e2e-real/atlas-readiness.spec.ts"
+    },
+    {
+      "branch_score": 12,
+      "loc": 54,
+      "path": "apps/web/tests/e2e-real/basemap-transport.spec.ts"
+    },
+    {
+      "branch_score": 45,
+      "loc": 468,
+      "path": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts"
+    },
+    {
+      "branch_score": 44,
+      "loc": 469,
+      "path": "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts"
     },
     {
       "branch_score": 41,
@@ -377,7 +507,7 @@
     },
     {
       "branch_score": 23,
-      "loc": 155,
+      "loc": 162,
       "path": "apps/web/tests/e2e-real/review-v2.spec.ts"
     },
     {
@@ -396,19 +526,29 @@
       "path": "apps/web/tests/fetchReadyHealth.test.ts"
     },
     {
-      "branch_score": 5,
-      "loc": 29,
+      "branch_score": 14,
+      "loc": 44,
       "path": "apps/web/tests/fetchStub.ts"
     },
     {
-      "branch_score": 23,
-      "loc": 824,
+      "branch_score": 25,
+      "loc": 912,
       "path": "apps/web/tests/frontend-surface-runner.test.mjs"
     },
     {
       "branch_score": 6,
       "loc": 16,
       "path": "apps/web/tests/frontendSemanticOwner.test.ts"
+    },
+    {
+      "branch_score": 4,
+      "loc": 43,
+      "path": "apps/web/tests/guidanceGroups.test.tsx"
+    },
+    {
+      "branch_score": 1,
+      "loc": 21,
+      "path": "apps/web/tests/lazyAnswerAnnouncement.test.tsx"
     },
     {
       "branch_score": 7,
@@ -427,7 +567,7 @@
     },
     {
       "branch_score": 0,
-      "loc": 77,
+      "loc": 81,
       "path": "apps/web/tests/liveDataStatus.test.tsx"
     },
     {
@@ -436,9 +576,24 @@
       "path": "apps/web/tests/liveMapPopup.test.tsx"
     },
     {
+      "branch_score": 6,
+      "loc": 128,
+      "path": "apps/web/tests/liveMapPresentation.test.tsx"
+    },
+    {
       "branch_score": 2,
       "loc": 93,
       "path": "apps/web/tests/liveResultPresentation.test.ts"
+    },
+    {
+      "branch_score": 2,
+      "loc": 15,
+      "path": "apps/web/tests/localBrowserOrigin.test.ts"
+    },
+    {
+      "branch_score": 8,
+      "loc": 10,
+      "path": "apps/web/tests/localBrowserOrigin.ts"
     },
     {
       "branch_score": 0,
@@ -446,9 +601,49 @@
       "path": "apps/web/tests/mapClustering.test.ts"
     },
     {
+      "branch_score": 3,
+      "loc": 32,
+      "path": "apps/web/tests/mapGeometryRefresh.test.tsx"
+    },
+    {
+      "branch_score": 2,
+      "loc": 73,
+      "path": "apps/web/tests/mapNavigationReset.test.ts"
+    },
+    {
+      "branch_score": 21,
+      "loc": 176,
+      "path": "apps/web/tests/mapRefresh.test.tsx"
+    },
+    {
+      "branch_score": 0,
+      "loc": 42,
+      "path": "apps/web/tests/mapSelectionRefresh.test.ts"
+    },
+    {
+      "branch_score": 0,
+      "loc": 25,
+      "path": "apps/web/tests/mapViewportRefresh.test.tsx"
+    },
+    {
+      "branch_score": 11,
+      "loc": 109,
+      "path": "apps/web/tests/productExperience.test.tsx"
+    },
+    {
+      "branch_score": 3,
+      "loc": 80,
+      "path": "apps/web/tests/productIntegrationV2.test.tsx"
+    },
+    {
       "branch_score": 26,
       "loc": 1176,
       "path": "apps/web/tests/proofCards.test.tsx"
+    },
+    {
+      "branch_score": 2,
+      "loc": 73,
+      "path": "apps/web/tests/quoteAttribution.test.tsx"
     },
     {
       "branch_score": 1,
@@ -456,23 +651,28 @@
       "path": "apps/web/tests/raw-modules.d.ts"
     },
     {
+      "branch_score": 3,
+      "loc": 80,
+      "path": "apps/web/tests/readableAnswer.test.tsx"
+    },
+    {
       "branch_score": 45,
       "loc": 240,
       "path": "apps/web/tests/reality/product-reality.spec.ts"
     },
     {
-      "branch_score": 6,
-      "loc": 94,
+      "branch_score": 7,
+      "loc": 103,
       "path": "apps/web/tests/sessionLifecycle.test.ts"
     },
     {
       "branch_score": 0,
-      "loc": 125,
+      "loc": 126,
       "path": "apps/web/tests/sessionMap.test.ts"
     },
     {
-      "branch_score": 0,
-      "loc": 1,
+      "branch_score": 1,
+      "loc": 7,
       "path": "apps/web/tests/setup.ts"
     },
     {
@@ -482,13 +682,28 @@
     },
     {
       "branch_score": 1,
-      "loc": 31,
+      "loc": 77,
       "path": "apps/web/tests/sourceRevision.test.tsx"
     },
     {
+      "branch_score": 2,
+      "loc": 49,
+      "path": "apps/web/tests/surface-identity.test.mjs"
+    },
+    {
+      "branch_score": 0,
+      "loc": 24,
+      "path": "apps/web/tests/surface-layout.test.mjs"
+    },
+    {
       "branch_score": 8,
-      "loc": 84,
+      "loc": 86,
       "path": "apps/web/tests/tooling-config.test.mjs"
+    },
+    {
+      "branch_score": 0,
+      "loc": 21,
+      "path": "apps/web/tests/useProvinceMap.test.ts"
     },
     {
       "branch_score": 11,
@@ -3117,431 +3332,501 @@
     }
   ],
   "schema_version": "firelens.complexity.v1",
-  "source_digest": "27b7939a30bb3111c5107211b14c3b6345fa6506c4341df1139b3e41c45938c9",
+  "source_digest": "b34233de1afb1e422105315fb54580f95628d4c8e73af84e270fb51522bbdfb2",
   "symbols": [
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::browserContextConfiguration:578",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::browserContextConfiguration:627",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::buildIdentity:2906",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::buildIdentity:3021",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::canonicalApiRequestRecord:377",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::canonicalApiRequestRecord:421",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::canonicalHttpUrl:608",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::canonicalHttpUrl:657",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::canonicalRequestUrl:590",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::canonicalRequestUrl:639",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::captureSurfaceRow:1447",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::captureFailureArtifact:1719",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::classifyConsoleErrors:1362",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::captureSurfaceRow:1546",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::collectRuntimeSignals:1285",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::classifyConsoleErrors:1461",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::configurePerformancePage:2161",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::collectRuntimeSignals:1383",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::configuredExecutionRunProfiles:2944",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::configurePerformancePage:2276",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::contiguousDomIndices:787",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::configuredExecutionRunProfiles:3059",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::derivePrivacyEvidence:1849",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::contiguousDomIndices:884",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::deriveRequestEvidence:1328",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::derivePrivacyEvidence:1964",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::driveState:744",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::deriveRequestEvidence:1426",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::exactPartition:791",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::driveState:835",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::executionEnvironment:2983",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::exactPartition:888",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedMapResponseDetails:768",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::executionEnvironment:3098",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedMapResponseRecordIds:764",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedMapResponseDetails:865",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedMapResponseRecords:757",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedMapResponseRecordIds:861",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedPairs:2378",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedMapResponseRecords:854",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::fileSha256:399",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::expectedPairs:2493",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::fixtureForQuestion:622",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::fileSha256:443",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::gitCommit:2898",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::fixtureForQuestion:671",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::hasExactKeys:3013",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::gitCommit:3013",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::historyJourney:2073",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::hasExactKeys:3128",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::initialApplicableMapEvidence:920",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::historyJourney:2188",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::inspectLayoutAndCss:1149",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::initialApplicableMapEvidence:1017",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::inspectMapEvidence:965",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::inspectLayoutAndCss:1246",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::inspectPrivacyBrowserSurfaces:1691",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::inspectMapEvidence:1062",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::installDeterministicRoutes:640",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::inspectPrivacyBrowserSurfaces:1806",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::isQualificationTimeoutMessage:97",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::installDeterministicRoutes:689",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::keyboardJourney:1642",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::isCurrentSurfaceProtocol:376",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::loadProtocol:410",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::isQualificationTimeoutMessage:103",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::main:3140",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::keyboardJourney:1757",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::newJourneyPage:1632",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::loadProtocol:454",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::normalizedText:2916",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::main:3261",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::notApplicableMapEvidence:900",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::newJourneyPage:1747",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::npmVersion:2978",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::normalizedText:3031",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openOfficialMapContext:722",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::notApplicableMapEvidence:997",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openTechnicalEvidenceContext:737",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::npmVersion:3093",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::p75NearestRank:2153",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openOfficialMapContext:791",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::parseArguments:549",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openSurfaceComposer:777",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::performanceSample:2223",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openSurfaceSources:784",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::privacyJourney:1989",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::openTechnicalEvidenceContext:807",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeAxeImpactCounts:2398",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::p75NearestRank:2268",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeMapDetailIntegrity:804",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::parseArguments:598",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeMapListParity:873",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::performanceSample:2338",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeMarkerPlacementSanity:848",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::privacyJourney:2104",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputePerformanceProfile:2602",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeAxeImpactCounts:2513",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::relativeArtifact:1442",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeMapDetailIntegrity:901",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::requestOrigin:615",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeMapListParity:970",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::requiresOnDemandMapContext:345",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputeMarkerPlacementSanity:945",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::resolveUniqueRecord:954",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::recomputePerformanceProfile:2717",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runAxe:1103",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::relativeArtifact:1541",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runFunctionalJourneys:2120",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::requestOrigin:664",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runPerformance:2365",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::requiresOnDemandMapContext:390",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runPerformanceProfile:2287",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::resolveUniqueRecord:1051",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runSurfaceMatrix:1614",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runAxe:1200",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::sameExactRoster:777",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runFunctionalJourneys:2235",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::sha256Bytes:359",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runPerformance:2480",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::stableJson:363",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runPerformanceProfile:2402",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::stableJsonString:373",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::runSurfaceMatrix:1728",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::startPreview:3096",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::sameExactRoster:874",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::stopPreview:3122",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::sha256Bytes:403",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::strictObject:403",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::stableJson:407",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceChecks:1390",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::stableJsonString:417",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceMatrixComplete:2384",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::startPreview:3211",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceReadyTextCoverageIssues:349",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::stopPreview:3243",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::tokenMatchFindings:1830",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::strictObject:447",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::unthrottledRunProfile:2933",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceChecks:1489",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateAxeEvidence:2407",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceMatrixComplete:2499",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateExecutionEnvironment:3022",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceProtocolSuccessorIssues:380",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateFunctionalJourneys:2570",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::surfaceReadyTextCoverageIssues:392",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateMapEvidence:2702",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::tokenMatchFindings:1945",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validatePerformance:2632",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::unthrottledRunProfile:3048",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validatePrivacyJourney:2527",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateAxeEvidence:2522",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateReportStructure:2820",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateExecutionEnvironment:3137",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateRequestRuntime:2453",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateFunctionalJourneys:2685",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::viewportExecutionProfile:2920",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateMapEvidence:2817",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForPreview:3079",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validatePerformance:2747",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForText:718",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validatePrivacyJourney:2642",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::withQualificationTimeout:70",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateReportStructure:2935",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/scripts/qualify-frontend-surface.mjs::writeReport:3131",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::validateRequestRuntime:2568",
       "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/app/App.tsx::App:39",
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::viewportExecutionProfile:3035",
+      "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForCurrentAnswer:817",
+      "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForPreview:3194",
+      "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForSurfaceHome:828",
+      "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::waitForText:773",
+      "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::withQualificationTimeout:76",
+      "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/qualify-frontend-surface.mjs::writeReport:3252",
+      "module_path": "apps/web/scripts/qualify-frontend-surface.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/surface-identity.mjs::assertPreviewPortAvailable:41",
+      "module_path": "apps/web/scripts/surface-identity.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/surface-identity.mjs::assertSurfaceIdentityUnchanged:33",
+      "module_path": "apps/web/scripts/surface-identity.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/surface-identity.mjs::captureSurfaceIdentity:18",
+      "module_path": "apps/web/scripts/surface-identity.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/scripts/surface-identity.mjs::fileInventory:9",
+      "module_path": "apps/web/scripts/surface-identity.mjs"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/app/App.tsx::App:35",
       "module_path": "apps/web/src/app/App.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/app/ContextChips.tsx::ContextChips:46",
+      "id": "apps/web/src/app/AtlasHeader.tsx::AtlasHeader:5",
+      "module_path": "apps/web/src/app/AtlasHeader.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/app/AtlasHome.tsx::AtlasHome:7",
+      "module_path": "apps/web/src/app/AtlasHome.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/app/AtlasQuestion.tsx::AtlasQuestion:6",
+      "module_path": "apps/web/src/app/AtlasQuestion.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/app/ContextChips.tsx::ContextChips:50",
       "module_path": "apps/web/src/app/ContextChips.tsx"
     },
     {
@@ -3556,7 +3841,7 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/app/LiveDataStatus.tsx::LiveDataStatus:29",
+      "id": "apps/web/src/app/LiveDataStatus.tsx::LiveDataStatus:32",
       "module_path": "apps/web/src/app/LiveDataStatus.tsx"
     },
     {
@@ -3571,17 +3856,12 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/app/OfficialSourcesCard.tsx::OfficialSourcesCard:6",
-      "module_path": "apps/web/src/app/OfficialSourcesCard.tsx"
-    },
-    {
-      "branch_score": 0,
       "id": "apps/web/src/app/ProductSidebar.tsx::ProductSidebar:9",
       "module_path": "apps/web/src/app/ProductSidebar.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/app/ProductSidebar.tsx::deriveRecentQuestions:108",
+      "id": "apps/web/src/app/ProductSidebar.tsx::deriveRecentQuestions:96",
       "module_path": "apps/web/src/app/ProductSidebar.tsx"
     },
     {
@@ -3616,12 +3896,17 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/AnswerBody.tsx::AnswerBody:13",
+      "id": "apps/web/src/features/ask/AnswerActions.tsx::AnswerActions:8",
+      "module_path": "apps/web/src/features/ask/AnswerActions.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/ask/AnswerBody.tsx::AnswerBody:15",
       "module_path": "apps/web/src/features/ask/AnswerBody.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/AnswerBody.tsx::QuoteOnlyAnswer:134",
+      "id": "apps/web/src/features/ask/AnswerBody.tsx::QuoteOnlyAnswer:172",
       "module_path": "apps/web/src/features/ask/AnswerBody.tsx"
     },
     {
@@ -3661,7 +3946,7 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/AskStartPanel.tsx::AskStartPanel:55",
+      "id": "apps/web/src/features/ask/AskStartPanel.tsx::AskStartPanel:51",
       "module_path": "apps/web/src/features/ask/AskStartPanel.tsx"
     },
     {
@@ -3696,7 +3981,12 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/ConversationPanel.tsx::ConversationPanel:23",
+      "id": "apps/web/src/features/ask/ConversationExtras.tsx::ConversationExtras:6",
+      "module_path": "apps/web/src/features/ask/ConversationExtras.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/ask/ConversationPanel.tsx::ConversationPanel:25",
       "module_path": "apps/web/src/features/ask/ConversationPanel.tsx"
     },
     {
@@ -3751,12 +4041,12 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::LiveSourceLine:252",
+      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::LiveSourceLine:256",
       "module_path": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::RecordRow:221",
+      "id": "apps/web/src/features/ask/LiveAnswerSummary.tsx::RecordRow:223",
       "module_path": "apps/web/src/features/ask/LiveAnswerSummary.tsx"
     },
     {
@@ -3806,27 +4096,37 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/SourceProof.tsx::SourceProof:78",
+      "id": "apps/web/src/features/ask/SourceProof.tsx::SourceDocument:119",
       "module_path": "apps/web/src/features/ask/SourceProof.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/SourceProof.tsx::SourceRevision:135",
+      "id": "apps/web/src/features/ask/SourceProof.tsx::SourceProof:96",
       "module_path": "apps/web/src/features/ask/SourceProof.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/SourceProof.tsx::reviewedSources:39",
+      "id": "apps/web/src/features/ask/SourceProof.tsx::SourceRevision:131",
       "module_path": "apps/web/src/features/ask/SourceProof.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/SourceProof.tsx::trimExcerpt:27",
+      "id": "apps/web/src/features/ask/SourceProof.tsx::reviewedSources:40",
       "module_path": "apps/web/src/features/ask/SourceProof.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/StatusBanner.tsx::ProofCard:47",
+      "id": "apps/web/src/features/ask/SourceProof.tsx::sourcesForQuote:86",
+      "module_path": "apps/web/src/features/ask/SourceProof.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/ask/SourceProof.tsx::trimExcerpt:28",
+      "module_path": "apps/web/src/features/ask/SourceProof.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/ask/StatusBanner.tsx::ProofCard:49",
       "module_path": "apps/web/src/features/ask/StatusBanner.tsx"
     },
     {
@@ -3838,6 +4138,31 @@
       "branch_score": 0,
       "id": "apps/web/src/features/ask/abstentionPresentation.ts::abstentionPresentation:52",
       "module_path": "apps/web/src/features/ask/abstentionPresentation.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/ask/answerActionPresentation.ts::copiedPassageSources:147",
+      "module_path": "apps/web/src/features/ask/answerActionPresentation.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/ask/answerActionPresentation.ts::explainAnswer:47",
+      "module_path": "apps/web/src/features/ask/answerActionPresentation.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/ask/answerActionPresentation.ts::formatAnswerForCopy:162",
+      "module_path": "apps/web/src/features/ask/answerActionPresentation.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/ask/answerActionPresentation.ts::suppliedTimestamp:42",
+      "module_path": "apps/web/src/features/ask/answerActionPresentation.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/ask/answerActionPresentation.ts::unique:37",
+      "module_path": "apps/web/src/features/ask/answerActionPresentation.ts"
     },
     {
       "branch_score": 0,
@@ -3878,6 +4203,11 @@
       "branch_score": 0,
       "id": "apps/web/src/features/ask/conversationAnnouncements.ts::announcementForState:5",
       "module_path": "apps/web/src/features/ask/conversationAnnouncements.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/ask/guidanceGroups.ts::guidanceGroups:7",
+      "module_path": "apps/web/src/features/ask/guidanceGroups.ts"
     },
     {
       "branch_score": 0,
@@ -4056,6 +4386,11 @@
     },
     {
       "branch_score": 0,
+      "id": "apps/web/src/features/ask/readableAnswer.ts::readableAnswer:4",
+      "module_path": "apps/web/src/features/ask/readableAnswer.ts"
+    },
+    {
+      "branch_score": 0,
       "id": "apps/web/src/features/ask/responseModeBadge.tsx::ResponseModeBadge:6",
       "module_path": "apps/web/src/features/ask/responseModeBadge.tsx"
     },
@@ -4071,12 +4406,12 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/roster.ts::nextRoster:17",
+      "id": "apps/web/src/features/ask/roster.ts::nextRoster:18",
       "module_path": "apps/web/src/features/ask/roster.ts"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/sessionMap.ts::deriveSessionMapView:25",
+      "id": "apps/web/src/features/ask/sessionMap.ts::deriveSessionMapView:34",
       "module_path": "apps/web/src/features/ask/sessionMap.ts"
     },
     {
@@ -4086,28 +4421,38 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/useFireLensSession.ts::currentSummaryText:409",
+      "id": "apps/web/src/features/ask/sessionMap.ts::latestObservation:15",
+      "module_path": "apps/web/src/features/ask/sessionMap.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/ask/useFireLensSession.ts::currentSummaryText:455",
       "module_path": "apps/web/src/features/ask/useFireLensSession.ts"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/ask/useFireLensSession.ts::useFireLensSession:77",
+      "id": "apps/web/src/features/ask/useFireLensSession.ts::useFireLensSession:82",
       "module_path": "apps/web/src/features/ask/useFireLensSession.ts"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/evidence/EvidencePanel.tsx::EvidencePanel:57",
+      "id": "apps/web/src/features/evidence/EvidencePanel.tsx::EvidencePanel:58",
       "module_path": "apps/web/src/features/evidence/EvidencePanel.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/evidence/EvidencePanel.tsx::selectedClaimFooter:43",
+      "id": "apps/web/src/features/evidence/EvidencePanel.tsx::selectedClaimFooter:44",
       "module_path": "apps/web/src/features/evidence/EvidencePanel.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/evidence/EvidencePanel.tsx::selectedClaimHeading:29",
+      "id": "apps/web/src/features/evidence/EvidencePanel.tsx::selectedClaimHeading:30",
       "module_path": "apps/web/src/features/evidence/EvidencePanel.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/evidence/OfficialSourcesCard.tsx::OfficialSourcesCard:6",
+      "module_path": "apps/web/src/features/evidence/OfficialSourcesCard.tsx"
     },
     {
       "branch_score": 0,
@@ -4166,6 +4511,21 @@
     },
     {
       "branch_score": 0,
+      "id": "apps/web/src/features/near-me/AnswerMapScope.tsx::AnswerMapScope:13",
+      "module_path": "apps/web/src/features/near-me/AnswerMapScope.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/near-me/AnswerMapScope.tsx::answerMapScope:4",
+      "module_path": "apps/web/src/features/near-me/AnswerMapScope.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/near-me/AtlasLiveMap.tsx::AtlasLiveMap:18",
+      "module_path": "apps/web/src/features/near-me/AtlasLiveMap.tsx"
+    },
+    {
+      "branch_score": 0,
       "id": "apps/web/src/features/near-me/ClusteredPointMarkers.tsx::ClusteredPointMarkers:20",
       "module_path": "apps/web/src/features/near-me/ClusteredPointMarkers.tsx"
     },
@@ -4191,17 +4551,22 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/near-me/LiveMap.tsx::LiveMap:26",
+      "id": "apps/web/src/features/near-me/LiveMap.tsx::LiveMap:28",
       "module_path": "apps/web/src/features/near-me/LiveMap.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/near-me/LiveRecordLists.tsx::MatchingRecordList:73",
+      "id": "apps/web/src/features/near-me/LiveMapCoverage.tsx::LiveMapCoverage:5",
+      "module_path": "apps/web/src/features/near-me/LiveMapCoverage.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/near-me/LiveRecordLists.tsx::MatchingRecordList:75",
       "module_path": "apps/web/src/features/near-me/LiveRecordLists.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/near-me/LiveRecordLists.tsx::ProvinceRecordList:126",
+      "id": "apps/web/src/features/near-me/LiveRecordLists.tsx::ProvinceRecordList:130",
       "module_path": "apps/web/src/features/near-me/LiveRecordLists.tsx"
     },
     {
@@ -4221,7 +4586,7 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/near-me/MapLayerFilters.tsx::filterMapResults:76",
+      "id": "apps/web/src/features/near-me/MapLayerFilters.tsx::filterMapResults:87",
       "module_path": "apps/web/src/features/near-me/MapLayerFilters.tsx"
     },
     {
@@ -4236,6 +4601,21 @@
     },
     {
       "branch_score": 0,
+      "id": "apps/web/src/features/near-me/MapRefreshStatus.tsx::HistoricalMapRecords:68",
+      "module_path": "apps/web/src/features/near-me/MapRefreshStatus.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/near-me/MapRefreshStatus.tsx::MapRefreshStatus:33",
+      "module_path": "apps/web/src/features/near-me/MapRefreshStatus.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/src/features/near-me/MapRefreshStatus.tsx::mapSnapshotAge:18",
+      "module_path": "apps/web/src/features/near-me/MapRefreshStatus.tsx"
+    },
+    {
+      "branch_score": 0,
       "id": "apps/web/src/features/near-me/MapScope.tsx::MapScope:1",
       "module_path": "apps/web/src/features/near-me/MapScope.tsx"
     },
@@ -4246,12 +4626,12 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/near-me/OfficialBasemap.tsx::OfficialBasemap:17",
+      "id": "apps/web/src/features/near-me/OfficialBasemap.tsx::OfficialBasemap:27",
       "module_path": "apps/web/src/features/near-me/OfficialBasemap.tsx"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/near-me/OfficialBasemap.tsx::TileFailureWarning:8",
+      "id": "apps/web/src/features/near-me/OfficialBasemap.tsx::TileFailureWarning:18",
       "module_path": "apps/web/src/features/near-me/OfficialBasemap.tsx"
     },
     {
@@ -4376,7 +4756,7 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/src/features/near-me/useProvinceMap.ts::useProvinceMap:14",
+      "id": "apps/web/src/features/near-me/useProvinceMap.ts::useProvinceMap:16",
       "module_path": "apps/web/src/features/near-me/useProvinceMap.ts"
     },
     {
@@ -4461,6 +4841,16 @@
     },
     {
       "branch_score": 0,
+      "id": "apps/web/tests/answerActions.test.tsx::guidance:15",
+      "module_path": "apps/web/tests/answerActions.test.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/answerActions.test.tsx::liveRecord:52",
+      "module_path": "apps/web/tests/answerActions.test.tsx"
+    },
+    {
+      "branch_score": 0,
       "id": "apps/web/tests/askStartPanel.test.tsx::renderPanel:18",
       "module_path": "apps/web/tests/askStartPanel.test.tsx"
     },
@@ -4471,8 +4861,93 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/e2e-real/astra.spec.ts::ask:39",
+      "id": "apps/web/tests/browserNavigation.ts::goHome:14",
+      "module_path": "apps/web/tests/browserNavigation.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/browserNavigation.ts::menuAction:21",
+      "module_path": "apps/web/tests/browserNavigation.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/browserNavigation.ts::openClaimDetails:54",
+      "module_path": "apps/web/tests/browserNavigation.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/browserNavigation.ts::openComposer:7",
+      "module_path": "apps/web/tests/browserNavigation.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/browserNavigation.ts::openMapRecords:42",
+      "module_path": "apps/web/tests/browserNavigation.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/browserNavigation.ts::openMatchingRecords:34",
+      "module_path": "apps/web/tests/browserNavigation.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/browserNavigation.ts::openSources:26",
+      "module_path": "apps/web/tests/browserNavigation.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/e2e-real/astra.spec.ts::ask:43",
       "module_path": "apps/web/tests/e2e-real/astra.spec.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/e2e-real/atlas-readiness.spec.ts::ask:14",
+      "module_path": "apps/web/tests/e2e-real/atlas-readiness.spec.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/e2e-real/atlas-readiness.spec.ts::recordAsks:25",
+      "module_path": "apps/web/tests/e2e-real/atlas-readiness.spec.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts::ask:41",
+      "module_path": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts::askWithExchange:50",
+      "module_path": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts::localOnly:22",
+      "module_path": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts::nonLocalExceptBlockedBasemap:37",
+      "module_path": "apps/web/tests/e2e-real/fullstack-atlas-v1.spec.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts::ask:41",
+      "module_path": "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts::askWithExchange:50",
+      "module_path": "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts::localOnly:22",
+      "module_path": "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts::nonLocalExceptBlockedBasemap:37",
+      "module_path": "apps/web/tests/e2e-real/fullstack-product-v2.spec.ts"
     },
     {
       "branch_score": 0,
@@ -4496,7 +4971,7 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/e2e-real/review-v2.spec.ts::ask:11",
+      "id": "apps/web/tests/e2e-real/review-v2.spec.ts::ask:15",
       "module_path": "apps/web/tests/e2e-real/review-v2.spec.ts"
     },
     {
@@ -4511,27 +4986,27 @@
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/frontend-surface-runner.test.mjs::completeReport:289",
+      "id": "apps/web/tests/frontend-surface-runner.test.mjs::completeReport:377",
       "module_path": "apps/web/tests/frontend-surface-runner.test.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/frontend-surface-runner.test.mjs::mapEvidenceForState:76",
+      "id": "apps/web/tests/frontend-surface-runner.test.mjs::mapEvidenceForState:164",
       "module_path": "apps/web/tests/frontend-surface-runner.test.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/frontend-surface-runner.test.mjs::performanceProfile:234",
+      "id": "apps/web/tests/frontend-surface-runner.test.mjs::performanceProfile:322",
       "module_path": "apps/web/tests/frontend-surface-runner.test.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/frontend-surface-runner.test.mjs::privacyEvidence:163",
+      "id": "apps/web/tests/frontend-surface-runner.test.mjs::privacyEvidence:251",
       "module_path": "apps/web/tests/frontend-surface-runner.test.mjs"
     },
     {
       "branch_score": 0,
-      "id": "apps/web/tests/frontend-surface-runner.test.mjs::requestEvent:150",
+      "id": "apps/web/tests/frontend-surface-runner.test.mjs::requestEvent:238",
       "module_path": "apps/web/tests/frontend-surface-runner.test.mjs"
     },
     {
@@ -4551,8 +5026,43 @@
     },
     {
       "branch_score": 0,
+      "id": "apps/web/tests/localBrowserOrigin.ts::localBrowserOrigin:2",
+      "module_path": "apps/web/tests/localBrowserOrigin.ts"
+    },
+    {
+      "branch_score": 0,
       "id": "apps/web/tests/mapClustering.test.ts::point:10",
       "module_path": "apps/web/tests/mapClustering.test.ts"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/mapRefresh.test.tsx::advance:14",
+      "module_path": "apps/web/tests/mapRefresh.test.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/mapRefresh.test.tsx::settle:13",
+      "module_path": "apps/web/tests/mapRefresh.test.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/mapRefresh.test.tsx::visibility:15",
+      "module_path": "apps/web/tests/mapRefresh.test.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/productIntegrationV2.test.tsx::ask:22",
+      "module_path": "apps/web/tests/productIntegrationV2.test.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/productIntegrationV2.test.tsx::setup:18",
+      "module_path": "apps/web/tests/productIntegrationV2.test.tsx"
+    },
+    {
+      "branch_score": 0,
+      "id": "apps/web/tests/quoteAttribution.test.tsx::response:19",
+      "module_path": "apps/web/tests/quoteAttribution.test.tsx"
     },
     {
       "branch_score": 0,
@@ -28077,6 +28587,16 @@
       "path": "src/firelens/live.py"
     },
     {
+      "branch_score": 101,
+      "loc": 463,
+      "path": "apps/web/src/features/ask/useFireLensSession.ts"
+    },
+    {
+      "branch_score": 95,
+      "loc": 217,
+      "path": "apps/web/src/features/ask/AnswerBody.tsx"
+    },
+    {
       "branch_score": 95,
       "loc": 612,
       "path": "src/firelens/review_workspace/journal.py"
@@ -28100,16 +28620,6 @@
       "branch_score": 90,
       "loc": 635,
       "path": "src/firelens/review_workspace/inputs.py"
-    },
-    {
-      "branch_score": 86,
-      "loc": 789,
-      "path": "src/firelens/answering/service.py"
-    },
-    {
-      "branch_score": 85,
-      "loc": 349,
-      "path": "src/firelens/publication/compiled_validation.py"
     }
   ],
   "top_production_by_loc": [

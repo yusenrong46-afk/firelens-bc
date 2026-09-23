@@ -10,6 +10,7 @@ export type Roster = {
   focus: { latitude: number; longitude: number } | undefined;
   unavailableLayers: string[];
   partialLayers?: string[];
+  observedAt?: string | undefined;
 };
 
 export const EMPTY_ROSTER: Roster = { results: [], focus: undefined, unavailableLayers: [] };
@@ -27,5 +28,6 @@ export function nextRoster(previous: Roster, response: AskResponse): Roster {
     focus: response.resolved_location ?? undefined,
     unavailableLayers: [...new Set(response.unavailable_layers ?? [])],
     partialLayers: [...new Set(response.partial_layers ?? [])],
+    observedAt: response.status_banner?.retrieval_completed_at ?? undefined,
   };
 }

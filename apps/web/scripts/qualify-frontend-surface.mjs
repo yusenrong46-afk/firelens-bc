@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { chromium } from "@playwright/test";
+import { captureSurfaceIdentity, assertSurfaceIdentityUnchanged, assertPreviewPortAvailable } from "./surface-identity.mjs";
 import sharp from "sharp";
 import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -15,7 +16,12 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const driverFrontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+// An evaluator bridge can inspect an unchanged application checkout. The driver
+// hash is recorded separately from the application and complete asset identity.
+const frontendRoot = process.env.FIRELENS_SURFACE_FRONTEND_ROOT
+  ? path.resolve(process.env.FIRELENS_SURFACE_FRONTEND_ROOT)
+  : driverFrontendRoot;
 const repositoryRoot = path.resolve(frontendRoot, "../..");
 const defaultProtocolPath = path.join(
   repositoryRoot,
@@ -333,22 +339,60 @@ export const surfaceStateReadyText = Object.freeze({
   partial_layer: "Official records returned",
 });
 
-// The product is deliberately chat-first. Only these answered live states
-// expose a map after the user explicitly asks for its context; reviewed
-// evidence likewise opens through the claim-level technical-evidence control.
+// Current navigation is separate from the unchanged provisional fixture protocol.
+// A map is already available beside ordinary answers; analysis retains its Map tab.
 export const surfaceInteractionContract = Object.freeze({
+  version: "atlas_answer_sheet_v1",
   map_state_ids: ["live", "mixed", "stale", "partial_layer"],
-  map_control_name: "View official map context",
+  map_control_name: "Map",
   evidence_control_name: "Review technical evidence",
+  composer_control_name: "Ask FireLens",
+  sources_disclosure: "details.sheet-sources",
 });
 
-export function requiresOnDemandMapContext(stateId) {
-  return surfaceInteractionContract.map_state_ids.includes(stateId);
+export const surfaceInteractionContractV2 = Object.freeze({
+  ...surfaceInteractionContract,
+  version: "task_reading_and_map_v2",
+  home_region_name: "Find wildfire information",
+  home_reset_name: "FireLens home",
+  map_required_only_for_nonempty_response_roster: true,
+});
+
+export const surfaceStateReadyTextV2 = Object.freeze({
+  idle: "Find wildfire information",
+  grounded: groundedResponse.answer,
+  partial: responseFixtures["surface:partial"].answer,
+  background: responseFixtures["surface:background"].answer,
+  requires_input: responseFixtures["surface:requires-location"].answer,
+  abstention: "Use the official BC Wildfire Service map for emergency direction.",
+  provider_failure: "We couldn't complete this question",
+  live: responseFixtures["surface:live-fresh"].answer,
+  mixed: responseFixtures["surface:mixed"].answer,
+  stale: responseFixtures["surface:live-stale"].answer,
+  no_result: "No matching record is not a safety determination.",
+  partial_layer: responseFixtures["surface:partial-layer"].answer,
+});
+
+function isCurrentSurfaceProtocol(protocol) {
+  return protocol?.protocol_id === "firelens_frontend_surface_v2";
 }
 
+export function surfaceProtocolSuccessorIssues(previous, successor) {
+  const expected = structuredClone(previous);
+  expected.protocol_id = "firelens_frontend_surface_v2";
+  expected.description = successor.description;
+  expected.states = expected.states.map(state => ({ ...state, ready_text: surfaceStateReadyTextV2[state.id] }));
+  expected.surface_thresholds.allowed_request_origins.push("https://tile.openstreetmap.org");
+  return stableJsonString(expected) === stableJsonString(successor)
+    ? [] : ["surface v2 changes exceed reviewed origin and readiness updates"];
+}
+
+export function requiresOnDemandMapContext() { return false; }
+
 export function surfaceReadyTextCoverageIssues(protocol) {
+  const readyText = isCurrentSurfaceProtocol(protocol) ? surfaceStateReadyTextV2 : surfaceStateReadyText;
   return protocol.states.flatMap((state) => {
-    const expected = surfaceStateReadyText[state.id];
+    const expected = readyText[state.id];
     if (typeof expected !== "string") return [`missing ready-text expectation ${state.id}`];
     return state.ready_text === expected
       ? []
@@ -418,6 +462,11 @@ export async function loadProtocol(protocolPath = defaultProtocolPath) {
     throw new Error(`frontend surface protocol must be JSON-compatible YAML: ${error}`);
   }
   strictObject(protocol, "frontend surface protocol");
+  if (isCurrentSurfaceProtocol(protocol)) {
+    const previous = JSON.parse(await readFile(path.join(driverFrontendRoot, "../../data/evaluation/frontend_surface.v1.yaml"), "utf8"));
+    const issues = surfaceProtocolSuccessorIssues(previous, protocol);
+    if (issues.length) throw new Error(issues.join("; "));
+  }
   if (protocol.schema_version !== "firelens.frontend_surface_protocol.v1") {
     throw new Error("unsupported frontend surface protocol schema");
   }
@@ -637,7 +686,13 @@ function fixtureForQuestion(question) {
   return { statusCode: 200, body };
 }
 
-async function installDeterministicRoutes(page) {
+export async function installDeterministicRoutes(page) {
+  // Freeze Date only at the unchanged fixture retrieval instant; timers still run.
+  await page.clock.setFixedTime(new Date("2026-08-06T12:00:00Z"));
+  // Status and telemetry are local deterministic transport fixtures, not paid providers.
+  await page.route("**/api/v1/product-events", route => route.fulfill({ status: 202, json: { accepted: true } }));
+  await page.route("**/api/v1/health/ready*", route => route.fulfill({ json: { status: "ready", release_version: "1.6.4" } }));
+  await page.route("**/api/v1/live/summary*", route => route.fulfill({ json: { incident_record_count: 0, evacuation_record_count: 0, retrieved_at: "2026-08-06T12:00:00Z", freshness: "fresh", limitation: "Deterministic surface transport fixture; not live official data." } }));
   const requestBodies = [];
   const apiRequestRecords = [];
   const expectedHttpFailures = [];
@@ -645,7 +700,7 @@ async function installDeterministicRoutes(page) {
   const loadingGate = new Promise((resolve) => {
     releaseLoading = resolve;
   });
-  await page.route("https://*.tile.openstreetmap.org/**", async (route) => {
+  await page.route(/^https:\/\/(?:[abc]\.)?tile\.openstreetmap\.org\//, async (route) => {
     // Qualification measures the application, not availability of the public
     // basemap CDN. Keep tile rendering deterministic while retaining the real
     // request origin in the network evidence roster.
@@ -719,39 +774,81 @@ async function waitForText(page, text) {
   await page.getByText(text, { exact: true }).first().waitFor({ state: "visible" });
 }
 
-async function openOfficialMapContext(page) {
-  const disclosure = page.getByRole("button", {
-    name: surfaceInteractionContract.map_control_name,
-  });
-  if (await disclosure.count()) {
-    await disclosure.click();
-  } else {
-    // Multi-record analytical answers expose Map as a workspace tab instead
-    // of duplicating the chat disclosure control.
+async function openSurfaceComposer(page) {
+  const input = page.locator('input[aria-label="Ask FireLens a question"]:visible');
+  if (!await input.count()) await page.getByRole("button", { name: "Ask FireLens", exact: true }).click();
+  await input.waitFor({ state: "visible" });
+  return input;
+}
+
+async function openSurfaceSources(page) {
+  const disclosure = page.locator("#conversation details.sheet-sources");
+  if (await disclosure.count() && !await disclosure.evaluate(node => node.open)) {
+    await disclosure.locator(":scope > summary").click();
+  }
+}
+
+export async function openOfficialMapContext(page, protocol) {
+  const map = page.getByRole("region", { name: "Official wildfire records map", exact: true });
+  // Both callers have already received an answer with expected map records.
+  // V2 mounts that answer's map lazily. Entering province view while the chunk
+  // loads would hide the answer and change the state under measurement.
+  if (!isCurrentSurfaceProtocol(protocol) && !await map.count()) {
     await page.getByRole("tab", { name: "Map", exact: true }).click();
   }
-  await page.getByRole("region", { name: "Official wildfire records map" }).waitFor();
+  await map.waitFor({ state: "visible" });
   await page.locator(".leaflet-container").waitFor();
+  const disclosure = map.locator("details.atlas-live-records");
+  if (await disclosure.count() && !await disclosure.evaluate(node => node.open)) await disclosure.locator(":scope > summary").click();
+  const remaining = map.getByRole("button", { name: /^Show (?:all|rest of B.C.)/ });
+  for (const button of await remaining.all()) if (await button.isVisible()) await button.click();
 }
 
 async function openTechnicalEvidenceContext(page) {
+  await openSurfaceSources(page);
+  const details = page.locator("#conversation details.answer-details");
+  if (await details.count() && !await details.evaluate(node => node.open)) await details.locator(":scope > summary").click();
   await page.getByRole("button", {
     name: new RegExp(`^${surfaceInteractionContract.evidence_control_name} for `),
   }).first().click();
   await page.locator("button.source-toggle").first().waitFor();
 }
 
-async function driveState(page, state) {
-  await page.goto("/", { waitUntil: "networkidle" });
-  if (state.question) {
-    await page.getByLabel("Ask FireLens a question").fill(state.question);
-    await page.getByLabel("Ask FireLens a question").press("Enter");
+async function waitForCurrentAnswer(page, question) {
+  const fixture = fixtureForQuestion(question);
+  if (fixture.statusCode !== 200) {
+    await page.getByText("We couldn't complete this question", { exact: true }).waitFor();
+  } else {
+    await page.locator("#conversation .assistant-message").waitFor({ state: "visible" });
+    if (fixture.body.answer) await page.locator("#conversation .answer-lead").filter({ hasText: fixture.body.answer }).waitFor();
+    await page.locator('input[aria-label="Ask FireLens a question"]:visible:not(:disabled)').waitFor();
   }
-  await waitForText(page, state.ready_text);
-  if (requiresOnDemandMapContext(state.id)) await openOfficialMapContext(page);
-  await page.evaluate(async () => {
-    if (document.fonts?.ready) await document.fonts.ready;
-  });
+}
+
+async function waitForSurfaceHome(page, protocol) {
+  if (isCurrentSurfaceProtocol(protocol)) {
+    await page.getByRole("main", { name: surfaceInteractionContractV2.home_region_name, exact: true }).waitFor();
+    await page.getByRole("link", { name: surfaceInteractionContractV2.home_reset_name, exact: true }).waitFor();
+  } else await page.getByLabel("BC community for a nearby lookup").waitFor();
+}
+
+export async function driveState(page, state, protocol) {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await waitForSurfaceHome(page, protocol);
+  if (state.question) {
+    const input = await openSurfaceComposer(page);
+    await input.fill(state.question);
+    await input.press("Enter");
+    await waitForCurrentAnswer(page, state.question);
+  }
+  if (requiredMapParityStateIds.includes(state.id)
+    && (!isCurrentSurfaceProtocol(protocol) || expectedMapResponseRecordIds(state).length > 0)) {
+    await openOfficialMapContext(page, protocol);
+  }
+  if (isCurrentSurfaceProtocol(protocol) && state.question) {
+    await page.locator("#conversation").getByText(state.ready_text, { exact: false }).first().waitFor();
+  }
+  await page.evaluate(async () => { if (document.fonts?.ready) await document.fonts.ready; });
 }
 
 function expectedMapResponseRecords(state) {
@@ -1146,13 +1243,14 @@ async function runAxe(page) {
   };
 }
 
-async function inspectLayoutAndCss(page, thresholds) {
+export async function inspectLayoutAndCss(page, thresholds) {
   return page.evaluate((limits) => {
     const visible = (element) => {
       const style = getComputedStyle(element);
       const rect = element.getBoundingClientRect();
       return (
-        style.display !== "none"
+        element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+        && style.display !== "none"
         && style.visibility !== "hidden"
         && Number.parseFloat(style.opacity || "1") > 0
         && rect.width > 0
@@ -1342,7 +1440,8 @@ export function deriveRequestEvidence(requestEvents, thresholds) {
   const directThirdPartyTileRequests = requestEvents.filter((event) => {
     if (!event.url) return false;
     try {
-      return new URL(event.url).hostname.endsWith(".tile.openstreetmap.org");
+      const hostname = new URL(event.url).hostname;
+      return hostname === "tile.openstreetmap.org" || hostname.endsWith(".tile.openstreetmap.org");
     } catch {
       return false;
     }
@@ -1444,7 +1543,7 @@ function relativeArtifact(file) {
   return relative.startsWith("..") ? file : relative.split(path.sep).join("/");
 }
 
-async function captureSurfaceRow({
+export async function captureSurfaceRow({
   browser,
   protocol,
   state,
@@ -1474,13 +1573,18 @@ async function captureSurfaceRow({
     await withQualificationTimeout(
       `${stateLabel} drive`,
       qualificationTimeouts.surfacePhaseMs,
-      () => driveState(page, state),
+      () => driveState(page, state, protocol),
     );
     mapEvidence = await withQualificationTimeout(
       `${stateLabel} map evidence`,
       qualificationTimeouts.surfacePhaseMs,
       () => inspectMapEvidence(page, state, protocol),
     );
+    // Capture the prepared state at a defined document origin. Interaction
+    // helpers may scroll to the record list; that incidental position must not
+    // make sticky headers obscure controls during the accessibility snapshot.
+    await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await withQualificationTimeout(
       `${stateLabel} network settle`,
       qualificationTimeouts.surfacePhaseMs,
@@ -1589,6 +1693,7 @@ async function captureSurfaceRow({
       status: "error",
       error: String(error?.stack ?? error),
       screenshot: null,
+      failure_artifact: await captureFailureArtifact(page, screenshotPath),
       axe: null,
       layout: null,
       map_evidence: mapEvidence,
@@ -1611,6 +1716,15 @@ async function captureSurfaceRow({
   return row;
 }
 
+async function captureFailureArtifact(page, screenshotPath) {
+  const artifact = { screenshot: null, screenshot_error: null, dom: `${screenshotPath}.html` };
+  try { await page.screenshot({ path: screenshotPath, fullPage: true, animations: "disabled", timeout: 5_000 }); artifact.screenshot = screenshotPath; }
+  catch (error) { artifact.screenshot_error = String(error); }
+  try { await writeFile(artifact.dom, await page.content()); }
+  catch (error) { artifact.dom_error = String(error); }
+  return artifact;
+}
+
 async function runSurfaceMatrix(browser, protocol, outputDirectory, baseUrl) {
   const rows = [];
   for (const state of protocol.states) {
@@ -1624,6 +1738,7 @@ async function runSurfaceMatrix(browser, protocol, outputDirectory, baseUrl) {
         baseUrl,
       });
       rows.push(row);
+      await writeFile(path.join(outputDirectory, "surface-progress.json"), JSON.stringify(rows, null, 2));
     }
   }
   return rows;
@@ -1646,11 +1761,11 @@ async function keyboardJourney(browser, protocol, baseUrl) {
   const errors = [];
   try {
     await page.goto("/", { waitUntil: "networkidle" });
-    const input = page.getByLabel("Ask FireLens a question");
+    const input = await openSurfaceComposer(page);
     await input.fill("surface:grounded");
     await input.press("Enter");
     checks.question_submitted_with_enter = true;
-    await waitForText(page, "Answer evidence and support");
+    await waitForCurrentAnswer(page, "surface:grounded");
     checks.grounded_answer_visible = true;
     await openTechnicalEvidenceContext(page);
     const toggle = page.locator("button.source-toggle").first();
@@ -2015,15 +2130,15 @@ async function privacyJourney(browser, protocol, baseUrl) {
     const geolocationBeforeOptIn = await page.evaluate(
       () => window.__surfaceGeolocationCalls,
     );
-    await page.getByLabel("Ask FireLens a question").fill("surface:requires-location");
+    await (await openSurfaceComposer(page)).fill("surface:requires-location");
     await page.getByLabel("Ask FireLens a question").press("Enter");
-    await waitForText(page, "One detail needed");
+    await waitForCurrentAnswer(page, "surface:requires-location");
     await page.getByRole("button", { name: "Use approximate location" }).click();
     await waitForText(page, "Approximate location ready for this conversation.");
     const geolocationAfterOptIn = await page.evaluate(
       () => window.__surfaceGeolocationCalls,
     );
-    await waitForText(page, "Analysis view");
+    await waitForCurrentAnswer(page, "surface:live-fresh");
     await page.waitForLoadState("networkidle");
     const browserSurfaces = await inspectPrivacyBrowserSurfaces(
       page,
@@ -2082,23 +2197,23 @@ async function historyJourney(browser, protocol, baseUrl) {
   const errors = [];
   try {
     await page.goto("/", { waitUntil: "networkidle" });
-    const input = page.getByLabel("Ask FireLens a question");
+    const input = await openSurfaceComposer(page);
     await input.fill("surface:grounded");
     await input.press("Enter");
-    await waitForText(page, "Answer evidence and support");
+    await waitForCurrentAnswer(page, "surface:grounded");
     await input.fill("surface:background");
     await input.press("Enter");
-    await waitForText(
-      page,
-      "General model knowledge · not checked against FireLens sources",
-    );
+    await waitForCurrentAnswer(page, "surface:background");
+    await openSurfaceSources(page);
     checks.bounded_history_sent = routes.requestBodies[1]?.history?.length === 2;
-    await page.getByLabel("Clear conversation history").click();
-    await waitForText(page, "Ask about a fire, a B.C. place, or preparedness.");
+    if (isCurrentSurfaceProtocol(protocol)) {
+      await page.getByRole("link", { name: surfaceInteractionContractV2.home_reset_name, exact: true }).click();
+    } else await page.getByLabel("Clear conversation history").click();
+    await waitForSurfaceHome(page, protocol);
     checks.clear_returns_idle = true;
-    await input.fill("surface:capability");
+    await (await openSurfaceComposer(page)).fill("surface:capability");
     await input.press("Enter");
-    await waitForText(page, "FireLens topics");
+    await waitForCurrentAnswer(page, "surface:capability");
     checks.next_request_history_empty = routes.requestBodies[2]?.history?.length === 0;
   } catch (error) {
     errors.push(String(error?.stack ?? error));
@@ -2117,7 +2232,7 @@ async function historyJourney(browser, protocol, baseUrl) {
   };
 }
 
-async function runFunctionalJourneys(browser, protocol, baseUrl) {
+export async function runFunctionalJourneys(browser, protocol, baseUrl) {
   const captureJourney = async (id, operation) => {
     try {
       return await withQualificationTimeout(
@@ -2247,15 +2362,15 @@ async function performanceSample(
   try {
     await configurePerformancePage(page, protocol);
     await page.goto("/", { waitUntil: "networkidle" });
-    await waitForText(page, "Ask about a fire, a B.C. place, or preparedness.");
+    await waitForSurfaceHome(page, protocol);
     await page.waitForTimeout(250);
     const beforeInteraction = await page.evaluate(() => ({ ...window.__surfaceVitals }));
-    const input = page.getByLabel("Ask FireLens a question");
+    const input = await openSurfaceComposer(page);
     await input.fill(performanceQuestion);
     await input.press("Enter");
-    await waitForText(page, "Analysis view");
+    await waitForCurrentAnswer(page, "surface:live-fresh");
     const interactionStarted = await page.evaluate(() => performance.now());
-    await openOfficialMapContext(page);
+    await openOfficialMapContext(page, protocol);
     await page.locator(".leaflet-interactive").first().waitFor();
     await page.waitForFunction(
       () => Number.isFinite(window.__surfaceVitals.inp_interaction_proxy_ms),
@@ -2362,7 +2477,7 @@ async function runPerformanceProfile(browser, protocol, viewport, baseUrl) {
   };
 }
 
-async function runPerformance(browser, protocol, baseUrl) {
+export async function runPerformance(browser, protocol, baseUrl) {
   const profiles = [];
   for (const profileId of protocol.performance.profiles) {
     const viewport = protocol.viewports.find((item) => item.id === profileId);
@@ -3084,7 +3199,7 @@ async function waitForPreview(baseUrl, server, logs) {
     }
     try {
       const response = await fetch(baseUrl);
-      if (response.ok) return;
+      if (response.ok && logs.some(entry => entry.includes(baseUrl))) return;
     } catch {
       // Retry until the bounded deadline.
     }
@@ -3094,6 +3209,7 @@ async function waitForPreview(baseUrl, server, logs) {
 }
 
 async function startPreview(baseUrl) {
+  await assertPreviewPortAvailable(baseUrl);
   const parsed = new URL(baseUrl);
   const viteBin = path.join(frontendRoot, "node_modules/vite/bin/vite.js");
   const logs = [];
@@ -3115,8 +3231,13 @@ async function startPreview(baseUrl) {
       if (logs.length > 50) logs.shift();
     });
   }
-  await waitForPreview(baseUrl, server, logs);
-  return server;
+  try {
+    await waitForPreview(baseUrl, server, logs);
+    return server;
+  } catch (error) {
+    await stopPreview(server);
+    throw error;
+  }
 }
 
 async function stopPreview(server) {
@@ -3141,10 +3262,15 @@ async function main() {
   const options = parseArguments(process.argv.slice(2));
   const protocol = await loadProtocol(options.protocolPath);
   await readFile(path.join(frontendRoot, "dist/client/index.html"));
-  const server = await startPreview(options.baseUrl);
-  const browser = await chromium.launch({ headless: true });
+  await mkdir(options.outputDirectory, { recursive: true });
+  const identityBefore = await captureSurfaceIdentity(repositoryRoot, path.join(frontendRoot, "dist/client"));
+  await writeFile(path.join(options.outputDirectory, "identity-before.json"), JSON.stringify(identityBefore, null, 2));
+  let server;
+  let browser;
   let report;
   try {
+    server = await startPreview(options.baseUrl);
+    browser = await chromium.launch({ headless: true });
     await withQualificationTimeout(
       "qualification campaign",
       qualificationTimeouts.campaignMs,
@@ -3168,6 +3294,13 @@ async function main() {
           protocol_sha256: await fileSha256(options.protocolPath),
           protocol_status: protocol.status,
           protocol_frozen_at: protocol.frozen_at,
+          interaction_driver: {
+            ...(isCurrentSurfaceProtocol(protocol) ? surfaceInteractionContractV2 : surfaceInteractionContract),
+            driver_sha256: await fileSha256(fileURLToPath(import.meta.url)),
+            application_frontend_root: frontendRoot,
+            fixture_clock: "2026-08-06T12:00:00Z",
+            clock_scope: "Date only; browser timers continue. Fixture payloads and protocol thresholds unchanged.",
+          },
           base_url: options.baseUrl,
           execution_environment: await executionEnvironment(protocol, browser),
           browser: {
@@ -3179,6 +3312,9 @@ async function main() {
           functional_journeys: functionalJourneys,
           performance,
         };
+        const identityAfter = await captureSurfaceIdentity(repositoryRoot, path.join(frontendRoot, "dist/client"));
+        await writeFile(path.join(options.outputDirectory, "identity-after.json"), JSON.stringify(identityAfter, null, 2));
+        assertSurfaceIdentityUnchanged(identityBefore, identityAfter);
         const structureIssues = validateReportStructure(report, protocol);
         const matrixComplete = surfaceMatrixComplete(surfaceRows, protocol);
         const surfaceQualified = matrixComplete && surfaceRows.every((row) => row.qualified);
@@ -3208,9 +3344,12 @@ async function main() {
         }, null, 2)}\n`);
       },
     );
+  } catch (error) {
+    await writeFile(path.join(options.outputDirectory, "campaign-failure.json"), JSON.stringify({ qualified: false, error: String(error?.stack ?? error), identity_before: identityBefore, partial_report: report ?? null }, null, 2));
+    throw error;
   } finally {
-    await browser.close();
-    await stopPreview(server);
+    await browser?.close();
+    if (server) await stopPreview(server);
   }
   if (report) process.exitCode = report.summary.qualified ? 0 : 2;
 }

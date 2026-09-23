@@ -35,6 +35,8 @@ export function ClusteredPointMarkers({
   useEffect(() => {
     const onZoom = () => setZoom(map.getZoom());
     map.on("zoomend", onZoom);
+    // FitResults can update the initial viewport before this effect subscribes.
+    onZoom();
     return () => {
       map.off("zoomend", onZoom);
     };

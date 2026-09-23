@@ -1,0 +1,104 @@
+.live-map .live-map__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.live-map .live-map__heading > div { min-width: 0; }
+.live-map .live-map__heading span {
+  color: var(--slate, #586b77);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .07em;
+}
+.live-map .live-map__heading h1,
+.live-map .live-map__heading h2 {
+  margin: 5px 0 0;
+  color: var(--ink);
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -.025em;
+}
+.live-map .live-map__heading h2 { font-size: 25px; }
+.live-map .live-map__location { margin: 7px 0 0; color: var(--ink-soft); font-size: 13px; }
+.live-map__expand {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 8px 10px;
+  color: var(--pacific-blue, #205b66);
+  background: transparent;
+  border: 1px solid var(--divider, #d5dfe0);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.live-map .live-map__filter-row button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  font-size: 13px;
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+.live-map__layer-dot { width: 7px; height: 7px; border-radius: 50%; background: #235a66; }
+.live-map__layer-dot--evacuation { background: #a26114; }
+.live-map__layer-dot--perimeter { border: 1.5px solid #235a66; border-radius: 2px; background: transparent; }
+.live-map__filter-row button[aria-pressed="false"] .live-map__layer-dot { opacity: .35; }
+.live-map__status-filter > summary,
+.live-map__records > summary {
+  min-height: 44px;
+  align-content: center;
+  color: var(--pacific-blue, #205b66);
+  cursor: pointer;
+  font-size: 13px;
+}
+.live-map .live-roster-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 14px;
+  margin: 12px 0;
+  padding: 0;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  font-size: 12px;
+}
+.live-map .live-roster-summary strong { width: 100%; color: var(--ink); font-weight: 600; }
+.live-map--compact .live-map__heading { margin: 0; padding: 16px 16px 10px; }
+.live-map--compact .live-map__filters { margin: 0; padding: 0 16px; }
+.live-map--compact .live-map__scope { margin: 0; padding: 8px 16px; font-size: 12px; line-height: 1.55; }
+.live-map--compact .live-roster-summary { padding: 0 16px; margin: 0 0 14px; }
+.live-map--compact .live-map__records { padding: 0 16px; border-top: 1px solid var(--divider, #d5dfe0); }
+.live-map--compact .live-map__records .live-list { grid-template-columns: 1fr; }
+.live-map--compact .live-map__records .live-list-heading { font-size: 16px; }
+.live-map--compact .live-map__records .live-list li { min-width: 0; }
+.live-map--compact .live-map__safety-note { margin: 0; padding: 0 12px 12px; color: var(--ink-soft); font-size: 11px; line-height: 1.5; }
+.live-map__expand:focus-visible,
+.live-map__filter-row button:focus-visible,
+.live-map__status-filter > summary:focus-visible,
+.live-map__records > summary:focus-visible {
+  outline: 3px solid var(--pacific-blue, #205b66);
+  outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+  .live-map .live-map__heading { flex-wrap: wrap; gap: 8px; }
+  .live-map .live-map__filter-row { gap: 5px; }
+  .live-map .live-map__filter-row button { padding-inline: 9px; }
+  .live-map--compact .live-map__compact-actions { flex-wrap: wrap; font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-map .live-map__filter-row button { transition: none; }
+}
+
+.map-refresh-status, .map-historical-records { font-size: 12px; line-height: 1.5; }
+.map-refresh-status__check { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
+.map-refresh-status__check span { flex: 1; color: var(--ink-soft); }
+.map-refresh-status button, .map-historical-records button { color: var(--ink); background: transparent; border: 1px solid var(--divider); border-radius: 5px; padding: 5px 8px; font: inherit; cursor: pointer; }
+.map-refresh-status button:disabled { opacity: .6; cursor: default; }
+.map-refresh-status details, .map-historical-records { margin-top: 8px; }
+.map-refresh-status summary, .map-historical-records summary { cursor: pointer; }
+.map-refresh-status button:focus-visible, .map-refresh-status summary:focus-visible, .map-historical-records button:focus-visible, .map-historical-records summary:focus-visible { outline: 3px solid var(--pacific-blue, #205b66); outline-offset: 3px; }

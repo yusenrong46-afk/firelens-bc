@@ -58,9 +58,9 @@
   --amber-ink: var(--warning-amber);
 
   --radius-control: 12px;
-  --radius-card: 16px;
-  --radius-map: 18px;
-  --radius-panel: 16px;
+  --radius-card: 10px;
+  --radius-map: 10px;
+  --radius-panel: 10px;
   --radius-field: 12px;
 
   --space-1: 4px;
@@ -71,7 +71,7 @@
   --space-6: 32px;
   --space-7: 48px;
 
-  --shadow-elevated: 0 8px 28px rgba(13, 43, 64, 0.055);
+  --shadow-elevated: none;
   --shadow-panel: var(--shadow-elevated);
   --shadow-card: none;
   --shadow-map: var(--shadow-elevated);

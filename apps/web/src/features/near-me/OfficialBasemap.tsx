@@ -1,6 +1,16 @@
 import { CircleMarker, GeoJSON, TileLayer } from "react-leaflet";
+import { latLngBounds, type LatLngBoundsLiteral } from "leaflet";
 import { bcBoundaryFeature } from "./bcBoundary";
-import type { MapFocus } from "./MapViewport";
+import { BC_BOUNDS, type MapFocus } from "./MapViewport";
+
+// Raster context covers B.C. and its surroundings. Official record geometry is
+// independent of this tile bound and is never filtered by it.
+const paddedBounds = latLngBounds(BC_BOUNDS).pad(0.2);
+// A plain coordinate value also works across Vite's independently loaded modules.
+const REGIONAL_TILE_BOUNDS: LatLngBoundsLiteral = [
+  [paddedBounds.getSouth(), paddedBounds.getWest()],
+  [paddedBounds.getNorth(), paddedBounds.getEast()],
+];
 
 export const OSM_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
@@ -24,8 +34,12 @@ export function OfficialBasemap({
   return (
     <>
       <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        referrerPolicy="origin"
         attribution={OSM_ATTRIBUTION}
+        bounds={REGIONAL_TILE_BOUNDS}
+        updateWhenIdle
+        updateWhenZooming={false}
         {...(onTileError ? { eventHandlers: { tileerror: onTileError } } : {})}
       />
       <GeoJSON

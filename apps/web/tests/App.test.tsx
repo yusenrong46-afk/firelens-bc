@@ -58,21 +58,21 @@ function askCallOptions(fetchMock: ReturnType<typeof vi.fn>): RequestInit[] {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe("FireLens Source Lens", () => {
   it("explains the publication boundary without covering the product", async () => {
     render(<App />);
     const user = userEvent.setup();
-    const trigger = screen.getByRole("button", { name: "How FireLens works" });
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await user.click(screen.getByRole("button", { name: "Open menu" }));
+    const trigger = screen.getByRole("button", { name: "About & methodology" });
     await user.click(trigger);
     const employerPanel = screen.getByRole("region", {
       name: "How FireLens works",
     });
     expect(employerPanel).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "How FireLens works" })).toHaveFocus();
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(employerPanel).toHaveAttribute("id", "how-firelens-works");
     expect(screen.getByText("Official records")).toBeInTheDocument();
     expect(screen.getByText(/not emergency advice/i)).toBeInTheDocument();
@@ -81,13 +81,13 @@ describe("FireLens Source Lens", () => {
     expect(screen.getByLabelText("Ask FireLens a question")).toHaveFocus();
     await user.click(screen.getByRole("button", { name: "Close how FireLens works" }));
     expect(screen.queryByRole("region", { name: "How FireLens works" })).not.toBeInTheDocument();
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
   it("exposes only the public same-origin OpenAPI contract", async () => {
     render(<App />);
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "How FireLens works" }));
+    await user.click(screen.getByRole("button", { name: "Open menu" }));
+    await user.click(screen.getByRole("button", { name: "About & methodology" }));
 
     expect(screen.queryByRole("link", { name: /Repository/i })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /OpenAPI contract/i })).toHaveAttribute(
@@ -98,9 +98,14 @@ describe("FireLens Source Lens", () => {
 
   it("does not enter the analytical shell from question wording while loading", async () => {
     let resolveAsk!: (response: Response) => void;
-    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockImplementation(() => new Promise<Response>((resolve) => {
-      resolveAsk = resolve;
-    }))));
+    vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockImplementation((url: string) => {
+      if (url.startsWith("/api/v1/live/map")) {
+        return Promise.resolve(new Response(JSON.stringify({
+          results: [], unavailable_layers: [], layer_statuses: [],
+        }), { status: 200 }));
+      }
+      return new Promise<Response>((resolve) => { resolveAsk = resolve; });
+    })));
     const user = userEvent.setup();
     render(<App />);
 
@@ -110,8 +115,9 @@ describe("FireLens Source Lens", () => {
     );
     await user.click(screen.getByLabelText("Send question"));
 
-    expect(screen.getByText("Preparing your response…")).toBeInTheDocument();
+    expect(await screen.findByText("Preparing your response…")).toBeInTheDocument();
     expect(document.querySelector("main.workspace--analysis")).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Analysis view" })).not.toBeInTheDocument();
 
     resolveAsk(new Response(JSON.stringify({
       status: "answer",
@@ -207,12 +213,14 @@ describe("FireLens Source Lens", () => {
     expect(screen.getByText("FireLens response ready.")).toBeInTheDocument();
     expect(screen.getByLabelText("Clear conversation history")).toHaveTextContent("New conversation");
     expect(screen.getByLabelText("Response feedback")).toBeInTheDocument();
-    expect(screen.getByText("B.C. wildfire intelligence")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Official map/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "FireLens home" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Open menu" }));
+    expect(screen.getByRole("link", { name: "Official BCWS map" })).toHaveAttribute(
       "href",
       "https://wildfiresituation.nrs.gov.bc.ca/map",
     );
-    expect(screen.queryByRole("button", { name: "Show these on the map" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Close menu" }));
+    expect(screen.queryByRole("button", { name: /^(Show these on the map|View map —)/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Open map" })).not.toBeInTheDocument();
     const analysisView = screen.getByRole("region", { name: "Analysis view" });
     expect(within(analysisView).getByLabelText("Analysis limitations")).toHaveTextContent("FireLens could not verify evacuation records for this request.");
@@ -326,10 +334,10 @@ describe("FireLens Source Lens", () => {
     expect(fireCentreTotals).toHaveTextContent("Kamloops1");
     expect(within(analysisView).queryByLabelText("Analysis limitations")).not.toBeInTheDocument();
     expect(within(analysisView).getByText("Limits", { exact: true })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Show these on the map" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^(Show these on the map|View map —)/ })).not.toBeInTheDocument();
   });
 
-  it("keeps mixed live-plus-guidance answers in chat without auto-opening a province map", async () => {
+  it("keeps mixed live-plus-guidance answers in the sheet with persistent official map context", async () => {
     const liveResults = [
       { result_id: "incident:mix-1", fire_centre: "Kamloops Fire Centre", status: "Out of Control" },
       { result_id: "incident:mix-2", fire_centre: "Coastal Fire Centre", status: "Being Held" },
@@ -371,7 +379,7 @@ describe("FireLens Source Lens", () => {
     expect(await screen.findByText("Current official records")).toBeInTheDocument();
     expect(screen.getByText("Reviewed preparedness guidance")).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Analysis view" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Official wildfire records map" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Official wildfire records map" })).toBeInTheDocument();
     expect(document.querySelector("main.workspace--analysis")).not.toBeInTheDocument();
   });
 
@@ -416,11 +424,12 @@ describe("FireLens Source Lens", () => {
 
     const mapContext = await screen.findByRole("complementary", { name: "Map" });
     expect(mapContext).toHaveFocus();
-    await user.click(screen.getByRole("button", { name: "Close answer context" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Show these on the map" })).toHaveFocus());
+    await user.click(screen.getByRole("button", { name: "Expand map" }));
+    await user.click(screen.getByRole("button", { name: "Back to answer" }));
+    expect(screen.getByLabelText("Current question")).toBeVisible();
   });
 
-  it("starts with a task-first question workspace and keeps the map optional", async () => {
+  it("loads official records only after an explicit map action, without an Ask request", async () => {
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({
       generated_at: "2026-08-23T12:00:00Z",
       results: [],
@@ -430,25 +439,20 @@ describe("FireLens Source Lens", () => {
     const user = userEvent.setup();
     render(<App />);
     expect(screen.getAllByRole("link", { name: /FireLens home/ }).length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: "What do you want to know about wildfires in B.C.?" })).toBeInTheDocument();
-    expect(await screen.findByText(/lists 12 fires in B\.C\./)).toBeInTheDocument();
-    expect(screen.getByText(/3 evacuation orders and alerts/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Browse guided questions" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "How FireLens works" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "How it works" })).toBeInTheDocument();
-    expect(screen.getByText(/FireLens provides information, not decisions/)).toBeInTheDocument();
-    expect(screen.queryByText("Start with an example")).not.toBeInTheDocument();
-    expect(screen.queryByText("0 of 6 turns in context")).not.toBeInTheDocument();
-    expect(screen.queryByText("No earlier turns in context")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Know what’s happening/ })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Ask FireLens a question" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Explore example questions" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Skip to conversation" })).toHaveAttribute("href", "#conversation");
     expect(screen.queryByRole("region", { name: "Official wildfire records map" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Skip to official map" })).not.toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(vi.mocked(globalThis.fetch).mock.calls.filter(([url]) => String(url).includes("/live/map"))).toHaveLength(0);
+    expect(askCallOptions(fetchMock)).toHaveLength(0);
 
-    await user.click(screen.getByRole("button", { name: "Explore live map" }));
+    await user.click(screen.getByRole("button", { name: "Open menu" }));
+    await user.click(screen.getByRole("button", { name: "Explore B.C. records" }));
     expect(await screen.findByRole("region", { name: "Official wildfire records map" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Skip to official map" })).toHaveAttribute("href", "#official-map");
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith(
       "/api/v1/live/map?layers=incidents,perimeters,evacuations",
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     ));
@@ -472,7 +476,7 @@ describe("FireLens Source Lens", () => {
     const answerText = screen.getByLabelText("Question and answer").querySelector(".assistant-message")!;
     const composer = screen.getByLabelText("Ask FireLens a question");
     expect(answerText.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(document.querySelector(".pc-composer-stack--follow-up")).toBeInTheDocument();
+    expect(document.querySelector(".sheet-composer")).toBeInTheDocument();
     expect(scrollIntoView).toHaveBeenCalled();
   });
 
@@ -506,6 +510,8 @@ describe("FireLens Source Lens", () => {
     await user.click(screen.getByLabelText("Send question"));
 
     expect(await screen.findByText("FireLens topics")).toBeInTheDocument();
+    await user.click(document.querySelector(".sheet-sources > summary")!);
+    await user.click(screen.getByText("Suggested follow-ups"));
     expect(screen.getByRole("button", { name: "How should I prepare a household emergency plan?" })).toBeInTheDocument();
     expect(screen.queryByText("Retrieved passage")).not.toBeInTheDocument();
     expect(screen.queryByRole("complementary", { name: "Map" })).not.toBeInTheDocument();
@@ -625,7 +631,7 @@ describe("FireLens Source Lens", () => {
     expect(screen.getAllByText("PreparedBC").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Human-verified source transcription").length).toBeGreaterThan(0);
     expect(screen.queryByRole("region", { name: "Official wildfire records map" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Show these on the map" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^(Show these on the map|View map —)/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Analysis view" })).not.toBeInTheDocument();
   });
 
@@ -792,7 +798,7 @@ describe("FireLens Source Lens", () => {
     expect(await screen.findByText("Personal safety boundary")).toBeInTheDocument();
     expect(screen.getByText("FireLens cannot decide whether you should evacuate.")).toBeInTheDocument();
     expect(screen.getByText("EmergencyInfoBC current evacuation information")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Open official source/ })).toHaveAttribute("href", officialUrl);
+    expect(screen.getByRole("link", { name: "EmergencyInfoBC current evacuation information" })).toHaveAttribute("href", officialUrl);
     expect(screen.queryByText(/Use the official-current-information link/)).not.toBeInTheDocument();
   });
 
@@ -837,16 +843,17 @@ describe("FireLens Source Lens", () => {
     const { container } = render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Is there an active wildfire now?");
     await user.click(screen.getByLabelText("Send question"));
-    await user.click(await screen.findByRole("button", { name: "Show these on the map" }));
+    await user.click(await screen.findByRole("button", { name: /^(Show these on the map|View map —)/ }));
 
-    expect(await screen.findByText("Wildfires in B.C. right now")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Official wildfire records" })).toBeInTheDocument();
     expect(screen.getAllByText("Official records").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Test Fire").length).toBeGreaterThan(0);
+    await user.click(document.querySelector(".atlas-live-records > summary")!);
     const matchingList = screen.getByRole("list", { name: "Matching this question" });
     const missingLayerWarning = screen.getByText(/Some official layers are unavailable: evacuation/);
     const map = screen.getByRole("region", { name: "Interactive map of official wildfire records" });
     expect(missingLayerWarning.compareDocumentPosition(matchingList) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(missingLayerWarning.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(missingLayerWarning).toBeVisible();
     expect(map.compareDocumentPosition(matchingList) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getAllByText("Test Fire").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /Test Fire Out of Control/ })).toHaveAccessibleName(/source updated/i);
@@ -875,6 +882,8 @@ describe("FireLens Source Lens", () => {
       freshness: "stale",
       name: "Stale Province Fire",
     };
+    // Keep the fresh fixture fresh while testing the separate stale province record.
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse(freshMatch.retrieved_at));
     const fetchMock = vi.fn().mockImplementation((url: string) => {
       if (url.startsWith("/api/v1/live/map")) {
         return Promise.resolve(new Response(JSON.stringify({
@@ -907,12 +916,12 @@ describe("FireLens Source Lens", () => {
     await user.click(screen.getByLabelText("Send question"));
 
     expect((await screen.findAllByText("Fresh Question Fire is the matching official record.")).length).toBeGreaterThan(0);
-    await user.click(await screen.findByRole("button", { name: "Show these on the map" }));
-    expect(screen.getByRole("heading", { name: "Wildfires in B.C. right now", level: 1 })).toBeInTheDocument();
-    expect(screen.queryByText("Stale Province Fire")).not.toBeInTheDocument();
-    await user.click(screen.getByLabelText("Show all fires in B.C."));
-    expect(await screen.findByRole("heading", { name: "Wildfires in B.C. (some records out of date)", level: 1 })).toBeInTheDocument();
-    expect(screen.getByText(/cached copies because a refresh failed/)).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: /^(Show these on the map|View map —)/ }));
+    expect(screen.getByRole("heading", { name: "Official wildfire records" })).toBeInTheDocument();
+    // Fresh matching and stale province records are both included by default.
+    expect(screen.getByLabelText("Official record totals")).toHaveTextContent("2 displayed official records");
+    expect(screen.getByText(/official observations have mixed freshness/)).toBeVisible();
+    expect(screen.getByText(/Some do not establish current conditions/)).toBeVisible();
   });
 
   it("separates question matches from an interleaved, collapsible province roster", async () => {
@@ -965,13 +974,13 @@ describe("FireLens Source Lens", () => {
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Where is Question Fire?");
     await user.click(screen.getByLabelText("Send question"));
-    await user.click(await screen.findByRole("button", { name: "Show these on the map" }));
+    await user.click(await screen.findByRole("button", { name: /^(Show these on the map|View map —)/ }));
 
-    expect(await screen.findByRole("heading", { name: "Matching this question", level: 2 })).toBeInTheDocument();
+    await user.click(document.querySelector(".atlas-live-records > summary")!);
+    expect(await screen.findByRole("heading", { name: "Matching this question", level: 2 })).toBeVisible();
     const matchingList = screen.getByRole("list", { name: "Matching this question" });
     expect(within(matchingList).getByText("Question Fire")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Rest of B.C.", level: 2 })).not.toBeInTheDocument();
-    await user.click(screen.getByLabelText("Show all fires in B.C."));
+    expect(screen.queryByRole("list", { name: "Rest of B.C." })).not.toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Rest of B.C.", level: 2 })).toBeInTheDocument();
     expect(screen.queryByText("Province Fire")).not.toBeInTheDocument();
 
@@ -1038,7 +1047,7 @@ describe("FireLens Source Lens", () => {
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Where are the fires in Kelowna?");
     await user.click(screen.getByLabelText("Send question"));
-    await user.click(await screen.findByRole("button", { name: "Show these on the map" }));
+    await user.click(await screen.findByRole("button", { name: /^(Show these on the map|View map —)/ }));
 
     expect(await screen.findByText(/Approximate place marker near 49.89, -119.50/)).toBeInTheDocument();
     expect(screen.queryByText("One detail needed")).not.toBeInTheDocument();
@@ -1110,8 +1119,10 @@ describe("FireLens Source Lens", () => {
     render(<App />);
 
     expect(screen.queryByLabelText("BC community for this question")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Explore live map" }));
+    await user.click(screen.getByRole("button", { name: "Open menu" }));
+    await user.click(screen.getByRole("button", { name: "Explore B.C. records" }));
     await user.click(await screen.findByRole("button", { name: /Mountain Fire.*Out of Control/ }));
+    await user.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "How far is this fire from me?");
     await user.click(screen.getByLabelText("Send question"));
 
@@ -1159,6 +1170,7 @@ describe("FireLens Source Lens", () => {
     const user = userEvent.setup();
     render(<App />);
 
+    await user.click(screen.getByRole("button", { name: "Near me" }));
     await user.type(screen.getByLabelText("BC community for a nearby lookup"), "Kelowna");
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What official fires are near me?");
     await user.click(screen.getByLabelText("Send question"));
@@ -1292,6 +1304,7 @@ describe("FireLens Source Lens", () => {
     expect(resumed.location).toEqual({ label: "Kelowna", radius_km: 50 });
     expect(laterLiveQuestion.location).toEqual({ label: "Kelowna", radius_km: 50 });
 
+    await user.click(document.querySelector(".sheet-sources > summary")!);
     await user.click(screen.getByLabelText("Clear conversation history"));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What official fires are near me?");
     await user.click(screen.getByLabelText("Send question"));
@@ -1504,10 +1517,11 @@ describe("FireLens Source Lens", () => {
     await user.type(screen.getByLabelText("Ask FireLens a question"), "First question");
     await user.click(screen.getByLabelText("Send question"));
     await waitFor(() => expect(screen.getByLabelText("Ask FireLens a question")).not.toBeDisabled());
+    await user.click(document.querySelector(".sheet-sources > summary")!);
     await user.click(screen.getByLabelText("Clear conversation history"));
     expect(screen.queryByText("0 of 6 turns in context")).not.toBeInTheDocument();
     expect(screen.queryByText("No earlier turns in context")).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "What do you want to know about wildfires in B.C.?" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Know what’s happening/ })).toBeInTheDocument();
 
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Fresh question");
     await user.click(screen.getByLabelText("Send question"));
@@ -1556,7 +1570,7 @@ describe("FireLens Source Lens", () => {
     ).toBeInTheDocument();
   });
 
-  it("uses the stale map title when the answer records are stale and the province map is empty", async () => {
+  it("keeps a stale map warning when the answer records are stale and the province map is empty", async () => {
     vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockImplementation((url: string) => {
       if (String(url).startsWith("/api/v1/live/map")) {
         return Promise.resolve(new Response(JSON.stringify({
@@ -1594,10 +1608,9 @@ describe("FireLens Source Lens", () => {
     render(<App />);
     await user.type(screen.getByLabelText("Ask FireLens a question"), "surface:live-stale");
     await user.click(screen.getByLabelText("Send question"));
-    await user.click(await screen.findByRole("button", { name: "Show these on the map" }));
-    expect(await screen.findByRole("heading", {
-      name: "Wildfires in B.C. (cached records)",
-    })).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: /^(Show these on the map|View map —)/ }));
+    expect(await screen.findByText(/official observations are stale and do not establish current conditions/)).toBeVisible();
+    expect(screen.getByLabelText("Official record totals")).toHaveTextContent("1 displayed official record");
   });
 
   it("bounds a large matching roster and exposes every record on request", async () => {
@@ -1718,8 +1731,8 @@ describe("FireLens Source Lens", () => {
     await screen.findByText("One detail needed");
     await user.click(screen.getByRole("button", { name: "Use approximate location" }));
     expect(await screen.findByText("Approximate location ready for this conversation.")).toBeInTheDocument();
-    await user.click(await screen.findByRole("button", { name: "Show these on the map" }));
-    expect(await screen.findByText("Wildfires in B.C. right now")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: /^(Show these on the map|View map —)/ }));
+    expect(await screen.findByRole("heading", { name: "Official wildfire records" })).toBeInTheDocument();
     expect(screen.getByText("Approximate location ready for this conversation.")).toBeInTheDocument();
   });
 
@@ -1825,7 +1838,7 @@ describe("FireLens Source Lens", () => {
     expect(result.violations).toEqual([]);
   });
 
-  it("keeps a named Mountain Fire answer first with the map closed", async () => {
+  it("keeps a named Mountain Fire answer first beside the map", async () => {
     vi.stubGlobal("fetch", wrapAppFetch( vi.fn().mockResolvedValue(new Response(JSON.stringify({
       status: "answer",
       response_mode: "live",
@@ -1856,8 +1869,8 @@ describe("FireLens Source Lens", () => {
     const answerLead = await screen.findByText(/Mountain Fire is Being Held/);
     const liveSummary = screen.getByLabelText("Live answer summary");
     expect(answerLead.compareDocumentPosition(liveSummary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Show these on the map" })).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Official wildfire records map" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^(Show these on the map|View map —)/ })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Official wildfire records map" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Analysis view" })).not.toBeInTheDocument();
   });
 
