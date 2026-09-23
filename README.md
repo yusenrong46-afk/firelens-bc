@@ -22,15 +22,16 @@ Exact source quotations, reviewed paraphrases and partial guidance are labelled
 separately. See the [dated release evidence](docs/releases/firelens-polish.md) for
 qualification, deployment status and retained limitations.
 
-![Reviewed local FireLens candidate answering grab-and-go guidance with inspectable source proof](docs/product/screenshots/polish-current-guidance-2026-09-07.png)
+![Map-first FireLens with compact Ask and controls outside the map](docs/product/screenshots/map-first-desktop-2026-09-23.png)
 
-_Local candidate `1161367`, captured 2026-09-07 with the real index and OpenRouter.
-This screenshot is not the deployed release or proof of complete provider qualification.
-Production snapshot captured 2026-09-07: the
-[before-polish screenshot](docs/product/screenshots/production-idle-2026-09-07.png)
-is retained from before the polish candidate. Its counts and availability are
-dated observations, not current wildfire information. Canonical source link/click and source bytes were verified; browser
-PDF rendering was not verified._
+_Map-first local candidate, captured 2026-09-23 with offline official-record fixtures.
+These records are dated observations, not current wildfire information. The release
+is being validated in [PR #83](https://github.com/yusenrong46-afk/firelens-bc/pull/83);
+this screenshot does not establish production deployment._
+
+[Mobile Ask screenshot](docs/product/screenshots/map-first-ask-mobile-2026-09-23.png) ·
+[Three-minute demo](docs/portfolio/MAP_FIRST_DEMO.md) ·
+[Release scope and runbook](docs/product/map-first-release-v2.md)
 
 ## Try three tasks
 
@@ -43,9 +44,12 @@ PDF rendering was not verified._
   Inspect the answer's coverage, retrieval time and unavailable layers before
   comparing the returned records. A partial sample cannot establish a total.
 
-The bottom composer accepts your own questions. Guided questions and suggested
-follow-ups submit when selected; Home starts a fresh conversation and clears
-retained location and selection. A record list remains useful when map tiles fail.
+The map opens first, without an AI-provider call. **Ask FireLens** opens a compact
+composer; **Near me** accepts a B.C. community or optional approximate location
+with a 50 km default. Preparedness fills a question for explicit submission.
+Examples, recent questions and methodology are in the menu. After an answer,
+Back to map preserves the conversation; the FireLens brand starts a fresh one
+and clears retained location and selection. Lists remain usable when tiles fail.
 
 ## Three information lanes
 
@@ -88,12 +92,21 @@ establish benchmark leadership or universal answer quality.
 
 | Evidence | Result and scope |
 | --- | --- |
-| Qualified backend | 12 fresh and nine retained external observations, independently accepted within a fixed scope; see the [System Card](docs/system-card/FIRELENS_SYSTEM_CARD.md) |
-| Final local verification | Reviewed candidate `fc5731e`: 2,581 backend tests, 13 skips, 709 subtests and 198 frontend tests passed; runtime remains equivalent to `37de779` |
-| Final browser checks | 45 mocked passes, one skip and 22 built-stack passes; fixture checks at 1536px, 390px, 320px and native 200% zoom remain distinct from production |
-| Historical evaluation | Core remains **FAIL 565/574**, with frozen failures and dispositions preserved in the [evaluation guide](docs/eval/README.md) |
-| Current CI | Main build `c06474d` failed source-aware conversation verification; local reproduction passed 105/106. Candidate evidence was refused at the legacy J01 invariant |
-| Actual production | Eight public Ask requests exercised live records, state, guidance and generation. Browser/assets/provider checks passed; current-source passage verification failed. See the [release record](docs/releases/firelens-final-ship.md) |
+| Map-first integration | UI implementation commit `ef98bfe`; context repair commit `6a1559c`. Final release gates and deployment identity belong to the PR's candidate-bound evidence, not this implementation snapshot. |
+| Targeted context comparison | Frozen 24-case offline bank: original main `ed2a7af` and starting candidate `f103afd` each 15/24; repaired implementation 24/24. Nine paired wins, no losses. Real-provider closure is a separate release gate. |
+| Review controls | 32 context tests and 328 frontend unit tests passed during implementation; includes independent pet-packing topics, pending map selection, preserved history and location-denial feedback. |
+| Historical evaluation | Core remains **FAIL 565/574** in raw historical results. Accepted historical dispositions and CI engineering gates are separate; see the [evaluation guide](docs/eval/README.md). |
+| Production | Existing backend release remains the baseline until the new preview, CI and public-domain verification complete. See [PR #83](https://github.com/yusenrong46-afk/firelens-bc/pull/83) for the bound release status. |
+
+The targeted comparison is regression evidence for two context failures, not a
+general accuracy score. The approved 178-chunk corpus, configured models, Python
+dependencies and public API contracts remain unchanged. Source migration and broad
+backend qualification remain deferred.
+
+Historical evidence remains available: [dated release evidence](docs/releases/firelens-polish.md)
+and [prior production record](docs/releases/firelens-final-ship.md).
+Production snapshot captured 2026-09-07: [before-polish screenshot](docs/product/screenshots/production-idle-2026-09-07.png),
+before the polish candidate. These historical snapshots are not current UI proof.
 
 Captured official feeds are dated evidence, not today's incident count. Fixture
 browser checks establish controlled behavior; production integration requires
@@ -130,7 +143,8 @@ PYTHONPATH=src:tests .venv/bin/python -m firelens_eval diagnose CASE_ID
 
 The historical core has known failures; its exit status is diagnostic. Consult the
 [evaluation guide](docs/eval/README.md) before provider-backed evaluation, which
-requires an explicit spending ceiling. [Current state](docs/firelens-current-state/README.md)
+uses its documented spending policy. The separately authorized release browser
+campaign uses observation-only cost tracking, including explicitly unknown charges. [Current state](docs/firelens-current-state/README.md)
 and the [engineering map](docs/firelens-map/README.md) locate maintained contracts.
 
 ## Limits and authority
@@ -140,3 +154,20 @@ It cannot decide whether you are safe or should stay, return or evacuate. Missin
 records never prove absence of danger. Follow the issuing authority's current
 instructions; call 9-1-1 for emergencies. Citations support inspection and do not,
 by themselves, prove every interpretation correct.
+
+
+## Engineering and implementation case studies
+
+FireLens is an evidence-aware wildfire information application combining official
+geospatial records, retrieval-grounded guidance, and evaluated conversational
+workflows for B.C. residents.
+
+- [AI engineer case study](docs/portfolio/MAP_FIRST_ENGINEERING_CASE_STUDY.md)
+- [AI implementation / solutions brief](docs/portfolio/MAP_FIRST_SOLUTIONS_BRIEF.md)
+- [Career evidence, résumé bullets and interview explanation](docs/portfolio/MAP_FIRST_CAREER_EVIDENCE.md)
+- [Applying Chip Huyen's AI Engineering ideas](docs/portfolio/AI_ENGINEERING_LESSONS.md)
+
+The project owner directed requirements, constraints, investigation and review;
+OpenAI Codex assisted implementation and testing. The evidence supports the
+specified engineering work, without claims of adoption, business savings,
+independent domain approval or enterprise implementation experience.
