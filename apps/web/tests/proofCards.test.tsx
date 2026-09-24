@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
@@ -116,7 +116,7 @@ describe("proof-carrying answer surface", () => {
   it("shows one status banner, one limitation, and the claim/source controls", async () => {
     vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(grounded), { status: 200 }))));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What belongs in a grab-and-go bag?");
     await user.click(screen.getByLabelText("Send question"));
 
@@ -170,11 +170,11 @@ describe("proof-carrying answer surface", () => {
     };
     vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(quoteOnly), { status: 200 }))));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "What does the source say?");
     await user.click(screen.getByLabelText("Send question"));
 
-    expect(await screen.findByText("Exact wording from an official source")).toBeInTheDocument();
+    expect(await screen.findByRole("status", { name: "Answer status" })).toHaveTextContent("Exact wording from an official source");
     expect(screen.getByText(
       "FireLens is showing the source's own words rather than a summary.",
     )).toBeInTheDocument();
@@ -214,7 +214,7 @@ describe("proof-carrying answer surface", () => {
     };
     vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(rejected), { status: 200 }))));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Can this be trusted?");
     await user.click(screen.getByLabelText("Send question"));
 
@@ -253,7 +253,7 @@ describe("proof-carrying answer surface", () => {
     };
     vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(failedCritical), { status: 200 }))));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Did critical fields pass?");
     await user.click(screen.getByLabelText("Send question"));
 
@@ -294,7 +294,7 @@ describe("proof-carrying answer surface", () => {
     };
     vi.stubGlobal("fetch", wrapAppFetch(vi.fn().mockResolvedValue(new Response(JSON.stringify(orphaned), { status: 200 }))));
     const user = userEvent.setup();
-    render(<App />);
+    render(<App />); fireEvent.click(screen.getByRole("button", { name: "Ask FireLens" }));
     await user.type(screen.getByLabelText("Ask FireLens a question"), "Can an orphan card be reused?");
     await user.click(screen.getByLabelText("Send question"));
 

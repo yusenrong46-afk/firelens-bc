@@ -1,16 +1,20 @@
+import { openComposer, goHome, openMatchingRecords, openMapRecords, openClaimDetails, localOrigin } from "../browserNavigation";
 /** Draft current-task acceptance. Synthetic upstream fixtures; real /ask responses. */
 import { expect, test, type Page } from "@playwright/test";
+
+// Use the existing fixture retrieval instant; never apply this clock to live feeds.
+test.beforeEach(async ({ page }) => { await page.clock.setFixedTime(new Date("2026-08-24T15:02:00Z")); });
 
 const nearby = ["incident:bear-creek", "incident:mountain"];
 const province = [...nearby, "incident:kootenay", "incident:south-okanagan"].sort();
 const ids = (payload: { live_results: { result_id: string }[] }) => payload.live_results.map(r => r.result_id).sort();
 
 test.beforeEach(async ({ context }) => {
-  await context.route("**/*", r => r.request().url().startsWith("http://127.0.0.1:8766/") ? r.continue() : r.abort("blockedbyclient"));
+  await context.route("**/*", r => r.request().url().startsWith(`${localOrigin}/`) ? r.continue() : r.abort("blockedbyclient"));
 });
 async function ask(page: Page, question: string) {
   const pending = page.waitForResponse(r => r.url().endsWith("/api/v1/ask"));
-  const input = page.getByLabel("Ask FireLens a question");
+  const input = await openComposer(page);
   await input.fill(question); await input.press("Enter");
   const result = await pending;
   expect(result.status()).toBe(200);
@@ -22,14 +26,15 @@ test.afterEach(async ({ page }, info) => {
   await page.screenshot({ path: info.outputPath("synthetic-fixture.png"), fullPage: true });
 });
 
-test("R4-01 named fire exposes identity location and status without opening map", async ({ page }) => {
+test("R4-01 named fire exposes identity location and status beside its official map", async ({ page }) => {
   await page.goto("/");
   const { payload } = await ask(page, "Where is Mountain Fire near Kelowna?");
   expect(payload.selected_live_result_id).toBe("incident:mountain");
   await expect(page.locator(".assistant-message").last()).toContainText("Mountain Fire");
   await expect(page.locator(".assistant-message").last()).toContainText("5.5 km");
+  await openMatchingRecords(page);
   await expect(page.getByRole("button", { name: /^Mountain Fire.*Status/ })).toContainText("Out of Control");
-  await expect(page.getByRole("region", { name: "Official wildfire records map", exact: true })).not.toBeVisible();
+  await expect(page.getByRole("region", { name: "Official wildfire records map", exact: true })).toBeVisible();
 });
 
 test("R4-02 distribution has the exact three records and one of each status", async ({ page }) => {
@@ -46,6 +51,7 @@ test("R4-03 mixed response separates live records and reviewed guidance", async 
   expect(ids(payload)).toEqual(nearby);
   expect(payload.claims.some((c: { publication: { typed_claim_id: string } }) => c.publication.typed_claim_id === "TC-EVAC-ALERT-001")).toBe(true);
   await expect(page.getByText("Reviewed preparedness guidance", { exact: true })).toBeVisible();
+  await openMatchingRecords(page);
   await expect(page.getByRole("button", { name: /^Bear Creek Fire Status/ })).toBeVisible();
 });
 
@@ -72,10 +78,10 @@ test("R4-06 visible source proof opens exact technical binding deliberately", as
   expect(claim.publication.kind).toBe("structured_reviewed");
   expect(claim.publication.source_revision_sha256).toMatch(/^[a-f0-9]{64}$/);
   await expect(page.locator(".assistant-message").last()).toContainText("short notice");
-  await page.getByText("More detail on each statement", { exact: true }).click();
+  await openClaimDetails(page);
   await page.getByRole("button", { name: /Review technical evidence for/ }).first().click();
   await expect(page.getByText("Reviewed structured claim", { exact: true }).first()).toBeVisible();
-  const link = page.getByRole("link", { name: "Open official source", exact: true }).first();
+  const link = page.getByRole("dialog", { name: "Inspect answer evidence" }).getByRole("link", { name: "View source", exact: true }).first();
   await expect(link).toHaveAttribute("href", /gov\.bc\.ca/); await link.focus(); await expect(link).toBeFocused();
   // Inspect target only: remote availability is outside this fixture gate.
 });
@@ -90,16 +96,16 @@ test("R4-07 smoke uses smoke claim and source instead of evacuation meaning", as
 test("R4-08 typo resolves named record and current map affordance", async ({ page }) => {
   await page.goto("/"); const { payload } = await ask(page, "Where is the moutain fire near Kelowna?");
   expect(payload.selected_live_result_id).toBe("incident:mountain");
-  await page.getByRole("button", { name: "Show these on the map", exact: true }).click();
+  await openMapRecords(page);
   await expect(page.getByRole("region", { name: "Official wildfire records map", exact: true })).toBeVisible();
 });
 
 for (const selection of ["list", "map"]) test(`R4-09 second record ${selection} selection survives followup and city switch clears it`, async ({ page }) => {
   await page.goto("/"); await ask(page, "Show current fires near Kelowna");
-  if (selection === "list") await page.getByRole("button", { name: /^Bear Creek Fire Status/ }).click();
+  if (selection === "list") { await openMatchingRecords(page); await page.getByRole("button", { name: /^Bear Creek Fire Status/ }).click(); }
   else {
-    await page.getByRole("button", { name: "Show these on the map", exact: true }).click();
-    await page.getByRole("region", { name: "Official wildfire records map", exact: true }).locator('[data-result-id="incident:bear-creek"]').click();
+    await openMapRecords(page);
+    await page.getByRole("region", { name: "Official wildfire records map", exact: true }).locator('.live-map__record-geometry[data-result-id="incident:bear-creek"]').click();
   }
   const follow = await ask(page, "What is the current status of this fire?");
   expect(follow.request.context.selected_live_result_id).toBe("incident:bear-creek");
@@ -123,6 +129,7 @@ test("R1 exact F10 browser completes roster and preserves personal boundary", as
   expect(ids(exchange.payload)).toEqual(province); expect(exchange.payload.roster_total).toBe(4);
   expect(exchange.payload.answer_sections.some((s: { kind: string }) => s.kind === "safety_boundary")).toBe(true);
   await expect(page.locator(".assistant-message").last()).toContainText(/cannot/i);
+  await openMatchingRecords(page);
   for (const name of ["Mountain Fire", "Bear Creek Fire", "South Okanagan Fire", "Kootenay Fixture Fire"]) await expect(page.getByRole("button", { name: new RegExp(`^${name}.*Status`) })).toBeVisible();
   await info.attach("F10-public-exchange", { body: JSON.stringify(exchange, null, 2), contentType: "application/json" });
 });
@@ -136,10 +143,10 @@ test("R4 Home protects a new request from a delayed real response", async ({ pag
     const response = await route.fetch(); ready(); await gate;
     try { await route.fulfill({ response }); } catch { /* Home may abort the original request. */ }
   });
-  await page.goto("/"); const input = page.getByLabel("Ask FireLens a question");
+  await page.goto("/"); const input = await openComposer(page);
   await input.fill("Show fires near Kelowna"); await input.press("Enter"); await started;
-  await page.getByRole("button", { name: "Home", exact: true }).click();
-  await expect(input).toHaveValue(""); await expect(input).toBeFocused();
+  await goHome(page);
+  await expect(page.getByRole("complementary", { name: "Map", exact: true })).toBeFocused(); await expect(await openComposer(page)).toHaveValue("");
   await ask(page, "Are there current wildfires near Emptytown?"); release();
   await expect(page.locator("#conversation")).toContainText("Emptytown");
   await expect(page.locator("#conversation")).not.toContainText("Mountain Fire");
@@ -148,7 +155,7 @@ test("R4 Home protects a new request from a delayed real response", async ({ pag
 for (const width of [320, 390]) test(`R4 keyboard and source disclosure remain readable at ${width}px`, async ({ page }) => {
   await page.setViewportSize({ width, height: 1000 }); await page.goto("/");
   await ask(page, "What current fires are near Kelowna, and what does an evacuation alert mean?");
-  await page.getByText("More detail on each statement", { exact: true }).click();
+  await openClaimDetails(page);
   await page.getByRole("button", { name: /Review technical evidence for/ }).first().click();
   await expect(page.getByText("Reviewed structured claim", { exact: true }).first()).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);

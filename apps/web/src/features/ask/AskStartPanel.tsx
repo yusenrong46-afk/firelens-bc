@@ -1,4 +1,4 @@
-import { ArrowRight, Crosshair, Funnel, MagnifyingGlass, MapPin, X } from "@phosphor-icons/react";
+import { ArrowRight, Backpack, Crosshair, Funnel, MagnifyingGlass, MapPin, MapTrifold, X } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { fetchGuidedQuestions, type GuidedQuestionCategory } from "../../shared/api/api";
 import { emitProductEvent } from "../../shared/telemetry";
@@ -45,31 +45,35 @@ function isGuidedQuestionCatalogue(value: unknown): value is { categories: Guide
   return valid && questionIds.length === 24 && new Set(questionIds).size === 24;
 }
 
-const STARTER_QUESTIONS = [
-  { label: "Fires near Kelowna", question: "What official wildfire records are near Kelowna?" },
-  { label: "Evacuation orders near Kamloops", question: "Are there evacuation orders near Kamloops?" },
-  { label: "Fires across B.C.", question: "How many fires are burning in B.C. right now?" },
-  { label: "What to pack", question: "What should I pack in an evacuation kit?" },
-];
+export const PREPAREDNESS_QUESTION = "What belongs in a wildfire grab-and-go bag?";
+export const NEARBY_QUESTION = "Show the incident, perimeter, and evacuation records near {place}.";
 
 export function AskStartPanel({
   locationLabel,
+  catalogueOnly = false,
   currentState,
   composer,
   onSelectQuestion,
+  onPrepareQuestion,
+  onOpenMap,
   onLocationChange,
   onUseApproximateLocation,
 }: {
   locationLabel: string;
+  catalogueOnly?: boolean;
   currentState?: string | undefined;
   composer?: ReactNode;
   onSelectQuestion: (question: string) => void;
+  onPrepareQuestion: (question: string) => void;
+  onOpenMap: () => void;
   onLocationChange: (value: string) => void;
   onUseApproximateLocation: () => void;
 }) {
   const [catalogue, setCatalogue] = useState<GuidedQuestionCategory[]>([]);
   const [catalogueState, setCatalogueState] = useState<"idle" | "loading" | "ready" | "failed">("idle");
   const [open, setOpen] = useState(false);
+  const [nearbyOpen, setNearbyOpen] = useState(false);
+  const placeRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("all");
   const [announcement, setAnnouncement] = useState("");
@@ -164,26 +168,35 @@ export function AskStartPanel({
   return (
     <section className="conversation-intro ask-start-panel">
       <p className="response-announcement" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
-      <div className="ask-start-panel__intro">
-        <h1>What do you want to know about wildfires in B.C.?</h1>
-        <p>Ask in your own words. FireLens answers from official BC Wildfire Service and EmergencyInfoBC records and reviewed guidance, and shows where each answer comes from.</p>
+      {!catalogueOnly && <div className="ask-start-panel__intro">
+        <p className="ask-start-panel__eyebrow">British Columbia · Independent public beta</p>
+        <h1>Know what’s happening.{" "}<br /><span>Know where the information came from.</span></h1>
+        <p>Official wildfire records, evacuation information and reviewed preparedness guidance for B.C.</p>
         {composer}
-        <ul className="ask-start-panel__starters" aria-label="Example questions">
-          {STARTER_QUESTIONS.map((starter) => (
-            <li key={starter.question}>
-              <button type="button" onClick={() => onSelectQuestion(starter.question)}>{starter.label}</button>
-            </li>
-          ))}
-        </ul>
+        <div className="home-task-cards" aria-label="Explore FireLens">
+          <button type="button" className="home-task-card" aria-label="Near me: check my area" aria-expanded={nearbyOpen} aria-controls="nearby-search" onClick={() => { setNearbyOpen((value) => !value); if (!nearbyOpen) requestAnimationFrame(() => placeRef.current?.focus()); }}>
+            <span className="home-task-card__icon"><MapPin size={24} /></span><strong>Near me</strong><span>Nearby official records</span><span className="home-task-card__action" aria-hidden="true"><ArrowRight size={17} /></span>
+          </button>
+          <button type="button" className="home-task-card" aria-label="Across B.C.: view wildfire activity" onClick={onOpenMap}>
+            <span className="home-task-card__icon"><MapTrifold size={24} /></span><strong>Across B.C.</strong><span>Provincial map and coverage</span><span className="home-task-card__action" aria-hidden="true"><ArrowRight size={17} /></span>
+          </button>
+          <button type="button" className="home-task-card" aria-label="Preparedness: ask about a grab-and-go bag" onClick={() => onPrepareQuestion(PREPAREDNESS_QUESTION)}>
+            <span className="home-task-card__icon"><Backpack size={24} /></span><strong>Preparedness</strong><span>Grab-and-go bag guidance</span><span className="home-task-card__action" aria-hidden="true"><ArrowRight size={17} /></span>
+          </button>
+        </div>
         {currentState && (
           <p className="ask-start-panel__current-state" role="status">{currentState}</p>
         )}
-      </div>
+      </div>}
       <div className="ask-start-panel__console">
+        {nearbyOpen && <form className="nearby-search" id="nearby-search" onSubmit={(event) => { event.preventDefault(); if (locationLabel.trim()) onSelectQuestion(expandPlace(NEARBY_QUESTION, locationLabel)); }}>
+        <h2>Where should I look?</h2>
+        <p>Official records within 50 km. Distances are straight-line, not travel routes.</p>
         <label className="ask-start-panel__place">
-          <span>Your B.C. community <small>Optional, for "near me" questions</small></span>
+          <span>Your B.C. community</span>
           <input
             aria-label="BC community for a nearby lookup"
+            ref={placeRef}
             value={locationLabel}
             onChange={(event) => onLocationChange(event.target.value)}
             placeholder="For example, Kelowna"
@@ -194,12 +207,14 @@ export function AskStartPanel({
           <Crosshair size={18} aria-hidden="true" />
           <span>Use my approximate location <small>Not stored</small></span>
         </button>
+        <button className="nearby-search__submit" type="submit" disabled={!locationLabel.trim()}>Check my area <ArrowRight size={17} /></button>
+        </form>}
         <div className="guided-questions">
           {catalogueState !== "failed" ? (
             <>
             <button ref={triggerRef} type="button" className="guided-questions__trigger" aria-expanded={open} aria-controls="guided-questions-panel" aria-busy={catalogueState === "loading"} onClick={() => setOpen((current) => !current)}>
               <MapPin size={20} aria-hidden="true" />
-              <span>Browse guided questions{catalogueState === "ready" ? ` · ${questionCount}` : ""}</span>
+              <span>Explore example questions{catalogueState === "ready" ? ` · ${questionCount}` : ""}</span>
               <ArrowRight size={18} aria-hidden="true" />
             </button>
             {open && (

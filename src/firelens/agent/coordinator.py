@@ -391,7 +391,7 @@ class FireLensAgent:
             )
         if missing_source_antecedent(request):
             return AgentExecution(
-                response=missing_source_antecedent_response(),
+                response=missing_source_antecedent_response(request),
                 route=QueryRoute.PROHIBITED,
                 tools=(),
                 policy=RequestExecutionPolicy(route="missing_source_antecedent"),

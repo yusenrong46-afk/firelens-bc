@@ -92,3 +92,12 @@ test("one status owner refreshes visible sessions and ignores superseded transpo
   await act(() => vi.advanceTimersByTimeAsync(600_000));
   expect(fetchLiveSummary).toHaveBeenCalledTimes(2);
 });
+
+test("starting an unrelated question clears an old selected-record chip before the response", async () => {
+  vi.mocked(askFireLens).mockImplementation(() => new Promise(() => {}));
+  const { result } = renderHook(() => useFireLensSession());
+  act(() => result.current.setSelectedLiveResultId("incident:old"));
+  act(() => { void result.current.submitQuestion("What belongs in an emergency bag?"); });
+  expect(result.current.selectedLiveResultId).toBeUndefined();
+  expect(vi.mocked(askFireLens).mock.calls[0]?.[4]).not.toHaveProperty("selected_live_result_id");
+});

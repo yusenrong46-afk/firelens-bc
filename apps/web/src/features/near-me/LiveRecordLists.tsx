@@ -41,6 +41,8 @@ export function RecordRow({
           <button
             type="button"
             className="live-list__select"
+            data-result-id={result.result_id}
+            aria-pressed={result.result_id === selectedResultId}
             onClick={() => onSelectResult?.(result.result_id)}
             aria-label={`${displayName} ${status} ${resultKindLabel(result.kind)}, source updated ${formatTimestamp(result.source_updated_at)}, retrieved ${formatTimestamp(result.retrieved_at)}`}
           >
@@ -72,10 +74,12 @@ export function RecordRow({
 
 export function MatchingRecordList({
   results,
+  label = "Matching this question",
   selectedResultId,
   onSelectResult,
 }: {
   results: LiveResult[];
+  label?: string;
   selectedResultId?: string | undefined;
   onSelectResult?: ((resultId: string) => void) | undefined;
 }) {
@@ -96,8 +100,8 @@ export function MatchingRecordList({
   if (results.length === 0) return null;
   return (
     <div className="live-matches">
-      <h2 className="live-list-heading">Matching this question</h2>
-      <ul className="live-list" aria-label="Matching this question">
+      <h2 className="live-list-heading">{label}</h2>
+      <ul className="live-list" aria-label={label}>
         {visibleResults.map((result) => (
           <RecordRow
             key={result.result_id}

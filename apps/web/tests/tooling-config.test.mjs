@@ -43,13 +43,15 @@ test("production build typechecks the OpenAPI frontend types before bundling", (
   assert.match(packageJson.scripts.build, /^npm run typecheck && /);
 });
 
-test("quote-only answers do not read a non-existent publication.source_title", async () => {
+test("quote-only answers avoid invalid and unbound source-title fallbacks", async () => {
   const answerBody = await readFile(
     new URL("../src/features/ask/AnswerBody.tsx", import.meta.url),
     "utf8",
   );
   assert.doesNotMatch(answerBody, /publication\?\.source_title/);
-  assert.match(answerBody, /proof_cards\?\.\[0\]\?\.source_title/);
+  // Per-quotation source identity is exercised in quoteAttribution.test.tsx.
+  // The first proof card cannot identify every quote in a multi-document answer.
+  assert.doesNotMatch(answerBody, /proof_cards\?\.\[0\]\?\.source_title/);
 });
 
 test("warnings, provenance, and fetch time stay visible in CSS", async () => {

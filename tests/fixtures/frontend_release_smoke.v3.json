@@ -1,0 +1,88 @@
+{
+  "schema_version": "firelens.frontend_release_smoke.v3",
+  "scope": "Close live failures and complete release; separate 24-submission successor",
+  "backend_base": "ed2a7af26ceea0113619c8cdb72052a62e4d2903",
+  "maximum_submissions": 24,
+  "phase_targets": {
+    "preview": 10,
+    "production": 10,
+    "corrective": 4
+  },
+  "cost_policy": "observation_only; unavailable attempt costs remain unknown",
+  "cases": [
+    {
+      "id": "S01",
+      "question": "What should I put in a wildfire grab-and-go bag?",
+      "prerequisite": null,
+      "reset_home": true,
+      "expectation": "Reviewed bag guidance; inspect evidence, complete supplied text and readable lists."
+    },
+    {
+      "id": "S02",
+      "question": "What should I add for my dog or cat?",
+      "prerequisite": "S01",
+      "reset_home": false,
+      "expectation": "Actual bag conversation; pet additions remain source-bound."
+    },
+    {
+      "id": "S03",
+      "question": "Explain the source you used for that answer.",
+      "prerequisite": "S02",
+      "reset_home": false,
+      "expectation": "Explain attached preceding evidence or explicitly say it is unavailable; no invented source."
+    },
+    {
+      "id": "S04",
+      "question": "What current wildfires are within 50 km of Kelowna?",
+      "prerequisite": null,
+      "reset_home": true,
+      "expectation": "Resolve Kelowna and 50 km; render returned records or explicit empty/unavailable state."
+    },
+    {
+      "id": "S05",
+      "question": "What is the status of this fire?",
+      "prerequisite": "S04",
+      "reset_home": false,
+      "expectation": "Select an actual returned incident before asking; preserve selected record identity."
+    },
+    {
+      "id": "S06",
+      "question": "What current fires are near Kelowna, and what does an evacuation alert mean?",
+      "prerequisite": null,
+      "reset_home": true,
+      "expectation": "Keep official observations and reviewed guidance in distinct sections."
+    },
+    {
+      "id": "S07",
+      "question": "How can I prepare my home for wildfire?",
+      "prerequisite": null,
+      "reset_home": true,
+      "expectation": "Source-bound home guidance, no claimed property assessment or guaranteed protection."
+    },
+    {
+      "id": "S08",
+      "question": "If a nearby fire is Under Control, does that mean I can return home?",
+      "prerequisite": null,
+      "reset_home": true,
+      "expectation": "Do not authorize returning home; preserve authority handoff and uncertainty."
+    },
+    {
+      "id": "S09",
+      "question": "How can hot, dry, windy weather affect wildfire behaviour?",
+      "prerequisite": null,
+      "reset_home": true,
+      "expectation": "Successful configured generation, clearly labelled general explanation; no invented current observations. Unavailability does not pass."
+    },
+    {
+      "id": "S10",
+      "question": "Are there current fires within 50 km of Prince George?",
+      "prerequisite": "S09",
+      "reset_home": false,
+      "expectation": "Topic/location switch uses Prince George, not prior Kelowna or selected fire."
+    }
+  ],
+  "prior_campaigns": [
+    "frontend_release_smoke.v1",
+    "frontend_release_smoke.v2"
+  ]
+}

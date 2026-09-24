@@ -199,4 +199,4 @@ vercel-production:
 # Draft interaction contracts await owner approval; frozen fullstack.spec.ts stays separate.
 .PHONY: verify-candidate-browser
 verify-candidate-browser:
-	cd apps/web && npm exec -- playwright test --config=playwright.real.config.ts astra.spec.ts review-v2.spec.ts
+	cd apps/web && npm exec -- playwright test --config=playwright.real.config.ts astra.spec.ts review-v2.spec.ts fullstack-product-v2.spec.ts atlas-readiness.spec.ts basemap-transport.spec.ts

@@ -11,6 +11,11 @@ from firelens.answering.live_named_fire import extracted_located_fire_name
 from firelens.answering.location_intent import coarse_location_from_question
 from firelens.answering.return_intent import reviewed_return_condition_intent
 from firelens.answering.scope import corpus_identifiers
+from firelens.answering.static_guidance_subject import (
+    StaticGuidanceSubject,
+    is_pet_packing_followup,
+    static_guidance_subject,
+)
 from firelens.contracts import QueryRequest, ReasonCode
 from firelens.guidance_capabilities import resolve_capability
 from firelens.source_requirements import guided_capability
@@ -101,6 +106,13 @@ def focused_question(question: str) -> str:
 
 def _is_elliptical_followup(question: str) -> bool:
     current = focused_question(question)
+    # An explicit live task with its own place is self-contained. Existential
+    # "there" and temporal "right now" do not refer to the preceding topic.
+    if (
+        parse_request_intent(current).has_live_records
+        and coarse_location_from_question(current) is not None
+    ):
+        return False
     return len(current.split()) <= 16 and bool(
         _DEICTIC_FOLLOWUP.search(current.casefold()) or _TRUE_THAT_DEIXIS.search(current)
     )
@@ -134,16 +146,26 @@ def prior_anchor_user_question(request: QueryRequest) -> str | None:
     return previous[-1] if previous else None
 
 
-def resolved_user_question(request: QueryRequest) -> str:
-    """Name the previous user subject for a genuinely elliptical follow-up."""
+def _followup_prior_question(request: QueryRequest) -> str | None:
+    """Resolve the prior subject once for both display and route construction."""
 
     current = focused_question(request.question)
-    if not _is_elliptical_followup(current):
-        return current
     prior = prior_anchor_user_question(request)
-    if not prior:
-        return current
-    return f"Regarding the earlier question '{prior}', {current}"[:2_000]
+    packing_followup = bool(
+        prior
+        and is_pet_packing_followup(current)
+        and static_guidance_subject(current) is None
+        and static_guidance_subject(prior)
+        in {StaticGuidanceSubject.EMERGENCY_KIT, StaticGuidanceSubject.PET_GRAB_AND_GO}
+    )
+    return prior if _is_elliptical_followup(current) or packing_followup else None
+
+
+def resolved_user_question(request: QueryRequest) -> str:
+    """Name the previous user subject for a genuinely elliptical follow-up."""
+    current = focused_question(request.question)
+    prior = _followup_prior_question(request)
+    return f"Regarding the earlier question '{prior}', {current}"[:2_000] if prior else current
 
 
 def conversation_planning_question(request: QueryRequest) -> str:
@@ -173,9 +195,9 @@ def _routing_texts(request: QueryRequest) -> tuple[str, ...]:
     """Use history only for a genuinely elliptical current question."""
 
     current = focused_question(request.question).lower()
-    if not _is_elliptical_followup(current):
-        return (current,)
-    prior = prior_anchor_user_question(request)
+    prior = _followup_prior_question(request)
+    # Routing sees only user-authored wording. The explanatory wrapper used for
+    # retrieval is not a new clause and must not turn kit guidance into a live task.
     return (current, f"{prior.lower()} {current}") if prior else (current,)
 
 

@@ -38,7 +38,7 @@ from firelens.guidance_capabilities import (
 )
 from firelens.ingestion.chunking import ChunkRecord
 from firelens.live_answering import LiveAnswerCoordinator
-from firelens.operational_logging import log_operation
+from firelens.operational_logging import PROVIDER_CORRELATION, log_operation
 from firelens.runtime import Runtime
 
 _FULL_COMMIT = re.compile(r"^[0-9a-f]{40}$")
@@ -70,15 +70,6 @@ async def _answer_request(
         )
     execution = await FireLensAgent(runtime.service, live_coordinator).answer(request)
     response = execution.response
-    if response.status == ResponseStatus.ERROR:
-        return error_response(
-            provider_error_status(response.error_kind),
-            trace_id=response.trace_id,
-            error_kind=response.error_kind or "provider_error",
-            message="The required OpenRouter service is unavailable.",
-            retryable=response.error_kind
-            in {"rate_limit", "timeout", "unavailable", "model_unavailable"},
-        )
     latency_ms = (perf_counter() - request_started) * 1_000
     log_operation(
         trace_id=response.trace_id,
@@ -110,6 +101,15 @@ async def _answer_request(
             else str(runtime.bound_candidate["candidate_id"])
         ),
     )
+    if response.status == ResponseStatus.ERROR:
+        return error_response(
+            provider_error_status(response.error_kind),
+            trace_id=response.trace_id,
+            error_kind=response.error_kind or "provider_error",
+            message="The required OpenRouter service is unavailable.",
+            retryable=response.error_kind
+            in {"rate_limit", "timeout", "unavailable", "model_unavailable"},
+        )
     return response
 
 
@@ -170,6 +170,7 @@ def install_answer_routes(
         responses=ERROR_RESPONSES,
     )
     async def ask(request: QueryRequest) -> AskResponse | JSONResponse:
+        correlation = PROVIDER_CORRELATION.set(uuid4().hex)
         try:
             async with asyncio.timeout(config.public_request_deadline_seconds):
                 return await _answer_request(
@@ -180,6 +181,8 @@ def install_answer_routes(
                 )
         except TimeoutError:
             return deadline_response(config, "ask")
+        finally:
+            PROVIDER_CORRELATION.reset(correlation)
 
     if config.debug and config.deployment_environment != "production":
 

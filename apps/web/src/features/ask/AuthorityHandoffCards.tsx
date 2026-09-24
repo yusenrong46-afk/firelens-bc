@@ -12,10 +12,13 @@ export function handoffAuthority(title: string): string {
 
 export function AuthorityHandoffCards({
   links,
+  compact = false,
 }: {
+  compact?: boolean;
   links: { title: string; url: string; description?: string }[];
 }) {
   if (links.length === 0) return null;
+  if (compact) return <nav className="authority-handoff-links" aria-label="Official authority handoffs">{links.map((item) => <a key={item.url} href={item.url} title={item.description} target="_blank" rel="noreferrer" onClick={() => emitProductEvent("authority_handoff_opened")}>{item.title}<ArrowSquareOut size={16} aria-hidden="true" /></a>)}</nav>;
   return (
     <div className="related-service-links authority-handoff-cards" aria-label="Official authority handoffs">
       {links.map((item) => (

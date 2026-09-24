@@ -7,9 +7,9 @@
 .product-sidebar__lockup { display: flex; gap: 8px; align-items: center; text-decoration: none; color: inherit; }
 .product-sidebar__lockup img { width: 32px; height: 32px; }
 .product-sidebar__name { display: block; font: 600 29px/1 var(--font-display); letter-spacing: -.025em; }
-.product-sidebar__subtitle { display: block; margin-top: 7px; color: var(--slate); font: 500 10px/1.5 var(--font-ui); letter-spacing: .07em; text-transform: uppercase; }
+.product-sidebar__subtitle { display: block; margin-top: 7px; color: var(--slate); font: 500 10px/1.5 var(--font-ui); letter-spacing: 0; }
 .product-sidebar__nav { display: grid; gap: 8px; }
-.product-nav { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); font: 500 14px/1.4 var(--font-ui); text-decoration: none; text-align: left; cursor: pointer; }
+.product-nav { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 12px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); font: 500 14px/1.4 var(--font-ui); text-decoration: none; text-align: left; cursor: pointer; }
 .product-nav:hover, .product-nav--active { background: var(--sea-glass); color: var(--deep-ocean); }
 .product-nav__external { margin-left: auto; flex-shrink: 0; }
 .product-sidebar__recent-heading { font: 600 11px/1.4 var(--font-ui); text-transform: uppercase; letter-spacing: .08em; color: var(--slate); }
@@ -27,7 +27,7 @@ html { scroll-padding-bottom: 160px; }
 .pc-composer-dock .composer { max-width: 900px; margin-inline: auto; }
 .pc-current-question { margin: 0; padding: 0 4px; color: var(--slate); font: 500 13px/1.4 var(--font-ui); overflow-wrap: anywhere; }
 .composer { width: 100%; min-height: 0; margin: 0; padding: 0; border: 0; background: transparent; }
-.composer-input { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 5px 5px 5px 16px; background: var(--snow); border: 1px solid var(--divider); border-radius: 12px; box-shadow: 0 4px 16px rgba(13,43,64,.035); }
+.composer-input { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 5px 5px 5px 16px; background: var(--snow); border: 1px solid var(--divider); border-radius: 12px; box-shadow: none; }
 .composer-input > svg { color: var(--pacific-blue); flex-shrink: 0; }
 .composer-input input { flex: 1; width: 100%; min-width: 0; min-height: 44px; border: 0; padding: 0; background: transparent; color: var(--ink); outline: 0; font-size: 16px; }
 .composer-input input::placeholder { color: var(--ink); opacity: 1; }

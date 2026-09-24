@@ -28,7 +28,11 @@ export function deriveContextChips({
     || mode === "mixed";
   if (!hasLive) return [];
 
-  chips.push({ id: "scope-current", label: "Current fires" });
+  const kinds = new Set((response.live_results ?? []).map((record) => record.kind));
+  const label = kinds.size === 1 && kinds.has("evacuation") ? "Evacuation records"
+    : kinds.size > 0 && !kinds.has("evacuation") ? "Wildfire records"
+    : "Official records";
+  chips.push({ id: "scope-current", label });
 
   const radius = activeRadiusKm;
   if (typeof radius === "number" && Number.isFinite(radius)) {

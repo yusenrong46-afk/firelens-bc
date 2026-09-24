@@ -1,0 +1,903 @@
+/** Current-interface successor; historical tests/e2e/app.spec.ts remains unchanged. */
+import { openComposer, openSources, openMatchingRecords, openMapRecords, menuAction } from "../browserNavigation";
+import { expect, test } from "@playwright/test";
+import catalogue from "../../../../data/capabilities/guided_questions.v1.json" with { type: "json" };
+
+const answer = {
+  status: "answer",
+  response_mode: "grounded",
+  trace_id: "e2e-trace",
+  answer: "Prepare water, food, and medication.",
+  suggested_questions: ["How often should I update my emergency kit?"],
+  claims: [{
+    claim_id: "C1",
+    text: "Prepare water, food, and medication.",
+    evidence_status: "verified_corpus",
+    supports: [{ evidence_id: "E1", quote: "Food & water" }],
+    publication: {
+      kind: "source_linked_explanation",
+      review_status: "source_linked",
+      renderer_id: "firelens.explanation_renderer.v1",
+      support_provenance: "validated_grounded_explanation",
+    },
+  }],
+  evidence: [{
+    evidence_id: "E1",
+    title: "Wildfire Preparedness Guide",
+    publisher: "PreparedBC",
+    canonical_url: "https://example.test/guide.pdf",
+    locator: "PDF page 5",
+    temporal_class: "stable_guidance",
+    primary_text: "Food & water",
+    context_text: "A grab-and-go bag includes Food & water and other supplies.",
+  }],
+  limitations: ["Stable guidance only."],
+  validation: {
+    accepted: true,
+    schema_valid: true,
+    citation_ids_valid: true,
+    quotes_exact: true,
+    policy_valid: true,
+    errors: [],
+  },
+};
+
+type AskRequest = { question: string; history: Array<{ role: string; content: string }> };
+let seenRequests: AskRequest[] = [];
+
+test.beforeEach(async ({ page }) => {
+  seenRequests = [];
+  // This lane is fixture-only. Unknown APIs and remote destinations must never
+  // escape to the developer's backend or provider services.
+  await page.route("**/*", async route => {
+    const url = new URL(route.request().url());
+    if (/^(?:[abc]\.)?tile\.openstreetmap\.org$/.test(url.hostname)) {
+      await route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#eef1ed"/></svg>' });
+    } else if (url.hostname === "example.test") {
+      await route.fulfill({ contentType: "text/html", body: "<title>Offline source-link fixture</title>Source link target" });
+    } else if (url.hostname !== "127.0.0.1" && url.hostname !== "localhost") {
+      await route.abort("blockedbyclient");
+    } else if (url.pathname.startsWith("/api/")) {
+      await route.abort("blockedbyclient");
+    } else await route.continue();
+  });
+  await page.route("**/api/v1/health/ready", route => route.fulfill({ json: { status: "ready", release_version: "1.6.4" } }));
+  await page.route("**/api/v1/live/summary", route => route.fulfill({ json: { incident_record_count: 12, evacuation_record_count: 3, retrieved_at: "2026-07-28T12:00:00Z", freshness: "fresh", limitation: "Offline official-feed fixture." } }));
+  await page.route("**/api/v1/product-events", route => route.fulfill({ status: 204, body: "" }));
+  await page.clock.setFixedTime(new Date("2026-07-28T12:00:00Z"));
+  await page.route("**/api/v1/live/map*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        generated_at: "2026-08-13T19:00:00Z",
+        results: [],
+        unavailable_layers: [],
+        layer_statuses: [],
+        limitations: [],
+      }),
+    });
+  });
+  await page.route("**/api/v1/ask", async (route) => {
+    const request = route.request().postDataJSON() as AskRequest;
+    seenRequests.push(request);
+    const question = request.question;
+    if (question.includes("stale official")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "answer",
+          response_mode: "live",
+          trace_id: "stale-live-trace",
+          answer: "Cached official information (refresh failed): cached Test Fire record.",
+          suggested_questions: [],
+          claims: [],
+          evidence: [],
+          limitations: ["A refresh failed; this cached record is visibly stale."],
+          aggregate_freshness: "stale",
+          live_results: [{
+            result_id: "incident:stale-7",
+            kind: "incident",
+            authority: "BC Wildfire Service",
+            source_url: "https://example.test/incidents/stale-7",
+            source_updated_at: "2026-07-28T11:55:00Z",
+            retrieved_at: "2026-07-28T12:00:00Z",
+            freshness: "stale",
+            status: "Out of Control",
+            name: "Cached Test Fire",
+            geometry_relation: "nearby",
+            geometry: { type: "Point", coordinates: [-123.5, 49.5] },
+          }],
+          unavailable_layers: ["evacuation"],
+        }),
+      });
+      return;
+    }
+    if (question.includes("active wildfire")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "answer",
+          response_mode: "live",
+          trace_id: "live-trace",
+          answer: "Current official information: Test Fire is Out of Control.",
+          suggested_questions: [],
+          claims: [],
+          evidence: [],
+          limitations: ["No matching record is not a safety determination."],
+          live_results: [{
+            result_id: "incident:7",
+            kind: "incident",
+            authority: "BC Wildfire Service",
+            source_url: "https://example.test/incidents/7",
+            source_updated_at: "2026-07-28T11:55:00Z",
+            retrieved_at: "2026-07-28T12:00:00Z",
+            freshness: "fresh",
+            status: "Out of Control",
+            name: "Test Fire",
+            geometry_relation: "nearby",
+            geometry: { type: "Point", coordinates: [-123.5, 49.5] },
+          }],
+          unavailable_layers: ["evacuation"],
+        }),
+      });
+      return;
+    }
+    if (question.includes("embers")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "answer",
+          response_mode: "background",
+          trace_id: "background-trace",
+          answer: "Embers can travel ahead of a wildfire front.",
+          suggested_questions: [],
+          claims: [{
+            claim_id: "C1",
+            text: "Embers can travel ahead of a wildfire front.",
+            evidence_status: "general_background",
+            supports: [],
+          }],
+          evidence: [],
+          limitations: ["General background — not verified against the FireLens corpus."],
+        }),
+      });
+      return;
+    }
+    if (question.includes("debug JavaScript")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "answer",
+          response_mode: "scope_redirect",
+          trace_id: "scope-trace",
+          answer: "That request is outside the FireLens guidance collection.",
+          suggested_questions: ["What can FireLens help me understand?"],
+          claims: [],
+          evidence: [],
+          limitations: [],
+        }),
+      });
+      return;
+    }
+    if (question.includes("rejected air quality")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "answer",
+          response_mode: "scope_redirect",
+          trace_id: "rejected-scope-trace",
+          answer: "Use the official air-quality service for current observations.",
+          suggested_questions: [],
+          claims: [],
+          evidence: [],
+          limitations: [],
+          related_links: [{
+            title: "Current B.C. AQHI",
+            url: "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html",
+            description: "Environment Canada current AQHI observations and forecasts.",
+          }],
+          validation: { accepted: false },
+          status_banner: {
+            headline: "Grounded in reviewed official sources",
+            detail: "All content was validated against reviewed sources.",
+            freshness_label: "Stable reviewed guidance",
+            availability_label: "Sources required for this request were available.",
+          },
+        }),
+      });
+      return;
+    }
+    if (question.includes("distribution")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "answer",
+          response_mode: "live",
+          trace_id: question.includes("new distribution") ? "analysis-trace-next" : "analysis-trace",
+          presentation_shell: "analysis",
+          answer: "Three official incident records are in this bounded result.",
+          suggested_questions: [],
+          claims: [],
+          evidence: [],
+          limitations: [],
+          aggregate_freshness: "fresh",
+          live_results: [{
+            result_id: "incident:1",
+            kind: "incident",
+            authority: "BC Wildfire Service",
+            source_url: "https://example.test/incidents/1",
+            source_updated_at: "2026-08-23T12:00:00Z",
+            retrieved_at: "2026-08-23T12:01:00Z",
+            freshness: "fresh",
+            status: "Out of Control",
+            fire_centre: "Kamloops Fire Centre",
+            name: "Alpha Fire",
+            geometry: { type: "Point", coordinates: [-119.5, 49.9] },
+          }, {
+            result_id: "incident:2",
+            kind: "incident",
+            authority: "BC Wildfire Service",
+            source_url: "https://example.test/incidents/2",
+            source_updated_at: "2026-08-23T12:00:00Z",
+            retrieved_at: "2026-08-23T12:01:00Z",
+            freshness: "fresh",
+            status: "Being Held",
+            fire_centre: "Kamloops Fire Centre",
+            name: "Beta Fire",
+            geometry: { type: "Point", coordinates: [-119.6, 50.0] },
+          }, {
+            result_id: "incident:3",
+            kind: "incident",
+            authority: "BC Wildfire Service",
+            source_url: "https://example.test/incidents/3",
+            source_updated_at: "2026-08-23T12:00:00Z",
+            retrieved_at: "2026-08-23T12:01:00Z",
+            freshness: "fresh",
+            status: "Under Control",
+            fire_centre: "Coastal Fire Centre",
+            name: "Gamma Fire",
+            geometry: { type: "Point", coordinates: [-123.5, 49.5] },
+          }],
+        }),
+      });
+      return;
+    }
+    if (question.includes("provider unavailable")) {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({
+          trace_id: "error-trace",
+          error_kind: "unavailable",
+          message: "The required OpenRouter service is unavailable.",
+          retryable: true,
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(answer),
+    });
+  });
+});
+
+test("submits a question and inspects exact evidence", async ({ page }) => {
+  await page.goto("/");
+  await (await openComposer(page)).fill("What belongs in a grab-and-go bag?");
+  await page.getByLabel("Send question").click();
+  await expect(page.locator("#conversation .assistant-message .answer-lead")).toHaveText(
+    "Prepare water, food, and medication.",
+  );
+  const evidenceDetails = page.locator("#conversation details.answer-details");
+  await openSources(page);
+  await expect(evidenceDetails).toBeVisible();
+  await expect(evidenceDetails.locator("summary")).toHaveText("More detail on each statement");
+  await expect(evidenceDetails.locator("mark")).toBeHidden();
+  await evidenceDetails.locator("summary").click();
+  await expect(page.getByText("Each statement and its source")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Source of this information" })).toBeVisible();
+  await expect(page.locator("mark")).toHaveText("Food & water");
+  await expect(page.getByText("PreparedBC", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("region", { name: "Analysis view" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Official wildfire records map" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Show these on the map" })).toHaveCount(0);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  expect(overflow).toBe(false);
+  if ((page.viewportSize()?.width ?? 0) >= 1120) {
+    const desktopChat = await page.evaluate(() => {
+      const viewportWidth = document.documentElement.clientWidth;
+      const panel = document.querySelector(".conversation-panel")!.getBoundingClientRect();
+      const answer = document.querySelector(".answer-lead")!.getBoundingClientRect();
+      return { panelWidth: panel.width, panelCentre: panel.left + panel.width / 2, viewportCentre: viewportWidth / 2, answerWidth: answer.width };
+    });
+    // Guidance has a centred reading column, independent of the live-map rail.
+    expect(desktopChat.panelWidth).toBeGreaterThanOrEqual(420);
+    expect(Math.abs(desktopChat.panelCentre - desktopChat.viewportCentre)).toBeLessThanOrEqual(1);
+    expect(desktopChat.answerWidth).toBeLessThanOrEqual(720);
+  }
+});
+
+test("opens the employer explainer in flow without covering FireLens", async ({ page }) => {
+  await page.setViewportSize({ width: 920, height: 800 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Open menu", exact: true }).click();
+  const trigger = page.getByRole("button", { name: "About & methodology", exact: true });
+  await expect(trigger).toBeVisible();
+  const triggerBox = await trigger.boundingBox();
+  expect(triggerBox?.width).toBeGreaterThanOrEqual(44);
+  expect(triggerBox?.height).toBeGreaterThanOrEqual(44);
+  await trigger.click();
+
+  const explainer = page.getByRole("region", {
+    name: "How FireLens works",
+  });
+  await expect(explainer).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "FireLens menu" })).not.toBeVisible();
+  await expect(page.locator("dialog[open]")).toHaveCount(0);
+
+  const geometry = await page.evaluate(() => {
+    const panel = document.querySelector("#how-firelens-works")!;
+    const workspace = document.querySelector("main, [role=main]")!;
+    const panelRect = panel.getBoundingClientRect();
+    const workspaceRect = workspace.getBoundingClientRect();
+    return {
+      position: getComputedStyle(panel).position,
+      panelBottom: panelRect.bottom,
+      workspaceTop: workspaceRect.top,
+    };
+  });
+  expect(geometry.position).toBe("static");
+  expect(geometry.workspaceTop).toBeGreaterThanOrEqual(geometry.panelBottom);
+
+  await page.keyboard.press("Escape");
+  await expect(explainer).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Open menu" })).toBeFocused();
+  const ask = await openComposer(page);
+  await ask.fill("The workspace remains usable");
+  await expect(ask).toHaveValue("The workspace remains usable");
+});
+
+test("labels general background and exposes no evidence control", async ({ page }) => {
+  await page.goto("/");
+  await (await openComposer(page)).fill("Why can embers be dangerous?");
+  await page.getByLabel("Send question").click();
+  await expect(
+    page.getByLabel("Question and answer").getByText("General background · Not source-verified", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(
+    /General background · Not source-verified/i,
+  )).toBeVisible();
+  await expect(page.getByText("Each statement and its source")).toHaveCount(0);
+  await expect(page.getByText("Important limits")).toHaveCount(0);
+  await expect(page.getByText("Source passage")).toHaveCount(0);
+});
+
+test("sends bounded conversation context and can clear it", async ({ page }) => {
+  await page.goto("/");
+  await (await openComposer(page)).fill("What should I pack?");
+  await page.getByLabel("Send question").click();
+  await openSources(page);
+  await expect(page.getByLabel("Clear conversation history")).toContainText("New conversation");
+
+  await (await openComposer(page)).fill("Why does that matter?");
+  await page.getByLabel("Send question").click();
+  await expect.poll(() => seenRequests.length).toBe(2);
+  await openSources(page);
+  await expect(page.getByText("2 of 6 prior turns in context")).toBeVisible();
+  expect(seenRequests[1]!.history).toEqual([
+    { role: "user", content: "What should I pack?" },
+    { role: "assistant", content: answer.answer },
+  ]);
+
+  await page.getByLabel("Clear conversation history").click();
+  await expect(page.getByText("0 of 6 turns in context")).toHaveCount(0);
+  await expect(page.getByText("No earlier turns in context")).toHaveCount(0);
+  await expect(page.getByRole("main", { name: "Explore official records" })).toBeVisible();
+  await (await openComposer(page)).fill("Fresh question");
+  await page.getByLabel("Send question").click();
+  await expect.poll(() => seenRequests.length).toBe(3);
+  expect(seenRequests[2]!.history).toEqual([]);
+});
+
+test("redirects a completely tangent request", async ({ page }) => {
+  await page.goto("/");
+  await (await openComposer(page)).fill("Can you debug JavaScript for me?");
+  await page.getByLabel("Send question").click();
+  await openSources(page);
+  await expect(page.getByLabel("Question and answer").getByText("Official source elsewhere", { exact: true })).toBeVisible();
+  await expect(page.getByText("That request is outside the FireLens guidance collection.", { exact: true })).toBeVisible();
+});
+
+test("fails closed for a rejected no-claim response", async ({ page }) => {
+  await page.goto("/");
+  await (await openComposer(page)).fill("Show rejected air quality");
+  await page.getByLabel("Send question").click();
+  const conversation = page.getByLabel("Question and answer");
+  await openSources(page);
+  await expect(conversation.getByText("Not confirmed by FireLens sources", { exact: true }).first()).toBeVisible();
+  await expect(conversation.getByText(
+    "FireLens did not establish or validate support for this response.",
+    { exact: true },
+  )).toBeVisible();
+  const status = conversation.getByRole("status", { name: "Answer status" }).first();
+  await expect(status).toContainText("Updated: Freshness not established");
+  await expect(status).toContainText(
+    "Availability: Support was not established from the evidence returned.",
+  );
+  await expect(conversation.getByText("Grounded in reviewed official sources")).toHaveCount(0);
+  await expect(conversation.getByRole("link", { name: "Current B.C. AQHI", exact: true }).first()).toHaveAttribute(
+    "href",
+    "https://weather.gc.ca/airquality/pages/provincial_summary/bc_e.html",
+  );
+});
+
+test("keeps a live answer primary and opens its map on demand", async ({ page }, testInfo) => {
+  await page.goto("/");
+  const question = await openComposer(page);
+  await question.fill("Is there an active wildfire near me right now?");
+  await question.press("Enter");
+  await expect(page.getByLabel("Question and answer").getByText("Current official information: Test Fire is Out of Control.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Official wildfire records map" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Analysis view" })).toHaveCount(0);
+  await openMapRecords(page);
+  await expect(page.getByRole("heading", { name: "Official wildfire records", exact: true })).toBeVisible();
+  const testFire = page
+    .getByRole("list", { name: "Matching this question" })
+    .getByRole("button", { name: /Test Fire Out of Control/ });
+  await expect(testFire).toBeVisible();
+  await expect(page.getByText(/Some official layers are unavailable: evacuation/)).toBeVisible();
+  await expect(testFire).toHaveAccessibleName(/source updated/i);
+  await expect(page.getByRole("region", { name: "Official wildfire records map" })).toBeVisible();
+  const marker = page.locator(".live-map__record-geometry").first();
+  await expect(marker).toBeVisible();
+  if (testInfo.project.name === "desktop") {
+    await marker.dispatchEvent("click");
+    await expect(page.locator(".leaflet-popup").getByText("Test Fire", { exact: true })).toBeVisible();
+  } else {
+    await testFire.press("Enter");
+    await expect(testFire.locator("..").locator("..")).toHaveClass(/live-list__selected/);
+  }
+  await openSources(page);
+  await page.locator(".sheet-sources details").filter({ has: page.locator("summary", { hasText: "Usage notes" }) }).locator(":scope > summary").click();
+  await expect(page.getByText("No matching record is not a safety determination.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Official wildfire records map" })).toContainText("Missing records are not an all-clear");
+  await expect(page.getByText("Each statement and its source")).toHaveCount(0);
+});
+
+test("uses neutral live-summary copy and exposes category-only feedback", async ({ page }) => {
+  await page.goto("/");
+  await (await openComposer(page)).fill("Is there an active wildfire near me right now?");
+  await page.getByLabel("Send question").click();
+
+  const conversation = page.getByLabel("Question and answer");
+  await openMatchingRecords(page);
+  await openSources(page);
+  await expect(conversation.getByText("1 official record found", { exact: true })).toBeVisible();
+  const sourceLine = conversation.getByLabel("Answer sources and update time");
+  await expect(sourceLine).toBeVisible();
+  await expect(sourceLine).toContainText("BC Wildfire Service");
+  await expect(sourceLine).toContainText("Latest source update");
+  await expect(conversation.getByText(/does not change the answer/i)).toHaveCount(1);
+  await conversation.locator("details.answer-feedback > summary").click();
+  const issueButton = conversation.getByRole("button", { name: "Report" });
+  await expect(issueButton).toHaveAttribute("aria-expanded", "false");
+  await issueButton.click();
+  await expect(issueButton).toHaveAttribute("aria-expanded", "true");
+  await expect(conversation.getByRole("button", { name: "Stale or wrong live data" })).toBeVisible();
+});
+
+test("closes an open map popup cleanly while repeatedly changing answer context", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "Popup lifecycle requires the desktop marker interaction.");
+  const pageErrors: Error[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error));
+
+  await page.goto("/");
+  const question = await openComposer(page);
+  await question.fill("Is there an active wildfire near me right now?");
+  await question.press("Enter");
+  await expect(page.getByRole("region", { name: "Official wildfire records map", exact: true })).toBeVisible();
+
+  for (let cycle = 0; cycle < 8; cycle += 1) {
+    await openMapRecords(page);
+    const marker = page.locator(".live-map__record-geometry").first();
+    await expect(marker).toBeVisible();
+    await marker.dispatchEvent("click");
+    await expect(page.locator(".leaflet-popup").getByText("Test Fire", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Expand map", exact: true }).click();
+    await page.getByRole("button", { name: "Back to answer", exact: true }).click();
+    await expect(page.getByText("Official map context", { exact: true })).toHaveCount(0);
+  }
+
+  expect(pageErrors.map((error) => error.stack ?? error.message)).toEqual([]);
+});
+
+test("shows street context with attributed OpenStreetMap tiles", async ({ page }) => {
+  const osmTileRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("tile.openstreetmap.org")) osmTileRequests.push(request.url());
+  });
+  await page.goto("/");
+  const question = await openComposer(page);
+  await question.fill("Is there an active wildfire near me right now?");
+  await question.press("Enter");
+  await expect(page.getByLabel("Question and answer").getByText("Current official information: Test Fire is Out of Control.")).toBeVisible();
+  await openMapRecords(page);
+  await expect(page.getByRole("button", { name: /Test Fire Out of Control/ })).toBeVisible();
+  await page.getByRole("button", { name: "Expand map", exact: true }).click();
+  await page.locator(".official-sources-details > summary").click();
+  await expect(page.getByText(/Tile requests go directly to OpenStreetMap/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "OpenStreetMap" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Government of BC provincial boundary" })).toBeVisible();
+  expect(osmTileRequests.length).toBeGreaterThan(0);
+});
+
+test("shows stale and partial-layer state without hiding records", async ({ page }) => {
+  await page.goto("/");
+  await (await openComposer(page)).fill("Show stale official wildfire records");
+  await page.getByLabel("Send question").click();
+  await openMapRecords(page);
+  await expect(page.getByRole("region", { name: "Official wildfire records map" })).toContainText(/official observations are stale|could not refresh these records/);
+  await expect(page.getByLabel("Question and answer").getByText(/Cached official information \(refresh failed\)/)).toBeVisible();
+  await openSources(page);
+  await expect(page.getByText("Cached official records", { exact: true }).first()).toBeVisible();
+  const staleWarning = page.getByRole("status").filter({ hasText: /official observations are stale|could not refresh these records/ });
+  await expect(staleWarning).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Wildfires in B.C. right now" })).toHaveCount(0);
+  await expect(
+    page.getByRole("list", { name: "Matching this question" })
+      .getByRole("button", { name: /Cached Test Fire Out of Control/ }),
+  ).toBeVisible();
+  expect(await staleWarning.evaluate((warning) => Boolean(
+    warning.compareDocumentPosition(document.querySelector(".live-list")!) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ))).toBe(true);
+  const staleRecord = page.getByRole("list", { name: "Matching this question" });
+  await staleRecord.getByText("Record details").click();
+  await expect(staleRecord.getByText(/stale · BC Wildfire Service/)).toBeVisible();
+  await expect(page.getByText(/Some official layers are unavailable: evacuation/)).toBeVisible();
+});
+
+test("keeps the workspace usable at a 320px viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto("/");
+  await expect(page.getByRole("main", { name: "Explore official records" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Official wildfire records map" })).toBeVisible();
+  await openComposer(page);
+  await page.getByRole("button", { name: "Near me", exact: true }).click();
+  await expect(page.getByLabel("BC community for a nearby lookup")).toBeVisible();
+  const actions = page.locator(".atlas-header > nav > button:visible");
+  await expect(actions).toHaveCount(2);
+  for (const action of await actions.all()) {
+    const bounds = await action.boundingBox();
+    expect(bounds?.width).toBeGreaterThanOrEqual(44);
+    expect(bounds?.height).toBeGreaterThanOrEqual(44);
+  }
+  await expect(await openComposer(page)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+});
+
+test("keeps primary controls reachable at a 640px 200-percent zoom proxy", async ({ page }) => {
+  await page.setViewportSize({ width: 640, height: 400 });
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "Skip to official map" })).toHaveAttribute("href", "#official-map");
+  await expect(await openComposer(page)).toBeVisible();
+  const overflowX = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflowX).toBeLessThanOrEqual(0);
+});
+
+test("keeps the assistant answer in view on a short mobile overlay", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await (await openComposer(page)).fill("What belongs in a grab-and-go bag?");
+  await page.getByLabel("Send question").click();
+  const answer = page.locator("#conversation .assistant-message .answer-lead");
+  await expect(answer).toHaveText("Prepare water, food, and medication.");
+  await expect(answer).toBeInViewport();
+  await expect(page.getByLabel("Answer limitations")).toBeInViewport();
+});
+
+test("places skip links first and limitations after the answer", async ({ page }) => {
+  await page.goto("/");
+  const skipConversation = page.getByRole("link", { name: "Skip to official map" });
+  await skipConversation.focus();
+  await expect(skipConversation).toBeVisible();
+  await skipConversation.press("Enter");
+  await expect(page.locator("#official-map")).toBeInViewport();
+  await (await openComposer(page)).fill("What belongs in a grab-and-go bag?");
+  await page.getByLabel("Send question").click();
+  const limitations = page.getByLabel("Answer limitations");
+  await expect(limitations).toBeVisible();
+  await expect(page.locator("#conversation .assistant-message .answer-lead")).toHaveText(
+    "Prepare water, food, and medication.",
+  );
+  expect(await page.evaluate(() => {
+    const warning = document.querySelector('[aria-label="Answer limitations"]');
+    const answer = document.querySelector("#conversation .assistant-message .answer-lead");
+    return Boolean(
+      warning
+      && answer
+      && (warning.compareDocumentPosition(answer) & Node.DOCUMENT_POSITION_PRECEDING),
+    );
+  })).toBe(true);
+});
+
+test("opens an official source link with keyboard activation", async ({ page }) => {
+  await page.goto("/");
+  await (await openComposer(page)).fill("Is there an active wildfire near me right now?");
+  await page.getByLabel("Send question").press("Enter");
+  await openMapRecords(page);
+  const source = page
+    .getByRole("listitem")
+    .filter({ hasText: "Test Fire" })
+    .getByRole("link", {
+      name: "Open Source for Test Fire, record incident:7",
+      exact: true,
+    });
+  await expect(source).toBeVisible();
+  await expect(source).toHaveAttribute("href", "https://example.test/incidents/7");
+  const [popup] = await Promise.all([page.waitForEvent("popup"), source.press("Enter")]);
+  expect(popup).toBeTruthy();
+});
+
+test("shows summary map and records for analytical live questions", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await (await openComposer(page)).fill("Show wildfire distribution by status across B.C.");
+  await page.getByLabel("Send question").click();
+  await expect(page.getByRole("region", { name: "Analysis view" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Analysis view" })).toHaveAttribute("data-surface-visually-hidden", "true");
+  await expect(page.getByRole("heading", { name: "Incident records by fire centre" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Summary", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "Map", exact: true })).toHaveAttribute("aria-selected", "false");
+  await expect(page.getByRole("tab", { name: "Records", exact: true })).toHaveAttribute("aria-selected", "false");
+  await expect(page.getByRole("region", { name: "Official wildfire records map" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Show these on the map" })).toHaveCount(0);
+  const overflowX = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflowX).toBeLessThanOrEqual(0);
+});
+
+test("keeps analytical answers usable at narrow mobile viewports", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto("/");
+  await (await openComposer(page)).fill("Show wildfire distribution by status across B.C.");
+  await page.getByLabel("Send question").click();
+  await expect(page.getByRole("region", { name: "Analysis view" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Incident records by fire centre" })).toBeVisible();
+  for (const width of [320, 340, 390]) {
+    await page.setViewportSize({ width, height: 640 });
+    const overflowX = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflowX, `horizontal overflow at ${width}px`).toBeLessThanOrEqual(0);
+  }
+  await page.getByRole("tab", { name: "Table", exact: true }).click();
+  await page.setViewportSize({ width: 320, height: 640 });
+  const tableOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(tableOverflow, "horizontal overflow in analytical table at 320px").toBeLessThanOrEqual(0);
+  await page.getByRole("tab", { name: "Charts", exact: true }).click();
+  const ranked = page.getByRole("region", { name: "Current snapshot by fire centre" });
+  await expect(ranked).toHaveAttribute("tabindex", "0");
+  const rankedScroll = await ranked.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(rankedScroll.scrollWidth).toBeGreaterThan(rankedScroll.clientWidth);
+  await ranked.evaluate((element) => { element.scrollLeft = element.scrollWidth; });
+  expect(await ranked.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+});
+
+test("opens analytical answers on Summary and resets the selected surface for a new answer", async ({ page }) => {
+  await page.goto("/");
+  const question = await openComposer(page);
+  await question.fill("Map wildfire distribution by status across B.C.");
+  await page.getByLabel("Send question").click();
+
+  const map = page.getByRole("tab", { name: "Map", exact: true });
+  const summary = page.getByRole("tab", { name: "Summary", exact: true });
+  const records = page.getByRole("tab", { name: "Records", exact: true });
+  await expect(map).toHaveAttribute("aria-selected", "false");
+  await expect(summary).toHaveAttribute("aria-selected", "true");
+  if ((page.viewportSize()?.width ?? 0) >= 1120) {
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    await expect.poll(() => page.evaluate(() => {
+      const chrome = document.querySelector(".atlas-header");
+      return chrome?.getBoundingClientRect().top ?? -1;
+    })).toBeGreaterThanOrEqual(0);
+  }
+
+  if ((page.viewportSize()?.width ?? 0) >= 1120) {
+    const desktopColumns = await page.evaluate(() => {
+      const panel = document.querySelector(".conversation-panel")!.getBoundingClientRect();
+      const canvas = document.querySelector(".analysis-surface-slot")!.getBoundingClientRect();
+      const composer = document.querySelector(".composer")!.getBoundingClientRect();
+      return {
+        panelBottom: panel.bottom,
+        canvasBottom: canvas.bottom,
+        canvasTop: canvas.top,
+        composerBottom: composer.bottom,
+      };
+    });
+    // The approved interface uses one document flow. The composer follows the
+    // analysis instead of overlaying it, and remains reachable by normal focus.
+    expect(desktopColumns.canvasBottom).toBeGreaterThan(0);
+    expect(desktopColumns.composerBottom).toBeGreaterThan(desktopColumns.canvasBottom);
+    expect(await page.locator(".composer").evaluate(node => getComputedStyle(node).position)).not.toBe("fixed");
+    await question.focus();
+    await expect(question).toBeInViewport();
+    const composerBounds = (await question.boundingBox())!;
+    expect(composerBounds.y + composerBounds.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+    await summary.scrollIntoViewIfNeeded();
+  }
+
+  await map.click();
+  await expect(map).toHaveAttribute("aria-selected", "true");
+  await records.click();
+  await expect(records).toHaveAttribute("aria-selected", "true");
+  await page.getByText("Method", { exact: true }).click();
+  await page.getByRole("button", { name: "Inspect answer evidence" }).click();
+  await page.getByRole("button", { name: "Close answer context", exact: true }).click();
+  await expect(records).toHaveAttribute("aria-selected", "true");
+
+  await question.fill("Show a new distribution by status across B.C.");
+  await page.getByLabel("Send question").click();
+  await expect(summary).toHaveAttribute("aria-selected", "true");
+  await expect(map).toHaveAttribute("aria-selected", "false");
+});
+
+test("offers retry for a transient provider outage", async ({ page }) => {
+  await page.goto("/");
+  await (await openComposer(page)).fill("Simulate provider unavailable");
+  await page.getByLabel("Send question").click();
+  await expect(page.getByRole("status", { name: "We couldn't complete this question" })).toBeVisible();
+  await expect(page.getByText("No wildfire status was shown or inferred.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Retry this question" })).toBeVisible();
+});
+
+test("respects reduced motion without hiding the answer", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await (await openComposer(page)).fill("What belongs in a grab-and-go bag?");
+  await page.getByLabel("Send question").click();
+  await expect(page.locator("#conversation .assistant-message .answer-lead")).toHaveText(
+    "Prepare water, food, and medication.",
+  );
+  const transition = await page.locator("#conversation").evaluate((node) => getComputedStyle(node).transitionDuration);
+  expect(transition === "0s" || transition === "").toBeTruthy();
+});
+
+
+test("Compact Ask becomes an in-flow answer composer without reusing the submitted question", async ({ page }) => {
+  await page.goto("/");
+  const input = await openComposer(page);
+  await expect(page.getByRole("main", { name: "Explore official records" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Ask FireLens", exact: true })).toBeVisible();
+  await expect(page.locator(".sheet-composer")).toHaveCount(0);
+  await input.fill("What belongs in a grab-and-go bag?");
+  await input.press("Enter");
+  await expect(page.locator(".answer-lead")).toContainText("Prepare water");
+  await expect(page.getByRole("dialog", { name: "Ask FireLens", exact: true })).not.toBeVisible();
+  await expect(page.locator(".sheet-composer")).toBeVisible();
+  const followUp = await openComposer(page);
+  await expect(followUp).toHaveValue("");
+  await expect(followUp).toHaveAttribute("placeholder", "Ask about B.C. wildfires…");
+  await followUp.fill("My unfinished follow-up");
+  await followUp.blur();
+  await followUp.click();
+  await expect(followUp).toHaveValue("My unfinished follow-up");
+  expect(await page.locator(".sheet-composer").evaluate(node => getComputedStyle(node).position)).not.toBe("fixed");
+  await followUp.scrollIntoViewIfNeeded();
+  await expect(followUp).toBeInViewport();
+});
+
+test("guided questions submit once on click and follow-ups keep the conversation", async ({ page }) => {
+  await page.route("**/api/v1/guided-questions", route => route.fulfill({
+    json: { ...catalogue, catalogue_sha256: "0".repeat(64) },
+  }));
+  await page.goto("/");
+
+  await openComposer(page);
+  await page.getByRole("button", { name: "Near me", exact: true }).click();
+  await page.getByLabel("BC community for a nearby lookup").fill("Kelowna, BC");
+  await menuAction(page, "Example questions");
+  await page.getByRole("button", { name: /Nearby wildfire records/ }).click();
+  await expect(page.locator(".answer-lead")).toContainText("Prepare water");
+  expect(seenRequests).toHaveLength(1);
+  expect(seenRequests[0]!.question).toBe("What official wildfire records are near Kelowna, BC?");
+  await expect(page.getByLabel("Ask FireLens a question")).toHaveValue("");
+  await openSources(page);
+  await page.locator("details.answer-suggestions > summary").click();
+  await page.getByRole("button", { name: "How often should I update my emergency kit?" }).click();
+  await expect.poll(() => seenRequests.length).toBe(2);
+  expect(seenRequests[1]!.question).toBe("How often should I update my emergency kit?");
+  expect(seenRequests[1]!.history.some(turn => turn.content.includes("What official wildfire records"))).toBe(true);
+});
+
+
+test("map totals distinguish unavailable layers from available empty layers", async ({ page }) => {
+  await page.goto("/");
+  await (await openComposer(page)).fill("Show stale official wildfire records");
+  await page.getByLabel("Send question").click();
+  await openMapRecords(page);
+  const totals = page.getByLabel("Official record totals");
+  await expect(totals).toContainText("Evacuation records unavailable");
+  await expect(totals).not.toContainText("0 evacuation areas");
+  await expect(totals).toContainText("0 perimeters");
+  await expect(totals).toContainText("1 fires");
+});
+
+test("map record source links do not overlap status in the narrow rail", async ({ page }) => {
+  await page.setViewportSize({ width: 1536, height: 1000 });
+  await page.goto("/");
+  await (await openComposer(page)).fill("Show stale official wildfire records");
+  await page.getByLabel("Send question").click();
+  await openMapRecords(page);
+  const list = page.getByRole("list", { name: "Matching this question" });
+  for (const width of [1536, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await expect(list).toBeVisible();
+    const overlap = await list.locator("li").first().evaluate((row) => {
+      const text = row.querySelector(".live-list__select small")!;
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      const link = row.querySelector("a")!.getBoundingClientRect();
+      return [...range.getClientRects()].some((box) => (
+        box.left < link.right && box.right > link.left && box.top < link.bottom && box.bottom > link.top
+      ));
+    });
+    expect(overlap, `status and source link overlap at ${width}px`).toBe(false);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  }
+});
+
+test("partial map keeps valid evacuation boundaries and labels omitted records", async ({ page }) => {
+  await page.route("**/api/v1/live/map*", async (route) => {
+    await route.fulfill({ json: {
+      generated_at: "2026-09-07T22:00:00Z",
+      aggregate_freshness: "fresh",
+      results: [{
+        result_id: "evacuation:valid",
+        kind: "evacuation",
+        authority: "Province of British Columbia",
+        source_url: "https://www.emergencyinfobc.gov.bc.ca/",
+        source_updated_at: "2026-09-07T21:00:00Z",
+        retrieved_at: "2026-09-07T22:00:00Z",
+        freshness: "fresh",
+        name: "Test official area",
+        status: "Alert",
+        geometry: { type: "Polygon", coordinates: [[[-120, 49], [-120, 50], [-119, 50], [-119, 49], [-120, 49]]] },
+      }],
+      unavailable_layers: [],
+      partial_layers: ["evacuation"],
+      layer_statuses: [{ kind: "evacuation", available: true, matching_result_count: 1, omitted_geometry_count: 2 }],
+      limitations: ["Two invalid boundaries omitted."],
+    } });
+  });
+  await page.goto("/");
+  await menuAction(page, "Explore B.C. records");
+  await page.getByRole("region", { name: "Official wildfire records map", exact: true }).waitFor();
+  for (const width of [1536, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 });
+    const map = page.getByRole("region", { name: "Official wildfire records map" });
+    await expect(map).toContainText("2 evacuation records omitted");
+    await expect(map).toContainText("A missing area is not an all-clear");
+    await expect(page.getByLabel("Official record totals")).toContainText("1 evacuation areas (partial)");
+    await expect(map).not.toContainText("Evacuation records unavailable");
+    await expect(map.getByRole("link", { name: "Check official emergency information" })).toHaveAttribute("href", "https://www.emergencyinfobc.gov.bc.ca/");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  }
+  expect(seenRequests).toHaveLength(0);
+});

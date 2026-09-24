@@ -4,9 +4,11 @@ import type { ProofCardView, StatusBannerView } from "./proofPresentation";
 export function StatusBanner({
   banner,
   compact = false,
+  showSummary = true,
 }: {
   banner: StatusBannerView;
   compact?: boolean;
+  showSummary?: boolean;
 }) {
   const availability = banner.availability_label.toLowerCase();
   const availabilityWarning = availability.includes("unavailable")
@@ -18,10 +20,10 @@ export function StatusBanner({
 
   return (
     <div className={`status-banner${compact ? " status-banner--compact" : ""}`} role="status" aria-label="Answer status">
-      <div className="status-banner__summary">
+      {showSummary && <div className="status-banner__summary">
         <strong>{banner.headline}</strong>
         {!compact && <p>{banner.detail}</p>}
-      </div>
+      </div>}
       <div className="status-banner__metadata">
         <span className={freshnessWarning ? "status-banner__warning" : undefined}>
           <strong>Updated:</strong> {banner.freshness_label}
