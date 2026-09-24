@@ -12,6 +12,7 @@ from typing import Any, Literal
 
 from firelens.agent.chat import ChatToolCall, ChatTurn
 from firelens.contracts import BackgroundDraft, GroundedDraft
+from firelens.errors import ProviderError, ProviderErrorKind
 
 _CANONICAL_RESPONSE_MODELS: dict[str, frozenset[str]] = {
     "openai/text-embedding-3-small": frozenset(
@@ -177,3 +178,53 @@ def retry_after_seconds(value: str | None) -> float | None:
     if retry_at.tzinfo is None or retry_at.utcoffset() is None:
         return None
     return max(0.0, (retry_at.astimezone(UTC) - datetime.now(UTC)).total_seconds())
+
+
+def raise_provider_error(
+    status: int,
+    body: dict[str, Any],
+    *,
+    retry_after_seconds: float | None = None,
+) -> None:
+    error = body.get("error") or {}
+    if not isinstance(error, dict):
+        error = {}
+    raw_code = error.get("code")
+    code = raw_code if isinstance(raw_code, int) else status or 500
+    kinds = {
+        400: ProviderErrorKind.INVALID_REQUEST,
+        401: ProviderErrorKind.AUTHENTICATION,
+        402: ProviderErrorKind.CREDITS,
+        403: ProviderErrorKind.SAFETY,
+        404: ProviderErrorKind.MODEL_UNAVAILABLE,
+        408: ProviderErrorKind.TIMEOUT,
+        429: ProviderErrorKind.RATE_LIMIT,
+        524: ProviderErrorKind.TIMEOUT,
+        529: ProviderErrorKind.UNAVAILABLE,
+        502: ProviderErrorKind.UNAVAILABLE,
+        503: ProviderErrorKind.UNAVAILABLE,
+    }
+    kind = kinds.get(code, ProviderErrorKind.UNKNOWN)
+    safe_messages = {
+        ProviderErrorKind.AUTHENTICATION: "OpenRouter authentication failed.",
+        ProviderErrorKind.CREDITS: "OpenRouter credits are unavailable.",
+        ProviderErrorKind.RATE_LIMIT: "OpenRouter rate limit was reached.",
+        ProviderErrorKind.TIMEOUT: "OpenRouter request timed out.",
+        ProviderErrorKind.UNAVAILABLE: "The required OpenRouter model is unavailable.",
+        ProviderErrorKind.MODEL_UNAVAILABLE: "The requested OpenRouter model is unavailable.",
+        ProviderErrorKind.INVALID_REQUEST: "OpenRouter rejected the request.",
+        ProviderErrorKind.SAFETY: "OpenRouter blocked the request by policy.",
+        ProviderErrorKind.UNKNOWN: "OpenRouter returned an unexpected error.",
+    }
+    raise ProviderError(
+        kind,
+        safe_messages[kind],
+        status_code=code,
+        retryable=kind
+        in {
+            ProviderErrorKind.RATE_LIMIT,
+            ProviderErrorKind.TIMEOUT,
+            ProviderErrorKind.UNAVAILABLE,
+        },
+        retry_after_seconds=retry_after_seconds,
+    )

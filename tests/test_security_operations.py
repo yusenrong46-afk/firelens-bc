@@ -345,6 +345,7 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
                 "schema_version",
                 "event",
                 "trace_id",
+                "provider_correlation_id",
                 "route",
                 "response_mode",
                 "status",
@@ -373,6 +374,7 @@ class SecurityAndOperationsTests(unittest.IsolatedAsyncioTestCase):
                 "cost_usd",
             },
         )
+        self.assertRegex(event["provider_correlation_id"], r"^[0-9a-f]{32}$")
         self.assertEqual(event["schema_version"], "firelens.operational_event.v3")
         self.assertEqual(event["corpus_version"], "firelens_static_corpus.v1")
         self.assertEqual(event["candidate_id"], "firelens-v1-6-2:" + "b" * 40)

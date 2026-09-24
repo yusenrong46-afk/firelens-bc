@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "9c5e7f4580d0a084c0a4d355319f0f6e62d1059ac0248f1ec50b87303f835f84",
+  "source_digest": "cd62e3866a4d3088a0ceaf29225ae11dce8ac7dd2db9265ddc6328636ae2cfd5",
   "tests": [
     {
       "cases": [
@@ -3788,6 +3788,33 @@
       ],
       "language": "python",
       "path": "tests/test_provider_api.py"
+    },
+    {
+      "cases": [
+        "test_embedded_errors_are_observed_without_upstream_content",
+        "test_malformed_metadata_is_not_serialized_or_blocking",
+        "test_public_error_logs_link_attempts_and_reset_correlation",
+        "test_retries_have_unique_ids_and_do_not_require_cost",
+        "test_terminal_failures_keep_attempt_accounting",
+        "test_transport_latency_excludes_semaphore_wait"
+      ],
+      "direct_targets": [
+        "src/firelens/api/answer_routes.py",
+        "src/firelens/config.py",
+        "src/firelens/contracts.py",
+        "src/firelens/errors.py",
+        "src/firelens/operational_logging.py",
+        "src/firelens/providers/openrouter.py"
+      ],
+      "endpoints": [
+        "POST /api/v1/ask"
+      ],
+      "evaluation_families": [
+        "provider",
+        "retrieval"
+      ],
+      "language": "python",
+      "path": "tests/test_provider_observations.py"
     },
     {
       "cases": [

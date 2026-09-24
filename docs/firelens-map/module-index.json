@@ -11069,7 +11069,7 @@
     },
     {
       "branch_score": 20,
-      "fan_in": 2,
+      "fan_in": 3,
       "fan_out": 10,
       "generated": false,
       "id": "src/firelens/api/answer_routes.py",
@@ -11108,7 +11108,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 200,
+      "loc": 203,
       "major_symbols": [
         "install_answer_routes"
       ],
@@ -11123,7 +11123,7 @@
         "install_answer_routes.guided_questions",
         "install_answer_routes.ask"
       ],
-      "test_fan_in": 1
+      "test_fan_in": 2
     },
     {
       "branch_score": 11,
@@ -11934,7 +11934,7 @@
     },
     {
       "branch_score": 36,
-      "fan_in": 68,
+      "fan_in": 69,
       "fan_out": 2,
       "generated": false,
       "id": "src/firelens/config.py",
@@ -11973,7 +11973,7 @@
         "FireLensConfig.from_env",
         "FireLensConfig.from_env.setting"
       ],
-      "test_fan_in": 25
+      "test_fan_in": 26
     },
     {
       "branch_score": 76,
@@ -12122,7 +12122,7 @@
     },
     {
       "branch_score": 116,
-      "fan_in": 192,
+      "fan_in": 193,
       "fan_out": 12,
       "generated": false,
       "id": "src/firelens/contracts.py",
@@ -12271,7 +12271,7 @@
         "AskResponse._validate_requires_input",
         "AskResponse._validate_abstention"
       ],
-      "test_fan_in": 83
+      "test_fan_in": 84
     },
     {
       "branch_score": 26,
@@ -12540,7 +12540,7 @@
     },
     {
       "branch_score": 1,
-      "fan_in": 28,
+      "fan_in": 30,
       "fan_out": 0,
       "generated": false,
       "id": "src/firelens/errors.py",
@@ -12569,7 +12569,7 @@
       ],
       "module": "firelens.errors",
       "path": "src/firelens/errors.py",
-      "production_fan_in": 18,
+      "production_fan_in": 19,
       "statically_unreferenced": false,
       "symbols": [
         "ProviderErrorKind",
@@ -12587,7 +12587,7 @@
         "CandidateConfigurationError",
         "UnexpectedProgrammingError"
       ],
-      "test_fan_in": 9
+      "test_fan_in": 10
     },
     {
       "branch_score": 0,
@@ -17252,17 +17252,19 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 14,
-      "fan_in": 11,
+      "branch_score": 32,
+      "fan_in": 13,
       "fan_out": 1,
       "generated": false,
       "id": "src/firelens/operational_logging.py",
       "import_specifiers": [
         "__future__",
         "collections.abc",
+        "contextvars",
         "firelens.contracts",
         "json",
         "logging",
+        "math",
         "pydantic",
         "typing"
       ],
@@ -17271,7 +17273,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 312,
+      "loc": 409,
       "major_symbols": [
         "OperationalEvent",
         "StageMetric",
@@ -17282,11 +17284,12 @@
         "request_stage_metrics",
         "log_operation",
         "log_feedback",
-        "log_product_event"
+        "log_product_event",
+        "log_provider_attempt"
       ],
       "module": "firelens.operational_logging",
       "path": "src/firelens/operational_logging.py",
-      "production_fan_in": 6,
+      "production_fan_in": 7,
       "statically_unreferenced": false,
       "symbols": [
         "OperationalEvent",
@@ -17298,9 +17301,11 @@
         "request_stage_metrics",
         "log_operation",
         "log_feedback",
-        "log_product_event"
+        "log_product_event",
+        "log_provider_attempt",
+        "log_provider_attempt.numeric_code"
       ],
-      "test_fan_in": 4
+      "test_fan_in": 5
     },
     {
       "branch_score": 31,
@@ -17681,9 +17686,9 @@
       "test_fan_in": 17
     },
     {
-      "branch_score": 81,
-      "fan_in": 16,
-      "fan_out": 10,
+      "branch_score": 78,
+      "fan_in": 17,
+      "fan_out": 11,
       "generated": false,
       "id": "src/firelens/providers/openrouter.py",
       "import_specifiers": [
@@ -17694,6 +17699,7 @@
         "firelens.config",
         "firelens.contracts",
         "firelens.errors",
+        "firelens.operational_logging",
         "firelens.privacy_policy",
         "firelens.providers",
         "firelens.providers.openrouter_support",
@@ -17701,13 +17707,15 @@
         "json",
         "pydantic",
         "time",
-        "typing"
+        "typing",
+        "uuid"
       ],
       "imports": [
         "src/firelens/agent/chat.py",
         "src/firelens/config.py",
         "src/firelens/contracts.py",
         "src/firelens/errors.py",
+        "src/firelens/operational_logging.py",
         "src/firelens/privacy_policy.py",
         "src/firelens/providers/openrouter_generation.py",
         "src/firelens/providers/openrouter_operations.py",
@@ -17717,7 +17725,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 650,
+      "loc": 643,
       "major_symbols": [
         "OpenRouterProvider"
       ],
@@ -17751,7 +17759,6 @@
         "OpenRouterProvider._post",
         "OpenRouterProvider._post_attempt",
         "OpenRouterProvider._post_with_retries",
-        "OpenRouterProvider._raise_provider_error",
         "OpenRouterProvider.embed",
         "OpenRouterProvider.rerank",
         "OpenRouterProvider._chat_json",
@@ -17761,7 +17768,7 @@
         "OpenRouterProvider.generate_background",
         "OpenRouterProvider.chat_turn"
       ],
-      "test_fan_in": 9
+      "test_fan_in": 10
     },
     {
       "branch_score": 3,
@@ -17880,9 +17887,9 @@
       "test_fan_in": 0
     },
     {
-      "branch_score": 30,
+      "branch_score": 34,
       "fan_in": 5,
-      "fan_out": 2,
+      "fan_out": 3,
       "generated": false,
       "id": "src/firelens/providers/openrouter_support.py",
       "import_specifiers": [
@@ -17894,16 +17901,18 @@
         "email.utils",
         "firelens.agent.chat",
         "firelens.contracts",
+        "firelens.errors",
         "json",
         "typing"
       ],
       "imports": [
         "src/firelens/agent/chat.py",
-        "src/firelens/contracts.py"
+        "src/firelens/contracts.py",
+        "src/firelens/errors.py"
       ],
       "kind": "production",
       "language": "python",
-      "loc": 179,
+      "loc": 230,
       "major_symbols": [
         "CircuitState",
         "StagePressureState",
@@ -17912,7 +17921,8 @@
         "locally_type_draft",
         "parse_chat_turn",
         "model_identity_matches",
-        "retry_after_seconds"
+        "retry_after_seconds",
+        "raise_provider_error"
       ],
       "module": "firelens.providers.openrouter_support",
       "path": "src/firelens/providers/openrouter_support.py",
@@ -17927,7 +17937,8 @@
         "locally_type_draft",
         "parse_chat_turn",
         "model_identity_matches",
-        "retry_after_seconds"
+        "retry_after_seconds",
+        "raise_provider_error"
       ],
       "test_fan_in": 2
     },
@@ -26648,6 +26659,72 @@
       "test_fan_in": 0
     },
     {
+      "branch_score": 17,
+      "fan_in": 0,
+      "fan_out": 6,
+      "generated": false,
+      "id": "tests/test_provider_observations.py",
+      "import_specifiers": [
+        "asyncio",
+        "fastapi",
+        "fastapi.testclient",
+        "firelens.api.answer_routes",
+        "firelens.config",
+        "firelens.contracts",
+        "firelens.errors",
+        "firelens.operational_logging",
+        "firelens.providers.openrouter",
+        "httpx",
+        "json",
+        "logging",
+        "pathlib",
+        "pydantic",
+        "pytest",
+        "types"
+      ],
+      "imports": [
+        "src/firelens/api/answer_routes.py",
+        "src/firelens/config.py",
+        "src/firelens/contracts.py",
+        "src/firelens/errors.py",
+        "src/firelens/operational_logging.py",
+        "src/firelens/providers/openrouter.py"
+      ],
+      "kind": "test",
+      "language": "python",
+      "loc": 246,
+      "major_symbols": [
+        "events",
+        "test_embedded_errors_are_observed_without_upstream_content",
+        "test_terminal_failures_keep_attempt_accounting",
+        "test_retries_have_unique_ids_and_do_not_require_cost",
+        "test_malformed_metadata_is_not_serialized_or_blocking",
+        "test_transport_latency_excludes_semaphore_wait",
+        "test_public_error_logs_link_attempts_and_reset_correlation"
+      ],
+      "module": "tests.test_provider_observations",
+      "path": "tests/test_provider_observations.py",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "events",
+        "test_embedded_errors_are_observed_without_upstream_content",
+        "test_embedded_errors_are_observed_without_upstream_content.run",
+        "test_terminal_failures_keep_attempt_accounting",
+        "test_terminal_failures_keep_attempt_accounting.handler",
+        "test_terminal_failures_keep_attempt_accounting.run",
+        "test_retries_have_unique_ids_and_do_not_require_cost",
+        "test_retries_have_unique_ids_and_do_not_require_cost.handler",
+        "test_retries_have_unique_ids_and_do_not_require_cost.run",
+        "test_malformed_metadata_is_not_serialized_or_blocking",
+        "test_transport_latency_excludes_semaphore_wait",
+        "test_transport_latency_excludes_semaphore_wait.run",
+        "test_public_error_logs_link_attempts_and_reset_correlation",
+        "test_public_error_logs_link_attempts_and_reset_correlation.answer"
+      ],
+      "test_fan_in": 0
+    },
+    {
       "branch_score": 0,
       "fan_in": 0,
       "fan_out": 4,
@@ -28908,7 +28985,7 @@
       ],
       "kind": "test",
       "language": "python",
-      "loc": 504,
+      "loc": 506,
       "major_symbols": [
         "SecurityAndOperationsTests",
         "ProductionImportBoundaryTests"
@@ -31921,5 +31998,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "9c5e7f4580d0a084c0a4d355319f0f6e62d1059ac0248f1ec50b87303f835f84"
+  "source_digest": "cd62e3866a4d3088a0ceaf29225ae11dce8ac7dd2db9265ddc6328636ae2cfd5"
 }

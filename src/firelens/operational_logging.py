@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from collections.abc import Sequence
+from contextvars import ContextVar
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -12,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from firelens.contracts import FeedbackCategory
 
 LOGGER_NAME = "firelens.operations"
+PROVIDER_CORRELATION: ContextVar[str | None] = ContextVar("provider_correlation", default=None)
 
 
 class OperationalEvent(BaseModel):
@@ -21,6 +24,7 @@ class OperationalEvent(BaseModel):
 
     schema_version: Literal["firelens.operational_event.v3"]
     event: Literal["firelens_request"]
+    provider_correlation_id: str | None = Field(default=None, pattern=r"^[0-9a-f]{32}$")
     trace_id: str = Field(min_length=1, max_length=128)
     route: str = Field(min_length=1, max_length=80)
     response_mode: str = Field(min_length=1, max_length=80)
@@ -217,6 +221,7 @@ def log_operation(
     event = OperationalEvent(
         schema_version="firelens.operational_event.v3",
         event="firelens_request",
+        provider_correlation_id=PROVIDER_CORRELATION.get(),
         trace_id=trace_id,
         route=route,
         response_mode=response_mode,
@@ -310,3 +315,95 @@ def log_product_event(
         )
     )
     return payload
+
+
+def log_provider_attempt(
+    *,
+    stage: str,
+    attempt: int,
+    attempt_id: str,
+    state: str,
+    elapsed_ms: float,
+    http_status: int | None = None,
+    body: object = None,
+    retry_delay: float | None = None,
+    outcome: str = "unknown",
+) -> None:
+    """Allowlist-only transport observation; never serialize upstream text."""
+    if stage not in {
+        "embedding",
+        "reranking",
+        "planning",
+        "context_generation",
+        "grounded_generation",
+        "background_generation",
+    } or state not in {"started", "completed"}:
+        return
+    error = body.get("error") if isinstance(body, dict) else None
+    error = error if isinstance(error, dict) else {}
+    metadata = error.get("metadata")
+    metadata = metadata if isinstance(metadata, dict) else {}
+
+    def numeric_code(value: object) -> int | None:
+        return value if type(value) is int and 100 <= value <= 599 else None
+
+    limit = metadata.get("limit_source")
+    limit = (
+        limit
+        if isinstance(limit, str)
+        and limit
+        in {"openrouter_in_flight_budget", "openrouter_key_limit", "openrouter_credits"}
+        else None
+    )
+    error_type = metadata.get("error_type")
+    error_type = (
+        error_type
+        if isinstance(error_type, str)
+        and error_type in {"rate_limit_exceeded", "insufficient_quota", "capacity_exceeded"}
+        else None
+    )
+    usage = body.get("usage") if isinstance(body, dict) else None
+    try:
+        cost = usage_cost_usd(usage)
+    except OverflowError:
+        cost = None
+    if cost is not None and not math.isfinite(cost):
+        cost = None
+    retry_delay = (
+        retry_delay
+        if retry_delay is not None and math.isfinite(retry_delay) and retry_delay >= 0
+        else None
+    )
+    allowed_outcomes = {
+        "unknown",
+        "response_received",
+        "authentication",
+        "credits",
+        "rate_limit",
+        "timeout",
+        "unavailable",
+        "model_unavailable",
+        "invalid_request",
+        "invalid_response",
+        "safety",
+        "cancelled",
+    }
+    event = {
+        "schema_version": "firelens.provider_attempt.v1",
+        "event": "firelens_provider_attempt",
+        "provider_correlation_id": PROVIDER_CORRELATION.get(),
+        "attempt_id": attempt_id,
+        "stage": stage,
+        "attempt": attempt,
+        "state": state,
+        "elapsed_ms": round(max(elapsed_ms, 0), 1),
+        "http_status": numeric_code(http_status),
+        "embedded_error_code": numeric_code(error.get("code")),
+        "provider_error_code": numeric_code(metadata.get("provider_code")),
+        "limit_source": limit,
+        "error_type": error_type,
+        "retry_after_seconds": retry_delay,
+        "outcome": outcome if outcome in allowed_outcomes else "unknown",
+        "cost_usd": cost,
+    }
+    logging.getLogger(LOGGER_NAME).info(json.dumps(event, sort_keys=True))

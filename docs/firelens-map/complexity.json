@@ -1442,7 +1442,7 @@
     },
     {
       "branch_score": 20,
-      "loc": 200,
+      "loc": 203,
       "path": "src/firelens/api/answer_routes.py"
     },
     {
@@ -2066,8 +2066,8 @@
       "path": "src/firelens/model_bakeoff.py"
     },
     {
-      "branch_score": 14,
-      "loc": 312,
+      "branch_score": 32,
+      "loc": 409,
       "path": "src/firelens/operational_logging.py"
     },
     {
@@ -2111,8 +2111,8 @@
       "path": "src/firelens/providers/fake.py"
     },
     {
-      "branch_score": 81,
-      "loc": 650,
+      "branch_score": 78,
+      "loc": 643,
       "path": "src/firelens/providers/openrouter.py"
     },
     {
@@ -2131,8 +2131,8 @@
       "path": "src/firelens/providers/openrouter_productbench.py"
     },
     {
-      "branch_score": 30,
-      "loc": 179,
+      "branch_score": 34,
+      "loc": 230,
       "path": "src/firelens/providers/openrouter_support.py"
     },
     {
@@ -2931,6 +2931,11 @@
       "path": "tests/test_provider_api.py"
     },
     {
+      "branch_score": 17,
+      "loc": 246,
+      "path": "tests/test_provider_observations.py"
+    },
+    {
       "branch_score": 0,
       "loc": 160,
       "path": "tests/test_public_contract_publication.py"
@@ -3112,7 +3117,7 @@
     },
     {
       "branch_score": 7,
-      "loc": 504,
+      "loc": 506,
       "path": "tests/test_security_operations.py"
     },
     {
@@ -3352,7 +3357,7 @@
     }
   ],
   "schema_version": "firelens.complexity.v1",
-  "source_digest": "9c5e7f4580d0a084c0a4d355319f0f6e62d1059ac0248f1ec50b87303f835f84",
+  "source_digest": "cd62e3866a4d3088a0ceaf29225ae11dce8ac7dd2db9265ddc6328636ae2cfd5",
   "symbols": [
     {
       "branch_score": 0,
@@ -13461,32 +13466,37 @@
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/operational_logging.py::log_feedback:260",
+      "id": "src/firelens/operational_logging.py::log_feedback:265",
       "module_path": "src/firelens/operational_logging.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/operational_logging.py::log_operation:170",
+      "id": "src/firelens/operational_logging.py::log_operation:174",
       "module_path": "src/firelens/operational_logging.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/operational_logging.py::log_product_event:289",
+      "id": "src/firelens/operational_logging.py::log_product_event:294",
+      "module_path": "src/firelens/operational_logging.py"
+    },
+    {
+      "branch_score": 18,
+      "id": "src/firelens/operational_logging.py::log_provider_attempt:320",
       "module_path": "src/firelens/operational_logging.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/operational_logging.py::request_stage_metrics:137",
+      "id": "src/firelens/operational_logging.py::request_stage_metrics:141",
       "module_path": "src/firelens/operational_logging.py"
     },
     {
       "branch_score": 4,
-      "id": "src/firelens/operational_logging.py::usage_cost_usd:126",
+      "id": "src/firelens/operational_logging.py::usage_cost_usd:130",
       "module_path": "src/firelens/operational_logging.py"
     },
     {
       "branch_score": 5,
-      "id": "src/firelens/operational_logging.py::usage_tokens:112",
+      "id": "src/firelens/operational_logging.py::usage_tokens:116",
       "module_path": "src/firelens/operational_logging.py"
     },
     {
@@ -13856,167 +13866,162 @@
     },
     {
       "branch_score": 5,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.__init__:47",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.__init__:50",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._abandon_stage_probe:291",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._abandon_stage_probe:294",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._acquire_stage_capacity:244",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._acquire_stage_capacity:247",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._admit_stage:175",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._admit_stage:178",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._chat_json:564",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._chat_json:557",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._generation_model_id:119",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._generation_model_id:122",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._generation_output_schema:139",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._generation_output_schema:142",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._generation_sampling_parameters:136",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._generation_sampling_parameters:139",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._headers:91",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._headers:94",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._headers_for_config:77",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._headers_for_config:80",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._post:295",
-      "module_path": "src/firelens/providers/openrouter.py"
-    },
-    {
-      "branch_score": 8,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._post_attempt:312",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._post:298",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 9,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._post_with_retries:388",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._post_attempt:315",
+      "module_path": "src/firelens/providers/openrouter.py"
+    },
+    {
+      "branch_score": 9,
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._post_with_retries:429",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 4,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._provider_preferences:122",
-      "module_path": "src/firelens/providers/openrouter.py"
-    },
-    {
-      "branch_score": 4,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._raise_provider_error:434",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._provider_preferences:125",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 7,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._record_stage_failure:262",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._record_stage_failure:265",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._record_stage_pressure_failure:219",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._record_stage_pressure_failure:222",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._record_stage_success:198",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._record_stage_success:201",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._release_stage_capacity:250",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider._release_stage_capacity:253",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.aclose:70",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.aclose:73",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.backpressure_limits:259",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.backpressure_limits:262",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.chat_turn:620",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.chat_turn:613",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 5,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.embed:483",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.embed:476",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.generate_background:610",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.generate_background:603",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.generate_contexts:590",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.generate_contexts:583",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.generate_grounded:600",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.generate_grounded:593",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 9,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.operational_state:154",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.operational_state:157",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.plan:582",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.plan:575",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.preflight_zdr:149",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.preflight_zdr:152",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 0,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.preflight_zdr_models:142",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.preflight_zdr_models:145",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.productbench_receipts:115",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.productbench_receipts:118",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.require_productbench_key_cap:95",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.require_productbench_key_cap:98",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 10,
-      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.rerank:516",
+      "id": "src/firelens/providers/openrouter.py::OpenRouterProvider.rerank:509",
       "module_path": "src/firelens/providers/openrouter.py"
     },
     {
@@ -14086,32 +14091,37 @@
     },
     {
       "branch_score": 2,
-      "id": "src/firelens/providers/openrouter_support.py::locally_type_draft:107",
+      "id": "src/firelens/providers/openrouter_support.py::locally_type_draft:108",
       "module_path": "src/firelens/providers/openrouter_support.py"
     },
     {
       "branch_score": 1,
-      "id": "src/firelens/providers/openrouter_support.py::model_identity_matches:156",
+      "id": "src/firelens/providers/openrouter_support.py::model_identity_matches:157",
       "module_path": "src/firelens/providers/openrouter_support.py"
     },
     {
       "branch_score": 12,
-      "id": "src/firelens/providers/openrouter_support.py::parse_chat_turn:120",
+      "id": "src/firelens/providers/openrouter_support.py::parse_chat_turn:121",
+      "module_path": "src/firelens/providers/openrouter_support.py"
+    },
+    {
+      "branch_score": 4,
+      "id": "src/firelens/providers/openrouter_support.py::raise_provider_error:183",
       "module_path": "src/firelens/providers/openrouter_support.py"
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/providers/openrouter_support.py::retry_after_seconds:165",
+      "id": "src/firelens/providers/openrouter_support.py::retry_after_seconds:166",
       "module_path": "src/firelens/providers/openrouter_support.py"
     },
     {
       "branch_score": 6,
-      "id": "src/firelens/providers/openrouter_support.py::strict_wire_schema:86",
+      "id": "src/firelens/providers/openrouter_support.py::strict_wire_schema:87",
       "module_path": "src/firelens/providers/openrouter_support.py"
     },
     {
       "branch_score": 3,
-      "id": "src/firelens/providers/openrouter_support.py::wire_draft_schema:69",
+      "id": "src/firelens/providers/openrouter_support.py::wire_draft_schema:70",
       "module_path": "src/firelens/providers/openrouter_support.py"
     },
     {
@@ -22875,6 +22885,41 @@
       "module_path": "tests/test_provider_api.py"
     },
     {
+      "branch_score": 2,
+      "id": "tests/test_provider_observations.py::events:18",
+      "module_path": "tests/test_provider_observations.py"
+    },
+    {
+      "branch_score": 2,
+      "id": "tests/test_provider_observations.py::test_embedded_errors_are_observed_without_upstream_content:27",
+      "module_path": "tests/test_provider_observations.py"
+    },
+    {
+      "branch_score": 1,
+      "id": "tests/test_provider_observations.py::test_malformed_metadata_is_not_serialized_or_blocking:135",
+      "module_path": "tests/test_provider_observations.py"
+    },
+    {
+      "branch_score": 3,
+      "id": "tests/test_provider_observations.py::test_public_error_logs_link_attempts_and_reset_correlation:194",
+      "module_path": "tests/test_provider_observations.py"
+    },
+    {
+      "branch_score": 6,
+      "id": "tests/test_provider_observations.py::test_retries_have_unique_ids_and_do_not_require_cost:105",
+      "module_path": "tests/test_provider_observations.py"
+    },
+    {
+      "branch_score": 3,
+      "id": "tests/test_provider_observations.py::test_terminal_failures_keep_attempt_accounting:77",
+      "module_path": "tests/test_provider_observations.py"
+    },
+    {
+      "branch_score": 0,
+      "id": "tests/test_provider_observations.py::test_transport_latency_excludes_semaphore_wait:162",
+      "module_path": "tests/test_provider_observations.py"
+    },
+    {
       "branch_score": 0,
       "id": "tests/test_public_contract_publication.py::_quote_only_response:105",
       "module_path": "tests/test_public_contract_publication.py"
@@ -25031,27 +25076,27 @@
     },
     {
       "branch_score": 0,
-      "id": "tests/test_security_operations.py::ProductionImportBoundaryTests.test_openapi_413_description_is_explicit_and_stable:428",
+      "id": "tests/test_security_operations.py::ProductionImportBoundaryTests.test_openapi_413_description_is_explicit_and_stable:430",
       "module_path": "tests/test_security_operations.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_security_operations.py::ProductionImportBoundaryTests.test_production_config_requires_zdr_and_content_free_traces:416",
+      "id": "tests/test_security_operations.py::ProductionImportBoundaryTests.test_production_config_requires_zdr_and_content_free_traces:418",
       "module_path": "tests/test_security_operations.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_security_operations.py::ProductionImportBoundaryTests.test_production_entrypoint_does_not_import_experiments:447",
+      "id": "tests/test_security_operations.py::ProductionImportBoundaryTests.test_production_entrypoint_does_not_import_experiments:449",
       "module_path": "tests/test_security_operations.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_security_operations.py::ProductionImportBoundaryTests.test_required_zdr_is_not_ready_before_endpoint_preflight:431",
+      "id": "tests/test_security_operations.py::ProductionImportBoundaryTests.test_required_zdr_is_not_ready_before_endpoint_preflight:433",
       "module_path": "tests/test_security_operations.py"
     },
     {
       "branch_score": 0,
-      "id": "tests/test_security_operations.py::ProductionImportBoundaryTests.test_vercel_entrypoint_reexports_canonical_api_app:468",
+      "id": "tests/test_security_operations.py::ProductionImportBoundaryTests.test_vercel_entrypoint_reexports_canonical_api_app:470",
       "module_path": "tests/test_security_operations.py"
     },
     {
@@ -25086,7 +25131,7 @@
     },
     {
       "branch_score": 1,
-      "id": "tests/test_security_operations.py::SecurityAndOperationsTests.test_unbound_runtime_logs_no_candidate_identity:383",
+      "id": "tests/test_security_operations.py::SecurityAndOperationsTests.test_unbound_runtime_logs_no_candidate_identity:385",
       "module_path": "tests/test_security_operations.py"
     },
     {
@@ -28794,11 +28839,6 @@
       "path": "src/firelens/contextual_retrieval_experiment.py"
     },
     {
-      "branch_score": 81,
-      "loc": 650,
-      "path": "src/firelens/providers/openrouter.py"
-    },
-    {
       "branch_score": 121,
       "loc": 650,
       "path": "src/firelens/publication/compiler.py"
@@ -28812,6 +28852,11 @@
       "branch_score": 64,
       "loc": 646,
       "path": "src/firelens/live_answering.py"
+    },
+    {
+      "branch_score": 78,
+      "loc": 643,
+      "path": "src/firelens/providers/openrouter.py"
     },
     {
       "branch_score": 92,

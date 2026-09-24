@@ -56,7 +56,7 @@ DivergenceConfidence = Literal["confirmed", "suspected", "unknown"]
 
 SUITES = ("core", "rag", "metamorphic", "trajectory", "fault", "ui", "performance")
 REGISTRY_RELATIVE = Path("data/evaluation/eval_lab_registry.v1.yaml")
-POLICY_RELATIVE = Path("data/evaluation/eval_lab_policy.v4.yaml")
+POLICY_RELATIVE = Path("data/evaluation/eval_lab_policy.v5.yaml")
 DEFAULT_ARTIFACT_ROOT = ROOT / "output/eval_lab"
 RUN_SCHEMA_VERSION = "firelens.eval_lab.run.v1"
 FAILURE_SCHEMA_VERSION = "firelens.eval_lab.failure.v1"
@@ -927,7 +927,7 @@ def validate_hard_probe_report(
 def validate_current_hard_probe_report(
     report: dict[str, Any], *, repository_root: Path = ROOT
 ) -> list[str]:
-    """Current v4 binding; the frozen rc2.2 validator remains independently callable."""
+    """Current v5 binding; the frozen rc2.2 validator remains independently callable."""
     from firelens_eval.semantic_oracles import CURRENT_DISPOSITIONS, current_disposition_issues
 
     historical = validate_hard_probe_report(report, repository_root=repository_root)
@@ -1191,7 +1191,7 @@ def _core_report_evidence(
             "minimum_passed": raw_summary.get("minimum_passed"),
             "minimum_passed_met": raw_summary.get("minimum_passed_met"),
             "cost_usd": raw_summary.get("cost_usd"),
-            "current_acceptance_policy": "firelens_eval_lab_zero_cost_v4",
+            "current_acceptance_policy": "firelens_eval_lab_zero_cost_v5",
             "historical_runner_native_exit": 0,
         }
         materials = _core_report_materials(adapter_id, report)
@@ -1785,7 +1785,7 @@ def _run_hard_probe(context: RunContext) -> tuple[dict[str, Any], list[dict[str,
                 "minimum_passed": summary.get("minimum_passed"),
                 "minimum_passed_met": summary.get("minimum_passed_met"),
                 "cost_usd": summary.get("cost_usd"),
-                "current_acceptance_policy": "firelens_eval_lab_zero_cost_v4",
+                "current_acceptance_policy": "firelens_eval_lab_zero_cost_v5",
                 "historical_runner_native_exit": exit_code,
             },
             materials=cast(dict[str, Any], report.get("manifest") or {}),

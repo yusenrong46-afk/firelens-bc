@@ -7,6 +7,7 @@ import json
 from collections.abc import Sequence
 from time import monotonic
 from typing import Any, Literal
+from uuid import uuid4
 
 import httpx
 from pydantic import ValidationError
@@ -22,6 +23,7 @@ from firelens.contracts import (
     RerankResult,
 )
 from firelens.errors import ProviderError, ProviderErrorKind
+from firelens.operational_logging import log_provider_attempt
 from firelens.privacy_policy import ZdrPreflightReport
 from firelens.providers import (
     openrouter_generation,
@@ -37,6 +39,7 @@ from firelens.providers.openrouter_support import (
     StagePressureState,
     model_identity_matches,
     parse_chat_turn,
+    raise_provider_error,
 )
 from firelens.providers.openrouter_support import (
     retry_after_seconds as parse_retry_after_seconds,
@@ -314,16 +317,35 @@ class OpenRouterProvider:
         stage: ProviderStage,
         endpoint: str,
         payload: dict[str, Any],
+        *,
+        attempt: int = 1,
     ) -> dict[str, Any]:
         await self._acquire_stage_capacity(stage)
+        started = 0.0
+        attempt_id = uuid4().hex
+        response_status = None
+        body: object = None
+        retry_after_seconds = None
+        outcome = "unknown"
+        dispatched = False
         try:
             try:
                 async with self._semaphore:
+                    started = monotonic()
+                    log_provider_attempt(
+                        stage=stage,
+                        attempt=attempt,
+                        attempt_id=attempt_id,
+                        state="started",
+                        elapsed_ms=0,
+                    )
+                    dispatched = True
                     response = await self._client.post(
                         f"{self.config.openrouter_base_url}/{endpoint.lstrip('/')}",
                         headers=self._headers(),
                         json=payload,
                     )
+                response_status = response.status_code
                 retry_after_seconds = parse_retry_after_seconds(
                     response.headers.get("Retry-After")
                 )
@@ -359,8 +381,13 @@ class OpenRouterProvider:
                         body,
                         retry_after_seconds=retry_after_seconds,
                     )
+                outcome = "response_received"
                 return body
+            except asyncio.CancelledError:
+                outcome = "cancelled"
+                raise
             except httpx.TimeoutException as exc:
+                outcome = "timeout"
                 error = ProviderError(
                     ProviderErrorKind.TIMEOUT,
                     "OpenRouter request timed out.",
@@ -371,6 +398,7 @@ class OpenRouterProvider:
                 await self._record_stage_pressure_failure(stage, error)
                 raise error from exc
             except httpx.HTTPError as exc:
+                outcome = "unavailable"
                 error = ProviderError(
                     ProviderErrorKind.UNAVAILABLE,
                     "OpenRouter could not be reached.",
@@ -380,10 +408,23 @@ class OpenRouterProvider:
                 await self._record_stage_pressure_failure(stage, error)
                 raise error from exc
             except ProviderError as error:
+                outcome = error.kind.value
                 await self._record_stage_pressure_failure(stage, error)
                 raise
         finally:
             await self._release_stage_capacity(stage)
+            if dispatched:
+                log_provider_attempt(
+                    stage=stage,
+                    attempt=attempt,
+                    attempt_id=attempt_id,
+                    state="completed",
+                    elapsed_ms=(monotonic() - started) * 1000,
+                    http_status=response_status,
+                    body=body,
+                    retry_delay=retry_after_seconds,
+                    outcome=outcome,
+                )
 
     async def _post_with_retries(
         self,
@@ -397,7 +438,7 @@ class OpenRouterProvider:
         started = monotonic()
         for attempt in range(1, self.config.provider_max_attempts + 1):
             try:
-                body = await self._post_attempt(stage, endpoint, payload)
+                body = await self._post_attempt(stage, endpoint, payload, attempt=attempt)
                 if self._productbench_receipts is not None:
                     self._productbench_receipts.append(
                         openrouter_productbench.receipt(
@@ -430,55 +471,7 @@ class OpenRouterProvider:
             ProviderErrorKind.UNKNOWN, "OpenRouter request failed."
         )
 
-    @staticmethod
-    def _raise_provider_error(
-        status: int,
-        body: dict[str, Any],
-        *,
-        retry_after_seconds: float | None = None,
-    ) -> None:
-        error = body.get("error") or {}
-        if not isinstance(error, dict):
-            error = {}
-        raw_code = error.get("code")
-        code = raw_code if isinstance(raw_code, int) else status or 500
-        kinds = {
-            400: ProviderErrorKind.INVALID_REQUEST,
-            401: ProviderErrorKind.AUTHENTICATION,
-            402: ProviderErrorKind.CREDITS,
-            403: ProviderErrorKind.SAFETY,
-            404: ProviderErrorKind.MODEL_UNAVAILABLE,
-            408: ProviderErrorKind.TIMEOUT,
-            429: ProviderErrorKind.RATE_LIMIT,
-            524: ProviderErrorKind.TIMEOUT,
-            529: ProviderErrorKind.UNAVAILABLE,
-            502: ProviderErrorKind.UNAVAILABLE,
-            503: ProviderErrorKind.UNAVAILABLE,
-        }
-        kind = kinds.get(code, ProviderErrorKind.UNKNOWN)
-        safe_messages = {
-            ProviderErrorKind.AUTHENTICATION: "OpenRouter authentication failed.",
-            ProviderErrorKind.CREDITS: "OpenRouter credits are unavailable.",
-            ProviderErrorKind.RATE_LIMIT: "OpenRouter rate limit was reached.",
-            ProviderErrorKind.TIMEOUT: "OpenRouter request timed out.",
-            ProviderErrorKind.UNAVAILABLE: "The required OpenRouter model is unavailable.",
-            ProviderErrorKind.MODEL_UNAVAILABLE: "The requested OpenRouter model is unavailable.",
-            ProviderErrorKind.INVALID_REQUEST: "OpenRouter rejected the request.",
-            ProviderErrorKind.SAFETY: "OpenRouter blocked the request by policy.",
-            ProviderErrorKind.UNKNOWN: "OpenRouter returned an unexpected error.",
-        }
-        raise ProviderError(
-            kind,
-            safe_messages[kind],
-            status_code=code,
-            retryable=kind
-            in {
-                ProviderErrorKind.RATE_LIMIT,
-                ProviderErrorKind.TIMEOUT,
-                ProviderErrorKind.UNAVAILABLE,
-            },
-            retry_after_seconds=retry_after_seconds,
-        )
+    _raise_provider_error = staticmethod(raise_provider_error)
 
     async def embed(self, texts: Sequence[str]) -> EmbeddingResponse:
         body, attempts = await self._post(
