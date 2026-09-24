@@ -1,0 +1,29 @@
+{
+  "schema": "firelens.release_source_followup.v1",
+  "origin": "Recorded real preview corrective/S03 on 2ae0370; question and actual history preserved.",
+  "request": {
+    "question": "Explain the source you used for that answer.",
+    "history": [
+      {
+        "role": "user",
+        "content": "What should I put in a wildfire grab-and-go bag?"
+      },
+      {
+        "role": "assistant",
+        "content": "Authority: Reviewed guidance + uncertainty. Answer: Build grab-and-go bags now for everyone in your home. Grab-and-Go Bag \u2022 Pen & notepad \u2022 Phone charger & battery bank \u2022 Flashlight \u2022 Radio \u2022 First aid kit \u2022 Personal toiletries \u2022 Seasonal clothing \u2022 Food & water \u2022 Batteries \u2022 Whistle \u2022 Emergency plan and insurance/important papers Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions."
+      },
+      {
+        "role": "user",
+        "content": "What should I add for my dog or cat?"
+      },
+      {
+        "role": "assistant",
+        "content": "Authority: Reviewed guidance + uncertainty. Answer: TIP: Pets are part of the family too. Pack them grab-and-go bags with food, water, leashes and carriers. It\u2019s a good idea to include a recent picture, along with copies of vaccination records and health information. Consider talking to your municipality, regional district or band office about what organizations or resources are available for animals during emergencies. Plan ahead for where they might stay. Limitations: The evidence contains stable official guidance and does not establish current wildfire conditions."
+      }
+    ],
+    "context": {
+      "visible_live_result_ids": []
+    }
+  },
+  "expectation": "Explain verified preceding evidence, or explicitly report that prior source/revision/passage metadata is unavailable; no invented citation or unrelated high-risk handoff."
+}

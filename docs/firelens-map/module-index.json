@@ -7111,7 +7111,7 @@
     },
     {
       "branch_score": 0,
-      "fan_in": 24,
+      "fan_in": 25,
       "fan_out": 2,
       "generated": false,
       "id": "src/firelens/agent/__init__.py",
@@ -7132,7 +7132,7 @@
       "production_fan_in": 1,
       "statically_unreferenced": false,
       "symbols": [],
-      "test_fan_in": 23
+      "test_fan_in": 24
     },
     {
       "branch_score": 9,
@@ -8855,8 +8855,8 @@
       "test_fan_in": 7
     },
     {
-      "branch_score": 17,
-      "fan_in": 3,
+      "branch_score": 21,
+      "fan_in": 4,
       "fan_out": 5,
       "generated": false,
       "id": "src/firelens/answering/input_clarity.py",
@@ -8879,10 +8879,11 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 132,
+      "loc": 167,
       "major_symbols": [
         "is_low_substance_question",
         "has_source_antecedent",
+        "requests_previous_answer_source",
         "missing_source_antecedent",
         "unclear_input_response",
         "missing_source_antecedent_response"
@@ -8894,11 +8895,12 @@
       "symbols": [
         "is_low_substance_question",
         "has_source_antecedent",
+        "requests_previous_answer_source",
         "missing_source_antecedent",
         "unclear_input_response",
         "missing_source_antecedent_response"
       ],
-      "test_fan_in": 2
+      "test_fan_in": 3
     },
     {
       "branch_score": 82,
@@ -12120,7 +12122,7 @@
     },
     {
       "branch_score": 116,
-      "fan_in": 191,
+      "fan_in": 192,
       "fan_out": 12,
       "generated": false,
       "id": "src/firelens/contracts.py",
@@ -12269,7 +12271,7 @@
         "AskResponse._validate_requires_input",
         "AskResponse._validate_abstention"
       ],
-      "test_fan_in": 82
+      "test_fan_in": 83
     },
     {
       "branch_score": 26,
@@ -17498,7 +17500,7 @@
       "test_fan_in": 1
     },
     {
-      "branch_score": 139,
+      "branch_score": 142,
       "fan_in": 10,
       "fan_out": 6,
       "generated": false,
@@ -17525,7 +17527,7 @@
       ],
       "kind": "production",
       "language": "python",
-      "loc": 563,
+      "loc": 568,
       "major_symbols": [
         "attach_proof_presentation",
         "build_status_banner",
@@ -27180,6 +27182,48 @@
       "test_fan_in": 0
     },
     {
+      "branch_score": 4,
+      "fan_in": 0,
+      "fan_out": 3,
+      "generated": false,
+      "id": "tests/test_release_source_followup.py",
+      "import_specifiers": [
+        "asyncio",
+        "firelens.agent",
+        "firelens.answering.input_clarity",
+        "firelens.contracts",
+        "json",
+        "pathlib",
+        "pytest",
+        "unittest.mock"
+      ],
+      "imports": [
+        "src/firelens/agent/__init__.py",
+        "src/firelens/answering/input_clarity.py",
+        "src/firelens/contracts.py"
+      ],
+      "kind": "test",
+      "language": "python",
+      "loc": 109,
+      "major_symbols": [
+        "test_previous_provenance_is_explicitly_unavailable_without_provider",
+        "test_new_content_and_multitask_requests_are_not_swallowed",
+        "test_untrusted_source_label_does_not_create_prior_evidence",
+        "test_source_repair_binding_keeps_historical_expectations"
+      ],
+      "module": "tests.test_release_source_followup",
+      "path": "tests/test_release_source_followup.py",
+      "production_fan_in": 0,
+      "statically_unreferenced": true,
+      "symbols": [
+        "test_previous_provenance_is_explicitly_unavailable_without_provider",
+        "test_new_content_and_multitask_requests_are_not_swallowed",
+        "test_untrusted_source_label_does_not_create_prior_evidence",
+        "test_source_repair_binding_keeps_historical_expectations"
+      ],
+      "test_fan_in": 0
+    },
+    {
       "branch_score": 8,
       "fan_in": 0,
       "fan_out": 8,
@@ -31877,5 +31921,5 @@
     "docs/reports/"
   ],
   "schema_version": "firelens.module_index.v1",
-  "source_digest": "bd8adfdd1982449b66e255af6939b788d7c6a0473e832f4bda6a26116cc4acb9"
+  "source_digest": "9c5e7f4580d0a084c0a4d355319f0f6e62d1059ac0248f1ec50b87303f835f84"
 }

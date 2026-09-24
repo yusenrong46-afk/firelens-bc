@@ -127,6 +127,8 @@ def build_status_banner(response: Any) -> AnswerStatusBanner:
     reason_value = getattr(reason, "value", reason)
     if publication_presentation:
         headline = publication_presentation[0]
+    elif mode == "requires_input" and reason_value == "missing_source_antecedent":
+        headline = "A source is needed to continue"
     elif mode == "live":
         headline = official_records_headline(response.aggregate_freshness)
     elif mode == "scope_redirect" and reason_value == "live_data_required":
@@ -422,6 +424,9 @@ def _banner_detail(response: Any, mode: str) -> str:
     if mode == "capability":
         return "Ask about reviewed preparedness guidance or official BC wildfire records."
     if mode == "requires_input":
+        reason = getattr(response, "reason_code", None)
+        if getattr(reason, "value", reason) == "missing_source_antecedent":
+            return "Name the document or ask a specific question about the source."
         return (
             "FireLens needs a BC community or approximate location to continue "
             "this live request."

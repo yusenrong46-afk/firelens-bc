@@ -2,7 +2,7 @@
   "coverage_note": "Cases are static declarations/call sites; family labels are substring hints and direct imports are not proof of semantic coverage.",
   "generator": "scripts/firelens_agent/build_map.py",
   "schema_version": "firelens.test_map.v1",
-  "source_digest": "bd8adfdd1982449b66e255af6939b788d7c6a0473e832f4bda6a26116cc4acb9",
+  "source_digest": "9c5e7f4580d0a084c0a4d355319f0f6e62d1059ac0248f1ec50b87303f835f84",
   "tests": [
     {
       "cases": [
@@ -4040,6 +4040,29 @@
       ],
       "language": "python",
       "path": "tests/test_release_promotion.py"
+    },
+    {
+      "cases": [
+        "test_new_content_and_multitask_requests_are_not_swallowed",
+        "test_previous_provenance_is_explicitly_unavailable_without_provider",
+        "test_source_repair_binding_keeps_historical_expectations",
+        "test_untrusted_source_label_does_not_create_prior_evidence"
+      ],
+      "direct_targets": [
+        "src/firelens/agent/__init__.py",
+        "src/firelens/answering/input_clarity.py",
+        "src/firelens/contracts.py"
+      ],
+      "endpoints": [],
+      "evaluation_families": [
+        "hard_probe",
+        "live",
+        "privacy",
+        "provider",
+        "trajectory"
+      ],
+      "language": "python",
+      "path": "tests/test_release_source_followup.py"
     },
     {
       "cases": [

@@ -46,6 +46,19 @@ _DEICTIC_SOURCE = re.compile(
     r"\b(?:this|that|the)\s+(?:source|document|guide|checklist|link|handle)\b",
     re.IGNORECASE,
 )
+_PREVIOUS_ANSWER_SOURCE = re.compile(
+    r"(?:"
+    r"(?:explain|describe|show|identify|name)\s+(?:me\s+)?(?:the\s+)?"
+    r"(?:source|sources|citation|citations|document|evidence)\s+"
+    r"(?:you\s+(?:used|cited)(?:\s+for\s+(?:that|this|the\s+previous)\s+answer)?|"
+    r"(?:for|behind)\s+(?:that|this|your\s+(?:last|previous))\s+(?:answer|response))|"
+    r"(?:what|which)\s+(?:source|sources|document|citation)\s+"
+    r"(?:did\s+you\s+(?:use|cite)(?:\s+for\s+(?:that|this)\s+answer)?|"
+    r"(?:supports?|backs?)\s+(?:that|your\s+(?:last|previous))\s+(?:answer|response))|"
+    r"where\s+did\s+you\s+get\s+(?:that|this)\s+(?:information|answer)"
+    r")[.!?\s]*",
+    re.IGNORECASE,
+)
 _CLARIFICATION_EXAMPLES = (
     "What wildfires are currently listed in B.C.?",
     "What belongs in a grab-and-go bag?",
@@ -85,8 +98,18 @@ def has_source_antecedent(request: QueryRequest) -> bool:
     return False
 
 
+def requests_previous_answer_source(question: str) -> bool:
+    """Recognize a standalone provenance request, not a new guidance question."""
+
+    return _PREVIOUS_ANSWER_SOURCE.fullmatch(question.strip()) is not None
+
+
 def missing_source_antecedent(request: QueryRequest) -> bool:
     question = request.question
+    # Public history carries answer text, not a trusted citation/revision packet.
+    # An authority label or selected live ID cannot identify the prior source span.
+    if requests_previous_answer_source(question):
+        return True
     if not _DEICTIC_SOURCE.search(question):
         return False
     if has_source_antecedent(request):
@@ -112,11 +135,19 @@ def unclear_input_response() -> AskResponse:
     )
 
 
-def missing_source_antecedent_response() -> AskResponse:
+def missing_source_antecedent_response(request: QueryRequest | None = None) -> AskResponse:
     answer = (
         "I'm not sure which source you mean. Select a source from the evidence "
         "panel, or ask what BC Wildfire Service says about a specific topic."
     )
+    prior_source = request is not None and requests_previous_answer_source(request.question)
+    if prior_source:
+        answer = (
+            "I can't verify which source, document revision, or passage supported the "
+            "previous answer from the conversation text available here. Please name the "
+            "document or ask a specific question about it. I won't infer a citation "
+            "from the topic alone."
+        )
     return AskResponse(
         status=ResponseStatus.ANSWER,
         trace_id=uuid4().hex,
@@ -128,5 +159,9 @@ def missing_source_antecedent_response() -> AskResponse:
             prompt="Select a source or name a specific topic.",
             continuation_question="What does the official BC Wildfire Service say about wildfire preparedness?",
         ),
-        limitations=["FireLens did not retrieve a source directory for an unbound reference."],
+        limitations=[
+            "This request does not include verified source metadata for the preceding answer."
+            if prior_source
+            else "FireLens did not retrieve a source directory for an unbound reference."
+        ],
     )

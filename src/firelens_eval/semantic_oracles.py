@@ -63,7 +63,7 @@ def unsupported_fixture_issues(payload: dict[str, Any], *, forbidden_fact: str) 
 
 # Versioned, reviewed acceptance of exact historical representation discrepancies.
 # This does not alter any frozen row, profile, runner exit, or global PASS meaning.
-CURRENT_DISPOSITIONS = Path("data/evaluation/hard_probe_current_dispositions.v2.json")
+CURRENT_DISPOSITIONS = Path("data/evaluation/hard_probe_current_dispositions.v3.json")
 
 
 def _digest(value: Any) -> str:

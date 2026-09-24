@@ -15641,6 +15641,30 @@
     {
       "kind": "static",
       "lines": [
+        10
+      ],
+      "source": "tests/test_release_source_followup.py",
+      "target": "src/firelens/agent/__init__.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        11
+      ],
+      "source": "tests/test_release_source_followup.py",
+      "target": "src/firelens/answering/input_clarity.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
+        15
+      ],
+      "source": "tests/test_release_source_followup.py",
+      "target": "src/firelens/contracts.py"
+    },
+    {
+      "kind": "static",
+      "lines": [
         15
       ],
       "source": "tests/test_reliability.py",
@@ -19124,6 +19148,7 @@
     "tests/test_release_context_repairs.py",
     "tests/test_release_operations.py",
     "tests/test_release_promotion.py",
+    "tests/test_release_source_followup.py",
     "tests/test_reliability.py",
     "tests/test_repairs.py",
     "tests/test_request_body_middleware.py",
@@ -19200,7 +19225,7 @@
   ],
   "schema_version": "firelens.import_graph.v1",
   "scope_note": "CSS, JSON, and other non-code relative imports are intentionally unresolved.",
-  "source_digest": "bd8adfdd1982449b66e255af6939b788d7c6a0473e832f4bda6a26116cc4acb9",
+  "source_digest": "9c5e7f4580d0a084c0a4d355319f0f6e62d1059ac0248f1ec50b87303f835f84",
   "unresolved_relative_imports": [
     {
       "line": 26,
